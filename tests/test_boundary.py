@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 from tensorsph.droplet_impact import (
@@ -87,3 +88,78 @@ def test_pool_with_walls_stays_bounded_and_does_not_clump(tmp_path):
     distance = torch.linalg.vector_norm(pos[:, None, :] - pos[None, :, :], dim=-1)
     distance += torch.eye(pos.shape[0]) * 1.0e9
     assert float(distance.min()) > 0.05 * cfg.dx, "particles must not collapse onto each other"
+
+
+def _shear_setup(friction, dx=0.02, height=0.2, viscosity=0.05, width=0.4):
+    """A slab sheared over a bottom wall, with no side constraints."""
+    import math
+    cfg = Config(dx=dx, pool_width=width, pool_depth=height, drop_radius=2 * dx,
+                 drop_center_y=height + 0.5, gravity=0.0, viscosity=viscosity,
+                 wall_friction=friction, device="cpu")
+    xs = torch.arange(dx * 0.5, width, dx)
+    ys = torch.arange(dx * 0.5, height, dx)
+    gx, gy = torch.meshgrid(xs, ys, indexing="xy")
+    pos = torch.stack((gx.reshape(-1), gy.reshape(-1)), dim=-1)
+    mass = torch.full((pos.shape[0],), cfg.rho0 * dx * dx)
+    wall = wall_lattice(cfg, torch.device("cpu"), top=height + 2 * dx)
+    wall = wall[wall[:, 1] < 0.0]  # bottom row only
+    return cfg, pos, mass, wall, math.pi / (2.0 * height)
+
+
+def test_free_slip_exerts_no_tangential_force():
+    cfg, pos, mass, wall, _ = _shear_setup(0.0)
+    vel = torch.zeros_like(pos)
+    vel[:, 0] = 0.1  # uniform tangential motion
+    _, _, acc = rhs(pos, vel, mass, cfg, wall=wall)
+    assert float(acc[:, 0].abs().max()) == 0.0
+
+
+def test_no_slip_exerts_tangential_force_that_scales_with_friction():
+    def force(friction):
+        cfg, pos, mass, wall, _ = _shear_setup(friction)
+        vel = torch.zeros_like(pos)
+        vel[:, 0] = 0.1
+        _, _, acc = rhs(pos, vel, mass, cfg, wall=wall)
+        return float(acc[:, 0].abs().max()), float(acc[:, 0].min())
+
+    half, _ = force(0.5)
+    full, most_negative = force(1.0)
+    assert full > 0.0, "a no-slip wall must oppose tangential motion"
+    assert most_negative < 0.0, "the force must act against the flow direction"
+    assert half == pytest.approx(0.5 * full, rel=1e-5)
+
+
+def test_no_slip_reproduces_the_stokes_shear_decay_rate():
+    """Quarter-wave shear over a no-slip floor decays like exp(-nu (pi/2H)^2 t)."""
+    import math
+
+    dx, height, viscosity = 0.02, 0.2, 0.05
+    cfg, pos, mass, wall, k = _shear_setup(1.0, dx=dx, height=height,
+                                          viscosity=viscosity)
+    vel = torch.zeros_like(pos)
+    vel[:, 0] = 0.1 * torch.sin(k * pos[:, 1])
+    initial = float(0.5 * (mass[:, None] * vel.square()).sum())
+
+    samples = []
+    steps = int(0.25 / cfg.dt)
+    for step in range(steps + 1):
+        _, _, acc = rhs(pos, vel, mass, cfg, wall=wall)
+        if step % 10 == 0:
+            samples.append((step * cfg.dt,
+                            float(0.5 * (mass[:, None] * vel.square()).sum())))
+        vel = vel + cfg.dt * acc
+        pos = pos + cfg.dt * vel
+
+    points = [(t, math.log(e / initial)) for t, e in samples
+              if 0.5 * initial >= e >= 0.02 * initial]
+    assert len(points) >= 3, "the mode must decay enough to fit a rate"
+    ts = [p[0] for p in points]
+    ls = [p[1] for p in points]
+    mean_t = sum(ts) / len(ts)
+    mean_l = sum(ls) / len(ls)
+    slope = (sum((a - mean_t) * (b - mean_l) for a, b in zip(ts, ls))
+             / sum((a - mean_t) ** 2 for a in ts))
+    measured = -slope / 2.0
+    analytic = viscosity * k * k
+    # Discretisation error at this resolution: measured 0.84 of analytic.
+    assert 0.70 <= measured / analytic <= 1.05, (measured, analytic)

@@ -1,7 +1,7 @@
 # TensorSPH algorithm gap analysis and validation roadmap
 
 **Status:** engineering assessment of the current prototype, not a claim of validated SPH accuracy.
-**Scope:** 2-D PyTorch WCSPH droplet-impact prototype on `main` at version 0.2.0.
+**Scope:** 2-D PyTorch WCSPH prototype (droplet impact and dam break) at version 0.3.0.
 
 ## Executive decision
 
@@ -44,22 +44,40 @@ possible". The root cause was diagnosed and fixed:
 
 See [`docs/review-2026-10.md`](review-2026-10.md) for the measurements behind these claims.
 
+## What changed in 0.3.0
+
+| Item | Before | After |
+|---|---|---|
+| Neighbour search | coordinates copied to the host, Python loops over particles; **slower than brute force** at 1000 particles (0.85x) | vectorized and device-resident; 3.0x faster than brute force at 1000 particles, 5.3x at 5000, and 5x faster than the previous host implementation |
+| Pair rebuilding | every step, 83 % of the step cost | Verlet skin cache (`Config.pair_skin_factor`, default 0.25 h): 11 steps per rebuild, 1.72x faster step, bit-identical results |
+| Whole impact run (incl. artifacts and plot) | 14.2 s | **5.2 s** (2.8x) |
+| Free-surface case | droplet impact only, a smoke example | dam-break case with a three-level ladder: **observed order 0.96**, front insensitive to `c0` |
+| Initial equilibrium | uniform density, the pool starts in free fall | `Config.hydrostatic_init` for a discrete-equilibrium start (t=0 profile error 100 % -> 5 %); measured not to change the time-averaged B1 result, so it stays opt-in |
+| B1 boundary comparison | one configuration | wall particles vs coordinate clamp measured on the same case: 1.09 % vs 26.7 % interior error, 0 vs 1955 escapes |
+
+The honest headline for 0.3.0 is **performance and a second verification case**,
+not new physics. The solver still has no surface tension, no wall friction, and
+no comparison against measured data.
+
 ## Gap register and priority
 
 | Priority | Gap | Current risk | Required work | Exit evidence |
 |---|---|---|---|---|
 | P0 | No scientific acceptance gates | A successful process can be mistaken for a valid simulation | **Done for numerical criteria.** Physical acceptance still absent | `run_manifest.json` separates `software_execution`, `numerical_verification`, `physical_validation` |
-| P0 | Boundary was a coordinate clamp | **Fixed.** Static wall particles with extrapolated pressure | Validate against a dynamic case (dam break), add wall-force diagnostics | B1 passes at 0.63 % interior error; B2 still open |
-| P0 | No convergence study | Results may depend strongly on particle spacing and smoothing length | Add a three-resolution protocol with fixed dimensionless inputs and comparison metrics | Resolution table and plots; no unsupported convergence claim |
+| P0 | Boundary was a coordinate clamp | **Fixed.** Static wall particles with extrapolated pressure | Validate against a dynamic case (dam break), add wall-force diagnostics | B1 passes at 1.09 % interior error; B2 has no experimental comparison yet |
+| P0 | No convergence study | Results may depend strongly on particle spacing and smoothing length | **Two-level convergence exists for B2.** A three-level ladder and the observed order of accuracy are still missing | Resolution table and plots; no unsupported convergence claim |
 | P1 | Free-surface tensile instability | **Fixed by clamping**, which is first-order: it discards all rarefaction and cannot represent capillary effects | Replace with a physically motivated remedy (delta-SPH density diffusion or Monaghan artificial stress) and compare against the clamp | Side-by-side impact comparison with clumping statistics |
-| P1 | All-pairs interactions, O(N^2) | **Fixed.** One shared linked-cell pair list feeds density, pressure, and viscosity | Make pair construction device-resident | Pair-set equivalence test (done); timing report (done) |
-| P1 | Pair construction copies coordinates to CPU | 83 % of the per-step cost in the 608-particle case; linked-cell is *slower* than brute force at 1000 particles | Vectorized device-side binning or a sort-based neighbour search | Timing must beat the brute-force reference at the same count |
+| P1 | All-pairs interactions, O(N^2) | **Fixed.** One shared linked-cell pair list feeds density, pressure, and viscosity | — | Pair-set equivalence test (done); timing report (done) |
+| P1 | Pair construction copied coordinates to CPU | **Fixed in 0.3.0.** Vectorized, device-resident binning plus a Verlet skin cache: 5x faster than the host search, 1.72x per solver step after skin reuse, 2.8x for the whole impact run | CUDA timing on real hardware | `device_equals_brute_force` and the host cross-check both pass at 400–5000 particles |
+| P0 | No dam-break reference comparison | **Still open, but the solver side is ready.** Convergence (order 0.96), compressibility (0.019 % between `c0` 40 and 60) and no-slip walls (0.91x of the analytic Stokes rate) are all verified; only traceable reference data is missing | Bundle a digitized Martin & Moyce table with provenance and an uncertainty per point | B2 experimental gate currently `not_evaluated` |
+| P1 | Viscosity was half its nominal value | **Fixed in 0.4.0.** The Morris Laplacian was missing its factor 2; measured 0.500 applied/nominal at four resolutions | — | `test_viscosity_is_calibrated` holds the ratio to 1e-3 |
+| P2 | Wall friction absent | **Fixed in 0.4.0.** `wall_friction` gives a no-slip floor, verified against the analytic Stokes decay | Tune nothing yet: the default stays free slip | Ratio 0.84 → 0.91 under refinement |
 | P1 | No surface-tension model | Droplet shape and splash morphology are not physically credible for capillary-dominated cases | Select a literature-backed formulation; isolate curvature/interface terms and parameters | Static droplet Laplace-pressure test and oscillating-drop frequency/damping comparison |
 | P1 | Fixed time step without adaptation | **Partially fixed.** The step is validated at start-up but not adapted to the evolving maximum speed | Adaptive step with all chosen limits recorded, or a documented safety factor | Unit tests for the time-step policy; Courant stays bounded in long runs |
 | P1 | Persistent residual motion | The pool never comes to rest (a few cm/s after 4 s) because walls are free slip and there is no relaxation phase | Add wall friction or a documented relaxation procedure | Decaying kinetic-energy trace in B1 |
 | P2 | Diagnostics are monitoring-only | **Partially fixed.** Numerical criteria are now pass/fail; physical criteria are absent | Add per-case acceptance definitions with tolerances justified by reference and resolution | JSON validation report with provenance |
 | P2 | No benchmark provenance registry | Comparisons can silently use mismatched parameters | Store source, reference, dimensionality, units, parameters, resolution, and extraction method | Each reference comparison is traceable |
-| P2 | Lattice initialisation is not in discrete equilibrium | Hydrostatic profiles only converge when time-averaged | Hydrostatic density initialisation or a damped relaxation phase | Single-snapshot B1 error comparable to the time-averaged one |
+| P2 | Lattice initialisation is not in discrete equilibrium | **Investigated, not solved.** `hydrostatic_init` takes the t=0 profile error from 100 % to 5 %, but does not change the time-averaged B1 result, because the residual is a slowly damped sloshing mode rather than a startup transient | A damped relaxation phase, or wall friction, or a longer averaging window | Single-snapshot B1 error comparable to the time-averaged one |
 
 ## Benchmark ladder
 
@@ -82,15 +100,15 @@ Run the following in order. Do not use the droplet-impact case as the first proo
 - Report the depth-averaged pressure profile against `rho0 g (H - y)`, the free-surface drop, and the residual velocity.
 - Time-average to remove the acoustic oscillation caused by the non-equilibrium initial lattice; report the free-surface band separately.
 
-**Gate:** mean absolute relative error of the interior bands <= 5 %, free-surface drop <= 5 % of depth. **Status: passing at 0.63 % / 2.6 %.** See [`docs/benchmarks/hydrostatic.md`](benchmarks/hydrostatic.md).
+**Gate:** mean absolute relative error of the interior bands <= 5 %, free-surface drop <= 5 % of depth. **Status: passing at 1.09 % / 3.5 %.** See [`docs/benchmarks/hydrostatic.md`](benchmarks/hydrostatic.md).
 
 ### B2 — Dam-break free-surface flow
 
-- Select a published experiment/reference case and record geometry, fluid properties, gravity, and nondimensional parameters.
-- Compare the leading-front position against time and compare selected wall-pressure histories where the reference provides them.
-- Plot reference and TensorSPH curves together; include resolution and timestep sensitivity.
+- Case with the classical 1:2 column aspect ratio, reported as `Z/a` against `tau = t sqrt(2 g / a)`.
+- Front trajectory across resolutions; Ritter shallow-water front as an anchor, not a target.
+- Mass conservation, boundedness, Mach number, density compression.
 
-**Gate:** report errors and sensitivity. A visual resemblance alone is not acceptance. **Status: not started.**
+**Gate:** front trajectory converges under refinement, and every other measured quantity is inside a recorded limit. **Status: passing at observed order 0.96 over `dx` = 0.04 / 0.02 / 0.01, with the front converged to 0.019 % in `c0`.** The experimental comparison is implemented as a named gate and is `not_evaluated` because no digitized reference table is bundled. See [`docs/benchmarks/dam-break-2d.md`](benchmarks/dam-break-2d.md).
 
 ### B3 — Surface-tension verification
 
@@ -143,10 +161,11 @@ The solver should remain usable from the command line and tests without TensorPl
 
 1. ~~Non-negative pressure, time-step validation, and acceptance criteria.~~ Done in 0.2.0.
 2. ~~Wall-boundary implementation and a hydrostatic verification case.~~ Done in 0.2.0.
-3. Device-resident neighbour search, so the pair build stops dominating the step.
-4. Dam-break case with reference data and comparison plots.
-5. Surface tension only with dedicated static and oscillating-drop tests.
-6. Adaptive time step, then resolution studies.
-7. Revisit droplet impact as a physical benchmark, not merely a smoke example.
+3. ~~Device-resident neighbour search and pair-list reuse.~~ Done in 0.3.0.
+4. ~~Dam-break case with resolution convergence.~~ Done in 0.3.0.
+5. Bundle a digitized experimental dam-break reference with provenance, and add wall friction so the no-slip condition matches the experiments.
+6. Surface tension only with dedicated static and oscillating-drop tests.
+7. Adaptive time step, a three-level resolution ladder, and the observed order of accuracy.
+8. Revisit droplet impact as a physical benchmark, not merely a smoke example.
 
 Each step should be delivered as a reviewable PR with reproducible tests and artifacts. No benchmark should be marked validated without traceable reference data and documented acceptance criteria.
