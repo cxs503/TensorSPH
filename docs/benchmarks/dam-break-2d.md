@@ -11,8 +11,15 @@ repository.
 Run it:
 
 ```bash
-python benchmarks/dam_break/run.py --sizes 0.02,0.01 --seconds 0.8
-python benchmarks/dam_break/run.py --sizes 0.04,0.02 --seconds 0.35 --quick
+# three-level ladder + observed order + compressibility sweep (~4 min)
+python benchmarks/dam_break/run.py --sizes 0.04,0.02,0.01 --seconds 0.8 \
+    --sound-speeds 25,40,60
+
+# quick CI-sized check
+python benchmarks/dam_break/run.py --sizes 0.04,0.02 --seconds 0.4 --quick
+
+# no-slip walls instead of free slip
+python benchmarks/dam_break/run.py --sizes 0.02 --seconds 0.8 --wall-friction 1.0
 ```
 
 ## Case
@@ -32,10 +39,21 @@ dam-break experiments.
 
 ## Measured
 
+Three-level ladder, `c0 = 25 m/s`, free-slip walls:
+
 | `dx` | particles | steps | wall clock | max &#124;v&#124; | Mach | compression | escapes | front hits wall |
 |---|---|---|---|---|---|---|---|---|
-| 0.02 | 200 | 2 564 | 7.3 s | 4.63 m/s | 0.19 | 7.4 % | 0 | t = 0.649 s |
-| 0.01 | 800 | 5 128 | 33.9 s | 4.92 m/s | 0.20 | 5.7 % | 0 | t = 0.649 s |
+| 0.04 | 50 | 1 282 | 3.1 s | 5.26 m/s | 0.21 | 9.7 % | 0 | t = 0.659 s |
+| 0.02 | 200 | 2 564 | 9.4 s | 4.41 m/s | 0.18 | 9.9 % | 0 | t = 0.669 s |
+| 0.01 | 800 | 5 128 | 40.9 s | 4.39 m/s | 0.18 | 3.8 % | 0 | t = 0.669 s |
+
+**Observed order of accuracy**: the relative L2 difference of `front(t)/a` is
+2.58 % between `dx` = 0.04 and 0.02, and 1.31 % between 0.02 and 0.01, giving
+
+    p = log2(2.58 / 1.31) = 0.96
+
+i.e. essentially first order, which is what a semi-implicit Euler integration
+with a first-order boundary treatment should give.
 
 Front trajectory at `dx = 0.01`:
 
@@ -50,8 +68,24 @@ Front trajectory at `dx = 0.01`:
 | 4.75 | 6.86 | 0.72 |
 | 6.33 | 9.69 | 0.77 |
 
-The front advances monotonically, stays below the Ritter shallow-water front
-(ratio 0.63–0.77), and the two resolutions agree well.
+The front advances monotonically and stays below the Ritter shallow-water front
+(ratio 0.62–0.75), which is expected for a finite reservoir.
+
+## Compressibility study
+
+The same geometry at `dx = 0.01` with three sound speeds. A reference
+comparison is only meaningful once the observable stops moving with `c0`.
+
+| `c0` (m/s) | Mach | compression | wall clock | front L2 vs next level |
+|---|---|---|---|---|
+| 25 | 0.18 | 3.8 % | 40.7 s | 0.034 % (25 → 40) |
+| 40 | 0.10 | 2.2 % | 59.8 s | 0.019 % (40 → 60) |
+| 60 | 0.07 | 2.0 % | 85.3 s | — |
+
+The leading-edge trajectory is converged with respect to compressibility at the
+percent level: changing `c0` by a factor of 2.4 moves the front by less than
+0.04 % of `a`. The weakly-compressible assumption is therefore not the limiting
+error for this observable, and `c0 = 25 m/s` is adequate for the default case.
 
 ## Gates
 
@@ -61,30 +95,39 @@ The front advances monotonically, stays below the Ritter shallow-water front
 | `bounded_flow` | particles clamped beyond the tank | 0 | 0 | pass |
 | `mach_number` | max &#124;v&#124; / `c0` | 0.197 | 0.25 | pass |
 | `density_compression` | max(rho/rho0 - 1) | 7.4 % | 10 % | pass |
-| `resolution_convergence` | relative L2 of `front(t)/a`, `dx` 0.02 vs 0.01 | **1.68 %** | 10 % | pass |
+| `resolution_convergence` | relative L2 of `front(t)/a`, `dx` 0.04 vs 0.02 | **2.58 %** | 10 % | pass |
+| `sound_speed_convergence` | relative L2 of `front(t)/a`, `c0` 40 vs 60 | **0.019 %** | 5 % | pass |
 | `experimental_reference` | agreement with Martin & Moyce (1952) | — | — | **not_evaluated** |
 
-The convergence window stops when the front reaches the far wall (t = 0.649 s),
+The convergence window stops when the front reaches the far wall (t = 0.669 s),
 because after impact the leading edge is pinned by the boundary and no longer
 measures the flow.
 
+The `density_compression` gate is the marginal one at coarse resolution: 9.7 %
+and 9.9 % at `dx` = 0.04 and 0.02 against a 10 % limit, falling to 3.8 % at
+`dx` = 0.01. The coarse levels are at the edge of the weakly-compressible
+assumption, which is worth remembering before quoting coarse-grid results.
+
 ## Why the experimental gate is `not_evaluated`
 
-Three separate reasons, all of which must be resolved before this case can be
-called validated:
+One reason remains, and two have been addressed:
 
-1. **No data.** The repository does not ship a digitized Martin & Moyce table.
-   Inventing or hand-transcribing numbers would make the comparison
-   untraceable, which is the exact failure mode the roadmap is written to avoid.
-   The gate names the reference so the work has a target.
-2. **Wrong wall condition.** The experiments have no-slip floors; these walls are
-   static particles with free-slip viscosity. A faster front than the experiment
-   is therefore expected, independent of resolution. Adding wall friction is its
-   own change with its own verification.
-3. **Compressibility.** Mach 0.2 and 5–7 % density compression are at the edge of
-   the weakly-compressible assumption. A production run should raise `c0`, with
-   the corresponding `dt` cost, and show that the front trajectory stops
-   changing with `c0`.
+1. **No data — still open.** The repository does not ship a digitized Martin &
+   Moyce table. Transcribing numbers from memory or from a figure would make the
+   comparison untraceable, which is the exact failure mode the roadmap is written
+   to avoid. The gate names the reference so the work has a target. What is
+   needed: the table with its source (figure or table number), the digitization
+   method, and an uncertainty per point.
+2. **Wall condition — addressed.** `--wall-friction 1.0` now gives a no-slip
+   floor by extending the viscous stencil into the static wall particles. It is
+   verified separately: a quarter-wave shear over a no-slip floor decays at
+   0.84x (dx = 0.02) and 0.91x (dx = 0.01) of the analytic Stokes rate
+   `nu (pi/2H)^2`, converging under refinement. Free slip conserves tangential
+   momentum to machine precision in the same test.
+3. **Compressibility — addressed.** See the table above: the front moves by less
+   than 0.04 % of `a` when `c0` goes from 25 to 60 m/s.
+
+So the remaining blocker for B2 is data provenance, not the solver.
 
 ## What this case does establish
 
@@ -92,15 +135,21 @@ called validated:
   diverges, and the front is monotone.
 - Mass is conserved exactly (particle masses are constants and are never
   rescaled).
-- The observable converges at 1.68 % L2 between `dx = 0.02` and `dx = 0.01`,
+- The observable converges at observed order 0.96 over a three-level ladder,
   which is the prerequisite for any later comparison: a reference comparison on
   an unconverged trajectory would measure discretization noise.
+- The trajectory no longer depends on the artificial sound speed (0.019 % of
+  `a` between `c0` = 40 and 60 m/s), so the weakly-compressible approximation is
+  not what would limit the comparison.
+- A no-slip floor is available and verified, so the wall condition no longer
+  stands between this case and the experiments.
 
-## Next steps, in order
+## Next steps
 
-1. Bundle a digitized reference table with full provenance (source, figure,
-   digitization method, uncertainty) and add the comparison plot.
-2. Add wall friction and re-run; report both free-slip and no-slip curves.
-3. Sweep `c0` (25, 40, 60 m/s) at fixed `dx` and show the front trajectory
-   converges with compressibility.
-4. Extend the resolution ladder to three spacings and report the observed order.
+1. **The only blocker:** bundle a digitized Martin & Moyce table with full
+   provenance (source, figure or table number, digitization method,
+   uncertainty per point) and add the comparison plot. Until that exists the
+   gate stays `not_evaluated`; reconstructing numbers from a plotted curve
+   without recording the method would defeat the purpose of the gate.
+2. Afterwards, decide the default for `wall_friction` on the basis of that
+   comparison rather than on a guess.

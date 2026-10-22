@@ -21,7 +21,16 @@ import torch
 from .neighbor_search import PairListCache, cell_linked_pairs
 
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
+
+# The Morris et al. (1997) discrete Laplacian carries a factor 2:
+#   laplacian(v)_i ~= 2 sum_j (m_j / rho_j) (v_i - v_j) . (-r_ij . grad_i W) / (r^2 + eta^2)
+# Without it the operator applies exactly half the requested kinematic
+# viscosity. That was measured on a smooth sinusoidal field at dx = 0.04, 0.02,
+# 0.01 and h/dx = 1.1..1.7: the ratio of applied to analytic Laplacian was
+# 0.500 to three decimals in every case, i.e. a normalization constant rather
+# than a discretization error. test_viscosity_is_calibrated pins this.
+VISCOUS_LAPLACIAN_FACTOR = 2.0
 
 
 class SimulationUnstableError(FloatingPointError):
@@ -44,6 +53,11 @@ class Config:
     It is off by default: measured on B1 it does not tighten the time-averaged
     hydrostatic profile, only the first instant. See
     docs/benchmarks/hydrostatic.md.
+
+    ``wall_friction`` blends the wall's tangential condition: 0 gives free slip
+    (viscosity acts between fluid particles only) and 1 gives a no-slip wall
+    (viscosity also acts between fluid and wall particles, whose velocity is
+    zero). It does nothing without wall particles.
 
     ``pair_skin_factor`` scales the Verlet skin used to reuse neighbour lists:
     the skin is ``pair_skin_factor * h``, and the list is rebuilt once any
@@ -75,6 +89,7 @@ class Config:
     fail_fast: bool = True
     pair_skin_factor: float = 0.25
     hydrostatic_init: bool = False
+    wall_friction: float = 0.0
 
 
 # --------------------------------------------------------------------------- #
@@ -266,8 +281,10 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
     ``wall`` is an optional ``(W, D)`` tensor of static wall particles. When it
     is given, wall particles contribute to the fluid density summation, their
     pressure is extrapolated from neighbouring fluid pressure, and they exert
-    pressure forces on the fluid. Viscosity is evaluated between fluid
-    particles only, i.e. walls are treated as free-slip.
+    pressure forces on the fluid. Viscosity acts between fluid particles and,
+    when ``cfg.wall_friction > 0``, also between fluid particles and the static
+    wall particles (whose velocity is zero), which imposes a no-slip tangential
+    condition.
 
     Returns ``(rho, pressure, acceleration)`` for the fluid particles.
     """
@@ -334,6 +351,15 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
     else:
         pressure_all, density_all = pressure, rho
 
+    if nw:
+        all_vel = torch.cat((vel, torch.zeros((nw, pos.shape[1]),
+                                             dtype=pos.dtype, device=pos.device)))
+    else:
+        all_vel = vel
+    wall_friction_tensor = torch.full((), cfg.wall_friction, dtype=pos.dtype,
+                                      device=pos.device)
+    ones = torch.ones((), dtype=pos.dtype, device=pos.device)
+
     pressure_term = (pressure_all[i] / density_all[i].square()
                      + pressure_all[j] / density_all[j].square())
     pair_pressure = pressure_term[:, None] * grad_w
@@ -344,19 +370,33 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
     acc_pressure = acc[:n]
 
     fluid_pair = (i < n) & (j < n)
-    dv = vel[i[fluid_pair]] - vel[j[fluid_pair]]
-    pair_distance = distance[fluid_pair]
+    if nw and cfg.wall_friction > 0.0:
+        # One side is fluid and the other is wall: extend the viscous stencil
+        # into the wall, with the wall at rest. This is the mirror/image
+        # treatment of a no-slip boundary in a particle method.
+        wall_side = ((i < n) & (j >= n)) | ((i >= n) & (j < n))
+        visc_pair = fluid_pair | wall_side
+        blend = torch.where(wall_side, wall_friction_tensor, ones)[visc_pair][:, None]
+    else:
+        visc_pair = fluid_pair
+        blend = 1.0
+    dv = all_vel[i[visc_pair]] - all_vel[j[visc_pair]]
+    pair_distance = distance[visc_pair]
     denom = pair_distance.square() + 0.01 * h * h
     laplace_weight = torch.relu(
-        -(delta[fluid_pair] * grad_w[fluid_pair]).sum(dim=1)) / denom
-    visc_i = (-cfg.viscosity * dv
-              * (mass[j[fluid_pair]] / rho[j[fluid_pair]] * laplace_weight)[:, None])
-    visc_j = (cfg.viscosity * dv
-              * (mass[i[fluid_pair]] / rho[i[fluid_pair]] * laplace_weight)[:, None])
-    acc_visc = torch.zeros_like(pos)
-    acc_visc = acc_visc.index_add(0, i[fluid_pair], visc_i)
-    acc_visc = acc_visc.index_add(0, j[fluid_pair], visc_j)
-    return rho, pressure, acc_pressure + acc_visc + gravity
+        -(delta[visc_pair] * grad_w[visc_pair]).sum(dim=1)) / denom
+    coefficient = VISCOUS_LAPLACIAN_FACTOR * cfg.viscosity * blend
+    visc_i = (-coefficient * dv
+              * (all_mass[j[visc_pair]] / density_all[j[visc_pair]]
+                 * laplace_weight)[:, None])
+    visc_j = (coefficient * dv
+              * (all_mass[i[visc_pair]] / density_all[i[visc_pair]]
+                 * laplace_weight)[:, None])
+    acc_visc = torch.zeros((n + nw, pos.shape[1]), dtype=pos.dtype,
+                           device=pos.device)
+    acc_visc = acc_visc.index_add(0, i[visc_pair], visc_i)
+    acc_visc = acc_visc.index_add(0, j[visc_pair], visc_j)
+    return rho, pressure, acc_pressure + acc_visc[:n] + gravity
 
 
 def rhs_all_pairs(pos, vel, mass, cfg: Config):
@@ -385,7 +425,8 @@ def rhs_all_pairs(pos, vel, mass, cfg: Config):
     denom = r.square() + 0.01 * h * h
     laplace_weight = torch.relu(-(delta * grad_w).sum(dim=-1)) / denom
     mu_weight = (mass[None, :] / rho[None, :]) * laplace_weight
-    acc_visc = -cfg.viscosity * (dv * mu_weight[:, :, None]).sum(dim=1)
+    acc_visc = -(VISCOUS_LAPLACIAN_FACTOR * cfg.viscosity
+                 * (dv * mu_weight[:, :, None]).sum(dim=1))
     gravity = torch.zeros_like(pos)
     if pos.shape[1] > 1:
         gravity[:, 1] = -cfg.gravity
@@ -448,6 +489,8 @@ def validate_config(cfg: Config) -> None:
         raise ValueError("max_density_error and max_mach must be positive")
     if cfg.pair_skin_factor < 0:
         raise ValueError("pair_skin_factor must be non-negative")
+    if not 0.0 <= cfg.wall_friction <= 1.0:
+        raise ValueError("wall_friction must be in [0, 1]")
     courant = acoustic_courant(cfg.dt, cfg)
     if courant > cfg.max_courant * (1.0 + 1.0e-9):
         raise ValueError(
