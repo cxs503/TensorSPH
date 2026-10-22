@@ -24,6 +24,7 @@ python -m pytest -q
 python benchmarks/neighbor_search/compare.py --particles 1000 --dimension 2 --device cpu
 python benchmarks/neighbor_search/compare.py --particles 1000 --dimension 3 --device cpu
 python benchmarks/neighbor_search/compare_rhs.py --particles 1000 --device cpu
+python benchmarks/neighbor_search/compare_rhs.py --sizes 256,512,1024 --device cpu
 ```
 
 The comparison script prints pair counts, exact equivalence, and observed timings. Results depend on particle distribution, particle count, hardware, and synchronization. Do not generalize a single run into a performance claim.
@@ -35,3 +36,6 @@ The comparison script prints pair counts, exact equivalence, and observed timing
 3. CI green before solver integration.
 4. Compare dense and pair-based RHS values before accepting changes to the force operators.
 5. Benchmark multiple particle counts and devices; avoid CPU transfer and profile peak memory before making performance claims.
+
+
+The current WCSPH kernel normalization and droplet-impact RHS are 2-D. The neighbor-pair enumeration itself supports 1-D/2-D/3-D, but this does not imply that the physical SPH kernel/RHS is dimension-generalized. Use the multi-size RHS sweep to record numerical agreement and timing on the target machine; no universal speedup is assumed.
