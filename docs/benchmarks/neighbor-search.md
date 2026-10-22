@@ -15,7 +15,22 @@ This follows the same broad spatial-binning idea used by mature SPH packages suc
 
 ## Important current limitation
 
-The current implementation copies positions to CPU to build bins and returns indices on the original device. It is a correctness-first reference, **not yet a GPU-resident or production-performance implementation**. The solver now uses one shared pair list for density summation, pressure acceleration, and viscous acceleration. The original dense implementation is retained as `rhs_all_pairs` for regression comparisons. Pair accumulation changes floating-point summation order, so comparisons use explicit numerical tolerances. CPU binning remains a major limitation and no speedup is claimed.
+The current implementation copies positions to CPU to build bins and returns indices on the original device. It is a correctness-first reference, **not yet a GPU-resident or production-performance implementation**.
+
+Measured on this repository (2 CPU cores), 608 particles, 5357 pairs, 17.6 neighbours per particle:
+
+| stage | time per step |
+|---|---|
+| `cell_linked_pairs` (CPU binning + Python loops) | 7.1 ms |
+| `rhs` given a precomputed pair list | 1.2 ms |
+| `rhs` rebuilding pairs every step | 8.6 ms |
+
+Pair construction is therefore **83 % of the step**, and at 1000 particles linked-cell is
+*slower* than brute force (21.5 ms vs 18.2 ms, ratio 0.85). The RHS speedup over the dense
+reference (1.8x at 256 particles, 3.5x at 512, 4.6x at 1024) comes from the O(N k) versus
+O(N^2) interaction count, not from a fast search. Do not quote it as a search speedup.
+
+The solver uses one shared pair list for density summation, pressure acceleration, and viscous acceleration. The original dense implementation is retained as `rhs_all_pairs` for regression comparisons. Pair accumulation changes floating-point summation order, so comparisons use explicit numerical tolerances.
 
 ## Run tests and compare
 
@@ -31,11 +46,17 @@ The comparison script prints pair counts, exact equivalence, and observed timing
 
 ## Acceptance gates
 
-1. Exact pair equality with brute force in deterministic random 1-D/2-D/3-D tests.
-2. Explicit coverage for empty inputs, one particle, duplicate coordinates, negative coordinates, cutoff equality, and invalid input.
-3. CI green before solver integration.
-4. Compare dense and pair-based RHS values before accepting changes to the force operators.
-5. Benchmark multiple particle counts and devices; avoid CPU transfer and profile peak memory before making performance claims.
+1. Exact pair equality with brute force in deterministic random 1-D/2-D/3-D tests. **Met.**
+2. Explicit coverage for empty inputs, one particle, duplicate coordinates, negative coordinates, cutoff equality, and invalid input. **Met.**
+3. CI green before solver integration. **Met.**
+4. Compare dense and pair-based RHS values before accepting changes to the force operators. **Met** (`rtol=2e-10` in float64, plus a check that a wall outside the support changes nothing).
+5. Benchmark multiple particle counts and devices; avoid CPU transfer and profile peak memory before making performance claims. **Partially met**: multiple counts are measured, but the CPU transfer is still there, so no performance claim is made.
+
+## Open item
+
+The next change here should be a device-resident neighbour search (vectorized binning or a
+sort-based approach). Until pair construction leaves the host, the solver's per-step cost is
+set by Python looping, and GPU execution cannot help.
 
 
 The current WCSPH kernel normalization and droplet-impact RHS are 2-D. The neighbor-pair enumeration itself supports 1-D/2-D/3-D, but this does not imply that the physical SPH kernel/RHS is dimension-generalized. Use the multi-size RHS sweep to record numerical agreement and timing on the target machine; no universal speedup is assumed.

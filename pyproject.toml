@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tensorsph"
-version = "0.1.0"
+dynamic = ["version"]
 description = "PyTorch-native SPH research solver for agent-driven scientific computing"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -15,6 +15,9 @@ test = ["pytest>=7.4"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.dynamic]
+version = { attr = "tensorsph.droplet_impact.__version__" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
