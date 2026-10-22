@@ -7,6 +7,7 @@ from tensorsph.droplet_impact import (
     density_from_neighbor_pairs,
     rhs,
     rhs_all_pairs,
+    wall_lattice,
 )
 
 
@@ -49,3 +50,56 @@ def test_pair_rhs_empty_pair_list_returns_gravity_only():
     assert torch.isfinite(pressure).all()
     torch.testing.assert_close(acc[:, 0], torch.zeros(2, dtype=torch.float64))
     torch.testing.assert_close(acc[:, 1], torch.full((2,), -cfg.gravity, dtype=torch.float64))
+
+
+def test_wall_outside_support_changes_nothing():
+    """A wall farther away than 2h must not perturb the solution at all."""
+    cfg = Config(dx=0.1, h_factor=1.0, device="cpu")
+    generator = torch.Generator().manual_seed(11)
+    pos = torch.rand((40, 2), generator=generator, dtype=torch.float64)
+    vel = torch.rand((40, 2), generator=generator, dtype=torch.float64) * 0.1
+    mass = torch.full((40,), 0.01, dtype=torch.float64)
+    far_wall = torch.tensor([[-5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]],
+                            dtype=torch.float64)
+    without = rhs(pos, vel, mass, cfg)
+    with_wall = rhs(pos, vel, mass, cfg, wall=far_wall)
+    for actual, expected in zip(with_wall, without):
+        assert torch.equal(actual, expected)
+
+
+def test_wall_restores_kernel_support():
+    """Density next to a wall is closer to rho0 when wall particles are present."""
+    cfg = Config(dx=0.05, h_factor=1.3, device="cpu")
+    wall = wall_lattice(cfg, torch.device("cpu"))
+    # A column of fluid particles sitting just above the bottom wall.
+    ys = torch.arange(cfg.dx * 0.5, 0.4, cfg.dx, dtype=torch.float32)
+    pos = torch.stack((torch.full_like(ys, 0.5), ys), dim=-1)
+    mass = torch.full((pos.shape[0],), cfg.rho0 * cfg.dx * cfg.dx)
+    vel = torch.zeros_like(pos)
+    rho_free, _, _ = rhs(pos, vel, mass, cfg)
+    rho_wall, _, _ = rhs(pos, vel, mass, cfg, wall=wall)
+    bottom = 0  # lowest fluid particle, i.e. the one closest to the wall
+    assert rho_wall[bottom] > rho_free[bottom]
+    assert abs(rho_wall[bottom] / cfg.rho0 - 1.0) < abs(rho_free[bottom] / cfg.rho0 - 1.0)
+
+
+def test_wall_supports_a_compressed_lattice():
+    """Wall particles must push back: the bottom row accelerates less downward."""
+    cfg = Config(dx=0.05, h_factor=1.3, device="cpu")
+    wall = wall_lattice(cfg, torch.device("cpu"))
+    spacing = 0.9 * cfg.dx  # over-packed, so the lattice carries real pressure
+    xs = torch.arange(cfg.dx * 0.5, 0.4, spacing)
+    ys = torch.arange(cfg.dx * 0.5, 0.25, spacing)
+    gx, gy = torch.meshgrid(xs, ys, indexing="xy")
+    pos = torch.stack((gx.reshape(-1), gy.reshape(-1)), dim=-1)
+    mass = torch.full((pos.shape[0],), cfg.rho0 * cfg.dx * cfg.dx)
+    vel = torch.zeros_like(pos)
+    bottom = pos[:, 1] < cfg.dx
+
+    _, pressure_free, acc_free = rhs(pos, vel, mass, cfg)
+    _, pressure_wall, acc_wall = rhs(pos, vel, mass, cfg, wall=wall)
+    assert (pressure_free >= 0).all() and (pressure_wall >= 0).all()
+    assert torch.isfinite(acc_wall).all()
+    # Without walls the bottom row is unsupported and pulled down hard; the wall
+    # must reduce that acceleration substantially.
+    assert acc_wall[bottom, 1].mean() > acc_free[bottom, 1].mean() + 50.0

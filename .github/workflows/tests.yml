@@ -10,7 +10,7 @@ on:
 jobs:
   pytest:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -34,10 +34,39 @@ jobs:
           python examples/droplet_impact_2d/run.py --steps 3 --output artifacts/ci-droplet
           test -s artifacts/ci-droplet/diagnostics.csv
           test -s artifacts/ci-droplet/run_manifest.json
+      - name: Verify the manifest records acceptance results
+        run: |
+          python - <<'PY'
+          import json, sys
+          manifest = json.load(open("artifacts/ci-droplet/run_manifest.json"))
+          statuses = manifest["statuses"]
+          assert statuses["software_execution"] == "success", statuses
+          assert statuses["physical_validation"] == "not_evaluated", statuses
+          criteria = manifest["acceptance"]["criteria"]
+          assert criteria, "acceptance criteria must be recorded"
+          for item in criteria:
+              assert item["result"] in ("pass", "fail", "not_evaluated"), item
+              assert "measured" in item and "threshold" in item, item
+          print("manifest contract OK:", [(c["id"], c["result"]) for c in criteria])
+          PY
+      - name: Compare neighbour search and pair-based RHS against references
+        run: |
+          python benchmarks/neighbor_search/compare.py --particles 400 --dimension 2
+          python benchmarks/neighbor_search/compare.py --particles 400 --dimension 3
+          python benchmarks/neighbor_search/compare_rhs.py --sizes 128,256 --repeats 1
+      - name: Fail-fast behaviour is reported through the exit status
+        run: |
+          if python examples/droplet_impact_2d/run.py --steps 2 --dt 1e-2 \
+              --output artifacts/ci-invalid; then
+            echo "expected the run to be rejected"; exit 1
+          fi
+          test -s artifacts/ci-invalid/diagnostics.csv || true
       - name: Upload smoke-run artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: tensorsph-smoke-python-${{ matrix.python-version }}
-          path: artifacts/ci-droplet/
+          path: |
+            artifacts/ci-droplet/
+            artifacts/ci-invalid/
           if-no-files-found: warn
