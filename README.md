@@ -51,4 +51,6 @@ A run writes `diagnostics.csv`, `run_manifest.json`, particle snapshot files, an
 - Fixed time step is monitored but not automatically selected from a stability criterion.
 - Published benchmark matching, resolution convergence, and acceptance thresholds remain to be implemented.
 
-See [the droplet-impact benchmark plan](docs/benchmarks/droplet-impact-2d.md) for the validation gates and diagnostic definitions.
+## Development roadmap
+
+See the [algorithm gap analysis and validation roadmap](docs/algorithm-gap-analysis.md) for the prioritized gaps, benchmark ladder, acceptance contract, and proposed implementation sequence. For the current impact case, see the [droplet-impact benchmark plan](docs/benchmarks/droplet-impact-2d.md).
