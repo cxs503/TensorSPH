@@ -61,6 +61,37 @@ The pre-fix behaviour is kept behind `Config(boundary="clamp")` so the improveme
 re-measured rather than asserted. With flat clamping the pool also develops coincident
 particles and loses the hydrostatic profile; see `docs/review-2026-10.md`.
 
+## Does a hydrostatic initial condition help?
+
+`Config(hydrostatic_init=True)` assigns each pool particle the mass implied by the
+analytical profile `rho(y) = rho0 (1 + rho0 g (H-y)/B)^(1/gamma)`, so the
+discretised density field starts as a discrete equilibrium instead of uniform
+`rho0`. Measured at `t = 0` on the impact case, the initial acceleration
+deviation from hydrostatic balance drops from **g (the whole pool starts in free
+fall) to 0.05 m/s²**, and the initial pressure profile error from **100 % to 5 %**.
+
+It does **not** tighten B1:
+
+| initialisation | initial mass | interior error | surface drop | t=0 profile error |
+|---|---|---|---|---|
+| uniform mass (default) | 350.00 kg | **0.63 %** | 2.56 % | 100 % |
+| hydrostatic mass | 351.48 kg | 1.16 % | 2.33 % | 5 % |
+
+Both pass the 5 % gate. The reason is that the residual error is not a startup
+transient: a pool confined by free-slip walls rings in a sloshing mode whose
+viscous damping time is `H^2 / nu ≈ 12 s`, so a 4 s run is still inside the same
+oscillation regardless of how it was started. Time-averaging is what removes it.
+
+The flag is therefore **off by default**. It is useful when a run must start from
+a well-defined equilibrium (resolution studies, restart tests) and it halves the
+free-surface band error (-40.7 % to -26.4 %), but it is not a fix for the slowly
+damped sloshing mode and it changes the total mass by +0.4 % because a resting
+column is compressed.
+
+```bash
+python benchmarks/hydrostatic/run.py --seconds 4 --hydrostatic-init
+```
+
 ## What this benchmark does *not* show
 
 - It is not evidence that free-surface flows are accurate.

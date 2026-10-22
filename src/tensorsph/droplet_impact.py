@@ -18,10 +18,10 @@ import subprocess
 
 import torch
 
-from .neighbor_search import cell_linked_pairs
+from .neighbor_search import PairListCache, cell_linked_pairs
 
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 
 class SimulationUnstableError(FloatingPointError):
@@ -36,6 +36,20 @@ class Config:
     ``dt * c0 / h <= max_courant`` with roughly 20% of margin. ``run`` rejects
     configurations that exceed the limit instead of silently producing an
     unstable run.
+
+    ``hydrostatic_init`` assigns particle masses from the analytical hydrostatic
+    density profile instead of a uniform ``rho0 dx^2``. It makes the initial
+    state a discrete equilibrium (the pressure gradient cancels gravity) at the
+    cost of a slightly larger total mass, because a resting column is compressed.
+    It is off by default: measured on B1 it does not tighten the time-averaged
+    hydrostatic profile, only the first instant. See
+    docs/benchmarks/hydrostatic.md.
+
+    ``pair_skin_factor`` scales the Verlet skin used to reuse neighbour lists:
+    the skin is ``pair_skin_factor * h``, and the list is rebuilt once any
+    particle has moved half a skin. Set it to zero to rebuild pairs every step.
+    Reuse does not change the result, only the cost: the default 0.25 was chosen
+    by measurement on the impact case (see docs/benchmarks/neighbor-search.md).
     """
 
     dx: float = 0.025
@@ -59,6 +73,8 @@ class Config:
     max_density_error: float = 0.05
     max_mach: float = 0.10
     fail_fast: bool = True
+    pair_skin_factor: float = 0.25
+    hydrostatic_init: bool = False
 
 
 # --------------------------------------------------------------------------- #
@@ -126,11 +142,27 @@ def domain_top(cfg: Config) -> float:
     return cfg.drop_center_y + cfg.drop_radius + 2.0 * cfg.dx
 
 
+def hydrostatic_density(y: torch.Tensor, cfg: Config, surface: float | None = None
+                        ) -> torch.Tensor:
+    """Density of a resting column at height ``y``, from inverting the Tait law.
+
+    ``p(y) = rho0 g (H - y)`` with ``p = B ((rho/rho0)^gamma - 1)`` gives
+    ``rho(y) = rho0 (1 + rho0 g (H - y) / B)^(1/gamma)``.
+    """
+    bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
+    top = cfg.pool_depth if surface is None else surface
+    depth = (top - y).clamp_min(0.0)
+    return cfg.rho0 * (1.0 + cfg.rho0 * cfg.gravity * depth / bulk).pow(1.0 / cfg.gamma)
+
+
 def make_particles(cfg: Config, device: torch.device):
     """Generate a rectangular pool and a circular drop on a regular lattice.
 
     The arrangement is deterministic: the solver contains no stochastic step,
     so no random seed is required. Returns ``(positions, mass)``.
+
+    With ``cfg.hydrostatic_init`` the pool masses follow the analytical
+    hydrostatic density profile; the drop is in free fall and keeps ``rho0``.
     """
     dx = cfg.dx
     if cfg.drop_center_y - cfg.drop_radius <= cfg.pool_depth:
@@ -152,10 +184,14 @@ def make_particles(cfg: Config, device: torch.device):
         raise ValueError("drop discretization produced no particles")
     positions = torch.cat((pool, drop), dim=0)
     mass = torch.full((positions.shape[0],), cfg.rho0 * dx * dx, device=device)
+    if cfg.hydrostatic_init:
+        pool_mass = (hydrostatic_density(pool[:, 1], cfg) * dx * dx)
+        mass = torch.cat((pool_mass, mass[pool.shape[0]:]), dim=0)
     return positions, mass
 
 
-def wall_lattice(cfg: Config, device: torch.device) -> torch.Tensor:
+def wall_lattice(cfg: Config, device: torch.device,
+                 top: float | None = None) -> torch.Tensor:
     """Static dummy wall particles on the bottom and both sides.
 
     Three layers with the fluid lattice spacing, placed half a spacing outside
@@ -169,7 +205,7 @@ def wall_lattice(cfg: Config, device: torch.device) -> torch.Tensor:
     if cfg.wall_layers < 1:
         raise ValueError("wall_layers must be positive")
     dx, layers = cfg.dx, cfg.wall_layers
-    top = domain_top(cfg)
+    top = domain_top(cfg) if top is None else float(top)
     span_x = torch.arange(-(layers - 0.5) * dx,
                           cfg.pool_width + (layers - 0.5) * dx, dx, device=device)
     columns = torch.arange(dx * 0.5, top, dx, device=device)
@@ -360,15 +396,16 @@ def rhs_all_pairs(pos, vel, mass, cfg: Config):
 # Boundary handling
 # --------------------------------------------------------------------------- #
 
-def boundary_box(cfg: Config):
+def boundary_box(cfg: Config, top: float | None = None):
     """Physical extents of the fluid box as ``(x_min, x_max, y_min, y_max)``."""
+    height = domain_top(cfg) if top is None else float(top)
     if cfg.boundary == "wall":
-        return 0.0, cfg.pool_width, 0.0, domain_top(cfg)
+        return 0.0, cfg.pool_width, 0.0, height
     margin = 0.5 * cfg.dx
-    return margin, cfg.pool_width - margin, margin, domain_top(cfg)
+    return margin, cfg.pool_width - margin, margin, height
 
 
-def apply_boundary(pos, vel, cfg: Config) -> int:
+def apply_boundary(pos, vel, cfg: Config, top: float | None = None) -> int:
     """Keep particles inside the box and count crossings.
 
     The clamp is a safety net, not a boundary condition. With
@@ -377,7 +414,7 @@ def apply_boundary(pos, vel, cfg: Config) -> int:
     velocity component is zeroed on contact, which avoids injecting energy
     into the fluid; tangential motion is left free (free slip).
     """
-    x_min, x_max, y_min, y_max = boundary_box(cfg)
+    x_min, x_max, y_min, y_max = boundary_box(cfg, top)
     tolerance = 0.25 * cfg.dx  # small excursions are normal wall repulsion
     low_x = pos[:, 0] < x_min - tolerance
     high_x = pos[:, 0] > x_max + tolerance
@@ -409,8 +446,10 @@ def validate_config(cfg: Config) -> None:
         raise ValueError("max_courant must be in (0, 1]")
     if cfg.max_density_error <= 0 or cfg.max_mach <= 0:
         raise ValueError("max_density_error and max_mach must be positive")
+    if cfg.pair_skin_factor < 0:
+        raise ValueError("pair_skin_factor must be non-negative")
     courant = acoustic_courant(cfg.dt, cfg)
-    if courant > cfg.max_courant:
+    if courant > cfg.max_courant * (1.0 + 1.0e-9):
         raise ValueError(
             f"dt={cfg.dt:g} gives acoustic Courant {courant:.3f} > max_courant "
             f"{cfg.max_courant:g}; use dt <= {suggested_dt(cfg):.3e} s"
@@ -488,7 +527,8 @@ def evaluate_acceptance(rows, cfg: Config, boundary_events: int) -> list[dict]:
 
 def _write_manifest(out: Path, cfg: Config, device: torch.device, initial_n: int,
                     rows, criteria, boundary_events: int, wall_count: int,
-                    failure: str | None, fall_time: float | None) -> dict:
+                    failure: str | None, fall_time: float | None,
+                    cache: PairListCache | None = None) -> dict:
     numerical = ("fail" if any(c["result"] == "fail" for c in criteria)
                  else "pass")
     metadata = {
@@ -511,6 +551,14 @@ def _write_manifest(out: Path, cfg: Config, device: torch.device, initial_n: int
             "physical_validation": "not_evaluated",
         },
         "acceptance": {"criteria": criteria},
+        "performance": {
+            "pair_skin": 0.0 if cache is None else cache.skin,
+            "pair_rebuilds": 0 if cache is None else cache.rebuilds,
+            "pair_reuses": 0 if cache is None else cache.reuses,
+            "mean_steps_per_rebuild": (
+                None if cache is None or cache.rebuilds == 0
+                else (cache.rebuilds + cache.reuses) / cache.rebuilds),
+        },
         "diagnostics": {"rows": len(rows),
                         "boundary_clamp_events": int(boundary_events),
                         "first_step": rows[0] if rows else None,
@@ -553,6 +601,10 @@ def run(cfg: Config, output: str | Path):
         raise ValueError("initial particle arrangement leaves the computational box")
     wall = wall_lattice(cfg, device) if cfg.boundary == "wall" else None
 
+    h = cfg.h_factor * cfg.dx
+    cache = (PairListCache(2.0 * h, cfg.pair_skin_factor * h)
+             if cfg.pair_skin_factor > 0 else None)
+
     vel = torch.zeros_like(pos)
     pos_initial = pos.clone()
     initial_n = pos.shape[0]
@@ -562,7 +614,12 @@ def run(cfg: Config, output: str | Path):
     failure: str | None = None
 
     for step in range(cfg.steps + 1):
-        rho, pressure, acc = rhs(pos, vel, mass, cfg, wall=wall)
+        if cache is None:
+            pairs = None
+        else:
+            pairs, _ = cache.get(torch.cat((pos, wall), dim=0) if wall is not None
+                                 else pos)
+        rho, pressure, acc = rhs(pos, vel, mass, cfg, wall=wall, pairs=pairs)
         state_finite = bool(torch.isfinite(pos).all() and torch.isfinite(vel).all()
                             and torch.isfinite(rho).all() and torch.isfinite(acc).all())
         if not state_finite and failure is None:
@@ -603,7 +660,7 @@ def run(cfg: Config, output: str | Path):
     criteria = evaluate_acceptance(rows, cfg, boundary_events)
     _write_manifest(out, cfg, device, initial_n, rows, criteria, boundary_events,
                     0 if wall is None else wall.shape[0], failure,
-                    nominal_fall_time(cfg, pos_initial))
+                    nominal_fall_time(cfg, pos_initial), cache)
 
     with (out / "diagnostics.csv").open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
