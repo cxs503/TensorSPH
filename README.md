@@ -46,11 +46,11 @@ A run writes `diagnostics.csv`, `run_manifest.json`, particle snapshot files, an
 
 - **Prototype only:** no physical-validation claim is made.
 - No surface-tension model; impact morphology should not be treated as a quantitatively accurate splash prediction.
-- The WCSPH force calculation still uses all-pairs interactions; the new linked-cell module is not integrated into the solver yet.
+- WCSPH density, pressure force, and viscous force now use a shared linked-cell pair list; the dense all-pairs RHS remains as a regression reference. Pair construction still copies coordinates to CPU, so GPU performance gains are not yet established.
 - Simple position clamping is not a validated wall or free-surface boundary treatment.
 - Fixed time step is monitored but not automatically selected from a stability criterion.
 - Published benchmark matching, resolution convergence, and acceptance thresholds remain to be implemented.
 
 ## Development roadmap
 
-See the [algorithm gap analysis and validation roadmap](docs/algorithm-gap-analysis.md) for prioritized gaps and the benchmark ladder. The new [neighbor-search baseline](docs/benchmarks/neighbor-search.md) documents the exact linked-cell pair search, reference comparison, and current CPU-binning limitation. For the impact case, see the [droplet-impact benchmark plan](docs/benchmarks/droplet-impact-2d.md).
+See the [algorithm gap analysis and validation roadmap](docs/algorithm-gap-analysis.md) for prioritized gaps and the benchmark ladder. The [neighbor-search baseline](docs/benchmarks/neighbor-search.md) documents pair-search correctness, solver integration, and CPU-binning limitations. Run `python benchmarks/neighbor_search/compare_rhs.py --particles 1000 --device cpu` to compare pair-based and dense RHS timing and numerical error. For the impact case, see the [droplet-impact benchmark plan](docs/benchmarks/droplet-impact-2d.md).

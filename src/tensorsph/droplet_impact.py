@@ -9,6 +9,8 @@ import math
 
 import torch
 
+from .neighbor_search import cell_linked_pairs
+
 
 @dataclass
 class Config:
@@ -83,7 +85,7 @@ def make_particles(cfg: Config, device: torch.device):
     return positions, fixed, mass
 
 
-def rhs(pos, vel, mass, cfg: Config):
+def rhs_all_pairs(pos, vel, mass, cfg: Config):
     """Compute density, Tait EOS pressure, pressure force and viscous acceleration."""
     h = cfg.h_factor * cfg.dx
     delta = pos[:, None, :] - pos[None, :, :]
@@ -108,6 +110,73 @@ def rhs(pos, vel, mass, cfg: Config):
     acc_visc = -cfg.viscosity * (dv * mu_weight[:, :, None]).sum(dim=1)
     gravity = torch.zeros_like(pos)
     gravity[:, 1] = -cfg.gravity
+    return rho, pressure, acc_pressure + acc_visc + gravity
+
+
+def density_from_neighbor_pairs(pos, mass, h: float, pairs=None):
+    """Density summation over unordered pairs, including each particle's self term."""
+    if pos.ndim != 2 or mass.ndim != 1 or mass.shape[0] != pos.shape[0]:
+        raise ValueError("pos must be (N, D) and mass must be (N,)")
+    if pos.device != mass.device:
+        raise ValueError("pos and mass must be on the same device")
+    if not pos.is_floating_point() or not mass.is_floating_point():
+        raise TypeError("pos and mass must be floating-point tensors")
+    if not math.isfinite(float(h)) or h <= 0:
+        raise ValueError("h must be finite and positive")
+    if pairs is None:
+        pairs = cell_linked_pairs(pos, 2.0 * h)
+    if pairs.ndim != 2 or pairs.shape[1] != 2 or pairs.dtype != torch.long:
+        raise ValueError("pairs must be a long tensor with shape (pair_count, 2)")
+    if pairs.device != pos.device:
+        raise ValueError("pairs and pos must be on the same device")
+
+    n = pos.shape[0]
+    zero = torch.zeros(n, dtype=pos.dtype, device=pos.device)
+    rho = mass * cubic_spline_kernel(zero, h)
+    if pairs.numel() == 0:
+        return rho
+    i, j = pairs.unbind(dim=1)
+    rij = torch.linalg.vector_norm(pos[i] - pos[j], dim=1)
+    wij = cubic_spline_kernel(rij, h)
+    rho = rho.index_add(0, i, mass[j] * wij)
+    rho = rho.index_add(0, j, mass[i] * wij)
+    return rho
+
+
+def rhs(pos, vel, mass, cfg: Config, pairs=None):
+    """Compute WCSPH RHS with pair-based compact-support interactions."""
+    h = cfg.h_factor * cfg.dx
+    if pairs is None:
+        pairs = cell_linked_pairs(pos, 2.0 * h)
+    rho = density_from_neighbor_pairs(pos, mass, h, pairs).clamp_min(0.1 * cfg.rho0)
+    pressure = (cfg.rho0 * cfg.sound_speed**2 / cfg.gamma) * (
+        (rho / cfg.rho0).clamp_min(0.01).pow(cfg.gamma) - 1.0
+    )
+    gravity = torch.zeros_like(pos)
+    if pos.shape[1] > 1:
+        gravity[:, 1] = -cfg.gravity
+    if pairs.numel() == 0:
+        return rho, pressure, gravity
+
+    i, j = pairs.unbind(dim=1)
+    delta = pos[i] - pos[j]
+    distance = torch.linalg.vector_norm(delta, dim=1)
+    grad_w = cubic_spline_gradient(delta, h)
+    pressure_term = pressure[i] / rho[i].square() + pressure[j] / rho[j].square()
+    pair_pressure = pressure_term[:, None] * grad_w
+
+    acc_pressure = torch.zeros_like(pos)
+    acc_pressure = acc_pressure.index_add(0, i, -mass[j, None] * pair_pressure)
+    acc_pressure = acc_pressure.index_add(0, j, mass[i, None] * pair_pressure)
+
+    dv = vel[i] - vel[j]
+    denom = distance.square() + 0.01 * h * h
+    laplace_weight = torch.relu(-(delta * grad_w).sum(dim=1)) / denom
+    visc_i = -cfg.viscosity * dv * (mass[j] / rho[j] * laplace_weight)[:, None]
+    visc_j = cfg.viscosity * dv * (mass[i] / rho[i] * laplace_weight)[:, None]
+    acc_visc = torch.zeros_like(pos)
+    acc_visc = acc_visc.index_add(0, i, visc_i)
+    acc_visc = acc_visc.index_add(0, j, visc_j)
     return rho, pressure, acc_pressure + acc_visc + gravity
 
 
