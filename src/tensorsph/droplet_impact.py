@@ -122,12 +122,13 @@ def density_from_neighbor_pairs(pos, mass, h: float, pairs=None):
     return rho
 
 
-def rhs(pos, vel, mass, cfg: Config):
-    """Compute density, Tait EOS pressure, pressure force and viscous acceleration."""
+def rhs_all_pairs(pos, vel, mass, cfg: Config):
+    """Dense all-pairs reference RHS retained for numerical regression tests."""
     h = cfg.h_factor * cfg.dx
     delta = pos[:, None, :] - pos[None, :, :]
     r = torch.linalg.vector_norm(delta, dim=-1)
-    rho = density_from_neighbor_pairs(pos, mass, h).clamp_min(0.1 * cfg.rho0)
+    w = cubic_spline_kernel(r, h)
+    rho = (w * mass[None, :]).sum(dim=1).clamp_min(0.1 * cfg.rho0)
     pressure = (cfg.rho0 * cfg.sound_speed**2 / cfg.gamma) * (
         (rho / cfg.rho0).clamp_min(0.01).pow(cfg.gamma) - 1.0
     )
@@ -137,8 +138,6 @@ def rhs(pos, vel, mass, cfg: Config):
         + pressure[None, :] / rho[None, :].square()
     )
     acc_pressure = -(mass[None, :, None] * pressure_term[:, :, None] * grad_w).sum(dim=1)
-
-    # Symmetric, regularized laminar-viscosity approximation.
     dv = vel[:, None, :] - vel[None, :, :]
     denom = r.square() + 0.01 * h * h
     laplace_weight = torch.relu(-(delta * grad_w).sum(dim=-1)) / denom
@@ -146,6 +145,42 @@ def rhs(pos, vel, mass, cfg: Config):
     acc_visc = -cfg.viscosity * (dv * mu_weight[:, :, None]).sum(dim=1)
     gravity = torch.zeros_like(pos)
     gravity[:, 1] = -cfg.gravity
+    return rho, pressure, acc_pressure + acc_visc + gravity
+
+
+def rhs(pos, vel, mass, cfg: Config, pairs=None):
+    """Compute WCSPH RHS using compact-support particle pairs."""
+    h = cfg.h_factor * cfg.dx
+    if pairs is None:
+        pairs = cell_linked_pairs(pos, 2.0 * h)
+    rho = density_from_neighbor_pairs(pos, mass, h, pairs).clamp_min(0.1 * cfg.rho0)
+    pressure = (cfg.rho0 * cfg.sound_speed**2 / cfg.gamma) * (
+        (rho / cfg.rho0).clamp_min(0.01).pow(cfg.gamma) - 1.0
+    )
+
+    gravity = torch.zeros_like(pos)
+    gravity[:, 1] = -cfg.gravity
+    if pairs.numel() == 0:
+        return rho, pressure, gravity
+
+    i, j = pairs.unbind(dim=1)
+    delta = pos[i] - pos[j]
+    distance = torch.linalg.vector_norm(delta, dim=1)
+    grad_w = cubic_spline_gradient(delta, h)
+    pressure_term = pressure[i] / rho[i].square() + pressure[j] / rho[j].square()
+    pair_pressure = pressure_term[:, None] * grad_w
+    acc_pressure = torch.zeros_like(pos)
+    acc_pressure = acc_pressure.index_add(0, i, -mass[j, None] * pair_pressure)
+    acc_pressure = acc_pressure.index_add(0, j, mass[i, None] * pair_pressure)
+
+    dv = vel[i] - vel[j]
+    denom = distance.square() + 0.01 * h * h
+    laplace_weight = torch.relu(-(delta * grad_w).sum(dim=1)) / denom
+    visc_i = -cfg.viscosity * dv * (mass[j] / rho[j] * laplace_weight)[:, None]
+    visc_j = cfg.viscosity * dv * (mass[i] / rho[i] * laplace_weight)[:, None]
+    acc_visc = torch.zeros_like(pos)
+    acc_visc = acc_visc.index_add(0, i, visc_i)
+    acc_visc = acc_visc.index_add(0, j, visc_j)
     return rho, pressure, acc_pressure + acc_visc + gravity
 
 
