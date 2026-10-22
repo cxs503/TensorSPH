@@ -15,7 +15,7 @@ This follows the same broad spatial-binning idea used by mature SPH packages suc
 
 ## Important current limitation
 
-The current implementation copies positions to CPU to build bins and returns indices on the original device. It is a correctness-first reference, **not yet a GPU-resident or production-performance implementation**. It is not wired into the WCSPH force calculation in this increment; integration should follow only after equivalence tests pass and pair-list memory/force accumulation semantics are designed explicitly.
+The current implementation copies positions to CPU to build bins and returns indices on the original device. It is a correctness-first reference, **not yet a GPU-resident or production-performance implementation**. The first solver integration now uses these pairs for the WCSPH density sum, including the self-kernel contribution and symmetric endpoint accumulation. The pressure and viscous force calculations still use dense all-pairs tensors, so this is a staged integration rather than an end-to-end complexity reduction. Exact density equivalence is tested against the all-pairs reference. GPU-resident binning and pair-based force accumulation remain future work.
 
 ## Run tests and compare
 
