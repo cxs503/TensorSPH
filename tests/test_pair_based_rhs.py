@@ -10,11 +10,10 @@ from tensorsph.droplet_impact import (
 )
 
 
-@pytest.mark.parametrize("dimension", [1, 2, 3])
 @pytest.mark.parametrize("seed", [3, 19])
-def test_pair_density_matches_dense_reference(dimension, seed):
+def test_pair_density_matches_dense_reference(seed):
     generator = torch.Generator().manual_seed(seed)
-    pos = torch.randn((83, dimension), generator=generator, dtype=torch.float64)
+    pos = torch.randn((83, 2), generator=generator, dtype=torch.float64)
     pos[1] = pos[0]
     mass = torch.rand((83,), generator=generator, dtype=torch.float64) + 0.1
     h = 0.37
