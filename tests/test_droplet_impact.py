@@ -42,3 +42,30 @@ def test_short_run_writes_auditable_artifacts(tmp_path):
     assert (tmp_path / "diagnostics.csv").exists()
     assert (tmp_path / "run_manifest.json").exists()
     assert (tmp_path / "particles_000002.pt").exists()
+
+
+
+def test_run_rejects_invalid_time_step(tmp_path):
+    cfg = Config(dt=0.0, steps=1, device="cpu")
+    try:
+        run(cfg, tmp_path)
+    except ValueError as exc:
+        assert "dt" in str(exc)
+    else:
+        raise AssertionError("run should reject a non-positive time step")
+
+
+def test_diagnostics_include_stability_and_conservation_probes(tmp_path):
+    cfg = Config(dx=0.05, steps=1, output_every=1, pool_width=0.4,
+                 pool_depth=0.15, drop_radius=0.05, drop_center_y=0.25,
+                 device="cpu")
+    rows = run(cfg, tmp_path)
+    required = {
+        "mass_total", "momentum_x", "momentum_y",
+        "rho_max_relative_error", "max_speed", "max_acceleration",
+        "courant_number",
+    }
+    assert required.issubset(rows[0])
+    assert all(torch.isfinite(torch.tensor([row[key] for key in required])).all()
+               for row in rows)
+    assert all(row["mass_total"] > 0 for row in rows)

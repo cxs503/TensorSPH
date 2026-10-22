@@ -112,6 +112,15 @@ def rhs(pos, vel, mass, cfg: Config):
 
 
 def run(cfg: Config, output: str | Path):
+    if cfg.dx <= 0 or cfg.dt <= 0 or cfg.h_factor <= 0:
+        raise ValueError("dx, dt, and h_factor must be positive")
+    if cfg.rho0 <= 0 or cfg.sound_speed <= 0 or cfg.gamma <= 0:
+        raise ValueError("rho0, sound_speed, and gamma must be positive")
+    if cfg.steps < 0 or cfg.output_every <= 0:
+        raise ValueError("steps must be non-negative and output_every must be positive")
+    if cfg.pool_width <= 0 or cfg.pool_depth <= 0 or cfg.drop_radius <= 0:
+        raise ValueError("pool dimensions and drop_radius must be positive")
+
     torch.manual_seed(cfg.seed)
     device = resolve_device(cfg.device)
     out = Path(output)
@@ -129,12 +138,24 @@ def run(cfg: Config, output: str | Path):
             raise FloatingPointError(f"non-finite state at step {step}")
         if step % cfg.output_every == 0 or step == cfg.steps:
             kinetic = 0.5 * (mass[:, None] * vel.square()).sum().item()
+            speed = torch.linalg.vector_norm(vel, dim=-1)
+            accel = torch.linalg.vector_norm(acc, dim=-1)
+            total_mass = mass.sum().item()
+            momentum = (mass[:, None] * vel).sum(dim=0)
+            max_speed = speed.max().item()
+            max_acceleration = accel.max().item()
+            courant_number = cfg.dt * (cfg.sound_speed + max_speed) / (cfg.h_factor * cfg.dx)
             rows.append({
                 "step": step, "time": step * cfg.dt,
                 "particle_count": int(pos.shape[0]),
+                "mass_total": total_mass,
+                "momentum_x": momentum[0].item(), "momentum_y": momentum[1].item(),
                 "rho_min": rho.min().item(), "rho_max": rho.max().item(),
                 "rho_mean": rho.mean().item(),
+                "rho_max_relative_error": (rho / cfg.rho0 - 1.0).abs().max().item(),
                 "pressure_min": pressure.min().item(), "pressure_max": pressure.max().item(),
+                "max_speed": max_speed, "max_acceleration": max_acceleration,
+                "courant_number": courant_number,
                 "kinetic_energy": kinetic,
                 "y_min": pos[:, 1].min().item(), "y_max": pos[:, 1].max().item(),
             })
