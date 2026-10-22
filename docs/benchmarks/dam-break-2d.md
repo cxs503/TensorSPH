@@ -118,6 +118,15 @@ One reason remains, and two have been addressed:
    to avoid. The gate names the reference so the work has a target. What is
    needed: the table with its source (figure or table number), the digitization
    method, and an uncertainty per point.
+
+   Searched, without success: the original *Phil. Trans. R. Soc. A* **244**
+   paper (DOI `10.1098/rsta.1952.0006`, paywalled), the Aureli et al. (2023)
+   dam-break review in *Water* **15**(6):1229 (no table), and GitHub code search
+   for `"Martin Moyce"` (0 hits). Later papers replot the `Z/a` against
+   `tau = t sqrt(2 g / a)` curve but do not publish the tabulated points. So the
+   data is not merely missing from this repository — it is not freely
+   redistributable in tabulated form, which is why the gate stays
+   `not_evaluated` rather than being filled with numbers of unknown provenance.
 2. **Wall condition — addressed.** `--wall-friction 1.0` now gives a no-slip
    floor by extending the viscous stencil into the static wall particles. It is
    verified separately: a quarter-wave shear over a no-slip floor decays at
