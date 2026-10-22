@@ -54,6 +54,30 @@ jobs:
           python benchmarks/neighbor_search/compare.py --particles 400 --dimension 2
           python benchmarks/neighbor_search/compare.py --particles 400 --dimension 3
           python benchmarks/neighbor_search/compare_rhs.py --sizes 128,256 --repeats 1
+      - name: Reusing the neighbour list must not change the forces
+        run: |
+          python - <<'PY'
+          import torch
+          from tensorsph.droplet_impact import Config, make_particles, rhs
+          from tensorsph.neighbor_search import PairListCache
+
+          cfg = Config(dx=0.05, pool_width=0.4, pool_depth=0.15,
+                       drop_radius=0.05, drop_center_y=0.25, device="cpu")
+          pos, mass = make_particles(cfg, torch.device("cpu"))
+          vel = torch.zeros_like(pos)
+          cache = PairListCache(2.0 * cfg.h_factor * cfg.dx, 0.25 * cfg.h_factor * cfg.dx)
+          pairs, rebuilt = cache.get(pos)
+          assert rebuilt
+          cached = rhs(pos, vel, mass, cfg, pairs=pairs)
+          fresh = rhs(pos, vel, mass, cfg)
+          for a, b in zip(cached, fresh):
+              torch.testing.assert_close(a, b, rtol=1e-6, atol=1e-6)
+          print("pair reuse is physics-neutral")
+          PY
+      - name: Dam-break convergence gates
+        run: |
+          python benchmarks/dam_break/run.py --sizes 0.04,0.02 --seconds 0.4 \
+            --json-out artifacts/ci-dam-break.json
       - name: Fail-fast behaviour is reported through the exit status
         run: |
           if python examples/droplet_impact_2d/run.py --steps 2 --dt 1e-2 \
@@ -69,4 +93,5 @@ jobs:
           path: |
             artifacts/ci-droplet/
             artifacts/ci-invalid/
+            artifacts/ci-dam-break.json
           if-no-files-found: warn

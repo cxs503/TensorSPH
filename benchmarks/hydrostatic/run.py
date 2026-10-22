@@ -68,10 +68,14 @@ def main():
                         help="fail if the mean |error| of interior bands exceeds this")
     parser.add_argument("--max-surface-drop", type=float, default=0.05,
                         help="fail if the free surface sinks more than this fraction of H")
+    parser.add_argument("--hydrostatic-init", action="store_true",
+                        help="assign masses from the analytical hydrostatic profile "
+                             "(start from a discrete equilibrium instead of uniform density)")
     args = parser.parse_args()
 
     cfg = Config(dx=args.dx, boundary=args.boundary, device=args.device,
-                 max_courant=args.max_courant)
+                 max_courant=args.max_courant,
+                 hydrostatic_init=args.hydrostatic_init)
     cfg.dt = (args.dt if args.dt is not None
               else cfg.max_courant * cfg.h_factor * cfg.dx / cfg.sound_speed)
     steps = max(int(round(args.seconds / cfg.dt)), 2)
@@ -80,6 +84,7 @@ def main():
     pos, mass = make_particles(cfg, device)
     keep = pos[:, 1] <= cfg.pool_depth  # pool only: this is a static-water test
     pos, mass = pos[keep].contiguous(), mass[keep].contiguous()
+    initial_mass = float(mass.sum())
     initial_surface = float(pos[:, 1].max())
     wall = wall_lattice(cfg, device) if cfg.boundary == "wall" else None
 
@@ -132,6 +137,8 @@ def main():
     report = {
         "benchmark": "B1_static_pool",
         "boundary": cfg.boundary,
+        "hydrostatic_init": cfg.hydrostatic_init,
+        "initial_mass_kg": initial_mass,
         "particles": int(pos.shape[0]),
         "wall_particles": 0 if wall is None else int(wall.shape[0]),
         "dt": cfg.dt,
