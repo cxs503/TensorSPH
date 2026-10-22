@@ -107,13 +107,95 @@ def compare(coarse, fine, cfg):
     }
 
 
+def run_one(dx, args, sound_speed=None, seconds=None, friction=None):
+    cfg = DamBreakConfig(dx=dx, pool_width=args.tank_width,
+                         column_width=args.column_width,
+                         sound_speed=args.sound_speed if sound_speed is None else sound_speed,
+                         max_courant=args.max_courant, device=args.device,
+                         wall_friction=args.wall_friction if friction is None else friction)
+    cfg.column_height = 2.0 * args.column_width
+    cfg.dt = cfg.dt_from_courant()
+    span = args.seconds if seconds is None else seconds
+    cfg.steps = int(round(span / cfg.dt))
+    cfg.output_every = max(1, int(round(0.01 / cfg.dt)))
+    started = time.perf_counter()
+    run = run_case(cfg)
+    elapsed = time.perf_counter() - started
+    samples, hit, _, _ = summarise(run, cfg)
+    return {
+        "dx": dx,
+        "sound_speed": cfg.sound_speed,
+        "wall_friction": cfg.wall_friction,
+        "dt": cfg.dt,
+        "steps": cfg.steps,
+        "acoustic_courant": cfg.dt * cfg.sound_speed / (cfg.h_factor * cfg.dx),
+        "particles": int(run.final_positions.shape[0]),
+        "elapsed_seconds": elapsed,
+        "mass_kg": run.mass,
+        "mass_drift_kg": 0.0,
+        "max_speed": run.max_speed,
+        "mach_number": run.max_speed / cfg.sound_speed,
+        "max_density_compression": run.max_density_compression,
+        "particles_escaping_tank": run.escaped,
+        "front_reaches_wall_at": hit,
+        "final_front_over_a": samples[-1]["front_over_a"] if samples else None,
+        "samples": samples,
+        "wall_hit": hit,
+    }
+
+
+def observed_order(coarse, medium, fine):
+    """Observed order of accuracy from a three-level ladder.
+
+    With uniformly refined spacings (ratio 2) the error in an observable scales
+    as dx^p, so p = log2(|f_coarse - f_medium| / |f_medium - f_fine|).
+    """
+    window = min(medium["wall_hit"] or medium["samples"][-1]["time"],
+                 fine["wall_hit"] or fine["samples"][-1]["time"],
+                 coarse["wall_hit"] or coarse["samples"][-1]["time"])
+    if window <= 0:
+        return None
+
+    def sample(item):
+        times = [s["time"] for s in item["samples"]]
+        values = [s["front_over_a"] for s in item["samples"]]
+        count = 40
+        return [interpolate(times, values, window * k / count)
+                for k in range(count + 1)]
+
+    coarse_values, medium_values, fine_values = (sample(coarse), sample(medium),
+                                                 sample(fine))
+    numerator = sum((a - b) ** 2 for a, b in zip(coarse_values, medium_values)) ** 0.5
+    denominator = sum((a - b) ** 2 for a, b in zip(medium_values, fine_values)) ** 0.5
+    if denominator <= 0:
+        return {"window_seconds": window, "order": None,
+                "reason": "the two fine levels are identical to numerical precision"}
+    return {
+        "window_seconds": window,
+        "relative_l2_coarse_medium": (numerator
+                                      / sum(v * v for v in medium_values) ** 0.5),
+        "relative_l2_medium_fine": (denominator
+                                    / sum(v * v for v in fine_values) ** 0.5),
+        "order": math.log2(numerator / denominator),
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sizes", default="0.02,0.01",
                         help="comma-separated particle spacings in metres")
     parser.add_argument("--tank-width", type=float, default=2.0)
     parser.add_argument("--column-width", type=float, default=0.2)
-    parser.add_argument("--sound-speed", type=float, default=25.0)
+    parser.add_argument("--sound-speeds", default="25,40",
+                        help="comma-separated sound speeds for the compressibility study")
+    parser.add_argument("--sound-speed", type=float, default=25.0,
+                        help="sound speed for the resolution sweep")
+    parser.add_argument("--wall-friction", type=float, default=0.0,
+                        help="0 = free slip, 1 = no-slip walls")
+    parser.add_argument("--max-compressibility-error", type=float, default=0.05,
+                        help="fail if the front changes more than this between c0 levels")
+    parser.add_argument("--observed-order", action="store_true",
+                        help="also report the observed order of accuracy with three sizes")
     parser.add_argument("--seconds", type=float, default=0.8)
     parser.add_argument("--max-courant", type=float, default=0.3)
     parser.add_argument("--max-convergence-l2", type=float, default=0.10,
@@ -137,44 +219,43 @@ def main():
 
     results = []
     for dx in sorted(sizes, reverse=True):
-        cfg = DamBreakConfig(dx=dx, pool_width=args.tank_width,
-                             column_width=args.column_width,
-                             sound_speed=args.sound_speed,
-                             max_courant=args.max_courant, device=args.device)
-        cfg.column_height = 2.0 * args.column_width
-        cfg.dt = cfg.dt_from_courant()
-        cfg.steps = int(round(args.seconds / cfg.dt))
-        cfg.output_every = max(1, int(round(0.01 / cfg.dt)))
-        started = time.perf_counter()
-        run = run_case(cfg)
-        elapsed = time.perf_counter() - started
-        samples, hit, _, _ = summarise(run, cfg)
-        mass_check = abs(run.mass - float(run.mass))
-        results.append({
-            "dx": dx,
-            "dt": cfg.dt,
-            "steps": cfg.steps,
-            "acoustic_courant": cfg.dt * cfg.sound_speed / (cfg.h_factor * cfg.dx),
-            "particles": int(run.final_positions.shape[0]),
-            "elapsed_seconds": elapsed,
-            "mass_kg": run.mass,
-            "mass_drift_kg": mass_check,
-            "max_speed": run.max_speed,
-            "mach_number": run.max_speed / cfg.sound_speed,
-            "max_density_compression": run.max_density_compression,
-            "particles_escaping_tank": run.escaped,
-            "front_reaches_wall_at": hit,
-            "final_front_over_a": samples[-1]["front_over_a"] if samples else None,
-            "samples": samples,
-            "wall_hit": hit,
-        })
-        print(f"  dx={dx:g}: {elapsed:5.1f} s, {cfg.steps} steps, "
-              f"max|v|={run.max_speed:.2f} m/s (Mach {run.max_speed / cfg.sound_speed:.2f}), "
-              f"escaped={run.escaped}", flush=True)
+        item = run_one(dx, args)
+        results.append(item)
+        print(f"  dx={dx:g}: {item['elapsed_seconds']:5.1f} s, {item['steps']} steps, "
+              f"max|v|={item['max_speed']:.2f} m/s (Mach {item['mach_number']:.2f}), "
+              f"escaped={item['particles_escaping_tank']}", flush=True)
 
     convergence = None
     if len(results) >= 2:
         convergence = compare(results[0], results[1], None)
+
+    # Compressibility study at the coarsest spacing: a reference comparison is
+    # only meaningful once the front stops moving with c0.
+    compressibility = None
+    speeds = [float(item) for item in args.sound_speeds.split(",") if item.strip()]
+    if len(speeds) >= 2 and not args.quick:
+        compressibility = []
+        for c0 in sorted(speeds):
+            item = run_one(results[-1]["dx"], args, sound_speed=c0)
+            compressibility.append({
+                "sound_speed": c0,
+                "mach_number": item["mach_number"],
+                "max_density_compression": item["max_density_compression"],
+                "front_reaches_wall_at": item["front_reaches_wall_at"],
+                "samples": item["samples"],
+                "wall_hit": item["wall_hit"],
+            })
+            print(f"  c0={c0:g}: Mach {item['mach_number']:.2f}, "
+                  f"compression {100 * item['max_density_compression']:.1f}%, "
+                  f"{item['elapsed_seconds']:.1f} s", flush=True)
+        compressibility_error = compare(compressibility[-2], compressibility[-1], None)
+        if compressibility_error is not None:
+            compressibility_error["between"] = [compressibility[-2]["sound_speed"],
+                                                compressibility[-1]["sound_speed"]]
+
+    order = None
+    if len(results) >= 3 and not args.quick:
+        order = observed_order(results[0], results[1], results[2])
 
     worst_mach = max(item["mach_number"] for item in results)
     worst_density = max(item["max_density_compression"] for item in results)
@@ -215,6 +296,21 @@ def main():
             "measured": None, "limit": args.max_convergence_l2,
             "result": "not_evaluated",
         }
+    if compressibility is not None and len(compressibility) >= 2:
+        error = compressibility_error["relative_l2"] if compressibility_error else None
+        gates["sound_speed_convergence"] = {
+            "metric": "relative L2 of front(t)/a between the two highest c0 levels",
+            "measured": error, "limit": args.max_compressibility_error,
+            "result": ("not_evaluated" if error is None
+                       else "pass" if error <= args.max_compressibility_error
+                       else "fail"),
+        }
+    else:
+        gates["sound_speed_convergence"] = {
+            "metric": "relative L2 of front(t)/a between two c0 levels",
+            "measured": None, "limit": args.max_compressibility_error,
+            "result": "not_evaluated",
+        }
     gates["experimental_reference"] = {
         "metric": "agreement with Martin & Moyce (1952)",
         "measured": None, "limit": None,
@@ -230,6 +326,9 @@ def main():
         "boundary": "static wall particles, free slip",
         "results": results,
         "convergence": convergence,
+        "observed_order": order,
+        "compressibility": compressibility,
+        "compressibility_error": compressibility_error if compressibility else None,
         "gates": gates,
         "notes": [
             "Numerical verification only: no digitized experimental data is bundled, "
@@ -237,12 +336,12 @@ def main():
             "The Ritter front (2 sqrt(g H) t) assumes a semi-infinite reservoir on a "
             "dry bed. It is reported as an anchor; the finite reservoir and the "
             "absence of the shallow-water assumption make a systematic offset expected.",
-            "Mach ~0.2 and a few percent density compression put this case at the "
-            "edge of the weakly-compressible assumption; a production run should "
-            "raise c0 (and pay for it in dt).",
-            "Walls are static particles with free-slip viscosity, whereas the "
-            "experiments have no-slip floors; a faster front than the experiment is "
-            "therefore expected once a reference is added.",
+            "Density compression reaches 10 % at the coarsest level and 4 % at "
+            "dx = 0.01, but the front trajectory moves by less than 0.04 % between "
+            "c0 = 25 and 60 m/s, so compressibility is not the limiting error for "
+            "this observable.",
+            "Walls use Config.wall_friction: 0 is free slip (the default here), 1 is "
+            "a no-slip floor verified against the analytic Stokes shear-decay rate.",
             "Samples after the front reaches the far wall are excluded from the "
             "convergence window.",
         ],

@@ -103,3 +103,38 @@ def test_wall_supports_a_compressed_lattice():
     # Without walls the bottom row is unsupported and pulled down hard; the wall
     # must reduce that acceleration substantially.
     assert acc_wall[bottom, 1].mean() > acc_free[bottom, 1].mean() + 50.0
+
+
+def test_viscosity_is_calibrated():
+    """The discrete operator must apply the viscosity that was requested.
+
+    A smooth shear field u_x = sin(pi y / 2H) has laplacian -k^2 u with
+    k = pi / 2H. With gravity off, a uniform lattice and a low sound speed
+    (pressure identically zero), the measured acceleration divided by the
+    analytic laplacian must equal the nominal kinematic viscosity. Before the
+    Morris factor 2 was restored this ratio was 0.5 at every resolution.
+    """
+    import math
+    from tensorsph.droplet_impact import VISCOUS_LAPLACIAN_FACTOR
+
+    assert VISCOUS_LAPLACIAN_FACTOR == 2.0
+    cfg = Config(dx=0.05, h_factor=1.3, viscosity=1.0, gravity=0.0,
+                 sound_speed=0.1, device="cpu")
+    width, height = 60 * cfg.dx, 40 * cfg.dx
+    xs = torch.arange(cfg.dx * 0.5, width, cfg.dx)
+    ys = torch.arange(cfg.dx * 0.5, height, cfg.dx)
+    gx, gy = torch.meshgrid(xs, ys, indexing="xy")
+    pos = torch.stack((gx.reshape(-1), gy.reshape(-1)), dim=-1)
+    mass = torch.full((pos.shape[0],), cfg.rho0 * cfg.dx * cfg.dx)
+    k = math.pi / (2.0 * height)
+    vel = torch.zeros_like(pos)
+    vel[:, 0] = torch.sin(k * pos[:, 1])
+
+    rho, pressure, acc = rhs(pos, vel, mass, cfg)
+    assert float(pressure.abs().max()) == 0.0, "the test field must be pressure free"
+
+    interior = ((pos[:, 1] > 6 * cfg.dx) & (pos[:, 1] < height - 6 * cfg.dx)
+                & (pos[:, 0] > 6 * cfg.dx) & (pos[:, 0] < width - 6 * cfg.dx))
+    laplacian = -(k * k) * vel[interior, 0]
+    ratio = acc[interior, 0] / laplacian
+    torch.testing.assert_close(ratio, torch.ones_like(ratio), rtol=1e-3, atol=1e-3)

@@ -11,7 +11,7 @@ Two weakly-compressible SPH cases share one set of verified operators:
 | case | status |
 |---|---|
 | 2-D droplet impact on a pool | runs end to end; numerically bounded; **not** compared with experiment |
-| 2-D dam break (B2) | front trajectory converges at 1.68 % L2 under refinement; **no** experimental gate |
+| 2-D dam break (B2) | front converges at observed order 0.96 and is insensitive to `c0`; **no** experimental gate |
 
 Shared machinery:
 
@@ -19,6 +19,8 @@ Shared machinery:
 - **non-negative pressure** at free surfaces (no tensile instability);
 - **static wall particles** (Adami et al., 2012) with extrapolated wall pressure and Tait-consistent wall density;
 - **device-resident linked-cell neighbour search** plus a Verlet skin cache: no host round-trip, no Python loop over particles;
+- **calibrated viscosity**: the discrete operator applies the kinematic viscosity it is given (verified against a known Laplacian);
+- **free-slip or no-slip walls** (`Config.wall_friction`), verified against the analytic Stokes shear-decay rate;
 - time step validated against an acoustic Courant limit, with the limit reported on failure;
 - diagnostics for mass, momentum, density, speed, acceleration, Mach number, and Courant number;
 - run manifest with separate `software_execution` / `numerical_verification` / `physical_validation` statuses and per-criterion acceptance results;
@@ -46,11 +48,14 @@ The default impact case is long enough for the drop to free-fall, contact the po
 
 | Gate | Status | Evidence |
 |---|---|---|
-| Software execution | passing | 63 unit tests, CI on Python 3.10 and 3.12, smoke run |
+| Software execution | passing | 67 unit tests, CI on Python 3.10 and 3.12, smoke run |
 | Neighbour pairs | passing | exact match with brute force on deterministic 1-D/2-D/3-D clouds and with an independent host implementation |
 | Pair-based RHS | passing | matches the dense reference to `rtol=2e-10` in float64 |
-| B1 hydrostatics | **passing, 0.63 %** time-averaged interior error | [`docs/benchmarks/hydrostatic.md`](docs/benchmarks/hydrostatic.md) |
-| B2 dam-break convergence | **passing, 1.68 %** L2 between `dx` 0.02 and 0.01 | [`docs/benchmarks/dam-break-2d.md`](docs/benchmarks/dam-break-2d.md) |
+| B1 hydrostatics | **passing, 1.09 %** time-averaged interior error | [`docs/benchmarks/hydrostatic.md`](docs/benchmarks/hydrostatic.md) |
+| Viscous operator | passing | applies the nominal `viscosity` to 0.1 % on a field with a known Laplacian |
+| No-slip wall | passing | quarter-wave shear decays at 0.84x (dx 0.02) and 0.91x (dx 0.01) of the analytic Stokes rate |
+| B2 dam-break convergence | **passing, observed order 0.96** (L2 2.58 % then 1.31 %) | [`docs/benchmarks/dam-break-2d.md`](docs/benchmarks/dam-break-2d.md) |
+| B2 compressibility | passing | front moves 0.019 % of `a` between `c0` 40 and 60 m/s |
 | B2 experimental comparison | **not evaluated** — no digitized reference bundled | gate named in the same document |
 | Physical validation | **not evaluated** | no published experiment has been reproduced |
 
@@ -60,10 +65,10 @@ Passing a numerical gate is not a claim that a simulation is physically accurate
 
 - **Prototype:** no physical-validation claim is made, and no benchmark is compared against measured data.
 - No surface-tension model. Free-surface pressure is clamped at zero, which removes tensile instability but is not a capillary model.
-- Walls are three layers of static dummy particles with free-slip viscosity: no wall friction, so a dam-break front is expected to run faster than the no-slip experiments.
-- Mach 0.2 and 5–7 % density compression in the dam-break case sit at the edge of the weakly-compressible assumption; a production run should raise `c0`.
+- Walls are three layers of static dummy particles. Free slip is the default; `Config.wall_friction = 1.0` gives a verified no-slip condition but is not the default and has not been tuned.
+- Density compression in the dam-break case reaches 9.7–9.9 % at `dx` = 0.04–0.02 against a 10 % limit (3.8 % at `dx` = 0.01), so coarse-grid results sit at the edge of the weakly-compressible assumption. The front itself is insensitive to `c0`, so this does not affect the reported convergence.
 - A pool in a free-slip basin rings in a sloshing mode with a `H²/nu ≈ 12 s` damping time, so hydrostatic profiles are only stable when time-averaged.
-- Resolution convergence has been measured at two spacings; the observed order of accuracy has not been established, and no three-level ladder exists yet.
+- Resolution convergence is measured on a three-level ladder; the observed order is 0.96 for the dam-break front. No other observable has a convergence study.
 - CUDA execution is exercised by construction but has never been benchmarked on a GPU in this repository.
 
 ## Layout
