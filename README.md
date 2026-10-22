@@ -6,16 +6,26 @@ TensorSPH is the SPH solver project in the Tensor ecosystem. It is intended to p
 
 ## First milestone: 2D droplet impact on a water pool
 
-The first implementation milestone is a small, CPU/GPU-capable weakly-compressible SPH (WCSPH) case built directly on PyTorch:
+The first implementation is a small, CPU/GPU-capable weakly-compressible SPH (WCSPH) prototype built directly on PyTorch:
 
 - reproducible initial particle arrangement and configuration;
 - cubic-spline kernel and pressure/viscous force evaluation;
-- gravity and simple solid-wall treatment;
-- time integration with finite-value and stability checks;
-- particle snapshots, diagnostic CSV, and plots;
-- tests for kernel normalization trends, finite forces, and a short smoke run.
+- gravity and simple domain clamping (not yet validated wall boundary conditions);
+- finite-state checks and diagnostic probes for mass, momentum, density, speed, acceleration, and acoustic Courant number;
+- particle snapshots, diagnostic CSV, run manifest, and density plots;
+- unit tests and a GitHub Actions workflow for smoke execution.
 
-This first case is a **numerical prototype**, not yet a validated engineering solver. Surface tension, robust free-surface consistency, scalable neighbor search, and quantitative comparison against published droplet-impact data are subsequent validation milestones.
+## Quick start
+
+Install the package and test dependencies, then run the example:
+
+```bash
+python -m pip install -e ".[test]"
+python -m pytest -q
+python examples/droplet_impact_2d/run.py --steps 100 --output artifacts/droplet_impact_2d
+```
+
+A run writes `diagnostics.csv`, `run_manifest.json`, particle snapshot files, and (when Matplotlib is available) `particle_snapshots.png`.
 
 ## Planned layout
 
@@ -32,6 +42,13 @@ This first case is a **numerical prototype**, not yet a validated engineering so
 4. Distinguish software execution success from numerical verification and physical validation.
 5. Integrate with TensorPhysics/TensorPlatform through explicit run metadata and artifacts, without making the solver depend on the platform.
 
-## Status
+## Current limitations
 
-Repository bootstrap. The first runnable WCSPH droplet-impact case is under development; no physical-validation claim is made at this stage.
+- **Prototype only:** no physical-validation claim is made.
+- No surface-tension model; impact morphology should not be treated as a quantitatively accurate splash prediction.
+- All-pairs interactions scale quadratically and are suitable only for small cases.
+- Simple position clamping is not a validated wall or free-surface boundary treatment.
+- Fixed time step is monitored but not automatically selected from a stability criterion.
+- Published benchmark matching, resolution convergence, and acceptance thresholds remain to be implemented.
+
+See [the droplet-impact benchmark plan](docs/benchmarks/droplet-impact-2d.md) for the validation gates and diagnostic definitions.
