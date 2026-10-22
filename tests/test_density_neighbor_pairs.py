@@ -42,3 +42,20 @@ def test_rhs_remains_finite_with_neighbor_density():
     assert torch.isfinite(rho).all()
     assert torch.isfinite(pressure).all()
     assert torch.isfinite(acc).all()
+
+
+@pytest.mark.parametrize("seed", [5, 23])
+def test_pair_rhs_matches_dense_reference(seed):
+    from tensorsph.droplet_impact import rhs_all_pairs
+
+    generator = torch.Generator().manual_seed(seed)
+    cfg = Config(dx=0.1, h_factor=1.3, rho0=1000.0, sound_speed=8.0,
+                 gamma=7.0, gravity=9.81, viscosity=0.03, device="cpu")
+    pos = torch.randn((61, 2), generator=generator, dtype=torch.float64) * 0.12
+    vel = torch.randn((61, 2), generator=generator, dtype=torch.float64) * 0.2
+    mass = (torch.rand((61,), generator=generator, dtype=torch.float64) + 0.2) * 0.01
+
+    dense = rhs_all_pairs(pos, vel, mass, cfg)
+    paired = rhs(pos, vel, mass, cfg)
+    for actual, expected in zip(paired, dense):
+        torch.testing.assert_close(actual, expected, rtol=2e-10, atol=2e-10)
