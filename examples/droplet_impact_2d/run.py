@@ -2,17 +2,42 @@
 
 From a repository checkout:
     pip install -e .
-    python examples/droplet_impact_2d/run.py --steps 500
+    python examples/droplet_impact_2d/run.py --steps 750
 """
 import argparse
-from tensorsph.droplet_impact import Config, run
+import sys
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--steps", type=int, default=500)
+from tensorsph.droplet_impact import Config, SimulationUnstableError, run
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--steps", type=int, default=None,
+                    help="integration steps (default: Config().steps)")
+parser.add_argument("--dt", type=float, default=None,
+                    help="fixed time step in seconds (default: Config().dt)")
+parser.add_argument("--boundary", default=None, choices=("wall", "clamp"),
+                    help="boundary treatment (default: Config().boundary)")
 parser.add_argument("--device", default="auto")
 parser.add_argument("--output", default="artifacts/droplet_impact_2d")
 args = parser.parse_args()
 
-cfg = Config(steps=args.steps, device=args.device)
-rows = run(cfg, args.output)
-print(f"Completed {len(rows) - 1} integration intervals; final diagnostics: {rows[-1]}")
+cfg = Config(device=args.device)
+if args.steps is not None:
+    cfg.steps = args.steps
+if args.dt is not None:
+    cfg.dt = args.dt
+if args.boundary is not None:
+    cfg.boundary = args.boundary
+
+try:
+    rows = run(cfg, args.output)
+except SimulationUnstableError as exc:
+    print(f"FAILED numerical acceptance: {exc}", file=sys.stderr)
+    raise SystemExit(1)
+
+last = rows[-1]
+print(f"Completed {len(rows) - 1} output intervals "
+      f"({cfg.steps} steps, t={last['time']:.4f} s)")
+print(f"  particles={last['particle_count']} max_speed={last['max_speed']:.3f} m/s "
+      f"mach={last['mach_number']:.3f} courant={last['courant_number']:.3f}")
+print(f"  rho=[{last['rho_min']:.1f}, {last['rho_max']:.1f}] "
+      f"KE={last['kinetic_energy']:.2f} J")
