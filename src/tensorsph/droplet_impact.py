@@ -9,6 +9,8 @@ import math
 
 import torch
 
+from .neighbor_search import cell_linked_pairs
+
 
 @dataclass
 class Config:
@@ -83,13 +85,49 @@ def make_particles(cfg: Config, device: torch.device):
     return positions, fixed, mass
 
 
+def density_from_neighbor_pairs(pos, mass, h: float, pairs=None):
+    """Compute the SPH density sum from exact compact-support particle pairs.
+
+    The self contribution m_i W(0) is included explicitly. Each unordered
+    pair contributes to both endpoint particles, matching the all-pairs sum.
+    Pair construction currently bins coordinates on the CPU; this reduces
+    density storage but is not yet a GPU-resident end-to-end acceleration.
+    """
+    if pos.ndim != 2 or mass.ndim != 1 or mass.shape[0] != pos.shape[0]:
+        raise ValueError("pos must be (N, D) and mass must be (N,)")
+    if not pos.is_floating_point() or not mass.is_floating_point():
+        raise TypeError("pos and mass must be floating-point tensors")
+    if pos.device != mass.device:
+        raise ValueError("pos and mass must be on the same device")
+    if not math.isfinite(float(h)) or h <= 0:
+        raise ValueError("h must be finite and positive")
+    if pairs is None:
+        pairs = cell_linked_pairs(pos, 2.0 * h)
+    if pairs.ndim != 2 or pairs.shape[1] != 2 or pairs.dtype != torch.long:
+        raise ValueError("pairs must be a long tensor with shape (pair_count, 2)")
+    if pairs.device != pos.device:
+        raise ValueError("pairs and pos must be on the same device")
+
+    n = pos.shape[0]
+    rho = mass * cubic_spline_kernel(
+        torch.zeros(n, dtype=pos.dtype, device=pos.device), h
+    )
+    if pairs.numel() == 0:
+        return rho
+    i, j = pairs.unbind(dim=1)
+    rij = torch.linalg.vector_norm(pos[i] - pos[j], dim=1)
+    wij = cubic_spline_kernel(rij, h)
+    rho = rho.index_add(0, i, mass[j] * wij)
+    rho = rho.index_add(0, j, mass[i] * wij)
+    return rho
+
+
 def rhs(pos, vel, mass, cfg: Config):
     """Compute density, Tait EOS pressure, pressure force and viscous acceleration."""
     h = cfg.h_factor * cfg.dx
     delta = pos[:, None, :] - pos[None, :, :]
     r = torch.linalg.vector_norm(delta, dim=-1)
-    w = cubic_spline_kernel(r, h)
-    rho = (w * mass[None, :]).sum(dim=1).clamp_min(0.1 * cfg.rho0)
+    rho = density_from_neighbor_pairs(pos, mass, h).clamp_min(0.1 * cfg.rho0)
     pressure = (cfg.rho0 * cfg.sound_speed**2 / cfg.gamma) * (
         (rho / cfg.rho0).clamp_min(0.01).pow(cfg.gamma) - 1.0
     )
