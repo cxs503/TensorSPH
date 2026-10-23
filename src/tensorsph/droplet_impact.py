@@ -15,13 +15,14 @@ import json
 import math
 import platform
 import subprocess
+import warnings
 
 import torch
 
 from .neighbor_search import PairListCache, cell_linked_pairs
 
 
-__version__ = "0.4.0"
+__version__ = "0.8.0"
 
 # The Morris et al. (1997) discrete Laplacian carries a factor 2:
 #   laplacian(v)_i ~= 2 sum_j (m_j / rho_j) (v_i - v_j) . (-r_ij . grad_i W) / (r^2 + eta^2)
@@ -64,6 +65,14 @@ class Config:
     particle has moved half a skin. Set it to zero to rebuild pairs every step.
     Reuse does not change the result, only the cost: the default 0.25 was chosen
     by measurement on the impact case (see docs/benchmarks/neighbor-search.md).
+
+    ``density_diffusion`` is the coefficient ``delta`` of the diffusive term of
+    Antuono, Colagrossi & Marrone (2012). Zero disables it, which is the
+    default. It is *not* delta-SPH proper: delta-SPH integrates the continuity
+    equation, while this solver obtains density by summation every step, so the
+    term here acts as a rate applied to the summation density over ``dt``. The
+    scheme, its invariants and what it measured on B1/B2 are documented in
+    docs/benchmarks/free-surface-treatment.md.
     """
 
     dx: float = 0.025
@@ -90,6 +99,18 @@ class Config:
     pair_skin_factor: float = 0.25
     hydrostatic_init: bool = False
     wall_friction: float = 0.0
+    density_diffusion: float = 0.0
+    # Adaptive time step. Off by default: a fixed step keeps every published
+    # number reproducible bit for bit. When on, ``dt`` starts at the configured
+    # value, shrinks to whatever the current maximum speed allows, and grows back
+    # by at most ``dt_growth`` per step. The configured ``dt`` is always the cap.
+    adaptive_dt: bool = False
+    dt_growth: float = 1.1
+    # Headroom on the adaptive step. The limits are evaluated with the speed at
+    # the *start* of the step, and a particle can accelerate during it, so a step
+    # sitting exactly on the limit can be exceeded by the time it is taken. A
+    # 200 m/s^2 gravity case measured 0.979 against a 0.9 limit without this.
+    dt_safety: float = 0.9
 
 
 # --------------------------------------------------------------------------- #
@@ -97,7 +118,12 @@ class Config:
 # --------------------------------------------------------------------------- #
 
 def cubic_spline_kernel(r: torch.Tensor, h: float) -> torch.Tensor:
-    """2-D cubic spline kernel W(r,h), normalized by 10/(7*pi*h**2)."""
+    """2-D cubic spline kernel W(r,h), normalized by 10/(7*pi*h**2).
+
+    Valid for two spatial dimensions only: the normalisation ``10/(7 pi h^2)``
+    is the 2-D one. ``rhs`` and ``run`` reject other dimensions instead of
+    silently applying this normalisation to a 3-D cloud.
+    """
     q = r / h
     sigma = 10.0 / (7.0 * math.pi * h * h)
     first = 1.0 - 1.5 * q.square() + 0.75 * q.pow(3)
@@ -122,6 +148,65 @@ def cubic_spline_gradient(
     return delta * scale.unsqueeze(-1)
 
 
+def pair_kernels(delta: torch.Tensor, h: float, eps: float = 1.0e-12):
+    """Return ``(W, grad W)`` for a batch of pair separations.
+
+    A hot loop needs both the kernel value and its gradient for the same pairs.
+    Calling the two public functions separately evaluates the radius, the
+    normalised distance ``q`` and the polynomial branch twice. This helper
+    shares them and is used by :func:`rhs`; the public functions remain the
+    readable single-purpose entry points and are what the tests pin.
+    """
+    r = torch.linalg.vector_norm(delta, dim=-1)
+    q = r / h
+    sigma = 10.0 / (7.0 * math.pi * h * h)
+    first = 1.0 - 1.5 * q.square() + 0.75 * q.pow(3)
+    second = 0.25 * (2.0 - q).clamp_min(0).pow(3)
+    shape = torch.where(q < 1.0, first, torch.where(q < 2.0, second, 0.0))
+    dshape = torch.where(
+        q < 1.0,
+        -3.0 * q + 2.25 * q.square(),
+        torch.where(q < 2.0, -0.75 * (2.0 - q).square(), 0.0),
+    )
+    weight = sigma * shape.clamp_min(0.0)
+    scale = sigma * dshape / (h * r.clamp_min(eps))
+    return weight, delta * scale.unsqueeze(-1)
+
+
+def density_diffusion_rate(rho: torch.Tensor, mass: torch.Tensor,
+                           distance: torch.Tensor, radial: torch.Tensor,
+                           neighbours: tuple, cfg: Config) -> torch.Tensor:
+    """Rate of the Antuono-Colagrossi-Marrone diffusive term, on fluid pairs.
+
+    ``rho`` is the summation density, ``radial`` is ``-(delta . grad W)`` per
+    pair, and ``neighbours`` are the pair indices. The term is
+
+        D rho_i / Dt = sum_j V_j * 2 (rho_i - rho_j) * (r_i - r_j) . grad W / r^2
+
+    scaled by ``delta * c0 * h``. Written with ``L = -(r . grad W)/r^2 > 0`` it
+    is ``-2 delta c0 h sum_j V_j (rho_i - rho_j) L``, which is a diffusion: a
+    particle denser than its neighbours loses density.
+
+    The pair contribution is applied as ``-c`` to ``i`` and ``+c V_i/V_j`` to
+    ``j``, so ``sum_i V_i drho_i/dt = 0`` exactly: the volume-weighted mean
+    density is conserved, and a field that is already uniform is left untouched
+    because ``rho_i - rho_j`` vanishes.
+
+    This is the diffusive *term* of delta-SPH, not the delta-SPH scheme: that
+    scheme integrates the continuity equation, while this solver obtains
+    density by summation, so the rate is applied over one time step.
+    """
+    i, j = neighbours
+    v_j = mass[j] / rho[j]
+    v_i = mass[i] / rho[i]
+    coupling = (rho[i] - rho[j]) * radial / (distance.square() + 1.0e-12)
+    scale = 2.0 * cfg.density_diffusion * cfg.sound_speed * cfg.h_factor * cfg.dx
+    rate = torch.zeros_like(rho)
+    rate = rate.index_add(0, i, -scale * v_j * coupling)
+    rate = rate.index_add(0, j, scale * v_i * coupling)
+    return rate
+
+
 def tait_pressure(rho: torch.Tensor, cfg: Config) -> torch.Tensor:
     """Tait equation of state, clamped to non-negative pressure.
 
@@ -143,9 +228,55 @@ def acoustic_courant(dt: float, cfg: Config, max_speed: float = 0.0) -> float:
 
 
 def suggested_dt(cfg: Config, max_courant: float | None = None) -> float:
-    """Largest fixed time step allowed by the acoustic Courant criterion."""
+    """Largest fixed time step allowed by the acoustic Courant criterion.
+
+    This is the bound at rest (``|v| = 0``). ``stable_dt`` is the same bound
+    evaluated for a moving flow, and is what the adaptive step uses.
+    """
     limit = cfg.max_courant if max_courant is None else max_courant
     return limit * cfg.h_factor * cfg.dx / cfg.sound_speed
+
+
+def acoustic_dt_limit(cfg: Config, max_speed: float = 0.0) -> float:
+    """Largest step with ``dt c0 / h <= max_courant``, adjusted for ``|v|``.
+
+    The acoustic signal speed in a moving fluid is ``c0 + |v|``, so a step that
+    satisfies the Courant condition at rest can violate it once the flow is fast:
+    the dam-break surge reaches 20 % of ``c0``, which puts the true Courant 20 %
+    above the nominal one.
+    """
+    return (cfg.max_courant * cfg.h_factor * cfg.dx
+            / (cfg.sound_speed + max(0.0, max_speed)))
+
+
+def stable_dt(cfg: Config, max_speed: float = 0.0) -> float:
+    """Largest step allowed by *every* limit this module enforces.
+
+    The same four limits ``validate_config`` checks, evaluated for the current
+    maximum speed instead of only at rest.
+    """
+    return min(acoustic_dt_limit(cfg, max_speed),
+               viscous_dt_limit(cfg),
+               gravity_dt_limit(cfg),
+               diffusion_dt_limit(cfg))
+
+
+def next_dt(cfg: Config, dt: float, max_speed: float = 0.0) -> float:
+    """Next adaptive step.
+
+    Shrink immediately when the flow demands it, grow by at most
+    ``cfg.dt_growth`` per step, and never exceed the configured ``dt``. The
+    growth cap is what keeps the step from oscillating around the limit; the
+    configured value is the cap because ``validate_config`` has already checked
+    that it is stable at rest.
+
+    ``cfg.dt_safety`` scales the limit down. The speed used here is the one at
+    the start of the step, so a flow that accelerates hard inside the step can
+    still exceed the limit if the step is placed exactly on it.
+    """
+    target = cfg.dt_safety * stable_dt(cfg, max_speed)
+    grown = dt * cfg.dt_growth if cfg.dt_growth >= 1.0 else target
+    return min(target, grown, cfg.dt)
 
 
 # --------------------------------------------------------------------------- #
@@ -211,11 +342,15 @@ def wall_lattice(cfg: Config, device: torch.device,
 
     Three layers with the fluid lattice spacing, placed half a spacing outside
     the fluid domain and extended around the corners. Wall particles use an
-    extrapolated pressure and a Tait-consistent density (Adami et al., 2012,
-    *A generalized wall boundary condition for smoothed particle
-    hydrodynamics*). They restore the kernel support that a fluid particle
-    misses next to a wall, which is what makes the density summation usable
-    near boundaries.
+    extrapolated pressure and a Tait-consistent density, following eq. (11) of
+    Adami, Hu & Adams (2012), *A generalized wall boundary condition for
+    smoothed particle hydrodynamics*, J. Comput. Phys. 231:7057-7075:
+
+        p_w = (sum_f p_f W + sum_f rho_f (g - a_w).(r_w - r_f) W) / sum_f W
+
+    Both terms are evaluated; the walls are static, so ``a_w = 0``. They restore
+    the kernel support that a fluid particle misses next to a wall, which is
+    what makes the density summation usable near boundaries.
     """
     if cfg.wall_layers < 1:
         raise ValueError("wall_layers must be positive")
@@ -275,7 +410,26 @@ def density_from_neighbor_pairs(pos, mass, h: float, pairs=None):
     return rho
 
 
-def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
+def drop_wall_wall_pairs(pairs: torch.Tensor, fluid_count: int) -> torch.Tensor:
+    """Remove pairs in which both particles are wall particles.
+
+    Positions are ordered fluid-first, wall-after, so a pair ``(i, j)`` with
+    ``i >= fluid_count`` and ``j >= fluid_count`` touches no fluid particle.
+    Such a pair can only contribute to wall density and wall pressure, and both
+    of those are discarded: the wall pressure is extrapolated *from* the fluid,
+    and the force on a static particle is never integrated. Keeping them is
+    therefore pure waste -- 23 % of the pairs in the default impact case.
+    """
+    if pairs.numel() == 0:
+        return pairs
+    i, j = pairs.unbind(dim=1)
+    usable = (i < fluid_count) | (j < fluid_count)
+    if bool(usable.all()):
+        return pairs
+    return pairs[usable]
+
+
+def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
     """Compute WCSPH RHS with pair-based compact-support interactions.
 
     ``wall`` is an optional ``(W, D)`` tensor of static wall particles. When it
@@ -286,10 +440,18 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
     wall particles (whose velocity is zero), which imposes a no-slip tangential
     condition.
 
+    ``dt`` is the step used by the diffusive density term. It defaults to
+    ``cfg.dt``; an adaptive run passes the step it is actually taking, so the
+    operator is not silently applied for a step that never happened.
+
     Returns ``(rho, pressure, acceleration)`` for the fluid particles.
     """
     h = cfg.h_factor * cfg.dx
     n = pos.shape[0]
+    step_dt = cfg.dt if dt is None else float(dt)
+    if pos.shape[1] != 2:
+        raise ValueError(
+            f"rhs implements 2-D smoothing only, got {pos.shape[1]} dimensions")
     if wall is None:
         all_pos, all_mass, nw = pos, mass, 0
     else:
@@ -303,6 +465,9 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
 
     if pairs is None:
         pairs = cell_linked_pairs(all_pos, 2.0 * h)
+        # A freshly built list still contains wall-wall pairs; drop them before
+        # paying for them. A cached list is filtered when it is built.
+        pairs = drop_wall_wall_pairs(pairs, n)
     if pairs.ndim != 2 or pairs.shape[1] != 2 or pairs.dtype != torch.long:
         raise ValueError("pairs must be a long tensor with shape (pair_count, 2)")
     if pairs.device != pos.device:
@@ -323,26 +488,56 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
     i, j = pairs.unbind(dim=1)
     delta = all_pos[i] - all_pos[j]
     distance = torch.linalg.vector_norm(delta, dim=1)
-    wij = cubic_spline_kernel(distance, h)
-    grad_w = cubic_spline_gradient(delta, h)
+    wij, grad_w = pair_kernels(delta, h)
 
     rho_all = rho_all.index_add(0, i, all_mass[j] * wij)
     rho_all = rho_all.index_add(0, j, all_mass[i] * wij)
     rho = rho_all[:n].clamp_min(0.1 * cfg.rho0)
+
+    if cfg.density_diffusion > 0.0:
+        # Fluid-fluid pairs only: the wall density is extrapolated from the
+        # fluid, so diffusing into it would feed the extrapolation back into
+        # the solved field.
+        fluid_only = (i < n) & (j < n)
+        radial = -(delta[fluid_only] * grad_w[fluid_only]).sum(dim=1)
+        rate = density_diffusion_rate(
+            rho, mass, distance[fluid_only], radial,
+            (i[fluid_only], j[fluid_only]), cfg)
+        rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
+
     pressure = tait_pressure(rho, cfg)
 
     if nw:
         bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
-        fluid_first = (i < n) & (j >= n)
-        wall_first = (i >= n) & (j < n)
+        # Only fluid/wall pairs extrapolate wall pressure. Instead of selecting
+        # those pairs with boolean masks (which costs 12 full pair-level copies
+        # in this function), gather with a clamped index and zero the weight of
+        # every non-crossing pair: identical numbers, fewer kernel launches.
+        i_fluid = i < n
+        crossing = i_fluid != (j < n)
+        fluid_idx = torch.where(i_fluid, i, j)
+        wall_idx = (torch.where(i_fluid, j, i) - n).clamp_(0, nw - 1)
+        weight = torch.where(crossing, wij, torch.zeros_like(wij))
+        zeros = torch.zeros(nw, dtype=pos.dtype, device=pos.device)
+        pressure_ext = torch.cat((pressure, zeros))
         numerator = torch.zeros(nw, dtype=pos.dtype, device=pos.device)
         denominator = torch.zeros(nw, dtype=pos.dtype, device=pos.device)
-        numerator = numerator.index_add(0, j[fluid_first] - n,
-                                        pressure[i[fluid_first]] * wij[fluid_first])
-        denominator = denominator.index_add(0, j[fluid_first] - n, wij[fluid_first])
-        numerator = numerator.index_add(0, i[wall_first] - n,
-                                        pressure[j[wall_first]] * wij[wall_first])
-        denominator = denominator.index_add(0, i[wall_first] - n, wij[wall_first])
+
+        # Adami et al. (2012) eq. (11) carries a body-force term next to the
+        # kernel-weighted pressure average:
+        #   p_w = (sum_f p_f W + sum_f rho_f (g - a_w).(r_w - r_f) W) / sum_f W
+        # The walls are static (a_w = 0), so with g = (0, -gravity) the extra
+        # contribution is -gravity * (y_w - y_f) * rho_f * W. Dropping it, as
+        # earlier versions did, makes the wall pressure the average of the
+        # neighbouring fluid pressure instead of its extrapolation to the wall
+        # face, which biases the bottom row low by half a spacing.
+        dy = torch.where(i_fluid, -delta[:, 1], delta[:, 1])
+        body = -cfg.gravity * dy
+        source = pressure_ext[fluid_idx]
+        if cfg.gravity != 0.0:
+            source = source + torch.cat((rho, zeros))[fluid_idx] * body
+        numerator = numerator.index_add(0, wall_idx, source * weight)
+        denominator = denominator.index_add(0, wall_idx, weight)
         wall_pressure = (numerator / denominator.clamp_min(1.0e-30)).clamp_min(0.0)
         wall_density = (cfg.rho0 * (wall_pressure / bulk + 1.0).pow(1.0 / cfg.gamma)
                         ).clamp_min(cfg.rho0)
@@ -356,9 +551,6 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
                                              dtype=pos.dtype, device=pos.device)))
     else:
         all_vel = vel
-    wall_friction_tensor = torch.full((), cfg.wall_friction, dtype=pos.dtype,
-                                      device=pos.device)
-    ones = torch.ones((), dtype=pos.dtype, device=pos.device)
 
     pressure_term = (pressure_all[i] / density_all[i].square()
                      + pressure_all[j] / density_all[j].square())
@@ -369,37 +561,37 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
     acc = acc.index_add(0, j, all_mass[i, None] * pair_pressure)
     acc_pressure = acc[:n]
 
+    # Viscosity acts on fluid-fluid pairs and, when a no-slip wall is asked
+    # for, on fluid-wall pairs with a blend factor. Wall-wall pairs never
+    # contribute (the wall is static), so the mask only has to separate
+    # fluid-fluid from fluid-wall.
     fluid_pair = (i < n) & (j < n)
     if nw and cfg.wall_friction > 0.0:
-        # One side is fluid and the other is wall: extend the viscous stencil
-        # into the wall, with the wall at rest. This is the mirror/image
-        # treatment of a no-slip boundary in a particle method.
-        wall_side = ((i < n) & (j >= n)) | ((i >= n) & (j < n))
-        visc_pair = fluid_pair | wall_side
-        blend = torch.where(wall_side, wall_friction_tensor, ones)[visc_pair][:, None]
+        crossing = torch.logical_xor(i < n, j < n)
+        blend = (fluid_pair.to(pos.dtype)
+                 + cfg.wall_friction * crossing.to(pos.dtype))
+        visc_scale = (VISCOUS_LAPLACIAN_FACTOR * cfg.viscosity * blend)[:, None]
+    elif nw:
+        visc_scale = (VISCOUS_LAPLACIAN_FACTOR * cfg.viscosity
+                      * fluid_pair.to(pos.dtype))[:, None]
     else:
-        visc_pair = fluid_pair
-        blend = 1.0
-    dv = all_vel[i[visc_pair]] - all_vel[j[visc_pair]]
-    pair_distance = distance[visc_pair]
-    denom = pair_distance.square() + 0.01 * h * h
-    laplace_weight = torch.relu(
-        -(delta[visc_pair] * grad_w[visc_pair]).sum(dim=1)) / denom
-    coefficient = VISCOUS_LAPLACIAN_FACTOR * cfg.viscosity * blend
-    visc_i = (-coefficient * dv
-              * (all_mass[j[visc_pair]] / density_all[j[visc_pair]]
-                 * laplace_weight)[:, None])
-    visc_j = (coefficient * dv
-              * (all_mass[i[visc_pair]] / density_all[i[visc_pair]]
-                 * laplace_weight)[:, None])
+        visc_scale = VISCOUS_LAPLACIAN_FACTOR * cfg.viscosity
+    dv = all_vel[i] - all_vel[j]
+    denom = distance.square() + 0.01 * h * h
+    laplace_weight = torch.relu(-(delta * grad_w).sum(dim=1)) / denom
+    visc_i = (-visc_scale * dv
+              * (all_mass[j] / density_all[j] * laplace_weight)[:, None])
+    visc_j = (visc_scale * dv
+              * (all_mass[i] / density_all[i] * laplace_weight)[:, None])
     acc_visc = torch.zeros((n + nw, pos.shape[1]), dtype=pos.dtype,
                            device=pos.device)
-    acc_visc = acc_visc.index_add(0, i[visc_pair], visc_i)
-    acc_visc = acc_visc.index_add(0, j[visc_pair], visc_j)
+    acc_visc = acc_visc.index_add(0, i, visc_i)
+    acc_visc = acc_visc.index_add(0, j, visc_j)
     return rho, pressure, acc_pressure + acc_visc[:n] + gravity
 
 
-def rhs_all_pairs(pos, vel, mass, cfg: Config):
+
+def rhs_all_pairs(pos, vel, mass, cfg: Config, dt=None):
     """Dense O(N^2) reference implementation used for regression comparisons.
 
     This is an independent formulation of the same physics with full pairwise
@@ -408,10 +600,19 @@ def rhs_all_pairs(pos, vel, mass, cfg: Config):
     implementation.
     """
     h = cfg.h_factor * cfg.dx
+    step_dt = cfg.dt if dt is None else float(dt)
     delta = pos[:, None, :] - pos[None, :, :]
     r = torch.linalg.vector_norm(delta, dim=-1)
     w = cubic_spline_kernel(r, h)
     rho = (w * mass[None, :]).sum(dim=1).clamp_min(0.1 * cfg.rho0)
+    if cfg.density_diffusion > 0.0:
+        grad_w_dense = cubic_spline_gradient(delta, h)
+        radial = -(delta * grad_w_dense).sum(dim=-1)
+        coupling = ((rho[:, None] - rho[None, :]) * radial
+                    / (r.square() + 1.0e-12))
+        scale = 2.0 * cfg.density_diffusion * cfg.sound_speed * cfg.h_factor * cfg.dx
+        rate = -scale * (mass[None, :] / rho[None, :] * coupling).sum(dim=1)
+        rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
     pressure = tait_pressure(rho, cfg)
     grad_w = cubic_spline_gradient(delta, h)
     pressure_term = (
@@ -491,12 +692,73 @@ def validate_config(cfg: Config) -> None:
         raise ValueError("pair_skin_factor must be non-negative")
     if not 0.0 <= cfg.wall_friction <= 1.0:
         raise ValueError("wall_friction must be in [0, 1]")
+    if cfg.density_diffusion < 0.0:
+        raise ValueError("density_diffusion must be non-negative")
+    if not math.isfinite(cfg.dt_growth) or cfg.dt_growth < 1.0:
+        # A growth factor below 1 would shrink the step every time the flow did
+        # not demand it, which is not "adaptive", it is a user error.
+        raise ValueError("dt_growth must be finite and at least 1.0")
+    if not 0.0 < cfg.dt_safety <= 1.0:
+        raise ValueError("dt_safety must be in (0, 1]")
     courant = acoustic_courant(cfg.dt, cfg)
     if courant > cfg.max_courant * (1.0 + 1.0e-9):
         raise ValueError(
             f"dt={cfg.dt:g} gives acoustic Courant {courant:.3f} > max_courant "
             f"{cfg.max_courant:g}; use dt <= {suggested_dt(cfg):.3e} s"
         )
+    viscosity_limit = viscous_dt_limit(cfg)
+    if cfg.dt > viscosity_limit * (1.0 + 1.0e-9):
+        raise ValueError(
+            f"dt={cfg.dt:g} exceeds the viscous limit {viscosity_limit:.3e} s "
+            f"(viscosity={cfg.viscosity:g}, h={cfg.h_factor * cfg.dx:g}); the "
+            f"explicit Laplacian is unstable above it"
+        )
+    gravity_limit = gravity_dt_limit(cfg)
+    if cfg.dt > gravity_limit * (1.0 + 1.0e-9):
+        raise ValueError(
+            f"dt={cfg.dt:g} exceeds the gravity limit {gravity_limit:.3e} s"
+        )
+    diffusion_limit = diffusion_dt_limit(cfg)
+    if cfg.dt > diffusion_limit * (1.0 + 1.0e-9):
+        raise ValueError(
+            f"dt={cfg.dt:g} exceeds the density-diffusion limit "
+            f"{diffusion_limit:.3e} s (delta={cfg.density_diffusion:g})"
+        )
+
+
+def viscous_dt_limit(cfg: Config, safety: float = 0.125) -> float:
+    """Largest step the explicit viscous term tolerates: ``safety*h^2/nu``.
+
+    The acoustic Courant condition alone does not bound the viscous operator.
+    A configuration can satisfy it and still diverge: with ``viscosity = 1`` and
+    the default ``dt`` the impact case reaches 53 % density compression and
+    Mach 1.2, and ``viscosity = 2`` reaches 1.6e4 % before fail-fast stops it.
+    The Morris/ESPHS form used here is a standard explicit Laplacian, for which
+    ``dt <= 0.125 h^2 / nu`` is the usual stability bound.
+    """
+    h = cfg.h_factor * cfg.dx
+    if cfg.viscosity <= 0.0:
+        return float("inf")
+    return safety * h * h / cfg.viscosity
+
+
+def diffusion_dt_limit(cfg: Config, safety: float = 0.125) -> float:
+    """Largest explicit step for the diffusive density term.
+
+    ``delta c0 h`` plays the role of a diffusivity for the density field, so the
+    same stability bound as for the viscous operator applies.
+    """
+    if cfg.density_diffusion <= 0.0:
+        return float("inf")
+    h = cfg.h_factor * cfg.dx
+    return safety * h / (cfg.density_diffusion * cfg.sound_speed)
+
+
+def gravity_dt_limit(cfg: Config, safety: float = 0.25) -> float:
+    """Largest step that still resolves free fall over one smoothing length."""
+    if cfg.gravity <= 0.0:
+        return float("inf")
+    return safety * math.sqrt(cfg.h_factor * cfg.dx / cfg.gravity)
 
 
 def nominal_fall_time(cfg: Config, pos: torch.Tensor) -> float | None:
@@ -531,14 +793,35 @@ def _source_revision() -> dict | None:
     return {"git_commit": commit, "worktree_dirty": dirty}
 
 
-def evaluate_acceptance(rows, cfg: Config, boundary_events: int) -> list[dict]:
-    """Evaluate the run against explicit, recorded numerical criteria."""
-    worst_compression = max(row["rho_max"] / cfg.rho0 - 1.0 for row in rows)
-    worst_mach = max(row["max_speed"] for row in rows) / cfg.sound_speed
-    worst_courant = max(row["courant_number"] for row in rows)
+def evaluate_acceptance(rows, cfg: Config, boundary_events: int,
+                        extremes: dict | None = None) -> list[dict]:
+    """Evaluate the run against explicit, recorded numerical criteria.
+
+    ``extremes`` are maxima accumulated over **every** integration step:
+    ``peak_rho_compression``, ``peak_speed`` and ``peak_courant``. Diagnostics
+    are only written every ``output_every`` steps, so judging stability from
+    ``rows`` alone can miss an overshoot that happens between two output
+    points. When ``extremes`` is omitted (a caller that only has diagnostics),
+    the values fall back to the sampled rows and the criterion records that
+    population.
+    """
+    sampled_compression = max(row["rho_max"] / cfg.rho0 - 1.0 for row in rows)
+    sampled_speed = max(row["max_speed"] for row in rows)
+    sampled_courant = max(row["courant_number"] for row in rows)
+    if extremes is None:
+        population = "sampled_rows"
+        worst_compression, worst_speed = sampled_compression, sampled_speed
+        worst_courant = sampled_courant
+    else:
+        population = "all_steps"
+        worst_compression = float(extremes["peak_rho_compression"])
+        worst_speed = float(extremes["peak_speed"])
+        worst_courant = float(extremes["peak_courant"])
+    worst_mach = worst_speed / cfg.sound_speed
     finite = all(all(math.isfinite(value) for value in row.values()) for row in rows)
 
-    def criterion(identifier, metric, measured, threshold, unit, comparison):
+    def criterion(identifier, metric, measured, threshold, unit, comparison,
+                  scope=population):
         if comparison == ">=":
             passed = measured >= threshold
         else:
@@ -546,12 +829,12 @@ def evaluate_acceptance(rows, cfg: Config, boundary_events: int) -> list[dict]:
         return {
             "id": identifier, "metric": metric, "measured": measured,
             "threshold": threshold, "unit": unit, "comparison": comparison,
-            "result": "pass" if passed else "fail",
+            "population": scope, "result": "pass" if passed else "fail",
         }
 
     criteria = [
         criterion("finite_state", "all diagnostics finite", 1.0 if finite else 0.0,
-                  1.0, "bool", ">="),
+                  1.0, "bool", ">=", "sampled_rows"),
         criterion("density_compression", "max(rho/rho0 - 1)", worst_compression,
                   cfg.max_density_error, "1", "<="),
         criterion("mach_number", "max|v| / c0", worst_mach, cfg.max_mach, "1", "<="),
@@ -559,7 +842,8 @@ def evaluate_acceptance(rows, cfg: Config, boundary_events: int) -> list[dict]:
                   cfg.max_courant, "1", "<="),
     ]
     escape = criterion("boundary_escape", "particles clamped beyond the box",
-                       float(boundary_events), 0.0, "count", "<=")
+                       float(boundary_events), 0.0, "count", "<=",
+                       "all_steps")
     if cfg.boundary == "clamp":
         # The coordinate clamp *is* the boundary condition here, so exceeding
         # the box is expected behaviour rather than a failure.
@@ -568,10 +852,16 @@ def evaluate_acceptance(rows, cfg: Config, boundary_events: int) -> list[dict]:
     return criteria
 
 
+def _json_number(value: float) -> float | None:
+    """``inf`` is not JSON; an absent limit is recorded as null."""
+    return value if math.isfinite(value) else None
+
+
 def _write_manifest(out: Path, cfg: Config, device: torch.device, initial_n: int,
                     rows, criteria, boundary_events: int, wall_count: int,
                     failure: str | None, fall_time: float | None,
-                    cache: PairListCache | None = None) -> dict:
+                    cache: PairListCache | None = None,
+                    extremes: dict | None = None) -> dict:
     numerical = ("fail" if any(c["result"] == "fail" for c in criteria)
                  else "pass")
     metadata = {
@@ -585,9 +875,15 @@ def _write_manifest(out: Path, cfg: Config, device: torch.device, initial_n: int
         "config": cfg.__dict__,
         "derived": {"smoothing_length": cfg.h_factor * cfg.dx,
                     "suggested_dt": suggested_dt(cfg),
+                    "viscous_dt_limit": _json_number(viscous_dt_limit(cfg)),
+                    "gravity_dt_limit": _json_number(gravity_dt_limit(cfg)),
+                    "diffusion_dt_limit": _json_number(diffusion_dt_limit(cfg)),
                     "acoustic_courant": acoustic_courant(cfg.dt, cfg),
                     "drop_free_fall_time": fall_time,
-                    "simulated_time": cfg.steps * cfg.dt},
+                    "simulated_time": extremes["simulated_time"],
+                    "adaptive_dt": cfg.adaptive_dt,
+                    "dt_min": extremes["dt_min"],
+                    "dt_max": extremes["dt_max"]},
         "statuses": {
             "software_execution": "failed" if failure else "success",
             "numerical_verification": numerical,
@@ -601,6 +897,14 @@ def _write_manifest(out: Path, cfg: Config, device: torch.device, initial_n: int
             "mean_steps_per_rebuild": (
                 None if cache is None or cache.rebuilds == 0
                 else (cache.rebuilds + cache.reuses) / cache.rebuilds),
+            "wall_wall_pairs_pruned": 0 if cache is None else cache.pruned,
+        },
+        "sampling": {
+            "diagnostic_rows": len(rows),
+            "output_every": cfg.output_every,
+            "extrema_population": ("all_steps" if extremes is not None
+                                   else "sampled_rows"),
+            "extrema": extremes,
         },
         "diagnostics": {"rows": len(rows),
                         "boundary_clamp_events": int(boundary_events),
@@ -612,7 +916,9 @@ def _write_manifest(out: Path, cfg: Config, device: torch.device, initial_n: int
             "No surface-tension model is included; free-surface pressure is "
             "clamped to zero, which suppresses tensile instability but is not "
             "a capillary model.",
-            "Walls are static dummy particles (Adami et al., 2012) with free-slip "
+            "Walls are static dummy particles with the Adami et al. (2012) "
+            "pressure extrapolation (both the kernel-weighted average and the "
+            "body-force term) and a Tait-consistent density, with free-slip "
             "viscosity. Hydrostatic accuracy is measured in "
             "docs/benchmarks/hydrostatic.md, not assumed.",
             "physical_validation is not_evaluated: no reference experiment is "
@@ -624,13 +930,18 @@ def _write_manifest(out: Path, cfg: Config, device: torch.device, initial_n: int
     return metadata
 
 
-def run(cfg: Config, output: str | Path):
+def run(cfg: Config, output: str | Path, plot: bool = True):
     """Run the case, write artifacts, and enforce numerical acceptance gates.
 
     Artifacts (diagnostics CSV, snapshots, run manifest, plot) are written even
     when a criterion fails, so a failed run can be inspected. If
     ``cfg.fail_fast`` is set, a violated criterion raises
     :class:`SimulationUnstableError` after the artifacts are on disk.
+
+    Snapshots are written as they are produced and the plot reads back a
+    subsample, so memory stays independent of ``steps``. Rendering the plot
+    costs about 1.5 s (matplotlib import plus save); ``plot=False`` skips it
+    when only the numbers matter.
     """
     validate_config(cfg)
     device = resolve_device(cfg.device)
@@ -645,43 +956,98 @@ def run(cfg: Config, output: str | Path):
     wall = wall_lattice(cfg, device) if cfg.boundary == "wall" else None
 
     h = cfg.h_factor * cfg.dx
-    cache = (PairListCache(2.0 * h, cfg.pair_skin_factor * h)
+    initial_n = pos.shape[0]
+    cache = (PairListCache(2.0 * h, cfg.pair_skin_factor * h,
+                           fluid_count=initial_n)
              if cfg.pair_skin_factor > 0 else None)
+    # One buffer for the fluid and the wall particles: rebuilt never, rewritten
+    # every step, so the solver does not allocate two concatenations per step.
+    all_pos = (torch.cat((pos, wall), dim=0) if wall is not None else pos)
 
     vel = torch.zeros_like(pos)
     pos_initial = pos.clone()
-    initial_n = pos.shape[0]
     rows: list[dict] = []
-    snapshots: list[tuple[int, torch.Tensor, torch.Tensor]] = []
+    snapshot_steps: list[int] = []
     boundary_events = 0
     failure: str | None = None
+    # Maxima over every step, not just the steps that write a diagnostic row.
+    dtype, dev = pos.dtype, pos.device
+    peak_compression = torch.zeros((), dtype=torch.float64, device=dev)
+    peak_speed = torch.zeros((), dtype=dtype, device=dev)
+    # Courant is a product of the step and the speed of that same step, so it is
+    # accumulated per step instead of from two independent maxima. With a fixed
+    # step the two agree; with an adaptive one they would not.
+    peak_courant = torch.zeros((), dtype=torch.float64, device=dev)
+    dt = cfg.dt
+    elapsed = 0.0
+    dt_min = dt
+    dt_max = dt
+    # Each diagnostic row reports the step that produced it, so
+    # ``time[n] - time[n-1] == dt[n]``. The first row has no preceding step and
+    # reports the configured ``dt``.
+    last_step_dt = cfg.dt
+    # ``cfg.steps`` at ``cfg.dt`` is the requested simulated time. With a fixed
+    # step that is simply ``cfg.steps`` iterations; with an adaptive one the
+    # same physical time needs more, so the loop runs to the time and the step
+    # count becomes an outcome. The cap keeps a mis-specified case from running
+    # forever, and hitting it is reported as a failure rather than truncated.
+    target_time = cfg.steps * cfg.dt
+    time_tolerance = 1.0e-12 * max(1.0, target_time)
+    max_steps = (cfg.steps if not cfg.adaptive_dt
+                 else 4 * cfg.steps + 1000)
+    finished = False
 
-    for step in range(cfg.steps + 1):
-        if cache is None:
-            pairs = None
+    for step in range(max_steps + 1):
+        if cache is not None:
+            if wall is not None:
+                all_pos[:initial_n] = pos
+            pairs, _ = cache.get(all_pos)
         else:
-            pairs, _ = cache.get(torch.cat((pos, wall), dim=0) if wall is not None
-                                 else pos)
-        rho, pressure, acc = rhs(pos, vel, mass, cfg, wall=wall, pairs=pairs)
+            pairs = None
+        # The step to be taken from this state, decided before the right-hand
+        # side so that the diffusive density term uses the same ``dt`` as the
+        # integration. The last adaptive step is clipped to land exactly on the
+        # requested time instead of overshooting it by up to one step.
+        step_dt = dt if not cfg.adaptive_dt else min(dt, target_time - elapsed)
+        rho, pressure, acc = rhs(pos, vel, mass, cfg, wall=wall, pairs=pairs,
+                                 dt=step_dt)
         state_finite = bool(torch.isfinite(pos).all() and torch.isfinite(vel).all()
                             and torch.isfinite(rho).all() and torch.isfinite(acc).all())
         if not state_finite and failure is None:
             failure = f"non-finite state at step {step}"
+        # Reduce first, then rescale in float64. ``(rho / rho0).max() - 1``
+        # evaluates the quotient elementwise in the density's own precision,
+        # where rho/rho0 sits at 1.0 and loses ~6e-8 absolute -- 5e-4 relative
+        # on a compression of 1e-4. That is enough for the all-steps extremum to
+        # come out *below* the value a diagnostic row recorded at the same step.
+        peak_compression = torch.maximum(
+            peak_compression, rho.max().double() / cfg.rho0 - 1.0)
+        speed = (torch.linalg.vector_norm(vel, dim=-1) if vel.numel()
+                 else torch.zeros(0, dtype=dtype, device=dev))
+        if speed.numel():
+            peak_speed = torch.maximum(peak_speed, speed.max())
+        courant_now = acoustic_courant(dt, cfg, float(speed.max()) if speed.numel() else 0.0)
+        peak_courant = torch.maximum(
+            peak_courant, torch.tensor(courant_now, dtype=torch.float64))
 
-        if step % cfg.output_every == 0 or step == cfg.steps:
-            speed = torch.linalg.vector_norm(vel, dim=-1)
+        final = (step == cfg.steps if not cfg.adaptive_dt
+                 else elapsed >= target_time - time_tolerance)
+        if step % cfg.output_every == 0 or final:
             accel = torch.linalg.vector_norm(acc, dim=-1)
             momentum = (mass[:, None] * vel).sum(dim=0)
             max_speed = float(speed.max()) if speed.numel() else 0.0
             rows.append({
-                "step": step, "time": step * cfg.dt,
+                "step": step,
+                "time": step * cfg.dt if not cfg.adaptive_dt else elapsed,
+                "dt": last_step_dt,
                 "particle_count": int(pos.shape[0]),
                 "mass_total": float(mass.sum()),
                 "momentum_x": float(momentum[0]),
                 "momentum_y": float(momentum[1]) if momentum.numel() > 1 else 0.0,
                 "rho_min": float(rho.min()), "rho_max": float(rho.max()),
                 "rho_mean": float(rho.mean()),
-                "rho_max_relative_error": float((rho / cfg.rho0 - 1.0).abs().max()),
+                "rho_max_relative_error": max(abs(float(rho.min()) / cfg.rho0 - 1.0),
+                                              abs(float(rho.max()) / cfg.rho0 - 1.0)),
                 "pressure_min": float(pressure.min()),
                 "pressure_max": float(pressure.max()),
                 "max_speed": max_speed,
@@ -691,29 +1057,48 @@ def run(cfg: Config, output: str | Path):
                 "kinetic_energy": float(0.5 * (mass[:, None] * vel.square()).sum()),
                 "y_min": float(pos[:, 1].min()), "y_max": float(pos[:, 1].max()),
             })
-            snapshots.append((step, pos.detach().clone(), rho.detach().clone()))
+            torch.save({"step": step,
+                        "time": step * cfg.dt if not cfg.adaptive_dt else elapsed,
+                        "position": pos.detach().cpu(), "density": rho.detach().cpu(),
+                        "boundary": cfg.boundary},
+                       out / f"particles_{step:06d}.pt")
+            snapshot_steps.append(step)
 
-        if step == cfg.steps or not state_finite:
+        if final or not state_finite:
+            finished = final
             break
         # Semi-implicit Euler with explicit boundary handling.
-        vel = vel + cfg.dt * acc
-        pos = pos + cfg.dt * vel
+        vel = vel + step_dt * acc
+        pos = pos + step_dt * vel
         boundary_events += apply_boundary(pos, vel, cfg)
+        elapsed += step_dt
+        last_step_dt = step_dt
+        if cfg.adaptive_dt:
+            dt = next_dt(cfg, dt, float(speed.max()) if speed.numel() else 0.0)
+            dt_min = min(dt_min, dt)
+            dt_max = max(dt_max, dt)
 
-    criteria = evaluate_acceptance(rows, cfg, boundary_events)
+    if not finished and failure is None:
+        failure = (f"the adaptive step did not reach {target_time:g} s within "
+                   f"{max_steps} steps")
+    extremes = {
+        "peak_rho_compression": float(peak_compression),
+        "peak_speed": float(peak_speed),
+        "peak_courant": float(peak_courant),
+        "simulated_time": cfg.steps * cfg.dt if not cfg.adaptive_dt else elapsed,
+        "dt_min": dt_min, "dt_max": dt_max,
+    }
+    criteria = evaluate_acceptance(rows, cfg, boundary_events, extremes=extremes)
     _write_manifest(out, cfg, device, initial_n, rows, criteria, boundary_events,
                     0 if wall is None else wall.shape[0], failure,
-                    nominal_fall_time(cfg, pos_initial), cache)
+                    nominal_fall_time(cfg, pos_initial), cache, extremes)
 
     with (out / "diagnostics.csv").open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         writer.writeheader()
         writer.writerows(rows)
-    for step, xyz, density in snapshots:
-        torch.save({"step": step, "time": step * cfg.dt, "position": xyz,
-                    "density": density, "boundary": cfg.boundary},
-                   out / f"particles_{step:06d}.pt")
-    _plot(out, cfg, snapshots)
+    if plot:
+        _plot(out, cfg, snapshot_steps)
 
     if cfg.fail_fast:
         failed = [c for c in criteria if c["result"] == "fail"]
@@ -726,25 +1111,39 @@ def run(cfg: Config, output: str | Path):
     return rows
 
 
-def _plot(out: Path, cfg: Config, snapshots) -> None:
-    if len(snapshots) > 12:  # keep the panel width readable for long runs
-        stride = math.ceil(len(snapshots) / 12)
-        snapshots = snapshots[::stride]
+def _plot(out: Path, cfg: Config, steps, max_frames: int = 12) -> None:
+    """Render up to ``max_frames`` snapshot files that are already on disk."""
+    if not steps:
+        return
+    steps = list(steps)
+    if len(steps) > max_frames:  # keep the panel width readable for long runs
+        stride = math.ceil(len(steps) / max_frames)
+        steps = steps[::stride]
     try:
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except ImportError:
+        warnings.warn(
+            "matplotlib is not installed; skipping particle_snapshots.png. "
+            "Install it with: pip install \"tensorsph[plot]\"",
+            RuntimeWarning, stacklevel=2)
         return
+    frames = []
+    for step in steps:
+        payload = torch.load(out / f"particles_{step:06d}.pt")
+        # The snapshot carries its own clock: with an adaptive step, ``step``
+        # and time are no longer proportional.
+        frames.append((payload["time"], payload["position"], payload["density"]))
     _, _, _, y_max = boundary_box(cfg)
-    fig, axes = plt.subplots(1, len(snapshots), figsize=(4 * len(snapshots), 4),
+    fig, axes = plt.subplots(1, len(frames), figsize=(4 * len(frames), 4),
                              squeeze=False)
     sc = None
-    for ax, (step, xyz, density) in zip(axes[0], snapshots):
+    for ax, (time, xyz, density) in zip(axes[0], frames):
         sc = ax.scatter(xyz[:, 0].tolist(), xyz[:, 1].tolist(),
                         c=density.tolist(), s=5, cmap="viridis",
                         vmin=0.9 * cfg.rho0, vmax=1.05 * cfg.rho0)
-        ax.set_title(f"t={step * cfg.dt:.4f} s")
+        ax.set_title(f"t={time:.4f} s")
         ax.set_xlim(0, cfg.pool_width)
         ax.set_ylim(0, y_max)
         ax.set_aspect("equal")

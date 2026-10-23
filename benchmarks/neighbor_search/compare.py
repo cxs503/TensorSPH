@@ -41,7 +41,8 @@ def main():
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--seed", type=int, default=7)
-    parser.add_argument("--include-host", action="store_true", default=True)
+    parser.add_argument("--skip-host", action="store_true",
+                        help="do not run the independent host implementation")
     args = parser.parse_args()
     if args.particles < 0 or args.repeats < 1:
         parser.error("--particles must be non-negative and --repeats positive")
@@ -58,7 +59,7 @@ def main():
         lambda: cell_linked_pairs(positions, args.cutoff), args.repeats)
     host_time = None
     host_equal = None
-    if args.include_host:
+    if not args.skip_host:
         host_time, host_pairs = timed(
             lambda: cell_linked_pairs_host(positions, args.cutoff), args.repeats)
         host_equal = torch.equal(host_pairs, brute)
@@ -83,7 +84,7 @@ def main():
     print(json.dumps(report, indent=2))
     if not report["device_equals_brute_force"]:
         raise SystemExit("ERROR: vectorized cell-linked pairs differ from brute force")
-    if args.include_host and not host_equal:
+    if not args.skip_host and not host_equal:
         raise SystemExit("ERROR: host cell-linked pairs differ from brute force")
 
 
