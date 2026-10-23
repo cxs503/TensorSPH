@@ -99,3 +99,44 @@ def test_wall_geometry_spans_the_tank():
     assert float(wall[:, 0].min()) < 0.0
     assert float(wall[:, 0].max()) > cfg.pool_width
     assert float(wall[:, 1].max()) <= cfg.tank_top() + 1e-6
+
+
+def test_clamp_boundary_is_rejected_instead_of_silently_ignored():
+    """run_case integrates static wall particles only."""
+    cfg = small_case(boundary="clamp")
+    with pytest.raises(ValueError, match="boundary"):
+        validate_case(cfg)
+
+
+def test_device_auto_resolves_to_a_real_device():
+    """``device="auto"`` must not reach torch.device() unconverted."""
+    cfg = small_case(device="auto", steps=1, output_every=1)
+    run = run_case(cfg)
+    assert run.final_positions.device.type in ("cpu", "cuda")
+
+
+def test_mass_drift_is_measured_not_assumed():
+    cfg = small_case(steps=100, output_every=50)
+    run = run_case(cfg)
+    assert run.initial_mass > 0.0
+    assert run.final_mass == run.initial_mass
+    assert run.mass_drift == 0.0
+    assert run.mass == pytest.approx(run.initial_mass)
+
+
+def test_compression_is_a_step_wise_maximum():
+    """The recorded peak cannot be smaller than any diagnostic sample."""
+    cfg = small_case(steps=200, output_every=20)
+    run = run_case(cfg)
+    assert run.max_density_compression > 0.0
+    assert run.max_speed > 0.0
+
+
+def test_compression_before_wall_impact_is_separated_from_the_impact_spike():
+    """The whole-run peak is a wall-impact transient, not bulk compressibility."""
+    cfg = small_case(dx=0.02, steps=900, output_every=50)
+    cfg.pool_width = 0.7          # short tank: the front reaches the wall quickly
+    run = run_case(cfg)
+    assert run.wall_impact_time is not None
+    assert run.compression_before_wall_impact <= run.max_density_compression
+    assert run.wall_impact_time > 0.0

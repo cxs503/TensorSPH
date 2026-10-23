@@ -41,11 +41,24 @@ dam-break experiments.
 
 Three-level ladder, `c0 = 25 m/s`, free-slip walls:
 
-| `dx` | particles | steps | wall clock | max &#124;v&#124; | Mach | compression | escapes | front hits wall |
-|---|---|---|---|---|---|---|---|---|
-| 0.04 | 50 | 1 282 | 3.1 s | 5.26 m/s | 0.21 | 9.7 % | 0 | t = 0.659 s |
-| 0.02 | 200 | 2 564 | 9.4 s | 4.41 m/s | 0.18 | 9.9 % | 0 | t = 0.669 s |
-| 0.01 | 800 | 5 128 | 40.9 s | 4.39 m/s | 0.18 | 3.8 % | 0 | t = 0.669 s |
+| `dx` | particles | steps | wall clock | max &#124;v&#124; | Mach | peak compression | bulk compression | escapes | front hits wall |
+|---|---|---|---|---|---|---|---|---|---|
+| 0.04 | 50 | 1 282 | 1.6 s | 5.28 m/s | 0.21 | 9.7 % | 2.4 % | 0 | t = 0.658 s |
+| 0.02 | 200 | 2 564 | 4.9 s | 4.44 m/s | 0.18 | 10.3 % | 1.8 % | 0 | t = 0.661 s |
+| 0.01 | 800 | 5 128 | 22.6 s | 4.50 m/s | 0.18 | 10.0 % | 2.0 % | 0 | t = 0.662 s |
+
+**Peak versus bulk compression.** "Peak" is the maximum of `rho/rho0 - 1` over
+**every integration step**; "bulk" is the same maximum up to the step where the
+front reaches the far wall. The two differ by a factor of five because the peak
+is a single impact transient: at `dx = 0.02` the surge arrives at
+t = 0.661 s and the maximum is recorded at t = 0.678 s, seventeen milliseconds
+later, while the bulk flow never exceeds 2.4 %.
+
+Earlier revisions of this document reported 3.8 % at `dx = 0.01`. That number
+came from diagnostics sampled every 0.01 s, which stepped over the spike. The
+step-wise maximum is 10.0 %, so the `density_compression` gate at a 10 % limit
+now **fails** at all three resolutions. The metric did not change; the
+measurement did.
 
 **Observed order of accuracy**: the relative L2 difference of `front(t)/a` is
 2.58 % between `dx` = 0.04 and 0.02, and 1.31 % between 0.02 and 0.01, giving
@@ -60,41 +73,49 @@ Front trajectory at `dx = 0.01`:
 | `tau` | `Z/a` | `Z / Ritter` |
 |---|---|---|
 | 0.00 | 0.97 | — |
-| 0.79 | 1.30 | 0.82 |
-| 1.58 | 2.03 | 0.64 |
-| 2.37 | 3.02 | 0.64 |
-| 3.16 | 4.19 | 0.66 |
-| 3.96 | 5.50 | 0.69 |
-| 4.75 | 6.86 | 0.72 |
-| 6.33 | 9.69 | 0.77 |
+| 0.69 | 1.21 | 0.88 |
+| 1.38 | 1.79 | 0.65 |
+| 2.08 | 2.58 | 0.62 |
+| 2.77 | 3.52 | 0.64 |
+| 3.46 | 4.57 | 0.66 |
+| 4.15 | 5.71 | 0.69 |
+| 4.85 | 6.88 | 0.71 |
+| 5.54 | 8.07 | 0.73 |
+| 6.23 | 9.28 | 0.74 |
 
 The front advances monotonically and stays below the Ritter shallow-water front
-(ratio 0.62–0.75), which is expected for a finite reservoir.
+(ratio 0.62–0.88), which is expected for a finite reservoir.
 
 ## Compressibility study
 
 The same geometry at `dx = 0.01` with three sound speeds. A reference
 comparison is only meaningful once the observable stops moving with `c0`.
 
-| `c0` (m/s) | Mach | compression | wall clock | front L2 vs next level |
+| `c0` (m/s) | Mach | peak compression | wall clock | front L2 vs next level |
 |---|---|---|---|---|
-| 25 | 0.18 | 3.8 % | 40.7 s | 0.034 % (25 → 40) |
-| 40 | 0.10 | 2.2 % | 59.8 s | 0.019 % (40 → 60) |
-| 60 | 0.07 | 2.0 % | 85.3 s | — |
+| 25 | 0.18 | 10.0 % | 24 s | 0.034 % (25 → 40) |
+| 40 | 0.10 | 6.1 % | 34 s | 0.019 % (40 → 60) |
+| 60 | 0.07 | 4.0 % | 48 s | — |
 
 The leading-edge trajectory is converged with respect to compressibility at the
 percent level: changing `c0` by a factor of 2.4 moves the front by less than
-0.04 % of `a`. The weakly-compressible assumption is therefore not the limiting
-error for this observable, and `c0 = 25 m/s` is adequate for the default case.
+0.04 % of `a`.
+
+Compression is a different story, and it is why the density gate now fails:
+the 10 % peak at `c0 = 25` is an impact transient, and it falls to 6.1 % at
+`c0 = 40` without moving the front. So the choice of `c0` is settled by the
+density gate rather than by the trajectory: raise it if the peak compression is
+the quantity being quoted.
 
 ## Gates
 
 | id | metric | measured | limit | result |
 |---|---|---|---|---|
-| `mass_conserved` | mass drift | 0.0 kg | 0 | pass |
+| `mass_conserved` | \|m(t_end) - m(0)\| | 0.0 kg | 0 | pass |
 | `bounded_flow` | particles clamped beyond the tank | 0 | 0 | pass |
-| `mach_number` | max &#124;v&#124; / `c0` | 0.197 | 0.25 | pass |
-| `density_compression` | max(rho/rho0 - 1) | 7.4 % | 10 % | pass |
+| `mach_number` | max &#124;v&#124; / `c0` | 0.211 | 0.25 | pass |
+| `density_compression` | max(rho/rho0 - 1) over every step | **10.3 %** | 10 % | **fail** |
+| `bulk_compression` | same, before the front reaches the wall | **2.4 %** | 10 % | pass |
 | `resolution_convergence` | relative L2 of `front(t)/a`, `dx` 0.04 vs 0.02 | **2.58 %** | 10 % | pass |
 | `sound_speed_convergence` | relative L2 of `front(t)/a`, `c0` 40 vs 60 | **0.019 %** | 5 % | pass |
 | `experimental_reference` | agreement with Martin & Moyce (1952) | — | — | **not_evaluated** |
@@ -103,10 +124,22 @@ The convergence window stops when the front reaches the far wall (t = 0.669 s),
 because after impact the leading edge is pinned by the boundary and no longer
 measures the flow.
 
-The `density_compression` gate is the marginal one at coarse resolution: 9.7 %
-and 9.9 % at `dx` = 0.04 and 0.02 against a 10 % limit, falling to 3.8 % at
-`dx` = 0.01. The coarse levels are at the edge of the weakly-compressible
-assumption, which is worth remembering before quoting coarse-grid results.
+The `density_compression` gate fails at every resolution by 0–0.3 percentage
+points, and it should be reported that way: the peak is a wall-impact transient
+of about 10 % that does not converge away with resolution, while the bulk flow
+stays at 2 %. Two ways to make the run pass without touching the metric:
+
+```bash
+# stop before the surge reaches the far wall (the convergence window already does)
+python benchmarks/dam_break/run.py --sizes 0.04,0.02,0.01 --seconds 0.65
+
+# or raise the artificial sound speed: 6.1 % peak at c0 = 40, front unchanged
+python benchmarks/dam_break/run.py --sizes 0.04,0.02,0.01 --seconds 0.8 --sound-speed 40
+```
+
+The CI-sized configuration (`--sizes 0.04,0.02 --seconds 0.4`) never reaches the
+wall and passes at 2.3 %, so this failure does not appear in CI. It is a real
+property of the case, not a flaky test.
 
 ## Why the experimental gate is `not_evaluated`
 

@@ -6,7 +6,8 @@ that keeps the list valid while particles move:
 - `brute_force_pairs`: all-pairs reference implementation, O(N²) memory, no assumptions.
 - `cell_linked_pairs`: uniform linked-cell implementation with cell edge equal to the cutoff, vectorized and **device-resident**.
 - `cell_linked_pairs_host`: the previous host-side binning (copy to CPU plus Python loops), retained as an independent algorithm to cross-check the vectorized search.
-- `PairListCache`: Verlet-skin reuse of the pair list.
+- `PairListCache`: Verlet-skin reuse of the pair list, optionally pruning
+  wall-wall pairs at build time (`fluid_count=`).
 
 All enumerators return unique unordered pairs `(i, j)` with `i < j`, sorted
 lexicographically, and include pairs exactly at the cutoff. They support 1-D,
@@ -62,6 +63,23 @@ vectorized **12.4 ms** (8.5x and 3.9x).
 
 Before this change, linked-cell was 0.85x the speed of brute force at 1000
 particles. It is now 3.0x.
+
+## Pruning pairs that cannot contribute
+
+When positions are ordered fluid-first, wall-after — the order `rhs` already
+assumes — a pair with both indices at or beyond the fluid count touches no
+fluid particle. It contributes only to wall density and wall pressure, and both
+are discarded (the wall pressure is extrapolated *from* the fluid, and a static
+particle's acceleration is never integrated).
+
+In the default impact case that is **1 823 of 7 918 pairs, 23 %**, and dropping
+them reduces the force evaluation from 2.62 ms to 1.85 ms together with the
+masking changes described in [`../changes-0.5.0.md`](../changes-0.5.0.md). The
+pruning is exact: `test_dropping_wall_wall_pairs_changes_nothing` compares
+`rho`, `pressure` and `acc` against the unpruned list with `torch.equal`.
+
+`PairListCache(cutoff, skin, fluid_count=n)` performs the prune once per rebuild,
+so reused lists stay pruned.
 
 ## The skin cache matters more than the search
 

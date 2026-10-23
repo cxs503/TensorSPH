@@ -86,7 +86,8 @@ def main():
         "seed": args.seed,
         "repeats": args.repeats,
         "results": results,
-        "note": "Microbenchmark only. Cell-linked construction currently copies coordinates to CPU; timings depend on hardware and distribution and are not a production-performance claim."
+        "note": ("Microbenchmark only; timings depend on hardware and particle "
+                 "distribution and are not a production-performance claim.")
     }, indent=2))
     if failed:
         raise SystemExit("ERROR: pair-based RHS differs from dense reference beyond tolerance")

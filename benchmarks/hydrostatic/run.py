@@ -129,7 +129,8 @@ def main():
         if not is_top:
             interior_errors.append(abs(error))
 
-    interior_error = sum(interior_errors) / len(interior_errors) if interior_errors else float("nan")
+    interior_error = (sum(interior_errors) / len(interior_errors)
+                      if interior_errors else float("nan"))
     surface_drop = (initial_surface - float(pos[:, 1].max())) / cfg.pool_depth
     interior_ok = interior_error <= args.max_interior_error
     surface_ok = surface_drop <= args.max_surface_drop
