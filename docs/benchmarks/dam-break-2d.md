@@ -43,45 +43,55 @@ Three-level ladder, `c0 = 25 m/s`, free-slip walls:
 
 | `dx` | particles | steps | wall clock | max &#124;v&#124; | Mach | peak compression | bulk compression | escapes | front hits wall |
 |---|---|---|---|---|---|---|---|---|---|
-| 0.04 | 50 | 1 282 | 1.6 s | 5.28 m/s | 0.21 | 9.7 % | 2.4 % | 0 | t = 0.658 s |
-| 0.02 | 200 | 2 564 | 4.9 s | 4.44 m/s | 0.18 | 10.3 % | 1.8 % | 0 | t = 0.661 s |
-| 0.01 | 800 | 5 128 | 22.6 s | 4.50 m/s | 0.18 | 10.0 % | 2.0 % | 0 | t = 0.662 s |
+| 0.04 | 50 | 1 282 | 1.6 s | 3.64 m/s | 0.15 | 8.977 % | 2.35 % | 0 | t = 0.678 s |
+| 0.02 | 200 | 2 564 | 5.3 s | 3.89 m/s | 0.16 | 8.982 % | 2.66 % | 0 | t = 0.670 s |
+| 0.01 | 800 | 5 128 | 24.1 s | 4.91 m/s | 0.20 | 8.613 % | 1.93 % | 0 | t = 0.668 s |
 
 **Peak versus bulk compression.** "Peak" is the maximum of `rho/rho0 - 1` over
 **every integration step**; "bulk" is the same maximum up to the step where the
-front reaches the far wall. The two differ by a factor of five because the peak
-is a single impact transient: at `dx = 0.02` the surge arrives at
-t = 0.661 s and the maximum is recorded at t = 0.678 s, seventeen milliseconds
-later, while the bulk flow never exceeds 2.4 %.
+front reaches the far wall. The peak is a single impact transient recorded a few
+milliseconds after the surge arrives, while the bulk flow never exceeds 2.7 %.
+
+Both numbers moved down in 0.7.0, when the wall pressure extrapolation was
+completed with the body-force term of Adami et al. (2012) eq. (11); the peak went
+from 9.7 / 10.3 / 10.0 % to 8.98 / 8.98 / 8.61 % (8.977 / 8.982 / 8.613 to three
+decimals -- the first two agree to two). The limit was not touched: at
+0.5.0 the same gate was reported as failing on these numbers, and it is reported
+as passing now because the wall condition changed, not the metric.
 
 Earlier revisions of this document reported 3.8 % at `dx = 0.01`. That number
 came from diagnostics sampled every 0.01 s, which stepped over the spike. The
-step-wise maximum is 10.0 %, so the `density_compression` gate at a 10 % limit
-now **fails** at all three resolutions. The metric did not change; the
-measurement did.
+step-wise maximum is 8.6 %, so the `density_compression` gate at a 10 % limit
+**passes**, with about one percentage point of margin. The metric did not change;
+the measurement did, and then the physics did.
 
 **Observed order of accuracy**: the relative L2 difference of `front(t)/a` is
-2.58 % between `dx` = 0.04 and 0.02, and 1.31 % between 0.02 and 0.01, giving
+4.83 % between `dx` = 0.04 and 0.02, and 2.19 % between 0.02 and 0.01, giving
 
-    p = log2(2.58 / 1.31) = 0.96
+    p = log2(4.83 / 2.19) = 1.11
 
-i.e. essentially first order, which is what a semi-implicit Euler integration
-with a first-order boundary treatment should give.
+i.e. first order, which is what a semi-implicit Euler integration with a
+first-order boundary treatment should give. Before 0.7.0 the same ladder read
+2.58 % and 1.31 % (order 0.96). Completing the wall pressure with its body-force
+term *increases* the coarse/medium difference, because that term is proportional
+to the spacing: it is a first-order correction to a first-order boundary
+condition, so it changes the coarse solution more than the fine one, and it moves
+the ladder onto a cleaner first order as it does so.
 
 Front trajectory at `dx = 0.01`:
 
 | `tau` | `Z/a` | `Z / Ritter` |
 |---|---|---|
 | 0.00 | 0.97 | — |
-| 0.69 | 1.21 | 0.88 |
-| 1.38 | 1.79 | 0.65 |
-| 2.08 | 2.58 | 0.62 |
-| 2.77 | 3.52 | 0.64 |
-| 3.46 | 4.57 | 0.66 |
-| 4.15 | 5.71 | 0.69 |
-| 4.85 | 6.88 | 0.71 |
-| 5.54 | 8.07 | 0.73 |
-| 6.23 | 9.28 | 0.74 |
+| 0.69 | 1.20 | 0.87 |
+| 1.38 | 1.78 | 0.64 |
+| 2.08 | 2.57 | 0.62 |
+| 2.77 | 3.51 | 0.63 |
+| 3.46 | 4.54 | 0.66 |
+| 4.15 | 5.64 | 0.68 |
+| 4.85 | 6.78 | 0.70 |
+| 5.54 | 7.97 | 0.72 |
+| 6.23 | 9.18 | 0.74 |
 
 The front advances monotonically and stays below the Ritter shallow-water front
 (ratio 0.62–0.88), which is expected for a finite reservoir.
@@ -93,19 +103,21 @@ comparison is only meaningful once the observable stops moving with `c0`.
 
 | `c0` (m/s) | Mach | peak compression | wall clock | front L2 vs next level |
 |---|---|---|---|---|
-| 25 | 0.18 | 10.0 % | 24 s | 0.034 % (25 → 40) |
-| 40 | 0.10 | 6.1 % | 34 s | 0.019 % (40 → 60) |
-| 60 | 0.07 | 4.0 % | 48 s | — |
+| 25 | 0.20 | 8.61 % | 23 s | 0.014 % (25 → 40) |
+| 40 | 0.12 | 4.76 % | 33 s | 0.014 % (40 → 60) |
+| 60 | 0.08 | 5.15 % | 46 s | — |
 
 The leading-edge trajectory is converged with respect to compressibility at the
 percent level: changing `c0` by a factor of 2.4 moves the front by less than
-0.04 % of `a`.
+0.02 % of `a`.
 
-Compression is a different story, and it is why the density gate now fails:
-the 10 % peak at `c0 = 25` is an impact transient, and it falls to 6.1 % at
-`c0 = 40` without moving the front. So the choice of `c0` is settled by the
-density gate rather than by the trajectory: raise it if the peak compression is
-the quantity being quoted.
+Compression is a different story: the peak at `c0 = 25` is an impact transient of
+8.61 %, it falls to 4.76 % at `c0 = 40`, and then it rises again to 5.15 % at
+`c0 = 60`. That last step is not monotone and is not explained by the Mach number
+alone; the impact transient is a short event whose capture depends on where a
+step lands relative to the surge hitting the wall, and none of these runs resolve
+it well. The honest reading is that raising `c0` buys compression margin at the
+gate but the residual peak is not a clean function of `c0`.
 
 ## Gates
 
@@ -113,33 +125,28 @@ the quantity being quoted.
 |---|---|---|---|---|
 | `mass_conserved` | \|m(t_end) - m(0)\| | 0.0 kg | 0 | pass |
 | `bounded_flow` | particles clamped beyond the tank | 0 | 0 | pass |
-| `mach_number` | max &#124;v&#124; / `c0` | 0.211 | 0.25 | pass |
-| `density_compression` | max(rho/rho0 - 1) over every step | **10.3 %** | 10 % | **fail** |
-| `bulk_compression` | same, before the front reaches the wall | **2.4 %** | 10 % | pass |
-| `resolution_convergence` | relative L2 of `front(t)/a`, `dx` 0.04 vs 0.02 | **2.58 %** | 10 % | pass |
-| `sound_speed_convergence` | relative L2 of `front(t)/a`, `c0` 40 vs 60 | **0.019 %** | 5 % | pass |
+| `mach_number` | max &#124;v&#124; / `c0` | 0.197 | 0.25 | pass |
+| `density_compression` | max(rho/rho0 - 1) over every step | **8.98 %** | 10 % | pass (first time since 0.5.0) |
+| `bulk_compression` | same, before the front reaches the wall | **2.66 %** | 10 % | pass |
+| `resolution_convergence` | relative L2 of `front(t)/a`, `dx` 0.04 vs 0.02 | **4.83 %** | 10 % | pass |
+| `sound_speed_convergence` | relative L2 of `front(t)/a`, `c0` 40 vs 60 | **0.014 %** | 5 % | pass |
 | `experimental_reference` | agreement with Martin & Moyce (1952) | — | — | **not_evaluated** |
 
 The convergence window stops when the front reaches the far wall (t = 0.669 s),
 because after impact the leading edge is pinned by the boundary and no longer
 measures the flow.
 
-The `density_compression` gate fails at every resolution by 0–0.3 percentage
-points, and it should be reported that way: the peak is a wall-impact transient
-of about 10 % that does not converge away with resolution, while the bulk flow
-stays at 2 %. Two ways to make the run pass without touching the metric:
-
-```bash
-# stop before the surge reaches the far wall (the convergence window already does)
-python benchmarks/dam_break/run.py --sizes 0.04,0.02,0.01 --seconds 0.65
-
-# or raise the artificial sound speed: 6.1 % peak at c0 = 40, front unchanged
-python benchmarks/dam_break/run.py --sizes 0.04,0.02,0.01 --seconds 0.8 --sound-speed 40
-```
+The `density_compression` gate now passes at every resolution, with 1.0–1.4
+percentage points of margin. It passed at 0.7.0 for the first time because the
+wall pressure extrapolation was completed, not because the threshold moved; in
+0.5.0 and 0.6.0 the same ladder read 9.7–10.3 % and the gate was reported as
+failing. The margin is small enough that it should be re-checked whenever the
+wall or the free-surface treatment changes, and it is not an argument that the
+peak is resolved: the impact transient is a few milliseconds long and 0.04 m
+particles cannot resolve it.
 
 The CI-sized configuration (`--sizes 0.04,0.02 --seconds 0.4`) never reaches the
-wall and passes at 2.3 %, so this failure does not appear in CI. It is a real
-property of the case, not a flaky test.
+wall and stays at 2 %, so the peak does not appear in CI at all.
 
 ## Why the experimental gate is `not_evaluated`
 
@@ -165,7 +172,8 @@ One reason remains, and two have been addressed:
    verified separately: a quarter-wave shear over a no-slip floor decays at
    0.84x (dx = 0.02) and 0.91x (dx = 0.01) of the analytic Stokes rate
    `nu (pi/2H)^2`, converging under refinement. Free slip conserves tangential
-   momentum to machine precision in the same test.
+   momentum to machine precision in the same test. The normal direction is the
+   Adami et al. (2012) eq. (11) extrapolation, both terms.
 3. **Compressibility — addressed.** See the table above: the front moves by less
    than 0.04 % of `a` when `c0` goes from 25 to 60 m/s.
 
@@ -177,10 +185,10 @@ So the remaining blocker for B2 is data provenance, not the solver.
   diverges, and the front is monotone.
 - Mass is conserved exactly (particle masses are constants and are never
   rescaled).
-- The observable converges at observed order 0.96 over a three-level ladder,
+- The observable converges at observed order 1.11 over a three-level ladder,
   which is the prerequisite for any later comparison: a reference comparison on
   an unconverged trajectory would measure discretization noise.
-- The trajectory no longer depends on the artificial sound speed (0.019 % of
+- The trajectory no longer depends on the artificial sound speed (0.014 % of
   `a` between `c0` = 40 and 60 m/s), so the weakly-compressible approximation is
   not what would limit the comparison.
 - A no-slip floor is available and verified, so the wall condition no longer

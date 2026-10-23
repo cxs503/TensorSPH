@@ -22,7 +22,7 @@ import torch
 from .neighbor_search import PairListCache, cell_linked_pairs
 
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 # The Morris et al. (1997) discrete Laplacian carries a factor 2:
 #   laplacian(v)_i ~= 2 sum_j (m_j / rho_j) (v_i - v_j) . (-r_ij . grad_i W) / (r^2 + eta^2)
@@ -285,11 +285,15 @@ def wall_lattice(cfg: Config, device: torch.device,
 
     Three layers with the fluid lattice spacing, placed half a spacing outside
     the fluid domain and extended around the corners. Wall particles use an
-    extrapolated pressure and a Tait-consistent density (Adami et al., 2012,
-    *A generalized wall boundary condition for smoothed particle
-    hydrodynamics*). They restore the kernel support that a fluid particle
-    misses next to a wall, which is what makes the density summation usable
-    near boundaries.
+    extrapolated pressure and a Tait-consistent density, following eq. (11) of
+    Adami, Hu & Adams (2012), *A generalized wall boundary condition for
+    smoothed particle hydrodynamics*, J. Comput. Phys. 231:7057-7075:
+
+        p_w = (sum_f p_f W + sum_f rho_f (g - a_w).(r_w - r_f) W) / sum_f W
+
+    Both terms are evaluated; the walls are static, so ``a_w = 0``. They restore
+    the kernel support that a fluid particle misses next to a wall, which is
+    what makes the density summation usable near boundaries.
     """
     if cfg.wall_layers < 1:
         raise ValueError("wall_layers must be positive")
@@ -452,12 +456,25 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
         fluid_idx = torch.where(i_fluid, i, j)
         wall_idx = (torch.where(i_fluid, j, i) - n).clamp_(0, nw - 1)
         weight = torch.where(crossing, wij, torch.zeros_like(wij))
-        pressure_ext = torch.cat((pressure, torch.zeros(nw, dtype=pos.dtype,
-                                                       device=pos.device)))
+        zeros = torch.zeros(nw, dtype=pos.dtype, device=pos.device)
+        pressure_ext = torch.cat((pressure, zeros))
         numerator = torch.zeros(nw, dtype=pos.dtype, device=pos.device)
         denominator = torch.zeros(nw, dtype=pos.dtype, device=pos.device)
-        numerator = numerator.index_add(0, wall_idx,
-                                        pressure_ext[fluid_idx] * weight)
+
+        # Adami et al. (2012) eq. (11) carries a body-force term next to the
+        # kernel-weighted pressure average:
+        #   p_w = (sum_f p_f W + sum_f rho_f (g - a_w).(r_w - r_f) W) / sum_f W
+        # The walls are static (a_w = 0), so with g = (0, -gravity) the extra
+        # contribution is -gravity * (y_w - y_f) * rho_f * W. Dropping it, as
+        # earlier versions did, makes the wall pressure the average of the
+        # neighbouring fluid pressure instead of its extrapolation to the wall
+        # face, which biases the bottom row low by half a spacing.
+        dy = torch.where(i_fluid, -delta[:, 1], delta[:, 1])
+        body = -cfg.gravity * dy
+        source = pressure_ext[fluid_idx]
+        if cfg.gravity != 0.0:
+            source = source + torch.cat((rho, zeros))[fluid_idx] * body
+        numerator = numerator.index_add(0, wall_idx, source * weight)
         denominator = denominator.index_add(0, wall_idx, weight)
         wall_pressure = (numerator / denominator.clamp_min(1.0e-30)).clamp_min(0.0)
         wall_density = (cfg.rho0 * (wall_pressure / bulk + 1.0).pow(1.0 / cfg.gamma)
@@ -827,7 +844,9 @@ def _write_manifest(out: Path, cfg: Config, device: torch.device, initial_n: int
             "No surface-tension model is included; free-surface pressure is "
             "clamped to zero, which suppresses tensile instability but is not "
             "a capillary model.",
-            "Walls are static dummy particles (Adami et al., 2012) with free-slip "
+            "Walls are static dummy particles with the Adami et al. (2012) "
+            "pressure extrapolation (both the kernel-weighted average and the "
+            "body-force term) and a Tait-consistent density, with free-slip "
             "viscosity. Hydrostatic accuracy is measured in "
             "docs/benchmarks/hydrostatic.md, not assumed.",
             "physical_validation is not_evaluated: no reference experiment is "
@@ -881,7 +900,7 @@ def run(cfg: Config, output: str | Path, plot: bool = True):
     failure: str | None = None
     # Maxima over every step, not just the steps that write a diagnostic row.
     dtype, dev = pos.dtype, pos.device
-    peak_compression = torch.zeros((), dtype=dtype, device=dev)
+    peak_compression = torch.zeros((), dtype=torch.float64, device=dev)
     peak_speed = torch.zeros((), dtype=dtype, device=dev)
 
     for step in range(cfg.steps + 1):
@@ -896,8 +915,13 @@ def run(cfg: Config, output: str | Path, plot: bool = True):
                             and torch.isfinite(rho).all() and torch.isfinite(acc).all())
         if not state_finite and failure is None:
             failure = f"non-finite state at step {step}"
-        peak_compression = torch.maximum(peak_compression,
-                                         (rho / cfg.rho0).max() - 1.0)
+        # Reduce first, then rescale in float64. ``(rho / rho0).max() - 1``
+        # evaluates the quotient elementwise in the density's own precision,
+        # where rho/rho0 sits at 1.0 and loses ~6e-8 absolute -- 5e-4 relative
+        # on a compression of 1e-4. That is enough for the all-steps extremum to
+        # come out *below* the value a diagnostic row recorded at the same step.
+        peak_compression = torch.maximum(
+            peak_compression, rho.max().double() / cfg.rho0 - 1.0)
         if vel.numel():
             peak_speed = torch.maximum(peak_speed,
                                        torch.linalg.vector_norm(vel, dim=-1).max())
@@ -915,7 +939,8 @@ def run(cfg: Config, output: str | Path, plot: bool = True):
                 "momentum_y": float(momentum[1]) if momentum.numel() > 1 else 0.0,
                 "rho_min": float(rho.min()), "rho_max": float(rho.max()),
                 "rho_mean": float(rho.mean()),
-                "rho_max_relative_error": float((rho / cfg.rho0 - 1.0).abs().max()),
+                "rho_max_relative_error": max(abs(float(rho.min()) / cfg.rho0 - 1.0),
+                                              abs(float(rho.max()) / cfg.rho0 - 1.0)),
                 "pressure_min": float(pressure.min()),
                 "pressure_max": float(pressure.max()),
                 "max_speed": max_speed,

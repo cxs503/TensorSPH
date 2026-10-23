@@ -8,7 +8,12 @@ dynamic = ["version"]
 description = "PyTorch-native SPH research solver for agent-driven scientific computing"
 readme = "README.md"
 requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
 dependencies = ["torch>=2.1"]
+
+[project.urls]
+Repository = "https://github.com/cxs503/TensorSPH"
 
 [project.optional-dependencies]
 plot = ["matplotlib>=3.7"]
