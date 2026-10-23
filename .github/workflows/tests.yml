@@ -93,6 +93,26 @@ jobs:
               torch.testing.assert_close(a, b, rtol=1e-6, atol=1e-6)
           print("pair reuse is physics-neutral")
           PY
+      - name: Hydrostatic profile and fluctuation gates
+        run: |
+          python benchmarks/hydrostatic/run.py --seconds 4 --boundary wall \
+            --json-out artifacts/ci-hydrostatic.json
+      - name: A ringing pool is rejected by the fluctuation gate
+        run: |
+          # The gate must be able to fail. A step that is an order of magnitude
+          # too large for the viscous term makes the pool ring hard, and the
+          # hydrostatic script has to exit non-zero because of it.
+          python - <<'PY'
+          import subprocess, sys
+          proc = subprocess.run(
+              [sys.executable, "benchmarks/hydrostatic/run.py",
+               "--seconds", "0.3", "--max-interior-error", "1.0",
+               "--max-surface-drop", "1.0", "--max-fluctuation", "0.001"],
+              capture_output=True, text=True)
+          assert proc.returncode != 0, "a 0.1 % fluctuation limit must fail"
+          assert "pressure_fluctuation" in proc.stdout, proc.stdout[-500:]
+          print("the fluctuation gate can fail")
+          PY
       - name: Dam-break convergence gates
         run: |
           python benchmarks/dam_break/run.py --sizes 0.04,0.02 --seconds 0.4 \

@@ -64,8 +64,14 @@ def main():
     parser.add_argument("--average-fraction", type=float, default=0.5,
                         help="fraction of the run to time-average over")
     parser.add_argument("--device", default="cpu")
+    parser.add_argument("--json-out", default=None,
+                        help="also write the report to this path")
     parser.add_argument("--max-interior-error", type=float, default=0.05,
                         help="fail if the mean |error| of interior bands exceeds this")
+    parser.add_argument("--max-fluctuation", type=float, default=0.15,
+                        help="fail if the mean relative pressure standard "
+                             "deviation over the averaging window exceeds this "
+                             "(the metric that catches a ringing pool)")
     parser.add_argument("--max-surface-drop", type=float, default=0.05,
                         help="fail if the free surface sinks more than this fraction of H")
     parser.add_argument("--density-diffusion", type=float, default=0.0,
@@ -123,7 +129,7 @@ def main():
     pressure_std = torch.sqrt(pressure_variance)
     rho, pressure_now, _ = rhs(pos, vel, mass, cfg, wall=wall)
 
-    profile, interior_errors = [], []
+    profile, interior_errors, interior_fluctuations = [], [], []
     for low, high, is_bottom, is_top in bands_of(pos, cfg, args.bands):
         measured, count, y = band_mean(pressure_mean, pos, low, high)
         if measured is None:
@@ -143,12 +149,20 @@ def main():
         profile.append(record)
         if not is_top:
             interior_errors.append(abs(error))
+            if record["relative_fluctuation"] is not None:
+                interior_fluctuations.append(abs(record["relative_fluctuation"]))
 
     interior_error = (sum(interior_errors) / len(interior_errors)
                       if interior_errors else float("nan"))
+    # A time average hides the ringing that a wall or free-surface defect
+    # produces, so the temporal standard deviation is gated separately. At 0.7.0
+    # it is 6-9 %; with the incomplete wall pressure of 0.6.0 it was 52-109 %.
+    fluctuation = (sum(interior_fluctuations) / len(interior_fluctuations)
+                   if interior_fluctuations else float("nan"))
     surface_drop = (initial_surface - float(pos[:, 1].max())) / cfg.pool_depth
     interior_ok = interior_error <= args.max_interior_error
     surface_ok = surface_drop <= args.max_surface_drop
+    fluctuation_ok = fluctuation <= args.max_fluctuation
 
     report = {
         "benchmark": "B1_static_pool",
@@ -172,6 +186,7 @@ def main():
         "density_max": float(rho.max()),
         "hydrostatic_bottom_pressure": cfg.rho0 * cfg.gravity * cfg.pool_depth,
         "mean_abs_relative_error_interior_bands": interior_error,
+        "mean_relative_fluctuation_interior_bands": fluctuation,
         "profile": profile,
         "gates": {
             "interior_pressure_profile": {
@@ -182,14 +197,23 @@ def main():
                 "metric": "(initial - final) free-surface height / pool depth",
                 "measured": surface_drop, "limit": args.max_surface_drop,
                 "result": "pass" if surface_ok else "fail"},
+            "pressure_fluctuation": {
+                "metric": ("mean over interior bands of std(p) over the "
+                           "averaging window / rho0 g (H-y)"),
+                "measured": fluctuation, "limit": args.max_fluctuation,
+                "population": "averaging_window", "unit": "1",
+                "comparison": "<=",
+                "result": "pass" if fluctuation_ok else "fail"},
         },
         "clamped_particles_beyond_box": escaped,
         "notes": [
             "B1 verifies the pressure field of a resting pool; it is not physical "
             "validation of a free-surface flow.",
-            "The instantaneous profile oscillates by tens of percent because a "
-            "uniform-density lattice is not in discrete equilibrium. The reported "
-            "profile is a time average over the second half of the run.",
+            "The instantaneous profile oscillates because a uniform-density "
+            "lattice is not in discrete equilibrium. The reported profile is a "
+            "time average over the second half of the run, and the residual "
+            "oscillation is reported and gated separately as "
+            "mean_relative_fluctuation_interior_bands.",
             "The topmost band is labelled free_surface and excluded from the "
             "interior gate: density summation is truncated there by construction.",
             "Mass is conserved exactly: particle masses never change.",
@@ -197,8 +221,15 @@ def main():
             "walls and no state relaxation.",
         ],
     }
+    if args.json_out:
+        import os
+        directory = os.path.dirname(args.json_out)
+        if directory:
+            os.makedirs(directory, exist_ok=True)
+        with open(args.json_out, "w") as handle:
+            handle.write(json.dumps(report, indent=2))
     print(json.dumps(report, indent=2))
-    if not (interior_ok and surface_ok):
+    if not (interior_ok and surface_ok and fluctuation_ok):
         raise SystemExit("ERROR: hydrostatic gates failed")
 
 

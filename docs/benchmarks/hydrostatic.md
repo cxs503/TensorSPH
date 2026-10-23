@@ -52,6 +52,15 @@ Two effects have to be separated, otherwise the numbers look worse than the solv
 - Fluctuation is the standard deviation of the pressure over the same 2 s
   averaging window, relative to the analytical pressure. A time average alone
   hides the ringing that a free surface produces, so both are reported.
+- **Gates:** interior error ≤ 5 % (measured 1.12 %), surface drop ≤ 5 %
+  (3.15 %), and the mean interior fluctuation ≤ 15 % (measured **9.0 %**).
+  The third gate was added in 0.8.0 because the first two are time averages and
+  a ringing pool passes them: the 0.6.0 wall pressure, which was missing the
+  body-force term of Adami et al. (2012) eq. (11), measured 1.09 % and 3.51 %
+  on those gates while its fluctuation was **68 %**. The limit is a stability
+  statement — a resting surface should not wander by more than ~15 % of the
+  hydrostatic pressure — and it is not tuned to the current code: the failure
+  above is what it was checked against.
 
 Before 0.7.0 this table read 1.09 % interior, 3.5 % surface drop and 0.044 m/s
 residual, with a fluctuation of 52–109 % per band. The difference is one term of

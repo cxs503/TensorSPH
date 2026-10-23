@@ -22,7 +22,7 @@ import torch
 from .neighbor_search import PairListCache, cell_linked_pairs
 
 
-__version__ = "0.7.0"
+__version__ = "0.8.0"
 
 # The Morris et al. (1997) discrete Laplacian carries a factor 2:
 #   laplacian(v)_i ~= 2 sum_j (m_j / rho_j) (v_i - v_j) . (-r_ij . grad_i W) / (r^2 + eta^2)
@@ -100,6 +100,17 @@ class Config:
     hydrostatic_init: bool = False
     wall_friction: float = 0.0
     density_diffusion: float = 0.0
+    # Adaptive time step. Off by default: a fixed step keeps every published
+    # number reproducible bit for bit. When on, ``dt`` starts at the configured
+    # value, shrinks to whatever the current maximum speed allows, and grows back
+    # by at most ``dt_growth`` per step. The configured ``dt`` is always the cap.
+    adaptive_dt: bool = False
+    dt_growth: float = 1.1
+    # Headroom on the adaptive step. The limits are evaluated with the speed at
+    # the *start* of the step, and a particle can accelerate during it, so a step
+    # sitting exactly on the limit can be exceeded by the time it is taken. A
+    # 200 m/s^2 gravity case measured 0.979 against a 0.9 limit without this.
+    dt_safety: float = 0.9
 
 
 # --------------------------------------------------------------------------- #
@@ -217,9 +228,55 @@ def acoustic_courant(dt: float, cfg: Config, max_speed: float = 0.0) -> float:
 
 
 def suggested_dt(cfg: Config, max_courant: float | None = None) -> float:
-    """Largest fixed time step allowed by the acoustic Courant criterion."""
+    """Largest fixed time step allowed by the acoustic Courant criterion.
+
+    This is the bound at rest (``|v| = 0``). ``stable_dt`` is the same bound
+    evaluated for a moving flow, and is what the adaptive step uses.
+    """
     limit = cfg.max_courant if max_courant is None else max_courant
     return limit * cfg.h_factor * cfg.dx / cfg.sound_speed
+
+
+def acoustic_dt_limit(cfg: Config, max_speed: float = 0.0) -> float:
+    """Largest step with ``dt c0 / h <= max_courant``, adjusted for ``|v|``.
+
+    The acoustic signal speed in a moving fluid is ``c0 + |v|``, so a step that
+    satisfies the Courant condition at rest can violate it once the flow is fast:
+    the dam-break surge reaches 20 % of ``c0``, which puts the true Courant 20 %
+    above the nominal one.
+    """
+    return (cfg.max_courant * cfg.h_factor * cfg.dx
+            / (cfg.sound_speed + max(0.0, max_speed)))
+
+
+def stable_dt(cfg: Config, max_speed: float = 0.0) -> float:
+    """Largest step allowed by *every* limit this module enforces.
+
+    The same four limits ``validate_config`` checks, evaluated for the current
+    maximum speed instead of only at rest.
+    """
+    return min(acoustic_dt_limit(cfg, max_speed),
+               viscous_dt_limit(cfg),
+               gravity_dt_limit(cfg),
+               diffusion_dt_limit(cfg))
+
+
+def next_dt(cfg: Config, dt: float, max_speed: float = 0.0) -> float:
+    """Next adaptive step.
+
+    Shrink immediately when the flow demands it, grow by at most
+    ``cfg.dt_growth`` per step, and never exceed the configured ``dt``. The
+    growth cap is what keeps the step from oscillating around the limit; the
+    configured value is the cap because ``validate_config`` has already checked
+    that it is stable at rest.
+
+    ``cfg.dt_safety`` scales the limit down. The speed used here is the one at
+    the start of the step, so a flow that accelerates hard inside the step can
+    still exceed the limit if the step is placed exactly on it.
+    """
+    target = cfg.dt_safety * stable_dt(cfg, max_speed)
+    grown = dt * cfg.dt_growth if cfg.dt_growth >= 1.0 else target
+    return min(target, grown, cfg.dt)
 
 
 # --------------------------------------------------------------------------- #
@@ -372,7 +429,7 @@ def drop_wall_wall_pairs(pairs: torch.Tensor, fluid_count: int) -> torch.Tensor:
     return pairs[usable]
 
 
-def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
+def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
     """Compute WCSPH RHS with pair-based compact-support interactions.
 
     ``wall`` is an optional ``(W, D)`` tensor of static wall particles. When it
@@ -383,10 +440,15 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
     wall particles (whose velocity is zero), which imposes a no-slip tangential
     condition.
 
+    ``dt`` is the step used by the diffusive density term. It defaults to
+    ``cfg.dt``; an adaptive run passes the step it is actually taking, so the
+    operator is not silently applied for a step that never happened.
+
     Returns ``(rho, pressure, acceleration)`` for the fluid particles.
     """
     h = cfg.h_factor * cfg.dx
     n = pos.shape[0]
+    step_dt = cfg.dt if dt is None else float(dt)
     if pos.shape[1] != 2:
         raise ValueError(
             f"rhs implements 2-D smoothing only, got {pos.shape[1]} dimensions")
@@ -441,7 +503,7 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
         rate = density_diffusion_rate(
             rho, mass, distance[fluid_only], radial,
             (i[fluid_only], j[fluid_only]), cfg)
-        rho = (rho + cfg.dt * rate).clamp_min(0.1 * cfg.rho0)
+        rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
 
     pressure = tait_pressure(rho, cfg)
 
@@ -529,7 +591,7 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
 
 
 
-def rhs_all_pairs(pos, vel, mass, cfg: Config):
+def rhs_all_pairs(pos, vel, mass, cfg: Config, dt=None):
     """Dense O(N^2) reference implementation used for regression comparisons.
 
     This is an independent formulation of the same physics with full pairwise
@@ -538,6 +600,7 @@ def rhs_all_pairs(pos, vel, mass, cfg: Config):
     implementation.
     """
     h = cfg.h_factor * cfg.dx
+    step_dt = cfg.dt if dt is None else float(dt)
     delta = pos[:, None, :] - pos[None, :, :]
     r = torch.linalg.vector_norm(delta, dim=-1)
     w = cubic_spline_kernel(r, h)
@@ -549,7 +612,7 @@ def rhs_all_pairs(pos, vel, mass, cfg: Config):
                     / (r.square() + 1.0e-12))
         scale = 2.0 * cfg.density_diffusion * cfg.sound_speed * cfg.h_factor * cfg.dx
         rate = -scale * (mass[None, :] / rho[None, :] * coupling).sum(dim=1)
-        rho = (rho + cfg.dt * rate).clamp_min(0.1 * cfg.rho0)
+        rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
     pressure = tait_pressure(rho, cfg)
     grad_w = cubic_spline_gradient(delta, h)
     pressure_term = (
@@ -631,6 +694,12 @@ def validate_config(cfg: Config) -> None:
         raise ValueError("wall_friction must be in [0, 1]")
     if cfg.density_diffusion < 0.0:
         raise ValueError("density_diffusion must be non-negative")
+    if not math.isfinite(cfg.dt_growth) or cfg.dt_growth < 1.0:
+        # A growth factor below 1 would shrink the step every time the flow did
+        # not demand it, which is not "adaptive", it is a user error.
+        raise ValueError("dt_growth must be finite and at least 1.0")
+    if not 0.0 < cfg.dt_safety <= 1.0:
+        raise ValueError("dt_safety must be in (0, 1]")
     courant = acoustic_courant(cfg.dt, cfg)
     if courant > cfg.max_courant * (1.0 + 1.0e-9):
         raise ValueError(
@@ -811,7 +880,10 @@ def _write_manifest(out: Path, cfg: Config, device: torch.device, initial_n: int
                     "diffusion_dt_limit": _json_number(diffusion_dt_limit(cfg)),
                     "acoustic_courant": acoustic_courant(cfg.dt, cfg),
                     "drop_free_fall_time": fall_time,
-                    "simulated_time": cfg.steps * cfg.dt},
+                    "simulated_time": extremes["simulated_time"],
+                    "adaptive_dt": cfg.adaptive_dt,
+                    "dt_min": extremes["dt_min"],
+                    "dt_max": extremes["dt_max"]},
         "statuses": {
             "software_execution": "failed" if failure else "success",
             "numerical_verification": numerical,
@@ -902,15 +974,43 @@ def run(cfg: Config, output: str | Path, plot: bool = True):
     dtype, dev = pos.dtype, pos.device
     peak_compression = torch.zeros((), dtype=torch.float64, device=dev)
     peak_speed = torch.zeros((), dtype=dtype, device=dev)
+    # Courant is a product of the step and the speed of that same step, so it is
+    # accumulated per step instead of from two independent maxima. With a fixed
+    # step the two agree; with an adaptive one they would not.
+    peak_courant = torch.zeros((), dtype=torch.float64, device=dev)
+    dt = cfg.dt
+    elapsed = 0.0
+    dt_min = dt
+    dt_max = dt
+    # Each diagnostic row reports the step that produced it, so
+    # ``time[n] - time[n-1] == dt[n]``. The first row has no preceding step and
+    # reports the configured ``dt``.
+    last_step_dt = cfg.dt
+    # ``cfg.steps`` at ``cfg.dt`` is the requested simulated time. With a fixed
+    # step that is simply ``cfg.steps`` iterations; with an adaptive one the
+    # same physical time needs more, so the loop runs to the time and the step
+    # count becomes an outcome. The cap keeps a mis-specified case from running
+    # forever, and hitting it is reported as a failure rather than truncated.
+    target_time = cfg.steps * cfg.dt
+    time_tolerance = 1.0e-12 * max(1.0, target_time)
+    max_steps = (cfg.steps if not cfg.adaptive_dt
+                 else 4 * cfg.steps + 1000)
+    finished = False
 
-    for step in range(cfg.steps + 1):
+    for step in range(max_steps + 1):
         if cache is not None:
             if wall is not None:
                 all_pos[:initial_n] = pos
             pairs, _ = cache.get(all_pos)
         else:
             pairs = None
-        rho, pressure, acc = rhs(pos, vel, mass, cfg, wall=wall, pairs=pairs)
+        # The step to be taken from this state, decided before the right-hand
+        # side so that the diffusive density term uses the same ``dt`` as the
+        # integration. The last adaptive step is clipped to land exactly on the
+        # requested time instead of overshooting it by up to one step.
+        step_dt = dt if not cfg.adaptive_dt else min(dt, target_time - elapsed)
+        rho, pressure, acc = rhs(pos, vel, mass, cfg, wall=wall, pairs=pairs,
+                                 dt=step_dt)
         state_finite = bool(torch.isfinite(pos).all() and torch.isfinite(vel).all()
                             and torch.isfinite(rho).all() and torch.isfinite(acc).all())
         if not state_finite and failure is None:
@@ -922,17 +1022,24 @@ def run(cfg: Config, output: str | Path, plot: bool = True):
         # come out *below* the value a diagnostic row recorded at the same step.
         peak_compression = torch.maximum(
             peak_compression, rho.max().double() / cfg.rho0 - 1.0)
-        if vel.numel():
-            peak_speed = torch.maximum(peak_speed,
-                                       torch.linalg.vector_norm(vel, dim=-1).max())
+        speed = (torch.linalg.vector_norm(vel, dim=-1) if vel.numel()
+                 else torch.zeros(0, dtype=dtype, device=dev))
+        if speed.numel():
+            peak_speed = torch.maximum(peak_speed, speed.max())
+        courant_now = acoustic_courant(dt, cfg, float(speed.max()) if speed.numel() else 0.0)
+        peak_courant = torch.maximum(
+            peak_courant, torch.tensor(courant_now, dtype=torch.float64))
 
-        if step % cfg.output_every == 0 or step == cfg.steps:
-            speed = torch.linalg.vector_norm(vel, dim=-1)
+        final = (step == cfg.steps if not cfg.adaptive_dt
+                 else elapsed >= target_time - time_tolerance)
+        if step % cfg.output_every == 0 or final:
             accel = torch.linalg.vector_norm(acc, dim=-1)
             momentum = (mass[:, None] * vel).sum(dim=0)
             max_speed = float(speed.max()) if speed.numel() else 0.0
             rows.append({
-                "step": step, "time": step * cfg.dt,
+                "step": step,
+                "time": step * cfg.dt if not cfg.adaptive_dt else elapsed,
+                "dt": last_step_dt,
                 "particle_count": int(pos.shape[0]),
                 "mass_total": float(mass.sum()),
                 "momentum_x": float(momentum[0]),
@@ -950,23 +1057,36 @@ def run(cfg: Config, output: str | Path, plot: bool = True):
                 "kinetic_energy": float(0.5 * (mass[:, None] * vel.square()).sum()),
                 "y_min": float(pos[:, 1].min()), "y_max": float(pos[:, 1].max()),
             })
-            torch.save({"step": step, "time": step * cfg.dt,
+            torch.save({"step": step,
+                        "time": step * cfg.dt if not cfg.adaptive_dt else elapsed,
                         "position": pos.detach().cpu(), "density": rho.detach().cpu(),
                         "boundary": cfg.boundary},
                        out / f"particles_{step:06d}.pt")
             snapshot_steps.append(step)
 
-        if step == cfg.steps or not state_finite:
+        if final or not state_finite:
+            finished = final
             break
         # Semi-implicit Euler with explicit boundary handling.
-        vel = vel + cfg.dt * acc
-        pos = pos + cfg.dt * vel
+        vel = vel + step_dt * acc
+        pos = pos + step_dt * vel
         boundary_events += apply_boundary(pos, vel, cfg)
+        elapsed += step_dt
+        last_step_dt = step_dt
+        if cfg.adaptive_dt:
+            dt = next_dt(cfg, dt, float(speed.max()) if speed.numel() else 0.0)
+            dt_min = min(dt_min, dt)
+            dt_max = max(dt_max, dt)
 
+    if not finished and failure is None:
+        failure = (f"the adaptive step did not reach {target_time:g} s within "
+                   f"{max_steps} steps")
     extremes = {
         "peak_rho_compression": float(peak_compression),
         "peak_speed": float(peak_speed),
-        "peak_courant": acoustic_courant(cfg.dt, cfg, float(peak_speed)),
+        "peak_courant": float(peak_courant),
+        "simulated_time": cfg.steps * cfg.dt if not cfg.adaptive_dt else elapsed,
+        "dt_min": dt_min, "dt_max": dt_max,
     }
     criteria = evaluate_acceptance(rows, cfg, boundary_events, extremes=extremes)
     _write_manifest(out, cfg, device, initial_n, rows, criteria, boundary_events,
@@ -1012,16 +1132,18 @@ def _plot(out: Path, cfg: Config, steps, max_frames: int = 12) -> None:
     frames = []
     for step in steps:
         payload = torch.load(out / f"particles_{step:06d}.pt")
-        frames.append((step, payload["position"], payload["density"]))
+        # The snapshot carries its own clock: with an adaptive step, ``step``
+        # and time are no longer proportional.
+        frames.append((payload["time"], payload["position"], payload["density"]))
     _, _, _, y_max = boundary_box(cfg)
     fig, axes = plt.subplots(1, len(frames), figsize=(4 * len(frames), 4),
                              squeeze=False)
     sc = None
-    for ax, (step, xyz, density) in zip(axes[0], frames):
+    for ax, (time, xyz, density) in zip(axes[0], frames):
         sc = ax.scatter(xyz[:, 0].tolist(), xyz[:, 1].tolist(),
                         c=density.tolist(), s=5, cmap="viridis",
                         vmin=0.9 * cfg.rho0, vmax=1.05 * cfg.rho0)
-        ax.set_title(f"t={step * cfg.dt:.4f} s")
+        ax.set_title(f"t={time:.4f} s")
         ax.set_xlim(0, cfg.pool_width)
         ax.set_ylim(0, y_max)
         ax.set_aspect("equal")

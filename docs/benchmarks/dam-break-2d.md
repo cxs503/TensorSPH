@@ -65,6 +65,47 @@ step-wise maximum is 8.6 %, so the `density_compression` gate at a 10 % limit
 **passes**, with about one percentage point of margin. The metric did not change;
 the measurement did, and then the physics did.
 
+### The step, and the Courant number it actually gives
+
+The step is fixed at `dt = max_courant h / c0`, i.e. the acoustic limit taken at
+**rest**. A moving flow is not at rest: the signal speed is `c0 + |v|`, and the
+surge reaches 3.6–4.9 m/s against `c0 = 25 m/s`. The number the stability
+condition bounds is therefore higher than the nominal one, by `|v|/c0`:
+
+| `dx` | nominal `dt c0 / h` | **measured** `dt (c0+|v|) / h` | steps |
+|---|---|---|---|
+| 0.04 | 0.300 | 0.344 | 1 282 |
+| 0.02 | 0.300 | 0.347 | 2 564 |
+| 0.01 | 0.300 | 0.359 | 5 128 |
+
+Both numbers are now recorded (`acoustic_courant` and `max_acoustic_courant`),
+the second accumulated per step, so the gap is visible instead of implied.
+
+`--adaptive-dt` closes it: the step is recomputed from `c0 + |v|` every step,
+scaled by a 0.9 safety factor (the speed used is the one at the *start* of the
+step, so a hard-accelerating flow would otherwise overshoot), allowed to grow by
+at most 10 % per step and never above the configured `dt`.
+
+| `dx` | steps | measured Courant | peak compression | front L2 vs fixed | wall clock |
+|---|---|---|---|---|---|
+| 0.04 | 1 579 (+23 %) | 0.300 | 8.58 % | 0.05 % | 1.7 s |
+| 0.02 | 3 164 (+23 %) | 0.300 | 8.92 % | 0.03 % | 5.7 s |
+| 0.01 | 6 347 (+24 %) | 0.300 | 7.93 % | 0.02 % | 26.2 s |
+
+The measured maximum is 0.300 because that is what the configured cap gives at
+rest; once the surge accelerates, the operating point is 0.27. The important
+property is the direction: the number never exceeds the nominal one, whereas the
+fixed step exceeds it by up to 20 %. The trajectory is unaffected at the level
+the benchmark resolves (0.02–0.05 %), the observed order moves from 1.11 to 1.08,
+and the **wall-impact peak** moves by up to 0.7 percentage points — a
+millisecond-scale transient whose capture depends on where the steps land.
+Further evidence that this number is a discretisation artefact, and the reason
+the density gate is quoted with its margin rather than as a clean pass.
+
+Adaptation is **off by default**: it costs 23 % more steps and the fixed-step
+numbers above are the ones every document quotes. It is the right choice when the
+Courant number is the thing being trusted rather than the run time.
+
 **Observed order of accuracy**: the relative L2 difference of `front(t)/a` is
 4.83 % between `dx` = 0.04 and 0.02, and 2.19 % between 0.02 and 0.01, giving
 
