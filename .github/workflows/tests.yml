@@ -68,6 +68,11 @@ jobs:
           python benchmarks/neighbor_search/compare.py --particles 400 --dimension 2
           python benchmarks/neighbor_search/compare.py --particles 400 --dimension 3
           python benchmarks/neighbor_search/compare_rhs.py --sizes 128,256 --repeats 1
+      - name: Free-surface treatments compared side by side
+        run: |
+          python benchmarks/free_surface/compare.py --deltas 0,0.1 \
+            --bands 6 --hydro-seconds 0.5 --dam-seconds 0.3 --impact-seconds 0.05 \
+            --json-out artifacts/free_surface.json
       - name: Reusing the neighbour list must not change the forces
         run: |
           python - <<'PY'

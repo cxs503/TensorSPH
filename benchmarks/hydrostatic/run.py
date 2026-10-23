@@ -68,6 +68,9 @@ def main():
                         help="fail if the mean |error| of interior bands exceeds this")
     parser.add_argument("--max-surface-drop", type=float, default=0.05,
                         help="fail if the free surface sinks more than this fraction of H")
+    parser.add_argument("--density-diffusion", type=float, default=0.0,
+                        help="delta of the Antuono et al. (2012) diffusive term "
+                             "(0 disables it, the default)")
     parser.add_argument("--hydrostatic-init", action="store_true",
                         help="assign masses from the analytical hydrostatic profile "
                              "(start from a discrete equilibrium instead of uniform density)")
@@ -75,7 +78,8 @@ def main():
 
     cfg = Config(dx=args.dx, boundary=args.boundary, device=args.device,
                  max_courant=args.max_courant,
-                 hydrostatic_init=args.hydrostatic_init)
+                 hydrostatic_init=args.hydrostatic_init,
+                 density_diffusion=args.density_diffusion)
     cfg.dt = (args.dt if args.dt is not None
               else cfg.max_courant * cfg.h_factor * cfg.dx / cfg.sound_speed)
     steps = max(int(round(args.seconds / cfg.dt)), 2)
@@ -91,6 +95,10 @@ def main():
     vel = torch.zeros_like(pos)
     average_from = int((1.0 - args.average_fraction) * steps)
     pressure_sum = torch.zeros(pos.shape[0])
+    # Second moment of the pressure over the averaging window: the temporal
+    # fluctuation is the quantity a free-surface treatment is supposed to calm,
+    # and a time average alone cannot show it.
+    pressure_square_sum = torch.zeros(pos.shape[0])
     samples = 0
     escaped = 0
     started = time.perf_counter()
@@ -100,6 +108,7 @@ def main():
             raise SystemExit("ERROR: non-finite acceleration in the hydrostatic case")
         if step >= average_from:
             pressure_sum = pressure_sum + pressure
+            pressure_square_sum = pressure_square_sum + pressure.square()
             samples += 1
         vel = vel + cfg.dt * acc
         pos = pos + cfg.dt * vel
@@ -109,6 +118,9 @@ def main():
         raise SystemExit("ERROR: no samples collected; increase --seconds")
 
     pressure_mean = pressure_sum / samples
+    pressure_variance = (pressure_square_sum / samples
+                         - pressure_mean.square()).clamp_min(0.0)
+    pressure_std = torch.sqrt(pressure_variance)
     rho, pressure_now, _ = rhs(pos, vel, mass, cfg, wall=wall)
 
     profile, interior_errors = [], []
@@ -118,11 +130,14 @@ def main():
             continue
         analytic = cfg.rho0 * cfg.gravity * (cfg.pool_depth - y)
         error = (measured - analytic) / analytic if analytic > 0 else float("nan")
+        fluctuation, _, _ = band_mean(pressure_std, pos, low, high)
         record = {
             "y": y, "band": [low, high], "particles": count,
             "pressure_time_averaged": measured,
             "pressure_analytic": analytic,
             "relative_error": error,
+            "pressure_fluctuation": fluctuation,
+            "relative_fluctuation": (fluctuation / analytic) if analytic > 0 else None,
             "kind": "free_surface" if is_top else ("interior" if not is_bottom else "interior"),
         }
         profile.append(record)
@@ -139,6 +154,7 @@ def main():
         "benchmark": "B1_static_pool",
         "boundary": cfg.boundary,
         "hydrostatic_init": cfg.hydrostatic_init,
+        "density_diffusion": cfg.density_diffusion,
         "initial_mass_kg": initial_mass,
         "particles": int(pos.shape[0]),
         "wall_particles": 0 if wall is None else int(wall.shape[0]),
