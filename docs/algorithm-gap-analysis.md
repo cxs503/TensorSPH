@@ -1,7 +1,7 @@
 # TensorSPH algorithm gap analysis and validation roadmap
 
 **Status:** engineering assessment of the current prototype, not a claim of validated SPH accuracy.
-**Scope:** 2-D PyTorch WCSPH prototype (droplet impact and dam break) at version 0.3.0.
+**Scope:** 2-D PyTorch WCSPH prototype (droplet impact and dam break) at version 0.8.0.
 
 ## Executive decision
 
@@ -44,6 +44,61 @@ possible". The root cause was diagnosed and fixed:
 
 See [`docs/review-2026-10.md`](review-2026-10.md) for the measurements behind these claims.
 
+## What changed in 0.8.0
+
+| Item | Before | After |
+|---|---|---|
+| Time step | validated at start-up against four limits, then held fixed; the acoustic Courant condition was applied to `c0` alone | optional `adaptive_dt` that applies the limits to `c0 + |v|` every step; the dam-break ladder moves from a true Courant of 0.344–0.359 to at most 0.300, for 23 % more steps and no measurable change in the front (0.02–0.05 %) |
+| Courant accounting | nominal `dt c0 / h` only; the number the stability condition actually bounds was never reported | both are recorded, accumulated per step, and the per-step product replaces the product of two independent maxima |
+| Hydrostatic gate | one gate on the time-averaged pressure profile — which is exactly what a ringing pool still passes | a second gate on the temporal standard deviation of the pressure (9.0 % measured, 15 % limit); the incomplete wall of 0.6.0 measures 68 % and fails |
+| Test count | 93 | 104 |
+
+## What changed in 0.7.0
+
+| Item | Before | After |
+|---|---|---|
+| Wall pressure | eq. (11) of Adami et al. (2012) with the body-force term missing — the cited equation and the code disagreed | both terms evaluated; `tests/test_wall_pressure.py` pins them against a closed form |
+| B2 density compression | **failing** at 9.7–10.3 % against a 10 % limit | **passing** at 8.61–8.98 %; the limit was not moved |
+| All-steps extrema | `rho/rho0 - 1` evaluated in float32 near 1.0, losing ~5e-4 relative — the extremum could come out below a sampled row | reduced first, rescaled in float64 |
+| Free-surface comparison | measured on a pool that was ringing because of the wall defect | re-measured on a quiet pool: the diffusive term moves the fluctuation by −24 % instead of −3 %; default still 0.0 |
+| Tests | 90 | 93 |
+| Licensing | no LICENSE file; the docs discussed other projects' licences while this repository had none | MIT, SPDX metadata in `pyproject.toml`, `LICENSE` shipped in the wheel |
+
+## What changed in 0.6.0
+
+| Item | Before | After |
+|---|---|---|
+| Free-surface remedies | one, first-order: clamp the Tait law at zero | a second, optional, literature-backed option (`Config.density_diffusion`, the Antuono-Colagrossi-Marrone term) with a measured comparison, its own step limit, and seven invariant tests |
+| B1 diagnostics | time-averaged pressure profile only | also the temporal pressure fluctuation per band: a time average hides exactly the noise a free-surface treatment targets |
+| Default behaviour | — | **unchanged**. The comparison did not justify switching; the numbers behind that decision are in [`benchmarks/free-surface-treatment.md`](benchmarks/free-surface-treatment.md) |
+| Benchmarks | three scripts | `--density-diffusion` on the hydrostatic and dam-break scripts, plus `benchmarks/free_surface/compare.py` |
+
+## What changed in 0.5.0
+
+No new physics. Three gate defects, three interfaces that disagreed with their
+own documentation, and a measured speed-up. Details and numbers:
+[`changes-0.5.0.md`](changes-0.5.0.md).
+
+| Item | Before | After |
+|---|---|---|
+| `mass_conserved` gate | compared a literal `0.0` with itself; could not fail | measures \|m(t_end) − m(0)\| from two tensor sums |
+| stability gates | judged from diagnostics sampled every `output_every` steps (default 50); the impact case's real peak speed is 2x the sampled one | extrema accumulated every step; every criterion records its `population` |
+| time-step validation | acoustic Courant only; `viscosity = 1` passed validation and diverged to 53 % compression | acoustic + viscous + gravity limits, each exposed as a function |
+| dam-break `boundary` | accepted and silently ignored | rejected by `validate_case` |
+| `DamBreakConfig(device="auto")` | `RuntimeError` from `torch.device` | `resolve_device`, like the impact case |
+| `rhs` dimension | accepted 3-D input with a 2-D kernel normalisation | rejects anything but 2-D |
+| dead CLI flags | `--include-host` (always true), `--observed-order` (never read) | `--skip-host`; the order is always reported for three spacings |
+| pair list | 23 % wall-wall pairs carried through every sum | pruned at build time, verified bit-exact |
+| force evaluation | 702 ATen calls, 60 mask-indexing calls | 515 and 17; 2.62 → 1.85 ms per step at 608 particles |
+| figure | rendered unconditionally, ~1.5 s of a 5 s run | `run(..., plot=False)` / `--no-plot`; snapshots streamed to disk |
+| packaging | `matplotlib` a hard dependency; no lint gate | `[plot]` extra + `RuntimeWarning`; ruff `E,F,W` in CI; Python 3.11 added to the matrix |
+
+**Consequence for the gates:** judged on every step, B2's peer-run peak density
+compression is 10.0–10.3 %, not the 3.8 % that the sampled metric reported. The
+`density_compression` gate now reports **fail** at all three resolutions while
+`bulk_compression` (the same metric before the surge reaches the far wall) is
+2.4 %. The metric was not redefined to make the run pass.
+
 ## What changed in 0.3.0
 
 | Item | Before | After |
@@ -63,17 +118,19 @@ no comparison against measured data.
 
 | Priority | Gap | Current risk | Required work | Exit evidence |
 |---|---|---|---|---|
-| P0 | No scientific acceptance gates | A successful process can be mistaken for a valid simulation | **Done for numerical criteria.** Physical acceptance still absent | `run_manifest.json` separates `software_execution`, `numerical_verification`, `physical_validation` |
+| P0 | No scientific acceptance gates | A successful process can be mistaken for a valid simulation | **Done for numerical criteria, and as of 0.5.0 the criteria are measured over every step rather than over the printed rows.** Physical acceptance still absent | `run_manifest.json` separates `software_execution`, `numerical_verification`, `physical_validation`, and records each criterion's population |
 | P0 | Boundary was a coordinate clamp | **Fixed.** Static wall particles with extrapolated pressure | Validate against a dynamic case (dam break), add wall-force diagnostics | B1 passes at 1.09 % interior error; B2 has no experimental comparison yet |
 | P0 | No convergence study | Results may depend strongly on particle spacing and smoothing length | **Two-level convergence exists for B2.** A three-level ladder and the observed order of accuracy are still missing | Resolution table and plots; no unsupported convergence claim |
-| P1 | Free-surface tensile instability | **Fixed by clamping**, which is first-order: it discards all rarefaction and cannot represent capillary effects | Replace with a physically motivated remedy (delta-SPH density diffusion or Monaghan artificial stress) and compare against the clamp | Side-by-side impact comparison with clumping statistics |
+| P1 | Wall pressure extrapolation (Adami eq. 11) | **Fixed in 0.7.0.** Only the kernel-weighted average was implemented; the body-force term was missing, so the wall pressure was the average of the neighbouring fluid pressure instead of its extrapolation to the wall face. Measured cost: the pool rang at 68 % of the hydrostatic pressure, and B2 peak compression read 10.0 % instead of 8.6 % | Implement both terms and re-measure | Peak compression gate now passes at 8.61–8.98 %; B1 residual speed 0.044 → 0.013 m/s | [`changes-0.7.0.md`](changes-0.7.0.md) |
+| P1 | Free-surface tensile instability | **Clamping still the default, now with a measured alternative.** A diffusive density term (Antuono et al. 2012) is implemented and compared against the clamp on B1, B2 and clumping: interior error 1.086 % → 0.943 %, front moves < 0.3 %, worst pair separation 0.052 → 0.089 `dx`, +30 % cost. Kept off by default because the hydrostatic gain is inside the band-selection spread and the fluctuation improves by only 3 % | A quiet free-surface case (oscillating drop in zero g) to measure the noise the term actually targets, then decide | [`benchmarks/free-surface-treatment.md`](benchmarks/free-surface-treatment.md) records the comparison, the invariants and the decision |
 | P1 | All-pairs interactions, O(N^2) | **Fixed.** One shared linked-cell pair list feeds density, pressure, and viscosity | — | Pair-set equivalence test (done); timing report (done) |
 | P1 | Pair construction copied coordinates to CPU | **Fixed in 0.3.0.** Vectorized, device-resident binning plus a Verlet skin cache: 5x faster than the host search, 1.72x per solver step after skin reuse, 2.8x for the whole impact run | CUDA timing on real hardware | `device_equals_brute_force` and the host cross-check both pass at 400–5000 particles |
 | P0 | No dam-break reference comparison | **Still open, but the solver side is ready.** Convergence (order 0.96), compressibility (0.019 % between `c0` 40 and 60) and no-slip walls (0.91x of the analytic Stokes rate) are all verified; only traceable reference data is missing | Bundle a digitized Martin & Moyce table with provenance and an uncertainty per point | B2 experimental gate currently `not_evaluated` |
 | P1 | Viscosity was half its nominal value | **Fixed in 0.4.0.** The Morris Laplacian was missing its factor 2; measured 0.500 applied/nominal at four resolutions | — | `test_viscosity_is_calibrated` holds the ratio to 1e-3 |
 | P2 | Wall friction absent | **Fixed in 0.4.0.** `wall_friction` gives a no-slip floor, verified against the analytic Stokes decay | Tune nothing yet: the default stays free slip | Ratio 0.84 → 0.91 under refinement |
 | P1 | No surface-tension model | Droplet shape and splash morphology are not physically credible for capillary-dominated cases | Select a literature-backed formulation; isolate curvature/interface terms and parameters | Static droplet Laplace-pressure test and oscillating-drop frequency/damping comparison |
-| P1 | Fixed time step without adaptation | **Partially fixed.** The step is validated at start-up but not adapted to the evolving maximum speed | Adaptive step with all chosen limits recorded, or a documented safety factor | Unit tests for the time-step policy; Courant stays bounded in long runs |
+| P1 | Fixed time step without adaptation | **Fixed in 0.8.0, off by default.** `Config.adaptive_dt` shrinks the step to `min(acoustic(c0+|v|), viscous, gravity, diffusion)`, grows by at most `dt_growth` per step, and never exceeds the configured `dt`. The dam-break case needed it: its nominal Courant was 0.300 and the measured one 0.344–0.359, because the surge reaches 20 % of `c0` | Adaptive step with all chosen limits recorded | 11 unit tests for the policy, including the accelerating-flow case that forced `dt_safety` |
+| P0 | Gate integrity | **Fixed in 0.5.0.** A constant comparison, sampled-only extrema and a missing viscous CFL all let a failing run report success | Keep the `population` field honest whenever a new criterion is added | CI asserts the stability criteria are measured on `all_steps` |
 | P1 | Persistent residual motion | The pool never comes to rest (a few cm/s after 4 s) because walls are free slip and there is no relaxation phase | Add wall friction or a documented relaxation procedure | Decaying kinetic-energy trace in B1 |
 | P2 | Diagnostics are monitoring-only | **Partially fixed.** Numerical criteria are now pass/fail; physical criteria are absent | Add per-case acceptance definitions with tolerances justified by reference and resolution | JSON validation report with provenance |
 | P2 | No benchmark provenance registry | Comparisons can silently use mismatched parameters | Store source, reference, dimensionality, units, parameters, resolution, and extraction method | Each reference comparison is traceable |
@@ -163,9 +220,10 @@ The solver should remain usable from the command line and tests without TensorPl
 2. ~~Wall-boundary implementation and a hydrostatic verification case.~~ Done in 0.2.0.
 3. ~~Device-resident neighbour search and pair-list reuse.~~ Done in 0.3.0.
 4. ~~Dam-break case with resolution convergence.~~ Done in 0.3.0.
-5. Bundle a digitized experimental dam-break reference with provenance, and add wall friction so the no-slip condition matches the experiments.
-6. Surface tension only with dedicated static and oscillating-drop tests.
-7. Adaptive time step, a three-level resolution ladder, and the observed order of accuracy.
-8. Revisit droplet impact as a physical benchmark, not merely a smoke example.
+5. ~~Gate integrity, interface honesty, and the measured performance pass.~~ Done in 0.5.0.
+6. Bundle a digitized experimental dam-break reference with provenance; decide the default `wall_friction` from that comparison.
+7. Surface tension only with dedicated static and oscillating-drop tests.
+8. Adaptive time step driven by the evolving maximum speed (all three limits already exist as functions).
+9. Revisit droplet impact as a physical benchmark, not merely a smoke example.
 
 Each step should be delivered as a reviewable PR with reproducible tests and artifacts. No benchmark should be marked validated without traceable reference data and documented acceptance criteria.

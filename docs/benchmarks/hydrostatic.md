@@ -36,24 +36,39 @@ Two effects have to be separated, otherwise the numbers look worse than the solv
 
 ### Wall particles (`--boundary wall`, the default)
 
-| band | particles | p time-averaged (Pa) | p analytical (Pa) | error |
-|---|---|---|---|---|
-| y = 0.025 | 80 | 3215.3 | 3190.4 | +0.8 % |
-| y = 0.075 | 80 | 2715.1 | 2697.9 | +0.4 % |
-| y = 0.126 | 80 | 2191.2 | 2201.0 | -0.5 % |
-| y = 0.175 | 80 | 1684.6 | 1708.6 | -1.4 % |
-| y = 0.224 | 80 | 1206.4 | 1227.6 | -1.7 % |
-| y = 0.275 | 90 | 703.1 | 715.6 | -1.7 % |
-| y = 0.324 (free surface) | 70 | 168.9 | 235.9 | -28.4 % |
+| band | particles | p time-averaged (Pa) | p analytical (Pa) | error | fluctuation |
+|---|---|---|---|---|---|
+| y = 0.025 | 80 | 3166.0 | 3191.5 | -0.8 % | 6.1 % |
+| y = 0.075 | 82 | 2678.3 | 2698.4 | -0.7 % | 6.7 % |
+| y = 0.126 | 82 | 2173.7 | 2200.3 | -1.2 % | 8.1 % |
+| y = 0.175 | 76 | 1699.3 | 1719.9 | -1.2 % | 8.5 % |
+| y = 0.223 | 80 | 1218.7 | 1243.0 | -2.0 % | 9.5 % |
+| y = 0.277 | 93 | 714.7 | 720.5 | -0.8 % | 15.2 % |
+| y = 0.325 (free surface) | 67 | 169.2 | 245.3 | -31.0 % | 23.7 % |
 
-- **Interior mean absolute relative error: 1.09 %** (gate: 5 %)
-- Free-surface drop after 4 s: 3.5 % of the pool depth (gate: 5 %)
-- Residual maximum speed: 0.044 m/s
+- **Interior mean absolute relative error: 1.12 %** (gate: 5 %)
+- Free-surface drop after 4 s: 3.15 % of the pool depth (gate: 5 %)
+- Residual maximum speed: 0.013 m/s
+- Fluctuation is the standard deviation of the pressure over the same 2 s
+  averaging window, relative to the analytical pressure. A time average alone
+  hides the ringing that a free surface produces, so both are reported.
+- **Gates:** interior error ≤ 5 % (measured 1.12 %), surface drop ≤ 5 %
+  (3.15 %), and the mean interior fluctuation ≤ 15 % (measured **9.0 %**).
+  The third gate was added in 0.8.0 because the first two are time averages and
+  a ringing pool passes them: the 0.6.0 wall pressure, which was missing the
+  body-force term of Adami et al. (2012) eq. (11), measured 1.09 % and 3.51 %
+  on those gates while its fluctuation was **68 %**. The limit is a stability
+  statement — a resting surface should not wander by more than ~15 % of the
+  hydrostatic pressure — and it is not tuned to the current code: the failure
+  above is what it was checked against.
 
-(These numbers are from version 0.4.0, which corrected the missing factor 2 in
-the Morris viscous Laplacian. The solver therefore applies twice the viscous
-damping that 0.2.0 applied at the same nominal `viscosity`; the interior error
-moved from 0.63 % to 1.09 %, still far inside the gate.)
+Before 0.7.0 this table read 1.09 % interior, 3.5 % surface drop and 0.044 m/s
+residual, with a fluctuation of 52–109 % per band. The difference is one term of
+the wall pressure extrapolation: `p_w` was the kernel-weighted *average* of the
+neighbouring fluid pressure, omitting `rho_f (g - a_w).(r_w - r_f) W` from Adami
+et al. (2012) eq. (11). Without it the fluid next to the floor is
+under-supported, the pool rings, and the time average still looks fine — the
+fluctuation column is what makes the defect visible.
 - Particle masses are constants, so total mass is conserved exactly.
 
 Note that the naive `sum_j W m_j` density summation at a wall under-counts kernel support by
@@ -75,23 +90,26 @@ discretised density field starts as a discrete equilibrium instead of uniform
 deviation from hydrostatic balance drops from **g (the whole pool starts in free
 fall) to 0.05 m/s²**, and the initial pressure profile error from **100 % to 5 %**.
 
-It does **not** tighten B1:
+It tightens B1 once the wall pressure is right:
 
 | initialisation | initial mass | interior error | surface drop | t=0 profile error |
 |---|---|---|---|---|
-| uniform mass (default) | 350.00 kg | **1.09 %** | 3.51 % | 100 % |
-| hydrostatic mass | 351.48 kg | 1.16 % | 2.33 % | 5 % |
+| uniform mass (default) | 350.00 kg | 1.12 % | 3.15 % | 100 % |
+| hydrostatic mass | 351.48 kg | **0.62 %** | 2.29 % | 5 % |
 
-Both pass the 5 % gate. The reason is that the residual error is not a startup
-transient: a pool confined by free-slip walls rings in a sloshing mode whose
-viscous damping time is `H^2 / nu ≈ 12 s`, so a 4 s run is still inside the same
-oscillation regardless of how it was started. Time-averaging is what removes it.
+Both pass the 5 % gate. Before 0.7.0 the two rows read 1.09 % and 1.16 %, and
+this section concluded that the initialisation made no difference, because the
+residual error was a sloshing mode with a viscous damping time of
+`H^2 / nu ≈ 12 s`: a 4 s run is still inside the same oscillation regardless of
+how it was started. With the wall body-force term in place the pool rings far
+less (residual speed 0.013 m/s instead of 0.044) and starting from a discrete
+equilibrium now halves the interior error. The earlier "no difference" was
+measured on a wall model that was itself injecting the imbalance.
 
-The flag is therefore **off by default**. It is useful when a run must start from
-a well-defined equilibrium (resolution studies, restart tests) and it halves the
-free-surface band error (-40.7 % to -26.4 %), but it is not a fix for the slowly
-damped sloshing mode and it changes the total mass by +0.4 % because a resting
-column is compressed.
+The flag is still **off by default**, for the same reason as before: it changes
+the total mass by +0.4 %, because a resting column is compressed. It is now the
+right choice whenever a resolution study or a restart needs a well-defined
+equilibrium to start from.
 
 ```bash
 python benchmarks/hydrostatic/run.py --seconds 4 --hydrostatic-init

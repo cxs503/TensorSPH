@@ -6,6 +6,7 @@ import torch
 from tensorsph.droplet_impact import (
     Config,
     acoustic_courant,
+    evaluate_acceptance,
     cubic_spline_gradient,
     cubic_spline_kernel,
     make_particles,
@@ -139,6 +140,9 @@ def test_manifest_records_statuses_and_acceptance(tmp_path):
     assert "python" in manifest["environment"]
     assert "torch" in manifest["environment"]
     assert manifest["derived"]["suggested_dt"] > 0
+    assert manifest["derived"]["viscous_dt_limit"] > 0
+    assert manifest["derived"]["gravity_dt_limit"] > 0
+    assert manifest["derived"]["diffusion_dt_limit"] is None  # no diffusion term
     assert manifest["derived"]["smoothing_length"] == pytest.approx(cfg.h_factor * cfg.dx)
 
 
@@ -171,3 +175,75 @@ def test_boundary_escape_is_not_evaluated_for_clamp_mode(tmp_path):
     manifest = json.loads((tmp_path / "run_manifest.json").read_text())
     criteria = {item["id"]: item for item in manifest["acceptance"]["criteria"]}
     assert criteria["boundary_escape"]["result"] == "not_evaluated"
+
+
+def test_viscous_cfl_is_rejected_before_the_run(tmp_path):
+    """The acoustic Courant alone does not bound the explicit viscous term.
+
+    On the default case ``viscosity = 1`` is above the limit (1.3e-4 s against
+    a 4e-4 s step) and used to be accepted, then diverged to 53 % density
+    compression and Mach 1.2. Here the same relationship is reproduced on the
+    smaller test geometry.
+    """
+    cfg = Config(**SMALL, viscosity=2.0, steps=1)
+    with pytest.raises(ValueError, match="viscous limit"):
+        run(cfg, tmp_path)
+
+
+def test_gravity_cfl_is_rejected_before_the_run(tmp_path):
+    cfg = Config(**SMALL, gravity=1.0e5, steps=1)
+    with pytest.raises(ValueError, match="gravity limit"):
+        run(cfg, tmp_path)
+
+
+def test_rhs_rejects_non_two_dimensional_input():
+    cfg = Config(**SMALL)
+    pos = torch.zeros((4, 3), dtype=torch.float64)
+    with pytest.raises(ValueError, match="2-D"):
+        rhs(pos, torch.zeros_like(pos), torch.ones(4, dtype=torch.float64), cfg)
+
+
+def test_acceptance_uses_all_step_extrema_not_only_sampled_rows():
+    cfg = Config(**SMALL)
+    rows = [{"rho_max": cfg.rho0 * 1.001, "max_speed": 0.1,
+             "courant_number": 0.01}]
+    sampled = evaluate_acceptance(rows, cfg, 0)
+    extremes = {"peak_rho_compression": 0.4, "peak_speed": 9.0,
+                "peak_courant": 0.9}
+    measured_all = evaluate_acceptance(rows, cfg, 0, extremes=extremes)
+    by_id = {c["id"]: c for c in measured_all}
+    assert by_id["density_compression"]["result"] == "fail"
+    assert by_id["mach_number"]["result"] == "fail"
+    assert by_id["acoustic_courant"]["result"] == "fail"
+    assert by_id["density_compression"]["population"] == "all_steps"
+    # ... while the sampled rows alone would have passed every one of them.
+    assert all(c["population"] == "sampled_rows" or c["result"] == "pass"
+               for c in sampled)
+    assert {c["id"]: c["result"] for c in sampled}["density_compression"] == "pass"
+
+
+def test_manifest_records_the_extrema_population(tmp_path):
+    cfg = Config(**SMALL, steps=4, output_every=2)
+    rows = run(cfg, tmp_path)
+    manifest = json.loads((tmp_path / "run_manifest.json").read_text())
+    sampling = manifest["sampling"]
+    assert sampling["extrema_population"] == "all_steps"
+    assert sampling["diagnostic_rows"] == len(rows)
+    by_id = {c["id"]: c for c in manifest["acceptance"]["criteria"]}
+    sampled_compression = max(row["rho_max"] / cfg.rho0 - 1.0 for row in rows)
+    assert by_id["density_compression"]["measured"] >= sampled_compression
+    assert manifest["sampling"]["extrema"]["peak_rho_compression"] >= 0.0
+
+
+def test_plot_can_be_skipped_and_snapshots_are_written_anyway(tmp_path):
+    cfg = Config(**SMALL, steps=2, output_every=1)
+    run(cfg, tmp_path, plot=False)
+    assert (tmp_path / "particles_000002.pt").exists()
+    assert not (tmp_path / "particle_snapshots.png").exists()
+
+
+def test_plot_reads_back_the_written_snapshots(tmp_path):
+    pytest.importorskip("matplotlib")
+    cfg = Config(**SMALL, steps=2, output_every=1)
+    run(cfg, tmp_path, plot=True)
+    assert (tmp_path / "particle_snapshots.png").stat().st_size > 0

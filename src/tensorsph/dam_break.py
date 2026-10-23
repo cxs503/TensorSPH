@@ -28,6 +28,8 @@ from .droplet_impact import (
     apply_boundary,
     boundary_box,
     hydrostatic_density,
+    next_dt,
+    resolve_device,
     rhs,
     wall_lattice,
 )
@@ -64,6 +66,10 @@ class DamBreakConfig(Config):
 
 
 def validate_case(cfg: DamBreakConfig) -> None:
+    if cfg.boundary != "wall":
+        raise ValueError(
+            "the dam-break case integrates static wall particles only; "
+            f"boundary={cfg.boundary!r} would be silently ignored")
     if cfg.dx <= 0 or cfg.h_factor <= 0:
         raise ValueError("dx and h_factor must be positive")
     if cfg.column_width <= 0 or cfg.column_height <= 0:
@@ -124,7 +130,29 @@ class DamBreakRun:
     rebuilds: int
     max_speed: float
     max_density_compression: float
+    compression_before_wall_impact: float
+    wall_impact_time: float | None
+    initial_mass: float
+    final_mass: float
     final_positions: torch.Tensor
+    steps_taken: int = 0
+    simulated_time: float = 0.0
+    dt_min: float = 0.0
+    dt_max: float = 0.0
+    # ``dt (c0 + |v|) / h`` accumulated per step. The nominal Courant number of
+    # a fixed-step run is ``dt c0 / h``; this is the number the stability
+    # condition actually bounds, and the two differ by |v|/c0.
+    max_acoustic_courant: float = 0.0
+
+    @property
+    def mass_drift(self) -> float:
+        """Difference between the initial and final total mass.
+
+        Particle masses are constants here, so this is expected to be exactly
+        zero. It is returned rather than asserted because the benchmark gate is
+        supposed to measure it instead of assuming it.
+        """
+        return self.final_mass - self.initial_mass
 
     def dimensionless(self, cfg: DamBreakConfig):
         scale = cfg.column_width
@@ -135,15 +163,19 @@ class DamBreakRun:
 def run_case(cfg: DamBreakConfig, pair_skin_factor: float | None = None):
     """Integrate the dam break and return the measured trajectory."""
     validate_case(cfg)
-    device = torch.device(cfg.device)
+    device = resolve_device(cfg.device)
     top = cfg.tank_top()
     positions, mass = make_column(cfg, device)
     wall = wall_lattice(cfg, device, top=top)
     velocity = torch.zeros_like(positions)
+    initial_mass = float(mass.sum())
 
     h = cfg.h_factor * cfg.dx
+    fluid_count = positions.shape[0]
     skin = cfg.pair_skin_factor if pair_skin_factor is None else pair_skin_factor
-    cache = PairListCache(2.0 * h, skin * h) if skin > 0 else None
+    cache = (PairListCache(2.0 * h, skin * h, fluid_count=fluid_count)
+             if skin > 0 else None)
+    all_positions = torch.cat((positions, wall), dim=0)
 
     times: list[float] = []
     front: list[float] = []
@@ -151,43 +183,97 @@ def run_case(cfg: DamBreakConfig, pair_skin_factor: float | None = None):
     potential: list[float] = []
     escaped = 0
     max_speed = 0.0
-    max_density_compression = 0.0
+    # Compression only: rarefaction at the free surface is expected in SPH
+    # density summation and is handled by the zero-pressure clamp. Both maxima
+    # are accumulated every step, not only at the output steps, so the recorded
+    # extremum cannot hide between two diagnostic rows.
+    compression_peak = torch.zeros((), dtype=torch.float64, device=device)
+    speed_peak = torch.zeros((), dtype=positions.dtype, device=device)
+    courant_peak = torch.zeros((), dtype=torch.float64, device=device)
+    # The peak compression over the whole run is dominated by the surge hitting
+    # the far wall, not by the bulk flow. Keep the pre-impact maximum separate so
+    # the two effects can be told apart.
+    impact_limit = cfg.pool_width - 3.0 * cfg.dx
+    compression_at_impact = None
+    wall_impact_time = None
 
-    for step in range(cfg.steps + 1):
+    dt = cfg.dt
+    elapsed = 0.0
+    dt_min = dt_max = dt
+    # Same semantics as ``droplet_impact.run``: ``cfg.steps`` at ``cfg.dt`` is
+    # the requested simulated time, so an adaptive run takes as many steps as
+    # that time needs instead of stopping short.
+    target_time = cfg.steps * cfg.dt
+    time_tolerance = 1.0e-12 * max(1.0, target_time)
+    max_steps = cfg.steps if not cfg.adaptive_dt else 4 * cfg.steps + 1000
+
+    for step in range(max_steps + 1):
         if cache is None:
             pairs = None
         else:
-            pairs, _ = cache.get(torch.cat((positions, wall), dim=0))
-        density, _, acc = rhs(positions, velocity, mass, cfg, pairs=pairs, wall=wall)
+            if wall is not None:
+                all_positions[:fluid_count] = positions
+            pairs, _ = cache.get(all_positions)
+        step_dt = dt if not cfg.adaptive_dt else min(dt, target_time - elapsed)
+        density, _, acc = rhs(positions, velocity, mass, cfg, pairs=pairs, wall=wall,
+                              dt=step_dt)
         if not torch.isfinite(acc).all():
             raise FloatingPointError(f"non-finite acceleration at step {step}")
+        # Reduce first, rescale in float64: ``(rho/rho0).max() - 1`` in the
+        # field's own precision loses ~5e-4 relative at 1.0, which is the size
+        # of the quantity being measured near hydrostatic equilibrium.
+        compression_peak = torch.maximum(compression_peak,
+                                         density.max().double() / cfg.rho0 - 1.0)
+        speed_now = (torch.linalg.vector_norm(velocity, dim=-1) if velocity.numel()
+                     else torch.zeros(0, dtype=positions.dtype, device=device))
+        if speed_now.numel():
+            speed_peak = torch.maximum(speed_peak, speed_now.max())
+        speed_scalar = float(speed_now.max()) if speed_now.numel() else 0.0
+        courant_peak = torch.maximum(
+            courant_peak, (torch.tensor(step_dt * (cfg.sound_speed + speed_scalar)
+                                        / (cfg.h_factor * cfg.dx),
+                                        dtype=torch.float64, device=device)))
+        if wall_impact_time is None and float(positions[:, 0].max()) >= impact_limit:
+            wall_impact_time = elapsed
+            compression_at_impact = float(compression_peak)
 
-        if step % cfg.output_every == 0 or step == cfg.steps:
-            speed = float(torch.linalg.vector_norm(velocity, dim=-1).max())
+        final = (step == cfg.steps if not cfg.adaptive_dt
+                 else elapsed >= target_time - time_tolerance)
+        if step % cfg.output_every == 0 or final:
+            speed = speed_scalar
             max_speed = max(max_speed, speed)
-            # Compression only: rarefaction at the free surface is expected in
-            # SPH density summation and is handled by the zero-pressure clamp.
-            max_density_compression = max(max_density_compression,
-                                          float((density / cfg.rho0).max() - 1.0))
-            times.append(step * cfg.dt)
+            times.append(elapsed)
             front.append(front_position(positions, cfg))
             kinetic.append(float(0.5 * (mass[:, None] * velocity.square()).sum()))
             potential.append(float((mass * cfg.gravity * positions[:, 1]).sum()))
 
-        if step == cfg.steps:
+        if final:
             break
-        velocity = velocity + cfg.dt * acc
-        positions = positions + cfg.dt * velocity
+        velocity = velocity + step_dt * acc
+        positions = positions + step_dt * velocity
         escaped += apply_boundary(positions, velocity, cfg, top=top)
+        elapsed += step_dt
+        if cfg.adaptive_dt:
+            dt = next_dt(cfg, dt, speed_scalar)
+            dt_min = min(dt_min, dt)
+            dt_max = max(dt_max, dt)
 
     # The column starts at rest: its potential energy above the floor is the
     # energy budget available to the flow.
     return DamBreakRun(
         times=times, front=front, kinetic_energy=kinetic,
-        potential_energy=potential, mass=float(mass.sum()), escaped=escaped,
+        potential_energy=potential, mass=initial_mass, escaped=escaped,
         rebuilds=0 if cache is None else cache.rebuilds,
-        max_speed=max_speed, max_density_compression=max_density_compression,
+        max_speed=max(max_speed, float(speed_peak)),
+        max_density_compression=float(compression_peak),
+        compression_before_wall_impact=float(
+            compression_peak if compression_at_impact is None else compression_at_impact),
+        wall_impact_time=wall_impact_time,
+        initial_mass=initial_mass, final_mass=float(mass.sum()),
         final_positions=positions.detach().clone(),
+        steps_taken=step, simulated_time=elapsed,
+        dt_min=dt_min, dt_max=dt_max,
+        max_acoustic_courant=float(courant_peak),
     )
 
 
