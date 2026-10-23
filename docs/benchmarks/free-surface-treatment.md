@@ -80,78 +80,101 @@ Impact case at `dx = 0.025` to `t = 0.3 s`; hydrostatics at `dx = 0.025` over
 4 s averaged over the second half (the B1 protocol); dam break at `dx = 0.02` to
 `t = 0.8 s`.
 
+These numbers were re-measured in 0.7.0, after the wall pressure extrapolation
+was completed with the body-force term of Adami et al. (2012) eq. (11). The 0.6.0
+measurement of the same script is kept below for comparison, because the wall fix
+changed what the hydrostatic metric can see.
+
 ### 1. Hydrostatics (B1 protocol, 7 bands)
 
 | delta | interior pressure error | pressure fluctuation | residual max &#124;v&#124; | wall clock |
 |---|---|---|---|---|
-| 0.0 | 1.086 % | 67.9 % | 0.044 m/s | 54 s |
-| 0.1 | **0.943 %** | **65.6 %** | 0.052 m/s | 59 s |
+| 0.0 | 1.119 % | 9.0 % | 0.013 m/s | 51 s |
+| 0.1 | **1.057 %** | **6.8 %** | 0.013 m/s | 57 s |
 
-The interior error improves by 13 % relative and the temporal fluctuation by
-3 %. Both are small, and the interior-error improvement is **not robust**: with
-six bands instead of seven the same pair of runs reads 0.978 % and 1.073 %
-(`--bands 6`), i.e. the sign flips. The fluctuation, which is the quantity a free-surface treatment
-is supposed to address, moves in the same direction under both band choices but
-only by a few percent.
+The fluctuation falls by a quarter. That is the quantity this term is supposed to
+address, and it now holds up: at 5, 6, 7 and 8 bands the fluctuation improves at
+every band count (2.6 → 2.2 %, 3.0 → 2.4 %, 9.0 → 6.8 %, 3.3 → 2.7 % on a
+separate 0.6 x 0.3 m pool, so the levels are not comparable across geometries but
+the sign is).
 
-The reason is visible in the B1 table itself: this pool never comes to rest
-(free slip, no damping), so the fluctuation is dominated by a sloshing mode, not
-by free-surface noise. `delta` at 0.1 cannot calm a mode that is not the one it
-targets.
+The interior pressure error is **not** robust. At 7 bands it improves (1.119 →
+1.057 %); at 5, 6 and 8 bands it gets worse (1.623 → 1.719 %, 1.133 → 1.150 %,
+1.315 → 1.855 %). Reporting only the 7-band number would be picking the band set
+that flatters the term, so the interior error is treated as unchanged.
 
 ### 2. Dam break (B2 geometry, `dx = 0.02`)
 
 | delta | bulk compression | peak compression | front L2 vs `delta = 0` | wall clock |
 |---|---|---|---|---|
-| 0.0 | 1.79 % | 10.26 % | — | 4.7 s |
-| 0.1 | 1.60 % | 10.33 % | **0.26 %** | 5.6 s |
+| 0.0 | 2.66 % | 8.98 % | — | 4.8 s |
+| 0.1 | 2.63 % | 8.89 % | **0.20 %** | 5.6 s |
 
-At `dx = 0.01` the same comparison gives 0.083 % of `a`, so the front difference
-converges away under refinement and the trajectory is unaffected at the level
-the benchmark resolves. Bulk compression drops by 0.2 percentage points; the
-wall-impact peak does not move.
+At `dx = 0.01` the same comparison gives 0.08 % of `a`, so the front difference
+converges away under refinement and the trajectory is unaffected at the level the
+benchmark resolves. Compression is unchanged to two digits.
 
 ### 3. Droplet impact — clumping
 
 | delta | min separation | pairs closer than `dx` | KE at t = 0.3 s | wall clock |
 |---|---|---|---|---|
-| 0.0 | 0.052 `dx` | 10.0 % | 13.54 J | 4.4 s |
-| 0.1 | **0.089 `dx`** | 9.9 % | 13.39 J | 4.7 s |
+| 0.0 | 0.053 `dx` | 10.1 % | 13.40 J | 4.3 s |
+| 0.1 | **0.088 `dx`** | 10.1 % | 13.29 J | 4.7 s |
 
-This is the clearest effect: the worst pair separation improves by 71 %, from
-5 % of a particle spacing to 9 %, while the kinetic energy is unchanged to 1 %.
-Ten percent of all neighbour pairs are still closer than one spacing in both
-cases, so the term mitigates near-coincident particles but does not remove them.
+The worst pair separation improves by 67 %, from 5 % of a particle spacing to 9 %,
+while the kinetic energy is unchanged to 1 %. Ten percent of all neighbour pairs
+are still closer than one spacing in both cases, so the term mitigates
+near-coincident particles but does not remove them.
 
-Cost: +7 % in this script's bare integration loop (4.4 s to 4.7 s) and **+30 %**
-through `run(..., plot=False)` with the Verlet cache and artifacts (1.78 s to
-2.32 s, best of three), where the extra mask-indexing is a larger share of a
-cheaper step.
+Cost through `run(..., plot=False)` with the Verlet cache and artifacts:
+1.78 s to 2.32 s, i.e. **+30 %** for the default 750-step impact run.
+
+### What changed from the 0.6.0 measurement
+
+| observable | 0.6.0 (incomplete wall) | 0.7.0 (complete wall) |
+|---|---|---|
+| B1 fluctuation, δ = 0 | 67.9 % | 9.0 % |
+| B1 fluctuation, δ = 0.1 | 65.6 % | 6.8 % |
+| δ effect on the fluctuation | −3 % | **−24 %** |
+| B1 residual speed | 0.044 m/s | 0.013 m/s |
+
+In 0.6.0 the pool was ringing (the wall pressure was the kernel average of the
+neighbouring fluid pressure, not its extrapolation to the wall face), and that
+ringing swamped the quantity the diffusive term acts on. The 0.6.0 conclusion —
+"the improvement is 3 %, too small to matter" — was correct for the code it was
+measured on and wrong about the term.
 
 ## Decision
 
-**The default stays `density_diffusion = 0`.** The measured benefits do not
-justify changing the physics every existing number was produced with:
+**The default stays `density_diffusion = 0`.** The case for turning it on is
+better than it was, but it is still a cost with no gate to justify it:
 
-- hydrostatics: the interior error improvement is inside the spread caused by
-  choosing a different band set, and the fluctuation improves by 3 %;
-- dam break: the front moves by less than 0.3 % and converges away under
-  refinement;
-- impact: the real gain is in the smallest pair separations, at a 27 % cost.
+- the only robust gain is the residual pressure fluctuation on an
+  already-quiet pool (9.0 % → 6.8 %, i.e. the pool is quieter but it was not
+  noisy to begin with);
+- the interior pressure error moves within the spread of band choices, so there
+  is no defensible claim that B1 improves;
+- B2 is unchanged, including the peak-compression gate;
+- the trade is +30 % wall clock for a 67 % better worst-case particle separation.
 
 Use `Config.density_diffusion = 0.1` when near-coincident particles matter —
-splash morphology, high-speed impact, anything where `min separation / dx`
-below 0.1 is a problem. Do not expect it to fix the free-surface density
-deficit: at the top B1 band the error goes from −28.4 % to −35.6 %, i.e. the
-diffusion pulls the surface band slightly further from the hydrostatic value,
-because smoothing a truncated kernel support is not the same as restoring it.
+splash morphology, high-speed impact, anything where `min separation / dx` below
+0.1 is a problem. Do not expect it to fix the free-surface density deficit: at
+the top B1 band the error moves from −31.0 % to −35.6 %, i.e. diffusion pulls the
+surface band slightly further from the hydrostatic value, because smoothing a
+truncated kernel support is not the same as restoring it.
 
 ## What would change this conclusion
 
-- A damping or relaxation phase in B1, so the sloshing mode stops masking the
-  free-surface noise. The current metric cannot see what `delta` targets.
-- A capillary case: without surface tension (`B3` in the roadmap is not started)
-  neither treatment can be judged on the physics that usually motivates
+- **A gate that measures what the term improves.** The fluctuation is now the
+  only robust gain (9.0 % → 6.8 %), and it is reported but not gated. A criterion
+  such as "relative pressure fluctuation below X % in the last second of B1"
+  would give the default decision something to rest on other than judgement.
+- **A capillary case.** Without surface tension (`B3` in the roadmap is not
+  started) neither treatment can be judged on the physics that usually motivates
   free-surface work.
-- A pressure-noise metric on a genuinely quiet free surface, such as a drop
-  oscillating in a zero-gravity box, rather than a sloshing pool.
+- **A genuinely quiet free surface.** B1 still rings a little even with the
+  complete wall condition (0.013 m/s residual, 9 % fluctuation). A drop
+  oscillating in zero gravity, or B1 with a damping ramp before the averaging
+  window, would remove the last of the sloshing mode and make the fluctuation a
+  cleaner measurement of surface noise.

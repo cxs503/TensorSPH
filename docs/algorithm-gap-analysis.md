@@ -1,7 +1,7 @@
 # TensorSPH algorithm gap analysis and validation roadmap
 
 **Status:** engineering assessment of the current prototype, not a claim of validated SPH accuracy.
-**Scope:** 2-D PyTorch WCSPH prototype (droplet impact and dam break) at version 0.6.0.
+**Scope:** 2-D PyTorch WCSPH prototype (droplet impact and dam break) at version 0.7.0.
 
 ## Executive decision
 
@@ -43,6 +43,17 @@ possible". The root cause was diagnosed and fixed:
 | Manifest missing the documented contract | ran without revision, versions, or statuses | manifest records solver revision, environment, three separate statuses, and per-criterion measured value/threshold/result |
 
 See [`docs/review-2026-10.md`](review-2026-10.md) for the measurements behind these claims.
+
+## What changed in 0.7.0
+
+| Item | Before | After |
+|---|---|---|
+| Wall pressure | eq. (11) of Adami et al. (2012) with the body-force term missing — the cited equation and the code disagreed | both terms evaluated; `tests/test_wall_pressure.py` pins them against a closed form |
+| B2 density compression | **failing** at 9.7–10.3 % against a 10 % limit | **passing** at 8.61–8.98 %; the limit was not moved |
+| All-steps extrema | `rho/rho0 - 1` evaluated in float32 near 1.0, losing ~5e-4 relative — the extremum could come out below a sampled row | reduced first, rescaled in float64 |
+| Free-surface comparison | measured on a pool that was ringing because of the wall defect | re-measured on a quiet pool: the diffusive term moves the fluctuation by −24 % instead of −3 %; default still 0.0 |
+| Tests | 90 | 93 |
+| Licensing | no LICENSE file; the docs discussed other projects' licences while this repository had none | MIT, SPDX metadata in `pyproject.toml`, `LICENSE` shipped in the wheel |
 
 ## What changed in 0.6.0
 
@@ -101,6 +112,7 @@ no comparison against measured data.
 | P0 | No scientific acceptance gates | A successful process can be mistaken for a valid simulation | **Done for numerical criteria, and as of 0.5.0 the criteria are measured over every step rather than over the printed rows.** Physical acceptance still absent | `run_manifest.json` separates `software_execution`, `numerical_verification`, `physical_validation`, and records each criterion's population |
 | P0 | Boundary was a coordinate clamp | **Fixed.** Static wall particles with extrapolated pressure | Validate against a dynamic case (dam break), add wall-force diagnostics | B1 passes at 1.09 % interior error; B2 has no experimental comparison yet |
 | P0 | No convergence study | Results may depend strongly on particle spacing and smoothing length | **Two-level convergence exists for B2.** A three-level ladder and the observed order of accuracy are still missing | Resolution table and plots; no unsupported convergence claim |
+| P1 | Wall pressure extrapolation (Adami eq. 11) | **Fixed in 0.7.0.** Only the kernel-weighted average was implemented; the body-force term was missing, so the wall pressure was the average of the neighbouring fluid pressure instead of its extrapolation to the wall face. Measured cost: the pool rang at 68 % of the hydrostatic pressure, and B2 peak compression read 10.0 % instead of 8.6 % | Implement both terms and re-measure | Peak compression gate now passes at 8.61–8.98 %; B1 residual speed 0.044 → 0.013 m/s | [`changes-0.7.0.md`](changes-0.7.0.md) |
 | P1 | Free-surface tensile instability | **Clamping still the default, now with a measured alternative.** A diffusive density term (Antuono et al. 2012) is implemented and compared against the clamp on B1, B2 and clumping: interior error 1.086 % → 0.943 %, front moves < 0.3 %, worst pair separation 0.052 → 0.089 `dx`, +30 % cost. Kept off by default because the hydrostatic gain is inside the band-selection spread and the fluctuation improves by only 3 % | A quiet free-surface case (oscillating drop in zero g) to measure the noise the term actually targets, then decide | [`benchmarks/free-surface-treatment.md`](benchmarks/free-surface-treatment.md) records the comparison, the invariants and the decision |
 | P1 | All-pairs interactions, O(N^2) | **Fixed.** One shared linked-cell pair list feeds density, pressure, and viscosity | — | Pair-set equivalence test (done); timing report (done) |
 | P1 | Pair construction copied coordinates to CPU | **Fixed in 0.3.0.** Vectorized, device-resident binning plus a Verlet skin cache: 5x faster than the host search, 1.72x per solver step after skin reuse, 2.8x for the whole impact run | CUDA timing on real hardware | `device_equals_brute_force` and the host cross-check both pass at 400–5000 particles |
