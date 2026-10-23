@@ -1,7 +1,7 @@
 # TensorSPH algorithm gap analysis and validation roadmap
 
 **Status:** engineering assessment of the current prototype, not a claim of validated SPH accuracy.
-**Scope:** 2-D PyTorch WCSPH prototype (droplet impact and dam break) at version 0.7.0.
+**Scope:** 2-D PyTorch WCSPH prototype (droplet impact and dam break) at version 0.8.0.
 
 ## Executive decision
 
@@ -43,6 +43,15 @@ possible". The root cause was diagnosed and fixed:
 | Manifest missing the documented contract | ran without revision, versions, or statuses | manifest records solver revision, environment, three separate statuses, and per-criterion measured value/threshold/result |
 
 See [`docs/review-2026-10.md`](review-2026-10.md) for the measurements behind these claims.
+
+## What changed in 0.8.0
+
+| Item | Before | After |
+|---|---|---|
+| Time step | validated at start-up against four limits, then held fixed; the acoustic Courant condition was applied to `c0` alone | optional `adaptive_dt` that applies the limits to `c0 + |v|` every step; the dam-break ladder moves from a true Courant of 0.344–0.359 to at most 0.300, for 23 % more steps and no measurable change in the front (0.02–0.05 %) |
+| Courant accounting | nominal `dt c0 / h` only; the number the stability condition actually bounds was never reported | both are recorded, accumulated per step, and the per-step product replaces the product of two independent maxima |
+| Hydrostatic gate | one gate on the time-averaged pressure profile — which is exactly what a ringing pool still passes | a second gate on the temporal standard deviation of the pressure (9.0 % measured, 15 % limit); the incomplete wall of 0.6.0 measures 68 % and fails |
+| Test count | 93 | 104 |
 
 ## What changed in 0.7.0
 
@@ -120,7 +129,7 @@ no comparison against measured data.
 | P1 | Viscosity was half its nominal value | **Fixed in 0.4.0.** The Morris Laplacian was missing its factor 2; measured 0.500 applied/nominal at four resolutions | — | `test_viscosity_is_calibrated` holds the ratio to 1e-3 |
 | P2 | Wall friction absent | **Fixed in 0.4.0.** `wall_friction` gives a no-slip floor, verified against the analytic Stokes decay | Tune nothing yet: the default stays free slip | Ratio 0.84 → 0.91 under refinement |
 | P1 | No surface-tension model | Droplet shape and splash morphology are not physically credible for capillary-dominated cases | Select a literature-backed formulation; isolate curvature/interface terms and parameters | Static droplet Laplace-pressure test and oscillating-drop frequency/damping comparison |
-| P1 | Fixed time step without adaptation | **Partially fixed.** As of 0.5.0 the step is validated at start-up against the acoustic, viscous and gravity limits, but it is still not adapted to the evolving maximum speed | Adaptive step with all chosen limits recorded | Unit tests for the time-step policy; Courant stays bounded in long runs |
+| P1 | Fixed time step without adaptation | **Fixed in 0.8.0, off by default.** `Config.adaptive_dt` shrinks the step to `min(acoustic(c0+|v|), viscous, gravity, diffusion)`, grows by at most `dt_growth` per step, and never exceeds the configured `dt`. The dam-break case needed it: its nominal Courant was 0.300 and the measured one 0.344–0.359, because the surge reaches 20 % of `c0` | Adaptive step with all chosen limits recorded | 11 unit tests for the policy, including the accelerating-flow case that forced `dt_safety` |
 | P0 | Gate integrity | **Fixed in 0.5.0.** A constant comparison, sampled-only extrema and a missing viscous CFL all let a failing run report success | Keep the `population` field honest whenever a new criterion is added | CI asserts the stability criteria are measured on `all_steps` |
 | P1 | Persistent residual motion | The pool never comes to rest (a few cm/s after 4 s) because walls are free slip and there is no relaxation phase | Add wall friction or a documented relaxation procedure | Decaying kinetic-energy trace in B1 |
 | P2 | Diagnostics are monitoring-only | **Partially fixed.** Numerical criteria are now pass/fail; physical criteria are absent | Add per-case acceptance definitions with tolerances justified by reference and resolution | JSON validation report with provenance |

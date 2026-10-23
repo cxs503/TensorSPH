@@ -113,7 +113,8 @@ def run_one(dx, args, sound_speed=None, seconds=None, friction=None):
                          sound_speed=args.sound_speed if sound_speed is None else sound_speed,
                          max_courant=args.max_courant, device=args.device,
                          wall_friction=args.wall_friction if friction is None else friction,
-                         density_diffusion=args.density_diffusion)
+                         density_diffusion=args.density_diffusion,
+                         adaptive_dt=args.adaptive_dt)
     cfg.column_height = 2.0 * args.column_width
     cfg.dt = cfg.dt_from_courant()
     span = args.seconds if seconds is None else seconds
@@ -129,8 +130,17 @@ def run_one(dx, args, sound_speed=None, seconds=None, friction=None):
         "wall_friction": cfg.wall_friction,
         "density_diffusion": cfg.density_diffusion,
         "dt": cfg.dt,
+        "adaptive_dt": cfg.adaptive_dt,
+        "dt_min": run.dt_min,
+        "dt_max": run.dt_max,
         "steps": cfg.steps,
+        "steps_taken": run.steps_taken,
+        "simulated_time": run.simulated_time,
+        # Nominal Courant of the configured step (dt c0 / h) and the number the
+        # stability condition actually bounds (dt (c0 + |v|) / h), accumulated
+        # over every step. They differ by |v|/c0, which reaches 0.16 here.
         "acoustic_courant": cfg.dt * cfg.sound_speed / (cfg.h_factor * cfg.dx),
+        "max_acoustic_courant": run.max_acoustic_courant,
         "particles": int(run.final_positions.shape[0]),
         "elapsed_seconds": elapsed,
         "mass_kg": run.mass,
@@ -199,6 +209,10 @@ def main():
     parser.add_argument("--density-diffusion", type=float, default=0.0,
                         help="delta of the Antuono et al. (2012) diffusive term "
                              "(0 disables it, the default)")
+    parser.add_argument("--adaptive-dt", action="store_true",
+                        help="shrink the step to dt (c0 + |v|) / h <= max_courant "
+                             "as the flow accelerates; costs about 10 %% more steps "
+                             "in this case and caps the true Courant number")
     parser.add_argument("--wall-friction", type=float, default=0.0,
                         help="0 = free slip, 1 = no-slip walls")
     parser.add_argument("--max-compressibility-error", type=float, default=0.05,
@@ -230,8 +244,9 @@ def main():
     for dx in sorted(sizes, reverse=True):
         item = run_one(dx, args)
         results.append(item)
-        print(f"  dx={dx:g}: {item['elapsed_seconds']:5.1f} s, {item['steps']} steps, "
+        print(f"  dx={dx:g}: {item['elapsed_seconds']:5.1f} s, {item['steps_taken']} steps, "
               f"max|v|={item['max_speed']:.2f} m/s (Mach {item['mach_number']:.2f}), "
+              f"Courant {item['max_acoustic_courant']:.3f}, "
               f"escaped={item['particles_escaping_tank']}", flush=True)
 
     convergence = None
