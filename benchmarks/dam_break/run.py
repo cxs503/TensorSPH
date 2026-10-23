@@ -112,7 +112,8 @@ def run_one(dx, args, sound_speed=None, seconds=None, friction=None):
                          column_width=args.column_width,
                          sound_speed=args.sound_speed if sound_speed is None else sound_speed,
                          max_courant=args.max_courant, device=args.device,
-                         wall_friction=args.wall_friction if friction is None else friction)
+                         wall_friction=args.wall_friction if friction is None else friction,
+                         density_diffusion=args.density_diffusion)
     cfg.column_height = 2.0 * args.column_width
     cfg.dt = cfg.dt_from_courant()
     span = args.seconds if seconds is None else seconds
@@ -126,6 +127,7 @@ def run_one(dx, args, sound_speed=None, seconds=None, friction=None):
         "dx": dx,
         "sound_speed": cfg.sound_speed,
         "wall_friction": cfg.wall_friction,
+        "density_diffusion": cfg.density_diffusion,
         "dt": cfg.dt,
         "steps": cfg.steps,
         "acoustic_courant": cfg.dt * cfg.sound_speed / (cfg.h_factor * cfg.dx),
@@ -194,6 +196,9 @@ def main():
                         help="comma-separated sound speeds for the compressibility study")
     parser.add_argument("--sound-speed", type=float, default=25.0,
                         help="sound speed for the resolution sweep")
+    parser.add_argument("--density-diffusion", type=float, default=0.0,
+                        help="delta of the Antuono et al. (2012) diffusive term "
+                             "(0 disables it, the default)")
     parser.add_argument("--wall-friction", type=float, default=0.0,
                         help="0 = free slip, 1 = no-slip walls")
     parser.add_argument("--max-compressibility-error", type=float, default=0.05,

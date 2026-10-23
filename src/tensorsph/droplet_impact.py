@@ -22,7 +22,7 @@ import torch
 from .neighbor_search import PairListCache, cell_linked_pairs
 
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 # The Morris et al. (1997) discrete Laplacian carries a factor 2:
 #   laplacian(v)_i ~= 2 sum_j (m_j / rho_j) (v_i - v_j) . (-r_ij . grad_i W) / (r^2 + eta^2)
@@ -65,6 +65,14 @@ class Config:
     particle has moved half a skin. Set it to zero to rebuild pairs every step.
     Reuse does not change the result, only the cost: the default 0.25 was chosen
     by measurement on the impact case (see docs/benchmarks/neighbor-search.md).
+
+    ``density_diffusion`` is the coefficient ``delta`` of the diffusive term of
+    Antuono, Colagrossi & Marrone (2012). Zero disables it, which is the
+    default. It is *not* delta-SPH proper: delta-SPH integrates the continuity
+    equation, while this solver obtains density by summation every step, so the
+    term here acts as a rate applied to the summation density over ``dt``. The
+    scheme, its invariants and what it measured on B1/B2 are documented in
+    docs/benchmarks/free-surface-treatment.md.
     """
 
     dx: float = 0.025
@@ -91,6 +99,7 @@ class Config:
     pair_skin_factor: float = 0.25
     hydrostatic_init: bool = False
     wall_friction: float = 0.0
+    density_diffusion: float = 0.0
 
 
 # --------------------------------------------------------------------------- #
@@ -151,6 +160,40 @@ def pair_kernels(delta: torch.Tensor, h: float, eps: float = 1.0e-12):
     weight = sigma * shape.clamp_min(0.0)
     scale = sigma * dshape / (h * r.clamp_min(eps))
     return weight, delta * scale.unsqueeze(-1)
+
+
+def density_diffusion_rate(rho: torch.Tensor, mass: torch.Tensor,
+                           distance: torch.Tensor, radial: torch.Tensor,
+                           neighbours: tuple, cfg: Config) -> torch.Tensor:
+    """Rate of the Antuono-Colagrossi-Marrone diffusive term, on fluid pairs.
+
+    ``rho`` is the summation density, ``radial`` is ``-(delta . grad W)`` per
+    pair, and ``neighbours`` are the pair indices. The term is
+
+        D rho_i / Dt = sum_j V_j * 2 (rho_i - rho_j) * (r_i - r_j) . grad W / r^2
+
+    scaled by ``delta * c0 * h``. Written with ``L = -(r . grad W)/r^2 > 0`` it
+    is ``-2 delta c0 h sum_j V_j (rho_i - rho_j) L``, which is a diffusion: a
+    particle denser than its neighbours loses density.
+
+    The pair contribution is applied as ``-c`` to ``i`` and ``+c V_i/V_j`` to
+    ``j``, so ``sum_i V_i drho_i/dt = 0`` exactly: the volume-weighted mean
+    density is conserved, and a field that is already uniform is left untouched
+    because ``rho_i - rho_j`` vanishes.
+
+    This is the diffusive *term* of delta-SPH, not the delta-SPH scheme: that
+    scheme integrates the continuity equation, while this solver obtains
+    density by summation, so the rate is applied over one time step.
+    """
+    i, j = neighbours
+    v_j = mass[j] / rho[j]
+    v_i = mass[i] / rho[i]
+    coupling = (rho[i] - rho[j]) * radial / (distance.square() + 1.0e-12)
+    scale = 2.0 * cfg.density_diffusion * cfg.sound_speed * cfg.h_factor * cfg.dx
+    rate = torch.zeros_like(rho)
+    rate = rate.index_add(0, i, -scale * v_j * coupling)
+    rate = rate.index_add(0, j, scale * v_i * coupling)
+    return rate
 
 
 def tait_pressure(rho: torch.Tensor, cfg: Config) -> torch.Tensor:
@@ -384,6 +427,18 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
     rho_all = rho_all.index_add(0, i, all_mass[j] * wij)
     rho_all = rho_all.index_add(0, j, all_mass[i] * wij)
     rho = rho_all[:n].clamp_min(0.1 * cfg.rho0)
+
+    if cfg.density_diffusion > 0.0:
+        # Fluid-fluid pairs only: the wall density is extrapolated from the
+        # fluid, so diffusing into it would feed the extrapolation back into
+        # the solved field.
+        fluid_only = (i < n) & (j < n)
+        radial = -(delta[fluid_only] * grad_w[fluid_only]).sum(dim=1)
+        rate = density_diffusion_rate(
+            rho, mass, distance[fluid_only], radial,
+            (i[fluid_only], j[fluid_only]), cfg)
+        rho = (rho + cfg.dt * rate).clamp_min(0.1 * cfg.rho0)
+
     pressure = tait_pressure(rho, cfg)
 
     if nw:
@@ -470,6 +525,14 @@ def rhs_all_pairs(pos, vel, mass, cfg: Config):
     r = torch.linalg.vector_norm(delta, dim=-1)
     w = cubic_spline_kernel(r, h)
     rho = (w * mass[None, :]).sum(dim=1).clamp_min(0.1 * cfg.rho0)
+    if cfg.density_diffusion > 0.0:
+        grad_w_dense = cubic_spline_gradient(delta, h)
+        radial = -(delta * grad_w_dense).sum(dim=-1)
+        coupling = ((rho[:, None] - rho[None, :]) * radial
+                    / (r.square() + 1.0e-12))
+        scale = 2.0 * cfg.density_diffusion * cfg.sound_speed * cfg.h_factor * cfg.dx
+        rate = -scale * (mass[None, :] / rho[None, :] * coupling).sum(dim=1)
+        rho = (rho + cfg.dt * rate).clamp_min(0.1 * cfg.rho0)
     pressure = tait_pressure(rho, cfg)
     grad_w = cubic_spline_gradient(delta, h)
     pressure_term = (
@@ -549,6 +612,8 @@ def validate_config(cfg: Config) -> None:
         raise ValueError("pair_skin_factor must be non-negative")
     if not 0.0 <= cfg.wall_friction <= 1.0:
         raise ValueError("wall_friction must be in [0, 1]")
+    if cfg.density_diffusion < 0.0:
+        raise ValueError("density_diffusion must be non-negative")
     courant = acoustic_courant(cfg.dt, cfg)
     if courant > cfg.max_courant * (1.0 + 1.0e-9):
         raise ValueError(
@@ -567,6 +632,12 @@ def validate_config(cfg: Config) -> None:
         raise ValueError(
             f"dt={cfg.dt:g} exceeds the gravity limit {gravity_limit:.3e} s"
         )
+    diffusion_limit = diffusion_dt_limit(cfg)
+    if cfg.dt > diffusion_limit * (1.0 + 1.0e-9):
+        raise ValueError(
+            f"dt={cfg.dt:g} exceeds the density-diffusion limit "
+            f"{diffusion_limit:.3e} s (delta={cfg.density_diffusion:g})"
+        )
 
 
 def viscous_dt_limit(cfg: Config, safety: float = 0.125) -> float:
@@ -583,6 +654,18 @@ def viscous_dt_limit(cfg: Config, safety: float = 0.125) -> float:
     if cfg.viscosity <= 0.0:
         return float("inf")
     return safety * h * h / cfg.viscosity
+
+
+def diffusion_dt_limit(cfg: Config, safety: float = 0.125) -> float:
+    """Largest explicit step for the diffusive density term.
+
+    ``delta c0 h`` plays the role of a diffusivity for the density field, so the
+    same stability bound as for the viscous operator applies.
+    """
+    if cfg.density_diffusion <= 0.0:
+        return float("inf")
+    h = cfg.h_factor * cfg.dx
+    return safety * h / (cfg.density_diffusion * cfg.sound_speed)
 
 
 def gravity_dt_limit(cfg: Config, safety: float = 0.25) -> float:
@@ -683,6 +766,11 @@ def evaluate_acceptance(rows, cfg: Config, boundary_events: int,
     return criteria
 
 
+def _json_number(value: float) -> float | None:
+    """``inf`` is not JSON; an absent limit is recorded as null."""
+    return value if math.isfinite(value) else None
+
+
 def _write_manifest(out: Path, cfg: Config, device: torch.device, initial_n: int,
                     rows, criteria, boundary_events: int, wall_count: int,
                     failure: str | None, fall_time: float | None,
@@ -701,6 +789,9 @@ def _write_manifest(out: Path, cfg: Config, device: torch.device, initial_n: int
         "config": cfg.__dict__,
         "derived": {"smoothing_length": cfg.h_factor * cfg.dx,
                     "suggested_dt": suggested_dt(cfg),
+                    "viscous_dt_limit": _json_number(viscous_dt_limit(cfg)),
+                    "gravity_dt_limit": _json_number(gravity_dt_limit(cfg)),
+                    "diffusion_dt_limit": _json_number(diffusion_dt_limit(cfg)),
                     "acoustic_courant": acoustic_courant(cfg.dt, cfg),
                     "drop_free_fall_time": fall_time,
                     "simulated_time": cfg.steps * cfg.dt},

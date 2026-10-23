@@ -1,7 +1,7 @@
 # TensorSPH algorithm gap analysis and validation roadmap
 
 **Status:** engineering assessment of the current prototype, not a claim of validated SPH accuracy.
-**Scope:** 2-D PyTorch WCSPH prototype (droplet impact and dam break) at version 0.5.0.
+**Scope:** 2-D PyTorch WCSPH prototype (droplet impact and dam break) at version 0.6.0.
 
 ## Executive decision
 
@@ -43,6 +43,15 @@ possible". The root cause was diagnosed and fixed:
 | Manifest missing the documented contract | ran without revision, versions, or statuses | manifest records solver revision, environment, three separate statuses, and per-criterion measured value/threshold/result |
 
 See [`docs/review-2026-10.md`](review-2026-10.md) for the measurements behind these claims.
+
+## What changed in 0.6.0
+
+| Item | Before | After |
+|---|---|---|
+| Free-surface remedies | one, first-order: clamp the Tait law at zero | a second, optional, literature-backed option (`Config.density_diffusion`, the Antuono-Colagrossi-Marrone term) with a measured comparison, its own step limit, and seven invariant tests |
+| B1 diagnostics | time-averaged pressure profile only | also the temporal pressure fluctuation per band: a time average hides exactly the noise a free-surface treatment targets |
+| Default behaviour | — | **unchanged**. The comparison did not justify switching; the numbers behind that decision are in [`benchmarks/free-surface-treatment.md`](benchmarks/free-surface-treatment.md) |
+| Benchmarks | three scripts | `--density-diffusion` on the hydrostatic and dam-break scripts, plus `benchmarks/free_surface/compare.py` |
 
 ## What changed in 0.5.0
 
@@ -92,7 +101,7 @@ no comparison against measured data.
 | P0 | No scientific acceptance gates | A successful process can be mistaken for a valid simulation | **Done for numerical criteria, and as of 0.5.0 the criteria are measured over every step rather than over the printed rows.** Physical acceptance still absent | `run_manifest.json` separates `software_execution`, `numerical_verification`, `physical_validation`, and records each criterion's population |
 | P0 | Boundary was a coordinate clamp | **Fixed.** Static wall particles with extrapolated pressure | Validate against a dynamic case (dam break), add wall-force diagnostics | B1 passes at 1.09 % interior error; B2 has no experimental comparison yet |
 | P0 | No convergence study | Results may depend strongly on particle spacing and smoothing length | **Two-level convergence exists for B2.** A three-level ladder and the observed order of accuracy are still missing | Resolution table and plots; no unsupported convergence claim |
-| P1 | Free-surface tensile instability | **Fixed by clamping**, which is first-order: it discards all rarefaction and cannot represent capillary effects | Replace with a physically motivated remedy (delta-SPH density diffusion or Monaghan artificial stress) and compare against the clamp | Side-by-side impact comparison with clumping statistics |
+| P1 | Free-surface tensile instability | **Clamping still the default, now with a measured alternative.** A diffusive density term (Antuono et al. 2012) is implemented and compared against the clamp on B1, B2 and clumping: interior error 1.086 % → 0.943 %, front moves < 0.3 %, worst pair separation 0.052 → 0.089 `dx`, +30 % cost. Kept off by default because the hydrostatic gain is inside the band-selection spread and the fluctuation improves by only 3 % | A quiet free-surface case (oscillating drop in zero g) to measure the noise the term actually targets, then decide | [`benchmarks/free-surface-treatment.md`](benchmarks/free-surface-treatment.md) records the comparison, the invariants and the decision |
 | P1 | All-pairs interactions, O(N^2) | **Fixed.** One shared linked-cell pair list feeds density, pressure, and viscosity | — | Pair-set equivalence test (done); timing report (done) |
 | P1 | Pair construction copied coordinates to CPU | **Fixed in 0.3.0.** Vectorized, device-resident binning plus a Verlet skin cache: 5x faster than the host search, 1.72x per solver step after skin reuse, 2.8x for the whole impact run | CUDA timing on real hardware | `device_equals_brute_force` and the host cross-check both pass at 400–5000 particles |
 | P0 | No dam-break reference comparison | **Still open, but the solver side is ready.** Convergence (order 0.96), compressibility (0.019 % between `c0` 40 and 60) and no-slip walls (0.91x of the analytic Stokes rate) are all verified; only traceable reference data is missing | Bundle a digitized Martin & Moyce table with provenance and an uncertainty per point | B2 experimental gate currently `not_evaluated` |

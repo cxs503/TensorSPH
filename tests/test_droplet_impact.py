@@ -140,6 +140,9 @@ def test_manifest_records_statuses_and_acceptance(tmp_path):
     assert "python" in manifest["environment"]
     assert "torch" in manifest["environment"]
     assert manifest["derived"]["suggested_dt"] > 0
+    assert manifest["derived"]["viscous_dt_limit"] > 0
+    assert manifest["derived"]["gravity_dt_limit"] > 0
+    assert manifest["derived"]["diffusion_dt_limit"] is None  # no diffusion term
     assert manifest["derived"]["smoothing_length"] == pytest.approx(cfg.h_factor * cfg.dx)
 
 
