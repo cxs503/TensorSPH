@@ -17,6 +17,8 @@ parser.add_argument("--dt", type=float, default=None,
 parser.add_argument("--boundary", default=None, choices=("wall", "clamp"),
                     help="boundary treatment (default: Config().boundary)")
 parser.add_argument("--device", default="auto")
+parser.add_argument("--no-plot", action="store_true",
+                    help="skip the snapshot figure (saves ~1.5 s)")
 parser.add_argument("--output", default="artifacts/droplet_impact_2d")
 args = parser.parse_args()
 
@@ -29,10 +31,14 @@ if args.boundary is not None:
     cfg.boundary = args.boundary
 
 try:
-    rows = run(cfg, args.output)
+    rows = run(cfg, args.output, plot=not args.no_plot)
 except SimulationUnstableError as exc:
     print(f"FAILED numerical acceptance: {exc}", file=sys.stderr)
     raise SystemExit(1)
+except ValueError as exc:
+    # A configuration the solver refuses is a user error, not a crash.
+    print(f"FAILED configuration check: {exc}", file=sys.stderr)
+    raise SystemExit(2)
 
 last = rows[-1]
 print(f"Completed {len(rows) - 1} output intervals "

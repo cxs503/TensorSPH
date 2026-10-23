@@ -175,29 +175,51 @@ class PairListCache:
     This is the standard Verlet-skin strategy. It matters because particles in a
     weakly-compressible flow move a small fraction of a cell per step: rebuilding
     the list every step costs far more than the force evaluation that uses it.
+
+    ``fluid_count`` optionally prunes the list at build time: positions are
+    assumed to be ordered fluid-first (the order :func:`tensorsph.droplet_impact.rhs`
+    already assumes for ``pos`` followed by ``wall``), and pairs in which both
+    indices are at or beyond it are dropped. They cannot affect any fluid
+    quantity, so pruning changes nothing but the cost; ``pruned`` reports how
+    many were dropped.
     """
 
-    def __init__(self, cutoff: float, skin: float):
+    def __init__(self, cutoff: float, skin: float, fluid_count: int | None = None):
         if not math.isfinite(float(cutoff)) or cutoff <= 0:
             raise ValueError("cutoff must be finite and positive")
         if not math.isfinite(float(skin)) or skin < 0:
             raise ValueError("skin must be finite and non-negative")
+        if fluid_count is not None and fluid_count < 0:
+            raise ValueError("fluid_count must be non-negative")
         self.cutoff = float(cutoff)
         self.skin = float(skin)
+        self.fluid_count = fluid_count
         self._pairs: torch.Tensor | None = None
         self._anchor: torch.Tensor | None = None
         self.rebuilds = 0
         self.reuses = 0
+        self.pruned = 0
 
     def displacement(self, positions: torch.Tensor) -> float:
         if self._anchor is None or self._anchor.shape != positions.shape:
             return float("inf")
         return float(torch.linalg.vector_norm(positions - self._anchor, dim=-1).max())
 
+    def _build(self, positions: torch.Tensor) -> torch.Tensor:
+        pairs = cell_linked_pairs(positions, self.cutoff + self.skin)
+        if self.fluid_count is not None and pairs.numel():
+            # Positions are ordered fluid-first: drop pairs that touch no fluid
+            # particle once here rather than on every step that reuses them.
+            i, j = pairs.unbind(dim=1)
+            keep = (i < self.fluid_count) | (j < self.fluid_count)
+            self.pruned += int(keep.numel() - keep.sum())
+            pairs = pairs[keep]
+        return pairs
+
     def get(self, positions: torch.Tensor) -> tuple[torch.Tensor, bool]:
         """Return ``(pairs, rebuilt)`` for the current positions."""
         if self._pairs is None or self.displacement(positions) > 0.5 * self.skin:
-            self._pairs = cell_linked_pairs(positions, self.cutoff + self.skin)
+            self._pairs = self._build(positions)
             self._anchor = positions.detach().clone()
             self.rebuilds += 1
             return self._pairs, True

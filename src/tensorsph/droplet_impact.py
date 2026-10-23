@@ -15,13 +15,14 @@ import json
 import math
 import platform
 import subprocess
+import warnings
 
 import torch
 
 from .neighbor_search import PairListCache, cell_linked_pairs
 
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 # The Morris et al. (1997) discrete Laplacian carries a factor 2:
 #   laplacian(v)_i ~= 2 sum_j (m_j / rho_j) (v_i - v_j) . (-r_ij . grad_i W) / (r^2 + eta^2)
@@ -97,7 +98,12 @@ class Config:
 # --------------------------------------------------------------------------- #
 
 def cubic_spline_kernel(r: torch.Tensor, h: float) -> torch.Tensor:
-    """2-D cubic spline kernel W(r,h), normalized by 10/(7*pi*h**2)."""
+    """2-D cubic spline kernel W(r,h), normalized by 10/(7*pi*h**2).
+
+    Valid for two spatial dimensions only: the normalisation ``10/(7 pi h^2)``
+    is the 2-D one. ``rhs`` and ``run`` reject other dimensions instead of
+    silently applying this normalisation to a 3-D cloud.
+    """
     q = r / h
     sigma = 10.0 / (7.0 * math.pi * h * h)
     first = 1.0 - 1.5 * q.square() + 0.75 * q.pow(3)
@@ -120,6 +126,31 @@ def cubic_spline_gradient(
     )
     scale = sigma * dshape / (h * r.clamp_min(eps))
     return delta * scale.unsqueeze(-1)
+
+
+def pair_kernels(delta: torch.Tensor, h: float, eps: float = 1.0e-12):
+    """Return ``(W, grad W)`` for a batch of pair separations.
+
+    A hot loop needs both the kernel value and its gradient for the same pairs.
+    Calling the two public functions separately evaluates the radius, the
+    normalised distance ``q`` and the polynomial branch twice. This helper
+    shares them and is used by :func:`rhs`; the public functions remain the
+    readable single-purpose entry points and are what the tests pin.
+    """
+    r = torch.linalg.vector_norm(delta, dim=-1)
+    q = r / h
+    sigma = 10.0 / (7.0 * math.pi * h * h)
+    first = 1.0 - 1.5 * q.square() + 0.75 * q.pow(3)
+    second = 0.25 * (2.0 - q).clamp_min(0).pow(3)
+    shape = torch.where(q < 1.0, first, torch.where(q < 2.0, second, 0.0))
+    dshape = torch.where(
+        q < 1.0,
+        -3.0 * q + 2.25 * q.square(),
+        torch.where(q < 2.0, -0.75 * (2.0 - q).square(), 0.0),
+    )
+    weight = sigma * shape.clamp_min(0.0)
+    scale = sigma * dshape / (h * r.clamp_min(eps))
+    return weight, delta * scale.unsqueeze(-1)
 
 
 def tait_pressure(rho: torch.Tensor, cfg: Config) -> torch.Tensor:
@@ -275,6 +306,25 @@ def density_from_neighbor_pairs(pos, mass, h: float, pairs=None):
     return rho
 
 
+def drop_wall_wall_pairs(pairs: torch.Tensor, fluid_count: int) -> torch.Tensor:
+    """Remove pairs in which both particles are wall particles.
+
+    Positions are ordered fluid-first, wall-after, so a pair ``(i, j)`` with
+    ``i >= fluid_count`` and ``j >= fluid_count`` touches no fluid particle.
+    Such a pair can only contribute to wall density and wall pressure, and both
+    of those are discarded: the wall pressure is extrapolated *from* the fluid,
+    and the force on a static particle is never integrated. Keeping them is
+    therefore pure waste -- 23 % of the pairs in the default impact case.
+    """
+    if pairs.numel() == 0:
+        return pairs
+    i, j = pairs.unbind(dim=1)
+    usable = (i < fluid_count) | (j < fluid_count)
+    if bool(usable.all()):
+        return pairs
+    return pairs[usable]
+
+
 def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
     """Compute WCSPH RHS with pair-based compact-support interactions.
 
@@ -290,6 +340,9 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
     """
     h = cfg.h_factor * cfg.dx
     n = pos.shape[0]
+    if pos.shape[1] != 2:
+        raise ValueError(
+            f"rhs implements 2-D smoothing only, got {pos.shape[1]} dimensions")
     if wall is None:
         all_pos, all_mass, nw = pos, mass, 0
     else:
@@ -303,6 +356,9 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
 
     if pairs is None:
         pairs = cell_linked_pairs(all_pos, 2.0 * h)
+        # A freshly built list still contains wall-wall pairs; drop them before
+        # paying for them. A cached list is filtered when it is built.
+        pairs = drop_wall_wall_pairs(pairs, n)
     if pairs.ndim != 2 or pairs.shape[1] != 2 or pairs.dtype != torch.long:
         raise ValueError("pairs must be a long tensor with shape (pair_count, 2)")
     if pairs.device != pos.device:
@@ -323,8 +379,7 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
     i, j = pairs.unbind(dim=1)
     delta = all_pos[i] - all_pos[j]
     distance = torch.linalg.vector_norm(delta, dim=1)
-    wij = cubic_spline_kernel(distance, h)
-    grad_w = cubic_spline_gradient(delta, h)
+    wij, grad_w = pair_kernels(delta, h)
 
     rho_all = rho_all.index_add(0, i, all_mass[j] * wij)
     rho_all = rho_all.index_add(0, j, all_mass[i] * wij)
@@ -333,16 +388,22 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
 
     if nw:
         bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
-        fluid_first = (i < n) & (j >= n)
-        wall_first = (i >= n) & (j < n)
+        # Only fluid/wall pairs extrapolate wall pressure. Instead of selecting
+        # those pairs with boolean masks (which costs 12 full pair-level copies
+        # in this function), gather with a clamped index and zero the weight of
+        # every non-crossing pair: identical numbers, fewer kernel launches.
+        i_fluid = i < n
+        crossing = i_fluid != (j < n)
+        fluid_idx = torch.where(i_fluid, i, j)
+        wall_idx = (torch.where(i_fluid, j, i) - n).clamp_(0, nw - 1)
+        weight = torch.where(crossing, wij, torch.zeros_like(wij))
+        pressure_ext = torch.cat((pressure, torch.zeros(nw, dtype=pos.dtype,
+                                                       device=pos.device)))
         numerator = torch.zeros(nw, dtype=pos.dtype, device=pos.device)
         denominator = torch.zeros(nw, dtype=pos.dtype, device=pos.device)
-        numerator = numerator.index_add(0, j[fluid_first] - n,
-                                        pressure[i[fluid_first]] * wij[fluid_first])
-        denominator = denominator.index_add(0, j[fluid_first] - n, wij[fluid_first])
-        numerator = numerator.index_add(0, i[wall_first] - n,
-                                        pressure[j[wall_first]] * wij[wall_first])
-        denominator = denominator.index_add(0, i[wall_first] - n, wij[wall_first])
+        numerator = numerator.index_add(0, wall_idx,
+                                        pressure_ext[fluid_idx] * weight)
+        denominator = denominator.index_add(0, wall_idx, weight)
         wall_pressure = (numerator / denominator.clamp_min(1.0e-30)).clamp_min(0.0)
         wall_density = (cfg.rho0 * (wall_pressure / bulk + 1.0).pow(1.0 / cfg.gamma)
                         ).clamp_min(cfg.rho0)
@@ -356,9 +417,6 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
                                              dtype=pos.dtype, device=pos.device)))
     else:
         all_vel = vel
-    wall_friction_tensor = torch.full((), cfg.wall_friction, dtype=pos.dtype,
-                                      device=pos.device)
-    ones = torch.ones((), dtype=pos.dtype, device=pos.device)
 
     pressure_term = (pressure_all[i] / density_all[i].square()
                      + pressure_all[j] / density_all[j].square())
@@ -369,34 +427,34 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None):
     acc = acc.index_add(0, j, all_mass[i, None] * pair_pressure)
     acc_pressure = acc[:n]
 
+    # Viscosity acts on fluid-fluid pairs and, when a no-slip wall is asked
+    # for, on fluid-wall pairs with a blend factor. Wall-wall pairs never
+    # contribute (the wall is static), so the mask only has to separate
+    # fluid-fluid from fluid-wall.
     fluid_pair = (i < n) & (j < n)
     if nw and cfg.wall_friction > 0.0:
-        # One side is fluid and the other is wall: extend the viscous stencil
-        # into the wall, with the wall at rest. This is the mirror/image
-        # treatment of a no-slip boundary in a particle method.
-        wall_side = ((i < n) & (j >= n)) | ((i >= n) & (j < n))
-        visc_pair = fluid_pair | wall_side
-        blend = torch.where(wall_side, wall_friction_tensor, ones)[visc_pair][:, None]
+        crossing = torch.logical_xor(i < n, j < n)
+        blend = (fluid_pair.to(pos.dtype)
+                 + cfg.wall_friction * crossing.to(pos.dtype))
+        visc_scale = (VISCOUS_LAPLACIAN_FACTOR * cfg.viscosity * blend)[:, None]
+    elif nw:
+        visc_scale = (VISCOUS_LAPLACIAN_FACTOR * cfg.viscosity
+                      * fluid_pair.to(pos.dtype))[:, None]
     else:
-        visc_pair = fluid_pair
-        blend = 1.0
-    dv = all_vel[i[visc_pair]] - all_vel[j[visc_pair]]
-    pair_distance = distance[visc_pair]
-    denom = pair_distance.square() + 0.01 * h * h
-    laplace_weight = torch.relu(
-        -(delta[visc_pair] * grad_w[visc_pair]).sum(dim=1)) / denom
-    coefficient = VISCOUS_LAPLACIAN_FACTOR * cfg.viscosity * blend
-    visc_i = (-coefficient * dv
-              * (all_mass[j[visc_pair]] / density_all[j[visc_pair]]
-                 * laplace_weight)[:, None])
-    visc_j = (coefficient * dv
-              * (all_mass[i[visc_pair]] / density_all[i[visc_pair]]
-                 * laplace_weight)[:, None])
+        visc_scale = VISCOUS_LAPLACIAN_FACTOR * cfg.viscosity
+    dv = all_vel[i] - all_vel[j]
+    denom = distance.square() + 0.01 * h * h
+    laplace_weight = torch.relu(-(delta * grad_w).sum(dim=1)) / denom
+    visc_i = (-visc_scale * dv
+              * (all_mass[j] / density_all[j] * laplace_weight)[:, None])
+    visc_j = (visc_scale * dv
+              * (all_mass[i] / density_all[i] * laplace_weight)[:, None])
     acc_visc = torch.zeros((n + nw, pos.shape[1]), dtype=pos.dtype,
                            device=pos.device)
-    acc_visc = acc_visc.index_add(0, i[visc_pair], visc_i)
-    acc_visc = acc_visc.index_add(0, j[visc_pair], visc_j)
+    acc_visc = acc_visc.index_add(0, i, visc_i)
+    acc_visc = acc_visc.index_add(0, j, visc_j)
     return rho, pressure, acc_pressure + acc_visc[:n] + gravity
+
 
 
 def rhs_all_pairs(pos, vel, mass, cfg: Config):
@@ -497,6 +555,41 @@ def validate_config(cfg: Config) -> None:
             f"dt={cfg.dt:g} gives acoustic Courant {courant:.3f} > max_courant "
             f"{cfg.max_courant:g}; use dt <= {suggested_dt(cfg):.3e} s"
         )
+    viscosity_limit = viscous_dt_limit(cfg)
+    if cfg.dt > viscosity_limit * (1.0 + 1.0e-9):
+        raise ValueError(
+            f"dt={cfg.dt:g} exceeds the viscous limit {viscosity_limit:.3e} s "
+            f"(viscosity={cfg.viscosity:g}, h={cfg.h_factor * cfg.dx:g}); the "
+            f"explicit Laplacian is unstable above it"
+        )
+    gravity_limit = gravity_dt_limit(cfg)
+    if cfg.dt > gravity_limit * (1.0 + 1.0e-9):
+        raise ValueError(
+            f"dt={cfg.dt:g} exceeds the gravity limit {gravity_limit:.3e} s"
+        )
+
+
+def viscous_dt_limit(cfg: Config, safety: float = 0.125) -> float:
+    """Largest step the explicit viscous term tolerates: ``safety*h^2/nu``.
+
+    The acoustic Courant condition alone does not bound the viscous operator.
+    A configuration can satisfy it and still diverge: with ``viscosity = 1`` and
+    the default ``dt`` the impact case reaches 53 % density compression and
+    Mach 1.2, and ``viscosity = 2`` reaches 1.6e4 % before fail-fast stops it.
+    The Morris/ESPHS form used here is a standard explicit Laplacian, for which
+    ``dt <= 0.125 h^2 / nu`` is the usual stability bound.
+    """
+    h = cfg.h_factor * cfg.dx
+    if cfg.viscosity <= 0.0:
+        return float("inf")
+    return safety * h * h / cfg.viscosity
+
+
+def gravity_dt_limit(cfg: Config, safety: float = 0.25) -> float:
+    """Largest step that still resolves free fall over one smoothing length."""
+    if cfg.gravity <= 0.0:
+        return float("inf")
+    return safety * math.sqrt(cfg.h_factor * cfg.dx / cfg.gravity)
 
 
 def nominal_fall_time(cfg: Config, pos: torch.Tensor) -> float | None:
@@ -531,14 +624,35 @@ def _source_revision() -> dict | None:
     return {"git_commit": commit, "worktree_dirty": dirty}
 
 
-def evaluate_acceptance(rows, cfg: Config, boundary_events: int) -> list[dict]:
-    """Evaluate the run against explicit, recorded numerical criteria."""
-    worst_compression = max(row["rho_max"] / cfg.rho0 - 1.0 for row in rows)
-    worst_mach = max(row["max_speed"] for row in rows) / cfg.sound_speed
-    worst_courant = max(row["courant_number"] for row in rows)
+def evaluate_acceptance(rows, cfg: Config, boundary_events: int,
+                        extremes: dict | None = None) -> list[dict]:
+    """Evaluate the run against explicit, recorded numerical criteria.
+
+    ``extremes`` are maxima accumulated over **every** integration step:
+    ``peak_rho_compression``, ``peak_speed`` and ``peak_courant``. Diagnostics
+    are only written every ``output_every`` steps, so judging stability from
+    ``rows`` alone can miss an overshoot that happens between two output
+    points. When ``extremes`` is omitted (a caller that only has diagnostics),
+    the values fall back to the sampled rows and the criterion records that
+    population.
+    """
+    sampled_compression = max(row["rho_max"] / cfg.rho0 - 1.0 for row in rows)
+    sampled_speed = max(row["max_speed"] for row in rows)
+    sampled_courant = max(row["courant_number"] for row in rows)
+    if extremes is None:
+        population = "sampled_rows"
+        worst_compression, worst_speed = sampled_compression, sampled_speed
+        worst_courant = sampled_courant
+    else:
+        population = "all_steps"
+        worst_compression = float(extremes["peak_rho_compression"])
+        worst_speed = float(extremes["peak_speed"])
+        worst_courant = float(extremes["peak_courant"])
+    worst_mach = worst_speed / cfg.sound_speed
     finite = all(all(math.isfinite(value) for value in row.values()) for row in rows)
 
-    def criterion(identifier, metric, measured, threshold, unit, comparison):
+    def criterion(identifier, metric, measured, threshold, unit, comparison,
+                  scope=population):
         if comparison == ">=":
             passed = measured >= threshold
         else:
@@ -546,12 +660,12 @@ def evaluate_acceptance(rows, cfg: Config, boundary_events: int) -> list[dict]:
         return {
             "id": identifier, "metric": metric, "measured": measured,
             "threshold": threshold, "unit": unit, "comparison": comparison,
-            "result": "pass" if passed else "fail",
+            "population": scope, "result": "pass" if passed else "fail",
         }
 
     criteria = [
         criterion("finite_state", "all diagnostics finite", 1.0 if finite else 0.0,
-                  1.0, "bool", ">="),
+                  1.0, "bool", ">=", "sampled_rows"),
         criterion("density_compression", "max(rho/rho0 - 1)", worst_compression,
                   cfg.max_density_error, "1", "<="),
         criterion("mach_number", "max|v| / c0", worst_mach, cfg.max_mach, "1", "<="),
@@ -559,7 +673,8 @@ def evaluate_acceptance(rows, cfg: Config, boundary_events: int) -> list[dict]:
                   cfg.max_courant, "1", "<="),
     ]
     escape = criterion("boundary_escape", "particles clamped beyond the box",
-                       float(boundary_events), 0.0, "count", "<=")
+                       float(boundary_events), 0.0, "count", "<=",
+                       "all_steps")
     if cfg.boundary == "clamp":
         # The coordinate clamp *is* the boundary condition here, so exceeding
         # the box is expected behaviour rather than a failure.
@@ -571,7 +686,8 @@ def evaluate_acceptance(rows, cfg: Config, boundary_events: int) -> list[dict]:
 def _write_manifest(out: Path, cfg: Config, device: torch.device, initial_n: int,
                     rows, criteria, boundary_events: int, wall_count: int,
                     failure: str | None, fall_time: float | None,
-                    cache: PairListCache | None = None) -> dict:
+                    cache: PairListCache | None = None,
+                    extremes: dict | None = None) -> dict:
     numerical = ("fail" if any(c["result"] == "fail" for c in criteria)
                  else "pass")
     metadata = {
@@ -601,6 +717,14 @@ def _write_manifest(out: Path, cfg: Config, device: torch.device, initial_n: int
             "mean_steps_per_rebuild": (
                 None if cache is None or cache.rebuilds == 0
                 else (cache.rebuilds + cache.reuses) / cache.rebuilds),
+            "wall_wall_pairs_pruned": 0 if cache is None else cache.pruned,
+        },
+        "sampling": {
+            "diagnostic_rows": len(rows),
+            "output_every": cfg.output_every,
+            "extrema_population": ("all_steps" if extremes is not None
+                                   else "sampled_rows"),
+            "extrema": extremes,
         },
         "diagnostics": {"rows": len(rows),
                         "boundary_clamp_events": int(boundary_events),
@@ -624,13 +748,18 @@ def _write_manifest(out: Path, cfg: Config, device: torch.device, initial_n: int
     return metadata
 
 
-def run(cfg: Config, output: str | Path):
+def run(cfg: Config, output: str | Path, plot: bool = True):
     """Run the case, write artifacts, and enforce numerical acceptance gates.
 
     Artifacts (diagnostics CSV, snapshots, run manifest, plot) are written even
     when a criterion fails, so a failed run can be inspected. If
     ``cfg.fail_fast`` is set, a violated criterion raises
     :class:`SimulationUnstableError` after the artifacts are on disk.
+
+    Snapshots are written as they are produced and the plot reads back a
+    subsample, so memory stays independent of ``steps``. Rendering the plot
+    costs about 1.5 s (matplotlib import plus save); ``plot=False`` skips it
+    when only the numbers matter.
     """
     validate_config(cfg)
     device = resolve_device(cfg.device)
@@ -645,28 +774,42 @@ def run(cfg: Config, output: str | Path):
     wall = wall_lattice(cfg, device) if cfg.boundary == "wall" else None
 
     h = cfg.h_factor * cfg.dx
-    cache = (PairListCache(2.0 * h, cfg.pair_skin_factor * h)
+    initial_n = pos.shape[0]
+    cache = (PairListCache(2.0 * h, cfg.pair_skin_factor * h,
+                           fluid_count=initial_n)
              if cfg.pair_skin_factor > 0 else None)
+    # One buffer for the fluid and the wall particles: rebuilt never, rewritten
+    # every step, so the solver does not allocate two concatenations per step.
+    all_pos = (torch.cat((pos, wall), dim=0) if wall is not None else pos)
 
     vel = torch.zeros_like(pos)
     pos_initial = pos.clone()
-    initial_n = pos.shape[0]
     rows: list[dict] = []
-    snapshots: list[tuple[int, torch.Tensor, torch.Tensor]] = []
+    snapshot_steps: list[int] = []
     boundary_events = 0
     failure: str | None = None
+    # Maxima over every step, not just the steps that write a diagnostic row.
+    dtype, dev = pos.dtype, pos.device
+    peak_compression = torch.zeros((), dtype=dtype, device=dev)
+    peak_speed = torch.zeros((), dtype=dtype, device=dev)
 
     for step in range(cfg.steps + 1):
-        if cache is None:
-            pairs = None
+        if cache is not None:
+            if wall is not None:
+                all_pos[:initial_n] = pos
+            pairs, _ = cache.get(all_pos)
         else:
-            pairs, _ = cache.get(torch.cat((pos, wall), dim=0) if wall is not None
-                                 else pos)
+            pairs = None
         rho, pressure, acc = rhs(pos, vel, mass, cfg, wall=wall, pairs=pairs)
         state_finite = bool(torch.isfinite(pos).all() and torch.isfinite(vel).all()
                             and torch.isfinite(rho).all() and torch.isfinite(acc).all())
         if not state_finite and failure is None:
             failure = f"non-finite state at step {step}"
+        peak_compression = torch.maximum(peak_compression,
+                                         (rho / cfg.rho0).max() - 1.0)
+        if vel.numel():
+            peak_speed = torch.maximum(peak_speed,
+                                       torch.linalg.vector_norm(vel, dim=-1).max())
 
         if step % cfg.output_every == 0 or step == cfg.steps:
             speed = torch.linalg.vector_norm(vel, dim=-1)
@@ -691,7 +834,11 @@ def run(cfg: Config, output: str | Path):
                 "kinetic_energy": float(0.5 * (mass[:, None] * vel.square()).sum()),
                 "y_min": float(pos[:, 1].min()), "y_max": float(pos[:, 1].max()),
             })
-            snapshots.append((step, pos.detach().clone(), rho.detach().clone()))
+            torch.save({"step": step, "time": step * cfg.dt,
+                        "position": pos.detach().cpu(), "density": rho.detach().cpu(),
+                        "boundary": cfg.boundary},
+                       out / f"particles_{step:06d}.pt")
+            snapshot_steps.append(step)
 
         if step == cfg.steps or not state_finite:
             break
@@ -700,20 +847,22 @@ def run(cfg: Config, output: str | Path):
         pos = pos + cfg.dt * vel
         boundary_events += apply_boundary(pos, vel, cfg)
 
-    criteria = evaluate_acceptance(rows, cfg, boundary_events)
+    extremes = {
+        "peak_rho_compression": float(peak_compression),
+        "peak_speed": float(peak_speed),
+        "peak_courant": acoustic_courant(cfg.dt, cfg, float(peak_speed)),
+    }
+    criteria = evaluate_acceptance(rows, cfg, boundary_events, extremes=extremes)
     _write_manifest(out, cfg, device, initial_n, rows, criteria, boundary_events,
                     0 if wall is None else wall.shape[0], failure,
-                    nominal_fall_time(cfg, pos_initial), cache)
+                    nominal_fall_time(cfg, pos_initial), cache, extremes)
 
     with (out / "diagnostics.csv").open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         writer.writeheader()
         writer.writerows(rows)
-    for step, xyz, density in snapshots:
-        torch.save({"step": step, "time": step * cfg.dt, "position": xyz,
-                    "density": density, "boundary": cfg.boundary},
-                   out / f"particles_{step:06d}.pt")
-    _plot(out, cfg, snapshots)
+    if plot:
+        _plot(out, cfg, snapshot_steps)
 
     if cfg.fail_fast:
         failed = [c for c in criteria if c["result"] == "fail"]
@@ -726,21 +875,33 @@ def run(cfg: Config, output: str | Path):
     return rows
 
 
-def _plot(out: Path, cfg: Config, snapshots) -> None:
-    if len(snapshots) > 12:  # keep the panel width readable for long runs
-        stride = math.ceil(len(snapshots) / 12)
-        snapshots = snapshots[::stride]
+def _plot(out: Path, cfg: Config, steps, max_frames: int = 12) -> None:
+    """Render up to ``max_frames`` snapshot files that are already on disk."""
+    if not steps:
+        return
+    steps = list(steps)
+    if len(steps) > max_frames:  # keep the panel width readable for long runs
+        stride = math.ceil(len(steps) / max_frames)
+        steps = steps[::stride]
     try:
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except ImportError:
+        warnings.warn(
+            "matplotlib is not installed; skipping particle_snapshots.png. "
+            "Install it with: pip install \"tensorsph[plot]\"",
+            RuntimeWarning, stacklevel=2)
         return
+    frames = []
+    for step in steps:
+        payload = torch.load(out / f"particles_{step:06d}.pt")
+        frames.append((step, payload["position"], payload["density"]))
     _, _, _, y_max = boundary_box(cfg)
-    fig, axes = plt.subplots(1, len(snapshots), figsize=(4 * len(snapshots), 4),
+    fig, axes = plt.subplots(1, len(frames), figsize=(4 * len(frames), 4),
                              squeeze=False)
     sc = None
-    for ax, (step, xyz, density) in zip(axes[0], snapshots):
+    for ax, (step, xyz, density) in zip(axes[0], frames):
         sc = ax.scatter(xyz[:, 0].tolist(), xyz[:, 1].tolist(),
                         c=density.tolist(), s=5, cmap="viridis",
                         vmin=0.9 * cfg.rho0, vmax=1.05 * cfg.rho0)

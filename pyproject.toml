@@ -8,10 +8,11 @@ dynamic = ["version"]
 description = "PyTorch-native SPH research solver for agent-driven scientific computing"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["torch>=2.1", "matplotlib>=3.7"]
+dependencies = ["torch>=2.1"]
 
 [project.optional-dependencies]
-test = ["pytest>=7.4"]
+plot = ["matplotlib>=3.7"]
+test = ["pytest>=7.4", "matplotlib>=3.7", "ruff>=0.6"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -21,3 +22,12 @@ version = { attr = "tensorsph.droplet_impact.__version__" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+# Correctness-only gate: pyflakes undefined names/unused imports, pycodestyle
+# errors and warnings. Formatting is deliberately not enforced.
+select = ["E", "F", "W"]

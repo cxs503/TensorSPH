@@ -132,10 +132,14 @@ def run_one(dx, args, sound_speed=None, seconds=None, friction=None):
         "particles": int(run.final_positions.shape[0]),
         "elapsed_seconds": elapsed,
         "mass_kg": run.mass,
-        "mass_drift_kg": 0.0,
+        "initial_mass_kg": run.initial_mass,
+        "final_mass_kg": run.final_mass,
+        "mass_drift_kg": run.mass_drift,
         "max_speed": run.max_speed,
         "mach_number": run.max_speed / cfg.sound_speed,
         "max_density_compression": run.max_density_compression,
+        "compression_before_wall_impact": run.compression_before_wall_impact,
+        "wall_impact_time": run.wall_impact_time,
         "particles_escaping_tank": run.escaped,
         "front_reaches_wall_at": hit,
         "final_front_over_a": samples[-1]["front_over_a"] if samples else None,
@@ -194,8 +198,8 @@ def main():
                         help="0 = free slip, 1 = no-slip walls")
     parser.add_argument("--max-compressibility-error", type=float, default=0.05,
                         help="fail if the front changes more than this between c0 levels")
-    parser.add_argument("--observed-order", action="store_true",
-                        help="also report the observed order of accuracy with three sizes")
+    parser.add_argument("--max-mass-drift", type=float, default=0.0,
+                        help="fail if |m(t_end) - m(0)| exceeds this in kg")
     parser.add_argument("--seconds", type=float, default=0.8)
     parser.add_argument("--max-courant", type=float, default=0.3)
     parser.add_argument("--max-convergence-l2", type=float, default=0.10,
@@ -255,6 +259,8 @@ def main():
 
     order = None
     if len(results) >= 3 and not args.quick:
+        # Always reported when three spacings are given: an order of accuracy is
+        # evidence, not an optional extra.
         order = observed_order(results[0], results[1], results[2])
 
     worst_mach = max(item["mach_number"] for item in results)
@@ -262,10 +268,12 @@ def main():
     escaped = sum(item["particles_escaping_tank"] for item in results)
     gates = {
         "mass_conserved": {
-            "metric": "mass drift (particle masses are constants)",
-            "measured": max(item["mass_drift_kg"] for item in results),
-            "limit": 0.0,
-            "result": "pass" if max(item["mass_drift_kg"] for item in results) == 0.0 else "fail",
+            "metric": "|sum(m) at the end - sum(m) at the start|, kg",
+            "measured": max(abs(item["mass_drift_kg"]) for item in results),
+            "limit": args.max_mass_drift,
+            "result": ("pass" if max(abs(item["mass_drift_kg"])
+                                     for item in results) <= args.max_mass_drift
+                       else "fail"),
         },
         "bounded_flow": {
             "metric": "particles clamped beyond the tank",
@@ -282,6 +290,13 @@ def main():
             "measured": worst_density, "limit": args.max_density_error,
             "result": "pass" if worst_density <= args.max_density_error else "fail",
         },
+    }
+    bulk_compression = max(item["compression_before_wall_impact"] for item in results)
+    gates["bulk_compression"] = {
+        "metric": ("max(rho/rho0 - 1) before the front reaches the far wall "
+                   "(isolates the bulk flow from the impact transient)"),
+        "measured": bulk_compression, "limit": args.max_density_error,
+        "result": ("pass" if bulk_compression <= args.max_density_error else "fail"),
     }
     if convergence is not None and not args.quick:
         gates["resolution_convergence"] = {
@@ -331,15 +346,19 @@ def main():
         "compressibility_error": compressibility_error if compressibility else None,
         "gates": gates,
         "notes": [
+            "Density compression is a maximum over every integration step, not over "
+            "the diagnostic rows. The whole-run peak occurs when the surge hits the "
+            "far wall; compression_before_wall_impact isolates the bulk flow.",
             "Numerical verification only: no digitized experimental data is bundled, "
             "so physical_validation remains not_evaluated.",
             "The Ritter front (2 sqrt(g H) t) assumes a semi-infinite reservoir on a "
             "dry bed. It is reported as an anchor; the finite reservoir and the "
             "absence of the shallow-water assumption make a systematic offset expected.",
-            "Density compression reaches 10 % at the coarsest level and 4 % at "
-            "dx = 0.01, but the front trajectory moves by less than 0.04 % between "
-            "c0 = 25 and 60 m/s, so compressibility is not the limiting error for "
-            "this observable.",
+            "The whole-run peak density compression is a wall-impact transient "
+            "(about 10 % at c0 = 25); before impact the bulk flow stays near 2 %. "
+            "The front trajectory moves by less than 0.04 % between c0 = 25 and "
+            "60 m/s, so the weakly-compressible assumption does not limit that "
+            "observable.",
             "Walls use Config.wall_friction: 0 is free slip (the default here), 1 is "
             "a no-slip floor verified against the analytic Stokes shear-decay rate.",
             "Samples after the front reaches the far wall are excluded from the "

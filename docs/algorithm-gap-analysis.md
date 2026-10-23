@@ -1,7 +1,7 @@
 # TensorSPH algorithm gap analysis and validation roadmap
 
 **Status:** engineering assessment of the current prototype, not a claim of validated SPH accuracy.
-**Scope:** 2-D PyTorch WCSPH prototype (droplet impact and dam break) at version 0.3.0.
+**Scope:** 2-D PyTorch WCSPH prototype (droplet impact and dam break) at version 0.5.0.
 
 ## Executive decision
 
@@ -44,6 +44,32 @@ possible". The root cause was diagnosed and fixed:
 
 See [`docs/review-2026-10.md`](review-2026-10.md) for the measurements behind these claims.
 
+## What changed in 0.5.0
+
+No new physics. Three gate defects, three interfaces that disagreed with their
+own documentation, and a measured speed-up. Details and numbers:
+[`changes-0.5.0.md`](changes-0.5.0.md).
+
+| Item | Before | After |
+|---|---|---|
+| `mass_conserved` gate | compared a literal `0.0` with itself; could not fail | measures \|m(t_end) − m(0)\| from two tensor sums |
+| stability gates | judged from diagnostics sampled every `output_every` steps (default 50); the impact case's real peak speed is 2x the sampled one | extrema accumulated every step; every criterion records its `population` |
+| time-step validation | acoustic Courant only; `viscosity = 1` passed validation and diverged to 53 % compression | acoustic + viscous + gravity limits, each exposed as a function |
+| dam-break `boundary` | accepted and silently ignored | rejected by `validate_case` |
+| `DamBreakConfig(device="auto")` | `RuntimeError` from `torch.device` | `resolve_device`, like the impact case |
+| `rhs` dimension | accepted 3-D input with a 2-D kernel normalisation | rejects anything but 2-D |
+| dead CLI flags | `--include-host` (always true), `--observed-order` (never read) | `--skip-host`; the order is always reported for three spacings |
+| pair list | 23 % wall-wall pairs carried through every sum | pruned at build time, verified bit-exact |
+| force evaluation | 702 ATen calls, 60 mask-indexing calls | 515 and 17; 2.62 → 1.85 ms per step at 608 particles |
+| figure | rendered unconditionally, ~1.5 s of a 5 s run | `run(..., plot=False)` / `--no-plot`; snapshots streamed to disk |
+| packaging | `matplotlib` a hard dependency; no lint gate | `[plot]` extra + `RuntimeWarning`; ruff `E,F,W` in CI; Python 3.11 added to the matrix |
+
+**Consequence for the gates:** judged on every step, B2's peer-run peak density
+compression is 10.0–10.3 %, not the 3.8 % that the sampled metric reported. The
+`density_compression` gate now reports **fail** at all three resolutions while
+`bulk_compression` (the same metric before the surge reaches the far wall) is
+2.4 %. The metric was not redefined to make the run pass.
+
 ## What changed in 0.3.0
 
 | Item | Before | After |
@@ -63,7 +89,7 @@ no comparison against measured data.
 
 | Priority | Gap | Current risk | Required work | Exit evidence |
 |---|---|---|---|---|
-| P0 | No scientific acceptance gates | A successful process can be mistaken for a valid simulation | **Done for numerical criteria.** Physical acceptance still absent | `run_manifest.json` separates `software_execution`, `numerical_verification`, `physical_validation` |
+| P0 | No scientific acceptance gates | A successful process can be mistaken for a valid simulation | **Done for numerical criteria, and as of 0.5.0 the criteria are measured over every step rather than over the printed rows.** Physical acceptance still absent | `run_manifest.json` separates `software_execution`, `numerical_verification`, `physical_validation`, and records each criterion's population |
 | P0 | Boundary was a coordinate clamp | **Fixed.** Static wall particles with extrapolated pressure | Validate against a dynamic case (dam break), add wall-force diagnostics | B1 passes at 1.09 % interior error; B2 has no experimental comparison yet |
 | P0 | No convergence study | Results may depend strongly on particle spacing and smoothing length | **Two-level convergence exists for B2.** A three-level ladder and the observed order of accuracy are still missing | Resolution table and plots; no unsupported convergence claim |
 | P1 | Free-surface tensile instability | **Fixed by clamping**, which is first-order: it discards all rarefaction and cannot represent capillary effects | Replace with a physically motivated remedy (delta-SPH density diffusion or Monaghan artificial stress) and compare against the clamp | Side-by-side impact comparison with clumping statistics |
@@ -73,7 +99,8 @@ no comparison against measured data.
 | P1 | Viscosity was half its nominal value | **Fixed in 0.4.0.** The Morris Laplacian was missing its factor 2; measured 0.500 applied/nominal at four resolutions | — | `test_viscosity_is_calibrated` holds the ratio to 1e-3 |
 | P2 | Wall friction absent | **Fixed in 0.4.0.** `wall_friction` gives a no-slip floor, verified against the analytic Stokes decay | Tune nothing yet: the default stays free slip | Ratio 0.84 → 0.91 under refinement |
 | P1 | No surface-tension model | Droplet shape and splash morphology are not physically credible for capillary-dominated cases | Select a literature-backed formulation; isolate curvature/interface terms and parameters | Static droplet Laplace-pressure test and oscillating-drop frequency/damping comparison |
-| P1 | Fixed time step without adaptation | **Partially fixed.** The step is validated at start-up but not adapted to the evolving maximum speed | Adaptive step with all chosen limits recorded, or a documented safety factor | Unit tests for the time-step policy; Courant stays bounded in long runs |
+| P1 | Fixed time step without adaptation | **Partially fixed.** As of 0.5.0 the step is validated at start-up against the acoustic, viscous and gravity limits, but it is still not adapted to the evolving maximum speed | Adaptive step with all chosen limits recorded | Unit tests for the time-step policy; Courant stays bounded in long runs |
+| P0 | Gate integrity | **Fixed in 0.5.0.** A constant comparison, sampled-only extrema and a missing viscous CFL all let a failing run report success | Keep the `population` field honest whenever a new criterion is added | CI asserts the stability criteria are measured on `all_steps` |
 | P1 | Persistent residual motion | The pool never comes to rest (a few cm/s after 4 s) because walls are free slip and there is no relaxation phase | Add wall friction or a documented relaxation procedure | Decaying kinetic-energy trace in B1 |
 | P2 | Diagnostics are monitoring-only | **Partially fixed.** Numerical criteria are now pass/fail; physical criteria are absent | Add per-case acceptance definitions with tolerances justified by reference and resolution | JSON validation report with provenance |
 | P2 | No benchmark provenance registry | Comparisons can silently use mismatched parameters | Store source, reference, dimensionality, units, parameters, resolution, and extraction method | Each reference comparison is traceable |
@@ -163,9 +190,10 @@ The solver should remain usable from the command line and tests without TensorPl
 2. ~~Wall-boundary implementation and a hydrostatic verification case.~~ Done in 0.2.0.
 3. ~~Device-resident neighbour search and pair-list reuse.~~ Done in 0.3.0.
 4. ~~Dam-break case with resolution convergence.~~ Done in 0.3.0.
-5. Bundle a digitized experimental dam-break reference with provenance, and add wall friction so the no-slip condition matches the experiments.
-6. Surface tension only with dedicated static and oscillating-drop tests.
-7. Adaptive time step, a three-level resolution ladder, and the observed order of accuracy.
-8. Revisit droplet impact as a physical benchmark, not merely a smoke example.
+5. ~~Gate integrity, interface honesty, and the measured performance pass.~~ Done in 0.5.0.
+6. Bundle a digitized experimental dam-break reference with provenance; decide the default `wall_friction` from that comparison.
+7. Surface tension only with dedicated static and oscillating-drop tests.
+8. Adaptive time step driven by the evolving maximum speed (all three limits already exist as functions).
+9. Revisit droplet impact as a physical benchmark, not merely a smoke example.
 
 Each step should be delivered as a reviewable PR with reproducible tests and artifacts. No benchmark should be marked validated without traceable reference data and documented acceptance criteria.

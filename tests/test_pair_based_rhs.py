@@ -5,10 +5,13 @@ from tensorsph.droplet_impact import (
     Config,
     cubic_spline_kernel,
     density_from_neighbor_pairs,
+    drop_wall_wall_pairs,
+    make_particles,
     rhs,
     rhs_all_pairs,
     wall_lattice,
 )
+from tensorsph.neighbor_search import PairListCache, cell_linked_pairs
 
 
 @pytest.mark.parametrize("seed", [3, 19])
@@ -138,3 +141,65 @@ def test_viscosity_is_calibrated():
     laplacian = -(k * k) * vel[interior, 0]
     ratio = acc[interior, 0] / laplacian
     torch.testing.assert_close(ratio, torch.ones_like(ratio), rtol=1e-3, atol=1e-3)
+
+
+def _impact_state(**overrides):
+    cfg = Config(dx=0.05, pool_width=0.4, pool_depth=0.15, drop_radius=0.05,
+                 drop_center_y=0.25, device="cpu", **overrides)
+    pos, mass = make_particles(cfg, torch.device("cpu"))
+    wall = wall_lattice(cfg, torch.device("cpu"))
+    generator = torch.Generator().manual_seed(4)
+    vel = torch.randn(pos.shape, generator=generator) * 0.05
+    return cfg, pos, mass, wall, vel
+
+
+def test_dropping_wall_wall_pairs_changes_nothing():
+    """Wall-wall pairs cannot reach any retained quantity, so pruning is exact."""
+    cfg, pos, mass, wall, vel = _impact_state()
+    h = cfg.h_factor * cfg.dx
+    all_pos = torch.cat((pos, wall), dim=0)
+    full = cell_linked_pairs(all_pos, 2.0 * h)
+    pruned = drop_wall_wall_pairs(full, pos.shape[0])
+    assert pruned.shape[0] < full.shape[0], "the test must actually prune pairs"
+
+    keep = torch.ones(full.shape[0], dtype=torch.bool)
+    i, j = full.unbind(dim=1)
+    keep &= (i < pos.shape[0]) | (j < pos.shape[0])
+    assert torch.equal(pruned, full[keep])
+
+    reference = rhs(pos, vel, mass, cfg, pairs=full, wall=wall)
+    measured = rhs(pos, vel, mass, cfg, pairs=pruned, wall=wall)
+    for actual, expected in zip(measured, reference):
+        assert torch.equal(actual, expected)
+
+
+def test_pruning_is_idempotent_and_keeps_empty_lists():
+    cfg, pos, mass, wall, vel = _impact_state()
+    empty = torch.empty((0, 2), dtype=torch.long)
+    assert drop_wall_wall_pairs(empty, pos.shape[0]).shape == (0, 2)
+    h = cfg.h_factor * cfg.dx
+    pairs = cell_linked_pairs(torch.cat((pos, wall)), 2.0 * h)
+    once = drop_wall_wall_pairs(pairs, pos.shape[0])
+    assert torch.equal(drop_wall_wall_pairs(once, pos.shape[0]), once)
+
+
+def test_pair_cache_with_fluid_count_is_physics_neutral():
+    cfg, pos, mass, wall, vel = _impact_state()
+    h = cfg.h_factor * cfg.dx
+    all_pos = torch.cat((pos, wall), dim=0)
+
+    plain = PairListCache(2.0 * h, 0.25 * h)
+    pruned = PairListCache(2.0 * h, 0.25 * h, fluid_count=pos.shape[0])
+    pairs_a, _ = plain.get(all_pos)
+    pairs_b, _ = pruned.get(all_pos)
+    assert pairs_b.shape[0] < pairs_a.shape[0]
+    assert pruned.pruned == pairs_a.shape[0] - pairs_b.shape[0]
+    assert plain.pruned == 0
+
+    reference = rhs(pos, vel, mass, cfg, pairs=pairs_a, wall=wall)
+    measured = rhs(pos, vel, mass, cfg, pairs=pairs_b, wall=wall)
+    for actual, expected in zip(measured, reference):
+        assert torch.equal(actual, expected)
+
+    with pytest.raises(ValueError):
+        PairListCache(2.0 * h, 0.25 * h, fluid_count=-1)
