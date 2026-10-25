@@ -16,6 +16,7 @@ Two weakly-compressible SPH cases share one set of verified operators:
 Shared machinery:
 
 - cubic-spline kernel, density summation, Tait equation of state, symmetric pressure forces, regularized laminar viscosity;
+- **surface tension model** (CSF method, Brackbill et al. 1992) with neighbor-count-based surface detection, configurable via `Config.surface_tension_coefficient`;
 - **non-negative pressure** at free surfaces (no tensile instability), plus an optional diffusive density term (`Config.density_diffusion`, Antuono et al. 2012) measured against it in [`docs/benchmarks/free-surface-treatment.md`](docs/benchmarks/free-surface-treatment.md);
 - **static wall particles** using the full Adami et al. (2012) eq. (11) pressure extrapolation (kernel-weighted average plus body-force term) and a Tait-consistent wall density;
 - **device-resident linked-cell neighbour search** plus a Verlet skin cache: no host round-trip, no Python loop over particles;
