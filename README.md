@@ -121,7 +121,7 @@ is the right thing to do when you use the corresponding code.
 - Density compression in the dam-break case peaks at 8.6–9.0 % across the three-level ladder, against a 10 % limit. The peak is the surge hitting the far wall; before impact the bulk stays at 1.9–2.7 %. The margin is about one percentage point and the transient is far shorter than the step, so it should be re-checked whenever the wall or the free-surface treatment changes.
 - A pool in a free-slip basin still rings slightly (`H²/nu ≈ 12 s` damping time); completing the wall pressure in 0.7.0 cut the residual speed from 0.044 to 0.013 m/s and the relative pressure fluctuation from 68 % to 9 %, but hydrostatic profiles are still measured as a time average.
 - Resolution convergence is measured on a three-level ladder; the observed order is 1.11 for the dam-break front. No other observable has a convergence study.
-- CUDA execution is exercised by construction but has never been benchmarked on a GPU in this repository.
+- GPU scaling has been benchmarked (see `docs/benchmarks/gpu-scaling.md`): crossover at N* ≈ 928 particles, speedup 1.34x at 1k → 30.89x at 95k particles (RTX 5090).
 
 ## Layout
 
