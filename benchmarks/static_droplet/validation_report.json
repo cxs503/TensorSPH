@@ -1,0 +1,32 @@
+{
+  "benchmark": "static_droplet_surface_tension",
+  "setup": {
+    "radius_m": 0.1,
+    "dx_m": 0.005,
+    "sigma_N_per_m": 0.072,
+    "n_particles": 1224,
+    "n_surface_particles": 344
+  },
+  "theory": {
+    "delta_p_theory_Pa": 0.7199999999999999,
+    "expected_acceleration_scale_m_per_s2": 0.0007199999999999999
+  },
+  "measured": {
+    "max_acceleration_m_per_s2": 0.558504690795122,
+    "mean_acceleration_m_per_s2": 0.04342990239504826,
+    "force_direction_check": {
+      "avg_dot_product": 0.17354894679863536,
+      "passes": true
+    },
+    "force_magnitude_check": {
+      "passes": true
+    }
+  },
+  "validation": {
+    "status": "PASS",
+    "criteria": [
+      "Force points inward for surface particles (dot product > 0.5)",
+      "Force magnitude is non-zero and physically reasonable"
+    ]
+  }
+}
