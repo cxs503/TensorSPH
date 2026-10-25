@@ -111,6 +111,10 @@ class Config:
     # sitting exactly on the limit can be exceeded by the time it is taken. A
     # 200 m/s^2 gravity case measured 0.979 against a 0.9 limit without this.
     dt_safety: float = 0.9
+    # Surface tension coefficient (N/m). Zero disables surface tension (default,
+    # backward compatible). When > 0, activates the Continuum Surface Force (CSF)
+    # model of Brackbill et al. (1992).
+    surface_tension_coefficient: float = 0.0
 
 
 # --------------------------------------------------------------------------- #
@@ -252,13 +256,16 @@ def acoustic_dt_limit(cfg: Config, max_speed: float = 0.0) -> float:
 def stable_dt(cfg: Config, max_speed: float = 0.0) -> float:
     """Largest step allowed by *every* limit this module enforces.
 
-    The same four limits ``validate_config`` checks, evaluated for the current
-    maximum speed instead of only at rest.
+    The same limits ``validate_config`` checks, evaluated for the current
+    maximum speed instead of only at rest. Includes capillary time step limit
+    when surface tension is active.
     """
+    from .surface_tension import capillary_dt_limit
     return min(acoustic_dt_limit(cfg, max_speed),
                viscous_dt_limit(cfg),
                gravity_dt_limit(cfg),
-               diffusion_dt_limit(cfg))
+               diffusion_dt_limit(cfg),
+               capillary_dt_limit(cfg))
 
 
 def next_dt(cfg: Config, dt: float, max_speed: float = 0.0) -> float:
@@ -587,7 +594,19 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
                            device=pos.device)
     acc_visc = acc_visc.index_add(0, i, visc_i)
     acc_visc = acc_visc.index_add(0, j, visc_j)
-    return rho, pressure, acc_pressure + acc_visc[:n] + gravity
+
+    # Surface tension (CSF model) - only if coefficient > 0
+    acc_st_total = torch.zeros((n, pos.shape[1]), dtype=pos.dtype, device=pos.device)
+    if cfg.surface_tension_coefficient > 0.0:
+        from .surface_tension import compute_surface_tension_force
+        # Use fluid-only pairs for surface tension (wall particles don't have surface)
+        fluid_mask = (i < n) & (j < n)
+        if fluid_mask.any():
+            fluid_pairs = pairs[fluid_mask]
+            acc_st_total = compute_surface_tension_force(
+                pos, rho, mass, fluid_pairs, cfg)
+
+    return rho, pressure, acc_pressure + acc_visc[:n] + acc_st_total + gravity
 
 
 
