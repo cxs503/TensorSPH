@@ -1,0 +1,112 @@
+{
+  "mission": "m281",
+  "task": "EXPAND-FOLLOW: TensorSPH 上游跟进 847c34b5..195bc3d6",
+  "date": "2026-10-25",
+  "head_sha": "195bc3d65a41fa2a3eae4f5d8fc66f887ec614cd",
+  "commits_reviewed": 4,
+  "commits": [
+    {
+      "sha": "520bc548c29f5d1599385b43c6d31531df84b4bd",
+      "title": "TensorSPH 首波审计：基线测试 104/104 PASS，液滴冒烟 + 静水壁 benchmark 通过，CUDA/CPU 对照完成",
+      "type": "substantive",
+      "source": "agent/m239",
+      "verdict": "PASS",
+      "notes": "审计报告结构完整，数字直读 manifest 可溯源"
+    },
+    {
+      "sha": "8f3eeb679e102d3e86d7a390e91eff5fa9ba4fdd",
+      "title": "Merge pull request #11 from cxs503/agent/m239",
+      "type": "merge",
+      "verdict": "PASS",
+      "notes": "例行 merge，无冲突"
+    },
+    {
+      "sha": "18212ac68ea13e9f9a3fdbf0e23beed3880cd97c",
+      "title": "TensorSPH GPU 大规模基准：定位加速拐点 N* ≈ 928，30.89x @ 95k 粒子",
+      "type": "substantive",
+      "source": "agent/m276",
+      "verdict": "PASS",
+      "notes": "高质量基准贡献，填补 README 自承认缺口，不修改 src/"
+    },
+    {
+      "sha": "195bc3d65a41fa2a3eae4f5d8fc66f887ec614cd",
+      "title": "Merge pull request #12 from cxs503/agent/m276",
+      "type": "merge",
+      "verdict": "PASS",
+      "notes": "例行 merge，无冲突"
+    }
+  ],
+  "src_diff_empty": true,
+  "new_declarations": [
+    {
+      "declaration": "GPU 加速拐点 N* ≈ 928 particles",
+      "source": "README.md",
+      "test_coverage": "benchmarks/scaling/run.py",
+      "verdict": "VERIFIED"
+    },
+    {
+      "declaration": "加速比 1.34x @ 1k → 30.89x @ 95k (RTX 5090)",
+      "source": "README.md + docs/benchmarks/gpu-scaling.md",
+      "test_coverage": "benchmarks/scaling/run.py",
+      "verdict": "VERIFIED"
+    },
+    {
+      "declaration": "内存占用 4.6 MB → 411 MB（线性增长）",
+      "source": "docs/benchmarks/gpu-scaling.md",
+      "test_coverage": "torch.cuda.max_memory_allocated",
+      "verdict": "VERIFIED"
+    }
+  ],
+  "test_suite": {
+    "platform": "/nfs/wangxi/tensor_eco/agent_work/m281/TensorSPH",
+    "head": "195bc3d6",
+    "python": "3.12.13",
+    "torch": "2.14.1+cu130",
+    "pytest": "9.1.1",
+    "passed": 104,
+    "failed": 0,
+    "total": 104,
+    "wall_clock_s": 18.55,
+    "verdict": "ALL_GREEN"
+  },
+  "backlog_impact": {
+    "merged_proposals": [
+      {
+        "proposal": "GPU 基准缺失",
+        "merged_via": "PR #12 (m276)",
+        "status": "FILLED"
+      }
+    ],
+    "remaining_items": [
+      {"priority": "P0", "item": "表面张力模型 (m277)", "status": "待合入"},
+      {"priority": "P0", "item": "3D 扩展", "status": "仍缺"},
+      {"priority": "P1", "item": "实验数据对照", "status": "仍缺"},
+      {"priority": "P1", "item": "多相 SPH", "status": "仍缺"},
+      {"priority": "P1", "item": "dam-break 收敛复现", "status": "仍缺"}
+    ],
+    "new_findings": [
+      "dx=0.006 (N≈10556) 数值不稳定 (density_compression=0.17)，CPU/GPU 一致失败，物理分辨率问题"
+    ]
+  },
+  "conflict_check": {
+    "agent/m239": "已合入 (PR #11)",
+    "agent/m276": "已合入 (PR #12)",
+    "agent/m277": "待合入，无冲突",
+    "agent/m281": "无冲突"
+  },
+  "regression_detected": false,
+  "fix_proposal_needed": false,
+  "checks": {
+    "逐commit评审": "PASS",
+    "新声明vs测试在场性": "PASS",
+    "backlog影响分析": "PASS",
+    "冲突检查": "PASS",
+    "测试套件门禁": "PASS"
+  },
+  "checks_passed": 5,
+  "checks_total": 5,
+  "deliverables": [
+    "follow_195bc3d6.md",
+    "backlog_update_m281.md"
+  ]
+}
