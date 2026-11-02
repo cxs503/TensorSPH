@@ -37,7 +37,17 @@ def compute_color_gradient(
 ) -> torch.Tensor:
     """Compute gradient of color function using SPH.
 
-    grad(c)_i = sum_j m_j / rho_j * (c_j - c_i) * grad_W_ij
+    grad(c)_i = sum_j V_j * (c_j - c_i) * grad_i W_ij,   V_j = m_j / rho_j
+
+    The pair list holds each unordered pair once, so particle ``j`` receives its
+    own contribution from the same entry. Written out for ``j`` the term is
+
+        grad(c)_j = V_i * (c_i - c_j) * grad_j W_ji
+                  = V_i * (c_j - c_i) * grad_i W_ij
+
+    because ``grad_j W_ji = -grad_i W_ij``; both the volume and the sign belong
+    to the partner particle, which is what makes the discrete operator reproduce
+    the gradient of a linear field (``tests/test_surface_tension.py``).
 
     Args:
         pos: (N, 2) particle positions
@@ -60,13 +70,11 @@ def compute_color_gradient(
     delta = pos[i] - pos[j]
     grad_w = cubic_spline_gradient(delta, h)
 
-    # Symmetric gradient: (c_j - c_i) * grad_W
     dc = color[j] - color[i]
-    # Average density for denominator
-    vol_j = mass[j] / density[j]
+    vol = mass / density
 
-    grad_c = grad_c.index_add(0, i, vol_j[:, None] * dc[:, None] * grad_w)
-    grad_c = grad_c.index_add(0, j, -vol_j[:, None] * dc[:, None] * grad_w)
+    grad_c = grad_c.index_add(0, i, vol[j, None] * dc[:, None] * grad_w)
+    grad_c = grad_c.index_add(0, j, vol[i, None] * dc[:, None] * grad_w)
 
     return grad_c
 
