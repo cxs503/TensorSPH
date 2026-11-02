@@ -1,0 +1,545 @@
+{
+  "generated_utc": "2026-11-01T09:20:33Z",
+  "repo": "/root/tp-agent/work/m1633",
+  "head": {
+    "sha": "400db02cfa49fe26ecc0fd5e62ab04bc52099008",
+    "branch": "agent/m1633",
+    "committed": "2026-10-25T10:40:42+08:00"
+  },
+  "remote_branch_count": 14,
+  "remote_branches": [
+    {
+      "branch": "origin",
+      "ahead": 0,
+      "behind": 0
+    },
+    {
+      "branch": "origin/agent/m239",
+      "ahead": 9,
+      "behind": 0
+    },
+    {
+      "branch": "origin/agent/m276",
+      "ahead": 7,
+      "behind": 0
+    },
+    {
+      "branch": "origin/agent/m277",
+      "ahead": 4,
+      "behind": 0
+    },
+    {
+      "branch": "origin/agent/m281",
+      "ahead": 4,
+      "behind": 0
+    },
+    {
+      "branch": "origin/arena/2cbcd8cc-tensorsph",
+      "ahead": 22,
+      "behind": 1
+    },
+    {
+      "branch": "origin/arena/aa52281d-tensorsph",
+      "ahead": 11,
+      "behind": 0
+    },
+    {
+      "branch": "origin/arena/be36f406-tensorsph",
+      "ahead": 17,
+      "behind": 0
+    },
+    {
+      "branch": "origin/bench/rhs-scaling-validation",
+      "ahead": 24,
+      "behind": 0
+    },
+    {
+      "branch": "origin/docs/sph-validation-roadmap",
+      "ahead": 42,
+      "behind": 0
+    },
+    {
+      "branch": "origin/feat/cell-linked-neighbor-search",
+      "ahead": 35,
+      "behind": 8
+    },
+    {
+      "branch": "origin/feat/pair-based-wcsph-forces",
+      "ahead": 28,
+      "behind": 3
+    },
+    {
+      "branch": "origin/feat/wcsph-droplet-impact",
+      "ahead": 46,
+      "behind": 0
+    },
+    {
+      "branch": "origin/main",
+      "ahead": 0,
+      "behind": 0
+    }
+  ],
+  "merged_into_head": [
+    "origin",
+    "origin/agent/m239",
+    "origin/agent/m276",
+    "origin/agent/m277",
+    "origin/agent/m281",
+    "origin/arena/aa52281d-tensorsph",
+    "origin/arena/be36f406-tensorsph",
+    "origin/bench/rhs-scaling-validation",
+    "origin/docs/sph-validation-roadmap",
+    "origin/feat/wcsph-droplet-impact",
+    "origin/main"
+  ],
+  "diverged": [
+    {
+      "branch": "origin/arena/2cbcd8cc-tensorsph",
+      "ahead": 1,
+      "behind_base": 22,
+      "commits": [
+        {
+          "sha": "2c33033f0502590f7409408050c515cae5d95d30",
+          "short": "2c33033",
+          "date": "2026-10-22",
+          "author": "Arena Agent",
+          "subject": "perf: device-resident neighbour search, skin cache, and a dam-break case",
+          "patch_already_in_head": true
+        }
+      ],
+      "patch_equivalent": 1,
+      "patch_novel": 0,
+      "changed_files": [
+        ".github/workflows/tests.yml",
+        "README.md",
+        "benchmarks/dam_break/run.py",
+        "benchmarks/hydrostatic/run.py",
+        "benchmarks/neighbor_search/compare.py",
+        "docs/algorithm-gap-analysis.md",
+        "docs/benchmarks/dam-break-2d.md",
+        "docs/benchmarks/hydrostatic.md",
+        "docs/benchmarks/neighbor-search.md",
+        "docs/review-2026-10.md",
+        "src/tensorsph/__init__.py",
+        "src/tensorsph/dam_break.py",
+        "src/tensorsph/droplet_impact.py",
+        "src/tensorsph/neighbor_search.py",
+        "tests/test_dam_break.py",
+        "tests/test_neighbor_search.py"
+      ],
+      "merge_clean": false,
+      "conflicted_files": [
+        ".github/workflows/tests.yml",
+        "README.md",
+        "benchmarks/dam_break/run.py",
+        "benchmarks/hydrostatic/run.py",
+        "benchmarks/neighbor_search/compare.py",
+        "docs/algorithm-gap-analysis.md",
+        "docs/benchmarks/dam-break-2d.md",
+        "docs/benchmarks/hydrostatic.md",
+        "docs/benchmarks/neighbor-search.md",
+        "docs/review-2026-10.md",
+        "src/tensorsph/__init__.py",
+        "src/tensorsph/dam_break.py",
+        "src/tensorsph/droplet_impact.py",
+        "src/tensorsph/neighbor_search.py",
+        "tests/test_dam_break.py"
+      ],
+      "branch_defs": [
+        "__init__",
+        "_empty_pairs",
+        "apply_boundary",
+        "boundary_box",
+        "cell_linked_pairs_host",
+        "dimensionless",
+        "displacement",
+        "dt_from_courant",
+        "front_position",
+        "get",
+        "hydrostatic_density",
+        "make_column",
+        "ritter_front",
+        "run_case",
+        "small_case",
+        "tank_top",
+        "validate_case",
+        "wall_lattice"
+      ],
+      "defs_present_in_head": [
+        "__init__",
+        "_empty_pairs",
+        "apply_boundary",
+        "boundary_box",
+        "cell_linked_pairs_host",
+        "dimensionless",
+        "displacement",
+        "dt_from_courant",
+        "front_position",
+        "get",
+        "hydrostatic_density",
+        "make_column",
+        "ritter_front",
+        "run_case",
+        "tank_top",
+        "validate_case",
+        "wall_lattice"
+      ],
+      "defs_absent_from_head": [
+        "small_case"
+      ],
+      "branch_tests_unmatched_in_head": [],
+      "defs_rename_candidates": {
+        "small_case": {
+          "match": "wall_mass",
+          "ratio": 0.632
+        }
+      },
+      "tests_rename_candidates": {},
+      "defs_unmatched_no_rename": []
+    },
+    {
+      "branch": "origin/feat/cell-linked-neighbor-search",
+      "ahead": 8,
+      "behind_base": 35,
+      "commits": [
+        {
+          "sha": "61aba3264f9d61179f7521dfe4ebb9ff9d340943",
+          "short": "61aba32",
+          "date": "2026-10-22",
+          "author": "chuxuesen",
+          "subject": "docs: document pair-based force accumulation and reference tests",
+          "patch_already_in_head": false
+        },
+        {
+          "sha": "20013fd4cf497120c5e99a465f9d96743b0aa7e1",
+          "short": "20013fd",
+          "date": "2026-10-22",
+          "author": "chuxuesen",
+          "subject": "feat: export dense RHS regression reference",
+          "patch_already_in_head": false
+        },
+        {
+          "sha": "b56e5596d8bffe0b07a1872ba0ed9aeac8de7c49",
+          "short": "b56e559",
+          "date": "2026-10-22",
+          "author": "chuxuesen",
+          "subject": "test: compare pair-based WCSPH RHS with dense reference",
+          "patch_already_in_head": false
+        },
+        {
+          "sha": "de6b57e301531febc8767732b31374201ade079f",
+          "short": "de6b57e",
+          "date": "2026-10-22",
+          "author": "chuxuesen",
+          "subject": "feat: compute WCSPH forces from neighbor pairs",
+          "patch_already_in_head": false
+        },
+        {
+          "sha": "346856d26c69dc440bf92ec5adb57489867bb085",
+          "short": "346856d",
+          "date": "2026-10-22",
+          "author": "chuxuesen",
+          "subject": "docs: record staged WCSPH density integration",
+          "patch_already_in_head": false
+        },
+        {
+          "sha": "3f298c1a116c3a693303638166681540a5115c02",
+          "short": "3f298c1",
+          "date": "2026-10-22",
+          "author": "chuxuesen",
+          "subject": "feat: export neighbor-based density routine",
+          "patch_already_in_head": false
+        },
+        {
+          "sha": "2076a9a437fe36d37f5cc4918357d16151062f40",
+          "short": "2076a9a",
+          "date": "2026-10-22",
+          "author": "chuxuesen",
+          "subject": "test: verify neighbor-pair density against all-pairs reference",
+          "patch_already_in_head": false
+        },
+        {
+          "sha": "33a659b593dfced9fb29825351b8c8e0af2d3c64",
+          "short": "33a659b",
+          "date": "2026-10-22",
+          "author": "chuxuesen",
+          "subject": "feat: compute WCSPH density from compact-support pairs",
+          "patch_already_in_head": false
+        }
+      ],
+      "patch_equivalent": 0,
+      "patch_novel": 8,
+      "changed_files": [
+        "docs/benchmarks/neighbor-search.md",
+        "src/tensorsph/__init__.py",
+        "src/tensorsph/droplet_impact.py",
+        "tests/test_density_neighbor_pairs.py"
+      ],
+      "merge_clean": false,
+      "conflicted_files": [
+        "docs/benchmarks/neighbor-search.md",
+        "src/tensorsph/__init__.py",
+        "src/tensorsph/droplet_impact.py"
+      ],
+      "branch_defs": [
+        "density_from_neighbor_pairs",
+        "rhs",
+        "rhs_all_pairs"
+      ],
+      "defs_present_in_head": [
+        "density_from_neighbor_pairs",
+        "rhs",
+        "rhs_all_pairs"
+      ],
+      "defs_absent_from_head": [],
+      "branch_tests_unmatched_in_head": [
+        "test_pair_density_handles_empty_and_single_particle",
+        "test_pair_density_matches_all_pairs_reference",
+        "test_rhs_remains_finite_with_neighbor_density"
+      ],
+      "defs_rename_candidates": {},
+      "tests_rename_candidates": {
+        "test_pair_density_handles_empty_and_single_particle": {
+          "match": "test_pair_density_handles_degenerate_inputs",
+          "ratio": 0.702
+        },
+        "test_pair_density_matches_all_pairs_reference": {
+          "match": "test_pair_density_matches_dense_reference",
+          "ratio": 0.86
+        },
+        "test_rhs_remains_finite_with_neighbor_density": {
+          "match": "test_rhs_rejects_non_two_dimensional_input",
+          "ratio": 0.552
+        }
+      },
+      "defs_unmatched_no_rename": []
+    },
+    {
+      "branch": "origin/feat/pair-based-wcsph-forces",
+      "ahead": 3,
+      "behind_base": 28,
+      "commits": [
+        {
+          "sha": "9a962870028ac53c33aabc6441d0682cee6b1b66",
+          "short": "9a96287",
+          "date": "2026-10-22",
+          "author": "chuxuesen",
+          "subject": "docs: add RHS scaling sweep and clarify 2D kernel scope",
+          "patch_already_in_head": true
+        },
+        {
+          "sha": "a0f5bc9df6597128eaa18dd1739ae0564f43c978",
+          "short": "a0f5bc9",
+          "date": "2026-10-22",
+          "author": "chuxuesen",
+          "subject": "test: scope WCSPH density equivalence to its 2D kernel",
+          "patch_already_in_head": true
+        },
+        {
+          "sha": "7eb7096bb8d6f195d75b604ab45c235fa52f2cd7",
+          "short": "7eb7096",
+          "date": "2026-10-22",
+          "author": "chuxuesen",
+          "subject": "bench: support RHS scaling sweeps across particle counts",
+          "patch_already_in_head": true
+        }
+      ],
+      "patch_equivalent": 3,
+      "patch_novel": 0,
+      "changed_files": [
+        "benchmarks/neighbor_search/compare_rhs.py",
+        "docs/benchmarks/neighbor-search.md",
+        "tests/test_pair_based_rhs.py"
+      ],
+      "merge_clean": false,
+      "conflicted_files": [
+        "benchmarks/neighbor_search/compare_rhs.py",
+        "docs/benchmarks/neighbor-search.md"
+      ],
+      "branch_defs": [],
+      "defs_present_in_head": [],
+      "defs_absent_from_head": [],
+      "branch_tests_unmatched_in_head": [],
+      "defs_rename_candidates": {},
+      "tests_rename_candidates": {},
+      "defs_unmatched_no_rename": []
+    }
+  ],
+  "totals": {
+    "unmerged_commits": 12,
+    "patch_equivalent_commits": 4,
+    "patch_novel_commits": 8,
+    "conflicted_files": 20,
+    "stale_base_max": 35
+  },
+  "selfcheck": {
+    "checks": [
+      {
+        "name": "origin/arena/2cbcd8cc-tensorsph: rev-list ahead == logged commit count",
+        "got": 1,
+        "want": 1,
+        "ok": true
+      },
+      {
+        "name": "origin/arena/2cbcd8cc-tensorsph: patch_equivalent + patch_novel == ahead",
+        "got": 1,
+        "want": 1,
+        "ok": true
+      },
+      {
+        "name": "origin/arena/2cbcd8cc-tensorsph: defs classified present+absent == new defs",
+        "got": 18,
+        "want": 18,
+        "ok": true
+      },
+      {
+        "name": "origin/feat/cell-linked-neighbor-search: rev-list ahead == logged commit count",
+        "got": 8,
+        "want": 8,
+        "ok": true
+      },
+      {
+        "name": "origin/feat/cell-linked-neighbor-search: patch_equivalent + patch_novel == ahead",
+        "got": 8,
+        "want": 8,
+        "ok": true
+      },
+      {
+        "name": "origin/feat/cell-linked-neighbor-search: defs classified present+absent == new defs",
+        "got": 3,
+        "want": 3,
+        "ok": true
+      },
+      {
+        "name": "origin/feat/pair-based-wcsph-forces: rev-list ahead == logged commit count",
+        "got": 3,
+        "want": 3,
+        "ok": true
+      },
+      {
+        "name": "origin/feat/pair-based-wcsph-forces: patch_equivalent + patch_novel == ahead",
+        "got": 3,
+        "want": 3,
+        "ok": true
+      },
+      {
+        "name": "origin/feat/pair-based-wcsph-forces: defs classified present+absent == new defs",
+        "got": 0,
+        "want": 0,
+        "ok": true
+      },
+      {
+        "name": "HEAD vs origin/main: ahead",
+        "got": 0,
+        "want": 0,
+        "ok": true
+      },
+      {
+        "name": "HEAD vs origin/main: behind",
+        "got": 0,
+        "want": 0,
+        "ok": true
+      }
+    ],
+    "failed": 0
+  },
+  "head_window": [
+    {
+      "sha": "400db02",
+      "date": "2026-10-25",
+      "subject": "Merge pull request #14 from cxs503/agent/m281"
+    },
+    {
+      "sha": "b5a81b2",
+      "date": "2026-10-25",
+      "subject": "Merge pull request #13 from cxs503/agent/m277"
+    },
+    {
+      "sha": "4e3165c",
+      "date": "2026-10-25",
+      "subject": "添加验证报告工件 (validation_report.json)"
+    },
+    {
+      "sha": "fc08674",
+      "date": "2026-10-25",
+      "subject": "TensorSPH 上游跟进：847c34b5..195bc3d6（4 commits）评审完成"
+    },
+    {
+      "sha": "78f0107",
+      "date": "2026-10-25",
+      "subject": "merge: 并入 main（expand_follow）"
+    },
+    {
+      "sha": "4357c66",
+      "date": "2026-10-25",
+      "subject": "feat: 实现表面张力模型(CSF)"
+    },
+    {
+      "sha": "195bc3d",
+      "date": "2026-10-25",
+      "subject": "Merge pull request #12 from cxs503/agent/m276"
+    },
+    {
+      "sha": "18212ac",
+      "date": "2026-10-25",
+      "subject": "TensorSPH GPU 大规模基准：定位加速拐点 N* ≈ 928，30.89x @ 95k 粒子"
+    },
+    {
+      "sha": "8f3eeb6",
+      "date": "2026-10-24",
+      "subject": "Merge pull request #11 from cxs503/agent/m239"
+    },
+    {
+      "sha": "520bc54",
+      "date": "2026-10-24",
+      "subject": "TensorSPH 首波审计：基线测试 104/104 PASS，液滴冒烟 + 静水壁 benchmark 通过，CUDA/CPU 对照完成"
+    },
+    {
+      "sha": "847c34b",
+      "date": "2026-10-23",
+      "subject": "Merge pull request #10 from cxs503/arena/aa52281d-tensorsph"
+    },
+    {
+      "sha": "6eb4e4b",
+      "date": "2026-10-23",
+      "subject": "0.8.0: an adaptive step, and a gate that can see a pool ringing"
+    },
+    {
+      "sha": "bb494b0",
+      "date": "2026-10-23",
+      "subject": "0.7.0: finish the wall pressure equation, and find out what it was hiding"
+    },
+    {
+      "sha": "0ff8670",
+      "date": "2026-10-23",
+      "subject": "0.6.0: measure a free-surface alternative instead of assuming the clamp is enough"
+    },
+    {
+      "sha": "e924aff",
+      "date": "2026-10-23",
+      "subject": "0.5.0: make the gates measure the run, and cut 1.4x off the force evaluation"
+    }
+  ],
+  "head_window_themes": {
+    "audit-review": 1,
+    "free-surface": 1,
+    "gpu-scaling": 2,
+    "merge-integration": 6,
+    "surface-tension": 1,
+    "time-integration": 1,
+    "validation-gate": 2,
+    "wall-boundary": 1
+  },
+  "figures": [
+    {
+      "name": "upstream_divergence_m1633.png",
+      "path": "docs/audit/m1633/figs/upstream_divergence_m1633.png",
+      "caption": "Branch divergence (ahead/behind) vs local HEAD"
+    },
+    {
+      "name": "theme_timeline_m1633.png",
+      "path": "docs/audit/m1633/figs/theme_timeline_m1633.png",
+      "caption": "Theme evolution timeline of commits"
+    }
+  ]
+}
