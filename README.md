@@ -1,5 +1,9 @@
 # TensorSPH
 
+**Tensor ecosystem vision:** [AI-era ecosystem vision](https://github.com/cxs503/TensorPlatform/blob/main/docs/architecture/TENSOR_ECOSYSTEM_AI_ERA_VISION.md).
+
+**Project charter:** [docs/PROJECT_CHARTER.md](docs/PROJECT_CHARTER.md) — mission, ownership, non-goals, integration, quality gates, and agent rules.
+
 **PyTorch-native smoothed particle hydrodynamics (SPH) for agent-driven scientific computing.**
 
 TensorSPH is the SPH solver project in the Tensor ecosystem. It is intended to provide reproducible, testable particle-based fluid simulations that can later be orchestrated by TensorPhysics and recorded by TensorPlatform.
