@@ -115,6 +115,9 @@ class Config:
     # backward compatible). When > 0, activates the Continuum Surface Force (CSF)
     # model of Brackbill et al. (1992).
     surface_tension_coefficient: float = 0.0
+    # Contact angle at walls (radians). None disables contact angle BC.
+    # theta < pi/2: hydrophilic (wetting), theta > pi/2: hydrophobic.
+    contact_angle: float | None = None
 
 
 # --------------------------------------------------------------------------- #
@@ -604,7 +607,7 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
         if fluid_mask.any():
             fluid_pairs = pairs[fluid_mask]
             acc_st_total = compute_surface_tension_force(
-                pos, rho, mass, fluid_pairs, cfg)
+                pos, rho, mass, fluid_pairs, cfg, wall=wall)
 
     return rho, pressure, acc_pressure + acc_visc[:n] + acc_st_total + gravity
 
