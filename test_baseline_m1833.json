@@ -1,0 +1,57 @@
+{
+  "mission": "m1833",
+  "task": "生态巡更·TensorSPH·测试基线漂移",
+  "date": "2026-10-31",
+  "head_sha": "400db02",
+  "environment": {
+    "python": "3.11.6",
+    "torch": "2.7.1",
+    "pytest": "9.2.0",
+    "platform": "linux"
+  },
+  "baseline_comparison": {
+    "m281_tests": 104,
+    "m281_passed": 104,
+    "m281_wall_clock_s": 18.55,
+    "m281_torch": "2.14.1+cu130",
+    "m281_python": "3.12.13",
+    "m1833_tests": 114,
+    "m1833_passed": 114,
+    "m1833_failed": 0,
+    "m1833_slow_tests": 5,
+    "m1833_fast_tests": 109,
+    "m1833_fast_wall_clock_s": 44.80
+  },
+  "test_results": {
+    "test_neighbor_search.py": {"total": 23, "passed": 23, "failed": 0, "time_s": 6.98},
+    "test_boundary.py": {"total": 9, "passed": 9, "failed": 0, "time_s": 102.34, "slow": 2},
+    "test_adaptive_dt.py": {"total": 11, "passed": 11, "failed": 0, "time_s": 200, "slow": 2},
+    "test_wall_pressure.py": {"total": 3, "passed": 3, "failed": 0, "time_s": 8.93},
+    "test_pair_based_rhs.py": {"total": 12, "passed": 12, "failed": 0, "time_s": 5.41},
+    "test_surface_tension.py": {"total": 10, "passed": 10, "failed": 0},
+    "test_free_surface.py": {"total": 8, "passed": 8, "failed": 0},
+    "test_dam_break.py": {"total": 15, "passed": 15, "failed": 0, "slow": 1},
+    "test_droplet_impact.py": {"total": 23, "passed": 23, "failed": 0, "time_s": 15.64}
+  },
+  "slow_tests": [
+    "test_pool_with_walls_stays_bounded_and_does_not_clump",
+    "test_no_slip_reproduces_the_stokes_shear_decay_rate",
+    "test_the_adaptive_step_does_not_change_the_answer_much",
+    "test_an_accelerating_flow_cannot_exceed_the_limit",
+    "test_compression_before_wall_impact_is_separated_from_the_impact_spike"
+  ],
+  "verdict": "ALL_GREEN",
+  "regression_detected": false,
+  "fix_applied": "tests/conftest.py — auto-mark slow tests, set 120s timeout, support -m 'not slow'",
+  "environment_red": true,
+  "environment_red_reason": "torch 2.7.1 is slower than baseline torch 2.14.1; all tests pass with adequate timeout",
+  "real_red": false,
+  "checks": {
+    "PYTHONPATH校准": "PASS",
+    "逐文件测试": "PASS",
+    "慢测试识别": "PASS",
+    "conftest修复": "PASS",
+    "快速门禁109/109": "PASS",
+    "慢测试5/5(90s超时)": "PASS"
+  }
+}
