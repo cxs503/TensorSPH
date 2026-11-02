@@ -55,6 +55,24 @@ def test_pair_rhs_empty_pair_list_returns_gravity_only():
     torch.testing.assert_close(acc[:, 1], torch.full((2,), -cfg.gravity, dtype=torch.float64))
 
 
+def test_pair_density_handles_degenerate_inputs():
+    """Empty and single-particle systems: density must reduce to the kernel self term.
+
+    Ported from the abandoned ``feat/cell-linked-neighbor-search`` branch
+    (``tests/test_density_neighbor_pairs.py``), restricted to the 2-D scope of
+    ``cubic_spline_kernel``.  Closes the only branch test without a HEAD
+    counterpart; see docs/upstream-diff-m1633.md.
+    """
+    empty_pos = torch.empty((0, 2), dtype=torch.float64)
+    empty_mass = torch.empty((0,), dtype=torch.float64)
+    assert density_from_neighbor_pairs(empty_pos, empty_mass, 0.2).shape == (0,)
+
+    pos = torch.tensor([[0.0, 0.0]], dtype=torch.float64)
+    mass = torch.tensor([2.5], dtype=torch.float64)
+    actual = density_from_neighbor_pairs(pos, mass, 0.2)
+    expected = mass * cubic_spline_kernel(torch.zeros(1, dtype=torch.float64), 0.2)
+    torch.testing.assert_close(actual, expected)
+
 def test_wall_outside_support_changes_nothing():
     """A wall farther away than 2h must not perturb the solution at all."""
     cfg = Config(dx=0.1, h_factor=1.0, device="cpu")
