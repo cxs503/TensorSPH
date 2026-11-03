@@ -23,10 +23,14 @@
     }
   },
   "validation": {
-    "status": "PASS",
+    "status": "WITHDRAWN",
     "criteria": [
       "Force points inward for surface particles (dot product > 0.5)",
       "Force magnitude is non-zero and physically reasonable"
-    ]
-  }
+    ],
+    "status_before_withdrawal": "PASS",
+    "withdrawal_reason": "The recorded PASS used the criterion 'force magnitude is non-zero and physically reasonable', while the same report shows a measured acceleration of 0.5585 m/s2 against an expected scale of 7.2e-4 m/s2 (776x), and an average inward dot product of 0.174 against the module's own stated criterion of 0.5. A model that applies traction two to three orders of magnitude too large is not validated. Superseded by the analytic Young-Laplace gate in benchmarks/laplace_pressure (case B5)."
+  },
+  "superseded_by": "benchmarks/laplace_pressure/validation_report.json",
+  "docs": "docs/benchmarks/surface-tension-verification.md"
 }

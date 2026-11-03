@@ -1,0 +1,354 @@
+{
+  "benchmark": "B5_young_laplace",
+  "analytic_reference": {
+    "laplace_pressure_2d": "p_in - p_out = sigma / R",
+    "capillary_force_half_droplet_2d": "|F_half| = 2 sigma",
+    "independence": "the 2 sigma target does not depend on R, dx or c0"
+  },
+  "scheme": "csf",
+  "sigma_N_per_m": 0.072,
+  "force_tolerance": 0.15,
+  "cases": [
+    {
+      "radius_m": 0.04,
+      "dx_m": 0.005,
+      "h_over_dx": 1.3,
+      "particles": 208,
+      "radius_over_h": 6.153846153846153,
+      "target_force_2sigma": 0.144,
+      "measured_force_half": 0.10137659330759816,
+      "sigma_eff_over_sigma": 0.7040041201916539,
+      "force_right_half": [
+        -0.10137659330759816,
+        -6.245004513516506e-17
+      ],
+      "force_top_half": [
+        -7.112366251504909e-17,
+        -0.10137659330759813
+      ],
+      "force_total": [
+        -1.5959455978986625e-16,
+        -1.3183898417423734e-16
+      ],
+      "mirror_asymmetry": 6.160203563526576e-16,
+      "rotation_asymmetry": 7.015787391794157e-16,
+      "bulk_traction_ratio": 0.0,
+      "inward_fraction": 1.0
+    },
+    {
+      "radius_m": 0.06,
+      "dx_m": 0.005,
+      "h_over_dx": 1.3,
+      "particles": 448,
+      "radius_over_h": 9.23076923076923,
+      "target_force_2sigma": 0.144,
+      "measured_force_half": 0.13239359448974505,
+      "sigma_eff_over_sigma": 0.9193999617343407,
+      "force_right_half": [
+        -0.13239359448974505,
+        -1.7867651802561113e-16
+      ],
+      "force_top_half": [
+        -1.6306400674181987e-16,
+        -0.13239359448974508
+      ],
+      "force_total": [
+        -3.469446951953614e-16,
+        -3.7470027081099033e-16
+      ],
+      "mirror_asymmetry": 1.3495858218386167e-15,
+      "rotation_asymmetry": 1.2316608471148539e-15,
+      "bulk_traction_ratio": 0.0,
+      "inward_fraction": 0.9459459459459459
+    },
+    {
+      "radius_m": 0.08,
+      "dx_m": 0.005,
+      "h_over_dx": 1.3,
+      "particles": 812,
+      "radius_over_h": 12.307692307692307,
+      "target_force_2sigma": 0.144,
+      "measured_force_half": 0.15658095020041518,
+      "sigma_eff_over_sigma": 1.0873677097251055,
+      "force_right_half": [
+        -0.15658095020041518,
+        -3.5561831257524545e-16
+      ],
+      "force_top_half": [
+        -2.931682674400804e-16,
+        -0.1565809502004152
+      ],
+      "force_total": [
+        -6.349087922075114e-16,
+        -6.7914424084492e-16
+      ],
+      "mirror_asymmetry": 2.271146727108714e-15,
+      "rotation_asymmetry": 1.8723112042993783e-15,
+      "bulk_traction_ratio": 0.0,
+      "inward_fraction": 0.9607843137254902
+    },
+    {
+      "radius_m": 0.04,
+      "dx_m": 0.0025,
+      "h_over_dx": 1.3,
+      "particles": 812,
+      "radius_over_h": 12.307692307692307,
+      "target_force_2sigma": 0.144,
+      "measured_force_half": 0.15658095020041518,
+      "sigma_eff_over_sigma": 1.0873677097251055,
+      "force_right_half": [
+        -0.15658095020041518,
+        -3.5561831257524545e-16
+      ],
+      "force_top_half": [
+        -2.931682674400804e-16,
+        -0.1565809502004152
+      ],
+      "force_total": [
+        -6.349087922075114e-16,
+        -6.7914424084492e-16
+      ],
+      "mirror_asymmetry": 2.271146727108714e-15,
+      "rotation_asymmetry": 1.8723112042993783e-15,
+      "bulk_traction_ratio": 0.0,
+      "inward_fraction": 0.9607843137254902
+    },
+    {
+      "radius_m": 0.06,
+      "dx_m": 0.0025,
+      "h_over_dx": 1.3,
+      "particles": 1804,
+      "radius_over_h": 18.46153846153846,
+      "target_force_2sigma": 0.144,
+      "measured_force_half": 0.21587694794912243,
+      "sigma_eff_over_sigma": 1.499145471868906,
+      "force_right_half": [
+        -0.21587694794912243,
+        3.920475055707584e-16
+      ],
+      "force_top_half": [
+        4.388850394221322e-16,
+        -0.21587694794912246
+      ],
+      "force_total": [
+        8.81239525796218e-16,
+        8.153200337090993e-16
+      ],
+      "mirror_asymmetry": 1.8160693362366583e-15,
+      "rotation_asymmetry": 2.0330333719817456e-15,
+      "bulk_traction_ratio": 0.0,
+      "inward_fraction": 0.9487179487179487
+    },
+    {
+      "radius_m": 0.08,
+      "dx_m": 0.0025,
+      "h_over_dx": 1.3,
+      "particles": 3228,
+      "radius_over_h": 24.615384615384613,
+      "target_force_2sigma": 0.144,
+      "measured_force_half": 0.2704878016509381,
+      "sigma_eff_over_sigma": 1.878387511464848,
+      "force_right_half": [
+        -0.2704878016509381,
+        1.016547956922409e-15
+      ],
+      "force_top_half": [
+        1.0668549377257364e-15,
+        -0.2704878016509381
+      ],
+      "force_total": [
+        2.1441182163073336e-15,
+        2.0469737016526324e-15
+      ],
+      "mirror_asymmetry": 3.758202590718875e-15,
+      "rotation_asymmetry": 3.944188725754452e-15,
+      "bulk_traction_ratio": 0.0,
+      "inward_fraction": 0.9433962264150944
+    },
+    {
+      "radius_m": 0.04,
+      "dx_m": 0.00125,
+      "h_over_dx": 1.3,
+      "particles": 3228,
+      "radius_over_h": 24.615384615384613,
+      "target_force_2sigma": 0.144,
+      "measured_force_half": 0.2704878016509381,
+      "sigma_eff_over_sigma": 1.878387511464848,
+      "force_right_half": [
+        -0.2704878016509381,
+        1.016547956922409e-15
+      ],
+      "force_top_half": [
+        1.0668549377257364e-15,
+        -0.2704878016509381
+      ],
+      "force_total": [
+        2.1441182163073336e-15,
+        2.0469737016526324e-15
+      ],
+      "mirror_asymmetry": 3.758202590718875e-15,
+      "rotation_asymmetry": 3.944188725754452e-15,
+      "bulk_traction_ratio": 0.0,
+      "inward_fraction": 0.9433962264150944
+    },
+    {
+      "radius_m": 0.06,
+      "dx_m": 0.00125,
+      "h_over_dx": 1.3,
+      "particles": 7232,
+      "radius_over_h": 36.92307692307692,
+      "target_force_2sigma": 0.144,
+      "measured_force_half": 0.37100310550647786,
+      "sigma_eff_over_sigma": 2.5764104549060964,
+      "force_right_half": [
+        -0.37100310550647786,
+        8.916478666520788e-16
+      ],
+      "force_top_half": [
+        9.922618282587337e-16,
+        -0.3710031055064779
+      ],
+      "force_total": [
+        1.9394208461420703e-15,
+        1.7277845820728999e-15
+      ],
+      "mirror_asymmetry": 2.403343404457056e-15,
+      "rotation_asymmetry": 2.6745377963996805e-15,
+      "bulk_traction_ratio": 0.0,
+      "inward_fraction": 0.9375
+    },
+    {
+      "radius_m": 0.08,
+      "dx_m": 0.00125,
+      "h_over_dx": 1.3,
+      "particles": 12892,
+      "radius_over_h": 49.230769230769226,
+      "target_force_2sigma": 0.144,
+      "measured_force_half": 0.48096276240773733,
+      "sigma_eff_over_sigma": 3.340019183387065,
+      "force_right_half": [
+        -0.48096276240773733,
+        1.3426759704060487e-15
+      ],
+      "force_top_half": [
+        1.4641066137244252e-15,
+        -0.48096276240773733
+      ],
+      "force_total": [
+        2.9073965457371287e-15,
+        2.6575963651964685e-15
+      ],
+      "mirror_asymmetry": 2.7916422545573123e-15,
+      "rotation_asymmetry": 3.0441163602666296e-15,
+      "bulk_traction_ratio": 0.0,
+      "inward_fraction": 0.9348837209302325
+    }
+  ],
+  "refinement": {
+    "0.04": {
+      "errors": [
+        0.2959958798083461,
+        0.08736770972510555,
+        0.8783875114648481
+      ],
+      "dx": [
+        0.005,
+        0.0025,
+        0.00125
+      ],
+      "observed_order": -1.569280448847425,
+      "worst_error": 0.8783875114648481
+    },
+    "0.06": {
+      "errors": [
+        0.08060003826565931,
+        0.4991454718689059,
+        1.5764104549060964
+      ],
+      "dx": [
+        0.005,
+        0.0025,
+        0.00125
+      ],
+      "observed_order": -4.289718888800381,
+      "worst_error": 1.5764104549060964
+    },
+    "0.08": {
+      "errors": [
+        0.08736770972510555,
+        0.8783875114648481,
+        2.340019183387065
+      ],
+      "dx": [
+        0.005,
+        0.0025,
+        0.00125
+      ],
+      "observed_order": -4.743276374925774,
+      "worst_error": 2.340019183387065
+    }
+  },
+  "gates": {
+    "mirror_symmetry": {
+      "metric": "|F_y| / |F_x| of the right half (exact: 0)",
+      "measured": 3.758202590718875e-15,
+      "limit": 0.05,
+      "comparison": "<=",
+      "result": "pass",
+      "note": "the droplet and the lattice are mirror-symmetric, so any transverse force is manufactured by the model"
+    },
+    "rotation_symmetry": {
+      "metric": "|F_x| / |F_y| of the top half (exact: 0)",
+      "measured": 3.944188725754452e-15,
+      "limit": 0.05,
+      "comparison": "<=",
+      "result": "pass",
+      "note": "90-degree rotation must map the right-half result onto the top half"
+    },
+    "closed_surface_momentum": {
+      "metric": "|F_total| / (2 sigma) (exact: 0)",
+      "measured": 2.735421260545005e-14,
+      "limit": 0.05,
+      "comparison": "<=",
+      "result": "pass",
+      "note": "a closed surface carries no net capillary force; a non-zero sum means the scheme creates momentum"
+    },
+    "bulk_traction_free": {
+      "metric": "max|a| (r < R/2) / max|a| overall (exact: 0)",
+      "measured": 0.0,
+      "limit": 0.001,
+      "comparison": "<=",
+      "result": "pass",
+      "note": "grad c vanishes exactly for a complete stencil, so the interior must not be pushed"
+    },
+    "force_points_inward": {
+      "metric": "fraction of moving particles with a . r_hat < 0",
+      "measured": 0.9348837209302325,
+      "limit": 1.0,
+      "comparison": ">=",
+      "result": "fail",
+      "note": "a convex droplet is pulled towards its centre"
+    },
+    "capillary_force_balance": {
+      "metric": "max |sigma_eff/sigma - 1| over the ladder",
+      "measured": 2.340019183387065,
+      "limit": 0.15,
+      "comparison": "<=",
+      "result": "fail",
+      "note": "|F_half| must equal 2 sigma; this is Young-Laplace expressed as a force balance. KNOWN FAILURE of the current model: not waived, recorded. See docs/benchmarks/surface-tension-verification.md"
+    },
+    "refinement_convergence": {
+      "metric": "worst error must not grow under refinement",
+      "measured": -1.569280448847425,
+      "limit": 0.0,
+      "comparison": ">=",
+      "result": "fail",
+      "note": "a converging scheme needs a positive observed order; a negative one means the error is generated by the discretisation itself"
+    }
+  },
+  "notes": [
+    "Static force integration: one evaluation of the surface tension acceleration field on an equilibrated (undeformed) circular droplet, then the traction is summed. No time integration is needed because the analytic target is a force balance.",
+    "The dynamic counterpart (integrate until the EOS pressure inside the droplet reaches sigma/R) measures the same relation and would need of order 1/t_cap * 2 pi / dt steps, which is why the force balance form is the gate used in CI. See the docs for the equivalence.",
+    "sigma_eff/sigma is the effective surface tension the model applies; a correct implementation gives 1 at every radius and every resolution."
+  ]
+}
