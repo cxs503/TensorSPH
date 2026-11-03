@@ -127,6 +127,11 @@ class Config:
     # historical discretisation, +25 % on a circle); "fit_quadratic"/"fit_circle"
     # = weighted local interface fit (see tensorsph.csf_curvature).
     csf_curvature: str = "mls"
+    # CSF delta-function closure. "gradient" = delta_s = 2|grad c| with the
+    # one-sided colour gradient (historical, int delta_s dn ~ 0.74); "ghost" =
+    # add the void-side mirror contribution on the outermost layer, which
+    # restores int delta_s dn ~ 1.0 (docs/verification_surface_tension_delta_s.md).
+    csf_delta_s: str = "gradient"
 
 
 # --------------------------------------------------------------------------- #
@@ -729,6 +734,10 @@ def validate_config(cfg: Config) -> None:
         raise ValueError(
             "csf_curvature must be 'mls', 'fit_quadratic' or 'fit_circle', "
             f"got {cfg.csf_curvature!r}")
+    if cfg.csf_delta_s not in ("gradient", "ghost"):
+        raise ValueError(
+            "csf_delta_s must be 'gradient' or 'ghost', "
+            f"got {cfg.csf_delta_s!r}")
     if cfg.csf_scheme not in ("consistent", "legacy"):
         raise ValueError(
             f"csf_scheme must be 'consistent' or 'legacy', got {cfg.csf_scheme!r}")

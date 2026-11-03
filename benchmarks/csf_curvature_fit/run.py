@@ -59,20 +59,23 @@ delta_s_integral = _consistent.delta_s_integral
 
 
 def instant(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
-            viscosity=0.01, scheme="consistent", curvature="mls"):
-    """Static (t = 0) diagnostics of one curvature operator."""
+            viscosity=0.01, scheme="consistent", curvature="mls",
+            delta_s="gradient"):
+    """Static (t = 0) diagnostics of one curvature / delta_s combination."""
     cfg = Config(dx=dx, h_factor=1.3, rho0=rho0, sound_speed=sound_speed,
                  gamma=7.0, gravity=0.0, viscosity=viscosity,
                  surface_tension_coefficient=sigma, csf_scheme=scheme,
-                 csf_curvature=curvature)
+                 csf_curvature=curvature, csf_delta_s=delta_s)
     h = cfg.h_factor * cfg.dx
     pos, mass = hexagonal_droplet(radius, dx, rho0)
     wide = cell_linked_pairs(pos, 4.0 * h)
     rho = density_from_neighbor_pairs(pos, mass, h,
                                       cell_linked_pairs(pos, 2.0 * h))
-    state = csf_fields(pos, mass, wide, h, rho0, curvature_scheme=curvature)
+    state = csf_fields(pos, mass, wide, h, rho0, curvature_scheme=curvature,
+                       delta_s_scheme=delta_s)
     acc, _ = surface_tension_acceleration(pos, rho, mass, wide, h, sigma,
-                                          rho0=rho0, curvature_scheme=curvature)
+                                          rho0=rho0, curvature_scheme=curvature,
+                                          delta_s_scheme=delta_s)
 
     r = torch.linalg.vector_norm(pos, dim=1)
     rhat = pos / r[:, None]
@@ -92,6 +95,7 @@ def instant(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
     return {
         "csf_scheme": scheme,
         "curvature": curvature,
+        "delta_s_scheme": delta_s,
         "dx_m": dx,
         "h_m": h,
         "n_particles": int(pos.shape[0]),
@@ -127,12 +131,12 @@ def instant(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
 
 def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
           steps=900, viscosity=0.01, scheme="consistent", curvature="mls",
-          output_every=50):
+          output_every=50, delta_s="gradient"):
     """Time integration: does the Laplace jump / spurious current change?"""
     cfg = Config(dx=dx, h_factor=1.3, rho0=rho0, sound_speed=sound_speed,
                  gamma=7.0, gravity=0.0, viscosity=viscosity,
                  surface_tension_coefficient=sigma, csf_scheme=scheme,
-                 csf_curvature=curvature)
+                 csf_curvature=curvature, csf_delta_s=delta_s)
     h = cfg.h_factor * cfg.dx
     dt = float(stable_dt(cfg))
     v_ref = math.sqrt(sigma / (rho0 * radius))
@@ -169,6 +173,7 @@ def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
     return {
         "csf_scheme": scheme,
         "curvature": curvature,
+        "delta_s_scheme": delta_s,
         "setup": {"radius_m": radius, "dx_m": dx, "h_m": h, "sigma_N_per_m": sigma,
                   "rho0": rho0, "sound_speed": sound_speed, "steps": steps,
                   "dt_s": dt, "t_end_s": steps * dt,

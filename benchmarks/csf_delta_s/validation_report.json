@@ -1,0 +1,709 @@
+{
+  "case": {
+    "radius_m": 0.02,
+    "sigma_N_per_m": 7.2,
+    "rho0_kg_per_m3": 1000.0,
+    "sound_speed_m_per_s": 20.0,
+    "h_factor": 1.3,
+    "gravity": 0.0,
+    "dx_m": [
+      0.003,
+      0.002,
+      0.0015
+    ],
+    "references": {
+      "delta_p_Pa": 360.0,
+      "kappa_1_per_m": 50.0,
+      "cut_force_N_per_m": 14.4,
+      "int_delta_s_dn": 1.0
+    }
+  },
+  "instant": [
+    {
+      "curvature": "mls",
+      "delta_s_scheme": "gradient",
+      "dx_m": 0.003,
+      "h_m": 0.0039000000000000003,
+      "n_particles": 161,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 65.00010806788606
+      },
+      "delta_s": {
+        "integral_dn": 0.7545449895898849,
+        "rel_error_pct": -24.54550104101151,
+        "within_15pct": false,
+        "max_over_source": 200.86014027658965
+      },
+      "cut_force_rest_volume": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -12.515607764239125,
+        "ratio": 0.8691394280721614,
+        "rel_error_pct": 13.086057192783862,
+        "within_15pct": true
+      },
+      "cut_force_summation_density": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -15.978791856355363,
+        "ratio": 1.1096383233580114,
+        "rel_error_pct": 10.963832335801138,
+        "within_15pct": true
+      },
+      "colour_deficit": {
+        "mean_colour_outer_shell": 0.6695824023401293,
+        "mean_rho_outer_shell_over_rho0": 0.6695824023401292
+      },
+      "direction": {
+        "cos_band_median": 0.9992852852235228,
+        "fraction_inward": 1.0,
+        "n_band": 102
+      }
+    },
+    {
+      "curvature": "mls",
+      "delta_s_scheme": "gradient",
+      "dx_m": 0.002,
+      "h_m": 0.0026000000000000003,
+      "n_particles": 362,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 62.44653574203292
+      },
+      "delta_s": {
+        "integral_dn": 0.7509820285052726,
+        "rel_error_pct": -24.90179714947274,
+        "within_15pct": false,
+        "max_over_source": 330.74947455508095
+      },
+      "cut_force_rest_volume": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -12.361723220662947,
+        "ratio": 0.8584530014349269,
+        "rel_error_pct": 14.154699856507314,
+        "within_15pct": true
+      },
+      "cut_force_summation_density": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -15.503055458458704,
+        "ratio": 1.0766010735040765,
+        "rel_error_pct": 7.660107350407652,
+        "within_15pct": true
+      },
+      "colour_deficit": {
+        "mean_colour_outer_shell": 0.7341009927330688,
+        "mean_rho_outer_shell_over_rho0": 0.7341009927330687
+      },
+      "direction": {
+        "cos_band_median": 0.9997157597673402,
+        "fraction_inward": 1.0,
+        "n_band": 165
+      }
+    },
+    {
+      "curvature": "mls",
+      "delta_s_scheme": "gradient",
+      "dx_m": 0.0015,
+      "h_m": 0.0019500000000000001,
+      "n_particles": 642,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 62.59077655385785
+      },
+      "delta_s": {
+        "integral_dn": 0.7391328039053593,
+        "rel_error_pct": -26.08671960946407,
+        "within_15pct": false,
+        "max_over_source": 401.9455336063837
+      },
+      "cut_force_rest_volume": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -12.371338158463676,
+        "ratio": 0.8591207054488663,
+        "rel_error_pct": 14.087929455113368,
+        "within_15pct": true
+      },
+      "cut_force_summation_density": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -15.45866965844661,
+        "ratio": 1.0735187262810146,
+        "rel_error_pct": 7.3518726281014635,
+        "within_15pct": true
+      },
+      "colour_deficit": {
+        "mean_colour_outer_shell": 0.7851915043323395,
+        "mean_rho_outer_shell_over_rho0": 0.7851915043323393
+      },
+      "direction": {
+        "cos_band_median": 0.9997337818358333,
+        "fraction_inward": 1.0,
+        "n_band": 228
+      }
+    },
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "gradient",
+      "dx_m": 0.003,
+      "h_m": 0.0039000000000000003,
+      "n_particles": 161,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 58.891982468382274
+      },
+      "delta_s": {
+        "integral_dn": 0.7545449895898849,
+        "rel_error_pct": -24.54550104101151,
+        "within_15pct": false,
+        "max_over_source": 200.86014027658965
+      },
+      "cut_force_rest_volume": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -11.324258755349362,
+        "ratio": 0.7864068580103724,
+        "rel_error_pct": 21.359314198962764,
+        "within_15pct": false
+      },
+      "cut_force_summation_density": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -14.57727809875554,
+        "ratio": 1.0123109790802458,
+        "rel_error_pct": 1.231097908024581,
+        "within_15pct": true
+      },
+      "colour_deficit": {
+        "mean_colour_outer_shell": 0.6695824023401293,
+        "mean_rho_outer_shell_over_rho0": 0.6695824023401292
+      },
+      "direction": {
+        "cos_band_median": 0.9992852852235229,
+        "fraction_inward": 1.0,
+        "n_band": 102
+      }
+    },
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "gradient",
+      "dx_m": 0.002,
+      "h_m": 0.0026000000000000003,
+      "n_particles": 362,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 52.65530442437468
+      },
+      "delta_s": {
+        "integral_dn": 0.7509820285052726,
+        "rel_error_pct": -24.90179714947274,
+        "within_15pct": false,
+        "max_over_source": 330.74947455508095
+      },
+      "cut_force_rest_volume": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -10.270403889318139,
+        "ratio": 0.7132224923137597,
+        "rel_error_pct": 28.677750768624033,
+        "within_15pct": false
+      },
+      "cut_force_summation_density": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -12.948840619275206,
+        "ratio": 0.8992250430052227,
+        "rel_error_pct": 10.077495699477733,
+        "within_15pct": true
+      },
+      "colour_deficit": {
+        "mean_colour_outer_shell": 0.7341009927330688,
+        "mean_rho_outer_shell_over_rho0": 0.7341009927330687
+      },
+      "direction": {
+        "cos_band_median": 0.9997157597673401,
+        "fraction_inward": 1.0,
+        "n_band": 165
+      }
+    },
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "gradient",
+      "dx_m": 0.0015,
+      "h_m": 0.0019500000000000001,
+      "n_particles": 642,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 50.43010734418038
+      },
+      "delta_s": {
+        "integral_dn": 0.7391328039053593,
+        "rel_error_pct": -26.08671960946407,
+        "within_15pct": false,
+        "max_over_source": 401.9455336063837
+      },
+      "cut_force_rest_volume": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -10.227042469528502,
+        "ratio": 0.710211282606146,
+        "rel_error_pct": 28.978871739385404,
+        "within_15pct": false
+      },
+      "cut_force_summation_density": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -12.864520791756547,
+        "ratio": 0.893369499427538,
+        "rel_error_pct": 10.663050057246204,
+        "within_15pct": true
+      },
+      "colour_deficit": {
+        "mean_colour_outer_shell": 0.7851915043323395,
+        "mean_rho_outer_shell_over_rho0": 0.7851915043323393
+      },
+      "direction": {
+        "cos_band_median": 0.9997337818358334,
+        "fraction_inward": 1.0,
+        "n_band": 228
+      }
+    },
+    {
+      "curvature": "mls",
+      "delta_s_scheme": "ghost",
+      "dx_m": 0.003,
+      "h_m": 0.0039000000000000003,
+      "n_particles": 161,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 62.966657869583024
+      },
+      "delta_s": {
+        "integral_dn": 1.05874970445094,
+        "rel_error_pct": 5.874970445093997,
+        "within_15pct": true,
+        "max_over_source": 200.86014027658965
+      },
+      "cut_force_rest_volume": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -15.956058149428564,
+        "ratio": 1.108059593710317,
+        "rel_error_pct": 10.805959371031705,
+        "within_15pct": true
+      },
+      "cut_force_summation_density": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -21.045119802460896,
+        "ratio": 1.4614666529486733,
+        "rel_error_pct": 46.146665294867326,
+        "within_15pct": false
+      },
+      "colour_deficit": {
+        "mean_colour_outer_shell": 0.6695824023401293,
+        "mean_rho_outer_shell_over_rho0": 0.6695824023401292
+      },
+      "direction": {
+        "cos_band_median": 0.9993476600554636,
+        "fraction_inward": 1.0,
+        "n_band": 99
+      }
+    },
+    {
+      "curvature": "mls",
+      "delta_s_scheme": "ghost",
+      "dx_m": 0.002,
+      "h_m": 0.0026000000000000003,
+      "n_particles": 362,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 60.89376511526376
+      },
+      "delta_s": {
+        "integral_dn": 1.0272345953890158,
+        "rel_error_pct": 2.7234595389015848,
+        "within_15pct": true,
+        "max_over_source": 330.74947455508095
+      },
+      "cut_force_rest_volume": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -15.763176147374857,
+        "ratio": 1.0946650102343651,
+        "rel_error_pct": 9.466501023436514,
+        "within_15pct": true
+      },
+      "cut_force_summation_density": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -20.458091845431497,
+        "ratio": 1.4207008225994096,
+        "rel_error_pct": 42.07008225994095,
+        "within_15pct": false
+      },
+      "colour_deficit": {
+        "mean_colour_outer_shell": 0.7341009927330688,
+        "mean_rho_outer_shell_over_rho0": 0.7341009927330687
+      },
+      "direction": {
+        "cos_band_median": 0.9996851032776466,
+        "fraction_inward": 1.0,
+        "n_band": 159
+      }
+    },
+    {
+      "curvature": "mls",
+      "delta_s_scheme": "ghost",
+      "dx_m": 0.0015,
+      "h_m": 0.0019500000000000001,
+      "n_particles": 642,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 60.20348289556534
+      },
+      "delta_s": {
+        "integral_dn": 1.0273023092303186,
+        "rel_error_pct": 2.730230923031862,
+        "within_15pct": true,
+        "max_over_source": 401.9455336063837
+      },
+      "cut_force_rest_volume": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -15.39154227857668,
+        "ratio": 1.068857102678936,
+        "rel_error_pct": 6.885710267893597,
+        "within_15pct": true
+      },
+      "cut_force_summation_density": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -19.931420592125264,
+        "ratio": 1.3841264300086988,
+        "rel_error_pct": 38.412643000869885,
+        "within_15pct": false
+      },
+      "colour_deficit": {
+        "mean_colour_outer_shell": 0.7851915043323395,
+        "mean_rho_outer_shell_over_rho0": 0.7851915043323393
+      },
+      "direction": {
+        "cos_band_median": 0.9997337818358333,
+        "fraction_inward": 1.0,
+        "n_band": 217
+      }
+    },
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "ghost",
+      "dx_m": 0.003,
+      "h_m": 0.0039000000000000003,
+      "n_particles": 161,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 58.81306807670533
+      },
+      "delta_s": {
+        "integral_dn": 1.05874970445094,
+        "rel_error_pct": 5.874970445093997,
+        "within_15pct": true,
+        "max_over_source": 200.86014027658965
+      },
+      "cut_force_rest_volume": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -14.744540711424479,
+        "ratio": 1.0239264382933666,
+        "rel_error_pct": 2.3926438293366603,
+        "within_15pct": true
+      },
+      "cut_force_summation_density": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -19.593148861822165,
+        "ratio": 1.3606353376265392,
+        "rel_error_pct": 36.06353376265392,
+        "within_15pct": false
+      },
+      "colour_deficit": {
+        "mean_colour_outer_shell": 0.6695824023401293,
+        "mean_rho_outer_shell_over_rho0": 0.6695824023401292
+      },
+      "direction": {
+        "cos_band_median": 0.9993476600554635,
+        "fraction_inward": 1.0,
+        "n_band": 99
+      }
+    },
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "ghost",
+      "dx_m": 0.002,
+      "h_m": 0.0026000000000000003,
+      "n_particles": 362,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 53.19983947280254
+      },
+      "delta_s": {
+        "integral_dn": 1.0272345953890158,
+        "rel_error_pct": 2.7234595389015848,
+        "within_15pct": true,
+        "max_over_source": 330.74947455508095
+      },
+      "cut_force_rest_volume": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -13.481035090322893,
+        "ratio": 0.9361829923835342,
+        "rel_error_pct": 6.381700761646581,
+        "within_15pct": true
+      },
+      "cut_force_summation_density": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -17.586581978069546,
+        "ratio": 1.2212904151437185,
+        "rel_error_pct": 22.12904151437185,
+        "within_15pct": false
+      },
+      "colour_deficit": {
+        "mean_colour_outer_shell": 0.7341009927330688,
+        "mean_rho_outer_shell_over_rho0": 0.7341009927330687
+      },
+      "direction": {
+        "cos_band_median": 0.9996851032776467,
+        "fraction_inward": 1.0,
+        "n_band": 159
+      }
+    },
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "ghost",
+      "dx_m": 0.0015,
+      "h_m": 0.0019500000000000001,
+      "n_particles": 642,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 50.45123984371267
+      },
+      "delta_s": {
+        "integral_dn": 1.0273023092303186,
+        "rel_error_pct": 2.730230923031862,
+        "within_15pct": true,
+        "max_over_source": 401.9455336063837
+      },
+      "cut_force_rest_volume": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -13.22646044904032,
+        "ratio": 0.9185041978500222,
+        "rel_error_pct": 8.149580214997776,
+        "within_15pct": true
+      },
+      "cut_force_summation_density": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -17.184408995951806,
+        "ratio": 1.1933617358299864,
+        "rel_error_pct": 19.33617358299864,
+        "within_15pct": false
+      },
+      "colour_deficit": {
+        "mean_colour_outer_shell": 0.7851915043323395,
+        "mean_rho_outer_shell_over_rho0": 0.7851915043323393
+      },
+      "direction": {
+        "cos_band_median": 0.9997337818358333,
+        "fraction_inward": 1.0,
+        "n_band": 217
+      }
+    }
+  ],
+  "relax": [
+    {
+      "csf_scheme": "consistent",
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "gradient",
+      "setup": {
+        "radius_m": 0.02,
+        "dx_m": 0.002,
+        "h_m": 0.0026000000000000003,
+        "sigma_N_per_m": 7.2,
+        "rho0": 1000.0,
+        "sound_speed": 20.0,
+        "steps": 900,
+        "dt_s": 3.9000000000000006e-05,
+        "t_end_s": 0.035100000000000006,
+        "t_over_t_sigma": 1.053
+      },
+      "reference": {
+        "delta_p_Pa": 360.0
+      },
+      "laplace": {
+        "p_center_Pa": 198.19231197348378,
+        "p_interface_band_Pa": 222.44514918900097,
+        "delta_p_measured_Pa": -24.25283721551719,
+        "rel_error_pct": -106.73689922653256,
+        "within_3pct": false,
+        "within_15pct": false
+      },
+      "spurious_current": {
+        "v_ref_m_per_s": 0.6,
+        "vmax_over_vref_final": 0.027515920694300845,
+        "passes_adami_0p1": true
+      },
+      "density": {
+        "rho_core_over_rho0": 1.000478006043395,
+        "compression_required_by_law": 0.0063
+      },
+      "history": {
+        "t": [
+          3.9000000000000006e-05,
+          0.0019890000000000003,
+          0.003939000000000001,
+          0.005889000000000001,
+          0.007839,
+          0.009789,
+          0.011739000000000001,
+          0.013689000000000002,
+          0.015639000000000004,
+          0.017589000000000004,
+          0.019539000000000004,
+          0.021489000000000005,
+          0.023439000000000005,
+          0.025389000000000005,
+          0.027339000000000006,
+          0.029289000000000006,
+          0.031239000000000006,
+          0.033189,
+          0.035100000000000006
+        ],
+        "vmax_over_vref": [
+          0.03825119157876151,
+          0.09806106891296025,
+          0.13780134233260696,
+          0.12988135343265586,
+          0.11534031583718156,
+          0.06050132499089574,
+          0.0753782128409627,
+          0.043177538212590016,
+          0.03976678888769554,
+          0.04546998581999499,
+          0.0340830393532389,
+          0.033061877297750716,
+          0.03271872610338247,
+          0.03090044788081652,
+          0.026608758624475152,
+          0.024846478891429893,
+          0.03172095255239797,
+          0.025344899002242006,
+          0.027515920694300845
+        ],
+        "ke": [
+          7.596824426956195e-05,
+          0.0003634477454024208,
+          0.0006715791464667531,
+          0.00030588828633522347,
+          0.00015899031378779378,
+          0.00012544915355650413,
+          0.0001423247043236274,
+          5.608320832532671e-05,
+          2.8543663651456233e-05,
+          5.1420564601434106e-05,
+          3.560913960228174e-05,
+          1.9375506875465872e-05,
+          2.33949128801456e-05,
+          2.481643294464282e-05,
+          2.0965590348008905e-05,
+          2.143477195391223e-05,
+          2.4272017405692563e-05,
+          2.5612473638190193e-05,
+          2.6354497694584586e-05
+        ]
+      }
+    },
+    {
+      "csf_scheme": "consistent",
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "ghost",
+      "setup": {
+        "radius_m": 0.02,
+        "dx_m": 0.002,
+        "h_m": 0.0026000000000000003,
+        "sigma_N_per_m": 7.2,
+        "rho0": 1000.0,
+        "sound_speed": 20.0,
+        "steps": 900,
+        "dt_s": 3.9000000000000006e-05,
+        "t_end_s": 0.035100000000000006,
+        "t_over_t_sigma": 1.053
+      },
+      "reference": {
+        "delta_p_Pa": 360.0
+      },
+      "laplace": {
+        "p_center_Pa": 250.07666510911528,
+        "p_interface_band_Pa": 212.6152872880728,
+        "delta_p_measured_Pa": 37.461377821042475,
+        "rel_error_pct": -89.5940617163771,
+        "within_3pct": false,
+        "within_15pct": false
+      },
+      "spurious_current": {
+        "v_ref_m_per_s": 0.6,
+        "vmax_over_vref_final": 0.04929148867769923,
+        "passes_adami_0p1": true
+      },
+      "density": {
+        "rho_core_over_rho0": 1.0006235471796059,
+        "compression_required_by_law": 0.0063
+      },
+      "history": {
+        "t": [
+          3.9000000000000006e-05,
+          0.0019890000000000003,
+          0.003939000000000001,
+          0.005889000000000001,
+          0.007839,
+          0.009789,
+          0.011739000000000001,
+          0.013689000000000002,
+          0.015639000000000004,
+          0.017589000000000004,
+          0.019539000000000004,
+          0.021489000000000005,
+          0.023439000000000005,
+          0.025389000000000005,
+          0.027339000000000006,
+          0.029289000000000006,
+          0.031239000000000006,
+          0.033189,
+          0.035100000000000006
+        ],
+        "vmax_over_vref": [
+          0.03829788594712478,
+          0.22928023624830648,
+          0.19219928793653684,
+          0.11594540659420692,
+          0.16687814466002687,
+          0.19344260764386276,
+          0.151098046222015,
+          0.1520729328728834,
+          0.08530035657918199,
+          0.08541728012571594,
+          0.06235016469961692,
+          0.06172466273321736,
+          0.06010395188287408,
+          0.059824637673275435,
+          0.05588223258038609,
+          0.05031115756479256,
+          0.05592509303370053,
+          0.05212096258881668,
+          0.04929148867769923
+        ],
+        "ke": [
+          7.988673898170246e-05,
+          0.00042192083289530237,
+          0.0012724626097435645,
+          0.0005853392827683524,
+          0.00066230181229493,
+          0.0007563721108702463,
+          0.0006950801763943842,
+          0.0006050076322989754,
+          0.000515951009204388,
+          0.00044925208302345256,
+          0.00037594294537380977,
+          0.0003275643600510359,
+          0.000300521921825771,
+          0.000272560763372614,
+          0.0002489897688768584,
+          0.0002350168564343734,
+          0.00022153795263162802,
+          0.00020676370311202176,
+          0.00019411148225474432
+        ]
+      }
+    }
+  ]
+}

@@ -45,6 +45,17 @@ curvature and force
     a convex drop) and ``a_i = -sigma kappa_i delta_s_i n_i / rho_i`` applied to
     every particle -- ``delta_s`` localises the force to the interface shell.
 
+delta_s closure (``delta_s_scheme``)
+    ``d_s = 2 |grad c|`` assumes the ramp ``1 -> 0`` lives inside the fluid.  It
+    does not: the outermost particle layer only sees half a kernel, so the
+    one-sided ``grad c`` there is ~25 % low and ``int delta_s dn`` reads
+    0.74-0.76 instead of 1 (m2174/m2588).  ``delta_s_scheme="ghost"`` restores
+    the missing void half by mirroring the neighbours of that layer across the
+    local tangent plane with the known void value ``c = 0`` (see
+    :func:`void_mirror_gradient`); ``int delta_s dn`` then reads 1.03 at every
+    resolution.  The default stays ``"gradient"`` so that every historical
+    number in ``docs/verification_surface_tension*.md`` remains reproducible.
+
 References
     Brackbill, Kothe & Zemach (1992), J. Comput. Phys. 100:335.
     Bonet & Lok (1999), Comput. Methods Appl. Mech. Engrg. 180:97.
@@ -219,6 +230,54 @@ def shepard_smooth(
     return out
 
 
+def void_mirror_gradient(
+    pos: torch.Tensor,
+    mass: torch.Tensor,
+    pairs: torch.Tensor,
+    h: float,
+    rho0: float,
+    color: torch.Tensor,
+    normal: torch.Tensor,
+    mask: torch.Tensor,
+) -> torch.Tensor:
+    """Void-side (mirror) contribution to ``grad c`` on the free-surface layer.
+
+    A single-phase cloud has no particles outside the free surface, so the
+    colour gradient of the outermost layer is one-sided and ``|grad c|`` there
+    is 25 % low (``int delta_s dn = 0.74``, m2588).  The missing half is not
+    unknown, however: the void colour is exactly zero.  For every neighbour
+    ``j`` of a masked particle ``i`` we build its image
+
+        x_j' = x_i + (d - 2 (d.n_i) n_i),   d = x_j - x_i
+
+    i.e. reflect ``j`` across the plane through ``x_i`` normal to the local
+    normal ``n_i`` (flat-interface approximation), give the image the volume
+    ``V_j`` and the void value ``c = 0``, and add its pair contribution
+
+        V_j (0 - c_i) grad_i W(x_i - x_j').
+
+    The mirrored configuration is locally symmetric about the tangent plane, so
+    the MLS correction matrix is the identity there and the raw pair sum is
+    already first-order accurate -- no second solve is needed.
+
+    ``mask`` selects the particles that actually touch the void (the layer that
+    has lost support, ``c_i < ghost_colour_max``).  Interior particles get an
+    exact zero, so bulk physics is bit-for-bit unchanged.
+    """
+    out = torch.zeros_like(pos)
+    if pairs.numel() == 0 or not bool(mask.any()):
+        return out
+    vol = mass / rho0
+    i, j = pairs.unbind(dim=1)
+    n_i = normal[i]
+    d = pos[j] - pos[i]
+    d_ref = d - 2.0 * (d * n_i).sum(dim=1, keepdim=True) * n_i
+    gw = cubic_spline_gradient(-d_ref, h)
+    contrib = (vol[j] * (-color[i]))[:, None] * gw
+    contrib = torch.where(mask[i][:, None], contrib, torch.zeros_like(contrib))
+    return out.index_add(0, i, contrib)
+
+
 def csf_fields(
     pos: torch.Tensor,
     mass: torch.Tensor,
@@ -230,6 +289,8 @@ def csf_fields(
     normal_smoothing: int = 2,
     curvature_scheme: str = "mls",
     curvature_stencil: float = 4.0,
+    delta_s_scheme: str = "gradient",
+    ghost_colour_max: float = 0.75,
 ) -> CSFState:
     """Colour, its gradient, the outward normal, curvature and delta_s.
 
@@ -245,6 +306,19 @@ def csf_fields(
     ``"fit_quadratic"`` / ``"fit_circle"``
         weighted local interface fit, see :mod:`tensorsph.csf_curvature`; the
         MLS value is kept as the fallback where the stencil is too poor.
+
+    ``delta_s_scheme`` selects how ``int delta_s dn = 1`` is enforced:
+
+    ``"gradient"`` (default, historical)
+        ``delta_s = 2 |grad c|`` with the one-sided gradient; ``int delta_s dn``
+        measures 0.74-0.76 (25 % low) because the outer half of the colour ramp
+        lives in the void and carries no particles.
+    ``"ghost"``
+        adds the mirror contribution of :func:`void_mirror_gradient` for the
+        particles with ``c < ghost_colour_max`` (the layer that lost kernel
+        support); ``int delta_s dn`` measures 1.03 at dx = 3e-3 .. 1.5e-3 and
+        the cut-force identity moves from -11 % to within the 15 % gate
+        (``docs/verification_surface_tension_delta_s.md``).
     """
     n = pos.shape[0]
     vol = mass / rho0
@@ -284,7 +358,16 @@ def csf_fields(
     # did, letting the colour jump be O(0.3) instead of O(1)) makes the CSF
     # force -- and therefore the Laplace pressure jump -- too weak by exactly
     # the missing factor.
-    delta_s = 2.0 * torch.linalg.vector_norm(grad_c, dim=1)
+    ds_grad = grad_c
+    if delta_s_scheme == "ghost":
+        mask = color < ghost_colour_max
+        ds_grad = grad_c + void_mirror_gradient(
+            pos, mass, pairs, h, rho0, color, normal, mask)
+    elif delta_s_scheme != "gradient":
+        raise ValueError(
+            f"unknown delta_s_scheme {delta_s_scheme!r}; expected 'gradient' "
+            "or 'ghost'")
+    delta_s = 2.0 * torch.linalg.vector_norm(ds_grad, dim=1)
     if curvature_scheme != "mls":
         kappa = fit_curvature(pos, normal, delta_s, pairs, h, fallback=kappa,
                               method=curvature_scheme, stencil=curvature_stencil)
@@ -305,6 +388,8 @@ def surface_tension_acceleration(
     contact_angle: float | None = None,
     curvature_scheme: str = "mls",
     curvature_stencil: float = 4.0,
+    delta_s_scheme: str = "gradient",
+    ghost_colour_max: float = 0.75,
 ) -> tuple[torch.Tensor, CSFState | None]:
     """CSF acceleration ``a = -sigma kappa delta_s n / rho`` and its fields."""
     if sigma <= 0.0:
@@ -320,7 +405,9 @@ def surface_tension_acceleration(
     state = csf_fields(pos, mass, pairs, h, rho0, wall=wall,
                        contact_angle=contact_angle,
                        curvature_scheme=curvature_scheme,
-                       curvature_stencil=curvature_stencil)
+                       curvature_stencil=curvature_stencil,
+                       delta_s_scheme=delta_s_scheme,
+                       ghost_colour_max=ghost_colour_max)
     # Particles whose colour field is locally flat are not on the interface; the
     # clamped kernel sum makes their |grad c| numerically ~1e-12 rather than
     # exactly zero, so they are masked out. Bulk traction stays a bit-exact
