@@ -1,188 +1,176 @@
 {
-  "benchmark": "csf_surface_tension_instant_diagnostics",
-  "reference": {
-    "curvature_1_per_m": 50.0,
-    "cut_force_N_per_m": -14.4,
-    "note": "cut-force identity: surface tension = force per unit length, so a cut through the drop transmits 2*sigma"
-  },
-  "setup": {
-    "radius_m": 0.02,
-    "sigma_N_per_m": 7.2,
-    "rho0": 1000.0,
-    "sound_speed": 20.0
-  },
   "resolutions": [
     {
-      "dx_m": 0.001,
-      "h_m": 0.0013000000000000002,
-      "n_particles": 1450,
-      "dt_acoustic_s": 1.9500000000000003e-05,
-      "n_surface_particles": 94,
-      "surface_fraction": 0.0648275837302208,
+      "dx_m": 0.003,
+      "h_m": 0.0039000000000000003,
+      "n_particles": 161,
+      "dt_acoustic_s": 5.85e-05,
+      "n_surface_particles": 102,
+      "surface_fraction": 0.6335403919219971,
       "curvature": {
         "exact_1_per_m": 50.0,
         "band": {
-          "count": 876,
-          "mean": 204.5289211398238,
-          "median": 78.60382706800232,
-          "std": 274.2037167966665
+          "count": 95,
+          "mean": 72.77193011336236,
+          "median": 66.30522859795545,
+          "std": 20.281872198403256
         },
-        "rel_error_pct": 309.0578422796476,
-        "delta_s_weighted_mean_1_per_m": 624.0106319284467,
-        "delta_s_weighted_rel_error_pct": 1148.0212638568935
+        "rel_error_pct": 45.54386022672472,
+        "delta_s_weighted_mean_1_per_m": 65.00010806788606,
+        "delta_s_weighted_rel_error_pct": 30.000216135772124
       },
       "delta_s": {
         "band": {
-          "count": 876,
-          "mean": 35.96395270217711,
-          "median": 0.0,
-          "std": 65.18679667126504
+          "count": 95,
+          "mean": 97.08678739025333,
+          "median": 99.0181866884227,
+          "std": 53.983074860150474
         },
-        "ideal_value_1_per_m": 384.6153846153846
+        "ideal_value_1_per_m": 128.2051282051282
       },
       "cut_force": {
         "theory_N_per_m": -14.4,
-        "measured_N_per_m": -22.202378335346452,
-        "ratio_measured_over_theory": 1.5418318288435036,
-        "implied_delta_p_Pa": 555.0594583836613
+        "measured_N_per_m": -15.978791856355363,
+        "ratio_measured_over_theory": 1.1096383233580114,
+        "implied_delta_p_Pa": 399.46979640888406
       },
       "inward_alignment": {
-        "cos_band_mean": 0.007503627457515281,
-        "cos_band_median": 0.026775220053898995,
-        "fraction_inward": 0.5747126340866089,
-        "n_aligned": 348
+        "cos_band_mean": 0.998663590217344,
+        "cos_band_median": 0.9992556260842791,
+        "fraction_inward": 1.0,
+        "n_aligned": 127
       },
-      "max_acc_st_m_per_s2": 5059.548935624511,
-      "mean_acc_st_m_per_s2": 179.6789046372499
-    },
-    {
-      "dx_m": 0.0015,
-      "h_m": 0.0019500000000000001,
-      "n_particles": 642,
-      "dt_acoustic_s": 2.925e-05,
-      "n_surface_particles": 66,
-      "surface_fraction": 0.10280373692512512,
-      "curvature": {
-        "exact_1_per_m": 50.0,
-        "band": {
-          "count": 387,
-          "mean": 229.18132841375117,
-          "median": 154.36773476490671,
-          "std": 211.21549191678577
-        },
-        "rel_error_pct": 358.36265682750235,
-        "delta_s_weighted_mean_1_per_m": 436.26305485322916,
-        "delta_s_weighted_rel_error_pct": 772.5261097064583
-      },
-      "delta_s": {
-        "band": {
-          "count": 387,
-          "mean": 40.77671836516446,
-          "median": 8.716373918750643,
-          "std": 52.112173798824095
-        },
-        "ideal_value_1_per_m": 256.4102564102564
-      },
-      "cut_force": {
-        "theory_N_per_m": -14.4,
-        "measured_N_per_m": -13.662382695825478,
-        "ratio_measured_over_theory": 0.9487765760989915,
-        "implied_delta_p_Pa": 341.5595673956369
-      },
-      "inward_alignment": {
-        "cos_band_mean": 0.04261484438740732,
-        "cos_band_median": 0.11241885441050951,
-        "fraction_inward": 0.5707964897155762,
-        "n_aligned": 226
-      },
-      "max_acc_st_m_per_s2": 1743.1663169413105,
-      "mean_acc_st_m_per_s2": 123.40242639890609
+      "max_acc_st_m_per_s2": 159.6150057038156,
+      "mean_acc_st_m_per_s2": 39.30447633451887
     },
     {
       "dx_m": 0.002,
       "h_m": 0.0026000000000000003,
       "n_particles": 362,
       "dt_acoustic_s": 3.9000000000000006e-05,
-      "n_surface_particles": 45,
-      "surface_fraction": 0.12430939078330994,
+      "n_surface_particles": 165,
+      "surface_fraction": 0.4558010995388031,
       "curvature": {
         "exact_1_per_m": 50.0,
         "band": {
           "count": 216,
-          "mean": 199.01348687726386,
-          "median": 163.07883385685568,
-          "std": 147.93294510399522
+          "mean": 130.55609893311464,
+          "median": 81.44337373476822,
+          "std": 93.06652254054676
         },
-        "rel_error_pct": 298.0269737545277,
-        "delta_s_weighted_mean_1_per_m": 309.7030754053302,
-        "delta_s_weighted_rel_error_pct": 519.4061508106604
+        "rel_error_pct": 161.11219786622928,
+        "delta_s_weighted_mean_1_per_m": 62.44653574203292,
+        "delta_s_weighted_rel_error_pct": 24.893071484065842
       },
       "delta_s": {
         "band": {
           "count": 216,
-          "mean": 38.04353132558654,
-          "median": 24.82863598994037,
-          "std": 38.95548812846852
+          "mean": 97.26538747453534,
+          "median": 79.59717677143685,
+          "std": 91.15311151492955
         },
         "ideal_value_1_per_m": 192.3076923076923
       },
       "cut_force": {
         "theory_N_per_m": -14.4,
-        "measured_N_per_m": -11.344008479099177,
-        "ratio_measured_over_theory": 0.7877783666041095,
-        "implied_delta_p_Pa": 283.60021197747943
+        "measured_N_per_m": -15.503055458458704,
+        "ratio_measured_over_theory": 1.0766010735040765,
+        "implied_delta_p_Pa": 387.57638646146756
       },
       "inward_alignment": {
-        "cos_band_mean": 0.04291901690158746,
-        "cos_band_median": 0.08545588607162917,
-        "fraction_inward": 0.5652173757553101,
-        "n_aligned": 161
+        "cos_band_mean": 0.9991663555390876,
+        "cos_band_median": 0.999620609027261,
+        "fraction_inward": 1.0,
+        "n_aligned": 213
       },
-      "max_acc_st_m_per_s2": 1287.247349213485,
-      "mean_acc_st_m_per_s2": 83.21941250173721
+      "max_acc_st_m_per_s2": 228.3489338619789,
+      "mean_acc_st_m_per_s2": 38.84143720610312
     },
     {
-      "dx_m": 0.003,
-      "h_m": 0.0039000000000000003,
-      "n_particles": 161,
-      "dt_acoustic_s": 5.85e-05,
-      "n_surface_particles": 25,
-      "surface_fraction": 0.1552795022726059,
+      "dx_m": 0.0015,
+      "h_m": 0.0019500000000000001,
+      "n_particles": 642,
+      "dt_acoustic_s": 2.925e-05,
+      "n_surface_particles": 228,
+      "surface_fraction": 0.35514017939567566,
       "curvature": {
         "exact_1_per_m": 50.0,
         "band": {
-          "count": 95,
-          "mean": 148.91288826183532,
-          "median": 104.19019061749466,
-          "std": 122.19526164523724
+          "count": 387,
+          "mean": 163.0164838590928,
+          "median": 104.08061756339299,
+          "std": 123.67408323198428
         },
-        "rel_error_pct": 197.82577652367064,
-        "delta_s_weighted_mean_1_per_m": 210.75595566822324,
-        "delta_s_weighted_rel_error_pct": 321.5119113364465
+        "rel_error_pct": 226.0329677181856,
+        "delta_s_weighted_mean_1_per_m": 62.59077655385785,
+        "delta_s_weighted_rel_error_pct": 25.181553107715697
       },
       "delta_s": {
         "band": {
-          "count": 95,
-          "mean": 36.73720698481738,
-          "median": 33.84647982331718,
-          "std": 26.943444790898496
+          "count": 387,
+          "mean": 93.0459273802135,
+          "median": 43.77582664612794,
+          "std": 114.01670817450533
         },
-        "ideal_value_1_per_m": 128.2051282051282
+        "ideal_value_1_per_m": 256.4102564102564
       },
       "cut_force": {
         "theory_N_per_m": -14.4,
-        "measured_N_per_m": -6.525757254640217,
-        "ratio_measured_over_theory": 0.4531775871277928,
-        "implied_delta_p_Pa": 163.14393136600543
+        "measured_N_per_m": -15.45866965844661,
+        "ratio_measured_over_theory": 1.0735187262810146,
+        "implied_delta_p_Pa": 386.4667414611652
       },
       "inward_alignment": {
-        "cos_band_mean": -0.04159589041667336,
-        "cos_band_median": -0.06933805044525714,
-        "fraction_inward": 0.5102040767669678,
-        "n_aligned": 98
+        "cos_band_mean": 0.9990585847620038,
+        "cos_band_median": 0.9996392871270269,
+        "fraction_inward": 1.0,
+        "n_aligned": 299
       },
-      "max_acc_st_m_per_s2": 525.606767836886,
-      "mean_acc_st_m_per_s2": 51.15198765040043
+      "max_acc_st_m_per_s2": 342.6650739810048,
+      "mean_acc_st_m_per_s2": 38.79152811430503
+    },
+    {
+      "dx_m": 0.001,
+      "h_m": 0.0013000000000000002,
+      "n_particles": 1450,
+      "dt_acoustic_s": 1.9500000000000003e-05,
+      "n_surface_particles": 354,
+      "surface_fraction": 0.2441379278898239,
+      "curvature": {
+        "exact_1_per_m": 50.0,
+        "band": {
+          "count": 876,
+          "mean": 162.3268011799497,
+          "median": 76.82341529115028,
+          "std": 189.79358628968325
+        },
+        "rel_error_pct": 224.65360235989942,
+        "delta_s_weighted_mean_1_per_m": 65.310461103851,
+        "delta_s_weighted_rel_error_pct": 30.620922207701994
+      },
+      "delta_s": {
+        "band": {
+          "count": 876,
+          "mean": 83.36635225463138,
+          "median": 0.0,
+          "std": 141.73171702791385
+        },
+        "ideal_value_1_per_m": 384.6153846153846
+      },
+      "cut_force": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -16.14984831114321,
+        "ratio_measured_over_theory": 1.1215172438293894,
+        "implied_delta_p_Pa": 403.74620777858024
+      },
+      "inward_alignment": {
+        "cos_band_mean": 0.9989931998712879,
+        "cos_band_median": 0.9995517264921683,
+        "fraction_inward": 1.0,
+        "n_aligned": 471
+      },
+      "max_acc_st_m_per_s2": 594.6637115302556,
+      "mean_acc_st_m_per_s2": 40.49546490404468
     }
   ]
 }

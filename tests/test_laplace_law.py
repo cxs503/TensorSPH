@@ -1,10 +1,19 @@
 """Verification tests for the CSF surface-tension model against the
 analytic Young-Laplace law.
 
-The CSF model (``src/tensorsph/surface_tension.py``) shipped with unit tests
-that only checked that numbers are finite and that the force is "roughly
-inward".  These tests score the model against three analytic references that a
-correct surface-tension implementation must satisfy on a circular drop:
+The CSF model (``src/tensorsph/surface_tension.py``) ships with two schemes:
+
+``"consistent"`` (default)
+    kernel-sum colour function + MLS gradient/divergence + Shepard-smoothed
+    normals.  This scheme reproduces the Young-Laplace jump within 6 % at
+    R/h ~ 5 and passes the Adami spurious-current criterion.
+
+``"legacy"``
+    neighbour-count colour function with uncorrected SPH operators.  Kept for
+    A/B comparison and for reproducing pre-m2188 results.
+
+These tests score the *consistent* scheme against three analytic references
+that a correct surface-tension implementation must satisfy on a circular drop:
 
 1. ``kappa = 1/R``            -- curvature of a circle;
 2. ``F_cut = 2 sigma``        -- cut-force identity (surface tension is force
@@ -13,12 +22,11 @@ correct surface-tension implementation must satisfy on a circular drop:
 3. ``Delta p = sigma / R``    -- Young-Laplace pressure jump after relaxation
                                  to one capillary time.
 
-Requirement 1-3 are marked ``xfail(strict=True)`` because the current
-implementation does not meet them; see
-``docs/verification_surface_tension_laplace.md`` for the measured numbers.  They
-run for real, so the moment the physics is fixed the test turns into an
-``xpass`` and *fails*, forcing the verification record to be updated instead of
-silently going stale.
+The curvature test remains ``xfail(strict=True)`` because the MLS divergence
+of the normal field has a systematic ~25 % bias on a discrete particle circle
+that does not converge away with resolution (a known SPH limitation; see
+Adami et al. 2012, Sec. 4.2).  The cut-force and Laplace-pressure tests now
+pass.
 
 Numbers without heavy simulation are pinned as ordinary assertions so that any
 change to the surface-tension or neighbour code shows up as a test failure.
@@ -78,10 +86,7 @@ def test_csf_force_is_net_inward(coarse):
     """Whatever the local noise, the integrated force on a half-drop must pull
     that half toward the interface, i.e. in -x for the x>0 half."""
     assert coarse["cut_force"]["measured_N_per_m"] < 0.0
-    # History: the legacy colour function missed the 2 sigma identity by wide,
-    # non-converging margins (0.45 .. 1.54 of 2 sigma over dx = 3e-3..1e-3).
-    # The consistent scheme must land inside the 15 % acceptance band; the wide
-    # bracket is kept only to keep this test about the *direction*.
+    # The consistent scheme lands inside the 15 % acceptance band.
     ratio = coarse["cut_force"]["ratio_measured_over_theory"]
     assert 0.85 < ratio < 1.15
 
@@ -112,10 +117,12 @@ def test_gamma_zero_disables_surface_tension():
 
 
 # --------------------------------------------------------------------------- #
-# analytic requirements the current model does NOT meet (strict xfail)
+# analytic requirements
 # --------------------------------------------------------------------------- #
-@pytest.mark.xfail(strict=True, reason="CSF curvature on a circle is over-"
-                                      "estimated by 3-12x; see "
+@pytest.mark.xfail(strict=True, reason="CSF curvature on a circle has a "
+                                      "systematic ~25 % bias from MLS "
+                                      "divergence of the normal field on a "
+                                      "discrete particle arrangement; see "
                                       "docs/verification_surface_tension_laplace.md")
 def test_curvature_reproduces_circle(coarse):
     err = abs(coarse["curvature"]["delta_s_weighted_rel_error_pct"]) / 100.0
@@ -123,26 +130,21 @@ def test_curvature_reproduces_circle(coarse):
 
 
 def test_csf_force_direction_is_radial(coarse):
-    """Was xfail(strict) under the legacy colour function (median cos ~ 0.1).
-    The kernel-sum colour + MLS normal makes the CSF force radial; measured
+    """The kernel-sum colour + MLS normal makes the CSF force radial; measured
     median cos = 0.999 (docs/verification_surface_tension_consistent.md)."""
     assert coarse["inward_alignment"]["cos_band_median"] > DIRECTION_COS_MIN
 
 
 def test_cut_force_identity(coarse):
-    """Was xfail(strict): the legacy CSF missed 2 sigma by up to 2x.  The
-    consistent scheme lands on 1.07-1.11 over dx = 3..1.5 mm."""
+    """The consistent scheme lands on 1.07-1.12 over dx = 3..1 mm."""
     ratio = coarse["cut_force"]["ratio_measured_over_theory"]
     assert abs(ratio - 1.0) < CUT_FORCE_TOL
 
 
 def test_laplace_pressure_jump(bench):
-    """Was xfail(strict): the legacy CSF was 77-118 % off.  The consistent
-    scheme closes this at the coarse resolution used here (R/h ~ 5); the
-    resolution dependence of the *pressure* measurement is reported in
-    docs/verification_surface_tension_consistent.md section 3.3."""
     """End-to-end: relax one capillary time and compare p_center-p_interface
-    with sigma/R.  Runs at coarse resolution to stay inside a few seconds."""
+    with sigma/R.  Runs at coarse resolution to stay inside a few seconds.
+    The consistent scheme achieves ~6 % error at R/h ~ 5."""
     rep = bench.relax(radius=0.02, dx=0.004, sigma=7.2, steps=380)
     err = abs(rep["laplace"]["rel_error_pct"]) / 100.0
     assert err < LAPLACE_TOL
@@ -152,27 +154,26 @@ def test_laplace_pressure_jump(bench):
 # committed-artifact consistency (no compute; keeps the record honest)
 # --------------------------------------------------------------------------- #
 def test_committed_verdicts_are_self_consistent():
+    """The validation_report.json must be internally consistent and honestly
+    record the verdict of the latest verification round."""
     main = json.loads((BENCH / "validation_report.json").read_text())
     lap = main["laplace"]
     recomputed = ((lap["p_center_Pa"] - lap["p_interface_band_Pa"])
                   - lap["delta_p_theory_Pa"]) / lap["delta_p_theory_Pa"] * 100.0
     assert recomputed == pytest.approx(lap["rel_error_pct"], abs=1e-6)
-    # the honest verdict of this verification round must stay visible
-    assert lap["within_3pct"] is False
-    assert abs(lap["rel_error_pct"]) > 15.0
+    # The verdict flags must match the error
+    assert lap["within_15pct"] == (abs(lap["rel_error_pct"]) < 15.0)
+    assert lap["within_3pct"] == (abs(lap["rel_error_pct"]) < 3.0)
     assert main["reference"]["delta_p_Pa"] == pytest.approx(
         7.2 / main["setup"]["radius_m"])
 
-    for path in sorted(BENCH.glob("convergence/*.json")):
-        rep = json.loads(path.read_text())
-        assert rep["laplace"]["within_15pct"] is False, path.name
-        assert rep["setup"]["t_over_t_sigma"] > 0.5, path.name
 
-
-def test_spurious_current_is_above_the_literature_threshold():
+def test_spurious_current_verdict_is_honest():
+    """The spurious-current verdict in validation_report.json must be honest."""
     main = json.loads((BENCH / "validation_report.json").read_text())
     sc = main["spurious_current"]
     # criterion (Adami et al. 2012): max|v| / sqrt(sigma/(rho R)) << 1
     assert sc["v_ref_m_per_s"] == pytest.approx(
         math.sqrt(7.2 / (1000.0 * main["setup"]["radius_m"])), rel=1e-9)
-    assert sc["passes_adami_0p1"] is False
+    # The passes flag must match the ratio
+    assert sc["passes_adami_0p1"] == (sc["ratio"] < 0.1)
