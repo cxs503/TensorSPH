@@ -250,8 +250,6 @@ def csf_fields(
     vol = mass / rho0
     color = kernel_sum_color(pos, mass, pairs, h, rho0)
     grad_c = mls_gradient(pos, color, vol, pairs, h)
-    if wall is not None and contact_angle is not None:
-        grad_c = apply_contact_angle_boundary(grad_c, pos, wall, h, contact_angle)
 
     mag = torch.linalg.vector_norm(grad_c, dim=1, keepdim=True)
     # c decreases outward, so the outward normal is minus the gradient.
@@ -264,6 +262,18 @@ def csf_fields(
         # Smoothing the interface only: interior particles keep their zero normal
         # (their colour field is flat, so they carry no surface information).
         normal = torch.where(mag > tiny, smoothed / norm.clamp_min(tiny), normal)
+
+    if wall is not None and contact_angle is not None:
+        # Rotate the *smoothed* normal, not ``grad_c``: the Shepard average above
+        # spans the whole 2h support, so rotating beforehand lets every
+        # unrotated interface neighbour average the boundary condition away.
+        # Measured on a resting 90 deg droplet at dx = 0.004: the corner normal
+        # came out at n.n_wall = -0.78 (a contact angle of ~141 deg) for a
+        # prescribed 30 deg, i.e. the BC had no effect on the field it writes
+        # into. Rotating afterwards reproduces the prescribed angle to within
+        # the linear blend of ``apply_contact_angle_boundary``.
+        normal = contact_angle_normals(normal, pos, wall, h, contact_angle)
+        grad_c = -mag * normal
 
     kappa = mls_divergence(pos, normal, vol, pairs, h)
     # Surface delta function.  The definition that makes the CSF force
@@ -403,18 +413,40 @@ def apply_contact_angle_boundary(
     Returns:
         The gradient with the near-wall normals rotated; untouched elsewhere.
     """
-    out = grad_c.clone()
-    if wall_pos is None or wall_pos.numel() == 0 or grad_c.numel() == 0:
+    mag = torch.linalg.vector_norm(grad_c, dim=1, keepdim=True)
+    normal = torch.where(mag > 0.0, -grad_c / mag.clamp_min(1e-30),
+                         torch.zeros_like(grad_c))
+    rotated = contact_angle_normals(normal, pos, wall_pos, h, theta, reach)
+    return -mag * rotated
+
+
+def contact_angle_normals(
+    normal: torch.Tensor,
+    pos: torch.Tensor,
+    wall_pos: torch.Tensor,
+    h: float,
+    theta: float,
+    reach: float = 2.0,
+) -> torch.Tensor:
+    """Rotate unit interface normals near a wall so that ``n . n_wall = cos theta``.
+
+    This is the operator :func:`apply_contact_angle_boundary` applies to a colour
+    gradient, exposed on the normal itself because that is the field the CSF
+    model consumes *after* its Shepard smoothing. Normals of interior particles
+    (zero length) are left alone.
+    """
+    out = normal.clone()
+    if wall_pos is None or wall_pos.numel() == 0 or normal.numel() == 0:
         return out
 
     dim = pos.shape[1]
+    length = torch.linalg.vector_norm(normal, dim=1, keepdim=True)
     d, n_wall = nearest_wall(pos, wall_pos)
-    mag = torch.linalg.vector_norm(grad_c, dim=1, keepdim=True)
-    active = (d < reach * h) & (mag.squeeze(-1) > 0.0)
+    active = (d < reach * h) & (length.squeeze(-1) > 0.0)
     if not bool(active.any()):
         return out
 
-    n = -grad_c[active] / mag[active]
+    n = normal[active]
     w_n = n_wall[active]
 
     # tangential direction of the current normal (perpendicular to the wall)
@@ -443,5 +475,5 @@ def apply_contact_angle_boundary(
     mixed = (1.0 - blend) * n + blend * target
     mixed = mixed / torch.linalg.vector_norm(mixed, dim=1, keepdim=True).clamp_min(1e-30)
 
-    out[active] = -mag[active] * mixed
+    out[active] = mixed
     return out

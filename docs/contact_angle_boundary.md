@@ -1,5 +1,17 @@
 # Contact Angle Boundary Condition for Surface Tension
 
+> **Verification status (2026-11-03, m2781): WITHHELD.**
+> The operator is correct and unit-tested, but the *emergent* macroscopic
+> contact angle does not follow the prescribed angle: a 30 deg request produced
+> 107 deg at `t = 0.35 s`, against 111 deg for the no-BC control and 90 deg for
+> the initial state. Errors: +77 / +47 / +19 deg at 30 / 60 / 90 deg; every
+> prescribed angle lands within 3.1 deg of every other. Root causes: the
+> boundary condition was being averaged away by the model's normal smoothing
+> (fixed in m2781), and the single-phase colour function cannot distinguish the
+> free surface from the wetted base, where the rotation's tangent is degenerate.
+> Measurements, method and next steps: [`benchmarks/contact-angle.md`](benchmarks/contact-angle.md).
+> Treat `Config.contact_angle` as experimental until that benchmark passes.
+
 **Added**: S1·m2090 (2026-10-31)  
 **Model**: Contact angle enforcement via color gradient modification  
 **Reference**: Adami et al. (2012), Tartakovsky & Meakin (2005)

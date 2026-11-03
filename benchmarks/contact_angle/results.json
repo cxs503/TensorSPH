@@ -1,0 +1,439 @@
+{
+  "benchmark": "contact_angle_young_law",
+  "theory": "(1-cos t)^2/(t-sin t cos t) = H^2/A for a circular cap",
+  "setup": {
+    "dx": 0.005,
+    "radius": 0.06,
+    "pool_width": 0.3,
+    "seconds": 0.35,
+    "viscosity": 0.02,
+    "sound_speed": 10.0,
+    "sigma": 0.072,
+    "gravity": 0.0,
+    "csf_scheme": "consistent",
+    "csf_curvature": "mls",
+    "initial_angle_deg": 90.0,
+    "tolerance_deg": 15.0
+  },
+  "estimator": {
+    "uncertainty_deg": 18.22436418323889,
+    "uncertainty_per_angle_deg": {
+      "30": 2.391855796348274,
+      "60": 4.230158518882334,
+      "90": 4.743274893311465,
+      "120": 1.9888370335821008,
+      "150": 18.22436418323889
+    },
+    "calibration_points": 89,
+    "calibration_step_deg": 2.0,
+    "anchor_r": 0.6001259689722963
+  },
+  "cases": [
+    {
+      "contact_angle_prescribed_deg": 30.0,
+      "theta_initial_deg": 88.0,
+      "theta_final_deg": 107.22129466080932,
+      "theta_final_circle_deg": 114.11211082608561,
+      "theta_shift_from_initial_deg": 19.22129466080932,
+      "theta_drift_last_0p2s_deg": 7.523194134865534,
+      "error_deg": 77.22129466080932,
+      "error_percent": 257.40431553603105,
+      "within_15pct": false,
+      "dt": 0.00016250000000000002,
+      "steps": 2154,
+      "particles": 263,
+      "wall_particles": 198,
+      "h": 0.006500000000000001,
+      "viscosity": 0.02,
+      "sound_speed": 10.0,
+      "sigma": 0.072,
+      "peak_speed": 0.0502467328608146,
+      "peak_mach": 0.00502467328608146,
+      "peak_bulk_density_error": 0.010229654368829166,
+      "peak_courant": 0.25125616832152037,
+      "boundary_events": 0,
+      "area_change_percent": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "time": 0.0,
+          "theta_deg": 88.0,
+          "theta_circle_deg": 101.58866632908229,
+          "area": 0.005694117029882684,
+          "r": 0.6001259689722963
+        },
+        {
+          "step": 615,
+          "time": 0.09993750000000001,
+          "theta_deg": 97.46159573430735,
+          "theta_circle_deg": 102.35627770229992,
+          "area": 0.005694117029882684,
+          "r": 0.6521783303615813
+        },
+        {
+          "step": 1230,
+          "time": 0.19987500000000002,
+          "theta_deg": 99.69810052594379,
+          "theta_circle_deg": 110.47186444280183,
+          "area": 0.005694117029882684,
+          "r": 0.6823657034625038
+        },
+        {
+          "step": 1845,
+          "time": 0.29981250000000004,
+          "theta_deg": 106.72680068261752,
+          "theta_circle_deg": 112.45229264049065,
+          "area": 0.005694117029882684,
+          "r": 0.6999040691379343
+        },
+        {
+          "step": 2154,
+          "time": 0.35002500000000003,
+          "theta_deg": 107.22129466080932,
+          "theta_circle_deg": 114.11211082608561,
+          "area": 0.005694117029882684,
+          "r": 0.705998050781494
+        }
+      ]
+    },
+    {
+      "contact_angle_prescribed_deg": 60.0,
+      "theta_initial_deg": 88.0,
+      "theta_final_deg": 107.31192039258389,
+      "theta_final_circle_deg": 106.93663559449062,
+      "theta_shift_from_initial_deg": 19.311920392583886,
+      "theta_drift_last_0p2s_deg": 7.6217275809115534,
+      "error_deg": 47.311920392583886,
+      "error_percent": 78.85320065430648,
+      "within_15pct": false,
+      "dt": 0.00016250000000000002,
+      "steps": 2154,
+      "particles": 263,
+      "wall_particles": 198,
+      "h": 0.006500000000000001,
+      "viscosity": 0.02,
+      "sound_speed": 10.0,
+      "sigma": 0.072,
+      "peak_speed": 0.05024691909212932,
+      "peak_mach": 0.005024691909212932,
+      "peak_bulk_density_error": 0.008316852086755033,
+      "peak_courant": 0.25125617297730324,
+      "boundary_events": 0,
+      "area_change_percent": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "time": 0.0,
+          "theta_deg": 88.0,
+          "theta_circle_deg": 101.58866632908229,
+          "area": 0.005694117029882684,
+          "r": 0.6001259689722963
+        },
+        {
+          "step": 615,
+          "time": 0.09993750000000001,
+          "theta_deg": 97.45139778981815,
+          "theta_circle_deg": 102.34320761204336,
+          "area": 0.005694117029882684,
+          "r": 0.6519693979045982
+        },
+        {
+          "step": 1230,
+          "time": 0.19987500000000002,
+          "theta_deg": 99.69019281167233,
+          "theta_circle_deg": 110.41990986520372,
+          "area": 0.005694117029882684,
+          "r": 0.682276494514768
+        },
+        {
+          "step": 1845,
+          "time": 0.29981250000000004,
+          "theta_deg": 106.7968075623976,
+          "theta_circle_deg": 112.46169192500359,
+          "area": 0.005694117029882684,
+          "r": 0.7007668109692156
+        },
+        {
+          "step": 2154,
+          "time": 0.35002500000000003,
+          "theta_deg": 107.31192039258389,
+          "theta_circle_deg": 106.93663559449062,
+          "area": 0.005694117029882684,
+          "r": 0.7071148925838712
+        }
+      ]
+    },
+    {
+      "contact_angle_prescribed_deg": 90.0,
+      "theta_initial_deg": 88.0,
+      "theta_final_deg": 108.45856691632589,
+      "theta_final_circle_deg": 115.48332185961014,
+      "theta_shift_from_initial_deg": 20.458566916325893,
+      "theta_drift_last_0p2s_deg": 7.546633777921272,
+      "error_deg": 18.458566916325893,
+      "error_percent": 20.509518795917657,
+      "within_15pct": false,
+      "dt": 0.00016250000000000002,
+      "steps": 2154,
+      "particles": 263,
+      "wall_particles": 198,
+      "h": 0.006500000000000001,
+      "viscosity": 0.02,
+      "sound_speed": 10.0,
+      "sigma": 0.072,
+      "peak_speed": 0.05024718251142151,
+      "peak_mach": 0.005024718251142151,
+      "peak_bulk_density_error": 0.006362821170907029,
+      "peak_courant": 0.25125617956278556,
+      "boundary_events": 0,
+      "area_change_percent": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "time": 0.0,
+          "theta_deg": 88.0,
+          "theta_circle_deg": 101.58866632908229,
+          "area": 0.005694117029882684,
+          "r": 0.6001259689722963
+        },
+        {
+          "step": 615,
+          "time": 0.09993750000000001,
+          "theta_deg": 97.4922688843166,
+          "theta_circle_deg": 108.34819604855971,
+          "area": 0.005694117029882684,
+          "r": 0.6528067527462718
+        },
+        {
+          "step": 1230,
+          "time": 0.19987500000000002,
+          "theta_deg": 100.91193313840462,
+          "theta_circle_deg": 111.69361506022028,
+          "area": 0.005694117029882684,
+          "r": 0.6875392610577691
+        },
+        {
+          "step": 1845,
+          "time": 0.29981250000000004,
+          "theta_deg": 107.91522408767703,
+          "theta_circle_deg": 113.45026278018689,
+          "area": 0.005694117029882684,
+          "r": 0.7145498095000149
+        },
+        {
+          "step": 2154,
+          "time": 0.35002500000000003,
+          "theta_deg": 108.45856691632589,
+          "theta_circle_deg": 115.48332185961014,
+          "area": 0.005694117029882684,
+          "r": 0.7268970166727007
+        }
+      ]
+    },
+    {
+      "contact_angle_prescribed_deg": 120.0,
+      "theta_initial_deg": 88.0,
+      "theta_final_deg": 109.43104959479201,
+      "theta_final_circle_deg": 117.1373044218092,
+      "theta_shift_from_initial_deg": 21.431049594792015,
+      "theta_drift_last_0p2s_deg": 3.187691074066308,
+      "error_deg": -10.568950405207985,
+      "error_percent": -8.807458671006655,
+      "within_15pct": true,
+      "dt": 0.00016250000000000002,
+      "steps": 2154,
+      "particles": 263,
+      "wall_particles": 198,
+      "h": 0.006500000000000001,
+      "viscosity": 0.02,
+      "sound_speed": 10.0,
+      "sigma": 0.072,
+      "peak_speed": 0.050247377988316744,
+      "peak_mach": 0.005024737798831674,
+      "peak_bulk_density_error": 0.006345501079928484,
+      "peak_courant": 0.25125618444970793,
+      "boundary_events": 0,
+      "area_change_percent": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "time": 0.0,
+          "theta_deg": 88.0,
+          "theta_circle_deg": 101.58866632908229,
+          "area": 0.005694117029882684,
+          "r": 0.6001259689722963
+        },
+        {
+          "step": 615,
+          "time": 0.09993750000000001,
+          "theta_deg": 97.54168757588559,
+          "theta_circle_deg": 109.3252722525241,
+          "area": 0.005694117029882684,
+          "r": 0.6538192282173172
+        },
+        {
+          "step": 1230,
+          "time": 0.19987500000000002,
+          "theta_deg": 106.2433585207257,
+          "theta_circle_deg": 111.49792546980392,
+          "area": 0.005694117029882684,
+          "r": 0.6939462864545852
+        },
+        {
+          "step": 1845,
+          "time": 0.29981250000000004,
+          "theta_deg": 108.63560583901172,
+          "theta_circle_deg": 114.6737169239431,
+          "area": 0.005694117029882684,
+          "r": 0.7312605559375794
+        },
+        {
+          "step": 2154,
+          "time": 0.35002500000000003,
+          "theta_deg": 109.43104959479201,
+          "theta_circle_deg": 117.1373044218092,
+          "area": 0.005694117029882684,
+          "r": 0.7508661319809307
+        }
+      ]
+    },
+    {
+      "contact_angle_prescribed_deg": 150.0,
+      "theta_initial_deg": 88.0,
+      "theta_final_deg": 110.34228009213633,
+      "theta_final_circle_deg": 118.40671874226817,
+      "theta_shift_from_initial_deg": 22.342280092136335,
+      "theta_drift_last_0p2s_deg": 3.7196756135710274,
+      "error_deg": -39.657719907863665,
+      "error_percent": -26.438479938575778,
+      "within_15pct": false,
+      "dt": 0.00016250000000000002,
+      "steps": 2154,
+      "particles": 263,
+      "wall_particles": 198,
+      "h": 0.006500000000000001,
+      "viscosity": 0.02,
+      "sound_speed": 10.0,
+      "sigma": 0.072,
+      "peak_speed": 0.0502474204450952,
+      "peak_mach": 0.00502474204450952,
+      "peak_bulk_density_error": 0.006336856629308718,
+      "peak_courant": 0.25125618551112733,
+      "boundary_events": 0,
+      "area_change_percent": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "time": 0.0,
+          "theta_deg": 88.0,
+          "theta_circle_deg": 101.58866632908229,
+          "area": 0.005694117029882684,
+          "r": 0.6001259689722963
+        },
+        {
+          "step": 615,
+          "time": 0.09993750000000001,
+          "theta_deg": 97.5749550949097,
+          "theta_circle_deg": 108.68769250170375,
+          "area": 0.005694117029882684,
+          "r": 0.6545008032636217
+        },
+        {
+          "step": 1230,
+          "time": 0.19987500000000002,
+          "theta_deg": 106.62260447856531,
+          "theta_circle_deg": 111.95059281342631,
+          "area": 0.005694117029882684,
+          "r": 0.6986199892849406
+        },
+        {
+          "step": 1845,
+          "time": 0.29981250000000004,
+          "theta_deg": 109.15260299368873,
+          "theta_circle_deg": 116.45193476581854,
+          "area": 0.005694117029882684,
+          "r": 0.744003162761205
+        },
+        {
+          "step": 2154,
+          "time": 0.35002500000000003,
+          "theta_deg": 110.34228009213633,
+          "theta_circle_deg": 118.40671874226817,
+          "area": 0.005694117029882684,
+          "r": 0.7691073960753595
+        }
+      ]
+    },
+    {
+      "contact_angle_prescribed_deg": null,
+      "theta_initial_deg": 88.0,
+      "theta_final_deg": 110.69289867117676,
+      "theta_final_circle_deg": 118.74909465000721,
+      "theta_shift_from_initial_deg": 22.692898671176764,
+      "theta_drift_last_0p2s_deg": 3.9780625533956027,
+      "error_deg": null,
+      "error_percent": null,
+      "within_15pct": null,
+      "dt": 0.00016250000000000002,
+      "steps": 2154,
+      "particles": 263,
+      "wall_particles": 198,
+      "h": 0.006500000000000001,
+      "viscosity": 0.02,
+      "sound_speed": 10.0,
+      "sigma": 0.072,
+      "peak_speed": 0.05024737645213755,
+      "peak_mach": 0.005024737645213755,
+      "peak_bulk_density_error": 0.006341722185120302,
+      "peak_courant": 0.2512561844113035,
+      "boundary_events": 0,
+      "area_change_percent": 0.0,
+      "history": [
+        {
+          "step": 0,
+          "time": 0.0,
+          "theta_deg": 88.0,
+          "theta_circle_deg": 101.58866632908229,
+          "area": 0.005694117029882684,
+          "r": 0.6001259689722963
+        },
+        {
+          "step": 615,
+          "time": 0.09993750000000001,
+          "theta_deg": 97.5834686058708,
+          "theta_circle_deg": 108.75952134330933,
+          "area": 0.005694117029882684,
+          "r": 0.6546752255469105
+        },
+        {
+          "step": 1230,
+          "time": 0.19987500000000002,
+          "theta_deg": 106.71483611778116,
+          "theta_circle_deg": 112.11376151250569,
+          "area": 0.005694117029882684,
+          "r": 0.6997566217640502
+        },
+        {
+          "step": 1845,
+          "time": 0.29981250000000004,
+          "theta_deg": 109.27690315252367,
+          "theta_circle_deg": 116.72812737196304,
+          "area": 0.005694117029882684,
+          "r": 0.7470668315605765
+        },
+        {
+          "step": 2154,
+          "time": 0.35002500000000003,
+          "theta_deg": 110.69289867117676,
+          "theta_circle_deg": 118.74909465000721,
+          "area": 0.005694117029882684,
+          "r": 0.7734283044762594
+        }
+      ]
+    }
+  ],
+  "figures": [
+    "benchmarks/contact_angle/contact_angle_parity.png",
+    "benchmarks/contact_angle/contact_angle_clouds.png"
+  ]
+}
