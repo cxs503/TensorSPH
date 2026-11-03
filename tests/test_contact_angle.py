@@ -12,9 +12,12 @@ import math
 import pytest
 import torch
 
+from tensorsph.neighbor_search import cell_linked_pairs
 from tensorsph.surface_tension import (
     apply_contact_angle_boundary,
     compute_color_gradient,
+    compute_curvature,
+    compute_normal,
     compute_surface_tension_force,
 )
 from tensorsph.droplet_impact import Config, wall_lattice
@@ -149,98 +152,166 @@ class TestContactAngleBoundary:
                 assert torch.isclose(orig_mag, new_mag, atol=1e-5)
 
 
+class TestContactAngleEnforcement:
+    """Quantitative properties of the enforced angle.
+
+    The originals of these assertions were shape checks; the angle itself was
+    never measured, which is how the magnitude-collapse bug below could pass.
+    """
+
+    H = 0.026
+    POS = [[0.1, 0.02], [0.2, 0.01], [0.3, 0.015], [0.4, 0.9]]
+    WALL = [[0.1, 0.0], [0.2, 0.0], [0.3, 0.0], [0.4, 0.0]]
+
+    def _setup(self):
+        pos = torch.tensor(self.POS, dtype=torch.float64)
+        wall = torch.tensor(self.WALL, dtype=torch.float64)
+        grad = torch.tensor([[0.3, 0.9], [-0.7, 0.2], [0.0, 1.0], [0.5, -0.5]],
+                            dtype=torch.float64)
+        normal = pos - wall
+        normal = normal / torch.linalg.vector_norm(normal, dim=1, keepdim=True)
+        return pos, wall, grad, normal
+
+    @pytest.mark.parametrize("theta", [math.pi / 6, math.pi / 3, math.pi / 2,
+                                       2 * math.pi / 3])
+    def test_enforced_angle_equals_contact_angle(self, theta):
+        """n . n_wall must equal cos(theta) after the rotation."""
+        pos, wall, grad, normal = self._setup()
+        out = apply_contact_angle_boundary(grad.clone(), pos, wall, self.H, theta)
+        unit = out[:2] / torch.linalg.vector_norm(out[:2], dim=1, keepdim=True)
+        dot = (unit * normal[:2]).sum(dim=1)
+        assert torch.allclose(dot, torch.full_like(dot, math.cos(theta)), atol=1e-6)
+
+    @pytest.mark.parametrize("theta", [math.pi / 6, math.pi / 3, 2 * math.pi / 3])
+    def test_magnitude_preserved_exactly(self, theta):
+        pos, wall, grad, normal = self._setup()
+        out = apply_contact_angle_boundary(grad.clone(), pos, wall, self.H, theta)
+        before = torch.linalg.vector_norm(grad, dim=1)
+        after = torch.linalg.vector_norm(out, dim=1)
+        assert torch.allclose(before, after, rtol=1e-12)
+
+    def test_gradient_parallel_to_wall_normal_is_left_alone(self):
+        """No tangential direction exists, so no tilt is invented.
+
+        The first revision multiplied by ``cos(theta) * n_wall`` here, shrinking
+        the gradient to 0.5 of its magnitude (deleting the interface), and the
+        magnitude test still passed because it only compared magnitudes of
+        particles that had been modified in a unit-preserving way.
+        """
+        pos, wall, grad, normal = self._setup()
+        out = apply_contact_angle_boundary(grad.clone(), pos, wall, self.H,
+                                           math.pi / 3)
+        assert torch.allclose(out[2], grad[2], rtol=0, atol=1e-12)
+
+    def test_far_particle_is_bit_identical(self):
+        pos, wall, grad, normal = self._setup()
+        out = apply_contact_angle_boundary(grad.clone(), pos, wall, self.H,
+                                           math.pi / 4)
+        assert torch.equal(out[3], grad[3])
+
+
 class TestContactAngleIntegration:
-    """Integration tests for contact angle with surface tension force."""
+    """Integration of the contact angle with the CSF force.
 
-    def _make_droplet_particles(self, device="cpu"):
-        """Create a droplet-like particle configuration with surface particles."""
-        cfg = Config(dx=0.02, device=device)
-        h = cfg.h_factor * cfg.dx  # ~0.026
+    The configuration is a 7x7 fluid lattice sitting half a smoothing length
+    above a single row of wall particles. It replaces a 6-particle toy cloud
+    whose four "interior" particles all carry the same unit normal: there the
+    discrete curvature of every particle is exactly zero (measured: kappa =
+    [10.1, -4.6, 11.8, -2.9, 0.0, 0.0] 1/m), so the force on the two particles
+    the original test asserted to be non-zero was identically zero. The
+    assertion could not have held for any contact-angle treatment, because it
+    is the curvature operator, not the boundary condition, that returns zero.
+    """
 
-        # Particles within 2h of each other
-        pos = torch.tensor([
-            [0.2, 0.1],    # 0: interior
-            [0.2, 0.12],   # 1: interior
-            [0.22, 0.1],   # 2: interior
-            [0.18, 0.1],   # 3: interior
-            [0.2, 0.08],   # 4: surface (fewer neighbors)
-            [0.24, 0.1],   # 5: surface (fewest neighbors)
-        ], dtype=torch.float32, device=device)
+    DX = 0.02
 
-        # Pairs for particles within interaction range
-        pairs = torch.tensor([
-            [0, 1], [0, 2], [0, 3], [0, 4],
-            [1, 2], [1, 3], [1, 4],
-            [2, 3], [2, 5],
-            [3, 5],
-        ], dtype=torch.long, device=device)
+    def _setup(self):
+        cfg = Config(dx=self.DX, pool_width=0.4, pool_depth=0.15,
+                     drop_radius=0.05, drop_center_y=0.25, device="cpu",
+                     surface_tension_coefficient=0.072)
+        h = cfg.h_factor * cfg.dx
+        n = 7
+        idx = torch.arange(n, dtype=torch.float64)
+        gx, gy = torch.meshgrid(idx, idx, indexing="xy")
+        pos = torch.stack(((gx.reshape(-1) + 0.5) * cfg.dx + 0.06,
+                           (gy.reshape(-1) + 0.5) * cfg.dx + 0.5 * h), dim=-1)
+        wx = torch.arange(-2.0 * cfg.dx, n * cfg.dx, cfg.dx, dtype=torch.float64)
+        wall = torch.stack((wx, torch.full_like(wx, pos[:, 1].min() - 0.5 * cfg.dx)),
+                           dim=-1)
+        density = torch.full((pos.shape[0],), cfg.rho0, dtype=torch.float64)
+        mass = torch.full((pos.shape[0],), cfg.rho0 * cfg.dx * cfg.dx,
+                          dtype=torch.float64)
+        pairs = cell_linked_pairs(pos, 2.0 * h)
+        return cfg, pos, density, mass, pairs, wall
 
-        density = torch.tensor([1000.0, 1000.0, 1000.0, 1000.0, 800.0, 700.0],
-                               dtype=torch.float32, device=device)
-        mass = torch.full((6,), cfg.rho0 * cfg.dx * cfg.dx, dtype=torch.float32, device=device)
+    def test_force_is_non_zero_on_surface_particles(self):
+        cfg, pos, density, mass, pairs, wall = self._setup()
+        acc = compute_surface_tension_force(pos, density, mass, pairs, cfg)
+        moved = (acc.abs().sum(dim=1) > 1e-12)
+        assert int(moved.sum()) > 0
+        assert acc.shape == (pos.shape[0], 2)
 
-        return cfg, pos, density, mass, pairs
+    def test_contact_angle_changes_only_the_near_wall_force(self):
+        cfg, pos, density, mass, pairs, wall = self._setup()
+        wet = Config(dx=self.DX, device="cpu", surface_tension_coefficient=0.072,
+                     contact_angle=math.pi / 3)
+        base = compute_surface_tension_force(pos, density, mass, pairs, cfg)
+        tilted = compute_surface_tension_force(pos, density, mass, pairs, wet,
+                                               wall=wall)
+        changed = (base - tilted).abs().sum(dim=1) > 1e-12
+        assert int(changed.sum()) > 0
+        h = cfg.h_factor * cfg.dx
+        distance = (pos[:, None, :] - wall[None, :, :]).pow(2).sum(dim=2).sqrt()
+        # The rotation acts within 2h of the wall, and the curvature operator
+        # couples neighbours, so the influence reaches one more smoothing length.
+        near = distance.min(dim=1).values < 4.0 * h
+        assert bool((changed <= near).all()), "a far-from-wall force changed"
 
-    def test_surface_tension_with_contact_angle(self):
-        """Surface tension force should use contact angle when wall is provided."""
-        device = "cpu"
-        cfg, pos, density, mass, pairs = self._make_droplet_particles(device)
-        cfg = Config(
-            dx=0.02, pool_width=0.4, pool_depth=0.15, drop_radius=0.05,
-            drop_center_y=0.25, device=device,
-            surface_tension_coefficient=0.072,
-            contact_angle=math.pi / 3,
-        )
-
-        wall = _make_simple_wall(device)
-
-        acc = compute_surface_tension_force(pos, density, mass, pairs, cfg, wall=wall)
-        assert acc.shape == (6, 2)
-        # Surface particles (4, 5) should have non-zero acceleration
-        assert not torch.allclose(acc[4:], torch.zeros(2, 2, dtype=torch.float32, device=device), atol=1e-10)
-
-    def test_surface_tension_without_contact_angle(self):
-        """Surface tension force should work without contact angle (backward compat)."""
-        device = "cpu"
-        cfg = Config(
-            dx=0.02, pool_width=0.4, pool_depth=0.15, drop_radius=0.05,
-            drop_center_y=0.25, device=device,
-            surface_tension_coefficient=0.072,
-            contact_angle=None,
-        )
-
-        _, pos, density, mass, pairs = self._make_droplet_particles(device)
-        wall = _make_simple_wall(device)
-
-        acc = compute_surface_tension_force(pos, density, mass, pairs, cfg, wall=wall)
-        assert acc.shape == (6, 2)
-        # Surface particles should have non-zero acceleration
-        assert not torch.allclose(acc[4:], torch.zeros(2, 2, dtype=torch.float32, device=device), atol=1e-10)
+    def test_no_contact_angle_is_backward_compatible(self):
+        """contact_angle=None plus a wall cloud must equal the wall-free result."""
+        cfg, pos, density, mass, pairs, wall = self._setup()
+        assert cfg.contact_angle is None
+        plain = compute_surface_tension_force(pos, density, mass, pairs, cfg)
+        with_wall = compute_surface_tension_force(pos, density, mass, pairs, cfg,
+                                                  wall=wall)
+        assert torch.equal(plain, with_wall)
 
     def test_config_has_contact_angle_parameter(self):
-        """Config should have contact_angle parameter."""
         cfg = Config()
-        assert hasattr(cfg, 'contact_angle')
+        assert hasattr(cfg, "contact_angle")
         assert cfg.contact_angle is None
-
-        cfg_wetting = Config(contact_angle=math.pi / 4)
-        assert cfg_wetting.contact_angle == pytest.approx(math.pi / 4)
+        wetting = Config(contact_angle=math.pi / 4)
+        assert wetting.contact_angle == pytest.approx(math.pi / 4)
 
     def test_contact_angle_zero_sigma_no_force(self):
-        """Zero surface tension coefficient should produce zero force."""
-        device = "cpu"
-        cfg = Config(
-            dx=0.05, pool_width=0.4, pool_depth=0.15, drop_radius=0.05,
-            drop_center_y=0.25, device=device,
-            surface_tension_coefficient=0.0,
-            contact_angle=math.pi / 3,
-        )
-
-        pos = torch.tensor([[0.1, 0.1], [0.2, 0.2]], dtype=torch.float32, device=device)
-        density = torch.full((2,), cfg.rho0, dtype=torch.float32, device=device)
-        mass = torch.full((2,), cfg.rho0 * cfg.dx * cfg.dx, dtype=torch.float32, device=device)
-        pairs = torch.tensor([[0, 1]], dtype=torch.long, device=device)
-        wall = _make_simple_wall(device)
-
-        acc = compute_surface_tension_force(pos, density, mass, pairs, cfg, wall=wall)
+        cfg = Config(dx=0.05, device="cpu", surface_tension_coefficient=0.0,
+                     contact_angle=math.pi / 3)
+        _, pos, density, mass, pairs, wall = self._setup()
+        cfg = Config(dx=self.DX, device="cpu", surface_tension_coefficient=0.0,
+                     contact_angle=math.pi / 3)
+        acc = compute_surface_tension_force(pos, density, mass, pairs, cfg,
+                                           wall=wall)
         assert torch.allclose(acc, torch.zeros_like(acc))
+
+    def test_uniform_normal_cloud_has_zero_curvature(self):
+        """Recorded degeneracy: the old 6-particle cloud cannot carry a force."""
+        cfg = Config(dx=0.02, device="cpu", surface_tension_coefficient=0.072)
+        pos = torch.tensor([[0.2, 0.1], [0.2, 0.12], [0.22, 0.1], [0.18, 0.1],
+                            [0.2, 0.08], [0.24, 0.1]], dtype=torch.float64)
+        pairs = torch.tensor([[0, 1], [0, 2], [0, 3], [0, 4], [1, 2], [1, 3],
+                              [1, 4], [2, 3], [2, 5], [3, 5]], dtype=torch.long)
+        density = torch.tensor([1000.0] * 4 + [800.0, 700.0], dtype=torch.float64)
+        mass = torch.full((6,), cfg.rho0 * cfg.dx * cfg.dx, dtype=torch.float64)
+        h = cfg.h_factor * cfg.dx
+        count = torch.zeros(6, dtype=torch.float64)
+        i, j = pairs.unbind(dim=1)
+        count = count.index_add(0, i, torch.ones_like(i, dtype=torch.float64))
+        count = count.index_add(0, j, torch.ones_like(j, dtype=torch.float64))
+        surface = count < 0.7 * count.mean()
+        color = torch.ones(6, dtype=torch.float64)
+        color[surface] = count[surface] / count.mean()
+        grad_c = compute_color_gradient(pos, color, mass, density, pairs, h)
+        normal = compute_normal(-grad_c)
+        kappa = compute_curvature(pos, normal, mass, density, pairs, h)
+        assert torch.allclose(kappa[surface], torch.zeros(2, dtype=torch.float64),
+                              atol=1e-10)
