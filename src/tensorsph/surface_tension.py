@@ -223,7 +223,8 @@ def compute_surface_tension_force(
         acc, _ = surface_tension_acceleration(
             pos, density, mass, pairs, h, sigma, rho0=cfg.rho0, wall=wall,
             contact_angle=getattr(cfg, "contact_angle", None),
-            curvature_scheme=getattr(cfg, "csf_curvature", "mls"))
+            curvature_scheme=getattr(cfg, "csf_curvature", "mls"),
+            delta_s_scheme=getattr(cfg, "csf_delta_s", "factor2"))
         return acc
 
     # Count neighbors for each particle

@@ -219,6 +219,56 @@ def shepard_smooth(
     return out
 
 
+def surface_color_level(vol: torch.Tensor, h: float) -> torch.Tensor:
+    """Colour level ``c_s`` of a particle sitting on a planar free surface.
+
+    The clamped kernel-sum colour saturates at 1 in the bulk.  On a planar
+    surface exactly half of the kernel support lies in the void, so
+
+        c_s = V W(0) + (1 - V W(0)) / 2 = (1 + V W(0)) / 2 ,
+
+    the self term ``V W(0)`` being the part every particle keeps regardless of
+    its neighbours.  For the 2-D cubic spline at ``h = 1.3 dx`` on a hex
+    lattice this gives ``c_s = 0.617``, *not* the ``1/2`` that the historical
+    ``2 |grad c|`` normalisation assumed (see :func:`delta_s_from_gradient`).
+    """
+    self_w = cubic_spline_kernel(vol.new_zeros(()), h)
+    return 0.5 * (1.0 + vol * self_w)
+
+
+def delta_s_from_gradient(
+    grad_c: torch.Tensor,
+    vol: torch.Tensor,
+    h: float,
+    scheme: str = "factor2",
+) -> torch.Tensor:
+    """Surface delta function from the colour gradient.
+
+    Two normalisations are available; both target ``int delta_s dn = 1``
+    across the interface (Brackbill et al. 1992).
+
+    ``"factor2"`` (default, historical)
+        ``delta_s = 2 |grad c|``.  The factor 2 assumes the in-fluid colour
+        branch spans ``[1/2, 1]``, i.e. that a surface particle holds half of
+        its kernel weight.  With the self term ``V W(0) = 0.233`` it holds
+        ``c_s = 0.617`` instead, so this normalisation is a factor
+        ``(1 - 0.5) / (1 - c_s) = 0.767`` too small -- measured 0.75.
+    ``"influid"``
+        ``delta_s = |grad c| / (1 - c_s)``: the in-fluid branch ``[c_s, 1]`` is
+        rescaled to ``[0, 1]`` before differentiating, which is the discrete
+        statement of ``int_fluid |grad c| dn = 1 - c_s``.  This is the
+        parameter-free normalisation; ``c_s`` comes from the kernel and the
+        particle volume alone, not from a fitted constant.
+    """
+    mag = torch.linalg.vector_norm(grad_c, dim=1)
+    if scheme == "factor2":
+        return 2.0 * mag
+    if scheme == "influid":
+        span = (1.0 - surface_color_level(vol, h)).clamp_min(1.0e-6)
+        return mag / span
+    raise ValueError(
+        f"unknown delta_s_scheme {scheme!r}; expected 'factor2' or 'influid'")
+
 def csf_fields(
     pos: torch.Tensor,
     mass: torch.Tensor,
@@ -230,6 +280,7 @@ def csf_fields(
     normal_smoothing: int = 2,
     curvature_scheme: str = "mls",
     curvature_stencil: float = 4.0,
+    delta_s_scheme: str = "factor2",
 ) -> CSFState:
     """Colour, its gradient, the outward normal, curvature and delta_s.
 
@@ -245,6 +296,10 @@ def csf_fields(
     ``"fit_quadratic"`` / ``"fit_circle"``
         weighted local interface fit, see :mod:`tensorsph.csf_curvature`; the
         MLS value is kept as the fallback where the stencil is too poor.
+
+    ``delta_s_scheme`` selects the surface delta function: ``"factor2"``
+    (default, historical) or ``"influid"``, see
+    :func:`delta_s_from_gradient`.
     """
     n = pos.shape[0]
     vol = mass / rho0
@@ -284,7 +339,7 @@ def csf_fields(
     # did, letting the colour jump be O(0.3) instead of O(1)) makes the CSF
     # force -- and therefore the Laplace pressure jump -- too weak by exactly
     # the missing factor.
-    delta_s = 2.0 * torch.linalg.vector_norm(grad_c, dim=1)
+    delta_s = delta_s_from_gradient(grad_c, vol, h, scheme=delta_s_scheme)
     if curvature_scheme != "mls":
         kappa = fit_curvature(pos, normal, delta_s, pairs, h, fallback=kappa,
                               method=curvature_scheme, stencil=curvature_stencil)
@@ -305,6 +360,7 @@ def surface_tension_acceleration(
     contact_angle: float | None = None,
     curvature_scheme: str = "mls",
     curvature_stencil: float = 4.0,
+    delta_s_scheme: str = "factor2",
 ) -> tuple[torch.Tensor, CSFState | None]:
     """CSF acceleration ``a = -sigma kappa delta_s n / rho`` and its fields."""
     if sigma <= 0.0:
@@ -320,7 +376,8 @@ def surface_tension_acceleration(
     state = csf_fields(pos, mass, pairs, h, rho0, wall=wall,
                        contact_angle=contact_angle,
                        curvature_scheme=curvature_scheme,
-                       curvature_stencil=curvature_stencil)
+                       curvature_stencil=curvature_stencil,
+                       delta_s_scheme=delta_s_scheme)
     # Particles whose colour field is locally flat are not on the interface; the
     # clamped kernel sum makes their |grad c| numerically ~1e-12 rather than
     # exactly zero, so they are masked out. Bulk traction stays a bit-exact

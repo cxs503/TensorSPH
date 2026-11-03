@@ -127,6 +127,12 @@ class Config:
     # historical discretisation, +25 % on a circle); "fit_quadratic"/"fit_circle"
     # = weighted local interface fit (see tensorsph.csf_curvature).
     csf_curvature: str = "mls"
+    # Surface delta function normalisation in the "consistent" scheme.
+    # "factor2" = 2|grad c| (historical, assumes a surface particle holds half
+    # of its kernel weight -> measured 0.75 instead of 1); "influid" =
+    # |grad c| / (1 - c_s) with c_s the analytic planar-surface colour level
+    # (see tensorsph.csf_consistent.delta_s_from_gradient).
+    csf_delta_s: str = "factor2"
 
 
 # --------------------------------------------------------------------------- #
@@ -729,6 +735,10 @@ def validate_config(cfg: Config) -> None:
         raise ValueError(
             "csf_curvature must be 'mls', 'fit_quadratic' or 'fit_circle', "
             f"got {cfg.csf_curvature!r}")
+    if cfg.csf_delta_s not in ("factor2", "influid"):
+        raise ValueError(
+            "csf_delta_s must be 'factor2' or 'influid', "
+            f"got {cfg.csf_delta_s!r}")
     if cfg.csf_scheme not in ("consistent", "legacy"):
         raise ValueError(
             f"csf_scheme must be 'consistent' or 'legacy', got {cfg.csf_scheme!r}")

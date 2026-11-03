@@ -1,0 +1,63 @@
+{
+  "delta_s_scheme": "factor2",
+  "curvature": "fit_quadratic",
+  "dx_m": 0.002,
+  "h_m": 0.0026000000000000003,
+  "n_particles": 362,
+  "color": {
+    "bulk_level": 1.0,
+    "interface_band_colour_median": 0.7425354229235065,
+    "surface_level_analytic": 0.6165107547614335,
+    "surface_level_half_lattice": 0.7309252023696899
+  },
+  "kappa": {
+    "exact_1_per_m": 50.0,
+    "delta_s_weighted_mean_1_per_m": 52.65530442437468,
+    "rel_error_pct": 5.310608848749354,
+    "band": {
+      "count": 216,
+      "mean": 117.02351214421755,
+      "median": 59.36486979344604,
+      "std": 99.32398289468385
+    },
+    "within_15pct": true
+  },
+  "delta_s": {
+    "grad_integral_dn": 0.3754910142526363,
+    "surface_level_from_drop": 0.6245089857473637,
+    "integral_dn": 0.7509820285052726,
+    "rel_error_pct": -24.90179714947274,
+    "within_3pct": false,
+    "within_15pct": false
+  },
+  "cut_force": {
+    "theory_N_per_m": -14.4,
+    "measured_N_per_m": -12.948840619275206,
+    "ratio_measured_over_theory": 0.8992250430052227,
+    "rel_error_pct": 10.077495699477733,
+    "within_3pct": false,
+    "within_15pct": true
+  },
+  "cut_force_density": {
+    "theory_N_per_m": -14.4,
+    "measured_N_per_m": -10.270403889318139,
+    "ratio_measured_over_theory": 0.7132224923137597,
+    "rel_error_pct": 28.677750768624033,
+    "within_3pct": false,
+    "within_15pct": false
+  },
+  "density": {
+    "shell_rho_over_rho0_weighted": 0.8016120527654391,
+    "acc_inflation_factor": 1.2474862329603862
+  },
+  "direction": {
+    "n_active_band": 165,
+    "cos_band_median": 0.9997157597673401,
+    "fraction_inward": 1.0,
+    "cos_error_pct": 0.028424023265993803
+  },
+  "force_density": {
+    "max_abs_acc": 264.9383510578474,
+    "n_force_particles": 213
+  }
+}
