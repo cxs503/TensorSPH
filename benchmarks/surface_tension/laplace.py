@@ -377,10 +377,12 @@ def plot(summary, path):
     ax.plot(dxr, [r["synthetic_jump_pa"] / r["jump_theory_pa"] for r in rows],
             "s--", color="tab:green", label="gauge self-test")
     ax.axhline(1.0, color="k", ls=":", lw=1.2, label="Laplace law")
-    ax.set_xscale("log"); ax.set_xlabel("$dx/R$")
+    ax.set_xscale("log")
+    ax.set_xlabel("$dx/R$")
     ax.set_ylabel("$\\Delta p\\,/\\,(\\sigma/R)$")
     ax.set_title("Laplace pressure jump")
-    ax.grid(True, which="both", alpha=0.3); ax.legend(fontsize=8)
+    ax.grid(True, which="both", alpha=0.3)
+    ax.legend(fontsize=8)
 
     ax = axes[1]
     ax.plot(dxr, [r["curvature_ratio"] for r in rows], "s-", color="tab:red",
@@ -389,9 +391,12 @@ def plot(summary, path):
             color="tab:purple", label="shipped $\\kappa R$ (force-weighted)")
     ax.axhline(1.0, color="k", ls=":", lw=1.2, label="exact $\\kappa R=1$")
     ax.axhline(0.0, color="grey", lw=0.8)
-    ax.set_xscale("log"); ax.set_xlabel("$dx/R$"); ax.set_ylabel("$\\kappa R$")
+    ax.set_xscale("log")
+    ax.set_xlabel("$dx/R$")
+    ax.set_ylabel("$\\kappa R$")
     ax.set_title("Curvature: zero-mean noise, not $1/R$")
-    ax.grid(True, which="both", alpha=0.3); ax.legend(fontsize=8)
+    ax.grid(True, which="both", alpha=0.3)
+    ax.legend(fontsize=8)
 
     ax = axes[2]
     fine = rows[-1]
@@ -400,9 +405,11 @@ def plot(summary, path):
             [q["f"] for q in prof], where="mid", color="tab:blue",
             label=f"model, $R/dx$={fine['r_over_dx']:.0f}")
     ax.axhline(0.0, color="grey", lw=0.8)
-    ax.set_xlabel("$r/R$"); ax.set_ylabel("$\\rho\\,a\\cdot(-n)$  [Pa/m]")
+    ax.set_xlabel("$r/R$")
+    ax.set_ylabel("$\\rho\\,a\\cdot(-n)$  [Pa/m]")
     ax.set_title("Radial force-density profile")
-    ax.grid(True, alpha=0.3); ax.legend(fontsize=8)
+    ax.grid(True, alpha=0.3)
+    ax.legend(fontsize=8)
 
     fig.tight_layout()
     fig.savefig(path, dpi=140)

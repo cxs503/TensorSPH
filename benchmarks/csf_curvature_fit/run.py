@@ -195,7 +195,6 @@ def make_figures(payload, out_dir=HERE):
 
     rows = payload["instant"]
     radius = payload["setup"]["radius_m"]
-    dxs = sorted({r["dx_m"] for r in rows})
     relax = payload.get("relax", [])
 
     fig, axes = plt.subplots(1, 4, figsize=(19, 4.2))
