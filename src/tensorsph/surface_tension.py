@@ -15,10 +15,21 @@ The color function c is taken as the density ratio rho / rho0, which provides
 a smooth indicator of the interface in single-fluid SPH. For multi-phase
 extensions, c would be a phase indicator.
 
+Contact angle boundary condition
+    When a fluid interface meets a solid wall the contact angle theta is
+    enforced by rotating the colour gradient of near-wall particles so that
+
+        n . n_wall = cos(theta)
+
+    where n_wall is the wall normal pointing into the fluid (Adami et al.
+    2012; Tartakovsky & Meakin 2005). See
+    ``docs/contact_angle_boundary.md`` and ``apply_contact_angle_boundary``.
+
 References:
     Brackbill, Kothe & Zemach (1992): "A continuum surface force method"
     Monaghan (1992): "Smoothed particle hydrodynamics"
     Tartakovsky et al. (2005): "Modeling of physically adsorbing surfaces"
+    Adami et al. (2012): "Generalized boundary condition for SPH"
 """
 from __future__ import annotations
 
@@ -154,12 +165,192 @@ def compute_curvature(
     return kappa
 
 
+def csf_colour_field(
+    pos: torch.Tensor,
+    mass: torch.Tensor,
+    density: torch.Tensor,
+    pairs: torch.Tensor,
+    h: float,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Colour function, its gradient and the free-surface mask of the CSF model.
+
+    Interior particles carry ``c = 1``; particles whose neighbour count falls
+    below 70 % of the mean carry ``c = n_neighbours / mean(n_neighbours)``.
+    ``grad(c)`` of that field feeds the CSF normal, curvature and surface delta
+    function, so the force routine and the verification harnesses share this
+    single implementation instead of keeping drifting copies.
+
+    Args:
+        pos: (N, 2) particle positions
+        mass: (N,) particle masses
+        density: (N,) particle densities
+        pairs: (P, 2) neighbour pair indices
+        h: smoothing length
+
+    Returns:
+        color: (N,) colour function
+        grad_c: (N, 2) colour gradient
+        is_surface: (N,) boolean free-surface mask
+    """
+    n = pos.shape[0]
+    color = torch.ones(n, dtype=pos.dtype, device=pos.device)
+    grad_c = torch.zeros((n, 2), dtype=pos.dtype, device=pos.device)
+    if pairs.numel() == 0:
+        return color, grad_c, torch.zeros(n, dtype=torch.bool, device=pos.device)
+
+    i, j = pairs.unbind(dim=1)
+    neighbor_count = torch.zeros(n, dtype=pos.dtype, device=pos.device)
+    neighbor_count = neighbor_count.index_add(0, i, torch.ones_like(i, dtype=pos.dtype))
+    neighbor_count = neighbor_count.index_add(0, j, torch.ones_like(j, dtype=pos.dtype))
+
+    # Interior particles have ~20-30 neighbours in 2-D; free-surface particles
+    # have roughly half of that, so 70 % of the mean separates the two.
+    avg_neighbors = neighbor_count.mean()
+    is_surface = neighbor_count < 0.7 * avg_neighbors
+    if is_surface.any():
+        color[is_surface] = neighbor_count[is_surface] / avg_neighbors
+
+    grad_c = compute_color_gradient(pos, color, mass, density, pairs, h)
+    return color, grad_c, is_surface
+
+
+def apply_contact_angle_boundary(
+    grad_c: torch.Tensor,
+    pos: torch.Tensor,
+    wall_positions: torch.Tensor,
+    h: float,
+    contact_angle_rad: float,
+    eps: float = 1.0e-8,
+) -> torch.Tensor:
+    """Apply contact angle boundary condition to color gradient near walls.
+
+    When a fluid interface meets a solid wall, the contact angle θ determines
+    how the interface meets the wall. This function modifies the color gradient
+    of surface particles near the wall to enforce the desired contact angle.
+
+    The method follows Adami et al. (2012) and Tartakovsky & Meakin (2005):
+    - For particles near the wall, the wall-normal component of grad(c) is
+      adjusted to satisfy: n · n_wall = cos(θ)
+    - The wall outward normal n_wall points into the fluid domain.
+
+    Args:
+        grad_c: (N, 2) color gradient (modified in place for near-wall particles)
+        pos: (N, 2) particle positions
+        wall_positions: (M, 2) wall particle positions
+        h: smoothing length
+        contact_angle_rad: desired contact angle in radians (0 < θ < π)
+            - θ < π/2: hydrophilic (wetting)
+            - θ = π/2: neutral
+            - θ > π/2: hydrophobic (non-wetting)
+        eps: small value for numerical stability
+
+    Returns:
+        grad_c: (N, 2) modified color gradient with contact angle enforced
+    """
+    if wall_positions.numel() == 0:
+        return grad_c
+
+    n = pos.shape[0]
+    cos_theta = torch.cos(torch.tensor(contact_angle_rad, dtype=pos.dtype, device=pos.device))
+    sin_theta = torch.sin(torch.tensor(contact_angle_rad, dtype=pos.dtype, device=pos.device))
+
+    # For large wall counts, use bounds-based approach
+    if wall_positions.shape[0] > 5000:
+        return _apply_contact_angle_by_bounds(grad_c, pos, h, contact_angle_rad, eps)
+
+    # Find particles near the wall (within 2h)
+    search_radius = 2.0 * h
+    diff = pos[:, None, :] - wall_positions[None, :, :]  # (N, M, 2)
+    dist_sq = (diff ** 2).sum(dim=2)  # (N, M)
+    min_dist_sq = dist_sq.min(dim=1).values  # (N,)
+    near_wall = min_dist_sq < (search_radius ** 2)
+
+    if not near_wall.any():
+        return grad_c
+
+    # Wall normal: from wall to fluid particle
+    nearest_wall_idx = dist_sq.argmin(dim=1)
+    nearest_wall_pos = wall_positions[nearest_wall_idx]
+    wall_normal = pos - nearest_wall_pos
+    wall_normal_mag = torch.linalg.vector_norm(wall_normal, dim=1, keepdim=True)
+    wall_normal = wall_normal / (wall_normal_mag + eps)
+
+    # Current normal from color gradient
+    grad_mag = torch.linalg.vector_norm(grad_c, dim=1, keepdim=True)
+    current_normal = grad_c / (grad_mag + eps)
+
+    # Project onto tangent plane and reconstruct with contact angle
+    dot_product = (current_normal * wall_normal).sum(dim=1, keepdim=True)
+    n_tangent = current_normal - dot_product * wall_normal
+    n_tangent_mag = torch.linalg.vector_norm(n_tangent, dim=1, keepdim=True)
+
+    safe_tangent = torch.where(
+        n_tangent_mag > eps,
+        n_tangent / (n_tangent_mag + eps),
+        torch.zeros_like(n_tangent)
+    )
+
+    new_normal = cos_theta * wall_normal + sin_theta * safe_tangent
+
+    significant_grad = grad_mag.squeeze() > eps
+    apply_mask = near_wall & significant_grad
+    grad_c[apply_mask] = grad_mag[apply_mask] * new_normal[apply_mask]
+
+    return grad_c
+
+
+def _apply_contact_angle_by_bounds(
+    grad_c: torch.Tensor,
+    pos: torch.Tensor,
+    h: float,
+    contact_angle_rad: float,
+    eps: float = 1.0e-8,
+) -> torch.Tensor:
+    """Simplified contact angle enforcement using domain bounds."""
+    cos_theta = torch.cos(torch.tensor(contact_angle_rad, dtype=pos.dtype, device=pos.device))
+    sin_theta = torch.sin(torch.tensor(contact_angle_rad, dtype=pos.dtype, device=pos.device))
+
+    near_left = pos[:, 0] < 2.0 * h
+    near_right = pos[:, 0] > pos[:, 0].max() - 2.0 * h
+    near_bottom = pos[:, 1] < 2.0 * h
+    near_wall = near_left | near_right | near_bottom
+    if not near_wall.any():
+        return grad_c
+
+    grad_mag = torch.linalg.vector_norm(grad_c, dim=1, keepdim=True)
+    current_normal = grad_c / (grad_mag + eps)
+
+    wall_normal = torch.zeros_like(grad_c)
+    wall_normal[near_left, 0] = 1.0
+    wall_normal[near_right, 0] = -1.0
+    wall_normal[near_bottom, 1] = 1.0
+
+    dot_product = (current_normal * wall_normal).sum(dim=1, keepdim=True)
+    n_tangent = current_normal - dot_product * wall_normal
+    n_tangent_mag = torch.linalg.vector_norm(n_tangent, dim=1, keepdim=True)
+
+    safe_tangent = torch.where(
+        n_tangent_mag > eps,
+        n_tangent / (n_tangent_mag + eps),
+        torch.zeros_like(n_tangent)
+    )
+
+    new_normal = cos_theta * wall_normal + sin_theta * safe_tangent
+
+    significant_grad = grad_mag.squeeze() > eps
+    apply_mask = near_wall & significant_grad
+    grad_c[apply_mask] = grad_mag[apply_mask] * new_normal[apply_mask]
+
+    return grad_c
+
+
 def compute_surface_tension_force(
     pos: torch.Tensor,
     density: torch.Tensor,
     mass: torch.Tensor,
     pairs: torch.Tensor,
     cfg: Config,
+    wall: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Compute surface tension acceleration using CSF model.
 
@@ -178,6 +369,9 @@ def compute_surface_tension_force(
         mass: (N,) particle masses
         pairs: (P, 2) neighbor pair indices
         cfg: simulation configuration
+        wall: (M, 2) wall particle positions; when given together with
+            ``cfg.contact_angle`` the colour gradient of near-wall particles is
+            rotated to realise the requested contact angle
 
     Returns:
         acc_st: (N, 2) surface tension acceleration
@@ -189,31 +383,18 @@ def compute_surface_tension_force(
     if sigma <= 0.0 or pairs.numel() == 0:
         return torch.zeros((n, 2), dtype=pos.dtype, device=pos.device)
 
-    # Count neighbors for each particle
-    i, j = pairs.unbind(dim=1)
-    neighbor_count = torch.zeros(n, dtype=pos.dtype, device=pos.device)
-    neighbor_count = neighbor_count.index_add(0, i, torch.ones_like(i, dtype=pos.dtype))
-    neighbor_count = neighbor_count.index_add(0, j, torch.ones_like(j, dtype=pos.dtype))
-    
-    # Detect surface particles: those with fewer neighbors than average
-    # Interior particles typically have ~20-30 neighbors in 2D
-    # Surface particles have significantly fewer
-    avg_neighbors = neighbor_count.mean()
-    surface_threshold = 0.7 * avg_neighbors  # 70% of average
-    is_surface = neighbor_count < surface_threshold
-    
+    color, grad_c, is_surface = csf_colour_field(pos, mass, density, pairs, h)
+
     if not is_surface.any():
         # No surface particles detected
         return torch.zeros((n, 2), dtype=pos.dtype, device=pos.device)
 
-    # For surface particles, compute a color function based on neighbor count
-    # Interior particles: c = 1.0
-    # Surface particles: c = neighbor_count / avg_neighbors (0 to 0.7)
-    color = torch.ones(n, dtype=pos.dtype, device=pos.device)
-    color[is_surface] = neighbor_count[is_surface] / avg_neighbors
-
-    # Compute gradient of color function
-    grad_c = compute_color_gradient(pos, color, mass, density, pairs, h)
+    # Enforce the contact angle on near-wall particles before the normal and
+    # curvature are formed, so the whole CSF chain sees the wetted interface.
+    if wall is not None and wall.numel() > 0 and cfg.contact_angle is not None:
+        grad_c = apply_contact_angle_boundary(
+            grad_c, pos, wall, h, cfg.contact_angle
+        )
 
     # Compute normal from color gradient
     # Note: color is high (1.0) in interior and low at surface, so grad(c) points inward.

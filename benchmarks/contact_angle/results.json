@@ -1,0 +1,106 @@
+{
+  "benchmark": "csf_contact_angle_boundary",
+  "setup": {
+    "radius_m": 0.02,
+    "dx_m": 0.002,
+    "h_m": 0.0026000000000000003,
+    "n_particles": 362,
+    "n_wall_particles": 62,
+    "rho0": 1000.0,
+    "sigma_N_per_m": 0.072,
+    "lattice": "hexagonal",
+    "wall": "flat bottom, 2 rows",
+    "theory": "n . n_wall = cos(theta); |grad(c)| preserved by the rotation"
+  },
+  "angle_identity": [
+    {
+      "theta_deg": 30.0,
+      "target_cos": 0.8660254037844387,
+      "n_particles_scored": 5,
+      "cos_before_median": -0.9811564028572923,
+      "cos_after_median": -0.8660281403947678,
+      "cos_after_max_abs_residual": 1.8660254037844388,
+      "angle_after_error_deg_max": 150.0,
+      "grad_magnitude_rel_change_max": 0.36552156943702246
+    },
+    {
+      "theta_deg": 60.0,
+      "target_cos": 0.5000000000000001,
+      "n_particles_scored": 5,
+      "cos_before_median": -0.9811564028572923,
+      "cos_after_median": -0.5000161218486678,
+      "cos_after_max_abs_residual": 1.5,
+      "angle_after_error_deg_max": 120.0,
+      "grad_magnitude_rel_change_max": 0.3651577370711157
+    },
+    {
+      "theta_deg": 90.0,
+      "target_cos": 6.123233995736766e-17,
+      "n_particles_scored": 5,
+      "cos_before_median": -0.9811564028572923,
+      "cos_after_median": -2.628581795019458e-05,
+      "cos_after_max_abs_residual": 1.0,
+      "angle_after_error_deg_max": 90.0,
+      "grad_magnitude_rel_change_max": 0.0009990084840956483
+    },
+    {
+      "theta_deg": 120.0,
+      "target_cos": -0.4999999999999998,
+      "n_particles_scored": 5,
+      "cos_before_median": -0.9811564028572923,
+      "cos_after_median": 0.49998197550454915,
+      "cos_after_max_abs_residual": 0.9999951865074741,
+      "angle_after_error_deg_max": 60.0,
+      "grad_magnitude_rel_change_max": 0.6348372629538841
+    },
+    {
+      "theta_deg": 150.0,
+      "target_cos": -0.8660254037844387,
+      "n_particles_scored": 5,
+      "cos_before_median": -0.9811564028572923,
+      "cos_after_median": 0.8660235961428364,
+      "cos_after_max_abs_residual": 1.8660254037844388,
+      "angle_after_error_deg_max": 150.0,
+      "grad_magnitude_rel_change_max": 0.6334794220788817
+    }
+  ],
+  "force_probe": [
+    {
+      "theta_deg": 30.0,
+      "max_acc_m_per_s2": 1.0856142892998344,
+      "total_acc_y": 0.06739599512994765,
+      "finite": true
+    },
+    {
+      "theta_deg": 60.0,
+      "max_acc_m_per_s2": 2.2277672166150984,
+      "total_acc_y": -2.086111260521167,
+      "finite": true
+    },
+    {
+      "theta_deg": 90.0,
+      "max_acc_m_per_s2": 3.250978906406264,
+      "total_acc_y": -1.7768876341626134,
+      "finite": true
+    },
+    {
+      "theta_deg": 120.0,
+      "max_acc_m_per_s2": 3.8810851999783433,
+      "total_acc_y": 1.4654963869280502,
+      "finite": true
+    },
+    {
+      "theta_deg": 150.0,
+      "max_acc_m_per_s2": 3.9492401820021765,
+      "total_acc_y": 7.525415054518727,
+      "finite": true
+    }
+  ],
+  "verdict": {
+    "max_cos_residual": 1.8660254037844388,
+    "max_angle_error_deg": 150.0,
+    "max_grad_magnitude_rel_change": 0.6348372629538841,
+    "within_1e-6_cos": false,
+    "magnitude_preserved_to_1e-6": false
+  }
+}
