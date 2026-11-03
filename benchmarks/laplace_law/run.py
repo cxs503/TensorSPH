@@ -3,7 +3,7 @@
 Why this benchmark exists
 -------------------------
 Surface tension (CSF, Brackbill et al. 1992) was merged into TensorSPH without
-ever being checked against the analytic Young-Laplace law.  The older
+ever been checked against the analytic Young-Laplace law.  The older
 ``benchmarks/static_droplet`` run prints ``Δp_theory = σ/R`` but only tests the
 *sign* of the force, so that theory value is decorative.  This harness measures
 the pressure jump and compares it, number for number, with ``σ/R``.
@@ -42,6 +42,7 @@ from pathlib import Path
 
 import torch
 
+from tensorsph.csf_consistent import csf_fields as csf_fields_consistent
 from tensorsph.droplet_impact import (
     Config,
     density_from_neighbor_pairs,
@@ -50,12 +51,7 @@ from tensorsph.droplet_impact import (
     tait_pressure,
 )
 from tensorsph.neighbor_search import cell_linked_pairs
-from tensorsph.surface_tension import (
-    compute_color_gradient,
-    compute_curvature,
-    compute_normal,
-    compute_surface_tension_force,
-)
+from tensorsph.surface_tension import compute_surface_tension_force
 
 torch.set_num_threads(2)
 
@@ -65,12 +61,7 @@ torch.set_num_threads(2)
 # --------------------------------------------------------------------------- #
 def hexagonal_droplet(radius: float, dx: float, rho0: float,
                       center: tuple[float, float] = (0.0, 0.0)):
-    """Hexagonally packed circular drop.
-
-    A square lattice has 4 nearest neighbours, hex packing has 6, which halves
-    the noise of the neighbour-count surface detector and of the SPH gradient
-    operators.  The lattice constant is set so ``mass * number_density = rho0``.
-    """
+    """Hexagonally packed circular drop."""
     dy = dx * math.sqrt(3.0) / 2.0
     mass = torch.tensor(rho0 * dx * dy, dtype=torch.float64)
     pts = []
@@ -87,29 +78,6 @@ def hexagonal_droplet(radius: float, dx: float, rho0: float,
         j += 1
     pos = torch.tensor(pts, dtype=torch.float64)
     return pos, torch.full((pos.shape[0],), float(mass), dtype=torch.float64)
-
-
-# --------------------------------------------------------------------------- #
-# CSF pipeline introspection (mirrors compute_surface_tension_force)
-# --------------------------------------------------------------------------- #
-def csf_fields(pos, rho, mass, pairs, cfg):
-    """The (color, grad_c, normal, kappa, delta_s, is_surface) fields the CSF
-    force is built from, so each ingredient can be scored separately."""
-    h = cfg.h_factor * cfg.dx
-    n = pos.shape[0]
-    i, j = pairs.unbind(dim=1)
-    count = torch.zeros(n, dtype=pos.dtype)
-    one = torch.ones_like(i, dtype=pos.dtype)
-    count = count.index_add(0, i, one).index_add(0, j, one)
-    avg = count.mean()
-    is_surface = count < 0.7 * avg
-    color = torch.ones(n, dtype=pos.dtype)
-    color[is_surface] = count[is_surface] / avg
-    grad_c = compute_color_gradient(pos, color, mass, rho, pairs, h)
-    normal = compute_normal(-grad_c)
-    kappa = compute_curvature(pos, normal, mass, rho, pairs, h)
-    delta_s = torch.linalg.vector_norm(grad_c, dim=1)
-    return color, grad_c, normal, kappa, delta_s, is_surface
 
 
 def radial_band(pos, values, radius, lo=0.6, hi=0.98):
@@ -144,18 +112,28 @@ def pressure_profile(pos, pressure, radius, nbins=20):
 
 
 def instant_diagnostics(radius, dx, sigma, rho0, sound_speed, viscosity):
-    """Everything that can be scored on a single static evaluation."""
+    """Everything that can be scored on a single static evaluation.
+
+    Uses the **consistent** CSF scheme (kernel-sum colour + MLS operators)
+    for all field scoring, so that curvature, delta_s, and cut-force are
+    evaluated on the same discretisation that produces the acceleration field.
+    """
     cfg = Config(dx=dx, h_factor=1.3, rho0=rho0, sound_speed=sound_speed,
                  gamma=7.0, gravity=0.0, viscosity=viscosity,
-                 surface_tension_coefficient=sigma)
+                 surface_tension_coefficient=sigma, csf_scheme="consistent")
     h = cfg.h_factor * cfg.dx
     pos, mass = hexagonal_droplet(radius, dx, rho0)
     n = pos.shape[0]
     pairs = cell_linked_pairs(pos, 2.0 * h)
-    rho = density_from_neighbor_pairs(pos, mass, h, pairs)
 
-    color, grad_c, normal, kappa, delta_s, is_surface = csf_fields(
-        pos, rho, mass, pairs, cfg)
+    # Use the consistent scheme's csf_fields for all scoring
+    csf = csf_fields_consistent(pos, mass, pairs, h, rho0)
+    kappa = csf.kappa
+    delta_s = csf.delta_s
+    is_surface = csf.surface_mask()
+
+    # Density needed for acceleration computation
+    rho = density_from_neighbor_pairs(pos, mass, h, pairs)
     acc_st = compute_surface_tension_force(pos, rho, mass, pairs, cfg)
 
     # -- cut-force identity (2): force transmitted across the y-axis cut ------- #
@@ -165,18 +143,12 @@ def instant_diagnostics(radius, dx, sigma, rho0, sound_speed, viscosity):
     f_cut_theory = -2.0 * sigma
 
     kappa_band = radial_band(pos, kappa.abs(), radius)
-    # Interface curvature: the physically meaningful average is weighted by the
-    # surface delta function |grad c|, because that is the weight the CSF force
-    # itself uses.  An unweighted band average mixes interior particles
-    # (kappa ~ 0) with interface particles (kappa large) and is not a fair
-    # score of the estimator.
     w = delta_s.abs()
     kappa_w = float((kappa.abs() * w).sum() / w.sum().clamp_min(1e-30))
     ds_band = radial_band(pos, delta_s, radius)
-    # inward alignment: a_st should oppose the radial unit vector
+    # inward alignment
     r_hat = pos / torch.linalg.vector_norm(pos, dim=1, keepdim=True)
     mag = torch.linalg.vector_norm(acc_st, dim=1)
-    # true cosine: +1 means the CSF force points exactly inward (opposite r_hat)
     cos_in = -(acc_st * r_hat).sum(dim=1) / mag.clamp_min(1e-30)
     aligned = mag > 0
     r_norm = torch.linalg.vector_norm(pos, dim=1) / radius
@@ -186,7 +158,6 @@ def instant_diagnostics(radius, dx, sigma, rho0, sound_speed, viscosity):
                    "mean": float(cb.mean()) if cb.numel() else float("nan"),
                    "median": float(cb.median()) if cb.numel() else float("nan")}
 
-    # pressure implied by the cut force, for comparison with (1)
     dp_from_force = abs(f_cut) / (2.0 * radius)
 
     return {
@@ -207,7 +178,7 @@ def instant_diagnostics(radius, dx, sigma, rho0, sound_speed, viscosity):
         },
         "delta_s": {
             "band": ds_band,
-            "ideal_value_1_per_m": 1.0 / (2.0 * h),   # |grad c| across one h
+            "ideal_value_1_per_m": 1.0 / (2.0 * h),
         },
         "cut_force": {
             "theory_N_per_m": f_cut_theory,
@@ -230,7 +201,7 @@ def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
           steps=900, viscosity=0.01):
     cfg = Config(dx=dx, h_factor=1.3, rho0=rho0, sound_speed=sound_speed,
                  gamma=7.0, gravity=0.0, viscosity=viscosity,
-                 surface_tension_coefficient=sigma)
+                 surface_tension_coefficient=sigma, csf_scheme="consistent")
     h = cfg.h_factor * cfg.dx
     dt = float(stable_dt(cfg))
     t_sigma = math.sqrt(rho0 * radius ** 3 / sigma)
@@ -269,7 +240,7 @@ def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
     dp_meas = p_in - p_band
     err = (dp_meas - dp_theory) / dp_theory * 100.0
     vmax = float(torch.linalg.vector_norm(vel, dim=1).max())
-    _, _, _, kappa_f, _, _ = csf_fields(pos, rho_f, mass, pairs, cfg)
+    csf = csf_fields_consistent(pos, mass, pairs, h, rho0)
     comp_needed = (1.0 + dp_theory / (rho0 * sound_speed ** 2 / 7.0)) ** (1 / 7) - 1
     return {
         "setup": {
@@ -299,8 +270,8 @@ def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
             "within_15pct": abs(err) < 15.0,
         },
         "curvature_relaxed": {
-            "band": radial_band(pos, kappa_f.abs(), radius),
-            "rel_error_pct": (radial_band(pos, kappa_f.abs(), radius)["mean"]
+            "band": radial_band(pos, csf.kappa.abs(), radius),
+            "rel_error_pct": (radial_band(pos, csf.kappa.abs(), radius)["mean"]
                               - 1.0 / radius) / (1.0 / radius) * 100.0,
         },
         "spurious_current": {
@@ -310,129 +281,57 @@ def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
             "passes_adami_0p1": vmax / v_ref < 0.1,
         },
         "density": {
-            "rho_center_over_rho0": float(rho_f[r < 0.5].mean() / rho0),
-            "rho_band_over_rho0": float(rho_f[(r > 0.8) & (r < 0.95)].mean() / rho0),
+            "rho_center_over_rho0": float(rho_f[r < 0.3 * radius].mean() / rho0),
+            "rho_band_over_rho0": float(
+                rho_f[(r > 0.8) & (r < 0.95)].mean() / rho0),
             "compression_required_by_law": comp_needed,
         },
         "pressure_profile_final": pressure_profile(pos, p_f, radius),
-        "history": hist,
     }
 
 
-def make_figures(relax_report, instant_rows, out_dir):
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    out = Path(out_dir)
-    fig, axes = plt.subplots(1, 4, figsize=(19, 4.2))
-
-    prof = relax_report["pressure_profile_final"]
-    axes[0].errorbar([p["r_over_R"] for p in prof], [p["p_mean"] for p in prof],
-                     yerr=[p["p_std"] for p in prof], fmt="o-", ms=4,
-                     label="SPH pressure")
-    axes[0].axhline(relax_report["reference"]["delta_p_Pa"], color="k", ls="--",
-                    label=r"analytic $\Delta p=\sigma/R$")
-    axes[0].axhline(relax_report["laplace"]["delta_p_measured_Pa"], color="r",
-                    ls=":", label="measured jump")
-    axes[0].set_xlabel("r / R")
-    axes[0].set_ylabel("pressure [Pa]")
-    axes[0].set_title("(a) pressure profile vs Young-Laplace")
-    axes[0].legend(fontsize=8)
-    axes[0].grid(alpha=0.3)
-
-    hist = relax_report["history"]
-    vr = relax_report["spurious_current"]["v_ref_m_per_s"]
-    axes[1].semilogy(hist["t"], [max(v, 1e-12) / vr for v in hist["vmax"]], "o-",
-                     ms=3, label=r"$|v|_{max}/\sqrt{\sigma/\rho R}$")
-    axes[1].axhline(0.1, color="r", ls="--", label="Adami threshold 0.1")
-    axes[1].set_xlabel("t [s]")
-    axes[1].set_title("(b) spurious current")
-    axes[1].legend(fontsize=8)
-    axes[1].grid(alpha=0.3, which="both")
-
-    kx = [r["curvature"]["exact_1_per_m"] for r in instant_rows]
-    axes[2].plot([r["dx_m"] for r in instant_rows],
-                 [r["curvature"]["band"]["mean"] for r in instant_rows], "o-",
-                 label=r"measured $|\kappa|$")
-    axes[2].plot([r["dx_m"] for r in instant_rows], kx, "k--",
-                 label=r"analytic $\kappa=1/R$")
-    axes[2].set_xscale("log")
-    axes[2].set_xlabel("dx [m]")
-    axes[2].set_ylabel(r"$|\kappa|$ [1/m]")
-    axes[2].set_title("(c) CSF curvature vs exact (resolution scan)")
-    axes[2].legend(fontsize=8)
-    axes[2].grid(alpha=0.3)
-
-    axes[3].plot([r["dx_m"] for r in instant_rows],
-                 [r["cut_force"]["ratio_measured_over_theory"]
-                  for r in instant_rows], "o-", label=r"$F_{cut}/(2\sigma)$")
-    axes[3].axhline(1.0, color="k", ls="--", label="identity: 1.0")
-    axes[3].set_xscale("log")
-    axes[3].set_xlabel("dx [m]")
-    axes[3].set_title("(d) cut-force identity vs resolution")
-    axes[3].legend(fontsize=8)
-    axes[3].grid(alpha=0.3)
-
-    fig.tight_layout()
-    path = out / "laplace_law.png"
-    fig.savefig(path, dpi=140)
-    print(f"figure -> {path}")
-    return path
-
-
+# --------------------------------------------------------------------------- #
+# CLI
+# --------------------------------------------------------------------------- #
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mode", choices=["instant", "relax", "both"], default="both")
+    ap.add_argument("--mode", choices=["instant", "relax", "both"],
+                    default="both")
     ap.add_argument("--radius", type=float, default=0.02)
     ap.add_argument("--dx", type=float, default=0.002)
     ap.add_argument("--sigma", type=float, default=7.2)
+    ap.add_argument("--rho0", type=float, default=1000.0)
+    ap.add_argument("--sound-speed", type=float, default=20.0)
+    ap.add_argument("--viscosity", type=float, default=0.01)
     ap.add_argument("--steps", type=int, default=900)
-    ap.add_argument("--out", default="benchmarks/laplace_law")
     a = ap.parse_args()
 
-    out = Path(a.out)
-    out.mkdir(parents=True, exist_ok=True)
-    instant_path = out / "instant_report.json"
-    relax_path = out / "validation_report.json"
+    out_dir = Path(__file__).resolve().parent
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     if a.mode in ("instant", "both"):
-        rows = [instant_diagnostics(a.radius, dx, a.sigma, 1000.0, 20.0, 0.01)
-                for dx in (0.001, 0.0015, 0.002, 0.003)]
-        payload = {
-            "benchmark": "csf_surface_tension_instant_diagnostics",
-            "reference": {
-                "curvature_1_per_m": 1.0 / a.radius,
-                "cut_force_N_per_m": -2.0 * a.sigma,
-                "note": "cut-force identity: surface tension = force per unit "
-                        "length, so a cut through the drop transmits 2*sigma",
-            },
-            "setup": {"radius_m": a.radius, "sigma_N_per_m": a.sigma,
-                      "rho0": 1000.0, "sound_speed": 20.0},
-            "resolutions": rows,
-        }
-        instant_path.write_text(json.dumps(payload, indent=2))
-        for r in rows:
-            print(f"dx={r['dx_m']:.4f} N={r['n_particles']:5d} "
-                  f"kappa_band={r['curvature']['band']['mean']:7.1f} "
-                  f"kappa_w={r['curvature']['delta_s_weighted_mean_1_per_m']:7.1f} "
-                  f"(w err {r['curvature']['delta_s_weighted_rel_error_pct']:+6.1f}%) "
-                  f"Fcut/2sigma={r['cut_force']['ratio_measured_over_theory']:+7.3f} "
-                  f"surf={r['surface_fraction']:.2f}")
+        dxs = [0.003, 0.002, 0.0015, 0.001]
+        ladder = []
+        for dx in dxs:
+            row = instant_diagnostics(a.radius, dx, a.sigma, a.rho0,
+                                      a.sound_speed, a.viscosity)
+            ladder.append(row)
+            print(f"dx={dx:<7g} N={row['n_particles']:<6d} "
+                  f"kappa_err={row['curvature']['delta_s_weighted_rel_error_pct']:+7.1f}% "
+                  f"Fcut/(2sig)={row['cut_force']['ratio_measured_over_theory']:.3f} "
+                  f"cos_med={row['inward_alignment']['cos_band_median']:+.3f}")
+        (out_dir / "instant_report.json").write_text(
+            json.dumps({"ladder": ladder}, indent=2))
 
     if a.mode in ("relax", "both"):
-        rep = relax(radius=a.radius, dx=a.dx, sigma=a.sigma, steps=a.steps)
-        relax_path.write_text(json.dumps(rep, indent=2))
-        print(f"RELAX dx={a.dx} steps={a.steps} "
-              f"t/t_sigma={rep['setup']['t_over_t_sigma']:.2f}: "
-              f"dp theory {rep['laplace']['delta_p_theory_Pa']:.1f} Pa, "
-              f"measured {rep['laplace']['delta_p_measured_Pa']:.2f} Pa, "
-              f"err {rep['laplace']['rel_error_pct']:+.1f}%, "
-              f"spurious {rep['spurious_current']['ratio']:.3f}")
-
-    if a.mode == "both":
-        instant_rows = json.loads(instant_path.read_text())["resolutions"]
-        make_figures(json.loads(relax_path.read_text()), instant_rows, out)
+        rep = relax(a.radius, a.dx, a.sigma, a.rho0, a.sound_speed, a.viscosity,
+                    a.steps)
+        (out_dir / "validation_report.json").write_text(
+            json.dumps(rep, indent=2))
+        print(f"relax Delta p={rep['laplace']['delta_p_measured_Pa']:.1f} Pa "
+              f"vs {rep['reference']['delta_p_Pa']:.1f} Pa "
+              f"({rep['laplace']['rel_error_pct']:+.1f}%)  "
+              f"spurious={rep['spurious_current']['ratio']:.3f}")
 
 
 if __name__ == "__main__":

@@ -1,10 +1,22 @@
 """Verification tests for the CSF surface-tension model against the
 analytic Young-Laplace law.
 
-The CSF model (``src/tensorsph/surface_tension.py``) shipped with unit tests
-that only checked that numbers are finite and that the force is "roughly
-inward".  These tests score the model against three analytic references that a
-correct surface-tension implementation must satisfy on a circular drop:
+The CSF model (``src/tensorsph/surface_tension.py``) ships with two schemes:
+
+``"consistent"`` (default)
+    kernel-sum colour function + first-order (MLS) consistent gradient and
+    divergence.  This scheme reproduces the cut-force identity within 15 %
+    and the force direction to machine precision; curvature remains ~25-30 %
+    high (see ``docs/verification_surface_tension_consistent.md``).
+
+``"legacy"``
+    neighbour-count colour function with uncorrected SPH operators, kept for
+    A/B comparison.  Curvature was 3-12x too high, cut-force missed by up to
+    2x, and the Laplace jump was off by 77-118 %.
+
+These tests score the **consistent** scheme (the default) against three
+analytic references that a correct surface-tension implementation must satisfy
+on a circular drop:
 
 1. ``kappa = 1/R``            -- curvature of a circle;
 2. ``F_cut = 2 sigma``        -- cut-force identity (surface tension is force
@@ -13,12 +25,12 @@ correct surface-tension implementation must satisfy on a circular drop:
 3. ``Delta p = sigma / R``    -- Young-Laplace pressure jump after relaxation
                                  to one capillary time.
 
-Requirement 1-3 are marked ``xfail(strict=True)`` because the current
-implementation does not meet them; see
-``docs/verification_surface_tension_laplace.md`` for the measured numbers.  They
-run for real, so the moment the physics is fixed the test turns into an
-``xpass`` and *fails*, forcing the verification record to be updated instead of
-silently going stale.
+The curvature gate is marked ``xfail(strict=True)`` because the consistent
+scheme's curvature is still ~25-30 % high; see
+``docs/verification_surface_tension_consistent.md`` for the measured numbers.
+It runs for real, so the moment the curvature estimator is improved the test
+turns into an ``xpass`` and *fails*, forcing the verification record to be
+updated instead of silently going stale.
 
 Numbers without heavy simulation are pinned as ordinary assertions so that any
 change to the surface-tension or neighbour code shows up as a test failure.
@@ -78,8 +90,6 @@ def test_csf_force_is_net_inward(coarse):
     """Whatever the local noise, the integrated force on a half-drop must pull
     that half toward the interface, i.e. in -x for the x>0 half."""
     assert coarse["cut_force"]["measured_N_per_m"] < 0.0
-    # History: the legacy colour function missed the 2 sigma identity by wide,
-    # non-converging margins (0.45 .. 1.54 of 2 sigma over dx = 3e-3..1e-3).
     # The consistent scheme must land inside the 15 % acceptance band; the wide
     # bracket is kept only to keep this test about the *direction*.
     ratio = coarse["cut_force"]["ratio_measured_over_theory"]
@@ -112,37 +122,36 @@ def test_gamma_zero_disables_surface_tension():
 
 
 # --------------------------------------------------------------------------- #
-# analytic requirements the current model does NOT meet (strict xfail)
+# analytic requirements the current model does NOT yet meet (strict xfail)
 # --------------------------------------------------------------------------- #
-@pytest.mark.xfail(strict=True, reason="CSF curvature on a circle is over-"
-                                      "estimated by 3-12x; see "
-                                      "docs/verification_surface_tension_laplace.md")
+@pytest.mark.xfail(strict=True, reason="Consistent CSF curvature on a circle "
+                                      "is ~25-30 % high (div n overestimates "
+                                      "on the 2h-thick interface shell); see "
+                                      "docs/verification_surface_tension_consistent.md")
 def test_curvature_reproduces_circle(coarse):
     err = abs(coarse["curvature"]["delta_s_weighted_rel_error_pct"]) / 100.0
     assert err < CURVATURE_TOL
 
 
 def test_csf_force_direction_is_radial(coarse):
-    """Was xfail(strict) under the legacy colour function (median cos ~ 0.1).
-    The kernel-sum colour + MLS normal makes the CSF force radial; measured
-    median cos = 0.999 (docs/verification_surface_tension_consistent.md)."""
+    """The kernel-sum colour + MLS normal makes the CSF force radial; measured
+    median cos = 0.999-1.000 (docs/verification_surface_tension_consistent.md)."""
     assert coarse["inward_alignment"]["cos_band_median"] > DIRECTION_COS_MIN
 
 
 def test_cut_force_identity(coarse):
-    """Was xfail(strict): the legacy CSF missed 2 sigma by up to 2x.  The
-    consistent scheme lands on 1.07-1.11 over dx = 3..1.5 mm."""
+    """The consistent scheme lands on 1.07-1.12 over dx = 3..1 mm, within the
+    15 % acceptance band."""
     ratio = coarse["cut_force"]["ratio_measured_over_theory"]
     assert abs(ratio - 1.0) < CUT_FORCE_TOL
 
 
 def test_laplace_pressure_jump(bench):
-    """Was xfail(strict): the legacy CSF was 77-118 % off.  The consistent
-    scheme closes this at the coarse resolution used here (R/h ~ 5); the
-    resolution dependence of the *pressure* measurement is reported in
-    docs/verification_surface_tension_consistent.md section 3.3."""
     """End-to-end: relax one capillary time and compare p_center-p_interface
-    with sigma/R.  Runs at coarse resolution to stay inside a few seconds."""
+    with sigma/R.  Runs at coarse resolution to stay inside a few seconds.
+    The consistent scheme closes this at R/h ~ 5; see
+    docs/verification_surface_tension_consistent.md section 3.3 for the
+    resolution dependence of the pressure measurement."""
     rep = bench.relax(radius=0.02, dx=0.004, sigma=7.2, steps=380)
     err = abs(rep["laplace"]["rel_error_pct"]) / 100.0
     assert err < LAPLACE_TOL
