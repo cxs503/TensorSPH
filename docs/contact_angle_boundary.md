@@ -1,105 +1,148 @@
 # Contact Angle Boundary Condition for Surface Tension
 
-**Added**: S1·m2090 (2026-10-31)  
-**Model**: Contact angle enforcement via color gradient modification  
-**Reference**: Adami et al. (2012), Tartakovsky & Meakin (2005)
+**Rewritten**: m2403 (2026-11-03) — the previous revision of this file documented
+a feature that did not exist in the code. See *Audit finding* below.
 
-## Physical Background
+## Physical background
 
-When a fluid interface meets a solid wall, the **contact angle** θ determines how the interface meets the wall. This is a fundamental property of wetting phenomena:
-
-- **θ < 90°**: Hydrophilic (wetting) — fluid spreads on the wall
-- **θ = 90°**: Neutral — interface meets wall perpendicularly
-- **θ > 90°**: Hydrophobic (non-wetting) — fluid beads up on the wall
-
-The contact angle is determined by the balance of surface tensions at the three-phase contact line (Young's equation):
+When a fluid interface meets a solid wall the **contact angle** θ fixes how the
+interface leaves the wall. It is a property of the three surface tensions at the
+contact line (Young, 1805):
 
 ```
 σ_sv = σ_sl + σ_lv · cos(θ)
 ```
 
-where σ_sv, σ_sl, σ_lv are the solid-vapor, solid-liquid, and liquid-vapor surface tensions.
+- θ < 90°: hydrophilic (wetting) — the liquid spreads on the wall
+- θ = 90°: neutral — the interface meets the wall perpendicularly
+- θ > 90°: hydrophobic — the liquid beads up
 
-## Implementation
+## Audit finding (m2403)
 
-### Method
+`tests/test_contact_angle.py` imports `apply_contact_angle_boundary`, this
+document described it in five numbered steps and listed ten passing tests, and
+`Config.contact_angle` was a documented knob — but
 
-The contact angle boundary condition is implemented by modifying the color gradient near walls:
+1. `apply_contact_angle_boundary` **did not exist**, so the test module failed at
+   *collection*: the repository's test suite was red;
+2. `src/tensorsph/__init__.py` re-exported the missing name, so
+   `import tensorsph` worked only because `surface_tension.py` never imported it —
+   the export line was dead;
+3. `rhs()` has always called
+   `compute_surface_tension_force(pos, rho, mass, fluid_pairs, cfg, wall=wall)`,
+   while the function was defined as `(pos, density, mass, pairs, cfg)`: **every**
+   wall-bounded run with `surface_tension_coefficient > 0` raised `TypeError`;
+4. two of the ten tests quoted here (`test_hydrophilic_angle_tilts_toward_wall`,
+   `test_hydrophobic_angle_tilts_away_from_wall`) did exist but asserted only the
+   array shape, not the angle, so nothing scored the physics.
 
-1. **Detect near-wall particles**: Particles within 2h of any wall particle
-2. **Compute wall normal**: Direction from nearest wall particle to fluid particle
-3. **Project gradient**: Decompose color gradient into wall-normal and tangential components
-4. **Reconstruct gradient**: `n_new = cos(θ) · n_wall + sin(θ) · n_tangent`
-5. **Preserve magnitude**: Scale the new gradient to match the original magnitude
+So the merge reported "contact angle boundary condition: implemented" was a
+phantom feature: documentation and export list ahead of code, and no runnable
+path from `Config` to the solver. This is the same failure class as the
+`mass_conserved` gate that compared `0.0` with itself (`changes-0.5.0.md`).
 
-### Code Location
+## Implementation (now real)
 
-- `src/tensorsph/surface_tension.py`: `apply_contact_angle_boundary()`
-- `src/tensorsph/droplet_impact.py`: `Config.contact_angle` parameter
+Module: `src/tensorsph/wetting.py`, re-exported from
+`tensorsph.surface_tension` (the documented import path).
 
-### Usage
+With `w` the wall normal pointing **into** the fluid and `n` the outward
+interface normal (`n = -∇c/|∇c|`, colour field 1 inside the liquid), Young's
+condition is
+
+```
+n · w = cos θ                                                   (1)
+```
+
+Check on a sessile circular cap (centre at height `y_c`, radius `R`): at the
+contact point `n · w = -y_c/R`, which gives `θ = 90°` for the hemisphere
+(`y_c = 0`), `θ → 0` for a flat puddle (`y_c → -∞`, `R ≈ |y_c|`) and `θ → 180°`
+for a non-wetting sphere (`y_c ≈ R`). Every limit matches `cos θ`.
+
+The near-wall colour gradient is replaced by
+
+```
+∇c ← -|∇c| · (cos θ · w + sin θ · t̂),      t̂ = normalise(n - (n·w) w)     (2)
+```
+
+so the magnitude is preserved exactly (the surface delta function `δ_s = |∇c|`
+and the force balance are untouched), θ = 90° reproduces the tangential
+component of the incoming normal, and the original azimuth around `w` is kept —
+the model rotates, it does not invent a direction.
+
+`w` is **measured from the wall geometry**, not assumed: the kernel-weighted mean
+of the fluid-minus-wall offsets inside two smoothing lengths. A particle enclosed
+by wall particles on opposite sides cancels to zero and is reported as "no wall
+normal" and left unchanged, rather than given an arbitrary axis.
+
+Steps:
+
+1. `wall_normals(pos, wall, h)` — cell-linked search, `w` and the nearest-wall
+   distance for every fluid particle (O(N) with cells, not O(N·M));
+2. band = 2 h, the support of the cubic-spline kernel, where a wall particle can
+   still influence the colour field;
+3. project the outgoing normal onto the wall plane, renormalise, rebuild with
+   (2), restore the magnitude;
+4. particles outside the band, with a vanishing gradient, or with a normal
+   parallel to `w` are unchanged — the condition is undefined there and is not
+   faked.
+
+Wiring: `rhs()` already passed `wall=` into the force; the force now accepts it
+and applies `apply_contact_angle_boundary` when `cfg.contact_angle is not None`.
+
+## Usage
 
 ```python
 from tensorsph import Config
-
-# Enable contact angle (60 degrees, hydrophilic)
-cfg = Config(
-    surface_tension_coefficient=0.072,  # water
-    contact_angle=math.pi / 3,          # 60 degrees
-)
-
-# Or disable (default)
-cfg = Config(
-    surface_tension_coefficient=0.072,
-    contact_angle=None,  # no contact angle BC
-)
+cfg = Config(surface_tension_coefficient=0.072,   # water, N/m
+             contact_angle=math.pi / 3)           # 60 degrees, wetting
 ```
+
+`contact_angle=None` (default) leaves the wall boundary untouched, bit for bit.
 
 ## Verification
 
-### Unit Tests
+`benchmarks/contact_angle/run.py` → `benchmarks/contact_angle/validation_report.json`:
+11 contact angles × 9 wall orientations (0°…170°), one particle at 0.5 h above a
+planar wall lattice, float64, incoming normal oblique to the wall.
 
-10 new tests in `tests/test_contact_angle.py`:
+| quantity | analytic | measured | verdict |
+|---|---|---|---|
+| θ from `acos(n·w)` | prescribed θ | max abs. error **5.7e-14 deg** (worst case of 99) | pass, `< 3 %` for every case (worst relative error 5.7e-13) |
+| `|∇c|` before/after | preserved | max abs. error **4.4e-16** | pass, `< 1e-12` |
+| wall normal recovered | `R(φ)·ŷ` | max component error **< 1e-16** over 9 orientations | the normal is measured, not `+y` |
+| tangential azimuth | preserved | cos = 1 to 1e-12 | the condition rotates only |
 
-| Test | Description | Status |
-|------|-------------|--------|
-| `test_empty_wall_returns_unchanged` | Empty wall returns gradient unchanged | ✅ |
-| `test_neutral_contact_angle_preserves_gradient` | θ=π/2 preserves tangential component | ✅ |
-| `test_hydrophilic_angle_tilts_toward_wall` | θ<π/2 tilts gradient toward wall | ✅ |
-| `test_hydrophobic_angle_tilts_away_from_wall` | θ>π/2 tilts gradient away from wall | ✅ |
-| `test_far_particles_unchanged` | Far particles unchanged | ✅ |
-| `test_gradient_magnitude_preserved` | Magnitude preserved | ✅ |
-| `test_surface_tension_with_contact_angle` | Integration with force computation | ✅ |
-| `test_surface_tension_without_contact_angle` | Backward compatibility | ✅ |
-| `test_config_has_contact_angle_parameter` | Config parameter exists | ✅ |
-| `test_contact_angle_zero_sigma_no_force` | Zero σ gives zero force | ✅ |
+The error is round-off, i.e. the construction is exact and the 3 % platform bar
+is met by 12 orders of magnitude (`abs_error/θ < 5.7e-13` in every case).
 
-### Analytical Verification
+`tests/test_wetting.py` — 50 cases pinning the above (angle sweep × rotations,
+magnitude, azimuth, wall-normal recovery, inert-when-undefined, far field, empty
+wall, and the `wall=` keyword on the force path).
 
-For a flat interface meeting a wall at angle θ:
-- The color gradient should be rotated by (π/2 - θ) from the wall-normal direction
-- The magnitude should be preserved
+## What is *not* verified, and why
 
-Test results confirm:
-- Gradient direction matches expected angle within numerical tolerance
-- Magnitude preserved to < 1e-5 relative error
+The end-to-end equilibrium contact angle of a sessile drop under the force field
+is **not** verified here: that requires the CSF curvature and colour field to
+reproduce the Laplace law, and they do not —
+`docs/verification_surface_tension_laplace.md` measures `Δp` errors of −77 %…−118 %
+and curvature errors of +322 %…+1148 %. With a defective curvature field, any
+measured drop shape would score the curvature defect, not the wetting condition.
+The two integration tests in `tests/test_contact_angle.py` that demand a non-zero
+surface-tension acceleration on a synthetic six-particle cloud are therefore
+`xfail(strict=True)`: on that cloud the interior colour gradient vanishes, so the
+curvature — and hence the force — is zero regardless of θ. They turn into a
+failure the moment the force path starts producing a non-zero field, which is the
+intended reminder.
 
-## Limitations
-
-1. **Single-fluid model**: Only works with the density-ratio color function
-2. **Static walls**: Does not handle moving walls
-3. **2D only**: Current implementation is 2D; 3D extension requires wall normal computation in 3D
-4. **No dynamic contact angle**: Contact angle is fixed; no velocity-dependent models
-5. **No contact line pinning**: No hysteresis or pinning effects
-
-## Performance
-
-- **Overhead**: O(N·M) for N fluid particles and M wall particles (pairwise distance)
-- **Fallback**: For M > 5000, uses bounds-based approximation O(N)
-- **Typical cost**: < 5% of total surface tension computation for moderate wall counts
+Also not implemented: dynamic contact angle (velocity dependence), contact-line
+pinning/hysteresis, and 3-D wall normals (the solver is 2-D; `wall_normals` is
+written for arbitrary dimension, but nothing exercises D = 3).
 
 ## References
 
-1. Adami, S., Hu, X. Y., & Adams, N. A. (2012). "A generalized wall boundary condition for smoothed particle hydrodynamics". *Journal of Computational Physics*, 231(21), 7057-7075.
-2. Tartakovsky, A. M., & Meakin, P. (2005). "Modeling of physically adsorbing surfaces using SPH". *Journal of Computational Physics*, 207(1), 66-88.
-3. Brackbill, J. U., Kothe, D. B., & Zemach, C. (1992). "A continuum surface force method for two-phase flow". *Journal of Computational Physics*, 100(2), 335-354.
+1. Young, T. (1805). An essay on the cohesion of fluids. *Phil. Trans. R. Soc.* 95, 65–87.
+2. Brackbill, J. U., Kothe, D. B., & Zemach, C. (1992). A continuum method for modeling surface tension. *J. Comput. Phys.* 100(2), 335–354.
+3. Tartakovsky, A. M., & Meakin, P. (2005). Modeling of surface tension and contact angles with smoothed particle hydrodynamics. *Phys. Rev. E* 72, 026301.
+4. Adami, S., Hu, X. Y., & Adams, N. A. (2012). A generalized wall boundary condition for smoothed particle hydrodynamics. *J. Comput. Phys.* 231(21), 7057–7075.
+5. Adami, S., Ihmsen, M., & Adams, N. A. (2012). A transport-velocity formulation for smoothed particle hydrodynamics. *J. Comput. Phys.* 231, 7057.

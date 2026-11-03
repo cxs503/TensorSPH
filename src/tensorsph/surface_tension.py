@@ -25,6 +25,11 @@ from __future__ import annotations
 import torch
 
 from .droplet_impact import Config, cubic_spline_gradient, cubic_spline_kernel
+from .wetting import (  # noqa: F401  (re-exported: documented import path)
+    apply_contact_angle_boundary,
+    measure_contact_angle,
+    wall_normals,
+)
 
 
 def compute_color_gradient(
@@ -160,6 +165,7 @@ def compute_surface_tension_force(
     mass: torch.Tensor,
     pairs: torch.Tensor,
     cfg: Config,
+    wall: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Compute surface tension acceleration using CSF model.
 
@@ -172,12 +178,20 @@ def compute_surface_tension_force(
 
     where n is the inward normal and kappa is the local curvature.
 
+    ``wall`` is optional and only used when ``cfg.contact_angle`` is set: the
+    colour gradient of the near-wall particles is then rotated so the interface
+    meets the wall at that angle (``tensorsph.wetting``).  The solver's ``rhs``
+    passes the wall lattice here; before this keyword existed that call raised
+    ``TypeError``, i.e. surface tension could not be used together with wall
+    particles at all.
+
     Args:
         pos: (N, 2) particle positions
         density: (N,) particle densities
         mass: (N,) particle masses
         pairs: (P, 2) neighbor pair indices
         cfg: simulation configuration
+        wall: (M, 2) wall particle positions, or ``None``
 
     Returns:
         acc_st: (N, 2) surface tension acceleration
@@ -214,6 +228,12 @@ def compute_surface_tension_force(
 
     # Compute gradient of color function
     grad_c = compute_color_gradient(pos, color, mass, density, pairs, h)
+    if cfg.contact_angle is not None and wall is not None and wall.numel():
+        # Young's relation at the contact line: rotate the near-wall normal so
+        # the interface meets the wall at cfg.contact_angle. Magnitude is
+        # preserved, so delta_s and the force balance are untouched.
+        grad_c = apply_contact_angle_boundary(grad_c, pos, wall, h,
+                                              cfg.contact_angle)
 
     # Compute normal from color gradient
     # Note: color is high (1.0) in interior and low at surface, so grad(c) points inward.

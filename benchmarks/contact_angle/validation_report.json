@@ -1,0 +1,1229 @@
+{
+  "what": "Young's relation n.w = cos(theta) for the wall contact-angle boundary condition of the CSF model",
+  "reference": {
+    "relation": "n . w = cos(theta), theta measured inside the liquid between the interface and the wall",
+    "sources": [
+      "Young (1805)",
+      "Brackbill, Kothe & Zemach (1992)",
+      "Tartakovsky & Meakin (2005)"
+    ],
+    "close_form": true
+  },
+  "setup": {
+    "dx_m": 0.01,
+    "h_m": 0.013000000000000001,
+    "particle_distance_to_wall_over_h": 0.5,
+    "wall_lattice": "planar, spacing dx, half-length 0.1 m",
+    "dtype": "float64",
+    "n_cases": 99
+  },
+  "cases": [
+    {
+      "theta_deg": 10.0,
+      "wall_rotation_deg": 0.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 9.999999999999975,
+      "abs_error_deg": 2.4868995751603507e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 10.0,
+      "wall_rotation_deg": 15.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 10.00000000000005,
+      "abs_error_deg": 4.973799150320701e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 10.0,
+      "wall_rotation_deg": 30.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 9.999999999999975,
+      "abs_error_deg": 2.4868995751603507e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 10.0,
+      "wall_rotation_deg": 45.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 10.00000000000005,
+      "abs_error_deg": 4.973799150320701e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 10.0,
+      "wall_rotation_deg": 60.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 10.000000000000012,
+      "abs_error_deg": 1.2434497875801753e-14,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 10.0,
+      "wall_rotation_deg": 90.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 9.999999999999975,
+      "abs_error_deg": 2.4868995751603507e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 10.0,
+      "wall_rotation_deg": 120.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 10.00000000000005,
+      "abs_error_deg": 4.973799150320701e-14,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 10.0,
+      "wall_rotation_deg": 150.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 10.000000000000012,
+      "abs_error_deg": 1.2434497875801753e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 10.0,
+      "wall_rotation_deg": 170.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 10.00000000000005,
+      "abs_error_deg": 4.973799150320701e-14,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 20.0,
+      "wall_rotation_deg": 0.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 19.999999999999975,
+      "abs_error_deg": 2.4868995751603507e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 20.0,
+      "wall_rotation_deg": 15.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 20.00000000000001,
+      "abs_error_deg": 1.0658141036401503e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 20.0,
+      "wall_rotation_deg": 30.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 19.999999999999993,
+      "abs_error_deg": 7.105427357601002e-15,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 20.0,
+      "wall_rotation_deg": 45.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 20.000000000000032,
+      "abs_error_deg": 3.197442310920451e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 20.0,
+      "wall_rotation_deg": 60.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 20.00000000000001,
+      "abs_error_deg": 1.0658141036401503e-14,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 20.0,
+      "wall_rotation_deg": 90.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 19.999999999999975,
+      "abs_error_deg": 2.4868995751603507e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 20.0,
+      "wall_rotation_deg": 120.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 19.999999999999993,
+      "abs_error_deg": 7.105427357601002e-15,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 20.0,
+      "wall_rotation_deg": 150.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 19.999999999999993,
+      "abs_error_deg": 7.105427357601002e-15,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 20.0,
+      "wall_rotation_deg": 170.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 19.999999999999993,
+      "abs_error_deg": 7.105427357601002e-15,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 30.0,
+      "wall_rotation_deg": 0.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 29.999999999999993,
+      "abs_error_deg": 7.105427357601002e-15,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 30.0,
+      "wall_rotation_deg": 15.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 30.000000000000004,
+      "abs_error_deg": 3.552713678800501e-15,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 30.0,
+      "wall_rotation_deg": 30.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 30.000000000000004,
+      "abs_error_deg": 3.552713678800501e-15,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 30.0,
+      "wall_rotation_deg": 45.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 30.000000000000004,
+      "abs_error_deg": 3.552713678800501e-15,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 30.0,
+      "wall_rotation_deg": 60.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 29.999999999999993,
+      "abs_error_deg": 7.105427357601002e-15,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 30.0,
+      "wall_rotation_deg": 90.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 29.999999999999993,
+      "abs_error_deg": 7.105427357601002e-15,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 30.0,
+      "wall_rotation_deg": 120.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 29.99999999999998,
+      "abs_error_deg": 2.1316282072803006e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 30.0,
+      "wall_rotation_deg": 150.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 30.000000000000004,
+      "abs_error_deg": 3.552713678800501e-15,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 30.0,
+      "wall_rotation_deg": 170.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 30.000000000000004,
+      "abs_error_deg": 3.552713678800501e-15,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 45.0,
+      "wall_rotation_deg": 0.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 45.0,
+      "abs_error_deg": 0.0,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 45.0,
+      "wall_rotation_deg": 15.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 45.00000000000001,
+      "abs_error_deg": 7.105427357601002e-15,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 45.0,
+      "wall_rotation_deg": 30.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 45.0,
+      "abs_error_deg": 0.0,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 45.0,
+      "wall_rotation_deg": 45.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 45.000000000000014,
+      "abs_error_deg": 1.4210854715202004e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 45.0,
+      "wall_rotation_deg": 60.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 45.00000000000001,
+      "abs_error_deg": 7.105427357601002e-15,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 45.0,
+      "wall_rotation_deg": 90.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 44.999999999999986,
+      "abs_error_deg": 1.4210854715202004e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 45.0,
+      "wall_rotation_deg": 120.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 45.00000000000001,
+      "abs_error_deg": 7.105427357601002e-15,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 45.0,
+      "wall_rotation_deg": 150.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 45.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 45.0,
+      "wall_rotation_deg": 170.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 45.0,
+      "abs_error_deg": 0.0,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 60.0,
+      "wall_rotation_deg": 0.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 59.99999999999999,
+      "abs_error_deg": 7.105427357601002e-15,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 60.0,
+      "wall_rotation_deg": 15.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 60.00000000000001,
+      "abs_error_deg": 7.105427357601002e-15,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 60.0,
+      "wall_rotation_deg": 30.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 59.99999999999999,
+      "abs_error_deg": 7.105427357601002e-15,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 60.0,
+      "wall_rotation_deg": 45.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 60.00000000000001,
+      "abs_error_deg": 7.105427357601002e-15,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 60.0,
+      "wall_rotation_deg": 60.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 59.99999999999999,
+      "abs_error_deg": 7.105427357601002e-15,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 60.0,
+      "wall_rotation_deg": 90.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 59.999999999999986,
+      "abs_error_deg": 1.4210854715202004e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 60.0,
+      "wall_rotation_deg": 120.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 60.00000000000002,
+      "abs_error_deg": 2.1316282072803006e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 60.0,
+      "wall_rotation_deg": 150.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 60.00000000000002,
+      "abs_error_deg": 2.1316282072803006e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 60.0,
+      "wall_rotation_deg": 170.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 59.999999999999986,
+      "abs_error_deg": 1.4210854715202004e-14,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 90.0,
+      "wall_rotation_deg": 0.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 90.0,
+      "abs_error_deg": 0.0,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 90.0,
+      "wall_rotation_deg": 15.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 90.00000000000001,
+      "abs_error_deg": 1.4210854715202004e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 90.0,
+      "wall_rotation_deg": 30.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 90.00000000000001,
+      "abs_error_deg": 1.4210854715202004e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 90.0,
+      "wall_rotation_deg": 45.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 90.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 90.0,
+      "wall_rotation_deg": 60.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 90.00000000000001,
+      "abs_error_deg": 1.4210854715202004e-14,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 90.0,
+      "wall_rotation_deg": 90.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 89.99999999999999,
+      "abs_error_deg": 1.4210854715202004e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 90.0,
+      "wall_rotation_deg": 120.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 90.00000000000004,
+      "abs_error_deg": 4.263256414560601e-14,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 90.0,
+      "wall_rotation_deg": 150.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 90.00000000000006,
+      "abs_error_deg": 5.684341886080802e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 90.0,
+      "wall_rotation_deg": 170.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 89.99999999999999,
+      "abs_error_deg": 1.4210854715202004e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 120.0,
+      "wall_rotation_deg": 0.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 119.99999999999999,
+      "abs_error_deg": 1.4210854715202004e-14,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 120.0,
+      "wall_rotation_deg": 15.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 120.00000000000001,
+      "abs_error_deg": 1.4210854715202004e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 120.0,
+      "wall_rotation_deg": 30.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 120.00000000000001,
+      "abs_error_deg": 1.4210854715202004e-14,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 120.0,
+      "wall_rotation_deg": 45.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 120.00000000000001,
+      "abs_error_deg": 1.4210854715202004e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 120.0,
+      "wall_rotation_deg": 60.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 120.00000000000001,
+      "abs_error_deg": 1.4210854715202004e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 120.0,
+      "wall_rotation_deg": 90.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 119.99999999999999,
+      "abs_error_deg": 1.4210854715202004e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 120.0,
+      "wall_rotation_deg": 120.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 120.00000000000001,
+      "abs_error_deg": 1.4210854715202004e-14,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 120.0,
+      "wall_rotation_deg": 150.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 120.00000000000004,
+      "abs_error_deg": 4.263256414560601e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 120.0,
+      "wall_rotation_deg": 170.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 119.99999999999997,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 135.0,
+      "wall_rotation_deg": 0.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 135.0,
+      "abs_error_deg": 0.0,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 135.0,
+      "wall_rotation_deg": 15.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 135.0,
+      "abs_error_deg": 0.0,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 135.0,
+      "wall_rotation_deg": 30.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 135.0,
+      "abs_error_deg": 0.0,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 135.0,
+      "wall_rotation_deg": 45.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 135.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 135.0,
+      "wall_rotation_deg": 60.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 135.0,
+      "abs_error_deg": 0.0,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 135.0,
+      "wall_rotation_deg": 90.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 135.0,
+      "abs_error_deg": 0.0,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 135.0,
+      "wall_rotation_deg": 120.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 135.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 135.0,
+      "wall_rotation_deg": 150.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 135.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 135.0,
+      "wall_rotation_deg": 170.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 135.0,
+      "abs_error_deg": 0.0,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 150.0,
+      "wall_rotation_deg": 0.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 150.0,
+      "abs_error_deg": 0.0,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 150.0,
+      "wall_rotation_deg": 15.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 150.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 150.0,
+      "wall_rotation_deg": 30.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 150.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 150.0,
+      "wall_rotation_deg": 45.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 150.0,
+      "abs_error_deg": 0.0,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 150.0,
+      "wall_rotation_deg": 60.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 150.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 150.0,
+      "wall_rotation_deg": 90.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 150.0,
+      "abs_error_deg": 0.0,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 150.0,
+      "wall_rotation_deg": 120.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 150.0,
+      "abs_error_deg": 0.0,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 150.0,
+      "wall_rotation_deg": 150.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 150.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 150.0,
+      "wall_rotation_deg": 170.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 150.0,
+      "abs_error_deg": 0.0,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 160.0,
+      "wall_rotation_deg": 0.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 160.0,
+      "abs_error_deg": 0.0,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 160.0,
+      "wall_rotation_deg": 15.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 160.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 160.0,
+      "wall_rotation_deg": 30.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 160.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 160.0,
+      "wall_rotation_deg": 45.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 160.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 160.0,
+      "wall_rotation_deg": 60.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 160.0,
+      "abs_error_deg": 0.0,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 160.0,
+      "wall_rotation_deg": 90.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 160.0,
+      "abs_error_deg": 0.0,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 160.0,
+      "wall_rotation_deg": 120.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 160.0,
+      "abs_error_deg": 0.0,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 160.0,
+      "wall_rotation_deg": 150.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 160.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 160.0,
+      "wall_rotation_deg": 170.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 159.99999999999994,
+      "abs_error_deg": 5.684341886080802e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 170.0,
+      "wall_rotation_deg": 0.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 170.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 170.0,
+      "wall_rotation_deg": 15.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 170.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 170.0,
+      "wall_rotation_deg": 30.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 170.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 170.0,
+      "wall_rotation_deg": 45.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 170.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 4.440892098500626e-16
+    },
+    {
+      "theta_deg": 170.0,
+      "wall_rotation_deg": 60.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 170.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 170.0,
+      "wall_rotation_deg": 90.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 170.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 170.0,
+      "wall_rotation_deg": 120.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 170.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 170.0,
+      "wall_rotation_deg": 150.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 170.00000000000003,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 0.0
+    },
+    {
+      "theta_deg": 170.0,
+      "wall_rotation_deg": 170.0,
+      "incoming_gradient": [
+        0.8,
+        0.6
+      ],
+      "theta_measured_deg": 169.99999999999997,
+      "abs_error_deg": 2.842170943040401e-14,
+      "magnitude_abs_error": 0.0
+    }
+  ],
+  "worst_case": {
+    "theta_deg": 90.0,
+    "wall_rotation_deg": 150.0,
+    "incoming_gradient": [
+      0.8,
+      0.6
+    ],
+    "theta_measured_deg": 90.00000000000006,
+    "abs_error_deg": 5.684341886080802e-14,
+    "magnitude_abs_error": 0.0
+  },
+  "magnitude": {
+    "worst_abs_error": 4.440892098500626e-16,
+    "tolerance": 1e-12,
+    "within_1e_12": true
+  },
+  "verdict": {
+    "max_abs_angle_error_deg": 5.684341886080802e-14,
+    "tolerance_deg": 1e-06,
+    "within_3pct_of_all_angles": true,
+    "passes": true
+  },
+  "wall_normal_recovery": [
+    {
+      "wall_rotation_deg": 0.0,
+      "normal_recovered": [
+        5.98038104232509e-17,
+        1.0
+      ],
+      "max_abs_component_error": 5.98038104232509e-17,
+      "distance_over_h": 0.5,
+      "detected": true
+    },
+    {
+      "wall_rotation_deg": 15.0,
+      "normal_recovered": [
+        -0.2588190451025209,
+        0.9659258262890682
+      ],
+      "max_abs_component_error": 1.6653345369377348e-16,
+      "distance_over_h": 0.5,
+      "detected": true
+    },
+    {
+      "wall_rotation_deg": 30.0,
+      "normal_recovered": [
+        -0.5000000000000001,
+        0.8660254037844387
+      ],
+      "max_abs_component_error": 1.6653345369377348e-16,
+      "distance_over_h": 0.5,
+      "detected": true
+    },
+    {
+      "wall_rotation_deg": 45.0,
+      "normal_recovered": [
+        -0.7071067811865477,
+        0.7071067811865474
+      ],
+      "max_abs_component_error": 2.220446049250313e-16,
+      "distance_over_h": 0.5,
+      "detected": true
+    },
+    {
+      "wall_rotation_deg": 60.0,
+      "normal_recovered": [
+        -0.8660254037844387,
+        0.5000000000000001
+      ],
+      "max_abs_component_error": 1.1102230246251565e-16,
+      "distance_over_h": 0.5,
+      "detected": true
+    },
+    {
+      "wall_rotation_deg": 90.0,
+      "normal_recovered": [
+        -1.0,
+        1.3340850017494433e-16
+      ],
+      "max_abs_component_error": 7.217616021757667e-17,
+      "distance_over_h": 0.5,
+      "detected": true
+    },
+    {
+      "wall_rotation_deg": 120.0,
+      "normal_recovered": [
+        -0.8660254037844388,
+        -0.4999999999999997
+      ],
+      "max_abs_component_error": 1.1102230246251565e-16,
+      "distance_over_h": 0.5,
+      "detected": true
+    },
+    {
+      "wall_rotation_deg": 150.0,
+      "normal_recovered": [
+        -0.5000000000000001,
+        -0.8660254037844387
+      ],
+      "max_abs_component_error": 1.6653345369377348e-16,
+      "distance_over_h": 0.5,
+      "detected": true
+    },
+    {
+      "wall_rotation_deg": 170.0,
+      "normal_recovered": [
+        -0.17364817766693025,
+        -0.984807753012208
+      ],
+      "max_abs_component_error": 2.7755575615628914e-17,
+      "distance_over_h": 0.49999999999999994,
+      "detected": true
+    }
+  ],
+  "not_verified_here": [
+    "the equilibrium contact angle of a sessile drop under the force field: the shipped CSF curvature/colour field does not reproduce the Laplace law (see docs/verification_surface_tension_laplace.md), so an end-to-end wetting simulation cannot yet be scored",
+    "dynamic contact angle and contact-line pinning: not implemented"
+  ]
+}
