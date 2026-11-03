@@ -22,6 +22,8 @@ References:
 """
 from __future__ import annotations
 
+import math
+
 import torch
 
 from .droplet_impact import Config, cubic_spline_gradient, cubic_spline_kernel
@@ -160,6 +162,7 @@ def compute_surface_tension_force(
     mass: torch.Tensor,
     pairs: torch.Tensor,
     cfg: Config,
+    wall: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Compute surface tension acceleration using CSF model.
 
@@ -178,6 +181,10 @@ def compute_surface_tension_force(
         mass: (N,) particle masses
         pairs: (P, 2) neighbor pair indices
         cfg: simulation configuration
+        wall: optional (M, 2) static wall particles. When given *and*
+            ``cfg.contact_angle`` is set, the colour gradient near the wall is
+            rotated so that the interface meets the solid at that angle
+            (:func:`apply_contact_angle_boundary`).
 
     Returns:
         acc_st: (N, 2) surface tension acceleration
@@ -215,6 +222,13 @@ def compute_surface_tension_force(
     # Compute gradient of color function
     grad_c = compute_color_gradient(pos, color, mass, density, pairs, h)
 
+    # Wall contact angle: rotate the colour gradient where the interface meets
+    # the solid, so that the CSF normal satisfies Young's relation. No wall or
+    # ``contact_angle=None`` leaves the gradient (and the old behaviour) intact.
+    if cfg.contact_angle is not None and wall is not None and wall.numel() > 0:
+        grad_c = apply_contact_angle_boundary(grad_c, pos, wall, h,
+                                              cfg.contact_angle)
+
     # Compute normal from color gradient
     # Note: color is high (1.0) in interior and low at surface, so grad(c) points inward.
     # For CSF model, we need normal pointing outward (from fluid to vacuum).
@@ -241,6 +255,130 @@ def compute_surface_tension_force(
     acc_st = force_mag[:, None] * normal / density[:, None]
 
     return acc_st
+
+
+# --------------------------------------------------------------------------- #
+# Wall contact-angle boundary condition
+# --------------------------------------------------------------------------- #
+def apply_contact_angle_boundary(
+    grad_c: torch.Tensor,
+    pos: torch.Tensor,
+    wall: torch.Tensor | None,
+    h: float,
+    theta: float,
+    reach: float = 2.0,
+    chunk: int = 4096,
+) -> torch.Tensor:
+    """Impose a static contact angle where the interface meets a solid wall.
+
+    Physics
+    -------
+    Young's relation ``sigma_sv = sigma_sl + sigma_lv cos(theta)`` fixes the
+    angle between the liquid-vapour interface and the solid surface. With
+    ``n_w`` the wall normal pointing *from the wall into the fluid* and
+    ``n_out = -grad(c)/|grad(c)|`` the outward interface normal, the condition is
+
+        angle(n_out, n_w) = theta                                   (1)
+
+    (``theta = 0`` wetting film: interface parallel to the wall, normal along
+    ``n_w``; ``theta = pi/2`` neutral: interface perpendicular to the wall,
+    normal tangent to it; ``theta -> pi`` completely non-wetting).
+
+    Implementation
+    --------------
+    For every fluid particle within ``reach * h`` of a wall particle, the colour
+    gradient is decomposed into its wall-normal part and its tangential part
+    ``g_t``.  The tangential *direction* ``t_hat = g_t / |g_t|`` is kept, so the
+    interface tilts to the side it already tilts to, and the direction is
+    rebuilt so that (1) holds while the magnitude is preserved:
+
+        g_new = |g| * ( -cos(theta) * n_w + sin(theta) * t_hat )      (2)
+
+    (2) is exactly ``-|g| n_out`` with ``n_out`` satisfying (1): the sign of the
+    tangential term carries the original tilt side, therefore the operator is
+    reversible in theta and reduces to the identity for the angle the gradient
+    already has.  This is the "gradient modification" variant of the contact
+    angle treatment of Tartakovsky & Meakin (2005) and Adami, Hu & Adams (2012).
+
+    Args:
+        grad_c: (N, D) colour-function gradient, modified in place semantics
+            (a new tensor is returned; the input is not mutated).
+        pos: (N, D) fluid particle positions.
+        wall: (M, D) static wall particle positions, or ``None``/empty for no
+            wall (the gradient is returned unchanged).
+        h: smoothing length.
+        theta: contact angle in radians, ``0 <= theta <= pi``.
+        reach: wall influence measured in smoothing lengths.
+        chunk: block size of the nearest-wall search (bounds peak memory).
+
+    Returns:
+        (N, D) modified colour gradient, same dtype/device as ``grad_c``.
+
+    Raises:
+        ValueError: if ``theta`` is outside ``[0, pi]`` or ``reach`` is
+            not positive.
+    """
+    if not math.isfinite(theta) or theta < 0.0 or theta > math.pi:
+        raise ValueError(f"contact angle must lie in [0, pi], got {theta!r}")
+    if reach <= 0.0:
+        raise ValueError(f"reach must be positive, got {reach!r}")
+    if wall is None or wall.numel() == 0 or grad_c.numel() == 0:
+        return grad_c
+
+    out = grad_c.clone()
+    wall = wall.to(dtype=pos.dtype, device=pos.device)
+    reach_dist = reach * h
+
+    # Nearest wall particle for each fluid particle (blocked to bound memory).
+    idx = torch.empty(pos.shape[0], dtype=torch.long, device=pos.device)
+    dist = torch.empty(pos.shape[0], dtype=pos.dtype, device=pos.device)
+    for start in range(0, pos.shape[0], chunk):
+        stop = min(start + chunk, pos.shape[0])
+        d = torch.cdist(pos[start:stop], wall)
+        dmin, argmin = d.min(dim=1)
+        dist[start:stop] = dmin
+        idx[start:stop] = argmin
+
+    near = dist <= reach_dist
+    if not bool(near.any()):
+        return out
+
+    # Wall normal: from the nearest wall particle into the fluid.
+    delta = pos[near] - wall[idx[near]]
+    d_near = dist[near]
+    safe = d_near > 1.0e-12
+    n_w = torch.zeros_like(delta)
+    n_w[safe] = delta[safe] / d_near[safe, None]
+    # A particle sitting exactly on a wall particle has no defined wall normal;
+    # leave its gradient untouched rather than inventing a direction.
+    active = safe
+    if not bool(active.any()):
+        return out
+
+    g = out[near]
+    mag = torch.linalg.vector_norm(g, dim=1)
+    g_n = (g * n_w).sum(dim=1, keepdim=True)
+    g_t = g - g_n * n_w
+    gt_mag = torch.linalg.vector_norm(g_t, dim=1)
+
+    # Tangential direction: keep the existing tilt side; if the gradient is
+    # already along the wall normal, fall back to a fixed in-plane rotation.
+    t_hat = torch.empty_like(g_t)
+    have_t = gt_mag > 1.0e-12 * mag.clamp_min(1.0e-300)
+    t_hat[have_t] = g_t[have_t] / gt_mag[have_t, None]
+    if bool((~have_t).any()):
+        perp = torch.stack((-n_w[~have_t, 1], n_w[~have_t, 0]), dim=1)
+        t_hat[~have_t] = perp
+
+    direction = -math.cos(theta) * n_w + math.sin(theta) * t_hat
+    d_mag = torch.linalg.vector_norm(direction, dim=1).clamp_min(1.0e-30)
+    direction = direction / d_mag[:, None]
+
+    # Particles with an undefined wall normal keep their original gradient.
+    block = out[near]
+    new_block = torch.where(active[:, None], mag[:, None] * direction, block)
+    out[near] = new_block
+    return out
 
 
 def capillary_dt_limit(cfg: Config, safety: float = 0.25) -> float:

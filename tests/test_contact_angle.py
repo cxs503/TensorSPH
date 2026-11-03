@@ -38,6 +38,49 @@ def _make_near_wall_particles(device="cpu"):
     return pos
 
 
+def _cap_droplet(radius=0.06, dx=0.01, rho0=1000.0):
+    """Rank-sufficient geometry: hex half-disc standing on the wall.
+
+    The original fixture of these two integration tests was a six-particle
+    cluster whose neighbours all share one coordinate, so ``div(normal)`` -- and
+    hence the CSF curvature -- is *identically* zero there for any contact
+    angle.  The assertion "surface particles must have non-zero acceleration"
+    was therefore unsatisfiable, independently of the boundary condition.  A
+    half disc supports a curvature estimate, so the test now checks the wiring
+    claim it makes in its name.
+    """
+    dy = dx * math.sqrt(3.0) / 2.0
+    pts = []
+    j = 0
+    y = 0.0
+    while y <= radius:
+        x = -radius + (0.5 * dx if j % 2 else 0.0)
+        while x <= radius:
+            if x * x + y * y <= radius * radius:
+                pts.append((x, y + 0.5 * dx))
+            x += dx
+        y += dy
+        j += 1
+    pos = torch.tensor(pts, dtype=torch.float64)
+    return pos, torch.full((pos.shape[0],), rho0 * dx * dy, dtype=torch.float64)
+
+
+def _cap_force(theta, wall, sigma=0.072, dx=0.01):
+    from tensorsph.droplet_impact import density_from_neighbor_pairs
+    from tensorsph.neighbor_search import cell_linked_pairs
+    from tensorsph.surface_tension import compute_surface_tension_force
+
+    pos, mass = _cap_droplet(dx=dx)
+    cfg = Config(dx=dx, rho0=1000.0, sound_speed=20.0, gravity=0.0,
+                 viscosity=0.01, surface_tension_coefficient=sigma,
+                 contact_angle=theta)
+    h = cfg.h_factor * cfg.dx
+    pairs = cell_linked_pairs(pos, 2.0 * h)
+    rho = density_from_neighbor_pairs(pos, mass, h, pairs)
+    return pos, h, compute_surface_tension_force(pos, rho, mass, pairs, cfg,
+                                                 wall=wall)
+
+
 class TestContactAngleBoundary:
     """Tests for apply_contact_angle_boundary function."""
 
@@ -192,12 +235,18 @@ class TestContactAngleIntegration:
             contact_angle=math.pi / 3,
         )
 
-        wall = _make_simple_wall(device)
-
-        acc = compute_surface_tension_force(pos, density, mass, pairs, cfg, wall=wall)
-        assert acc.shape == (6, 2)
-        # Surface particles (4, 5) should have non-zero acceleration
-        assert not torch.allclose(acc[4:], torch.zeros(2, 2, dtype=torch.float32, device=device), atol=1e-10)
+        wall = torch.tensor([[(k - 30) * 0.01, 0.0] for k in range(60)],
+                            dtype=torch.float64)
+        cap_pos, h, with_bc = _cap_force(math.pi / 3, wall)
+        _, _, without = _cap_force(None, wall)
+        delta = (with_bc - without).norm(dim=1)
+        dist = torch.cdist(cap_pos, wall).min(dim=1).values
+        # the boundary condition must bite on the wall band ...
+        assert float(delta[dist <= 2.0 * h].max()) > 0.0
+        # ... and leave everything beyond one kernel radius untouched
+        far = dist > 4.0 * h
+        assert int(far.sum()) > 0
+        assert torch.equal(delta[far], torch.zeros_like(delta[far]))
 
     def test_surface_tension_without_contact_angle(self):
         """Surface tension force should work without contact angle (backward compat)."""
@@ -209,13 +258,22 @@ class TestContactAngleIntegration:
             contact_angle=None,
         )
 
-        _, pos, density, mass, pairs = self._make_droplet_particles(device)
-        wall = _make_simple_wall(device)
+        from tensorsph.droplet_impact import density_from_neighbor_pairs
+        from tensorsph.neighbor_search import cell_linked_pairs
 
-        acc = compute_surface_tension_force(pos, density, mass, pairs, cfg, wall=wall)
-        assert acc.shape == (6, 2)
-        # Surface particles should have non-zero acceleration
-        assert not torch.allclose(acc[4:], torch.zeros(2, 2, dtype=torch.float32, device=device), atol=1e-10)
+        pos, mass = _cap_droplet()
+        wall = torch.tensor([[(k - 30) * 0.01, 0.0] for k in range(60)],
+                            dtype=torch.float64)
+        h = cfg.h_factor * cfg.dx
+        pairs = cell_linked_pairs(pos, 2.0 * h)
+        density = density_from_neighbor_pairs(pos, mass, h, pairs)
+        with_wall = compute_surface_tension_force(pos, density, mass, pairs, cfg,
+                                                  wall=wall)
+        no_wall = compute_surface_tension_force(pos, density, mass, pairs, cfg)
+        # backward compatibility is bit-exact: an unset contact angle means the
+        # wall is not consulted at all
+        assert with_wall.shape == no_wall.shape
+        assert torch.equal(with_wall, no_wall)
 
     def test_config_has_contact_angle_parameter(self):
         """Config should have contact_angle parameter."""

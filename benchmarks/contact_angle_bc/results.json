@@ -1,0 +1,172 @@
+{
+  "setup": {
+    "geometry": "hexagonal half-disc (sessile cap) on a flat wall row",
+    "radius_m": 0.06,
+    "dx_m": 0.01,
+    "h_factor": 1.3,
+    "sigma_N_per_m": 0.072,
+    "rho0": 1000.0,
+    "sound_speed": 20.0,
+    "n_cap_particles": 68,
+    "wall_particles": 60,
+    "note": "static evaluation only, no time integration"
+  },
+  "young_relation": [
+    {
+      "theta_deg": 0.0,
+      "measured_deg": 0.0,
+      "abs_error_deg": 0.0,
+      "magnitude_rel_error": 0.0
+    },
+    {
+      "theta_deg": 29.999999999999996,
+      "measured_deg": 29.999999999999993,
+      "abs_error_deg": 3.552713678800501e-15,
+      "magnitude_rel_error": 0.0
+    },
+    {
+      "theta_deg": 45.0,
+      "measured_deg": 45.0,
+      "abs_error_deg": 0.0,
+      "magnitude_rel_error": 0.0
+    },
+    {
+      "theta_deg": 59.99999999999999,
+      "measured_deg": 59.99999999999999,
+      "abs_error_deg": 0.0,
+      "magnitude_rel_error": 0.0
+    },
+    {
+      "theta_deg": 90.0,
+      "measured_deg": 90.0,
+      "abs_error_deg": 0.0,
+      "magnitude_rel_error": 0.0
+    },
+    {
+      "theta_deg": 119.99999999999999,
+      "measured_deg": 119.99999999999999,
+      "abs_error_deg": 0.0,
+      "magnitude_rel_error": 0.0
+    },
+    {
+      "theta_deg": 150.0,
+      "measured_deg": 150.0,
+      "abs_error_deg": 0.0,
+      "magnitude_rel_error": 0.0
+    },
+    {
+      "theta_deg": 180.0,
+      "measured_deg": 180.0,
+      "abs_error_deg": 0.0,
+      "magnitude_rel_error": 0.0
+    }
+  ],
+  "spreading_sweep": [
+    {
+      "theta_deg": 0.0,
+      "spreading_metric": -0.015664645281113165,
+      "n_contact_line": 17,
+      "raw_x_sum_right_band": -0.09604811889675625,
+      "max_change": 0.12808208475386632,
+      "n_changed": 25,
+      "n_in_wall_band": 35,
+      "max_change_distance_over_h": 3.049308934721349,
+      "n_particles": 68
+    },
+    {
+      "theta_deg": 29.999999999999996,
+      "spreading_metric": -0.003078758556840436,
+      "n_contact_line": 17,
+      "raw_x_sum_right_band": 0.030580348267556,
+      "max_change": 0.10181830024632212,
+      "n_changed": 25,
+      "n_in_wall_band": 35,
+      "max_change_distance_over_h": 3.049308934721349,
+      "n_particles": 68
+    },
+    {
+      "theta_deg": 45.0,
+      "spreading_metric": -0.003325062599076808,
+      "n_contact_line": 17,
+      "raw_x_sum_right_band": 0.03577332105644132,
+      "max_change": 0.08361959184178104,
+      "n_changed": 25,
+      "n_in_wall_band": 35,
+      "max_change_distance_over_h": 3.049308934721349,
+      "n_particles": 68
+    },
+    {
+      "theta_deg": 59.99999999999999,
+      "spreading_metric": -0.00791717137439221,
+      "n_contact_line": 17,
+      "raw_x_sum_right_band": -0.0008718645813945583,
+      "max_change": 0.060600502664099096,
+      "n_changed": 25,
+      "n_in_wall_band": 35,
+      "max_change_distance_over_h": 3.049308934721349,
+      "n_particles": 68
+    },
+    {
+      "theta_deg": 90.0,
+      "spreading_metric": -0.023738423605520326,
+      "n_contact_line": 17,
+      "raw_x_sum_right_band": -0.1467415622616424,
+      "max_change": 0.05867397393782953,
+      "n_changed": 25,
+      "n_in_wall_band": 35,
+      "max_change_distance_over_h": 3.049308934721349,
+      "n_particles": 68
+    },
+    {
+      "theta_deg": 119.99999999999999,
+      "spreading_metric": -0.03410789491247521,
+      "n_contact_line": 17,
+      "raw_x_sum_right_band": -0.25562551190138416,
+      "max_change": 0.09156378655251837,
+      "n_changed": 25,
+      "n_in_wall_band": 35,
+      "max_change_distance_over_h": 3.049308934721349,
+      "n_particles": 68
+    },
+    {
+      "theta_deg": 150.0,
+      "spreading_metric": -0.029196776574587826,
+      "n_contact_line": 17,
+      "raw_x_sum_right_band": -0.2212663820966487,
+      "max_change": 0.10844933035000136,
+      "n_changed": 25,
+      "n_in_wall_band": 35,
+      "max_change_distance_over_h": 3.049308934721349,
+      "n_particles": 68
+    },
+    {
+      "theta_deg": 180.0,
+      "spreading_metric": -0.0154660101055656,
+      "n_contact_line": 17,
+      "raw_x_sum_right_band": -0.08810627408016568,
+      "max_change": 0.0974381989119134,
+      "n_changed": 25,
+      "n_in_wall_band": 35,
+      "max_change_distance_over_h": 3.049308934721349,
+      "n_particles": 68
+    }
+  ],
+  "idempotence": {
+    "max_abs_drift": 1.1102230246251565e-16
+  },
+  "wetting_vs_nonwetting": {
+    "theta_wet_deg": 30.0,
+    "theta_dry_deg": 150.0,
+    "outward_projection": 0.026118018017747394,
+    "right_band_x_sum": 0.2518467303642047,
+    "left_band_x_sum": -0.1942911891834383,
+    "note": "a(30deg) - a(150deg); positive outward projection means wetting pushes the contact line out and non-wetting in"
+  },
+  "criteria": {
+    "young_relation_error_below_1e_9_deg": true,
+    "magnitude_preserved_below_1e_12": true,
+    "wetting_minus_nonwetting_is_outward": true,
+    "change_stays_within_wall_band_plus_kernel": true,
+    "idempotent_below_1e_12": true
+  }
+}
