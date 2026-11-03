@@ -8,8 +8,26 @@ The baseline at m281 (torch 2.14.1, Python 3.12) ran 104/104 in 18.55 s.
 The current environment (torch 2.7.1, Python 3.11) is measurably slower on
 large particle counts, so the timeouts below are generous enough to pass on
 both platforms while still catching genuine hangs.
+
+Source pinning (m2730)
+----------------------
+The host environment has an *editable* install of ``tensorsph`` whose ``.pth``
+points at another worktree, so a bare ``pytest`` used to grade that other
+branch (see ``tools/worktree_env.py``).  The first thing this file does is pin
+``tensorsph`` to *this* worktree and refuse to run if the pin fails.
 """
+import sys
+from pathlib import Path
+
 import pytest
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from tools.worktree_env import ensure_worktree_source  # noqa: E402
+
+TENSORSPH_INIT = ensure_worktree_source(__file__, verbose=False)
 
 
 def pytest_configure(config):

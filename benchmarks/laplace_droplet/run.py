@@ -38,6 +38,16 @@ Usage
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path as _Path
+
+_ROOT = _Path(__file__).resolve().parents[2]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+from tools.worktree_env import ensure_worktree_source  # noqa: E402
+
+ensure_worktree_source(__file__)
+
 import argparse
 import json
 import math
@@ -47,6 +57,7 @@ import torch
 
 from tensorsph.droplet_impact import Config, density_from_neighbor_pairs
 from tensorsph.neighbor_search import cell_linked_pairs
+from tensorsph.csf_consistent import csf_fields as csf_fields_consistent
 from tensorsph.surface_tension import (compute_color_gradient, compute_curvature,
                                        compute_normal, compute_surface_tension_force)
 
@@ -133,24 +144,41 @@ def run_case(radius: float = 0.1, dx: float = 0.005, sigma: float = 0.072,
     r = rel.norm(dim=1)
     rhat = rel / r.clamp_min(1e-12)[:, None]
 
-    # --- colour field exactly as the merged model builds it --------------
+    # --- field diagnostics: score the pipeline the solver actually runs ---
+    # Until m2730 this block rebuilt the colour field locally with the m277
+    # neighbour-count heuristic, while ``compute_surface_tension_force`` had
+    # already switched to ``csf_scheme="consistent"`` (the Config default).  The
+    # field verdicts (N_delta, sign and scale of kappa, normal coherence) thus
+    # described a pipeline that no longer produced the force and contradicted
+    # the pressure jump measured from it.  Both are reported now:
+    #   shipped fields : tensorsph.csf_consistent.csf_fields -- what the solver runs
+    #   legacy_*       : m277 neighbour-count CSF           -- A/B reference only
+    shipped = csf_fields_consistent(pos, mass, pairs, h, RHO0,
+                                    curvature_scheme=getattr(cfg, "csf_curvature", "mls"))
+    delta_s = shipped.delta_s
+    normal_out = shipped.normal
+    kappa = shipped.kappa
+    is_surface = shipped.surface_mask(0.05)
+
+    # legacy pipeline, kept only for the A/B record
     count = torch.zeros(pos.shape[0], dtype=torch.float64)
     i, j = pairs.unbind(dim=1)
     count = count.index_add(0, i, torch.ones_like(i, dtype=torch.float64))
     count = count.index_add(0, j, torch.ones_like(j, dtype=torch.float64))
-    is_surface = count < surface_factor * count.mean()
-    color = torch.ones(pos.shape[0], dtype=torch.float64)
-    color[is_surface] = count[is_surface] / count.mean()
-
-    grad_c = compute_color_gradient(pos, color, mass, rho, pairs, h)
-    delta_s = torch.linalg.vector_norm(grad_c, dim=1)
-    normal_out = compute_normal(-grad_c)
-    kappa = compute_curvature(pos, normal_out, mass, rho, pairs, h)
+    legacy_is_surface = count < surface_factor * count.mean()
+    legacy_color = torch.ones(pos.shape[0], dtype=torch.float64)
+    legacy_color[legacy_is_surface] = count[legacy_is_surface] / count.mean()
+    legacy_grad_c = compute_color_gradient(pos, legacy_color, mass, rho, pairs, h)
+    legacy_delta_s = torch.linalg.vector_norm(legacy_grad_c, dim=1)
+    legacy_normal = compute_normal(-legacy_grad_c)
+    legacy_kappa = compute_curvature(pos, legacy_normal, mass, rho, pairs, h)
 
     # --- N_delta = integral |grad c| dr ---------------------------------
     dr = 0.25 * h
     ds_mean, _, _ = radial_mean(delta_s, r, 1.5 * radius, dr)
     n_delta = float(ds_mean.sum() * dr)
+    legacy_ds_mean, _, _ = radial_mean(legacy_delta_s, r, 1.5 * radius, dr)
+    legacy_n_delta = float(legacy_ds_mean.sum() * dr)
 
     # --- pressure jump implied by the production force field ------------
     acc = compute_surface_tension_force(pos, rho, mass, pairs, cfg)
@@ -183,6 +211,15 @@ def run_case(radius: float = 0.1, dx: float = 0.005, sigma: float = 0.072,
     weight = ds_band.clamp_min(0.0)
     k_delta = float((k_band * weight).sum() / weight.sum().clamp_min(1e-30))
 
+    legacy_k_band = legacy_kappa[band]
+    legacy_w = legacy_delta_s[band].clamp_min(0.0)
+    legacy_k_delta = float((legacy_k_band * legacy_w).sum()
+                           / legacy_w.sum().clamp_min(1e-30))
+    legacy_face = (legacy_normal * rhat).sum(dim=1)
+    legacy_alignment = float(
+        (legacy_face[band] * legacy_delta_s[band]).sum()
+        / legacy_delta_s[band].sum().clamp_min(1e-30))
+
     dp_theory = sigma / radius
     return {
         "radius_m": radius, "dx_m": dx, "resolution_R_over_dx": round(radius / dx, 2),
@@ -213,6 +250,16 @@ def run_case(radius: float = 0.1, dx: float = 0.005, sigma: float = 0.072,
         "instrument_A_exact_kappa_model_normal_ratio": dp_exact_kappa / dp_theory,
         "instrument_B_exact_kappa_exact_normal_ratio": dp_exact_kappa_exact_normal / dp_theory,
         "instrument_C_exact_operators_ratio": dp_exact_kappa_norm / dp_theory,
+        # provenance of the field diagnostics (m2730 harness-fidelity fix)
+        "fields_under_test": "tensorsph.csf_consistent.csf_fields "
+                             "(csf_scheme='consistent', Config default)",
+        "legacy_N_delta": legacy_n_delta,
+        "legacy_kappa_model_median_times_R": float(legacy_k_band.median() * radius),
+        "legacy_kappa_model_positive_fraction": float(
+            (legacy_k_band > 0).double().mean()),
+        "legacy_kappa_delta_weighted_times_R": legacy_k_delta * radius,
+        "legacy_normal_alignment_delta_weighted": legacy_alignment,
+        "legacy_n_surface": int(legacy_is_surface.sum()),
     }
 
 
@@ -273,7 +320,10 @@ def run_benchmark(plot: bool = True, output_dir: str | Path = "benchmarks/laplac
             _converging([c for c in base if c["lattice"] == "hex"]),
         "status": "PASS" if all(c["within_15pct"] for c in base) else "FAIL",
         "current_model_verdict":
-            "merged CSF model does not reproduce the Young-Laplace pressure jump",
+            "consistent CSF (csf_scheme='consistent') reproduces the Young-Laplace "
+            "jump within the platform tolerance"
+            if all(c["within_15pct"] for c in base)
+            else "CSF model misses the Young-Laplace jump outside the platform tolerance",
         "instrument_check": {
             "description": ("the same CSF form with exact kappa = 1/R: A keeps the model "
                             "normal (must recover N_delta * <n.rhat>), B uses the exact "

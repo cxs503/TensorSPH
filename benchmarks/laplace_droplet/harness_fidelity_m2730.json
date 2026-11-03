@@ -1,0 +1,52 @@
+{
+  "source_in_use": "/root/tp-agent/work/m2730/src/tensorsph/__init__.py",
+  "grid": [
+    {
+      "dx_m": 0.01,
+      "resolution_R_over_dx": 10.0,
+      "dp_ratio": 0.9861390163005957,
+      "relative_error": 0.01386098369940425,
+      "within_15pct": true,
+      "kappa_delta_weighted_times_R": 1.1528248945194661,
+      "kappa_model_positive_fraction": 1.0,
+      "N_delta": 0.7865340566374311,
+      "normal_alignment_delta_weighted": 0.9994338139945919,
+      "legacy_N_delta": 0.34447998514057876,
+      "legacy_kappa_delta_weighted_times_R": 1.4646902542837716,
+      "legacy_kappa_model_positive_fraction": 0.9682539682539683,
+      "legacy_normal_alignment_delta_weighted": 0.9922405957387519
+    },
+    {
+      "dx_m": 0.005,
+      "resolution_R_over_dx": 20.0,
+      "dp_ratio": 1.1092252710407569,
+      "relative_error": 0.10922527104075686,
+      "within_15pct": true,
+      "kappa_delta_weighted_times_R": 1.120055654404873,
+      "kappa_model_positive_fraction": 1.0,
+      "N_delta": 0.8314293206260805,
+      "normal_alignment_delta_weighted": 0.9994010468369696,
+      "legacy_N_delta": 0.3791868340034115,
+      "legacy_kappa_delta_weighted_times_R": 1.7226924731093831,
+      "legacy_kappa_model_positive_fraction": 0.8625954198473282,
+      "legacy_normal_alignment_delta_weighted": 0.9827947735579599
+    },
+    {
+      "dx_m": 0.0025,
+      "resolution_R_over_dx": 40.0,
+      "dp_ratio": 1.4668678528386159,
+      "relative_error": 0.46686785283861587,
+      "within_15pct": false,
+      "kappa_delta_weighted_times_R": 1.1686953400787126,
+      "kappa_model_positive_fraction": 0.9632352941176471,
+      "N_delta": 0.909532465485454,
+      "normal_alignment_delta_weighted": 0.999272072489289,
+      "legacy_N_delta": 0.4478993102284167,
+      "legacy_kappa_delta_weighted_times_R": 2.569939165148553,
+      "legacy_kappa_model_positive_fraction": 0.7775735294117647,
+      "legacy_normal_alignment_delta_weighted": 0.9910809623104636
+    }
+  ],
+  "cut_force_ratio_now": 1.131849139707717,
+  "cos_median_now": 0.9995553714867054
+}
