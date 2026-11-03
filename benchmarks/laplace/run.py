@@ -49,8 +49,13 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from tensorsph.droplet_impact import Config, rhs                     # noqa: E402
+from tensorsph.droplet_impact import (                              # noqa: E402
+    Config,
+    density_from_neighbor_pairs,
+    rhs,
+)
 from tensorsph.neighbor_search import cell_linked_pairs             # noqa: E402
+from tensorsph.csf_consistent import csf_fields                     # noqa: E402
 from tensorsph.surface_tension import (                             # noqa: E402
     compute_color_gradient,
     compute_curvature,
@@ -69,16 +74,44 @@ CRITERIA = {
 }
 
 
-def lattice_disc(radius: float, dx: float, rho0: float, offset: float = 0.37):
-    """Square-lattice disc, centred off-lattice so no particle sits at r = 0."""
-    lo, hi = -radius - dx, radius + dx
-    xs = torch.arange(lo, hi, dx) + offset * dx
-    ys = torch.arange(lo, hi, dx) + offset * dx
-    gx, gy = torch.meshgrid(xs, ys, indexing="xy")
-    pts = torch.stack((gx.reshape(-1), gy.reshape(-1)), dim=-1)
+def lattice_disc(radius: float, dx: float, rho0: float, offset: float = 0.37,
+                 lattice: str = "square"):
+    """Disc of particles; ``hex`` (default) or ``square`` lattice.
+
+    ``"square"`` is the default: it is the configuration every historical number
+    in the docs was measured on, and it is the only one where the production RHS
+    stays stable at h = 1.3 dx (a hex lattice gives ~6 neighbours per particle
+    there, and the relaxation run diverges -- see section "lattice caveat" in
+    docs/benchmarks/laplace-verification.md).  ``"hex"`` is kept for the static
+    probes, where six neighbours remove part of the lattice anisotropy.
+
+    The lattice is centred off-site (``offset``) so no particle sits at r = 0,
+    where the radial binning would divide by zero.
+    """
+    if lattice == "hex":
+        dy = dx * math.sqrt(3.0) / 2.0
+        lo, hi = -radius - 2 * dx, radius + 2 * dx
+        rows = torch.arange(lo, hi, dy) + offset * dy
+        pts = []
+        for k, y in enumerate(rows):
+            xs = torch.arange(lo, hi, dx) + offset * dx
+            if k % 2:
+                xs = xs + 0.5 * dx
+            pts.append(torch.stack((xs, torch.full_like(xs, float(y))), dim=-1))
+        pts = torch.cat(pts, dim=0)
+        area = dx * dy
+    elif lattice == "square":
+        lo, hi = -radius - dx, radius + dx
+        xs = torch.arange(lo, hi, dx) + offset * dx
+        ys = torch.arange(lo, hi, dx) + offset * dx
+        gx, gy = torch.meshgrid(xs, ys, indexing="xy")
+        pts = torch.stack((gx.reshape(-1), gy.reshape(-1)), dim=-1)
+        area = dx * dx
+    else:                                      # pragma: no cover - defensive
+        raise ValueError(f"unknown lattice {lattice!r}")
     keep = torch.linalg.vector_norm(pts, dim=-1) <= radius
     pos = pts[keep]
-    mass = torch.full((pos.shape[0],), rho0 * dx * dx, dtype=pos.dtype)
+    mass = torch.full((pos.shape[0],), rho0 * area, dtype=pos.dtype)
     return pos, mass
 
 
@@ -94,14 +127,37 @@ def radial_bin(values: torch.Tensor, radius: torch.Tensor, edges: torch.Tensor):
                            torch.full_like(total, float("nan")))
 
 
-def csf_diagnostics(pos, mass, rho, cfg, sigma):
-    """Run the production CSF chain and return (acc, kappa, |grad c|, is_surface)."""
+def csf_diagnostics(pos, mass, rho, cfg, sigma, scheme=None):
+    """Fields of the CSF chain that produced the acceleration.
+
+    Returns ``(acc, kappa, delta_s, grad_c_mag, interface)``.
+
+    ``scheme`` defaults to ``cfg.csf_scheme``, i.e. the scheme the solver runs.
+    The colour field, curvature and surface delta function are taken from *that
+    same* scheme: the helper used to build a neighbour-count colour field for
+    every scheme, so a ``"consistent"`` acceleration was reported next to a
+    ``"legacy"`` interfacial structure.  Those mixed numbers describe neither
+    model and are what the old ``int |grad c| dr = 0.44`` pin in
+    ``tests/test_laplace_verification.py`` measured (see
+    docs/benchmarks/laplace-verification.md, section "mixed-model artefact").
+    """
+    scheme = scheme if scheme is not None else getattr(cfg, "csf_scheme",
+                                                       "consistent")
     h = cfg.h_factor * cfg.dx
     pairs = cell_linked_pairs(pos, 2.0 * h)
-    # The acceleration below is exactly what the solver adds to the RHS. The
-    # colour field and curvature are recomputed with the same public helpers
-    # and the same steps, because the force routine does not return them.
-    acc = compute_surface_tension_force(pos, rho, mass, pairs, cfg)
+    # Exactly what the solver adds to the RHS, for the selected scheme.
+    acc = compute_surface_tension_force(pos, rho, mass, pairs, cfg,
+                                        scheme=scheme)
+
+    if scheme == "consistent":
+        state = csf_fields(pos, mass, pairs, h, cfg.rho0)
+        grad_c_mag = torch.linalg.vector_norm(state.grad_c, dim=-1)
+        # The same flat-shell mask surface_tension_acceleration applies: bulk
+        # particles carry a clamped, numerically-flat colour field.
+        delta_s = state.delta_s.clone()
+        delta_s = torch.where(delta_s <= 1.0e-3 * delta_s.max(),
+                              torch.zeros_like(delta_s), delta_s)
+        return acc, state.kappa, delta_s, grad_c_mag, delta_s > 0.0
 
     n = pos.shape[0]
     i, j = pairs.unbind(dim=1)
@@ -110,22 +166,26 @@ def csf_diagnostics(pos, mass, rho, cfg, sigma):
     neighbour_count = neighbour_count.index_add(0, i, ones)
     neighbour_count = neighbour_count.index_add(0, j, ones)
     average = neighbour_count.mean()
-    is_surface = neighbour_count < 0.7 * average
+    interface = neighbour_count < 0.7 * average
     colour = torch.ones(n, dtype=pos.dtype)
-    colour[is_surface] = neighbour_count[is_surface] / average
+    colour[interface] = neighbour_count[interface] / average
     grad_c = compute_color_gradient(pos, colour, mass, rho, pairs, h)
     normal = compute_normal(-grad_c)
     kappa = compute_curvature(pos, normal, mass, rho, pairs, h)
-    return acc, kappa, torch.linalg.vector_norm(grad_c, dim=-1), is_surface
+    grad_c_mag = torch.linalg.vector_norm(grad_c, dim=-1)
+    # The legacy CSF sets delta_s = |grad c| with no normalisation.
+    return acc, kappa, grad_c_mag.clone(), grad_c_mag, interface
 
 
-def probe_static(radius, dx, sigma, rho0):
-    """P1/P2/P3: colour jump, curvature and the discrete Laplace pressure."""
+def probe_static(radius, dx, sigma, rho0, scheme=None, lattice="square"):
+    """P1/P2/P3: delta_s normalisation, curvature and the discrete Laplace jump."""
     cfg = Config(dx=dx, rho0=rho0, surface_tension_coefficient=sigma,
                  gravity=0.0)
-    pos, mass = lattice_disc(radius, dx, rho0)
+    scheme = scheme if scheme is not None else cfg.csf_scheme
+    pos, mass = lattice_disc(radius, dx, rho0, lattice=lattice)
     rho = torch.full((pos.shape[0],), rho0, dtype=pos.dtype)
-    acc, kappa, gmag, is_surface = csf_diagnostics(pos, mass, rho, cfg, sigma)
+    acc, kappa, d_s, gmag, is_surface = csf_diagnostics(pos, mass, rho, cfg,
+                                                        sigma, scheme=scheme)
 
     r = torch.linalg.vector_norm(pos, dim=-1)
     a_r = (acc * pos / r[:, None]).sum(dim=1)      # radial (outward positive)
@@ -134,14 +194,25 @@ def probe_static(radius, dx, sigma, rho0):
     shell_center = 0.5 * (edges[1:] + edges[:-1])
 
     gmag_shell = radial_bin(gmag, r, edges)
+    ds_shell = radial_bin(d_s, r, edges)
     kappa_shell = radial_bin(kappa, r, edges)
     ar_shell = radial_bin(a_r, r, edges)
 
     # P1: the surface delta function must integrate to unity across the
-    # interface. Sum |grad c| * dr over the shells that carry the interface.
+    # interface (Brackbill et al. 1992).  Sum delta_s * dr over the shells.
+    #
+    # For a *single-phase* cloud the raw |grad c| integral can only reach 1/2:
+    # c runs from 1 in the bulk to ~1/2 on the outer particle layer (that layer
+    # sees half a kernel) and the remaining 1/2 -> 0 half lives in the void,
+    # where no particles exist to carry it.  Hence the benchmark reports both
+    # integrals: delta_s (criterion 1.0) and |grad c| (criterion 0.5), instead
+    # of comparing a one-phase |grad c| with the two-phase 1.0 and calling the
+    # unavoidable factor 2 an error.
     delta = (edges[1:] - edges[:-1])
-    finite = torch.isfinite(gmag_shell)
-    colour_jump = float((gmag_shell[finite] * delta[finite]).sum())
+    finite = torch.isfinite(ds_shell)
+    colour_jump = float((ds_shell[finite] * delta[finite]).sum())
+    finite_g = torch.isfinite(gmag_shell)
+    grad_integral = float((gmag_shell[finite_g] * delta[finite_g]).sum())
 
     # P2: curvature on the interface band, where the interface contribution
     # is largest (outer 20% of the droplet).
@@ -162,9 +233,13 @@ def probe_static(radius, dx, sigma, rho0):
         "levels": int(round(radius / dx)),
         "dx_m": dx,
         "n_particles": int(pos.shape[0]),
+        "scheme": scheme,
         "surface_fraction": float(is_surface.to(torch.float64).mean()),
         "colour_jump_integral": colour_jump,
         "colour_jump_rel_error": colour_jump - 1.0,
+        "colour_gradient_integral": grad_integral,
+        "colour_gradient_theory": 0.5,
+        "colour_gradient_rel_error": grad_integral / 0.5 - 1.0,
         "curvature_band_mean_per_m": kappa_band,
         "curvature_times_R": kappa_band * radius,
         "curvature_rel_error": kappa_band * radius - 1.0,
@@ -176,17 +251,19 @@ def probe_static(radius, dx, sigma, rho0):
         "shells": {
             "r_over_R": (shell_center / radius).tolist(),
             "colour_gradient": gmag_shell.tolist(),
+            "delta_s": ds_shell.tolist(),
             "curvature_times_R": (kappa_shell * radius).tolist(),
             "radial_acceleration": ar_shell.tolist(),
         },
     }
 
 
-def probe_dynamical(radius, dx, sigma, rho0, seconds=0.05, sound_speed=20.0):
+def probe_dynamical(radius, dx, sigma, rho0, seconds=0.05,
+                    sound_speed=20.0, lattice="square"):
     """P4: relax the droplet with the production RHS and look at the pressure."""
     cfg = Config(dx=dx, rho0=rho0, surface_tension_coefficient=sigma,
                  gravity=0.0, sound_speed=sound_speed)
-    pos, mass = lattice_disc(radius, dx, rho0)
+    pos, mass = lattice_disc(radius, dx, rho0, lattice=lattice)
     n = pos.shape[0]
     h = cfg.h_factor * dx
     # Step limited by both the acoustic and the capillary scale of the model.
@@ -227,6 +304,81 @@ def probe_dynamical(radius, dx, sigma, rho0, seconds=0.05, sound_speed=20.0):
     }
 
 
+def lattice_density_bias(radius, dx, rho0, lattice="square"):
+    """Density-summation bias of the *static* lattice, before any dynamics.
+
+    ``rho/rho0 - 1`` measured with the same cubic-spline summation the solver
+    uses.  It is the noise floor of the Tait pressure: no pressure feature
+    smaller than ``B*((1+bias)^gamma - 1)`` can be resolved, however good the
+    surface-tension force is.
+    """
+    cfg = Config(dx=dx)
+    pos, mass = lattice_disc(radius, dx, rho0, lattice=lattice)
+    h = cfg.h_factor * dx
+    # Production density summation, so the self term (m_i W(0), ~27 % of rho0 in
+    # 2-D at h = 1.3 dx) is included exactly as the solver does.
+    rho = density_from_neighbor_pairs(pos, mass, h)
+    r = torch.linalg.vector_norm(pos, dim=-1)
+    interior = r < 0.5 * radius
+    rel = rho[interior] / rho0 - 1.0
+    return {
+        "max_abs_bias": float(rel.abs().max()),
+        "mean_bias": float(rel.mean()),
+        "std_bias": float(rel.std()),
+        "n_interior": int(interior.sum()),
+    }
+
+
+def probe_pressure_floor(radius, dx, sigma, rho0,
+                         sound_speeds=(20.0, 10.0, 5.0, 2.5), seconds=0.05,
+                         lattice="square"):
+    """P5: is the Laplace pressure resolvable in the Tait representation?
+
+    A dynamic failure of Young-Laplace has two possible causes: the force is
+    wrong, or the equation of state cannot represent a pressure jump this small.
+    The static probes (P1-P3) settle the first; this probe settles the second by
+    comparing, for each sound speed,
+
+        required density excess   drho/rho0 = (1 + sigma/(R B))^(1/gamma) - 1
+        lattice density bias      |rho/rho0 - 1| of the uncompressed disc
+        pressure floor            B*((1 + bias)^gamma - 1)          [Pa]
+
+    with ``B = rho0 c0^2 / gamma`` the Tait bulk modulus.  ``signal_to_noise``
+    below unity means the pressure route is measuring discretisation noise.
+    """
+    bias = lattice_density_bias(radius, dx, rho0, lattice=lattice)
+    theory = sigma / radius
+    rows = []
+    for c0 in sound_speeds:
+        cfg = Config(dx=dx, rho0=rho0, surface_tension_coefficient=sigma,
+                     gravity=0.0, sound_speed=c0)
+        bulk = rho0 * c0 ** 2 / cfg.gamma
+        required = (1.0 + theory / bulk) ** (1.0 / cfg.gamma) - 1.0
+        floor = bulk * ((1.0 + bias["max_abs_bias"]) ** cfg.gamma - 1.0)
+        dyn = probe_dynamical(radius, dx, sigma, rho0, seconds, c0)
+        rows.append({
+            "sound_speed_m_per_s": c0,
+            "bulk_modulus_Pa": bulk,
+            "required_density_excess": required,
+            "lattice_bias_max": bias["max_abs_bias"],
+            "signal_to_noise": required / bias["max_abs_bias"],
+            "pressure_floor_Pa": floor,
+            "floor_over_theory": floor / theory,
+            "measured_pressure_Pa": dyn["interior_pressure_Pa"],
+            "pressure_rel_error": dyn["pressure_rel_error"],
+            "max_speed_m_per_s": dyn["max_speed_m_per_s"],
+            "capillary_mach": dyn["max_speed_m_per_s"] / c0,
+            "weakly_compressible": bool(dyn["max_speed_m_per_s"] / c0 < 0.1),
+        })
+    return {
+        "levels": int(round(radius / dx)),
+        "dx_m": dx,
+        "laplace_theory_Pa": theory,
+        "lattice_density_bias": bias,
+        "rows": rows,
+    }
+
+
 def make_plot(static_results, dynamical, path):
     import matplotlib
     matplotlib.use("Agg")
@@ -237,7 +389,7 @@ def make_plot(static_results, dynamical, path):
     for res in static_results:
         s = res["shells"]
         ax.plot(s["r_over_R"], s["curvature_times_R"], "o-", ms=3,
-                label=f"R/dx={res['levels']}")
+                label=f"{res.get('scheme', 'consistent')[:4]} R/dx={res['levels']}")
     ax.axhline(1.0, color="k", ls="--", lw=1, label="theory $\\kappa R=1$")
     ax.set_xlabel("$r/R$")
     ax.set_ylabel("$\\kappa R$")
@@ -293,6 +445,18 @@ def main(argv=None):
     parser.add_argument("--dynamical-levels", type=int, default=20)
     parser.add_argument("--dynamical-sound-speeds", type=float, nargs="+",
                         default=[20.0, 5.0])
+    parser.add_argument("--schemes", type=str, nargs="+",
+                        default=["consistent"],
+                        choices=["consistent", "legacy"],
+                        help="CSF schemes to A/B; the solver default is "
+                             "'consistent'")
+    parser.add_argument("--lattice", type=str, default="square",
+                        choices=["hex", "square"],
+                        help="particle lattice for the static probes")
+    parser.add_argument("--pressure-floor", action="store_true",
+                        help="also run probe P5 (Tait resolvability of sigma/R)")
+    parser.add_argument("--floor-sound-speeds", type=float, nargs="+",
+                        default=[20.0, 10.0, 5.0, 2.5])
     parser.add_argument("--output", type=str, default="benchmarks/laplace")
     parser.add_argument("--threads", type=int, default=4)
     parser.add_argument("--no-plot", action="store_true")
@@ -312,21 +476,25 @@ def main(argv=None):
     print("=" * 78)
 
     static = []
-    for levels in args.levels:
-        res = probe_static(args.radius, args.radius / levels, args.sigma,
-                           args.rho0)
-        res["sigma"] = args.sigma
-        static.append(res)
-        print(f"R/dx={res['levels']:3d} N={res['n_particles']:5d}  "
-              f"int|grad c|dr={res['colour_jump_integral']:6.3f} "
-              f"| kappa*R={res['curvature_times_R']:+7.3f} "
-              f"| dp={res['laplace_pressure_Pa']:+9.4f} Pa "
-              f"({res['laplace_rel_error']:+.1%})")
+    for scheme in args.schemes:
+        for levels in args.levels:
+            res = probe_static(args.radius, args.radius / levels, args.sigma,
+                               args.rho0, scheme=scheme,
+                               lattice=args.lattice)
+            res["sigma"] = args.sigma
+            static.append(res)
+            print(f"{scheme:10s} R/dx={res['levels']:3d} N={res['n_particles']:5d}  "
+                  f"int ds dr={res['colour_jump_integral']:6.3f} "
+                  f"(int|grad c|dr={res['colour_gradient_integral']:6.3f}) "
+                  f"| kappa*R={res['curvature_times_R']:+7.3f} "
+                  f"| dp={res['laplace_pressure_Pa']:+9.4f} Pa "
+                  f"({res['laplace_rel_error']:+.1%})")
 
     dynamical = []
     for c0 in args.dynamical_sound_speeds:
         res = probe_dynamical(args.radius, args.radius / args.dynamical_levels,
-                              args.sigma, args.rho0, args.seconds, c0)
+                              args.sigma, args.rho0, args.seconds, c0,
+                              lattice=args.lattice)
         dynamical.append(res)
         print(f"relax  R/dx={res['levels']:3d} c0={c0:5.1f} t={res['time_s']:.4f}s "
               f"rho/rho0={res['interior_density_ratio']:.6f} "
@@ -334,9 +502,27 @@ def main(argv=None):
               f"(theory {res['laplace_theory_Pa']:.4f}) "
               f"|v|max={res['max_speed_m_per_s']:.3e} m/s")
 
+    floor = None
+    if args.pressure_floor:
+        floor = probe_pressure_floor(args.radius, args.radius / args.levels[0],
+                                     args.sigma, args.rho0,
+                                     tuple(args.floor_sound_speeds),
+                                     args.seconds, lattice=args.lattice)
+        print(f"P5 Tait resolvability at R/dx={floor['levels']}: "
+              f"lattice density bias {floor['lattice_density_bias']['max_abs_bias']:.2e}")
+        for row in floor["rows"]:
+            print(f"    c0={row['sound_speed_m_per_s']:5.1f}  "
+                  f"needed drho/rho0={row['required_density_excess']:8.2e}  "
+                  f"S/N={row['signal_to_noise']:6.2f}  "
+                  f"floor={row['pressure_floor_Pa']:8.1f} Pa "
+                  f"({row['floor_over_theory']:5.1%} of sigma/R)  "
+                  f"dp={row['measured_pressure_Pa']:+8.2f} Pa "
+                  f"({row['pressure_rel_error']:+.1%})  "
+                  f"Mach={row['capillary_mach']:.2f}")
+
     checks = {}
     for res in static:
-        tag = f"R/dx={res['levels']}"
+        tag = f"{res['scheme']} R/dx={res['levels']}"
         checks[f"{tag}:colour_jump"] = {
             "measured": res["colour_jump_integral"],
             "limit": CRITERIA["colour_jump_rel_error_max"],
@@ -375,7 +561,8 @@ def main(argv=None):
             "rho0_kg_per_m3": args.rho0,
             "sound_speed_m_per_s": 20.0,
             "levels": args.levels,
-            "discretisation": "square lattice, offset 0.37 dx",
+            "schemes": args.schemes,
+            "discretisation": f"{args.lattice} lattice (see lattice_disc)",
             "dtype": "float64",
             "dynamical_seconds": args.seconds,
             "dynamical_sound_speeds": args.dynamical_sound_speeds,
@@ -387,6 +574,7 @@ def main(argv=None):
         },
         "static_probes": static,
         "dynamical_probes": dynamical,
+        "pressure_floor": floor,
         "criteria": CRITERIA,
         "checks": checks,
         "validation": {

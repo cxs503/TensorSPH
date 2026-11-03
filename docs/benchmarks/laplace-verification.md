@@ -1,201 +1,186 @@
-# Young–Laplace verification of the CSF surface-tension model
+# Laplace verification of the CSF surface-tension model — re-measured per scheme
 
-**Verdict up front:** the CSF model merged in m277 (`src/tensorsph/surface_tension.py`)
-**does not reproduce the Young–Laplace law** and does not converge with
-resolution. It produces an inward-pointing force of roughly the right order,
-which is what the benchmark it shipped with checked, but it cannot sustain the
-pressure jump `Δp = σ/R` that defines a capillary model. Evidence grade for
-capillary physics: **MOCK** — geometrically plausible output, no quantitative
-agreement with the analytic law. The model is off by default
-(`Config.surface_tension_coefficient = 0.0`), so no other published number in
-this repository is affected.
+**Repo**: TensorSPH ｜ **Branch**: `agent/m2681` ｜ **Code**: `benchmarks/laplace/run.py` ｜
+**Tests**: `tests/test_laplace_verification.py` ｜ **Run artifacts**:
+`artifacts/m2681_laplace/report.json`, `artifacts/m2681_laplace/run.log`
 
-Harness: `benchmarks/laplace/run.py` (probes P1–P4, writes
-`benchmarks/laplace/report.json` and `laplace_verification.png`).
-Gates: `tests/test_laplace_verification.py`. Root-cause experiment:
-`benchmarks/laplace/halo_experiment.py`.
+## 0. Verdict up front
 
----
+1. The pin file `tests/test_laplace_verification.py` was measuring a **mixture of two
+   models**: `benchmarks/laplace/run.py::csf_diagnostics` called
+   `compute_surface_tension_force` with the solver's (now `consistent`) scheme and then
+   rebuilt the colour field, normal and curvature with the **legacy** neighbour-count
+   operators. The three `xfail(strict=True)` pins therefore described neither model, and
+   the docstring ("the merged implementation does not satisfy Young-Laplace") had gone
+   stale for the shipped default.
+2. Fixed: the diagnostic chain now reports the fields **of the scheme that produced the
+   acceleration**. On the same particles this changes the interfacial structure by a
+   factor 2.75 (delta_s integral 1.226 vs 0.446) — the entire size of the "error" the old
+   pins reported.
+3. Re-measured, the shipped (`consistent`) scheme:
+   * force-level Young-Laplace `dp = sigma/R`: **−10.8 % at R/dx = 20** (15 % gate: pass),
+     `+45.4 %` at R/dx = 10 (fail) — resolution, not the force law, drives the low-
+     resolution numbers;
+   * relaxed end-to-end pressure (production RHS, R/dx = 20, c0 = 20 m/s):
+     **+5.9 %** (pass), `+16.0 %` at c0 = 10 m/s (marginal);
+   * curvature `kappa*R` = 1.16–1.20 at R/dx = 8–12 (theory 1, **+16–20 %**, fails 15 %);
+   * normalised `delta_s` integral 1.0–1.33 at R/dx = 8–16 (theory 1, within 33 %).
+4. The **legacy** scheme, measured with its own fields, is genuinely broken and stays
+   `xfail(strict=True)`: `delta_s` integral 0.34–0.50, `kappa*R` 0.19–0.42,
+   force-level `dp` −52 … −69 %.
+5. New probe P5 shows the *pressure* route has a density-resolution floor: the density
+   excess that `sigma/R` requires is `3.6e-6` at c0 = 20 m/s, i.e. 15x smaller than the
+   uncompressed-lattice summation bias `5.3e-5`. Any pressure-level claim from a single
+   run must be read against that floor.
+6. **None of the key quantities is within 3 %.** The honest platform grade for the
+   end-to-end Laplace law is *verified at the force level once R/dx >= 20, WITHHELD as a
+   converged statement* — one resolution passing is not a convergence study.
 
-## 1. Case
+## 1. Case and parameters
 
-A 2-D disc of weakly-compressible liquid of radius `R` in vacuum, no gravity,
-one fluid phase, surface-tension coefficient `σ`. In two dimensions the exact
-capillary pressure jump across a circular interface of curvature `κ = 1/R` is
+| Parameter | Value | Note |
+|---|---|---|
+| droplet radius R | 0.0500 m | static free droplet, 2-D |
+| particle spacing dx | R/8 … R/20 (6.25 … 2.5 mm) | ladder of 5 resolutions |
+| smoothing length h | 1.3 dx | cubic-spline kernel |
+| surface tension sigma | 0.072 N/m | water at 25 C |
+| reference density rho0 | 1000 kg/m3 | Tait EOS, gamma = 7 |
+| sound speed c0 | 20 / 10 m/s (relaxation), 20…5 (P5) | dh mod |
+| viscosity | 0.0 | pure capillary balance |
+| gravity | 0.0 | off |
+| analytic jump `sigma/R` | **1.440 Pa** | primary benchmark |
+| analytic curvature `1/R` | **20 1/m** | second benchmark |
+| relaxation time | 0.05 s | `probe_dynamical` |
 
-    Δp = σ κ = σ / R.
+Lattice: square, offset 0.37 dx (the historical configuration; see §6 caveat on hex).
 
-| parameter | value |
-|---|---|
-| `R` | 0.05 m |
-| `σ` | 0.072 N/m (water/air) |
-| `ρ₀` | 1000 kg/m³ |
-| `c₀` | 20 m/s (sweep includes 5 m/s) |
-| `γ` (Tait) | 7 |
-| kernel | 2-D cubic spline, `h = 1.3 Δx` |
-| discretisation | square lattice, offset 0.37 Δx (no particle at `r = 0`) |
-| resolution ladder | `R/Δx = 10, 20, 40` (318 / 1262 / 5032 particles) |
-| theory | `Δp = σ/R = 1.4400 Pa`, `κR = 1` |
+## 2. What was done
 
-The disc is a genuine test of the *force model*, because the Laplace pressure is
-the only steady state a capillary force field can have.
+1. `csf_diagnostics(pos, mass, rho, cfg, sigma, scheme=None)` now dispatches on the scheme:
+   `consistent` -> `tensorsph.csf_consistent.csf_fields` (kernel-sum colour, MLS gradient /
+   divergence, `delta_s = 2|grad c|`, flat-shell mask identical to the force routine);
+   `legacy` -> neighbour-count colour + uncorrected operators. It returns
+   `(acc, kappa, delta_s, |grad c|, interface)`.
+2. `probe_static(..., scheme=)` reports **both** integrals: `int delta_s dr` (criterion 1.0)
+   and `int |grad c| dr` (criterion **0.5**, see §4), plus `kappa*R` and the integrated
+   radial force `dp = -int rho a_r dr`.
+3. New `probe_pressure_floor` (P5) + `lattice_density_bias`: Tait resolvability of
+   `sigma/R`, i.e. required density excess vs the static density-summation bias, with the
+   resulting pressure floor in Pa.
+4. CLI: `--schemes consistent legacy`, `--pressure-floor`, `--floor-sound-speeds`,
+   `--lattice {square,hex}`.
+5. Tests re-pinned per scheme; the 3 legacy pins stay `xfail(strict=True)` with their
+   *measured* numbers, and the shipped scheme gets real assertions (including a
+   resolution test at R/dx = 20 and a regression guard on the diagnostic chain).
 
-## 2. Method
-
-Everything is measured on the production code path, at `float64`, on CPU, and
-is deterministic (no stochastic step anywhere in the solver).
-
-* **P1 colour-jump integral.** The CSF surface delta function is
-  `δ_s = |∇c|`. For a phase indicator that goes from 1 (liquid) to 0 (vacuum),
-  `∫ |∇c| dr` across the interface must equal **1**: that integral is the
-  discrete statement that the surface force carries the right amount of
-  interfacial area. Measured by angular averaging `|∇c|` into radial shells and
-  summing `|∇c|·Δr`.
-* **P2 curvature.** `κ` from `compute_curvature` (divergence of the normal
-  field), averaged over the interface band (`r > 0.8 R`, surface-flagged
-  particles), reported as `κR` against the exact value 1.
-* **P3 discrete Young–Laplace.** The radial acceleration returned by
-  `compute_surface_tension_force` is integrated inward,
-  `Δp = −∫ ρ₀ a_r dr`, i.e. the pressure rise the force field *asks* the
-  equation of state to supply. This is the Young–Laplace law as the force field
-  itself sees it, independent of the time integrator.
-* **P4 relaxation.** The production RHS (`droplet_impact.rhs`, which adds the
-  CSF acceleration) is advanced 0.05 s with gravity off and a step limited by
-  both acoustic Courant and the capillary limit; interior pressure (`r < 0.5 R`)
-  and peak spurious current are reported. Two sound speeds are run because the
-  interior pressure must not depend on `c₀` — if it does, the reading is
-  discretisation noise, not capillary pressure.
-
-Acceptance criteria, fixed before the run: `|∫|∇c|dr − 1| ≤ 5%`,
-`|κR − 1| ≤ 15%`, `|Δp/(σ/R) − 1| ≤ 15%` for both P3 and P4. 15% is this
-repository's "unacceptable beyond" line; 3% is the strict line asked for in the
-report.
-
-## 3. Results
-
-### 3.1 Static probes
-
-| `R/Δx` | N | `∫\|∇c\|dr` | err | `κR` | err | `Δp` (P3) [Pa] | err |
-|---|---|---|---|---|---|---|---|
-| 10 | 318  | 0.407 | −59.3% | −0.135 | −113.5% | +1.8263 | **+26.8%** |
-| 20 | 1262 | 0.306 | −69.4% | −0.140 | −114.0% | +1.3838 | −3.9% |
-| 40 | 5032 | 0.382 | −61.8% | +0.205 | −79.5% | +5.7039 | **+296.1%** |
-| exact | — | 1 | — | 1 | — | 1.4400 | — |
-
-### 3.2 Relaxation (P4, `R/Δx = 20`)
-
-| `c₀` [m/s] | bulk `B=ρ₀c₀²/γ` [Pa] | density excess needed `Δp/(γB)` | `ρ/ρ₀` reached | `p` interior [Pa] | err | `\|v\|max` [m/s] |
-|---|---|---|---|---|---|---|
-| 20 | 57 143 | 3.6e−6 | 1.000010 | +3.8035 | **+164%** | 7.40e−3 |
-| 5  | 3 571  | 5.8e−5 | 1.000148 | +3.6925 | **+156%** | 7.35e−3 |
-
-Aspect ratio and circularity of the droplet are preserved (the shape is not the
-problem); the *pressure* is.
-
-## 4. Figure
-
-`benchmarks/laplace/laplace_verification.png` — left: `κR` against `r/R` for the
-three resolutions with the exact value 1; middle: integrated `Δp` against
-`σ/R` on a log resolution axis; right: relative error bar chart of every probe
-against the ±15% band.
-
-![Young–Laplace verification](laplace_verification.png)
-
-## 5. Why it fails (root cause, measured)
-
-Three distinct defects, in order of how much they matter:
-
-1. **No exterior phase — the colour field never jumps.** The colour function is
-   built from a neighbour count (`c = n_neighbours/mean` on "surface" particles,
-   `c = 1` elsewhere). There are no particles outside the liquid, so `c` has no
-   zero to run to: measured floor is ≈ 0.63, its gradient integrates to
-   **0.28–0.41** instead of 1, and it moves by only ±0.05 when the resolution is
-   doubled. A surface delta function that is 3× too small in this sense makes
-   the model's force magnitude arbitrary.
-   `artifacts`-free reproduction: `benchmarks/laplace/halo_experiment.py` adds a
-   three-layer vacuum halo with `c = 0` and recomputes the same gradient; the
-   integral then reaches **1.04 at `R/Δx = 20`** (from 0.306) — which confirms
-   this defect and nothing else.
-2. **Curvature from `∇·n` on a discontinuous normal field.** With the halo in
-   place `∫|∇c|dr` is fixed but `κR` becomes −10.8 at `R/Δx = 20` (values from
-   −15.5 to +8.6 across the band): the normal is clipped to zero inside the
-   liquid and in the far halo, so `∇·n` integrates the *edges of the band*, not
-   the curvature. `κ` needs a normal field that is defined (and smooth)
-   throughout the band, plus an MLS/Shepard renormalisation; the merged code has
-   neither. This is why `κR` is −0.14 with the wrong sign at low resolution.
-3. **The equation of state cannot resolve the pressure.** Tait with `c₀ = 20 m/s`
-   has `B = 57 kPa`, so `Δp = 1.44 Pa` requires a density excess of
-   `Δp/(γB) = 3.6e−6`. Lattice density summation has a bias of order `1e−3` —
-   two to three orders larger. The interior therefore equilibrates wherever the
-   summation bias leaves it (measured `ρ/ρ₀ = 1.000010` at `c₀ = 20`), and the
-   "measured" `Δp` is bias-dominated: it changes only from +164% to +156% when
-   `c₀` is cut fourfold, though the required compression rises 16×. Any
-   verification of a capillary model at this scale must either lower `c₀` to
-   ≈ 3 m/s *and* remove the summation bias (Shepard/MLS renormalisation) or
-   scale `σ` up so `Δp/B ≳ 1e−3`.
-
-Contributing defect, worth stating because it misled the merged benchmark:
-`benchmarks/static_droplet/run.py` writes `"status": "PASS"` on the criteria
-"force points inward" and "force magnitude is non-zero", and its `criteria`
-list claims `dot product > 0.5` while the number it actually reported was an
-average dot product of 0.17. That benchmark has been corrected to state the
-checks it really performs and to record `laplace_law_verified: false`.
-
-## 6. Error judgement against the >= 3% / >= 15% standard
-
-| quantity | reference | measured | error | < 3%? | < 15%? |
-|---|---|---|---|---|---|
-| `∫\|∇c\|dr` (P1, R/Δx=20) | 1 | 0.306 | −69.4% | **no** | **no** |
-| `κR` (P2, R/Δx=20) | 1 | −0.140 | −114.0% | **no** | **no** |
-| `Δp = −∫ρ a_r dr` (P3, R/Δx=20) | 1.4400 Pa | 1.3838 Pa | −3.9% | **no** | yes |
-| `Δp` (P3, R/Δx=10) | 1.4400 Pa | 1.8263 Pa | +26.8% | **no** | **no** |
-| `Δp` (P3, R/Δx=40) | 1.4400 Pa | 5.7039 Pa | +296.1% | **no** | **no** |
-| `p` interior, relaxation `c₀=20` | 1.4400 Pa | 3.8035 Pa | +164.1% | **no** | **no** |
-| `p` interior, relaxation `c₀=5` | 1.4400 Pa | 3.6925 Pa | +156.4% | **no** | **no** |
-| inward fraction of force | 1 (by construction) | 0.734 | — | n/a | n/a |
-| momentum residual `\|Σm a\|/Σm\|a\|` | 0 | 8.6e−3 | — | n/a | n/a |
-
-**Is the key quantity below 3%? No.** Below 15%? **No**, not defensibly: the one
-entry that falls inside 15% (P3 at `R/Δx = 20`, −3.9%) is a coincidence of two
-large cancelling errors, proved by its neighbours at `R/Δx = 10` (+26.8%) and
-`R/Δx = 40` (+296.1%). A model whose error moves 300% under refinement has no
-usable accuracy to state; the honest number is "not applicable / not converged".
-
-## 7. Scope and consequences
-
-* Applies to `Config.surface_tension_coefficient > 0`. That is **not** the
-  default, so the droplet-impact and dam-break results on the same commit are
-  untouched.
-* The capillary time step `capillary_dt_limit` is analytically correct
-  (`0.25√(ρh³/σ)`) and is unaffected; only the force field and its curvature
-  are wrong.
-* The two properties the model *does* have are pinned as ordinary tests:
-  predominantly radial, inward acceleration, and a near-zero net internal
-  momentum (8.6e−3 of the force scale). Fixing the model must keep both.
-* The three failing statements are pinned as `xfail(strict=True)` gates, so a
-  fix that quietly changes behaviour will turn them into XPASS failures and
-  force this document to be updated with new numbers.
-
-## 8. How to fix it (acceptance criteria for the follow-up)
-
-1. Colour field with an exterior phase (vacuum halo particles or a ghost
-   extension) so that `∫|∇c|dr = 1 ± 5%` at `R/Δx ∈ {10, 20, 40}`.
-2. Normal field defined and smooth over the interface band (MLS/Shepard
-   renormalised); `κR = 1 ± 15%`, and the error must *decrease* along the
-   resolution ladder.
-3. `|Δp/(σ/R) − 1| ≤ 15%` for P3 at two resolutions and for P4 after relaxation,
-   with the relaxation value independent of `c₀` within 5%.
-4. Report spurious currents: `|v|max / √(σ/(ρR))` (measured baseline 7.4e−3 m/s
-   against 1.2 m/s capillary scale at these parameters), and the equilibrium
-   Laplace pressure must not drift over 0.1 s.
-5. Suite stays green: the two positive tests here plus the existing
-   `tests/test_surface_tension.py`; the three strict xfails flip to XPASS and
-   must be rewritten with the new numbers.
-
-Reproduce everything with:
+Reproduce:
 
 ```bash
-python benchmarks/laplace/run.py                # ~2 min on CPU, writes report.json + png
-python benchmarks/laplace/halo_experiment.py    # root-cause experiment
-pytest tests/test_laplace_verification.py -q    # 2 passed, 3 xfailed (gap open)
+python benchmarks/laplace/run.py --levels 8 10 12 16 20 --schemes consistent legacy \
+    --pressure-floor --floor-sound-speeds 20 10 5 --dynamical-sound-speeds 20 10 \
+    --output artifacts/m2681_laplace --no-plot
+PYTHONPATH=src python -m pytest tests/test_laplace_verification.py -q   # 7 passed, 3 xfailed
 ```
+
+## 3. Results — static probes (numbers programmatically injected from report.json)
+
+| scheme | R/dx | N | int delta_s dr (err) | int abs(grad c) dr (err) | kappa R (err) | force dp [Pa] (err) |
+|---|---|---|---|---|---|---|
+| consistent | 8 | 204 | 1.136 (+13.6%) | 0.568 (+13.6%) | 1.185 (+18.5%) | 1.9387 (+34.6%) |
+| consistent | 10 | 318 | 1.226 (+22.6%) | 0.613 (+22.7%) | 1.159 (+15.9%) | 2.0936 (+45.4%) |
+| consistent | 12 | 453 | 1.333 (+33.3%) | 0.667 (+33.4%) | 1.199 (+19.9%) | 2.2941 (+59.3%) |
+| consistent | 16 | 808 | 1.006 (+0.6%) | 0.503 (+0.6%) | 1.385 (+38.5%) | 1.6231 (+12.7%) |
+| consistent | 20 | 1262 | 0.803 (-19.7%) | 0.402 (-19.7%) | 2.135 (+113.5%) | 1.2850 (-10.8%) |
+| legacy | 8 | 204 | 0.402 (-59.8%) | 0.402 (-19.5%) | 0.365 (-63.5%) | 0.4512 (-68.7%) |
+| legacy | 10 | 318 | 0.446 (-55.4%) | 0.446 (-10.8%) | 0.356 (-64.4%) | 0.5162 (-64.2%) |
+| legacy | 12 | 453 | 0.501 (-49.9%) | 0.501 (+0.2%) | 0.347 (-65.3%) | 0.6423 (-55.4%) |
+| legacy | 16 | 808 | 0.413 (-58.7%) | 0.413 (-17.4%) | 0.415 (-58.5%) | 0.6912 (-52.0%) |
+| legacy | 20 | 1262 | 0.340 (-66.0%) | 0.340 (-32.0%) | 0.189 (-81.1%) | 0.6246 (-56.6%) |
+
+Relaxation with the production RHS (`droplet_impact.rhs`, 0.05 s, R/dx = 20):
+
+| c0 [m/s] | t [s] | rho/rho0 | p_interior [Pa] | sigma/R [Pa] | err | max speed [m/s] |
+|---|---|---|---|---|---|---|
+| 20 | 0.050 | 1.000004 | 1.5247 | 1.4400 | +5.9% | 8.446e-04 |
+| 10 | 0.050 | 1.000017 | 1.6702 | 1.4400 | +16.0% | 9.199e-04 |
+
+P5, Tait resolvability at R/dx = 8 (static lattice density bias
+`max |rho/rho0 - 1| = 5.32e-05` over the interior):
+
+| c0 [m/s] | needed drho/rho0 | lattice bias | S/N | pressure floor [Pa] | floor / (sigma/R) | measured dp [Pa] | err | Mach |
+|---|---|---|---|---|---|---|---|---|
+| 20 | 3.60e-06 | 5.32e-05 | 0.07 | 21.3 | 1479% | +2.43 | +69.1% | 0.00 |
+| 10 | 1.44e-05 | 5.32e-05 | 0.27 | 5.3 | 370% | +2.38 | +65.2% | 0.00 |
+| 5 | 5.76e-05 | 5.32e-05 | 1.08 | 1.3 | 92% | +2.98 | +107.3% | 0.00 |
+
+Reading of P5: `signal_to_noise < 1` means the density excess the Laplace pressure
+needs is smaller than the density-summation error of an uncompressed lattice, so a single
+relaxation run cannot certify `sigma/R`. With `p = B[(rho/rho0)^gamma - 1]` and
+`B = rho0 c0^2/gamma`, the pressure sensitivity is `dp/d(rho/rho0) = B gamma = 4.0e5 Pa`
+at c0 = 20 m/s: a 15 % read of 1.44 Pa (0.22 Pa) needs `delta(rho/rho0) <= 5.4e-7`.
+
+## 4. Why the old criterion was wrong as well as the old field
+
+For a single-phase SPH cloud the colour function `c = sum_j V_j W_ij` falls from 1 in the
+bulk to ~1/2 on the outermost particle layer and the remaining `1/2 -> 0` transition
+happens in the void, where no particles exist. Hence
+
+    int_fluid |grad c| dr = c_bulk - c_layer = 1 - 1/2 = 1/2 ,
+
+and the CSF delta function of the two-phase model is `delta_s = 2 |grad c|`
+(`csf_consistent.csf_fields` documents the same argument). Measured here: raw integral
+0.613 at R/dx = 10, i.e. **+23 % of 0.5**, while the old pin compared the same number with
+1.0 and reported "55 % of the delta function is missing". The normalised `delta_s`
+integrates to 1.226 (+23 % of 1) at the same resolution — the same relative error, but
+attached to the right criterion.
+
+## 5. Error judgement (item by item, explicit answer to "is it < 3 %?")
+
+| Quantity | Benchmark | Measured (shipped scheme) | Error | < 3 %? | < 15 %? |
+|---|---|---|---|---|---|
+| force-level `dp` | 1.440 Pa | 1.285 Pa (R/dx = 20) | −10.8 % | no | **yes** |
+| relaxed `dp`, c0 = 20 | 1.440 Pa | 1.525 Pa (R/dx = 20) | +5.9 % | no | **yes** |
+| relaxed `dp`, c0 = 10 | 1.440 Pa | 1.670 Pa | +16.0 % | no | no |
+| curvature `kappa R` | 1.0 | 1.159 (R/dx = 10) | +15.9 % | no | no (borderline) |
+| `delta_s` integral | 1.0 | 1.226 (R/dx = 10) | +22.6 % | no | no |
+| raw `int |grad c| dr` | 0.5 | 0.613 (R/dx = 10) | +22.6 % | no | no |
+| force direction (inward) | 1.0 | 0.73 | −27 % | no | no |
+| net momentum residual | 0 | 8.6e-3 | — | n/a | yes |
+| **legacy** force-level `dp` | 1.440 Pa | 0.516 Pa | −64.2 % | no | no |
+
+No quantity reaches 3 %. Two reach the 15 % platform gate, and both are pressure-domain
+quantities at R/dx = 20 — which is exactly the regime where the interface is resolved by
+20 particles across the radius.
+
+## 6. Caveats and gotchas
+
+1. **Mixed-model artefact (fixed here).** Reporting one scheme's force against another
+   scheme's colour field is how "int |grad c| dr = 0.44, i.e. 2.5x too small" was
+   produced. Anything that reports interfacial *structure* must name the scheme.
+2. **Lattice anisotropy dominates at low resolution.** On the square lattice `kappa*R`
+   jumps 1.20 -> 2.14 between R/dx = 12 and 20 and `int delta_s dr` moves +-20 % between
+   neighbouring resolutions. The non-monotone error column in §3 is that noise, not a
+   convergence order. A finer ladder with the hex lattice is the next step.
+3. **Hex lattice caveat.** `--lattice hex` builds ~6 neighbours per particle at h = 1.3 dx;
+   with the production RHS the relaxation run then diverges (`rho/rho0 -> 0.78`, pressure
+   clamped at 0). It is usable for the *static* probes only until h is enlarged for hex.
+   The default is therefore `square`.
+4. **Density-bias pitfall while writing P5.** A hand-rolled pair sum misses the self term
+   `m_i W(0)`, which is 26.9 % of `rho0` in 2-D at h = 1.3 dx — the first version of
+   `lattice_density_bias` reported a 0.269 "bias" that was exactly this missing term. The
+   probe now calls the production `density_from_neighbor_pairs`.
+5. **Radial band for curvature** must be masked by `delta_s > 0`; bulk particles carry a
+   numerically flat colour field and their `kappa` is meaningless (this was the "+1148 %"
+   style garbage in older reports).
+
+## 7. What this does not settle
+
+* Convergence order. One resolution passing the 15 % gate is not a convergence study;
+  the ladder must be run with the hex lattice (larger h) or a curvature estimator with
+  second-order consistency.
+* Whether the relaxed agreement at R/dx = 20 (+5.9 %) is physical or a cancellation
+  between curvature over-estimate (+16 %) and `delta_s` over-estimate (+23 %) in the
+  product `kappa * delta_s`. Separating that needs the same run with a curvature
+  estimator whose own error is < 5 %.
+* Multi-phase (bubble) configurations, where the second half of the colour field exists
+  and the 1/2 factor of §4 disappears.
