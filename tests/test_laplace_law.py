@@ -78,11 +78,12 @@ def test_csf_force_is_net_inward(coarse):
     """Whatever the local noise, the integrated force on a half-drop must pull
     that half toward the interface, i.e. in -x for the x>0 half."""
     assert coarse["cut_force"]["measured_N_per_m"] < 0.0
-    # The magnitude is a defect that is pinned, not endorsed: the current
-    # implementation misses the 2 sigma identity by a wide margin and the error
-    # does not converge with dx (0.45 .. 1.54 of 2 sigma over dx = 3e-3..1e-3).
+    # History: the legacy colour function missed the 2 sigma identity by wide,
+    # non-converging margins (0.45 .. 1.54 of 2 sigma over dx = 3e-3..1e-3).
+    # The consistent scheme must land inside the 15 % acceptance band; the wide
+    # bracket is kept only to keep this test about the *direction*.
     ratio = coarse["cut_force"]["ratio_measured_over_theory"]
-    assert 0.3 < ratio < 1.8
+    assert 0.85 < ratio < 1.15
 
 
 def test_surface_detector_covers_the_interface(coarse):
@@ -121,25 +122,25 @@ def test_curvature_reproduces_circle(coarse):
     assert err < CURVATURE_TOL
 
 
-@pytest.mark.xfail(strict=True, reason="CSF normals on a circle are not radial: "
-                                      "median cos(a, r_hat) ~ 0.1, 51-57 % of "
-                                      "surface particles pushed inward")
 def test_csf_force_direction_is_radial(coarse):
+    """Was xfail(strict) under the legacy colour function (median cos ~ 0.1).
+    The kernel-sum colour + MLS normal makes the CSF force radial; measured
+    median cos = 0.999 (docs/verification_surface_tension_consistent.md)."""
     assert coarse["inward_alignment"]["cos_band_median"] > DIRECTION_COS_MIN
 
 
-@pytest.mark.xfail(strict=True, reason="cut-force identity F_cut = 2 sigma is "
-                                      "not reproduced to 15 % and does not "
-                                      "converge with dx")
 def test_cut_force_identity(coarse):
+    """Was xfail(strict): the legacy CSF missed 2 sigma by up to 2x.  The
+    consistent scheme lands on 1.07-1.11 over dx = 3..1.5 mm."""
     ratio = coarse["cut_force"]["ratio_measured_over_theory"]
     assert abs(ratio - 1.0) < CUT_FORCE_TOL
 
 
-@pytest.mark.xfail(strict=True, reason="Young-Laplace jump is 77-118 % off at "
-                                      "every resolution tested; the interior "
-                                      "cannot build the over-pressure")
 def test_laplace_pressure_jump(bench):
+    """Was xfail(strict): the legacy CSF was 77-118 % off.  The consistent
+    scheme closes this at the coarse resolution used here (R/h ~ 5); the
+    resolution dependence of the *pressure* measurement is reported in
+    docs/verification_surface_tension_consistent.md section 3.3."""
     """End-to-end: relax one capillary time and compare p_center-p_interface
     with sigma/R.  Runs at coarse resolution to stay inside a few seconds."""
     rep = bench.relax(radius=0.02, dx=0.004, sigma=7.2, steps=380)

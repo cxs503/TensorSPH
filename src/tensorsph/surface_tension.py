@@ -25,6 +25,15 @@ from __future__ import annotations
 import torch
 
 from .droplet_impact import Config, cubic_spline_gradient, cubic_spline_kernel
+from .csf_consistent import (  # noqa: F401  (re-exported: public API of this module)
+    CSFState,
+    apply_contact_angle_boundary,
+    csf_fields,
+    kernel_sum_color,
+    mls_divergence,
+    mls_gradient,
+    surface_tension_acceleration,
+)
 
 
 def compute_color_gradient(
@@ -160,8 +169,24 @@ def compute_surface_tension_force(
     mass: torch.Tensor,
     pairs: torch.Tensor,
     cfg: Config,
+    wall: torch.Tensor | None = None,
+    scheme: str | None = None,
 ) -> torch.Tensor:
-    """Compute surface tension acceleration using CSF model.
+    """Compute surface tension acceleration using the CSF model.
+
+    Two schemes are available through ``cfg.csf_scheme`` (or the ``scheme``
+    argument):
+
+    ``"consistent"`` (default)
+        kernel-sum colour function + first-order (MLS) consistent gradient and
+        divergence, see :mod:`tensorsph.csf_consistent`.  This is the model that
+        reproduces the Young-Laplace jump (docs/verification_surface_tension_laplace.md).
+    ``"legacy"``
+        neighbour-count colour function with the uncorrected SPH operators, kept
+        for the A/B comparison and for reproducing pre-m2188 results.
+
+    ``wall`` (particle positions) together with ``cfg.contact_angle`` activates
+    the wall contact-angle boundary condition.
 
     For single-fluid SPH with free surfaces (droplets/bubbles), we detect
     surface particles by counting neighbors. Surface particles have fewer
@@ -185,9 +210,20 @@ def compute_surface_tension_force(
     n = pos.shape[0]
     h = cfg.h_factor * cfg.dx
     sigma = cfg.surface_tension_coefficient
+    scheme = scheme if scheme is not None else getattr(cfg, "csf_scheme", "consistent")
 
     if sigma <= 0.0 or pairs.numel() == 0:
         return torch.zeros((n, 2), dtype=pos.dtype, device=pos.device)
+
+    if scheme not in ("consistent", "legacy"):
+        raise ValueError(
+            f"unknown csf_scheme {scheme!r}; expected 'consistent' or 'legacy'")
+
+    if scheme == "consistent":
+        acc, _ = surface_tension_acceleration(
+            pos, density, mass, pairs, h, sigma, rho0=cfg.rho0, wall=wall,
+            contact_angle=getattr(cfg, "contact_angle", None))
+        return acc
 
     # Count neighbors for each particle
     i, j = pairs.unbind(dim=1)
