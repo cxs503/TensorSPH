@@ -127,6 +127,17 @@ class Config:
     # historical discretisation, +25 % on a circle); "fit_quadratic"/"fit_circle"
     # = weighted local interface fit (see tensorsph.csf_curvature).
     csf_curvature: str = "mls"
+    # CSF surface delta function inside the "consistent" scheme. "two_sided" =
+    # delta_s = 2 |grad c| with the MLS gradient (historical; integrates to
+    # 0.74-0.76 instead of 1); "kernel_sum" = 2 |dc/dx| from the exact
+    # derivative of the kernel-sum colour (integrates to 1.04-1.07, see
+    # benchmarks/delta_s_normalization).
+    csf_delta_s: str = "two_sided"
+    # Density that turns the CSF force per volume into an acceleration:
+    # "local" = the local summation density (historical; 15-27 % low on the
+    # interface layer because the kernel is truncated there), "reference" =
+    # rho0 (see tensorsph.csf_consistent.surface_tension_acceleration).
+    csf_force_density: str = "local"
 
 
 # --------------------------------------------------------------------------- #
@@ -729,6 +740,14 @@ def validate_config(cfg: Config) -> None:
         raise ValueError(
             "csf_curvature must be 'mls', 'fit_quadratic' or 'fit_circle', "
             f"got {cfg.csf_curvature!r}")
+    if cfg.csf_delta_s not in ("two_sided", "kernel_sum"):
+        raise ValueError(
+            "csf_delta_s must be 'two_sided' or 'kernel_sum', "
+            f"got {cfg.csf_delta_s!r}")
+    if cfg.csf_force_density not in ("local", "reference"):
+        raise ValueError(
+            "csf_force_density must be 'local' or 'reference', "
+            f"got {cfg.csf_force_density!r}")
     if cfg.csf_scheme not in ("consistent", "legacy"):
         raise ValueError(
             f"csf_scheme must be 'consistent' or 'legacy', got {cfg.csf_scheme!r}")

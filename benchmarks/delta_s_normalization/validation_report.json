@@ -1,0 +1,894 @@
+{
+  "case": "2-D static droplet: delta_s normalisation, cut-force identity, CSF force density",
+  "setup": {
+    "radius_m": 0.02,
+    "sigma_N_per_m": 7.2,
+    "dx_list_m": [
+      0.003,
+      0.002,
+      0.0015
+    ],
+    "rho0": 1000.0,
+    "sound_speed": 20.0,
+    "gamma": 7.0,
+    "h_over_dx": 1.3,
+    "gravity": 0.0,
+    "combos": [
+      {
+        "delta_s_scheme": "two_sided",
+        "force_density": "local",
+        "curvature": "fit_quadratic"
+      },
+      {
+        "delta_s_scheme": "two_sided",
+        "force_density": "reference",
+        "curvature": "fit_quadratic"
+      },
+      {
+        "delta_s_scheme": "kernel_sum",
+        "force_density": "local",
+        "curvature": "fit_quadratic"
+      },
+      {
+        "delta_s_scheme": "kernel_sum",
+        "force_density": "reference",
+        "curvature": "fit_quadratic"
+      }
+    ]
+  },
+  "reference": {
+    "kappa_1_per_m": 50.0,
+    "delta_s_integral_dn": 1.0,
+    "delta_s_vector_identity_over_2R": 1.0,
+    "cut_force_N_per_m": -14.4,
+    "delta_p_Pa": 360.0
+  },
+  "instant": [
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "two_sided",
+      "force_density": "local",
+      "dx_m": 0.003,
+      "h_m": 0.0039000000000000003,
+      "n_particles": 161,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 58.891982468382274,
+        "rel_error_pct": 17.783964936764548,
+        "band": {
+          "count": 95,
+          "mean": 60.02417178631223,
+          "median": 60.63863070390589,
+          "std": 9.98517251127418
+        },
+        "band_rel_error_pct": 20.04834357262446,
+        "within_3pct": false,
+        "within_15pct": false
+      },
+      "delta_s": {
+        "integral_dn": 0.7545449895898849,
+        "rel_error_pct": -24.54550104101151,
+        "within_3pct": false,
+        "within_15pct": false,
+        "vector_identity": 0.659186680984657,
+        "vector_rel_error_pct": -34.0813319015343,
+        "vector_within_3pct": false,
+        "vector_within_15pct": false
+      },
+      "interface_density_ratio": 0.7270374399880105,
+      "cut_force": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -14.57727809875554,
+        "ratio_measured_over_theory": 1.0123109790802458,
+        "rel_error_pct": 1.231097908024581,
+        "within_15pct": true
+      },
+      "direction": {
+        "n_active_band": 102,
+        "cos_band_median": 0.9992852852235229,
+        "fraction_inward": 1.0
+      }
+    },
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "two_sided",
+      "force_density": "local",
+      "dx_m": 0.002,
+      "h_m": 0.0026000000000000003,
+      "n_particles": 362,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 52.65530442437468,
+        "rel_error_pct": 5.310608848749354,
+        "band": {
+          "count": 216,
+          "mean": 117.02351214421755,
+          "median": 59.36486979344604,
+          "std": 99.32398289468385
+        },
+        "band_rel_error_pct": 134.0470242884351,
+        "within_3pct": false,
+        "within_15pct": true
+      },
+      "delta_s": {
+        "integral_dn": 0.7509820285052726,
+        "rel_error_pct": -24.90179714947274,
+        "within_3pct": false,
+        "within_15pct": false,
+        "vector_identity": 0.6752483181721796,
+        "vector_rel_error_pct": -32.47516818278204,
+        "vector_within_3pct": false,
+        "vector_within_15pct": false
+      },
+      "interface_density_ratio": 0.8042208939071265,
+      "cut_force": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -12.948840619275206,
+        "ratio_measured_over_theory": 0.8992250430052227,
+        "rel_error_pct": 10.077495699477733,
+        "within_15pct": true
+      },
+      "direction": {
+        "n_active_band": 165,
+        "cos_band_median": 0.9997157597673401,
+        "fraction_inward": 1.0
+      }
+    },
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "two_sided",
+      "force_density": "local",
+      "dx_m": 0.0015,
+      "h_m": 0.0019500000000000001,
+      "n_particles": 642,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 50.43010734418038,
+        "rel_error_pct": 0.860214688360756,
+        "band": {
+          "count": 387,
+          "mean": 149.9616925594513,
+          "median": 69.22142013233258,
+          "std": 130.8669871433275
+        },
+        "band_rel_error_pct": 199.92338511890262,
+        "within_3pct": true,
+        "within_15pct": true
+      },
+      "delta_s": {
+        "integral_dn": 0.7391328039053593,
+        "rel_error_pct": -26.08671960946407,
+        "within_3pct": false,
+        "within_15pct": false,
+        "vector_identity": 0.6829038926936114,
+        "vector_rel_error_pct": -31.70961073063886,
+        "vector_within_3pct": false,
+        "vector_within_15pct": false
+      },
+      "interface_density_ratio": 0.8518331720060213,
+      "cut_force": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -12.864520791756547,
+        "ratio_measured_over_theory": 0.893369499427538,
+        "rel_error_pct": 10.663050057246204,
+        "within_15pct": true
+      },
+      "direction": {
+        "n_active_band": 228,
+        "cos_band_median": 0.9997337818358334,
+        "fraction_inward": 1.0
+      }
+    },
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "two_sided",
+      "force_density": "reference",
+      "dx_m": 0.003,
+      "h_m": 0.0039000000000000003,
+      "n_particles": 161,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 58.891982468382274,
+        "rel_error_pct": 17.783964936764548,
+        "band": {
+          "count": 95,
+          "mean": 60.02417178631223,
+          "median": 60.63863070390589,
+          "std": 9.98517251127418
+        },
+        "band_rel_error_pct": 20.04834357262446,
+        "within_3pct": false,
+        "within_15pct": false
+      },
+      "delta_s": {
+        "integral_dn": 0.7545449895898849,
+        "rel_error_pct": -24.54550104101151,
+        "within_3pct": false,
+        "within_15pct": false,
+        "vector_identity": 0.659186680984657,
+        "vector_rel_error_pct": -34.0813319015343,
+        "vector_within_3pct": false,
+        "vector_within_15pct": false
+      },
+      "interface_density_ratio": 0.7270374399880105,
+      "cut_force": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -11.324258755349362,
+        "ratio_measured_over_theory": 0.7864068580103724,
+        "rel_error_pct": 21.359314198962764,
+        "within_15pct": false
+      },
+      "direction": {
+        "n_active_band": 102,
+        "cos_band_median": 0.9992852852235229,
+        "fraction_inward": 1.0
+      }
+    },
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "two_sided",
+      "force_density": "reference",
+      "dx_m": 0.002,
+      "h_m": 0.0026000000000000003,
+      "n_particles": 362,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 52.65530442437468,
+        "rel_error_pct": 5.310608848749354,
+        "band": {
+          "count": 216,
+          "mean": 117.02351214421755,
+          "median": 59.36486979344604,
+          "std": 99.32398289468385
+        },
+        "band_rel_error_pct": 134.0470242884351,
+        "within_3pct": false,
+        "within_15pct": true
+      },
+      "delta_s": {
+        "integral_dn": 0.7509820285052726,
+        "rel_error_pct": -24.90179714947274,
+        "within_3pct": false,
+        "within_15pct": false,
+        "vector_identity": 0.6752483181721796,
+        "vector_rel_error_pct": -32.47516818278204,
+        "vector_within_3pct": false,
+        "vector_within_15pct": false
+      },
+      "interface_density_ratio": 0.8042208939071265,
+      "cut_force": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -10.270403889318139,
+        "ratio_measured_over_theory": 0.7132224923137597,
+        "rel_error_pct": 28.677750768624033,
+        "within_15pct": false
+      },
+      "direction": {
+        "n_active_band": 165,
+        "cos_band_median": 0.9997157597673402,
+        "fraction_inward": 1.0
+      }
+    },
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "two_sided",
+      "force_density": "reference",
+      "dx_m": 0.0015,
+      "h_m": 0.0019500000000000001,
+      "n_particles": 642,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 50.43010734418038,
+        "rel_error_pct": 0.860214688360756,
+        "band": {
+          "count": 387,
+          "mean": 149.9616925594513,
+          "median": 69.22142013233258,
+          "std": 130.8669871433275
+        },
+        "band_rel_error_pct": 199.92338511890262,
+        "within_3pct": true,
+        "within_15pct": true
+      },
+      "delta_s": {
+        "integral_dn": 0.7391328039053593,
+        "rel_error_pct": -26.08671960946407,
+        "within_3pct": false,
+        "within_15pct": false,
+        "vector_identity": 0.6829038926936114,
+        "vector_rel_error_pct": -31.70961073063886,
+        "vector_within_3pct": false,
+        "vector_within_15pct": false
+      },
+      "interface_density_ratio": 0.8518331720060213,
+      "cut_force": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -10.227042469528502,
+        "ratio_measured_over_theory": 0.710211282606146,
+        "rel_error_pct": 28.978871739385404,
+        "within_15pct": false
+      },
+      "direction": {
+        "n_active_band": 228,
+        "cos_band_median": 0.9997337818358331,
+        "fraction_inward": 1.0
+      }
+    },
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "kernel_sum",
+      "force_density": "local",
+      "dx_m": 0.003,
+      "h_m": 0.0039000000000000003,
+      "n_particles": 161,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 61.782151691687645,
+        "rel_error_pct": 23.56430338337529,
+        "band": {
+          "count": 95,
+          "mean": 72.007857015993,
+          "median": 66.57403876557366,
+          "std": 20.197154278919935
+        },
+        "band_rel_error_pct": 44.01571403198599,
+        "within_3pct": false,
+        "within_15pct": false
+      },
+      "delta_s": {
+        "integral_dn": 1.0677141371384686,
+        "rel_error_pct": 6.771413713846863,
+        "within_3pct": false,
+        "within_15pct": true,
+        "vector_identity": 0.9600400929402946,
+        "vector_rel_error_pct": -3.9959907059705424,
+        "vector_within_3pct": false,
+        "vector_within_15pct": true
+      },
+      "interface_density_ratio": 0.7270374399880105,
+      "cut_force": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -23.77070180464638,
+        "ratio_measured_over_theory": 1.6507431808782207,
+        "rel_error_pct": 65.07431808782206,
+        "within_15pct": false
+      },
+      "direction": {
+        "n_active_band": 80,
+        "cos_band_median": 0.999285285223523,
+        "fraction_inward": 1.0
+      }
+    },
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "kernel_sum",
+      "force_density": "local",
+      "dx_m": 0.002,
+      "h_m": 0.0026000000000000003,
+      "n_particles": 362,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 54.836622968746404,
+        "rel_error_pct": 9.673245937492808,
+        "band": {
+          "count": 216,
+          "mean": 128.5785247021918,
+          "median": 72.46614066894357,
+          "std": 94.44919540765609
+        },
+        "band_rel_error_pct": 157.1570494043836,
+        "within_3pct": false,
+        "within_15pct": true
+      },
+      "delta_s": {
+        "integral_dn": 1.0486977243979965,
+        "rel_error_pct": 4.869772439799647,
+        "within_3pct": false,
+        "within_15pct": true,
+        "vector_identity": 0.9721834929847253,
+        "vector_rel_error_pct": -2.7816507015274716,
+        "vector_within_3pct": true,
+        "vector_within_15pct": true
+      },
+      "interface_density_ratio": 0.8042208939071265,
+      "cut_force": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -20.8147254767582,
+        "ratio_measured_over_theory": 1.4454670469970972,
+        "rel_error_pct": 44.546704699709714,
+        "within_15pct": false
+      },
+      "direction": {
+        "n_active_band": 127,
+        "cos_band_median": 0.9997157597673404,
+        "fraction_inward": 1.0
+      }
+    },
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "kernel_sum",
+      "force_density": "local",
+      "dx_m": 0.0015,
+      "h_m": 0.0019500000000000001,
+      "n_particles": 642,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 52.11344495226414,
+        "rel_error_pct": 4.226889904528278,
+        "band": {
+          "count": 387,
+          "mean": 161.4566493713696,
+          "median": 104.08061756339299,
+          "std": 124.88805994472136
+        },
+        "band_rel_error_pct": 222.9132987427392,
+        "within_3pct": false,
+        "within_15pct": true
+      },
+      "delta_s": {
+        "integral_dn": 1.0415259980810274,
+        "rel_error_pct": 4.1525998081027415,
+        "within_3pct": false,
+        "within_15pct": true,
+        "vector_identity": 0.9821961853160317,
+        "vector_rel_error_pct": -1.78038146839683,
+        "vector_within_3pct": true,
+        "vector_within_15pct": true
+      },
+      "interface_density_ratio": 0.8518331720060213,
+      "cut_force": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -20.67226190315956,
+        "ratio_measured_over_theory": 1.4355737432749693,
+        "rel_error_pct": 43.55737432749693,
+        "within_15pct": false
+      },
+      "direction": {
+        "n_active_band": 172,
+        "cos_band_median": 0.999738558009075,
+        "fraction_inward": 1.0
+      }
+    },
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "kernel_sum",
+      "force_density": "reference",
+      "dx_m": 0.003,
+      "h_m": 0.0039000000000000003,
+      "n_particles": 161,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 61.782151691687645,
+        "rel_error_pct": 23.56430338337529,
+        "band": {
+          "count": 95,
+          "mean": 72.007857015993,
+          "median": 66.57403876557366,
+          "std": 20.197154278919935
+        },
+        "band_rel_error_pct": 44.01571403198599,
+        "within_3pct": false,
+        "within_15pct": false
+      },
+      "delta_s": {
+        "integral_dn": 1.0677141371384686,
+        "rel_error_pct": 6.771413713846863,
+        "within_3pct": false,
+        "within_15pct": true,
+        "vector_identity": 0.9600400929402946,
+        "vector_rel_error_pct": -3.9959907059705424,
+        "vector_within_3pct": false,
+        "vector_within_15pct": true
+      },
+      "interface_density_ratio": 0.7270374399880105,
+      "cut_force": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -17.306635901347846,
+        "ratio_measured_over_theory": 1.201849715371378,
+        "rel_error_pct": 20.18497153713781,
+        "within_15pct": false
+      },
+      "direction": {
+        "n_active_band": 80,
+        "cos_band_median": 0.9992852852235228,
+        "fraction_inward": 1.0
+      }
+    },
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "kernel_sum",
+      "force_density": "reference",
+      "dx_m": 0.002,
+      "h_m": 0.0026000000000000003,
+      "n_particles": 362,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 54.836622968746404,
+        "rel_error_pct": 9.673245937492808,
+        "band": {
+          "count": 216,
+          "mean": 128.5785247021918,
+          "median": 72.46614066894357,
+          "std": 94.44919540765609
+        },
+        "band_rel_error_pct": 157.1570494043836,
+        "within_3pct": false,
+        "within_15pct": true
+      },
+      "delta_s": {
+        "integral_dn": 1.0486977243979965,
+        "rel_error_pct": 4.869772439799647,
+        "within_3pct": false,
+        "within_15pct": true,
+        "vector_identity": 0.9721834929847253,
+        "vector_rel_error_pct": -2.7816507015274716,
+        "vector_within_3pct": true,
+        "vector_within_15pct": true
+      },
+      "interface_density_ratio": 0.8042208939071265,
+      "cut_force": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -15.395043248927477,
+        "ratio_measured_over_theory": 1.0691002256199638,
+        "rel_error_pct": 6.910022561996376,
+        "within_15pct": true
+      },
+      "direction": {
+        "n_active_band": 127,
+        "cos_band_median": 0.9997157597673404,
+        "fraction_inward": 1.0
+      }
+    },
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "kernel_sum",
+      "force_density": "reference",
+      "dx_m": 0.0015,
+      "h_m": 0.0019500000000000001,
+      "n_particles": 642,
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 52.11344495226414,
+        "rel_error_pct": 4.226889904528278,
+        "band": {
+          "count": 387,
+          "mean": 161.4566493713696,
+          "median": 104.08061756339299,
+          "std": 124.88805994472136
+        },
+        "band_rel_error_pct": 222.9132987427392,
+        "within_3pct": false,
+        "within_15pct": true
+      },
+      "delta_s": {
+        "integral_dn": 1.0415259980810274,
+        "rel_error_pct": 4.1525998081027415,
+        "within_3pct": false,
+        "within_15pct": true,
+        "vector_identity": 0.9821961853160317,
+        "vector_rel_error_pct": -1.78038146839683,
+        "vector_within_3pct": true,
+        "vector_within_15pct": true
+      },
+      "interface_density_ratio": 0.8518331720060213,
+      "cut_force": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -15.295348493758537,
+        "ratio_measured_over_theory": 1.0621769787332318,
+        "rel_error_pct": 6.21769787332318,
+        "within_15pct": true
+      },
+      "direction": {
+        "n_active_band": 172,
+        "cos_band_median": 0.999738558009075,
+        "fraction_inward": 1.0
+      }
+    }
+  ],
+  "relax": [
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "two_sided",
+      "force_density": "local",
+      "setup": {
+        "radius_m": 0.02,
+        "dx_m": 0.004,
+        "h_m": 0.005200000000000001,
+        "sigma_N_per_m": 7.2,
+        "rho0": 1000.0,
+        "sound_speed": 20.0,
+        "steps": 380,
+        "dt_s": 7.800000000000001e-05,
+        "t_end_s": 0.029640000000000003,
+        "t_over_t_sigma": 0.8891999999999999
+      },
+      "reference": {
+        "delta_p_Pa": 360.0
+      },
+      "laplace": {
+        "p_center_Pa": 389.19777328112514,
+        "p_interface_band_Pa": 0.0,
+        "delta_p_measured_Pa": 389.19777328112514,
+        "rel_error_pct": 8.110492578090316,
+        "within_3pct": false,
+        "within_15pct": true
+      },
+      "spurious_current": {
+        "v_ref_m_per_s": 0.6,
+        "vmax_over_vref_final": 0.04782628328712859,
+        "passes_adami_0p1": true
+      },
+      "history": {
+        "t": [
+          7.800000000000001e-05,
+          0.0031980000000000003,
+          0.006318000000000001,
+          0.009438000000000002,
+          0.012558000000000001,
+          0.015678,
+          0.018798000000000002,
+          0.021918000000000003,
+          0.025038000000000005,
+          0.028158000000000006,
+          0.029640000000000003
+        ],
+        "vmax_over_vref": [
+          0.03810635667263869,
+          0.3170232515580581,
+          0.2618084295865335,
+          0.19609496970147935,
+          0.14536006714143243,
+          0.11258238135552731,
+          0.08608835737599838,
+          0.0662348362984414,
+          0.0527665328731432,
+          0.04857210603110706,
+          0.04782628328712859
+        ],
+        "ke": [
+          0.00010554721973615584,
+          0.0022687935692475075,
+          0.000602068387342323,
+          0.00048449887594231107,
+          0.0003792399232191301,
+          0.0002756190910872938,
+          0.00020791588001917058,
+          0.00016032405036154853,
+          0.00013410427251594445,
+          0.00011985756983532826,
+          0.00011335417378961407
+        ],
+        "p_core": []
+      }
+    },
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "two_sided",
+      "force_density": "reference",
+      "setup": {
+        "radius_m": 0.02,
+        "dx_m": 0.004,
+        "h_m": 0.005200000000000001,
+        "sigma_N_per_m": 7.2,
+        "rho0": 1000.0,
+        "sound_speed": 20.0,
+        "steps": 380,
+        "dt_s": 7.800000000000001e-05,
+        "t_end_s": 0.029640000000000003,
+        "t_over_t_sigma": 0.8891999999999999
+      },
+      "reference": {
+        "delta_p_Pa": 360.0
+      },
+      "laplace": {
+        "p_center_Pa": 360.4801680944341,
+        "p_interface_band_Pa": 0.0,
+        "delta_p_measured_Pa": 360.4801680944341,
+        "rel_error_pct": 0.13338002623168815,
+        "within_3pct": true,
+        "within_15pct": true
+      },
+      "spurious_current": {
+        "v_ref_m_per_s": 0.6,
+        "vmax_over_vref_final": 0.056277049481191894,
+        "passes_adami_0p1": true
+      },
+      "history": {
+        "t": [
+          7.800000000000001e-05,
+          0.0031980000000000003,
+          0.006318000000000001,
+          0.009438000000000002,
+          0.012558000000000001,
+          0.015678,
+          0.018798000000000002,
+          0.021918000000000003,
+          0.025038000000000005,
+          0.028158000000000006,
+          0.029640000000000003
+        ],
+        "vmax_over_vref": [
+          0.038098436353859205,
+          0.1716802783660588,
+          0.15618683638935987,
+          0.15146055996852506,
+          0.14546493270145583,
+          0.1285527501437375,
+          0.10592568732051652,
+          0.08573552840415123,
+          0.07138777341762628,
+          0.06101226353636803,
+          0.056277049481191894
+        ],
+        "ke": [
+          0.0001024451676103453,
+          0.0009418901177565438,
+          0.0004436206978566707,
+          0.00031777911878127087,
+          0.0002882145714201474,
+          0.0002500645666173803,
+          0.0002008872621716495,
+          0.0001619198678185623,
+          0.00011989777789649114,
+          9.386014966045915e-05,
+          8.47744111822394e-05
+        ],
+        "p_core": []
+      }
+    },
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "kernel_sum",
+      "force_density": "local",
+      "setup": {
+        "radius_m": 0.02,
+        "dx_m": 0.004,
+        "h_m": 0.005200000000000001,
+        "sigma_N_per_m": 7.2,
+        "rho0": 1000.0,
+        "sound_speed": 20.0,
+        "steps": 380,
+        "dt_s": 7.800000000000001e-05,
+        "t_end_s": 0.029640000000000003,
+        "t_over_t_sigma": 0.8891999999999999
+      },
+      "reference": {
+        "delta_p_Pa": 360.0
+      },
+      "laplace": {
+        "p_center_Pa": 834.6464502204553,
+        "p_interface_band_Pa": 243.01021198490463,
+        "delta_p_measured_Pa": 591.6362382355508,
+        "rel_error_pct": 64.34339950987521,
+        "within_3pct": false,
+        "within_15pct": false
+      },
+      "spurious_current": {
+        "v_ref_m_per_s": 0.6,
+        "vmax_over_vref_final": 0.11175621707137526,
+        "passes_adami_0p1": false
+      },
+      "history": {
+        "t": [
+          7.800000000000001e-05,
+          0.0031980000000000003,
+          0.006318000000000001,
+          0.009438000000000002,
+          0.012558000000000001,
+          0.015678,
+          0.018798000000000002,
+          0.021918000000000003,
+          0.025038000000000005,
+          0.028158000000000006,
+          0.029640000000000003
+        ],
+        "vmax_over_vref": [
+          0.03945314715841792,
+          0.4131016052361977,
+          0.3202592684053179,
+          0.24089463692433782,
+          0.18314830617422986,
+          0.13971733284048338,
+          0.11955193552258268,
+          0.11105847273494632,
+          0.10436800693086853,
+          0.10552483515844943,
+          0.11175621707137526
+        ],
+        "ke": [
+          0.00013466761517800507,
+          0.0032304439794119022,
+          0.0013077443368674192,
+          0.0010249168511092448,
+          0.0008650561427836392,
+          0.0007034472774430921,
+          0.0005849738450783666,
+          0.0005177577967806547,
+          0.0005393771802608945,
+          0.0006748372105310878,
+          0.0007971261281147961
+        ],
+        "p_core": []
+      }
+    },
+    {
+      "curvature": "fit_quadratic",
+      "delta_s_scheme": "kernel_sum",
+      "force_density": "reference",
+      "setup": {
+        "radius_m": 0.02,
+        "dx_m": 0.004,
+        "h_m": 0.005200000000000001,
+        "sigma_N_per_m": 7.2,
+        "rho0": 1000.0,
+        "sound_speed": 20.0,
+        "steps": 380,
+        "dt_s": 7.800000000000001e-05,
+        "t_end_s": 0.029640000000000003,
+        "t_over_t_sigma": 0.8891999999999999
+      },
+      "reference": {
+        "delta_p_Pa": 360.0
+      },
+      "laplace": {
+        "p_center_Pa": 788.3701802642929,
+        "p_interface_band_Pa": 0.0,
+        "delta_p_measured_Pa": 788.3701802642929,
+        "rel_error_pct": 118.99171674008136,
+        "within_3pct": false,
+        "within_15pct": false
+      },
+      "spurious_current": {
+        "v_ref_m_per_s": 0.6,
+        "vmax_over_vref_final": 0.08022100169616232,
+        "passes_adami_0p1": true
+      },
+      "history": {
+        "t": [
+          7.800000000000001e-05,
+          0.0031980000000000003,
+          0.006318000000000001,
+          0.009438000000000002,
+          0.012558000000000001,
+          0.015678,
+          0.018798000000000002,
+          0.021918000000000003,
+          0.025038000000000005,
+          0.028158000000000006,
+          0.029640000000000003
+        ],
+        "vmax_over_vref": [
+          0.03945314715841792,
+          0.250508336260856,
+          0.22939981804365225,
+          0.1910837689739668,
+          0.16336038666775704,
+          0.13887701205130318,
+          0.11912109825815607,
+          0.10097747474615253,
+          0.08702083998362281,
+          0.08121160204943705,
+          0.08022100169616232
+        ],
+        "ke": [
+          0.00011646865493740152,
+          0.002325380935802553,
+          0.0008471906875987447,
+          0.0006185963857494382,
+          0.0005680088216488432,
+          0.0005202198876586363,
+          0.00046262808264754465,
+          0.0003920075547848815,
+          0.00033351274383468027,
+          0.0002968619562571201,
+          0.0002883445414968812
+        ],
+        "p_core": []
+      }
+    }
+  ],
+  "gates": {
+    "tolerance_15pct": "platform standard",
+    "note": "within_3pct is the stricter research bar"
+  }
+}

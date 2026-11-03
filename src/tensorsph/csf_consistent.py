@@ -134,6 +134,46 @@ def mls_gradient(
     return torch.linalg.solve(big_m.transpose(-1, -2), rhs.unsqueeze(-1)).squeeze(-1)
 
 
+def kernel_sum_gradient(
+    pos: torch.Tensor,
+    mass: torch.Tensor,
+    pairs: torch.Tensor,
+    h: float,
+    rho0: float,
+) -> torch.Tensor:
+    """Exact gradient of the *discrete* kernel-sum colour field.
+
+    With ``c_i = V_i W(0) + sum_j V_j W_ij`` the analytic derivative with
+    respect to the particle position is
+
+        dc_i/dx_i = sum_j V_j grad_i W_ij      (V_j = m_j / rho0) ,
+
+    because ``grad W(0) = 0`` kills the self term.  ``pairs`` stores ``(i, j)``
+    once; the contribution to ``i`` is ``V_j grad_i W_ij`` and to ``j``
+    ``-V_i grad_i W_ij`` (``grad_j W_ji = -grad_i W_ij``).
+
+    Why this operator (not the MLS one) is used for the surface delta function:
+    the MLS gradient of :func:`mls_gradient` reconstructs a *linear* field
+    exactly, but ``c`` is a step of width ``2h``, so on the one-sided stencil of
+    the outermost layer its truncation error is ``O(1)``.  Measured on the
+    lattice droplet this loses 25 % of ``int delta_s dn`` at every resolution
+    (0.739 ... 0.755 instead of 1), while the exact derivative of the same
+    discrete colour integrates to 1.042 ... 1.068
+    (``benchmarks/delta_s_normalization``).  ``m0.10`` keeps this operator out
+    of the normal/curvature path, which is verifiably better with MLS.
+    """
+    n = pos.shape[0]
+    vol = mass / rho0
+    if pairs.numel() == 0:
+        return torch.zeros((n, 2), dtype=pos.dtype, device=pos.device)
+    i, j = pairs.unbind(dim=1)
+    gw = cubic_spline_gradient(pos[i] - pos[j], h)
+    out = torch.zeros((n, 2), dtype=pos.dtype, device=pos.device)
+    out = out.index_add(0, i, vol[j, None] * gw)
+    out = out.index_add(0, j, -vol[i, None] * gw)
+    return out
+
+
 def mls_divergence(
     pos: torch.Tensor,
     field: torch.Tensor,
@@ -230,6 +270,7 @@ def csf_fields(
     normal_smoothing: int = 2,
     curvature_scheme: str = "mls",
     curvature_stencil: float = 4.0,
+    delta_s_scheme: str = "two_sided",
 ) -> CSFState:
     """Colour, its gradient, the outward normal, curvature and delta_s.
 
@@ -245,7 +286,24 @@ def csf_fields(
     ``"fit_quadratic"`` / ``"fit_circle"``
         weighted local interface fit, see :mod:`tensorsph.csf_curvature`; the
         MLS value is kept as the fallback where the stencil is too poor.
+
+    ``delta_s_scheme`` selects the gradient that carries the surface delta
+    function (the normal always keeps the MLS gradient, which reproduces the
+    radial direction to ``cos = 1.000``):
+
+    ``"two_sided"`` (default, historical)
+        ``delta_s = 2 |grad_mls c|``.  The factor 2 is exact (the colour field
+        only carries the fluid half of the transition), but the MLS gradient
+        under-integrates it by a further 25 %: ``int delta_s dn = 0.74 ... 0.76``.
+    ``"kernel_sum"``
+        ``delta_s = 2 |dc/dx|`` from :func:`kernel_sum_gradient`, the exact
+        derivative of the discrete colour field: ``int delta_s dn = 1.04 ... 1.07``
+        and the cut-force identity ``F_cut = 2 sigma`` improves from 10.7 % to
+        a few per cent (``benchmarks/delta_s_normalization``).
     """
+    if delta_s_scheme not in ("two_sided", "kernel_sum"):
+        raise ValueError("delta_s_scheme must be 'two_sided' or 'kernel_sum', "
+                         f"got {delta_s_scheme!r}")
     n = pos.shape[0]
     vol = mass / rho0
     color = kernel_sum_color(pos, mass, pairs, h, rho0)
@@ -284,7 +342,11 @@ def csf_fields(
     # did, letting the colour jump be O(0.3) instead of O(1)) makes the CSF
     # force -- and therefore the Laplace pressure jump -- too weak by exactly
     # the missing factor.
-    delta_s = 2.0 * torch.linalg.vector_norm(grad_c, dim=1)
+    if delta_s_scheme == "kernel_sum":
+        delta_s = 2.0 * torch.linalg.vector_norm(
+            kernel_sum_gradient(pos, mass, pairs, h, rho0), dim=1)
+    else:
+        delta_s = 2.0 * torch.linalg.vector_norm(grad_c, dim=1)
     if curvature_scheme != "mls":
         kappa = fit_curvature(pos, normal, delta_s, pairs, h, fallback=kappa,
                               method=curvature_scheme, stencil=curvature_stencil)
@@ -305,8 +367,27 @@ def surface_tension_acceleration(
     contact_angle: float | None = None,
     curvature_scheme: str = "mls",
     curvature_stencil: float = 4.0,
+    delta_s_scheme: str = "two_sided",
+    force_density: str = "local",
 ) -> tuple[torch.Tensor, CSFState | None]:
-    """CSF acceleration ``a = -sigma kappa delta_s n / rho`` and its fields."""
+    """CSF acceleration ``a = -sigma kappa delta_s n / rho`` and its fields.
+
+    ``force_density`` selects the density that converts the CSF force per unit
+    volume into an acceleration:
+
+    ``"local"`` (default, historical)
+        ``a = f / rho_i``.  On the outermost particle layer the *summation*
+        density is 15-27 % below ``rho0`` purely because the kernel is truncated
+        by the free surface (measured ``rho/rho0 = 0.73 / 0.81 / 0.85`` at
+        dx = 3 / 2 / 1.5 mm), so this inflates the interface force by the same
+        factor.  The cut-force identity of the previous rounds only passed
+        because an under-normalised ``delta_s`` (-32 %) cancelled this (+35 %).
+    ``"reference"``
+        ``a = f / rho0``: the interface carries the fluid density, not the
+        kernel-truncated summation density.  With a correct ``delta_s`` this is
+        the variant that satisfies ``F_cut = 2 sigma``
+        (``benchmarks/delta_s_normalization``).
+    """
     if sigma <= 0.0:
         return torch.zeros_like(pos), None
     rho0 = float(rho0 if rho0 is not None else density.mean())
@@ -320,7 +401,8 @@ def surface_tension_acceleration(
     state = csf_fields(pos, mass, pairs, h, rho0, wall=wall,
                        contact_angle=contact_angle,
                        curvature_scheme=curvature_scheme,
-                       curvature_stencil=curvature_stencil)
+                       curvature_stencil=curvature_stencil,
+                       delta_s_scheme=delta_s_scheme)
     # Particles whose colour field is locally flat are not on the interface; the
     # clamped kernel sum makes their |grad c| numerically ~1e-12 rather than
     # exactly zero, so they are masked out. Bulk traction stays a bit-exact
@@ -329,8 +411,12 @@ def surface_tension_acceleration(
     flat = d_s <= 1.0e-3 * d_s.max()
     d_s[flat] = 0.0
     state.delta_s = d_s
+    if force_density not in ("local", "reference"):
+        raise ValueError("force_density must be 'local' or 'reference', "
+                         f"got {force_density!r}")
     force = (-sigma * state.kappa * state.delta_s)[:, None] * state.normal
-    return force / density[:, None], state
+    denom = density if force_density == "local" else torch.full_like(density, rho0)
+    return force / denom[:, None], state
 
 # --------------------------------------------------------------------------- #
 # wall contact-angle boundary condition
