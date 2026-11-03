@@ -222,7 +222,8 @@ def compute_surface_tension_force(
     if scheme == "consistent":
         acc, _ = surface_tension_acceleration(
             pos, density, mass, pairs, h, sigma, rho0=cfg.rho0, wall=wall,
-            contact_angle=getattr(cfg, "contact_angle", None))
+            contact_angle=getattr(cfg, "contact_angle", None),
+            color_smoothing=getattr(cfg, "color_smoothing", 0))
         return acc
 
     # Count neighbors for each particle

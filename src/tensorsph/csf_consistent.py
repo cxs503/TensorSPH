@@ -203,13 +203,22 @@ def shepard_smooth(
     """
     if passes <= 0 or pairs.numel() == 0:
         return field
+    if field.dim() == 1:                      # scalar field: smooth as (N, 1)
+        out = shepard_smooth(field.unsqueeze(1), pos, vol, pairs, h, passes)
+        return out.squeeze(1)
     n = pos.shape[0]
     i, j = pairs.unbind(dim=1)
     w = cubic_spline_kernel(torch.linalg.vector_norm(pos[i] - pos[j], dim=1), h)
     out = field
+    w0 = cubic_spline_kernel(out.new_zeros(()), h)
     for _ in range(passes):
-        num = out.new_zeros(out.shape)
-        den = vol * cubic_spline_kernel(out.new_zeros(()), h)
+        # The self term must appear in the numerator as well as the denominator,
+        # otherwise a constant field is damped by the self weight fraction
+        # (measured 0.25 -> 0.087 on a 4-particle cloud).  With the normal field
+        # this went unnoticed because csf_fields renormalises the smoothed
+        # normal afterwards; on a scalar field it is a real bias.
+        num = vol[:, None] * w0 * out
+        den = vol * w0
         num = num.index_add(0, i, (vol[j] * w)[:, None] * out[j])
         den = den.index_add(0, i, vol[j] * w)
         num = num.index_add(0, j, (vol[i] * w)[:, None] * out[i])
@@ -227,6 +236,7 @@ def csf_fields(
     wall: torch.Tensor | None = None,
     contact_angle: float | None = None,
     normal_smoothing: int = 2,
+    color_smoothing: int = 0,
 ) -> CSFState:
     """Colour, its gradient, the outward normal, curvature and delta_s.
 
@@ -236,6 +246,19 @@ def csf_fields(
     n = pos.shape[0]
     vol = mass / rho0
     color = kernel_sum_color(pos, mass, pairs, h, rho0)
+    # The kernel-sum colour field carries lattice-scale noise: on a hexagonal
+    # drop its value at a given radius scatters by O(1e-2) with no systematic
+    # part, and the MLS gradient turns that into a normal perturbation
+    # ``dtheta ~ noise / (|grad c| h)``.  Since ``kappa = div n`` amplifies a
+    # normal perturbation by ``1/h``, the curvature error of the raw field
+    # *grows* with resolution (measured +43 % -> +104 % over R/h = 3.8 -> 44),
+    # which is divergence, not convergence.  Shepard smoothing of c before the
+    # gradient removes the lattice noise (the kernel is isotropic, so a radial
+    # field keeps its profile up to O(h^2)) and restores convergence:
+    # +50 % -> +3.6 % over the same range.  See
+    # docs/verification_surface_tension_laplace.md section 7.
+    if color_smoothing:
+        color = shepard_smooth(color, pos, vol, pairs, h, passes=color_smoothing)
     grad_c = mls_gradient(pos, color, vol, pairs, h)
     if wall is not None and contact_angle is not None:
         grad_c = apply_contact_angle_boundary(grad_c, pos, wall, h, contact_angle)
@@ -287,13 +310,15 @@ def surface_tension_acceleration(
     rho0: float | None = None,
     wall: torch.Tensor | None = None,
     contact_angle: float | None = None,
+    color_smoothing: int = 0,
 ) -> tuple[torch.Tensor, CSFState | None]:
     """CSF acceleration ``a = -sigma kappa delta_s n / rho`` and its fields."""
     if sigma <= 0.0:
         return torch.zeros_like(pos), None
     rho0 = float(rho0 if rho0 is not None else density.mean())
     state = csf_fields(pos, mass, pairs, h, rho0, wall=wall,
-                       contact_angle=contact_angle)
+                       contact_angle=contact_angle,
+                       color_smoothing=color_smoothing)
     # Particles whose colour field is locally flat are not on the interface; the
     # clamped kernel sum makes their |grad c| numerically ~1e-12 rather than
     # exactly zero, so they are masked out. Bulk traction stays a bit-exact
