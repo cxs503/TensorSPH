@@ -219,6 +219,38 @@ def shepard_smooth(
     return out
 
 
+def _color_drop(color: torch.Tensor, grad_c_mag: torch.Tensor) -> float:
+    """Estimate the colour drop across the interface from the particle field.
+
+    In single-phase SPH the kernel-sum colour falls from ``c ≈ 1`` in the bulk
+    to ``c ≈ 0.5–0.7`` on the outermost particle layer; the remaining drop to
+    zero lives in the void where there are no particles.  The integral of
+    ``|grad c|`` over the fluid therefore equals ``c_bulk - c_surface``, not 1.
+
+    The CSF delta function must satisfy ``int delta_s dn = 1``, so we scale
+    ``|grad c|`` by ``1 / (c_bulk - c_surface)``.
+
+    Returns the estimated colour drop (a scalar > 0).
+    """
+    # Bulk particles: those with near-zero gradient magnitude
+    bulk_cut = 0.01 * float(grad_c_mag.max().clamp_min(1e-30))
+    bulk = grad_c_mag < bulk_cut
+    if bulk.sum() < 10:
+        # Fallback: use top 80% of colour values as bulk
+        bulk = color > float(color.quantile(0.2))
+    c_bulk = float(color[bulk].mean())
+
+    # Surface particles: those with the largest gradient magnitude
+    surf_cut = 0.3 * float(grad_c_mag.max().clamp_min(1e-30))
+    surf = grad_c_mag > surf_cut
+    if surf.sum() < 10:
+        surf = color < float(color.quantile(0.2))
+    c_surf = float(color[surf].mean())
+
+    drop = c_bulk - c_surf
+    return max(drop, 0.05)  # safety floor
+
+
 def csf_fields(
     pos: torch.Tensor,
     mass: torch.Tensor,
@@ -228,7 +260,7 @@ def csf_fields(
     wall: torch.Tensor | None = None,
     contact_angle: float | None = None,
     normal_smoothing: int = 2,
-    curvature_scheme: str = "mls",
+    curvature_scheme: str = "fit_quadratic",
     curvature_stencil: float = 4.0,
 ) -> CSFState:
     """Colour, its gradient, the outward normal, curvature and delta_s.
@@ -238,13 +270,16 @@ def csf_fields(
 
     ``curvature_scheme`` selects the curvature operator:
 
-    ``"mls"`` (default, historical)
+    ``"fit_quadratic"`` (default)
+        Weighted local quadratic fit of the interface, see
+        :mod:`tensorsph.csf_curvature`.  On a circular droplet the median
+        ``kappa * R`` is within 1 % of the exact value +1
+        (``docs/verification_surface_tension_laplace.md``).
+    ``"fit_circle"``
+        Pratt algebraic circle fit; useful for nearly circular interfaces.
+    ``"mls"``
         ``kappa = div n`` with MLS-consistent operators and a Shepard-smoothed
-        normal.  Measured error on a circle: +25 %
-        (``docs/verification_surface_tension_consistent.md``).
-    ``"fit_quadratic"`` / ``"fit_circle"``
-        weighted local interface fit, see :mod:`tensorsph.csf_curvature`; the
-        MLS value is kept as the fallback where the stencil is too poor.
+        normal.  Measured error on a circle: +25 %; kept for A/B comparison.
     """
     n = pos.shape[0]
     vol = mass / rho0
@@ -266,25 +301,21 @@ def csf_fields(
         normal = torch.where(mag > tiny, smoothed / norm.clamp_min(tiny), normal)
 
     kappa = mls_divergence(pos, normal, vol, pairs, h)
+
     # Surface delta function.  The definition that makes the CSF force
     # mesh-consistent (Brackbill et al. 1992) is the one that satisfies
     #
     #     int_{interface} delta_s dn = 1 .
     #
-    # In a single-phase cloud the colour function only exists inside the fluid:
-    # it falls from c = 1 in the bulk to c = 1/2 on the outermost particle layer
-    # (that layer sees half a kernel), and the remaining 1 -> 0 half of the
-    # indicator lives in the void, where there are no particles to carry it.
-    # Hence
-    #
-    #     int_fluid |grad c| dn = c_bulk - c_interface = 1 - 1/2 = 1/2 ,
-    #
-    # so the delta function of the two-phase model is twice the in-fluid
-    # gradient magnitude.  Dropping this factor of 2 (or, as the legacy scheme
-    # did, letting the colour jump be O(0.3) instead of O(1)) makes the CSF
-    # force -- and therefore the Laplace pressure jump -- too weak by exactly
-    # the missing factor.
-    delta_s = 2.0 * torch.linalg.vector_norm(grad_c, dim=1)
+    # In single-phase SPH the kernel-sum colour falls from c ≈ 1 in the bulk
+    # to c ≈ 0.5–0.7 on the outermost particle layer; the remaining drop to
+    # zero lives in the void.  Hence int_fluid |grad c| dn = c_bulk - c_surface,
+    # which is typically 0.15–0.35 rather than 1.  We normalise by the actual
+    # colour drop so that the delta function integrates to unity.
+    grad_c_mag = torch.linalg.vector_norm(grad_c, dim=1)
+    drop = _color_drop(color, grad_c_mag)
+    delta_s = grad_c_mag / drop
+
     if curvature_scheme != "mls":
         kappa = fit_curvature(pos, normal, delta_s, pairs, h, fallback=kappa,
                               method=curvature_scheme, stencil=curvature_stencil)
@@ -303,7 +334,7 @@ def surface_tension_acceleration(
     rho0: float | None = None,
     wall: torch.Tensor | None = None,
     contact_angle: float | None = None,
-    curvature_scheme: str = "mls",
+    curvature_scheme: str = "fit_quadratic",
     curvature_stencil: float = 4.0,
 ) -> tuple[torch.Tensor, CSFState | None]:
     """CSF acceleration ``a = -sigma kappa delta_s n / rho`` and its fields."""

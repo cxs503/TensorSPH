@@ -126,7 +126,7 @@ class Config:
     # CSF curvature operator inside the "consistent" scheme. "mls" = div n (the
     # historical discretisation, +25 % on a circle); "fit_quadratic"/"fit_circle"
     # = weighted local interface fit (see tensorsph.csf_curvature).
-    csf_curvature: str = "mls"
+    csf_curvature: str = "fit_quadratic"
 
 
 # --------------------------------------------------------------------------- #
