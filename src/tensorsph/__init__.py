@@ -44,6 +44,9 @@ from .surface_tension import (
     compute_curvature,
     compute_normal,
     compute_surface_tension_force,
+    compute_surface_tension_force_corrected,
+    free_surface_color,
+    normalise_delta_s,
     capillary_dt_limit,
 )
 
@@ -61,4 +64,6 @@ __all__ = [
     "cell_linked_pairs_host", "DamBreakConfig", "make_column", "run_case",
     "apply_contact_angle_boundary", "compute_color_gradient", "compute_curvature", "compute_normal",
     "compute_surface_tension_force", "capillary_dt_limit",
+    "compute_surface_tension_force_corrected", "free_surface_color",
+    "normalise_delta_s",
 ]

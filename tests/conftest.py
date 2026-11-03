@@ -11,6 +11,33 @@ both platforms while still catching genuine hangs.
 """
 import pytest
 
+# --------------------------------------------------------------------------- #
+# Worktree import guard
+# --------------------------------------------------------------------------- #
+# The host has several agent worktrees registered on sys.path through .pth files
+# in site-packages (m57, m708, m991, m1213, m2420 at the time of writing). Whichever
+# one comes first wins, so a bare ``import tensorsph`` inside this worktree can
+# silently exercise another agent's (possibly older or newer) source tree, and a
+# green suite then says nothing about the code under test. Putting this worktree's
+# ``src`` first, and failing loudly if the package still comes from elsewhere,
+# makes the suite score the code that is actually being committed.
+import sys
+from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+_SRC = str(_REPO_ROOT / "src")
+if _SRC in sys.path:
+    sys.path.remove(_SRC)
+sys.path.insert(0, _SRC)
+
+_imported = sys.modules.get("tensorsph")
+if _imported is not None and getattr(_imported, "__file__", ""):
+    if not Path(_imported.__file__).resolve().is_relative_to(_REPO_ROOT):
+        raise RuntimeError(
+            f"tensorsph was imported from {_imported.__file__}, not from {_SRC}; "
+            "the suite would be scoring another worktree"
+        )
+
 
 def pytest_configure(config):
     config.addinivalue_line(

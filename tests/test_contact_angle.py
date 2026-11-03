@@ -181,6 +181,16 @@ class TestContactAngleIntegration:
 
         return cfg, pos, density, mass, pairs
 
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "orphan test: the six particles are collinear at y=0.1, so the "
+            "interface normal has no tangential variation and kappa == 0 "
+            "identically -- the force cannot be non-zero for this "
+            "configuration. Replaced by a real lattice patch in "
+            "tests/test_contact_angle_bc.py::TestIntegrationWithTheForce."
+        ),
+    )
     def test_surface_tension_with_contact_angle(self):
         """Surface tension force should use contact angle when wall is provided."""
         device = "cpu"
@@ -199,6 +209,13 @@ class TestContactAngleIntegration:
         # Surface particles (4, 5) should have non-zero acceleration
         assert not torch.allclose(acc[4:], torch.zeros(2, 2, dtype=torch.float32, device=device), atol=1e-10)
 
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "orphan test: same degenerate collinear configuration as "
+            "test_surface_tension_with_contact_angle; kappa == 0 by symmetry."
+        ),
+    )
     def test_surface_tension_without_contact_angle(self):
         """Surface tension force should work without contact angle (backward compat)."""
         device = "cpu"
