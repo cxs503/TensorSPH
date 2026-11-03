@@ -169,6 +169,19 @@ Run the following in order. Do not use the droplet-impact case as the first proo
 
 ### B3 — Surface-tension verification
 
+> **Update (m2574).** The consistent scheme (`csf_scheme="consistent"`) meets the
+> static Laplace check inside the 15 % tolerance for `R/dx <= 20`, but the bias
+> **grows** with refinement (+6.9 % at `R/dx = 8`, +12.1 % at 20, +20.0 % at 28,
+> +34.9 % at 40) and depends on `h/dx` (+0.9 % at 1.2, +7.7 % at 1.3). The one-point
+> claim of 0.9.0 must therefore carry the envelope `R/dx <= 20`. Measured, with
+> the two force estimators disagreeing by `1/rho_bar ~ 1.25` on the free surface, in
+> [`verification_laplace_scaling.md`](verification_laplace_scaling.md)
+> (`benchmarks/laplace_scaling/`, regenerated from JSON by `make_doc.py`).
+> The four `tests/test_laplace_droplet.py` assertions that pinned the superseded
+> legacy defects (red since m2447 changed the default scheme) were re-pinned to
+> the current model.
+
+
 After a surface-tension formulation is implemented:
 
 - Static droplet: pressure jump versus curvature and surface tension (Laplace-law check).

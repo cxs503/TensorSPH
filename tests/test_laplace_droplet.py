@@ -4,9 +4,15 @@ These tests (1) hold the *verification instrument* to its own standard and
 (2) pin the currently measured behaviour of the merged CSF model, so that a
 future fix of the curvature / colour-field treatment shows up as a change here.
 
-Measured state of the merged model (see docs/benchmarks/laplace-droplet.md):
-it does **not** reproduce the Laplace jump; the tests below encode that fact
-rather than a passing criterion.
+History: these tests were written against the *legacy* colour field (m2143-m2174)
+and pinned its defects -- no Laplace jump, `div(n)` curvature with the wrong sign,
+incoherent normals.  The default scheme became `csf_scheme="consistent"` in
+m2447 (`tensorsph.csf_consistent`), which fixes all three, and the assertions
+below were left describing a model that the default no longer runs -- four of
+them went red.  They are re-pinned here to the consistent scheme's measured
+behaviour, so they now fail if the *current* model regresses.  The legacy defect
+record lives in `benchmarks/laplace_law/` (unchanged) and the resolution envelope
+of the current scheme in `docs/verification_laplace_scaling.md` (m2574).
 """
 
 import importlib.util
@@ -82,25 +88,39 @@ def test_instrument_satisfies_laplace_with_correct_operators(coarse, medium):
         assert case["instrument_C_exact_operators_ratio"] == pytest.approx(1.0, rel=1e-6)
 
 
-def test_current_model_fails_laplace_criterion(coarse, medium):
-    """Pinned regression: the merged model is far outside the 15 % tolerance."""
-    assert coarse["within_15pct"] is False
-    assert medium["within_15pct"] is False
-    assert coarse["dp_ratio"] == pytest.approx(0.43, abs=0.05)
-    assert medium["dp_ratio"] == pytest.approx(1.39, abs=0.10)
+def test_consistent_scheme_meets_laplace_criterion(coarse, medium):
+    """Pinned regression: the consistent scheme is inside the 15 % tolerance.
+
+    Measured: dp_ratio = 0.986 at R/dx = 10 and 1.109 at R/dx = 20.  The drift
+    between the two is the resolution-dependent bias quantified in
+    docs/verification_laplace_scaling.md -- it grows with refinement, so these
+    numbers, not a converged value, are what is pinned.
+    """
+    assert coarse["within_15pct"] is True
+    assert medium["within_15pct"] is True
+    assert coarse["dp_ratio"] == pytest.approx(0.986, abs=0.03)
+    assert medium["dp_ratio"] == pytest.approx(1.109, abs=0.03)
 
 
-def test_curvature_error_grows_under_refinement(coarse, medium):
-    """div(normal) curvature is not convergent: |kappa R| grows with resolution."""
-    assert abs(medium["kappa_delta_weighted_times_R"]) > \
-        1.5 * abs(coarse["kappa_delta_weighted_times_R"])
+def test_curvature_bias_grows_slowly_without_diverging(coarse, medium):
+    """The consistent curvature stays bounded (1.46 -> 1.72 x 1/R), unlike legacy.
+
+    The legacy field multiplied this error by >= 1.5 per refinement step; the
+    consistent scheme's MLS divergence is bounded, but still not convergent,
+    which is why the Laplace amplitude in docs/verification_laplace_scaling.md
+    has a resolution-dependent bias.
+    """
+    k_coarse = abs(coarse["kappa_delta_weighted_times_R"])
+    k_medium = abs(medium["kappa_delta_weighted_times_R"])
+    assert 1.0 < k_coarse < 2.0
+    assert 1.0 < k_medium < 2.0
+    assert k_medium < 1.3 * k_coarse
 
 
-def test_curvature_has_the_wrong_sign_on_the_interface(coarse, medium):
-    """A convex droplet needs kappa > 0; the model returns a negative median."""
+def test_curvature_has_the_correct_sign_on_the_interface(coarse, medium):
+    """A convex droplet needs kappa > 0; the consistent scheme returns one."""
     for case in (coarse, medium):
-        assert case["kappa_model_median"] < 0.0
-        assert 0.3 < case["kappa_model_positive_fraction"] < 0.7
+        assert case["kappa_model_median"] > 0.0
 
 
 def test_surface_delta_is_under_normalised(coarse, medium):
@@ -109,10 +129,11 @@ def test_surface_delta_is_under_normalised(coarse, medium):
         assert 0.2 < case["N_delta"] < 0.5
 
 
-def test_normal_field_is_not_radially_coherent(coarse, medium):
-    """The model's normals do not point outwards coherently (this is the defect)."""
+def test_normal_field_is_radially_coherent(coarse, medium):
+    """The smoothed MLS normal field points radially outwards (was the legacy defect)."""
     for case in (coarse, medium):
-        assert abs(case["normal_alignment_delta_weighted"]) < 0.1
+        assert abs(case["normal_alignment_delta_weighted"]) > 0.95
+        assert case["normal_coherent_fraction"] > 0.95
 
 
 def test_resolvability_audit_rejects_pressure_based_measurement():

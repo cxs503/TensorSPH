@@ -1,0 +1,1738 @@
+{
+ "benchmark": "laplace_law_scaling_2d",
+ "implementation_under_test": "tensorsph.csf_consistent (csf_scheme='consistent')",
+ "reference": {
+  "law": "dp = sigma / R  (2-D cylinder) ; F_cut = 2 sigma",
+  "citation": "Young (1805); Laplace (1806); Brackbill, Kothe & Zemach (1992) JCP 100, 335; Adami, Hu & Adams (2012) JCP 231, 7057",
+  "note": "cut-force identity F_cut = dp * 2R avoids the stiff Tait EOS (dp/bulk modulus = 1.3e-5 at the reference point)"
+ },
+ "setup": {
+  "rho0_kg_per_m3": 1000.0,
+  "sound_speed_m_per_s": 20.0,
+  "gamma": 7.0,
+  "h_over_dx": 1.3,
+  "lattice": "hexagonal, R/dx fixed per grid axis",
+  "cells_per_radius": 10
+ },
+ "platform_tolerance": 0.15,
+ "grid": [
+  {
+   "radius_m": 0.015,
+   "dx_m": 0.0015,
+   "resolution_R_over_dx": 10.0,
+   "h_over_dx": 1.3,
+   "sigma_N_per_m": 3.6,
+   "n_particles": 362,
+   "n_pairs": 2930,
+   "cut_force": {
+    "measured_N_per_m": -7.7515277292293465,
+    "theory_N_per_m": -7.2,
+    "ratio_measured_over_theory": 1.0766010735040759,
+    "rel_error_pct": 7.660107350407586,
+    "within_15pct": true,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -6.180861610331471,
+    "theory_N_per_m": -7.2,
+    "ratio_measured_over_theory": 0.8584530014349265,
+    "rel_error_pct": -14.154699856507346,
+    "within_15pct": true,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.2541176648046068,
+    "rho_over_rho0_force_weighted": 0.7969301159003577
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 258.3842576409782,
+    "dp_theory_Pa": 240.00000000000003,
+    "rel_error_pct": 7.660107350407573,
+    "within_15pct": true
+   },
+   "curvature": {
+    "exact_1_per_m": 66.66666666666667,
+    "delta_s_weighted_signed": 81.46220828951883,
+    "delta_s_weighted_abs": 81.46220828951883,
+    "delta_s_weighted_signed_rel_error_pct": 22.193312434278244,
+    "delta_s_weighted_abs_rel_error_pct": 22.193312434278244,
+    "inner_half_mean": 81.7550870835309,
+    "outer_half_mean": 59.939834829713526
+   },
+   "delta_s": {
+    "integral_dn": 0.7509820285052724,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.0766010735040759,
+     1.07555681444985,
+     1.0732448752993737,
+     1.0710540631185472
+    ],
+    "ratio_geometric": [
+     0.8584530014349265,
+     0.8566365676758372,
+     0.8542692578159731,
+     0.8509862386265643
+    ],
+    "ratio_momentum_mean": 1.0741142065929616,
+    "ratio_momentum_spread": 0.005547010385528628,
+    "net_force_over_2sigma": [
+     -2.611722566609526e-16,
+     0.0035005529262243664,
+     0.006762548955464005,
+     0.009563688449029346
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.9997157597673401,
+    "fraction_inward": 1.0
+   }
+  },
+  {
+   "radius_m": 0.015,
+   "dx_m": 0.0015,
+   "resolution_R_over_dx": 10.0,
+   "h_over_dx": 1.3,
+   "sigma_N_per_m": 7.2,
+   "n_particles": 362,
+   "n_pairs": 2930,
+   "cut_force": {
+    "measured_N_per_m": -15.503055458458693,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 1.0766010735040759,
+    "rel_error_pct": 7.660107350407586,
+    "within_15pct": true,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -12.361723220662942,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 0.8584530014349265,
+    "rel_error_pct": -14.154699856507346,
+    "within_15pct": true,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.2541176648046068,
+    "rho_over_rho0_force_weighted": 0.7969301159003577
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 516.7685152819564,
+    "dp_theory_Pa": 480.00000000000006,
+    "rel_error_pct": 7.660107350407573,
+    "within_15pct": true
+   },
+   "curvature": {
+    "exact_1_per_m": 66.66666666666667,
+    "delta_s_weighted_signed": 81.46220828951883,
+    "delta_s_weighted_abs": 81.46220828951883,
+    "delta_s_weighted_signed_rel_error_pct": 22.193312434278244,
+    "delta_s_weighted_abs_rel_error_pct": 22.193312434278244,
+    "inner_half_mean": 81.7550870835309,
+    "outer_half_mean": 59.939834829713526
+   },
+   "delta_s": {
+    "integral_dn": 0.7509820285052724,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.0766010735040759,
+     1.07555681444985,
+     1.0732448752993737,
+     1.0710540631185472
+    ],
+    "ratio_geometric": [
+     0.8584530014349265,
+     0.8566365676758372,
+     0.8542692578159731,
+     0.8509862386265643
+    ],
+    "ratio_momentum_mean": 1.0741142065929616,
+    "ratio_momentum_spread": 0.005547010385528628,
+    "net_force_over_2sigma": [
+     -2.611722566609526e-16,
+     0.0035005529262243664,
+     0.006762548955464005,
+     0.009563688449029346
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.9997157597673401,
+    "fraction_inward": 1.0
+   }
+  },
+  {
+   "radius_m": 0.015,
+   "dx_m": 0.0015,
+   "resolution_R_over_dx": 10.0,
+   "h_over_dx": 1.3,
+   "sigma_N_per_m": 14.4,
+   "n_particles": 362,
+   "n_pairs": 2930,
+   "cut_force": {
+    "measured_N_per_m": -31.006110916917386,
+    "theory_N_per_m": -28.8,
+    "ratio_measured_over_theory": 1.0766010735040759,
+    "rel_error_pct": 7.660107350407586,
+    "within_15pct": true,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -24.723446441325883,
+    "theory_N_per_m": -28.8,
+    "ratio_measured_over_theory": 0.8584530014349265,
+    "rel_error_pct": -14.154699856507346,
+    "within_15pct": true,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.2541176648046068,
+    "rho_over_rho0_force_weighted": 0.7969301159003577
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 1033.5370305639128,
+    "dp_theory_Pa": 960.0000000000001,
+    "rel_error_pct": 7.660107350407573,
+    "within_15pct": true
+   },
+   "curvature": {
+    "exact_1_per_m": 66.66666666666667,
+    "delta_s_weighted_signed": 81.46220828951883,
+    "delta_s_weighted_abs": 81.46220828951883,
+    "delta_s_weighted_signed_rel_error_pct": 22.193312434278244,
+    "delta_s_weighted_abs_rel_error_pct": 22.193312434278244,
+    "inner_half_mean": 81.7550870835309,
+    "outer_half_mean": 59.939834829713526
+   },
+   "delta_s": {
+    "integral_dn": 0.7509820285052724,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.0766010735040759,
+     1.07555681444985,
+     1.0732448752993737,
+     1.0710540631185472
+    ],
+    "ratio_geometric": [
+     0.8584530014349265,
+     0.8566365676758372,
+     0.8542692578159731,
+     0.8509862386265643
+    ],
+    "ratio_momentum_mean": 1.0741142065929616,
+    "ratio_momentum_spread": 0.005547010385528628,
+    "net_force_over_2sigma": [
+     -2.611722566609526e-16,
+     0.0035005529262243664,
+     0.006762548955464005,
+     0.009563688449029346
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.9997157597673401,
+    "fraction_inward": 1.0
+   }
+  },
+  {
+   "radius_m": 0.02,
+   "dx_m": 0.002,
+   "resolution_R_over_dx": 10.0,
+   "h_over_dx": 1.3,
+   "sigma_N_per_m": 3.6,
+   "n_particles": 362,
+   "n_pairs": 2930,
+   "cut_force": {
+    "measured_N_per_m": -7.751527729229352,
+    "theory_N_per_m": -7.2,
+    "ratio_measured_over_theory": 1.0766010735040765,
+    "rel_error_pct": 7.660107350407652,
+    "within_15pct": true,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -6.1808616103314735,
+    "theory_N_per_m": -7.2,
+    "ratio_measured_over_theory": 0.8584530014349269,
+    "rel_error_pct": -14.154699856507314,
+    "within_15pct": true,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.254117664804607,
+    "rho_over_rho0_force_weighted": 0.7969301159003577
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 193.78819323073378,
+    "dp_theory_Pa": 180.0,
+    "rel_error_pct": 7.660107350407657,
+    "within_15pct": true
+   },
+   "curvature": {
+    "exact_1_per_m": 50.0,
+    "delta_s_weighted_signed": 61.09665621713912,
+    "delta_s_weighted_abs": 61.09665621713912,
+    "delta_s_weighted_signed_rel_error_pct": 22.193312434278244,
+    "delta_s_weighted_abs_rel_error_pct": 22.193312434278244,
+    "inner_half_mean": 61.31631531264817,
+    "outer_half_mean": 44.95487612228502
+   },
+   "delta_s": {
+    "integral_dn": 0.7509820285052726,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.0766010735040765,
+     1.0755568144498506,
+     1.0732448752993746,
+     1.071054063118548
+    ],
+    "ratio_geometric": [
+     0.8584530014349269,
+     0.8566365676758374,
+     0.8542692578159733,
+     0.8509862386265646
+    ],
+    "ratio_momentum_mean": 1.0741142065929625,
+    "ratio_momentum_spread": 0.005547010385528628,
+    "net_force_over_2sigma": [
+     -8.673617379884035e-16,
+     0.003500552926223819,
+     0.006762548955463592,
+     0.009563688449029037
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.9997157597673402,
+    "fraction_inward": 1.0
+   }
+  },
+  {
+   "radius_m": 0.02,
+   "dx_m": 0.002,
+   "resolution_R_over_dx": 10.0,
+   "h_over_dx": 1.3,
+   "sigma_N_per_m": 7.2,
+   "n_particles": 362,
+   "n_pairs": 2930,
+   "cut_force": {
+    "measured_N_per_m": -15.503055458458704,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 1.0766010735040765,
+    "rel_error_pct": 7.660107350407652,
+    "within_15pct": true,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -12.361723220662947,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 0.8584530014349269,
+    "rel_error_pct": -14.154699856507314,
+    "within_15pct": true,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.254117664804607,
+    "rho_over_rho0_force_weighted": 0.7969301159003577
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 387.57638646146756,
+    "dp_theory_Pa": 360.0,
+    "rel_error_pct": 7.660107350407657,
+    "within_15pct": true
+   },
+   "curvature": {
+    "exact_1_per_m": 50.0,
+    "delta_s_weighted_signed": 61.09665621713912,
+    "delta_s_weighted_abs": 61.09665621713912,
+    "delta_s_weighted_signed_rel_error_pct": 22.193312434278244,
+    "delta_s_weighted_abs_rel_error_pct": 22.193312434278244,
+    "inner_half_mean": 61.31631531264817,
+    "outer_half_mean": 44.95487612228502
+   },
+   "delta_s": {
+    "integral_dn": 0.7509820285052726,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.0766010735040765,
+     1.0755568144498506,
+     1.0732448752993746,
+     1.071054063118548
+    ],
+    "ratio_geometric": [
+     0.8584530014349269,
+     0.8566365676758374,
+     0.8542692578159733,
+     0.8509862386265646
+    ],
+    "ratio_momentum_mean": 1.0741142065929625,
+    "ratio_momentum_spread": 0.005547010385528628,
+    "net_force_over_2sigma": [
+     -8.673617379884035e-16,
+     0.003500552926223819,
+     0.006762548955463592,
+     0.009563688449029037
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.9997157597673402,
+    "fraction_inward": 1.0
+   }
+  },
+  {
+   "radius_m": 0.02,
+   "dx_m": 0.002,
+   "resolution_R_over_dx": 10.0,
+   "h_over_dx": 1.3,
+   "sigma_N_per_m": 14.4,
+   "n_particles": 362,
+   "n_pairs": 2930,
+   "cut_force": {
+    "measured_N_per_m": -31.006110916917407,
+    "theory_N_per_m": -28.8,
+    "ratio_measured_over_theory": 1.0766010735040765,
+    "rel_error_pct": 7.660107350407652,
+    "within_15pct": true,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -24.723446441325894,
+    "theory_N_per_m": -28.8,
+    "ratio_measured_over_theory": 0.8584530014349269,
+    "rel_error_pct": -14.154699856507314,
+    "within_15pct": true,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.254117664804607,
+    "rho_over_rho0_force_weighted": 0.7969301159003577
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 775.1527729229351,
+    "dp_theory_Pa": 720.0,
+    "rel_error_pct": 7.660107350407657,
+    "within_15pct": true
+   },
+   "curvature": {
+    "exact_1_per_m": 50.0,
+    "delta_s_weighted_signed": 61.09665621713912,
+    "delta_s_weighted_abs": 61.09665621713912,
+    "delta_s_weighted_signed_rel_error_pct": 22.193312434278244,
+    "delta_s_weighted_abs_rel_error_pct": 22.193312434278244,
+    "inner_half_mean": 61.31631531264817,
+    "outer_half_mean": 44.95487612228502
+   },
+   "delta_s": {
+    "integral_dn": 0.7509820285052726,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.0766010735040765,
+     1.0755568144498506,
+     1.0732448752993746,
+     1.071054063118548
+    ],
+    "ratio_geometric": [
+     0.8584530014349269,
+     0.8566365676758374,
+     0.8542692578159733,
+     0.8509862386265646
+    ],
+    "ratio_momentum_mean": 1.0741142065929625,
+    "ratio_momentum_spread": 0.005547010385528628,
+    "net_force_over_2sigma": [
+     -8.673617379884035e-16,
+     0.003500552926223819,
+     0.006762548955463592,
+     0.009563688449029037
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.9997157597673402,
+    "fraction_inward": 1.0
+   }
+  },
+  {
+   "radius_m": 0.03,
+   "dx_m": 0.003,
+   "resolution_R_over_dx": 10.0,
+   "h_over_dx": 1.3,
+   "sigma_N_per_m": 3.6,
+   "n_particles": 362,
+   "n_pairs": 2930,
+   "cut_force": {
+    "measured_N_per_m": -7.7515277292293465,
+    "theory_N_per_m": -7.2,
+    "ratio_measured_over_theory": 1.0766010735040759,
+    "rel_error_pct": 7.660107350407586,
+    "within_15pct": true,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -6.180861610331471,
+    "theory_N_per_m": -7.2,
+    "ratio_measured_over_theory": 0.8584530014349265,
+    "rel_error_pct": -14.154699856507346,
+    "within_15pct": true,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.2541176648046068,
+    "rho_over_rho0_force_weighted": 0.7969301159003577
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 129.1921288204891,
+    "dp_theory_Pa": 120.00000000000001,
+    "rel_error_pct": 7.660107350407573,
+    "within_15pct": true
+   },
+   "curvature": {
+    "exact_1_per_m": 33.333333333333336,
+    "delta_s_weighted_signed": 40.73110414475941,
+    "delta_s_weighted_abs": 40.73110414475941,
+    "delta_s_weighted_signed_rel_error_pct": 22.193312434278244,
+    "delta_s_weighted_abs_rel_error_pct": 22.193312434278244,
+    "inner_half_mean": 40.87754354176545,
+    "outer_half_mean": 29.969917414856763
+   },
+   "delta_s": {
+    "integral_dn": 0.7509820285052724,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.0766010735040759,
+     1.07555681444985,
+     1.0732448752993737,
+     1.0710540631185472
+    ],
+    "ratio_geometric": [
+     0.8584530014349265,
+     0.8566365676758372,
+     0.8542692578159731,
+     0.8509862386265643
+    ],
+    "ratio_momentum_mean": 1.0741142065929616,
+    "ratio_momentum_spread": 0.005547010385528628,
+    "net_force_over_2sigma": [
+     -2.611722566609526e-16,
+     0.0035005529262243664,
+     0.006762548955464005,
+     0.009563688449029346
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.9997157597673401,
+    "fraction_inward": 1.0
+   }
+  },
+  {
+   "radius_m": 0.03,
+   "dx_m": 0.003,
+   "resolution_R_over_dx": 10.0,
+   "h_over_dx": 1.3,
+   "sigma_N_per_m": 7.2,
+   "n_particles": 362,
+   "n_pairs": 2930,
+   "cut_force": {
+    "measured_N_per_m": -15.503055458458693,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 1.0766010735040759,
+    "rel_error_pct": 7.660107350407586,
+    "within_15pct": true,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -12.361723220662942,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 0.8584530014349265,
+    "rel_error_pct": -14.154699856507346,
+    "within_15pct": true,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.2541176648046068,
+    "rho_over_rho0_force_weighted": 0.7969301159003577
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 258.3842576409782,
+    "dp_theory_Pa": 240.00000000000003,
+    "rel_error_pct": 7.660107350407573,
+    "within_15pct": true
+   },
+   "curvature": {
+    "exact_1_per_m": 33.333333333333336,
+    "delta_s_weighted_signed": 40.73110414475941,
+    "delta_s_weighted_abs": 40.73110414475941,
+    "delta_s_weighted_signed_rel_error_pct": 22.193312434278244,
+    "delta_s_weighted_abs_rel_error_pct": 22.193312434278244,
+    "inner_half_mean": 40.87754354176545,
+    "outer_half_mean": 29.969917414856763
+   },
+   "delta_s": {
+    "integral_dn": 0.7509820285052724,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.0766010735040759,
+     1.07555681444985,
+     1.0732448752993737,
+     1.0710540631185472
+    ],
+    "ratio_geometric": [
+     0.8584530014349265,
+     0.8566365676758372,
+     0.8542692578159731,
+     0.8509862386265643
+    ],
+    "ratio_momentum_mean": 1.0741142065929616,
+    "ratio_momentum_spread": 0.005547010385528628,
+    "net_force_over_2sigma": [
+     -2.611722566609526e-16,
+     0.0035005529262243664,
+     0.006762548955464005,
+     0.009563688449029346
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.9997157597673401,
+    "fraction_inward": 1.0
+   }
+  },
+  {
+   "radius_m": 0.03,
+   "dx_m": 0.003,
+   "resolution_R_over_dx": 10.0,
+   "h_over_dx": 1.3,
+   "sigma_N_per_m": 14.4,
+   "n_particles": 362,
+   "n_pairs": 2930,
+   "cut_force": {
+    "measured_N_per_m": -31.006110916917386,
+    "theory_N_per_m": -28.8,
+    "ratio_measured_over_theory": 1.0766010735040759,
+    "rel_error_pct": 7.660107350407586,
+    "within_15pct": true,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -24.723446441325883,
+    "theory_N_per_m": -28.8,
+    "ratio_measured_over_theory": 0.8584530014349265,
+    "rel_error_pct": -14.154699856507346,
+    "within_15pct": true,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.2541176648046068,
+    "rho_over_rho0_force_weighted": 0.7969301159003577
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 516.7685152819564,
+    "dp_theory_Pa": 480.00000000000006,
+    "rel_error_pct": 7.660107350407573,
+    "within_15pct": true
+   },
+   "curvature": {
+    "exact_1_per_m": 33.333333333333336,
+    "delta_s_weighted_signed": 40.73110414475941,
+    "delta_s_weighted_abs": 40.73110414475941,
+    "delta_s_weighted_signed_rel_error_pct": 22.193312434278244,
+    "delta_s_weighted_abs_rel_error_pct": 22.193312434278244,
+    "inner_half_mean": 40.87754354176545,
+    "outer_half_mean": 29.969917414856763
+   },
+   "delta_s": {
+    "integral_dn": 0.7509820285052724,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.0766010735040759,
+     1.07555681444985,
+     1.0732448752993737,
+     1.0710540631185472
+    ],
+    "ratio_geometric": [
+     0.8584530014349265,
+     0.8566365676758372,
+     0.8542692578159731,
+     0.8509862386265643
+    ],
+    "ratio_momentum_mean": 1.0741142065929616,
+    "ratio_momentum_spread": 0.005547010385528628,
+    "net_force_over_2sigma": [
+     -2.611722566609526e-16,
+     0.0035005529262243664,
+     0.006762548955464005,
+     0.009563688449029346
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.9997157597673401,
+    "fraction_inward": 1.0
+   }
+  }
+ ],
+ "resolution_ladder": [
+  {
+   "radius_m": 0.02,
+   "dx_m": 0.0025,
+   "resolution_R_over_dx": 8.0,
+   "h_over_dx": 1.3,
+   "sigma_N_per_m": 7.2,
+   "n_particles": 228,
+   "n_pairs": 1793,
+   "cut_force": {
+    "measured_N_per_m": -15.388960891059297,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 1.0686778396568957,
+    "rel_error_pct": 6.867783965689567,
+    "within_15pct": true,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -12.207047607436524,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 0.8477116394053141,
+    "rel_error_pct": -15.228836059468588,
+    "within_15pct": false,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.2606619869070024,
+    "rho_over_rho0_force_weighted": 0.7853367289030757
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 384.7240222764824,
+    "dp_theory_Pa": 360.0,
+    "rel_error_pct": 6.867783965689556,
+    "within_15pct": true
+   },
+   "curvature": {
+    "exact_1_per_m": 50.0,
+    "delta_s_weighted_signed": 62.558682774489625,
+    "delta_s_weighted_abs": 62.558682774489625,
+    "delta_s_weighted_signed_rel_error_pct": 25.117365548979254,
+    "delta_s_weighted_abs_rel_error_pct": 25.117365548979254,
+    "inner_half_mean": 62.802738901867826,
+    "outer_half_mean": 48.65532677841656
+   },
+   "delta_s": {
+    "integral_dn": 0.7541249974419362,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.0686778396568957,
+     1.069377334944647,
+     1.0720280413269445,
+     1.0742580940122737
+    ],
+    "ratio_geometric": [
+     0.8477116394053142,
+     0.8487795823172481,
+     0.8509342264898033,
+     0.8521628034272757
+    ],
+    "ratio_momentum_mean": 1.0710853274851901,
+    "ratio_momentum_spread": 0.0055802543553780115,
+    "net_force_over_2sigma": [
+     1.4648776019359704e-16,
+     -0.003169372270090132,
+     -0.006122757057609085,
+     -0.008658886069986426
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.99980717121693,
+    "fraction_inward": 1.0
+   }
+  },
+  {
+   "radius_m": 0.02,
+   "dx_m": 0.002,
+   "resolution_R_over_dx": 10.0,
+   "h_over_dx": 1.3,
+   "sigma_N_per_m": 7.2,
+   "n_particles": 362,
+   "n_pairs": 2930,
+   "cut_force": {
+    "measured_N_per_m": -15.503055458458704,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 1.0766010735040765,
+    "rel_error_pct": 7.660107350407652,
+    "within_15pct": true,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -12.361723220662947,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 0.8584530014349269,
+    "rel_error_pct": -14.154699856507314,
+    "within_15pct": true,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.254117664804607,
+    "rho_over_rho0_force_weighted": 0.7969301159003577
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 387.57638646146756,
+    "dp_theory_Pa": 360.0,
+    "rel_error_pct": 7.660107350407657,
+    "within_15pct": true
+   },
+   "curvature": {
+    "exact_1_per_m": 50.0,
+    "delta_s_weighted_signed": 61.09665621713912,
+    "delta_s_weighted_abs": 61.09665621713912,
+    "delta_s_weighted_signed_rel_error_pct": 22.193312434278244,
+    "delta_s_weighted_abs_rel_error_pct": 22.193312434278244,
+    "inner_half_mean": 61.31631531264817,
+    "outer_half_mean": 44.95487612228502
+   },
+   "delta_s": {
+    "integral_dn": 0.7509820285052726,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.0766010735040765,
+     1.0755568144498506,
+     1.0732448752993746,
+     1.071054063118548
+    ],
+    "ratio_geometric": [
+     0.8584530014349269,
+     0.8566365676758374,
+     0.8542692578159733,
+     0.8509862386265646
+    ],
+    "ratio_momentum_mean": 1.0741142065929625,
+    "ratio_momentum_spread": 0.005547010385528628,
+    "net_force_over_2sigma": [
+     -8.673617379884035e-16,
+     0.003500552926223819,
+     0.006762548955463592,
+     0.009563688449029037
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.9997157597673402,
+    "fraction_inward": 1.0
+   }
+  },
+  {
+   "radius_m": 0.02,
+   "dx_m": 0.00125,
+   "resolution_R_over_dx": 16.0,
+   "h_over_dx": 1.3,
+   "sigma_N_per_m": 7.2,
+   "n_particles": 925,
+   "n_pairs": 7802,
+   "cut_force": {
+    "measured_N_per_m": -16.00566449660904,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 1.1115044789311832,
+    "rel_error_pct": 11.15044789311832,
+    "within_15pct": true,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -12.926351891139246,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 0.8976633257735588,
+    "rel_error_pct": -10.233667422644121,
+    "within_15pct": true,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.2382197724000226,
+    "rho_over_rho0_force_weighted": 0.8057058217322198
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 400.141612415226,
+    "dp_theory_Pa": 360.0,
+    "rel_error_pct": 11.150447893118336,
+    "within_15pct": true
+   },
+   "curvature": {
+    "exact_1_per_m": 50.0,
+    "delta_s_weighted_signed": 61.93210283978108,
+    "delta_s_weighted_abs": 61.93210283978108,
+    "delta_s_weighted_signed_rel_error_pct": 23.864205679562154,
+    "delta_s_weighted_abs_rel_error_pct": 23.864205679562154,
+    "inner_half_mean": 62.13227804968328,
+    "outer_half_mean": 37.85525637699413
+   },
+   "delta_s": {
+    "integral_dn": 0.7381702606203165,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.1115044789311832,
+     1.1113199295499447,
+     1.11048115784402,
+     1.108727660971181
+    ],
+    "ratio_geometric": [
+     0.8976633257735587,
+     0.8991767570091398,
+     0.8994461137623027,
+     0.898354848231813
+    ],
+    "ratio_momentum_mean": 1.1105083068240822,
+    "ratio_momentum_spread": 0.002776817960002287,
+    "net_force_over_2sigma": [
+     -2.4671622769447924e-16,
+     -0.00039490340116543003,
+     -0.0007628947881499866,
+     -0.001078896156065402
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.9994390023714352,
+    "fraction_inward": 1.0
+   }
+  },
+  {
+   "radius_m": 0.02,
+   "dx_m": 0.001,
+   "resolution_R_over_dx": 20.0,
+   "h_over_dx": 1.3,
+   "sigma_N_per_m": 7.2,
+   "n_particles": 1450,
+   "n_pairs": 12395,
+   "cut_force": {
+    "measured_N_per_m": -16.14984831114321,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 1.1215172438293894,
+    "rel_error_pct": 12.151724382938944,
+    "within_15pct": true,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -13.193677613373714,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 0.9162276120398412,
+    "rel_error_pct": -8.377238796015885,
+    "within_15pct": true,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.2240596431409683,
+    "rho_over_rho0_force_weighted": 0.8135507623437226
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 403.74620777858024,
+    "dp_theory_Pa": 360.0,
+    "rel_error_pct": 12.151724382938957,
+    "within_15pct": true
+   },
+   "curvature": {
+    "exact_1_per_m": 50.0,
+    "delta_s_weighted_signed": 62.35039083345459,
+    "delta_s_weighted_abs": 62.35039083345459,
+    "delta_s_weighted_signed_rel_error_pct": 24.700781666909187,
+    "delta_s_weighted_abs_rel_error_pct": 24.700781666909187,
+    "inner_half_mean": 62.538300995790486,
+    "outer_half_mean": 33.85376439502893
+   },
+   "delta_s": {
+    "integral_dn": 0.7336041710443906,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.1215172438293894,
+     1.121109686351982,
+     1.1250197869814014,
+     1.1282922356312601
+    ],
+    "ratio_geometric": [
+     0.9162276120398412,
+     0.9160876530003169,
+     0.9189296533373599,
+     0.9204278670819558
+    ],
+    "ratio_momentum_mean": 1.1239847381985082,
+    "ratio_momentum_spread": 0.007182549279278083,
+    "net_force_over_2sigma": [
+     2.0045693500176438e-16,
+     -0.003990821651223938,
+     -0.007709675402061796,
+     -0.010903127515090177
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.999628791151693,
+    "fraction_inward": 1.0
+   }
+  },
+  {
+   "radius_m": 0.02,
+   "dx_m": 0.0007142857142857143,
+   "resolution_R_over_dx": 28.0,
+   "h_over_dx": 1.3,
+   "sigma_N_per_m": 7.2,
+   "n_particles": 2847,
+   "n_pairs": 24704,
+   "cut_force": {
+    "measured_N_per_m": -17.280023527965433,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 1.2000016338864883,
+    "rel_error_pct": 20.00016338864883,
+    "within_15pct": false,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -14.270143665263141,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 0.990982198976607,
+    "rel_error_pct": -0.9017801023393002,
+    "within_15pct": true,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.210921482873998,
+    "rho_over_rho0_force_weighted": 0.8246611189193099
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 432.0005881991358,
+    "dp_theory_Pa": 360.0,
+    "rel_error_pct": 20.000163388648833,
+    "within_15pct": false
+   },
+   "curvature": {
+    "exact_1_per_m": 50.0,
+    "delta_s_weighted_signed": 65.68865096504388,
+    "delta_s_weighted_abs": 66.7940676042209,
+    "delta_s_weighted_signed_rel_error_pct": 31.377301930087764,
+    "delta_s_weighted_abs_rel_error_pct": 33.58813520844179,
+    "inner_half_mean": 65.78913061574598,
+    "outer_half_mean": 44.15211075114403
+   },
+   "delta_s": {
+    "integral_dn": 0.7291794817894858,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.200001633886488,
+     1.1969293250153075,
+     1.1928741760341341,
+     1.1893542469048126
+    ],
+    "ratio_geometric": [
+     0.9909821989766069,
+     0.989851129852855,
+     0.9874002381019051,
+     0.9848891401797425
+    ],
+    "ratio_momentum_mean": 1.1947898454601855,
+    "ratio_momentum_spread": 0.010647386981675444,
+    "net_force_over_2sigma": [
+     -1.0793834961633466e-16,
+     0.005481141769828018,
+     0.010588752786057233,
+     0.014974757798658147
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.9997096064027631,
+    "fraction_inward": 0.9762845849802372
+   }
+  },
+  {
+   "radius_m": 0.02,
+   "dx_m": 0.0005,
+   "resolution_R_over_dx": 40.0,
+   "h_over_dx": 1.3,
+   "sigma_N_per_m": 7.2,
+   "n_particles": 5805,
+   "n_pairs": 50930,
+   "cut_force": {
+    "measured_N_per_m": -19.42650956689316,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 1.3490631643675806,
+    "rel_error_pct": 34.906316436758054,
+    "within_15pct": false,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -16.217162512235745,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 1.1261918411274823,
+    "rel_error_pct": 12.619184112748227,
+    "within_15pct": true,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.1978981867041156,
+    "rho_over_rho0_force_weighted": 0.8328364505744003
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 485.662739172329,
+    "dp_theory_Pa": 360.0,
+    "rel_error_pct": 34.906316436758054,
+    "within_15pct": false
+   },
+   "curvature": {
+    "exact_1_per_m": 50.0,
+    "delta_s_weighted_signed": 72.5232126859047,
+    "delta_s_weighted_abs": 80.4574940130818,
+    "delta_s_weighted_signed_rel_error_pct": 45.046425371809384,
+    "delta_s_weighted_abs_rel_error_pct": 60.9149880261636,
+    "inner_half_mean": 72.55497956911817,
+    "outer_half_mean": 62.73154156985524
+   },
+   "delta_s": {
+    "integral_dn": 0.7264964733333898,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.3490631643675806,
+     1.3450822725371492,
+     1.3393602751564342,
+     1.3327251776964704
+    ],
+    "ratio_geometric": [
+     1.1261918411274823,
+     1.123785581306965,
+     1.1197042506050745,
+     1.1147154225850797
+    ],
+    "ratio_momentum_mean": 1.3415577224394086,
+    "ratio_momentum_spread": 0.016337986671110194,
+    "net_force_over_2sigma": [
+     -3.5079963625308767e-16,
+     0.0031575770859518584,
+     0.006099970511639406,
+     0.008626661027636517
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.9996381976084873,
+    "fraction_inward": 0.9291553133514986
+   }
+  }
+ ],
+ "fixed_dx_sweep": [
+  {
+   "radius_m": 0.012,
+   "dx_m": 0.002,
+   "resolution_R_over_dx": 6.0,
+   "h_over_dx": 1.3,
+   "sigma_N_per_m": 7.2,
+   "n_particles": 131,
+   "n_pairs": 983,
+   "cut_force": {
+    "measured_N_per_m": -16.19592060420088,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 1.124716708625061,
+    "rel_error_pct": 12.471670862506091,
+    "within_15pct": true,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -12.662188645590247,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 0.8793186559437671,
+    "rel_error_pct": -12.068134405623287,
+    "within_15pct": true,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.2790775005426327,
+    "rho_over_rho0_force_weighted": 0.7842412057328685
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 674.8300251750366,
+    "dp_theory_Pa": 600.0,
+    "rel_error_pct": 12.471670862506091,
+    "within_15pct": true
+   },
+   "curvature": {
+    "exact_1_per_m": 83.33333333333333,
+    "delta_s_weighted_signed": 108.96146188855923,
+    "delta_s_weighted_abs": 108.96146188855923,
+    "delta_s_weighted_signed_rel_error_pct": 30.753754266271073,
+    "delta_s_weighted_abs_rel_error_pct": 30.753754266271073,
+    "inner_half_mean": 109.49708192372879,
+    "outer_half_mean": 86.65884470296002
+   },
+   "delta_s": {
+    "integral_dn": 0.7505196756167853,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.124716708625061,
+     1.1214392069962846,
+     1.1232187497982553,
+     1.1171403465716878
+    ],
+    "ratio_geometric": [
+     0.8793186559437671,
+     0.8780202463825394,
+     0.8803504810051667,
+     0.8768636492533131
+    ],
+    "ratio_momentum_mean": 1.1216287529978222,
+    "ratio_momentum_spread": 0.007576362053373087,
+    "net_force_over_2sigma": [
+     -2.544261098099317e-16,
+     0.00851382675816507,
+     0.016447450292525374,
+     0.02326020727014683
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.9991502109111492,
+    "fraction_inward": 1.0
+   }
+  },
+  {
+   "radius_m": 0.02,
+   "dx_m": 0.002,
+   "resolution_R_over_dx": 10.0,
+   "h_over_dx": 1.3,
+   "sigma_N_per_m": 7.2,
+   "n_particles": 362,
+   "n_pairs": 2930,
+   "cut_force": {
+    "measured_N_per_m": -15.503055458458704,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 1.0766010735040765,
+    "rel_error_pct": 7.660107350407652,
+    "within_15pct": true,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -12.361723220662947,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 0.8584530014349269,
+    "rel_error_pct": -14.154699856507314,
+    "within_15pct": true,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.254117664804607,
+    "rho_over_rho0_force_weighted": 0.7969301159003577
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 387.57638646146756,
+    "dp_theory_Pa": 360.0,
+    "rel_error_pct": 7.660107350407657,
+    "within_15pct": true
+   },
+   "curvature": {
+    "exact_1_per_m": 50.0,
+    "delta_s_weighted_signed": 61.09665621713912,
+    "delta_s_weighted_abs": 61.09665621713912,
+    "delta_s_weighted_signed_rel_error_pct": 22.193312434278244,
+    "delta_s_weighted_abs_rel_error_pct": 22.193312434278244,
+    "inner_half_mean": 61.31631531264817,
+    "outer_half_mean": 44.95487612228502
+   },
+   "delta_s": {
+    "integral_dn": 0.7509820285052726,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.0766010735040765,
+     1.0755568144498506,
+     1.0732448752993746,
+     1.071054063118548
+    ],
+    "ratio_geometric": [
+     0.8584530014349269,
+     0.8566365676758374,
+     0.8542692578159733,
+     0.8509862386265646
+    ],
+    "ratio_momentum_mean": 1.0741142065929625,
+    "ratio_momentum_spread": 0.005547010385528628,
+    "net_force_over_2sigma": [
+     -8.673617379884035e-16,
+     0.003500552926223819,
+     0.006762548955463592,
+     0.009563688449029037
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.9997157597673402,
+    "fraction_inward": 1.0
+   }
+  },
+  {
+   "radius_m": 0.03,
+   "dx_m": 0.002,
+   "resolution_R_over_dx": 15.0,
+   "h_over_dx": 1.3,
+   "sigma_N_per_m": 7.2,
+   "n_particles": 808,
+   "n_pairs": 6787,
+   "cut_force": {
+    "measured_N_per_m": -16.04589861149651,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 1.1142985146872577,
+    "rel_error_pct": 11.429851468725772,
+    "within_15pct": true,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -12.962152844955774,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 0.9001495031219288,
+    "rel_error_pct": -9.985049687807123,
+    "within_15pct": true,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.2379038268894336,
+    "rho_over_rho0_force_weighted": 0.8049997657629786
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 267.4316435249419,
+    "dp_theory_Pa": 240.00000000000003,
+    "rel_error_pct": 11.429851468725769,
+    "within_15pct": true
+   },
+   "curvature": {
+    "exact_1_per_m": 33.333333333333336,
+    "delta_s_weighted_signed": 41.69052528374181,
+    "delta_s_weighted_abs": 41.69052528374181,
+    "delta_s_weighted_signed_rel_error_pct": 25.071575851225436,
+    "delta_s_weighted_abs_rel_error_pct": 25.071575851225436,
+    "inner_half_mean": 41.848418281111535,
+    "outer_half_mean": 23.998084611179316
+   },
+   "delta_s": {
+    "integral_dn": 0.7394902966800487,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.1142985146872577,
+     1.113378959690313,
+     1.1099624480316883,
+     1.1134242766522249
+    ],
+    "ratio_geometric": [
+     0.9001495031219287,
+     0.9003420498049032,
+     0.8978000035374135,
+     0.9003470148791161
+    ],
+    "ratio_momentum_mean": 1.112766049765371,
+    "ratio_momentum_spread": 0.004336066655569404,
+    "net_force_over_2sigma": [
+     7.709882115452476e-17,
+     -0.0003593665392021843,
+     -0.0006942428426391336,
+     -0.000981807643640753
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.9993021401585662,
+    "fraction_inward": 1.0
+   }
+  }
+ ],
+ "support_sensitivity": [
+  {
+   "radius_m": 0.02,
+   "dx_m": 0.002,
+   "resolution_R_over_dx": 10.0,
+   "h_over_dx": 1.2,
+   "sigma_N_per_m": 7.2,
+   "n_particles": 362,
+   "n_pairs": 2930,
+   "cut_force": {
+    "measured_N_per_m": -14.53565606648706,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 1.0094205601727124,
+    "rel_error_pct": 0.9420560172712422,
+    "within_15pct": true,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -11.637260665173542,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 0.8081431017481626,
+    "rel_error_pct": -19.185689825183736,
+    "within_15pct": false,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.2490616550325673,
+    "rho_over_rho0_force_weighted": 0.8002672501701144
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 363.3914016621765,
+    "dp_theory_Pa": 360.0,
+    "rel_error_pct": 0.9420560172712555,
+    "within_15pct": true
+   },
+   "curvature": {
+    "exact_1_per_m": 50.0,
+    "delta_s_weighted_signed": 59.01904688881557,
+    "delta_s_weighted_abs": 59.01904688881557,
+    "delta_s_weighted_signed_rel_error_pct": 18.038093777631147,
+    "delta_s_weighted_abs_rel_error_pct": 18.038093777631147,
+    "inner_half_mean": 59.25174256963212,
+    "outer_half_mean": 42.50915888150203
+   },
+   "delta_s": {
+    "integral_dn": 0.7338797029806323,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.0094205601727124,
+     1.008604840505244,
+     1.0073890215624446,
+     1.0060084530083542
+    ],
+    "ratio_geometric": [
+     0.8081431017481626,
+     0.8068667282190161,
+     0.8056167391385958,
+     0.8032954857703201
+    ],
+    "ratio_momentum_mean": 1.0078557188121888,
+    "ratio_momentum_spread": 0.003412107164358247,
+    "net_force_over_2sigma": [
+     -7.690607410163844e-16,
+     0.002313506546175004,
+     0.00446935144447926,
+     0.006320617427794746
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.9996637316040629,
+    "fraction_inward": 1.0
+   }
+  },
+  {
+   "radius_m": 0.02,
+   "dx_m": 0.002,
+   "resolution_R_over_dx": 10.0,
+   "h_over_dx": 1.3,
+   "sigma_N_per_m": 7.2,
+   "n_particles": 362,
+   "n_pairs": 2930,
+   "cut_force": {
+    "measured_N_per_m": -15.503055458458704,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 1.0766010735040765,
+    "rel_error_pct": 7.660107350407652,
+    "within_15pct": true,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -12.361723220662947,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 0.8584530014349269,
+    "rel_error_pct": -14.154699856507314,
+    "within_15pct": true,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.254117664804607,
+    "rho_over_rho0_force_weighted": 0.7969301159003577
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 387.57638646146756,
+    "dp_theory_Pa": 360.0,
+    "rel_error_pct": 7.660107350407657,
+    "within_15pct": true
+   },
+   "curvature": {
+    "exact_1_per_m": 50.0,
+    "delta_s_weighted_signed": 61.09665621713912,
+    "delta_s_weighted_abs": 61.09665621713912,
+    "delta_s_weighted_signed_rel_error_pct": 22.193312434278244,
+    "delta_s_weighted_abs_rel_error_pct": 22.193312434278244,
+    "inner_half_mean": 61.31631531264817,
+    "outer_half_mean": 44.95487612228502
+   },
+   "delta_s": {
+    "integral_dn": 0.7509820285052726,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.0766010735040765,
+     1.0755568144498506,
+     1.0732448752993746,
+     1.071054063118548
+    ],
+    "ratio_geometric": [
+     0.8584530014349269,
+     0.8566365676758374,
+     0.8542692578159733,
+     0.8509862386265646
+    ],
+    "ratio_momentum_mean": 1.0741142065929625,
+    "ratio_momentum_spread": 0.005547010385528628,
+    "net_force_over_2sigma": [
+     -8.673617379884035e-16,
+     0.003500552926223819,
+     0.006762548955463592,
+     0.009563688449029037
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.9997157597673402,
+    "fraction_inward": 1.0
+   }
+  },
+  {
+   "radius_m": 0.02,
+   "dx_m": 0.002,
+   "resolution_R_over_dx": 10.0,
+   "h_over_dx": 1.5,
+   "sigma_N_per_m": 7.2,
+   "n_particles": 362,
+   "n_pairs": 5450,
+   "cut_force": {
+    "measured_N_per_m": -15.531023780812445,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 1.0785433181119752,
+    "rel_error_pct": 7.8543318111975235,
+    "within_15pct": true,
+    "estimator": "sum m_i a_i (momentum; inflates by rho0/rho_i)"
+   },
+   "cut_force_geometric": {
+    "measured_N_per_m": -11.982600536142574,
+    "theory_N_per_m": -14.4,
+    "ratio_measured_over_theory": 0.8321250372321232,
+    "rel_error_pct": -16.787496276787685,
+    "within_15pct": false,
+    "estimator": "sum A_cell rho_i a_i (volumetric; divergence theorem)",
+    "momentum_over_geometric": 1.29613131423074,
+    "rho_over_rho0_force_weighted": 0.771638503011826
+   },
+   "laplace_jump": {
+    "dp_implied_Pa": 388.27559452031113,
+    "dp_theory_Pa": 360.0,
+    "rel_error_pct": 7.854331811197536,
+    "within_15pct": true
+   },
+   "curvature": {
+    "exact_1_per_m": 50.0,
+    "delta_s_weighted_signed": 58.95897083264299,
+    "delta_s_weighted_abs": 58.95897083264299,
+    "delta_s_weighted_signed_rel_error_pct": 17.917941665285973,
+    "delta_s_weighted_abs_rel_error_pct": 17.917941665285973,
+    "inner_half_mean": 59.08845786686689,
+    "outer_half_mean": 48.57968238295647
+   },
+   "delta_s": {
+    "integral_dn": 0.7766389050055537,
+    "within_35pct": true
+   },
+   "angle_average": {
+    "angles_deg": [
+     0.0,
+     15.0,
+     30.0,
+     45.0
+    ],
+    "ratio_momentum": [
+     1.0785433181119755,
+     1.080114594496484,
+     1.0796278908531358,
+     1.0795930745622213
+    ],
+    "ratio_geometric": [
+     0.8321250372321232,
+     0.8324226558849578,
+     0.831688542153048,
+     0.8303674085663263
+    ],
+    "ratio_momentum_mean": 1.0794697195059542,
+    "ratio_momentum_spread": 0.001571276384508602,
+    "net_force_over_2sigma": [
+     -3.0261287303150965e-16,
+     0.0027782643315217067,
+     0.005367194540149394,
+     0.007590359310574211
+    ]
+   },
+   "direction": {
+    "cos_inward_median": 0.999783503686331,
+    "fraction_inward": 1.0
+   }
+  }
+ ],
+ "verdict": {
+  "criterion_amplitude": "|F_cut/(2 sigma) - 1| <= 15 % at every (R, sigma)",
+  "tolerance": 0.15,
+  "n_points": 9,
+  "n_within_tolerance": 9,
+  "max_abs_ratio_error_pct": 7.660107350407652,
+  "max_abs_dp_error_pct": 7.660107350407657,
+  "amplitude_status": "PASS",
+  "criterion_scaling": "F_cut ~ sigma^p R^q with p = 1 (5 %) and q = 0 (|q| <= 0.1)",
+  "sigma_exponent": 1.0000000000000007,
+  "sigma_exponent_error_pct": 6.661338147750939e-14,
+  "radius_exponent": 5.237434094264571e-16,
+  "scaling_status": "PASS",
+  "ratio_spread_at_fixed_R": {
+   "0.015": 0.0,
+   "0.02": 0.0,
+   "0.03": 0.0
+  },
+  "resolution_ladder": {
+   "R_over_dx": [
+    8.0,
+    10.0,
+    16.0,
+    20.0,
+    28.0,
+    40.0
+   ],
+   "ratio": [
+    1.0686778396568957,
+    1.0766010735040765,
+    1.1115044789311832,
+    1.1215172438293894,
+    1.2000016338864883,
+    1.3490631643675806
+   ],
+   "converges_to_one": false
+  },
+  "support_sensitivity": {
+   "1.2": 1.0094205601727124,
+   "1.3": 1.0766010735040765,
+   "1.5": 1.0785433181119752
+  },
+  "bias_trend": {
+   "d_bias_per_R_over_dx": 0.008621186848483965,
+   "bias_at_R_over_dx": {
+    "8": 0.06868,
+    "10": 0.0766,
+    "16": 0.1115,
+    "20": 0.12152,
+    "28": 0.2,
+    "40": 0.34906
+   },
+   "shrinks_under_refinement": false,
+   "extrapolated_R_over_dx_where_15pct_is_breached": 20.804298784367763
+  },
+  "fixed_dx_radii": {
+   "R_m": [
+    0.012,
+    0.02,
+    0.03
+   ],
+   "R_over_dx": [
+    6.0,
+    10.0,
+    15.0
+   ],
+   "ratio": [
+    1.124716708625061,
+    1.0766010735040765,
+    1.1142985146872577
+   ],
+   "spread": 0.04811563512098438
+  }
+ }
+}
