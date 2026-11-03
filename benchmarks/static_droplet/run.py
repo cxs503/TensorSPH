@@ -230,10 +230,21 @@ def run_static_droplet_benchmark(
         },
         "validation": {
             "status": "PASS" if (force_direction_ok and magnitude_ok) else "FAIL",
+            # These are the checks actually performed. An earlier revision of
+            # this file claimed "dot product > 0.5" while reporting an average
+            # dot product of 0.17, which is not the test that ran.
             "criteria": [
-                "Force points inward for surface particles (dot product > 0.5)",
-                "Force magnitude is non-zero and physically reasonable",
+                "Force points inward for surface particles "
+                "(median dot > 0.3 or positive ratio > 0.6)",
+                "Force magnitude is non-zero (order-of-magnitude sanity only)",
             ],
+            # This benchmark does not test the Laplace pressure jump, and the
+            # model fails it: see docs/benchmarks/laplace-verification.md.
+            "laplace_law_verified": False,
+            "laplace_law_note": (
+                "dp = sigma/R is checked by benchmarks/laplace/run.py; the "
+                "merged CSF model is off by +27% to +296% there and does not "
+                "converge with resolution."),
         },
     }
     
