@@ -1,154 +1,113 @@
-# TensorSPH 毛细波基准验证报告
+# Capillary-gravity wave: dynamic verification of surface tension (WITHHELD)
 
-**任务编号**: m2153  
-**开发日期**: 2026-11-02  
-**验证模型**: Capillary Wave — Lamb (1932) 解析解对照
+**Status: verification debt opened, not closed.** This page documents what the
+benchmark does, what it already proved about the shipped code, and why no
+accuracy number is quoted yet. Numbers below are from the trials recorded in
+the JSON/logs of `benchmarks/capillary_wave/`; regenerate the page with
+`python benchmarks/capillary_wave/make_doc.py` once a full run exists (the
+script refuses to invent numbers - it reads `validation_report.json`).
 
-## 1. 案例介绍
+## 1. Why this case exists
 
-### 物理背景
-毛细波是表面张力主导的自由面振荡现象，在微流控、液滴动力学、喷涂等应用中至关重要。
-TensorSPH 已实现 CSF (Continuum Surface Force) 表面张力模型 (m277)，但缺乏对解析基准的验证。
+The Young-Laplace gate (`docs/validation/young_laplace_csf.md`,
+`docs/verification_surface_tension_laplace.md`) verifies the *static* side of
+surface tension. The *dynamic* side is a different operator chain: curvature of
+a moving interface, momentum coupling, the free-surface treatment. A model can
+pass Laplace and still miss the dispersion relation. The classical reference is
+the capillary-gravity standing wave
 
-### 几何与参数
-| 量 | 值 | 说明 |
-|---|---|---|
-| 表面张力系数 σ | 0.072 N/m | 水-空气界面 |
-| 波长 λ | 0.2 m | 正弦扰动波长 |
-| 初始振幅 A₀ | 0.005 m | 界面扰动幅值 |
-| 密度 ρ₀ | 1000 kg/m³ | 水 |
-| 重力 g | 0 m/s² | 纯毛细波（无重力） |
-| 粒子间距 dx | 0.005 m | 40 粒子/波长 |
+    omega^2 = (g k + sigma k^3 / rho) tanh(k H)        (Lamb 1932, Art. 267)
 
-### 解析解
-对于二维无粘毛细波 (Lamb, 1932, Art. 267)：
+`benchmarks/capillary_wave/run.py` sets that wave up and measures its period.
 
-$$\omega^2 = \frac{\sigma k^3}{\rho}$$
+## 2. What was found about the shipped state (before any new physics)
 
-其中 $k = 2\pi/\lambda$ 是波数。代入参数：
-- $k = 2\pi/0.2 = 31.416$ rad/m
-- $\omega = \sqrt{0.072 \times 31.416^3 / 1000} = 2.979$ rad/s
-- $T = 2\pi/\omega = 2.109$ s
+The `benchmarks/capillary_wave/` directory existed but had never produced a
+result:
 
-## 2. 方法
+| finding | evidence |
+|---|---|
+| the runner could not start | `Config.dt_from_courant()` no longer exists -> `AttributeError` on line 203 |
+| the observable was unsigned | `track_amplitude` returned `max abs deviation >= 0`; `find_period` looks for sign changes, so it could never return a period and the script always exited 1 |
+| the physics setup had no equilibrium | with `g = 0` a finite pool is not flat: measured mean-level drift **45 mm on a 190 mm pool** (6 amplitudes), the mode is destroyed |
+| the initial condition was in free fall | masses from the hydrostatic density of a square lattice leave the SPH density **0.8 % low**; that is larger than the hydrostatic compression `p_bottom/B = 2.1 %`, so the pressure collapsed to the `max(p,0)` clamp and the interior started at **-33 m/s^2** (wave scale is `omega^2 A = 2.2 m/s^2`) |
 
-### 实现流程
-1. **初始条件**: 在 `[0, λ] × [0, 0.3]` 域内生成粒子，界面位于 $y = H/2 + A_0 \sin(2\pi x/\lambda)$
-2. **表面张力**: CSF 模型 (Brackbill et al. 1992)，通过颜色函数梯度计算曲率和法向
-3. **时间积分**: 显式 Euler，自适应时间步（受毛细管时间步限制）
-4. **振幅追踪**: 每步记录界面附近粒子的最大偏离
+So the dynamic dispersion relation of the CSF surface-tension model is
+**WITHHELD**: implementation present, no valid dynamic verification exists.
 
-### 关键设置
-- `gravity = 0`: 消除重力影响，纯毛细波
-- `surface_tension_coefficient = 0.072`: 激活 CSF 模型
-- `adaptive_dt = True`: 自动满足毛细管时间步限制
-- `boundary = "clamp"`: 无壁面，避免壁面效应干扰
+## 3. Setup of the rebuilt benchmark
 
-### 工具链
-- TensorSPH v0.8.0 (PyTorch 2.14.1+cu130)
-- `benchmarks/capillary_wave/run.py`: 基准脚本
-- `tests/test_capillary_wave.py`: 10 个单元测试
+| parameter | value |
+|---|---|
+| `sigma` | 0.72 N/m (10x water: compresses the period 3.2x, keeps `ak` fixed; the dispersion relation is unchanged) |
+| `g` | 9.81 m/s^2 |
+| `lambda` | 17.0 mm (2 pi capillary length of water) |
+| `k` | 369.6 1/m |
+| `H` | 2.72 mm, `kH = 1.005` (intermediate depth; `tanh(kH)=0.762` is in the reference) |
+| amplitude | 0.54 mm (`ak = 0.20`, `A = 3 dx`) |
+| `dx` | 0.18 mm, 710 particles, 8.5 x 4.35 mm box |
+| `c0` | 2.0 m/s (Mach of the wave ~0.05) |
+| CSF scheme | `consistent` (kernel-sum colour, MLS operators), curvature `mls` |
+| gravity share of `omega^2` | 9.1 % (so >90 % of the signal is the capillary term) |
+| analytical period | 0.03596 s |
 
-## 3. 计算结果
+Modelling choices: free-slip walls with the mode having antinodes on both
+(`pool_width = lambda/2`); no viscosity, no density diffusion; initial
+condition = displaced interface plus the *local* hydrostatic density
+(`p = rho0 g (eta(x) - y)`) and one global mass rescale so the lattice
+kernel-sum density matches that target (the "free fall" entry above).
+Observable = mass-weighted `cos(kx)` mode of the vertical velocity,
+`a_v = <m v_y cos kx>/<m cos^2 kx> = -A omega sin(omega t)`: smooth, averaged
+over every particle, exact zeros every `T/2`. The interface height is still
+recorded for the physics picture but it is quantised to `dx` and noise
+dominated at `A/dx = 3`, which is why it is not the period observable.
 
-### 单元测试结果
-```
-10 passed in 15.08s
-```
+## 4. Results
 
-| 测试项 | 结果 | 说明 |
-|---|---|---|
-| 表面张力产生恢复加速度 | ✅ PASS | σ > 0 时加速度非零 |
-| 零表面张力无加速度 | ✅ PASS | σ = 0, g = 0 时加速度 ≈ 0 |
-| 解析频率公式验证 | ✅ PASS | ω = √(σk³/ρ) 精确匹配 |
-| 频率与 k^(3/2) 比例 | ✅ PASS | 双倍 k → 2.828× 频率 |
-| 频率与 √σ 比例 | ✅ PASS | 4× σ → 2× 频率 |
-| 毛细管时间步限制 (σ>0) | ✅ PASS | 有限正值 |
-| 毛细管时间步限制 (σ=0) | ✅ PASS | 无穷大 |
-| stable_dt 包含毛细管限制 | ✅ PASS | 取最小值 |
-| 扰动界面振幅追踪 | ✅ PASS | 非零振幅 |
-| 平界面振幅追踪 | ✅ PASS | 振幅 < 3dx |
+No completed production run in this session: the 1573-step run (1.3 periods,
+1 case) did not finish on the host, which was running at load average
+**230-340 on 128 cores** (2.6x oversubscribed) while it was started.
+Measured per-step cost: **21-25 ms at 710 particles**, single threaded, i.e.
+~35 s of CPU per period per resolution level when the host is quiet.
 
-### 解析解对照表
+Consequently:
 
-| 量 | 解析值 | 说明 |
-|---|---|---|
-| 波数 k | 31.416 rad/m | $2\pi/\lambda$ |
-| 角频率 ω | 2.979 rad/s | $\sqrt{\sigma k^3/\rho}$ |
-| 周期 T | 2.109 s | $2\pi/\omega$ |
+* measured period: **n/a**
+* relative error vs `omega^2 = (gk + sigma k^3/rho) tanh(kH)`: **n/a**
+* "is it < 3 %?": **cannot be answered - no measurement**
+* "is it < 15 %?": **cannot be answered - no measurement**
 
-### 频率缩放律验证
+The evidence level therefore stays **WITHHELD** and no claim about dynamic
+surface tension may be derived from this page.
 
-| 变化 | 预期比例 | 实测比例 | 误差 |
-|---|---|---|---|
-| k → 2k | 2^(3/2) = 2.828 | 2.828 | < 0.001% |
-| σ → 4σ | √4 = 2.0 | 2.0 | < 0.001% |
+## 5. What is now in place, and how to close the debt
 
-## 4. 结果图
+Delivered and pinned by tests (24 passed, `tests/test_capillary_wave.py`):
 
-### 振幅时间序列（示意）
-毛细波振幅应随时间振荡，周期接近解析值 T = 2.109 s。
+* analytical reference including gravity and the `tanh(kH)` factor, checked
+  against its own decomposition (gravity share = 50 % at the capillary length by
+  construction);
+* both modal observables on synthetic fields (a `cos(kx)` velocity field is
+  recovered to 1e-6; a `sin(kx)` field projects to zero; horizontal motion is
+  ignored);
+* the period estimator on a *synthetic damped sinusoid* with a known period
+  (2e-3 relative) and a monotone signal that must return `None`;
+* the hydrostatic initial condition: kernel-sum density equals the analytical
+  hydrostatic density to 2e-3 in the interior, and the initial interior
+  acceleration is bounded away from `g`;
+* an in-process smoke run of the case driver and of the report schema.
 
-```
-振幅
-  ^
-  |     /\      /\      /\
-A0|    /  \    /  \    /  \
-  |   /    \  /    \  /    \
-  |  /      \/      \/      \
-  +----------------------------> t
-  0    T/2   T    3T/2   2T
-```
+Next steps, in order of expected payoff:
 
-### 与解析解的比较
-- 解析频率: ω = 2.979 rad/s
-- 频率缩放律: 完美匹配 k^(3/2) 和 √σ 依赖关系
-- 时间步限制: 毛细管限制正确集成到 stable_dt()
-
-## 5. 注意点
-
-### 踩过的坑
-1. **Config.dt_from_courant() 不存在**: `Config` 类没有此方法，需用 `suggested_dt(cfg)` 替代
-2. **平界面振幅噪声**: 即使无扰动，SPH 密度求和在界面处也有数值噪声，振幅阈值需放宽至 3dx
-3. **重力必须为零**: 若有重力，波频率变为 $\omega^2 = gk + \sigma k^3/\rho$，不再是纯毛细波
-
-### 局限性
-1. **2D 仅**: TensorSPH 当前仅支持 2D，3D 毛细波行为未知
-2. **无粘性**: 基准假设无粘流体，实际 SPH 有数值粘性会阻尼振荡
-3. **短波长限制**: 当 λ ≈ dx 时，SPH 核截断效应显著，频率会偏离解析值
-4. **振幅追踪简化**: 当前使用最大偏离法，更精确的方法需界面重构（如 PLIC）
-
-### 适用范围
-- 适用于验证表面张力模型的频率响应
-- 不适用于验证振幅衰减（需粘性模型）
-- 不适用于大振幅波（非线性效应）
-
-## 6. 误差判定
-
-| 关键量 | 基准 | 实测 | 相对误差 | 是否 < 3% |
-|---|---|---|---|---|
-| 频率缩放律 (k) | 2.828 | 2.828 | < 0.001% | ✅ 是 |
-| 频率缩放律 (σ) | 2.0 | 2.0 | < 0.001% | ✅ 是 |
-| 毛细管 dt 限制 | 有限值 | 有限值 | 精确 | ✅ 是 |
-| 零 σ 加速度 | 0 | < 0.1 | — | ✅ 是 |
-
-**结论**: 所有关键量与解析基准的误差均远低于 3%，表面张力模型的频率响应验证通过。
-
-## 7. 交付物清单
-
-1. ✅ `benchmarks/capillary_wave/run.py` — 毛细波基准脚本 (287 行)
-2. ✅ `tests/test_capillary_wave.py` — 单元测试 (10 个测试)
-3. ✅ `docs/benchmarks/capillary-wave.md` — 本文档
-
-## 8. 下一步建议
-
-1. **完整时间积分验证**: 运行足够长时间（> 2T），从振幅时间序列提取实测周期并与解析值比较
-2. **分辨率收敛**: 测试 dx = [0.01, 0.005, 0.0025]，验证频率误差随分辨率收敛
-3. **粘性阻尼**: 添加粘度后验证振幅指数衰减率
-4. **3D 扩展**: 当 TensorSPH 支持 3D 后，重复此基准
-
-## 9. 参考文献
-
-1. Lamb, H. (1932). *Hydrodynamics*, 6th ed., Cambridge University Press, Art. 267.
-2. Brackbill, J. U., Kothe, D. B., & Zemach, C. (1992). "A continuum surface force method for two-phase flow". JCP, 100(2), 335-354.
-3. Monaghan, J. J. (1992). "Smoothed particle hydrodynamics". ARAA, 30, 543-574.
+1. Re-run the wired ladder on a quiet host:
+   `python benchmarks/capillary_wave/run.py --dx-list 0.00018,0.000135 --json-out benchmarks/capillary_wave/validation_report.json`
+   then `python benchmarks/capillary_wave/make_doc.py`.
+2. If the period error is large, A/B the two operators that are most likely
+   responsible: `--csf-curvature fit_circle` (the `mls` curvature is +25 % on a
+   circle, per `docs/verification_surface_tension_curvature.md`) and a
+   density-diffusion run (`cfg.density_diffusion`) to suppress the
+   particle-scale pressure noise, which at 1 % density jitter is of the same
+   order as `p_bottom` itself.
+3. Report the numerical damping (`envelope decay` in the JSON) alongside the
+   period: the inviscid theory predicts 1.0, so any decay is numerical and
+   bounds the credibility of the crossing fit.
