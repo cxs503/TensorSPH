@@ -1,4 +1,6 @@
-import json, os, urllib.request
+import json
+import os
+import urllib.request
 
 base = os.environ["TENSOR_API_BASE"].rstrip("/")
 user = os.environ["TENSOR_AGENT_USER"]
@@ -33,4 +35,5 @@ except Exception as e:
     d = []
 rs = d if isinstance(d, list) else (d.get("items") or d.get("data") or [])
 for r in rs[:25]:
-    print(r.get("id"), "|", str(r.get("created_at", ""))[:16], "|", r.get("scenario_key"), "|", (r.get("title") or "")[:80])
+    print(r.get("id"), "|", str(r.get("created_at", ""))[:16],
+          "|", r.get("scenario_key"), "|", (r.get("title") or "")[:80])

@@ -262,7 +262,7 @@ def make_plot(static_results, dynamical, path):
     ax = axes[2]
     ratios = [r["laplace_rel_error"] * 100 for r in static_results]
     dyns = [d["pressure_rel_error"] * 100 for d in dynamical]
-    labels = ([f"force\nR/dx={l}" for l in levels]
+    labels = ([f"force\nR/dx={lvl}" for lvl in levels]
               + [f"relax\nc0={d['sound_speed_m_per_s']:.0f}" for d in dynamical])
     ax.bar(range(len(ratios) + len(dyns)), ratios + dyns, color="C0")
     ax.set_xticks(range(len(ratios) + len(dyns)))

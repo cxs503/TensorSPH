@@ -231,7 +231,7 @@ def main() -> int:
         res["rel_error"] = abs(res["dp_Pa"] - theory) / theory
         one_sided.append(res)
         print(f"  dx={dx:.4f} N={res['n_particles']:5d} dp={res['dp_Pa']:7.4f} Pa "
-              f"(err {100 * res['rel_error']:5.1f} %) resolved jump d(c)={res['resolved_color_jump']:.3f}")
+              f"(err {100 * res['rel_error']:5.1f} %) resolved jump d(c)={res['resolved_color_jump']:.3f}")  # noqa: E501
 
     legacy = None
     if True:

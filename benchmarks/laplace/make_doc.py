@@ -2,6 +2,7 @@
 
 Numbers are injected from the run artefact, never typed by hand.
 """
+# ruff: noqa: E501  (long CJK/markdown template lines; see PR notes)
 import json
 import pathlib
 

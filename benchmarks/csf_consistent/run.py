@@ -224,7 +224,6 @@ def make_figures(rows_consistent, rows_legacy, relax_report, out_dir=HERE):
     import matplotlib.pyplot as plt
 
     fig, axes = plt.subplots(1, 4, figsize=(19, 4.2))
-    dxs = [r["dx_m"] for r in rows_consistent]
 
     ax = axes[0]
     for rows, label, style in ((rows_legacy, "legacy CSF (m277)", "s--"),

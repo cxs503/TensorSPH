@@ -59,8 +59,8 @@ def main():
     A("**结论（先给判定）**: 表面张力模块（CSF，m277 合入）**未通过**解析验证。"
       f"Young–Laplace 压差实测偏差 **{f(lap['rel_error_pct'],1)}%**（阈值 15%），"
       f"曲率估计偏差 **+{f(rows[0]['curvature']['delta_s_weighted_rel_error_pct'],0)}%** 量级，"
-      f"切割面力恒等式偏差 **{f(abs(by_dx[min(by_dx)]['cut_force']['ratio_measured_over_theory']-1)*100,0)}"
-      f"–{f(abs(by_dx[max(by_dx)]['cut_force']['ratio_measured_over_theory']-1)*100,0)}%** 且随分辨率不收敛，"
+      f"切割面力恒等式偏差 **{f(abs(by_dx[min(by_dx)]['cut_force']['ratio_measured_over_theory']-1)*100,0)}"  # noqa: E501
+      f"–{f(abs(by_dx[max(by_dx)]['cut_force']['ratio_measured_over_theory']-1)*100,0)}%** 且随分辨率不收敛，"  # noqa: E501
       f"静滴残余伪流达到毛细速度的 **{f(sc['ratio'],2)} 倍**（文献判据 < 0.1）。"
       "证据等级应从「已实现」下调为 **WITHHELD（实现存在、解析验证不通过）**。")
     A("")
@@ -82,7 +82,7 @@ def main():
     A("|---|---|---|")
     A(f"| 液滴半径 R | {f(s['radius_m'],4)} m | 验证算例，静止自由液滴 |")
     A(f"| 粒子间距 dx | {f(s['dx_m'],4)} m | 1.3dx 平滑长度 h = {f(s['h_m'],5)} m |")
-    A(f"| 表面张力系数 σ | {f(s['sigma_N_per_m'],1)} N/m | 10× 水，压缩毛细时间便于在步数预算内平衡 |")
+    A(f"| 表面张力系数 σ | {f(s['sigma_N_per_m'],1)} N/m | 10× 水，压缩毛细时间便于在步数预算内平衡 |")  # noqa: E501
     A(f"| 参考密度 ρ0 | {f(s['rho0'],0)} kg/m³ | 弱可压 Tait，γ = 7 |")
     A(f"| 声速 c0 | {f(s['sound_speed'],0)} m/s | Mach ≪ 0.1 |")
     A(f"| 粘度 ν | {f(s['viscosity'],2)} m²/s | 层流正则化 Laplacian |")
@@ -90,7 +90,7 @@ def main():
     A(f"| 重力 | {f(s['gravity'],1)} | 关闭，纯毛细平衡 |")
     A(f"| 解析压差 σ/R | **{f(ref['delta_p_Pa'],1)} Pa** | 待比对的基准量 |")
     A(f"| 解析曲率 1/R | **{f(ref['curvature_1_per_m'],1)} 1/m** | 待比对的第二个基准 |")
-    A(f"| 切割面力 2σ | **{f(ref['cut_force_N_per_m'],1)} N/m** | 第三个基准：「表面张力=单位长度力」 |")
+    A(f"| 切割面力 2σ | **{f(ref['cut_force_N_per_m'],1)} N/m** | 第三个基准：「表面张力=单位长度力」 |")  # noqa: E501
     A(f"| 毛细时间 t_σ | {f(ref['capillary_time_s'],4)} s | 动力学观测窗口 |")
     A(f"| 毛细速度 √(σ/ρR) | {f(ref['capillary_velocity_m_per_s'],3)} m/s | 伪流归一化尺度 |")
     A("")
@@ -131,7 +131,7 @@ def main():
     A("`κ_w` 为按表面 delta 函数 `|∇c|` 加权的界面曲率（CSF 力实际使用的权重），"
       "是与 1/R 可比的量；`δ_s·2h` 理想值 ≈ 1（表面 delta 函数应归一到 ∫δ_s dS = 1）。")
     A("")
-    A("| dx [m] | N | 表面粒子占比 | κ_w [1/m] | κ_w 相对 1/R | δ_s·2h | F_cut/2σ | F_cut 隐含 Δp [Pa] | 中位 cos(a, r̂) | 内向粒子比例 |")
+    A("| dx [m] | N | 表面粒子占比 | κ_w [1/m] | κ_w 相对 1/R | δ_s·2h | F_cut/2σ | F_cut 隐含 Δp [Pa] | 中位 cos(a, r̂) | 内向粒子比例 |")  # noqa: E501
     A("|---|---|---|---|---|---|---|---|---|---|")
     for r in rows:
         c = r["curvature"]
@@ -184,7 +184,7 @@ def main():
     A("### 3.3 密度视角")
     A("")
     dns = main["density"]
-    A(f"| 量 | 值 |")
+    A("| 量 | 值 |")
     A("|---|---|")
     A(f"| ρ_center/ρ0 | {dns['rho_center_over_rho0']:.6f} |")
     A(f"| ρ(0.8–0.95R)/ρ0 | {dns['rho_band_over_rho0']:.6f} |")

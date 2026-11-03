@@ -1,4 +1,5 @@
 """Publish the Laplace-verification report to the platform API."""
+# ruff: noqa: E501  (long CJK/markdown template lines; see PR notes)
 import base64
 import json
 import os
@@ -28,7 +29,8 @@ token = None
 for creds in ({"username": user, "password": password},):
     try:
         res = post("/auth/login", creds)
-        token = res.get("access_token") or res.get("token") or res.get("data", {}).get("access_token")
+        token = (res.get("access_token") or res.get("token")
+         or res.get("data", {}).get("access_token"))
     except Exception as exc:                                  # pragma: no cover
         print("login failed:", getattr(exc, "code", exc),
               getattr(exc, "read", lambda: b"")()[:200])

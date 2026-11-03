@@ -167,7 +167,6 @@ def kernel_sum_color(
     rho0: float,
 ) -> torch.Tensor:
     """``c_i = sum_j V_j W_ij`` with ``V_j = m_j/rho0``, clipped to [0, 1]."""
-    n = pos.shape[0]
     vol = mass / rho0
     # The particle's own volume is part of the discrete kernel sum; the pair
     # list never contains self-pairs, so it is added explicitly. On a hex
@@ -204,7 +203,6 @@ def shepard_smooth(
     """
     if passes <= 0 or pairs.numel() == 0:
         return field
-    n = pos.shape[0]
     i, j = pairs.unbind(dim=1)
     w = cubic_spline_kernel(torch.linalg.vector_norm(pos[i] - pos[j], dim=1), h)
     out = field
@@ -246,7 +244,6 @@ def csf_fields(
         weighted local interface fit, see :mod:`tensorsph.csf_curvature`; the
         MLS value is kept as the fallback where the stencil is too poor.
     """
-    n = pos.shape[0]
     vol = mass / rho0
     color = kernel_sum_color(pos, mass, pairs, h, rho0)
     grad_c = mls_gradient(pos, color, vol, pairs, h)
