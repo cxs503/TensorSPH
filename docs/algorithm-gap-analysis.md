@@ -227,3 +227,11 @@ The solver should remain usable from the command line and tests without TensorPl
 9. Revisit droplet impact as a physical benchmark, not merely a smoke example.
 
 Each step should be delivered as a reviewable PR with reproducible tests and artifacts. No benchmark should be marked validated without traceable reference data and documented acceptance criteria.
+
+## Register update 2026-11-03 (m2685): viscous transport
+
+| Priority | Gap | Current risk | Required work | Exit evidence |
+|---|---|---|---|---|
+| P1 | Effective viscosity is 10-35 % low at practical resolutions, first order | Every Reynolds number quoted from this solver is 10-25 % too high at 10-20 rows across a shear layer; the operator itself matches the requested `nu` on one frozen lattice, so the freeze-field test cannot see it | (a) quote `nu_eff/nu(dx)` in the case definition, or (b) replace the regularised Laplacian with a first-order-consistent one (`tensorsph.csf_consistent` is the precedent), and (c) treat the no-slip fluid-wall blend the same way -- the flow-level residual survives the operator's own convergence | A usable ladder in `benchmarks/viscous_transport/results.json` whose worst `|nu_modal/nu - 1|` is below 3 % |
+| P2 | The viscous form does not conserve momentum when the density is not uniform | `m_j/rho_j` is antisymmetric only for `rho_i = rho_j`; measured drift 1.3 % without walls, versus 6e-8 for the pressure term alone | Use a symmetric density weighting (`rho_bar_ij`) in the viscous term | Wall-free momentum drift of a viscous case at the round-off level |
+| P3 | The no-slip figure that stood in the README mixed a model error with the discretisation error | It was measured on a free-surface slab, where the exact solution's flat-lid assumption fails (the archived `floor` variant of the same case moves the fitted rate by a factor 0.36) | Measure on a geometry whose idealisation is checked per run | The lidded ladder in [`verification_viscous_transport.md`](verification_viscous_transport.md) |
