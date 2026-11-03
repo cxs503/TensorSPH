@@ -223,7 +223,8 @@ def compute_surface_tension_force(
         acc, _ = surface_tension_acceleration(
             pos, density, mass, pairs, h, sigma, rho0=cfg.rho0, wall=wall,
             contact_angle=getattr(cfg, "contact_angle", None),
-            curvature_scheme=getattr(cfg, "csf_curvature", "mls"))
+            curvature_scheme=getattr(cfg, "csf_curvature", "mls"),
+            accel_density=getattr(cfg, "csf_accel_density", "summation"))
         return acc
 
     # Count neighbors for each particle
@@ -275,7 +276,9 @@ def compute_surface_tension_force(
     # With outward normal and kappa = div(n) > 0 for convex surface:
     # f = -sigma * kappa * n points inward (correct!)
     force_mag = -sigma * kappa * delta_s
-    acc_st = force_mag[:, None] * normal / density[:, None]
+    divisor = (density if getattr(cfg, "csf_accel_density", "summation") == "summation"
+               else torch.full_like(density, cfg.rho0))
+    acc_st = force_mag[:, None] * normal / divisor[:, None]
 
     return acc_st
 

@@ -127,6 +127,15 @@ class Config:
     # historical discretisation, +25 % on a circle); "fit_quadratic"/"fit_circle"
     # = weighted local interface fit (see tensorsph.csf_curvature).
     csf_curvature: str = "mls"
+    # Which density converts the CSF traction (a force per unit volume) into an
+    # acceleration, ``a = f / rho``.  "summation" = the kernel-summed density of
+    # the particle (historical); "rho0" = the reference density, i.e. the mass
+    # that actually carries the traction is ``rho0 * V_i`` with the geometric
+    # volume ``V_i = m_i / rho0``.  Summation density is ~20 % deficient in the
+    # outermost shell (free-surface truncation), so the historical assembly
+    # injects ~25 % too much momentum there.  See
+    # docs/verification_csf_momentum_budget.md.
+    csf_accel_density: str = "summation"
 
 
 # --------------------------------------------------------------------------- #
@@ -732,6 +741,10 @@ def validate_config(cfg: Config) -> None:
     if cfg.csf_scheme not in ("consistent", "legacy"):
         raise ValueError(
             f"csf_scheme must be 'consistent' or 'legacy', got {cfg.csf_scheme!r}")
+    if cfg.csf_accel_density not in ("summation", "rho0"):
+        raise ValueError(
+            "csf_accel_density must be 'summation' or 'rho0', "
+            f"got {cfg.csf_accel_density!r}")
     if not math.isfinite(cfg.dt_growth) or cfg.dt_growth < 1.0:
         # A growth factor below 1 would shrink the step every time the flow did
         # not demand it, which is not "adaptive", it is a user error.

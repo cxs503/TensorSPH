@@ -305,8 +305,24 @@ def surface_tension_acceleration(
     contact_angle: float | None = None,
     curvature_scheme: str = "mls",
     curvature_stencil: float = 4.0,
+    accel_density: str = "summation",
 ) -> tuple[torch.Tensor, CSFState | None]:
-    """CSF acceleration ``a = -sigma kappa delta_s n / rho`` and its fields."""
+    """CSF acceleration ``a = -sigma kappa delta_s n / rho`` and its fields.
+
+    ``accel_density`` selects the density that converts the traction into an
+    acceleration:
+
+    ``"summation"`` (default, historical)
+        divide by the kernel-summed ``rho_i`` of the particle.
+    ``"rho0"``
+        divide by the reference density.  The CSF traction is a force per unit
+        *volume* of the interface shell; the mass that carries it is the
+        geometric one, ``rho0 V_i`` with ``V_i = m_i/rho0``, so
+        ``m_i a_i = V_i f_i`` -- a surface integral.  Summation density is
+        ~20 % deficient in the outermost layer (kernel truncation), so the
+        "summation" assembly over-injects momentum there by ~1/0.8 = 25 %.
+        See docs/verification_csf_momentum_budget.md.
+    """
     if sigma <= 0.0:
         return torch.zeros_like(pos), None
     rho0 = float(rho0 if rho0 is not None else density.mean())
@@ -330,7 +346,15 @@ def surface_tension_acceleration(
     d_s[flat] = 0.0
     state.delta_s = d_s
     force = (-sigma * state.kappa * state.delta_s)[:, None] * state.normal
-    return force / density[:, None], state
+    if accel_density == "summation":
+        divisor = density
+    elif accel_density == "rho0":
+        divisor = torch.full_like(density, rho0)
+    else:
+        raise ValueError(
+            "accel_density must be 'summation' or 'rho0', "
+            f"got {accel_density!r}")
+    return force / divisor[:, None], state
 
 # --------------------------------------------------------------------------- #
 # wall contact-angle boundary condition
