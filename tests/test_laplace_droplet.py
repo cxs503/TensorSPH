@@ -1,12 +1,18 @@
 """B3 surface-tension verification: Young-Laplace pressure jump on a static droplet.
 
-These tests (1) hold the *verification instrument* to its own standard and
-(2) pin the currently measured behaviour of the merged CSF model, so that a
-future fix of the curvature / colour-field treatment shows up as a change here.
+These tests verify the **consistent** CSF scheme (kernel-sum colour + MLS
+operators, merged in m2188) against the 2-D Laplace law ``dp = sigma / R``.
 
-Measured state of the merged model (see docs/benchmarks/laplace-droplet.md):
-it does **not** reproduce the Laplace jump; the tests below encode that fact
-rather than a passing criterion.
+The legacy scheme (neighbour-count colour, uncorrected SPH) is known to fail
+the Laplace law; its field analysis is still reported by the benchmark for
+historical comparison but is no longer the subject of pass/fail gates.
+
+Measured state of the consistent scheme (this file, 2026-11-03):
+- ``dp_ratio`` at R/dx = 10: 0.986 (within 15 %)
+- ``dp_ratio`` at R/dx = 20: 1.109 (within 15 %)
+- ``consistent_kappa_median_times_R``: ~1.18 (18 % high, outside 15 %)
+- ``consistent_normal_alignment``: 0.99 (excellent)
+- ``consistent_N_delta``: ~0.34 (under-normalised; see csf_consistent.py docstring)
 """
 
 import importlib.util
@@ -34,13 +40,25 @@ H = _load_harness()
 
 @pytest.fixture(scope="module")
 def coarse():
+    """Consistent scheme, R/dx = 10."""
     return H.run_case(radius=0.1, dx=0.01, sigma=0.072, lattice="hex")
 
 
 @pytest.fixture(scope="module")
 def medium():
+    """Consistent scheme, R/dx = 20."""
     return H.run_case(radius=0.1, dx=0.005, sigma=0.072, lattice="hex")
 
+
+@pytest.fixture(scope="module")
+def coarse_legacy():
+    """Legacy scheme, R/dx = 10 (for comparison)."""
+    return H.run_case(radius=0.1, dx=0.01, sigma=0.072, lattice="hex", scheme="legacy")
+
+
+# --------------------------------------------------------------------------- #
+# Geometry and basic sanity
+# --------------------------------------------------------------------------- #
 
 def test_geometry_density_and_mass(coarse):
     """The disc must carry rho0 * pi R^2 of mass and reach rho0 inside."""
@@ -69,11 +87,15 @@ def test_zero_sigma_produces_no_force():
     assert torch.equal(acc, torch.zeros_like(acc))
 
 
+# --------------------------------------------------------------------------- #
+# Instrument validation (the measurement itself is correct)
+# --------------------------------------------------------------------------- #
+
 def test_instrument_recovers_ndelta_with_exact_normal(coarse, medium):
     """Instrument B: exact kappa and exact normal must return N_delta exactly."""
     for case in (coarse, medium):
         assert case["instrument_B_exact_kappa_exact_normal_ratio"] == pytest.approx(
-            case["N_delta"], rel=1e-9)
+            case["consistent_N_delta"], rel=1e-9)
 
 
 def test_instrument_satisfies_laplace_with_correct_operators(coarse, medium):
@@ -82,38 +104,86 @@ def test_instrument_satisfies_laplace_with_correct_operators(coarse, medium):
         assert case["instrument_C_exact_operators_ratio"] == pytest.approx(1.0, rel=1e-6)
 
 
-def test_current_model_fails_laplace_criterion(coarse, medium):
-    """Pinned regression: the merged model is far outside the 15 % tolerance."""
-    assert coarse["within_15pct"] is False
-    assert medium["within_15pct"] is False
-    assert coarse["dp_ratio"] == pytest.approx(0.43, abs=0.05)
-    assert medium["dp_ratio"] == pytest.approx(1.39, abs=0.10)
+# --------------------------------------------------------------------------- #
+# Consistent scheme: Laplace law verification
+# --------------------------------------------------------------------------- #
+
+def test_consistent_scheme_passes_laplace_at_coarse(coarse):
+    """The consistent scheme reproduces dp = sigma/R within 15 % at R/dx = 10."""
+    assert coarse["within_15pct"] is True
+    assert coarse["dp_ratio"] == pytest.approx(0.986, abs=0.02)
 
 
-def test_curvature_error_grows_under_refinement(coarse, medium):
-    """div(normal) curvature is not convergent: |kappa R| grows with resolution."""
-    assert abs(medium["kappa_delta_weighted_times_R"]) > \
-        1.5 * abs(coarse["kappa_delta_weighted_times_R"])
+def test_consistent_scheme_passes_laplace_at_medium(medium):
+    """The consistent scheme reproduces dp = sigma/R within 15 % at R/dx = 20."""
+    assert medium["within_15pct"] is True
+    assert medium["dp_ratio"] == pytest.approx(1.109, abs=0.03)
 
 
-def test_curvature_has_the_wrong_sign_on_the_interface(coarse, medium):
-    """A convex droplet needs kappa > 0; the model returns a negative median."""
+def test_consistent_curvature_is_positive(coarse, medium):
+    """A convex droplet needs kappa > 0; the consistent scheme delivers."""
     for case in (coarse, medium):
-        assert case["kappa_model_median"] < 0.0
-        assert 0.3 < case["kappa_model_positive_fraction"] < 0.7
+        assert case["consistent_kappa_median"] > 0.0
+        # kappa*R should be close to 1.0 (measured ~1.18, i.e. 18 % high)
+        assert 0.8 < case["consistent_kappa_median_times_R"] < 1.5
 
 
-def test_surface_delta_is_under_normalised(coarse, medium):
-    """CSF needs integral |grad c| dr = 1; the model's colour field carries ~1/3."""
+def test_consistent_normal_is_coherent(coarse, medium):
+    """The consistent scheme's normals point outward coherently."""
     for case in (coarse, medium):
-        assert 0.2 < case["N_delta"] < 0.5
+        assert case["consistent_normal_alignment"] > 0.95
 
 
-def test_normal_field_is_not_radially_coherent(coarse, medium):
-    """The model's normals do not point outwards coherently (this is the defect)."""
-    for case in (coarse, medium):
-        assert abs(case["normal_alignment_delta_weighted"]) < 0.1
+def test_consistent_color_function_spans_interface(coarse):
+    """Kernel-sum colour goes from ~0.6 at the surface to 1.0 in the bulk."""
+    assert coarse["consistent_color_min"] < 0.7
+    assert coarse["consistent_color_max"] == pytest.approx(1.0, abs=0.01)
 
+
+# --------------------------------------------------------------------------- #
+# Legacy scheme: known defects (for regression / comparison)
+# --------------------------------------------------------------------------- #
+
+def test_legacy_scheme_fails_laplace(coarse_legacy):
+    """The legacy scheme is far outside the 15 % tolerance."""
+    assert coarse_legacy["within_15pct"] is False
+    # Legacy dp_ratio is ~0.62 (38 % low) -- still well outside 15 %
+    assert coarse_legacy["dp_ratio"] < 0.80
+
+
+def test_legacy_delta_is_under_normalised(coarse_legacy):
+    """Legacy N_delta is ~0.34 instead of 1.0."""
+    assert 0.2 < coarse_legacy["legacy_N_delta"] < 0.5
+
+
+def test_legacy_curvature_differs_from_consistent(coarse, coarse_legacy):
+    """Legacy curvature differs from the consistent scheme's curvature."""
+    # Legacy kappa*R ~1.56, consistent ~1.19 -- both positive but different
+    assert abs(coarse_legacy["legacy_kappa_median_times_R"] -
+               coarse["consistent_kappa_median_times_R"]) > 0.2
+
+
+# --------------------------------------------------------------------------- #
+# Consistent vs legacy comparison
+# --------------------------------------------------------------------------- #
+
+def test_consistent_improves_over_legacy(coarse, coarse_legacy):
+    """The consistent scheme's dp_ratio is much closer to 1.0 than legacy."""
+    cons_err = abs(coarse["dp_ratio"] - 1.0)
+    leg_err = abs(coarse_legacy["dp_ratio"] - 1.0)
+    assert cons_err < leg_err * 0.3  # consistent error is < 30 % of legacy error
+
+
+def test_consistent_curvature_closer_to_exact(coarse, coarse_legacy):
+    """Consistent |kappa*R - 1| is smaller than legacy |kappa*R - 1|."""
+    cons_err = abs(coarse["consistent_kappa_median_times_R"] - 1.0)
+    leg_err = abs(coarse_legacy["legacy_kappa_median_times_R"] - 1.0)
+    assert cons_err < leg_err
+
+
+# --------------------------------------------------------------------------- #
+# Resolvability audit
+# --------------------------------------------------------------------------- #
 
 def test_resolvability_audit_rejects_pressure_based_measurement():
     """A density-based Laplace measurement is below SPH noise for water."""

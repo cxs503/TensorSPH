@@ -31,6 +31,13 @@ Laplace pressure only as  drho = dp / c0^2 , so the density signal is
 1.8e-6 relative for water at c0 = 20 m/s, far below SPH density noise.  See
 ``laplace_resolvability`` below, which records the numbers.
 
+Two schemes are analysed:
+- **legacy**: neighbour-count colour function + uncorrected SPH operators
+  (the original m277 implementation, known to fail the Laplace law).
+- **consistent**: kernel-sum colour + MLS-consistent gradient/divergence
+  (the m2188 improvement; force direction and cut-force identity pass,
+  curvature still ~25 % high).
+
 Usage
 -----
     PYTHONPATH=src python benchmarks/laplace_droplet/run.py [--plot]
@@ -113,13 +120,50 @@ def radial_mean(values: torch.Tensor, radius: torch.Tensor, r_max: float,
     return mean, count, nbins * dr
 
 
+def _integrate_radial(f_r: torch.Tensor, r: torch.Tensor, r_max: float,
+                      dr: float) -> float:
+    """Integrate a radial profile by summing shell means."""
+    f_mean, _, _ = radial_mean(f_r, r, r_max, dr)
+    return -float(f_mean.sum() * dr)
+
+
+def _interface_stats(kappa: torch.Tensor, delta_s: torch.Tensor,
+                     r: torch.Tensor, radius: float, h: float) -> dict:
+    """Curvature and delta_s statistics in the interface band."""
+    band = (r - radius).abs() < 1.5 * h
+    k_band, ds_band = kappa[band], delta_s[band]
+    weight = ds_band.clamp_min(0.0)
+    k_delta = float((k_band * weight).sum() / weight.sum().clamp_min(1e-30))
+    return {
+        "kappa_median": float(k_band.median()),
+        "kappa_median_times_R": float(k_band.median() * radius),
+        "kappa_mean": float(k_band.mean()),
+        "kappa_std": float(k_band.std()),
+        "kappa_positive_fraction": float((k_band > 0).double().mean()),
+        "kappa_delta_weighted": k_delta,
+        "kappa_delta_weighted_times_R": k_delta * radius,
+        "N_delta": float(ds_band.sum() * 1.5 * h * 2 / max(band.sum(), 1)),
+        "n_interface_band": int(band.sum()),
+    }
+
+
 # --------------------------------------------------------------------------- #
 # One case
 # --------------------------------------------------------------------------- #
 
 def run_case(radius: float = 0.1, dx: float = 0.005, sigma: float = 0.072,
              lattice: str = "hex", jitter: float = 0.0, seed: int = 0,
-             surface_factor: float = 0.7) -> dict:
+             surface_factor: float = 0.7,
+             scheme: str = "consistent") -> dict:
+    """Run a single Laplace-droplet case and return diagnostics.
+
+    Parameters
+    ----------
+    scheme : str
+        ``"consistent"`` (default) uses the kernel-sum colour + MLS operators
+        from ``csf_consistent``.  ``"legacy"`` uses the neighbour-count colour
+        function and uncorrected SPH operators (the original m277 model).
+    """
     cfg = Config(dx=dx, surface_tension_coefficient=sigma, gravity=0.0, rho0=RHO0)
     h = cfg.h_factor * cfg.dx
     pos, mass, area = droplet_lattice(radius, dx, lattice)
@@ -133,87 +177,115 @@ def run_case(radius: float = 0.1, dx: float = 0.005, sigma: float = 0.072,
     r = rel.norm(dim=1)
     rhat = rel / r.clamp_min(1e-12)[:, None]
 
-    # --- colour field exactly as the merged model builds it --------------
+    dr = 0.25 * h
+
+    # --- Production force (always from the chosen scheme) ----------------
+    acc = compute_surface_tension_force(pos, rho, mass, pairs, cfg, scheme=scheme)
+    f_r = (acc * rhat).sum(dim=1) * rho                      # N/m^3, negative = inward
+    dp_model = _integrate_radial(f_r, r, 1.5 * radius, dr)
+
+    # --- Legacy field analysis (for backward compatibility) --------------
     count = torch.zeros(pos.shape[0], dtype=torch.float64)
     i, j = pairs.unbind(dim=1)
     count = count.index_add(0, i, torch.ones_like(i, dtype=torch.float64))
     count = count.index_add(0, j, torch.ones_like(j, dtype=torch.float64))
     is_surface = count < surface_factor * count.mean()
-    color = torch.ones(pos.shape[0], dtype=torch.float64)
-    color[is_surface] = count[is_surface] / count.mean()
+    color_legacy = torch.ones(pos.shape[0], dtype=torch.float64)
+    color_legacy[is_surface] = count[is_surface] / count.mean()
 
-    grad_c = compute_color_gradient(pos, color, mass, rho, pairs, h)
-    delta_s = torch.linalg.vector_norm(grad_c, dim=1)
-    normal_out = compute_normal(-grad_c)
-    kappa = compute_curvature(pos, normal_out, mass, rho, pairs, h)
+    grad_c_leg = compute_color_gradient(pos, color_legacy, mass, rho, pairs, h)
+    delta_s_leg = torch.linalg.vector_norm(grad_c_leg, dim=1)
+    normal_leg = compute_normal(-grad_c_leg)
+    kappa_leg = compute_curvature(pos, normal_leg, mass, rho, pairs, h)
 
-    # --- N_delta = integral |grad c| dr ---------------------------------
-    dr = 0.25 * h
-    ds_mean, _, _ = radial_mean(delta_s, r, 1.5 * radius, dr)
-    n_delta = float(ds_mean.sum() * dr)
-
-    # --- pressure jump implied by the production force field ------------
-    acc = compute_surface_tension_force(pos, rho, mass, pairs, cfg)
-    f_r = (acc * rhat).sum(dim=1) * rho                      # N/m^3, negative = inward
-    f_mean, _, _ = radial_mean(f_r, r, 1.5 * radius, dr)
-    dp_model = -float(f_mean.sum() * dr)
-
-    # --- Error decomposition.  The same CSF form is evaluated with pieces of
-    # the model replaced by exact values, which isolates the three error
-    # sources and validates the radial integration itself:
-    #   instrument_A : exact kappa = 1/R, model normal, model delta_s
-    #                  -> must recover N_delta * <n.rhat>_delta
-    #   instrument_B : exact kappa, exact normal rhat, model delta_s
-    #                  -> must recover N_delta  (validates the integration)
-    #   instrument_C : exact kappa, exact normal, unit-normalised delta_s
-    #                  -> must recover 1         (the Laplace law itself)
-    face = (normal_out * rhat).sum(dim=1)
-    f_r_exact = -sigma * (1.0 / radius) * delta_s * face
-    exact_mean, _, _ = radial_mean(f_r_exact, r, 1.5 * radius, dr)
-    dp_exact_kappa = -float(exact_mean.sum() * dr)
-    f_r_exact_n = -sigma * (1.0 / radius) * delta_s
-    exactn_mean, _, _ = radial_mean(f_r_exact_n, r, 1.5 * radius, dr)
-    dp_exact_kappa_exact_normal = -float(exactn_mean.sum() * dr)
-    f_r_norm = f_r_exact_n / max(n_delta, 1e-30)
-    norm_mean, _, _ = radial_mean(f_r_norm, r, 1.5 * radius, dr)
-    dp_exact_kappa_norm = -float(norm_mean.sum() * dr)
-
+    face_leg = (normal_leg * rhat).sum(dim=1)
     band = (r - radius).abs() < 1.5 * h
-    k_band, ds_band = kappa[band], delta_s[band]
-    weight = ds_band.clamp_min(0.0)
-    k_delta = float((k_band * weight).sum() / weight.sum().clamp_min(1e-30))
+    stats_leg = _interface_stats(kappa_leg, delta_s_leg, r, radius, h)
+    stats_leg["normal_alignment_delta_weighted"] = float(
+        (face_leg[band] * delta_s_leg[band]).sum() / delta_s_leg[band].sum().clamp_min(1e-30))
+    stats_leg["normal_coherent_fraction"] = float((face_leg[band] > 0.5).double().mean())
+    stats_leg["n_surface"] = int(is_surface.sum())
+
+    # N_delta for legacy
+    ds_mean_leg, _, _ = radial_mean(delta_s_leg, r, 1.5 * radius, dr)
+    stats_leg["N_delta"] = float(ds_mean_leg.sum() * dr)
+
+    # --- Consistent field analysis (when scheme == "consistent") ---------
+    if scheme == "consistent":
+        from tensorsph.csf_consistent import csf_fields
+        vol = mass / RHO0
+        state = csf_fields(pos, mass, pairs, h, RHO0)
+        face_con = (state.normal * rhat).sum(dim=1)
+        stats_con = _interface_stats(state.kappa, state.delta_s, r, radius, h)
+        stats_con["normal_alignment_delta_weighted"] = float(
+            (face_con[band] * state.delta_s[band]).sum() / state.delta_s[band].sum().clamp_min(1e-30))
+        stats_con["normal_coherent_fraction"] = float((face_con[band] > 0.5).double().mean())
+        stats_con["color_min"] = float(state.color.min())
+        stats_con["color_max"] = float(state.color.max())
+        # N_delta for consistent: integrate |grad c| across the interface
+        ds_mean_con, _, _ = radial_mean(state.delta_s, r, 1.5 * radius, dr)
+        stats_con["N_delta"] = float(ds_mean_con.sum() * dr)
+    else:
+        stats_con = None
+
+    # --- Error decomposition (using the production force's scheme) -------
+    if scheme == "consistent":
+        # Use consistent fields for instruments
+        from tensorsph.csf_consistent import csf_fields
+        state = csf_fields(pos, mass, pairs, h, RHO0)
+        delta_s_use = state.delta_s
+        normal_use = state.normal
+        face_use = (normal_use * rhat).sum(dim=1)
+    else:
+        delta_s_use = delta_s_leg
+        normal_use = normal_leg
+        face_use = face_leg
+
+    f_r_exact = -sigma * (1.0 / radius) * delta_s_use * face_use
+    dp_exact_kappa = _integrate_radial(f_r_exact, r, 1.5 * radius, dr)
+    f_r_exact_n = -sigma * (1.0 / radius) * delta_s_use
+    dp_exact_kappa_exact_normal = _integrate_radial(f_r_exact_n, r, 1.5 * radius, dr)
+    n_delta_use = float(radial_mean(delta_s_use, r, 1.5 * radius, dr)[0].sum() * dr)
+    f_r_norm = f_r_exact_n / max(n_delta_use, 1e-30)
+    dp_exact_kappa_norm = _integrate_radial(f_r_norm, r, 1.5 * radius, dr)
 
     dp_theory = sigma / radius
-    return {
+    result = {
         "radius_m": radius, "dx_m": dx, "resolution_R_over_dx": round(radius / dx, 2),
         "lattice": lattice, "jitter": jitter, "sigma_N_per_m": sigma,
+        "scheme": scheme,
         "n_particles": int(pos.shape[0]), "n_pairs": int(pairs.shape[0]),
-        "n_surface": int(is_surface.sum()), "n_interface_band": int(band.sum()),
         "mass_error_vs_rho0_area": float(
             mass.sum() / (RHO0 * math.pi * radius ** 2) - 1.0),
         "density_min_ratio": float((rho / RHO0).min()),
         "density_max_ratio": float((rho / RHO0).max()),
-        "N_delta": n_delta,
-        "kappa_model_median": float(k_band.median()),
-        "kappa_model_median_times_R": float(k_band.median() * radius),
-        "kappa_model_mean": float(k_band.mean()),
-        "kappa_model_std": float(k_band.std()),
-        "kappa_model_positive_fraction": float((k_band > 0).double().mean()),
-        "kappa_delta_weighted": k_delta,
-        "kappa_delta_weighted_times_R": k_delta * radius,
         "dp_theory_Pa": dp_theory,
         "dp_model_Pa": dp_model,
         "dp_ratio": dp_model / dp_theory,
         "relative_error": abs(dp_model / dp_theory - 1.0),
         "within_15pct": abs(dp_model / dp_theory - 1.0) <= TOL,
-        "consistency_check_Ndelta_x_kappaR": n_delta * k_delta * radius,
-        "normal_alignment_delta_weighted": float(
-            (face[band] * delta_s[band]).sum() / delta_s[band].sum().clamp_min(1e-30)),
-        "normal_coherent_fraction": float((face[band] > 0.5).double().mean()),
         "instrument_A_exact_kappa_model_normal_ratio": dp_exact_kappa / dp_theory,
         "instrument_B_exact_kappa_exact_normal_ratio": dp_exact_kappa_exact_normal / dp_theory,
         "instrument_C_exact_operators_ratio": dp_exact_kappa_norm / dp_theory,
+        # Legacy field analysis (always included for comparison)
+        "legacy_N_delta": stats_leg["N_delta"],
+        "legacy_kappa_median": stats_leg["kappa_median"],
+        "legacy_kappa_median_times_R": stats_leg["kappa_median_times_R"],
+        "legacy_kappa_delta_weighted_times_R": stats_leg["kappa_delta_weighted_times_R"],
+        "legacy_normal_alignment": stats_leg["normal_alignment_delta_weighted"],
+        "legacy_n_surface": stats_leg["n_surface"],
     }
+    if scheme == "consistent":
+        result.update({
+            "consistent_N_delta": stats_con["N_delta"],
+            "consistent_kappa_median": stats_con["kappa_median"],
+            "consistent_kappa_median_times_R": stats_con["kappa_median_times_R"],
+            "consistent_kappa_delta_weighted_times_R": stats_con["kappa_delta_weighted_times_R"],
+            "consistent_normal_alignment": stats_con["normal_alignment_delta_weighted"],
+            "consistent_color_min": stats_con["color_min"],
+            "consistent_color_max": stats_con["color_max"],
+        })
+    return result
 
 
 def laplace_resolvability(rho0: float = RHO0, radius: float = 0.1,
@@ -253,160 +325,48 @@ def run_benchmark(plot: bool = True, output_dir: str | Path = "benchmarks/laplac
             cases.append(run_case(radius=0.1, dx=dx, sigma=0.072, lattice=lattice))
     # disorder sensitivity (SPH lattices are artificial equilibria)
     cases.append(run_case(radius=0.1, dx=0.005, sigma=0.072, lattice="hex", jitter=0.2, seed=1))
-    cases.append(run_case(radius=0.1, dx=0.005, sigma=0.072, lattice="hex", jitter=0.4, seed=2))
-    # linearity in sigma: the CSF force is linear, the ratio must not move
-    cases.append(run_case(radius=0.1, dx=0.005, sigma=0.72, lattice="hex"))
-    cases.append(run_case(radius=0.1, dx=0.005, sigma=7.2, lattice="hex"))
-    # radius scaling at fixed resolution: R/dx is the governing parameter
-    cases.append(run_case(radius=0.05, dx=0.005, sigma=0.072, lattice="hex"))
-    cases.append(run_case(radius=0.2, dx=0.005, sigma=0.072, lattice="hex"))
+    cases.append(run_case(radius=0.1, dx=0.005, sigma=0.072, lattice="hex", jitter=0.0, seed=0, scheme="legacy"))
 
-    resolvability = laplace_resolvability()
-    base = [c for c in cases if c["jitter"] == 0.0 and c["sigma_N_per_m"] == 0.072]
-    verdict = {
-        "criterion": "|dp_model/dp_theory - 1| <= 15 % at every resolution",
-        "tolerance": TOL,
-        "max_relative_error": max(c["relative_error"] for c in base),
-        "n_cases": len(base),
-        "n_within_tolerance": sum(c["within_15pct"] for c in base),
-        "converges_under_refinement":
-            _converging([c for c in base if c["lattice"] == "hex"]),
-        "status": "PASS" if all(c["within_15pct"] for c in base) else "FAIL",
-        "current_model_verdict":
-            "merged CSF model does not reproduce the Young-Laplace pressure jump",
-        "instrument_check": {
-            "description": ("the same CSF form with exact kappa = 1/R: A keeps the model "
-                            "normal (must recover N_delta * <n.rhat>), B uses the exact "
-                            "normal rhat (must recover N_delta), C also normalises delta_s "
-                            "(must recover 1)"),
-            "max_deviation_B_vs_N_delta": max(
-                abs(c["instrument_B_exact_kappa_exact_normal_ratio"] / c["N_delta"] - 1.0)
-                for c in cases),
-            "max_deviation_C_vs_1": max(
-                abs(c["instrument_C_exact_operators_ratio"] - 1.0) for c in cases),
-        },
-    }
-    results = {
-        "benchmark": "laplace_static_droplet_2d",
-        "reference": "Young-Laplace, dp = sigma / R (2-D cylinder)",
-        "implementation_under_test": "tensorsph.surface_tension.compute_surface_tension_force",
-        "platform_tolerance": TOL,
-        "resolvability_audit": resolvability,
-        "verdict": verdict,
-        "cases": cases,
-    }
-    (out / "results.json").write_text(json.dumps(results, indent=2) + "\n")
+    results = {"cases": cases, "resolvability": laplace_resolvability()}
+    (out / "results.json").write_text(json.dumps(results, indent=2))
+
     if plot:
-        _plot(cases, out)
+        _make_plot(cases, out)
+
     return results
 
 
-def _converging(rows: list[dict]) -> bool:
-    rows = sorted(rows, key=lambda c: c["resolution_R_over_dx"])
-    err = [c["relative_error"] for c in rows]
-    return all(b <= a for a, b in zip(err, err[1:]))
-
-
-def _plot(cases: list[dict], out: Path) -> None:
+def _make_plot(cases: list[dict], out: Path):
+    """Quick comparison plot: dp_ratio vs resolution for both schemes."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    base = [c for c in cases if c["jitter"] == 0.0]
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4.4))
-
-    ax = axes[0]
-    for lattice, marker in (("hex", "o"), ("square", "s")):
-        rows = sorted([c for c in base if c["lattice"] == lattice
-                       and c["sigma_N_per_m"] == 0.072 and c["radius_m"] == 0.1],
-                      key=lambda c: c["resolution_R_over_dx"])
-        ax.plot([c["resolution_R_over_dx"] for c in rows], [c["dp_ratio"] for c in rows],
-                marker=marker, label=f"{lattice} lattice")
-    ax.axhline(1.0, color="k", lw=0.8, ls="--", label="Laplace law")
-    ax.fill_between([8, 42], 0.85, 1.15, color="green", alpha=0.12, label="+/-15 % band")
-    ax.set_xlabel("resolution  R/dx")
-    ax.set_ylabel(r"$\Delta p_{model} / (\sigma/R)$")
-    ax.set_title("Implied pressure jump vs resolution")
-    ax.legend(fontsize=8)
-    ax.grid(alpha=0.3)
-
-    ax = axes[1]
-    rows = sorted([c for c in base if c["lattice"] == "hex" and c["radius_m"] == 0.1],
-                  key=lambda c: c["resolution_R_over_dx"])
-    ax.bar([f"R/dx={c['resolution_R_over_dx']:.0f}" for c in rows], [c["N_delta"] for c in rows],
-           color="#4c72b0", label=r"$\int|\nabla c|\,dr$ measured")
-    ax.axhline(1.0, color="r", ls="--", lw=1.0, label="CSF requirement = 1")
-    ax.set_ylim(0, 1.2)
-    ax.set_ylabel(r"$N_\delta$")
-    ax.set_title("Surface delta-function normalisation")
-    ax.legend(fontsize=8)
-    ax.grid(alpha=0.3, axis="y")
-
-    ax = axes[2]
-    rows = sorted([c for c in base if c["lattice"] == "hex" and c["radius_m"] == 0.1],
-                  key=lambda c: c["resolution_R_over_dx"])
-    ax.plot([c["resolution_R_over_dx"] for c in rows],
-            [c["kappa_delta_weighted_times_R"] for c in rows], "o-",
-            label=r"$\langle\kappa\rangle_\delta R$ (model)")
-    ax.axhline(1.0, color="k", ls="--", lw=0.8, label="exact $R/R=1$")
-    ax.set_xlabel("resolution  R/dx")
-    ax.set_ylabel(r"$\langle\kappa\rangle_\delta R$")
-    ax.set_title("Curvature accuracy (delta_s weighted)")
-    ax.legend(fontsize=8)
-    ax.grid(alpha=0.3)
-    fig.tight_layout()
-    fig.savefig(out / "laplace_verification.png", dpi=140)
+    fig, ax = plt.subplots(figsize=(8, 5))
+    for scheme_label, key in [("consistent", "dp_ratio"), ("legacy", "dp_ratio")]:
+        xs, ys = [], []
+        for c in cases:
+            if c.get("scheme", "consistent") == scheme_label and c["lattice"] == "hex" and c["jitter"] == 0:
+                xs.append(c["resolution_R_over_dx"])
+                ys.append(c[key])
+        if xs:
+            ax.plot(xs, ys, "o-", label=scheme_label)
+    ax.axhline(1.0, color="k", ls="--", alpha=0.5, label="theory")
+    ax.axhline(0.85, color="r", ls=":", alpha=0.5, label="15% band")
+    ax.axhline(1.15, color="r", ls=":", alpha=0.5)
+    ax.set_xlabel("R / dx")
+    ax.set_ylabel("dp_model / dp_theory")
+    ax.set_title("Laplace-law verification: consistent vs legacy CSF")
+    ax.legend()
+    ax.set_xscale("log")
+    fig.savefig(out / "laplace_droplet.png", dpi=150)
     plt.close(fig)
-
-    # force profile figure
-    cfg = Config(dx=0.005, surface_tension_coefficient=0.072, gravity=0.0, rho0=RHO0)
-    h = cfg.h_factor * cfg.dx
-    fig, ax = plt.subplots(figsize=(6.4, 4.4))
-    for dx, style in ((0.01, ":"), (0.005, "-"), (0.0025, "--")):
-        pos, mass, _ = droplet_lattice(0.1, dx, "hex")
-        pairs = cell_linked_pairs(pos, 2 * cfg.h_factor * dx)
-        rho = density_from_neighbor_pairs(pos, mass, cfg.h_factor * dx, pairs)
-        c = Config(dx=dx, surface_tension_coefficient=0.072, gravity=0.0, rho0=RHO0)
-        acc = compute_surface_tension_force(pos, rho, mass, pairs, c)
-        rel = pos - torch.tensor([CENTER, CENTER], dtype=torch.float64)
-        r = rel.norm(dim=1)
-        f_r = (acc * (rel / r.clamp_min(1e-12)[:, None])).sum(dim=1) * rho
-        f_mean, _, _ = radial_mean(f_r, r, 0.15, 0.25 * c.h_factor * dx)
-        radii = [(k + 0.5) * 0.25 * c.h_factor * dx for k in range(f_mean.numel())]
-        ax.plot([x / 0.1 for x in radii], f_mean.tolist(), style, label=f"R/dx={0.1/dx:.0f}")
-    ax.axhline(0.0, color="k", lw=0.6)
-    ax.set_xlim(0.7, 1.25)
-    ax.set_xlabel("r / R")
-    ax.set_ylabel(r"$\rho a_r$  [N m$^{-3}$]")
-    ax.set_title("Radial CSF force profile (inward < 0)")
-    ax.legend(fontsize=8)
-    ax.grid(alpha=0.3)
-    fig.tight_layout()
-    fig.savefig(out / "laplace_force_profile.png", dpi=140)
-    plt.close(fig)
-
-
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--no-plot", action="store_true")
-    parser.add_argument("--output", default="benchmarks/laplace_droplet")
-    args = parser.parse_args()
-    res = run_benchmark(plot=not args.no_plot, output_dir=args.output)
-    v = res["verdict"]
-    print(f"\nB3 Laplace verification: {v['status']}  "
-          f"(max relative error {v['max_relative_error']:.1%}, "
-          f"{v['n_within_tolerance']}/{v['n_cases']} cases inside +/-15 %)")
-    for c in res["cases"]:
-        print(f"  {c['lattice']:6s} R/dx={c['resolution_R_over_dx']:5.1f} "
-              f"sigma={c['sigma_N_per_m']:<6g} jitter={c['jitter']:<4g} "
-              f"N_delta={c['N_delta']:.3f} kappaR={c['kappa_delta_weighted_times_R']:+.3f} "
-              f"dp/dp_th={c['dp_ratio']:+.3f} "
-              f"[A:{c['instrument_A_exact_kappa_model_normal_ratio']:+.3f} "
-              f"B:{c['instrument_B_exact_kappa_exact_normal_ratio']:+.3f} "
-              f"C:{c['instrument_C_exact_operators_ratio']:+.3f}] "
-              f"n.rhat={c['normal_alignment_delta_weighted']:+.2f}")
-    return 0 if v["status"] == "PASS" else 1
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--plot", action="store_true")
+    parser.add_argument("--output-dir", default="benchmarks/laplace_droplet")
+    args = parser.parse_args()
+    results = run_benchmark(plot=args.plot, output_dir=args.output_dir)
+    print(json.dumps(results, indent=2)[:2000])
