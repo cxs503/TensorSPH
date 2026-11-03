@@ -128,6 +128,28 @@ on a dry bed. The Martin & Moyce experiment has a finite reservoir (aspect
 ratio 2:1), so the Ritter solution overpredicts the front position. Both the
 simulation and the experiment fall below the Ritter curve, as expected.
 
+## Correction (measured, m2502): the resolution prediction is falsified
+
+The section above predicts that refinement "should" bring the error inside the
+experimental band (MAE 0.15-0.20 at `dx` = 0.01 m). That prediction has now been
+measured on a three-rung ladder (`dx` = 0.04 / 0.02 / 0.01 m, 50 / 200 / 800
+fluid particles, identical setup):
+
+| `dx` (m) | exp MAE (`Z/a`) | RMSE | within uncertainty |
+|---|---|---|---|
+| 0.04 | 0.5988 | 0.6766 | 5 % |
+| 0.02 | 0.5774 | 0.6817 | 5 % |
+| 0.01 | 0.5728 | 0.6994 | 0 % |
+
+The mean absolute error is flat (observed order 0.05 / 0.01, i.e. none) while the
+RMSE *grows* with resolution: the residual is a resolution-independent bias, not
+numerical diffusion of the front. The 15 % gate therefore stays **fail**, and the
+`physical_validation` status of case B2 is *fails* at every resolution measured.
+Machine-readable artifact: `benchmarks/dam_break/resolution_ladder.json`;
+full write-up (generated from the artifact, no hand-copied numbers):
+[`dam-break-resolution-ladder.md`](dam-break-resolution-ladder.md); figure:
+`benchmarks/dam_break/resolution_ladder.png`.
+
 ## Next steps
 
 1. **Run at finer resolution:** dx = 0.01 (800 particles) should give MAE
