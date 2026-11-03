@@ -145,6 +145,11 @@ The mean absolute error is flat (observed order 0.05 / 0.01, i.e. none) while th
 RMSE *grows* with resolution: the residual is a resolution-independent bias, not
 numerical diffusion of the front. The 15 % gate therefore stays **fail**, and the
 `physical_validation` status of case B2 is *fails* at every resolution measured.
+The bias the ladder leaves unexplained is separated into bed resistance and
+time origin in [`dam-break-friction-attribution.md`](dam-break-friction-attribution.md)
+(`benchmarks/dam_break/friction_sweep.py`, 10 runs over two spacings and five
+wall-friction blends).
+
 Machine-readable artifact: `benchmarks/dam_break/resolution_ladder.json`;
 full write-up (generated from the artifact, no hand-copied numbers):
 [`dam-break-resolution-ladder.md`](dam-break-resolution-ladder.md); figure:
