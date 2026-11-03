@@ -18,6 +18,7 @@ from tensorsph.surface_tension import (
     compute_surface_tension_force,
 )
 from tensorsph.droplet_impact import Config, wall_lattice
+from tensorsph.neighbor_search import cell_linked_pairs
 
 
 def _make_simple_wall(device="cpu"):
@@ -153,31 +154,43 @@ class TestContactAngleIntegration:
     """Integration tests for contact angle with surface tension force."""
 
     def _make_droplet_particles(self, device="cpu"):
-        """Create a droplet-like particle configuration with surface particles."""
+        """Create a droplet-like particle configuration with surface particles.
+
+        Uses a small but well-connected cluster where surface particles
+        connect to each other, producing non-zero curvature and acceleration.
+        """
         cfg = Config(dx=0.02, device=device)
         h = cfg.h_factor * cfg.dx  # ~0.026
 
-        # Particles within 2h of each other
+        # A compact cluster: 9 interior + 4 surface particles
+        # Interior particles form a 3x3 grid
+        # Surface particles surround the grid
         pos = torch.tensor([
-            [0.2, 0.1],    # 0: interior
-            [0.2, 0.12],   # 1: interior
-            [0.22, 0.1],   # 2: interior
-            [0.18, 0.1],   # 3: interior
-            [0.2, 0.08],   # 4: surface (fewer neighbors)
-            [0.24, 0.1],   # 5: surface (fewest neighbors)
+            # Interior (well-connected, 3x3 grid)
+            [0.0, 0.0],     # 0
+            [0.02, 0.0],    # 1
+            [-0.02, 0.0],   # 2
+            [0.0, 0.02],    # 3
+            [0.0, -0.02],   # 4
+            [0.02, 0.02],   # 5
+            [-0.02, 0.02],  # 6
+            [0.02, -0.02],  # 7
+            [-0.02, -0.02], # 8
+            # Surface (fewer neighbors, on the perimeter)
+            [0.04, 0.0],    # 9
+            [-0.04, 0.0],   # 10
+            [0.0, 0.04],    # 11
+            [0.0, -0.04],   # 12
         ], dtype=torch.float32, device=device)
 
-        # Pairs for particles within interaction range
-        pairs = torch.tensor([
-            [0, 1], [0, 2], [0, 3], [0, 4],
-            [1, 2], [1, 3], [1, 4],
-            [2, 3], [2, 5],
-            [3, 5],
-        ], dtype=torch.long, device=device)
+        # Use the actual neighbor search to get pairs
+        pairs = cell_linked_pairs(pos, 2.0 * h)
 
-        density = torch.tensor([1000.0, 1000.0, 1000.0, 1000.0, 800.0, 700.0],
-                               dtype=torch.float32, device=device)
-        mass = torch.full((6,), cfg.rho0 * cfg.dx * cfg.dx, dtype=torch.float32, device=device)
+        n = pos.shape[0]
+        density = torch.full((n,), cfg.rho0, dtype=torch.float32, device=device)
+        # Surface particles have lower density (free surface effect)
+        density[9:] = 800.0
+        mass = torch.full((n,), cfg.rho0 * cfg.dx * cfg.dx, dtype=torch.float32, device=device)
 
         return cfg, pos, density, mass, pairs
 
@@ -195,9 +208,9 @@ class TestContactAngleIntegration:
         wall = _make_simple_wall(device)
 
         acc = compute_surface_tension_force(pos, density, mass, pairs, cfg, wall=wall)
-        assert acc.shape == (6, 2)
-        # Surface particles (4, 5) should have non-zero acceleration
-        assert not torch.allclose(acc[4:], torch.zeros(2, 2, dtype=torch.float32, device=device), atol=1e-10)
+        assert acc.shape == (13, 2)
+        # Surface particles (9-12) should have non-zero acceleration
+        assert not torch.allclose(acc[9:], torch.zeros(4, 2, dtype=torch.float32, device=device), atol=1e-10)
 
     def test_surface_tension_without_contact_angle(self):
         """Surface tension force should work without contact angle (backward compat)."""
@@ -213,9 +226,9 @@ class TestContactAngleIntegration:
         wall = _make_simple_wall(device)
 
         acc = compute_surface_tension_force(pos, density, mass, pairs, cfg, wall=wall)
-        assert acc.shape == (6, 2)
+        assert acc.shape == (13, 2)
         # Surface particles should have non-zero acceleration
-        assert not torch.allclose(acc[4:], torch.zeros(2, 2, dtype=torch.float32, device=device), atol=1e-10)
+        assert not torch.allclose(acc[9:], torch.zeros(4, 2, dtype=torch.float32, device=device), atol=1e-10)
 
     def test_config_has_contact_angle_parameter(self):
         """Config should have contact_angle parameter."""
