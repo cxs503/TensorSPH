@@ -103,3 +103,25 @@ Test results confirm:
 1. Adami, S., Hu, X. Y., & Adams, N. A. (2012). "A generalized wall boundary condition for smoothed particle hydrodynamics". *Journal of Computational Physics*, 231(21), 7057-7075.
 2. Tartakovsky, A. M., & Meakin, P. (2005). "Modeling of physically adsorbing surfaces using SPH". *Journal of Computational Physics*, 207(1), 66-88.
 3. Brackbill, J. U., Kothe, D. B., & Zemach, C. (1992). "A continuum surface force method for two-phase flow". *Journal of Computational Physics*, 100(2), 335-354.
+
+## Implementation status (m2389, 2026-11-03)
+
+The implementation of this note was **dropped by the merge gate** in m2090
+(`bec5848`, *"1 个文件被门禁滤除"*: `src/tensorsph/surface_tension.py`), while the
+re-export in `__init__.py`, the `wall=` call site in `rhs()` and the test file
+landed. `import tensorsph` therefore failed on the merged tree and with it every
+test and benchmark in the repository.
+
+m2389 restores `apply_contact_angle_boundary` and the `wall=` keyword of
+`compute_surface_tension_force` following the method described above, and records
+the measured geometric accuracy (angle reproduced to 3.4e-2 deg = float32
+round-off, magnitude preserved to 1.9e-7 relative, nothing touched outside the
+`2h` band) in
+[`docs/benchmarks/contact-angle-verification.md`](benchmarks/contact-angle-verification.md).
+Two parts of the inherited specification were not satisfiable and are replaced
+there with verifiable statements: the six-particle flat-chain integration fixture
+(zero curvature by symmetry) and the mean-based surface-particle detection.
+
+Scope limit: this certifies the *geometric* boundary condition only. No claim is
+made about dynamic wetting, because the merged CSF curvature does not pass the
+Laplace law (`docs/benchmarks/laplace-droplet.md`).

@@ -22,6 +22,8 @@ References:
 """
 from __future__ import annotations
 
+import math
+
 import torch
 
 from .droplet_impact import Config, cubic_spline_gradient, cubic_spline_kernel
@@ -154,12 +156,115 @@ def compute_curvature(
     return kappa
 
 
+def apply_contact_angle_boundary(
+    grad_c: torch.Tensor,
+    pos: torch.Tensor,
+    wall: torch.Tensor,
+    h: float,
+    theta: float,
+    reach: float = 2.0,
+    chunk: int = 2048,
+) -> torch.Tensor:
+    """Enforce a prescribed contact angle on the interface normal near a wall.
+
+    The interface normal is taken to be collinear with ``grad_c`` (in this module
+    the outward normal is ``-grad(c)``, so the same function serves both sign
+    conventions: it only *reorients* a vector field, it never flips it).  For a
+    fluid particle within ``reach * h`` of a wall particle, the local wall normal
+
+        n_w = (x_i - x_w) / |x_i - x_w|
+
+    (pointing from the wall into the fluid) together with the contact angle theta
+    fixes the admissible normal, following the colour-gradient reconstruction of
+    Adami, Hu & Adams (2012), *A generalized wall boundary condition for
+    smoothed particle hydrodynamics*, J. Comput. Phys. 231:7057-7075, and
+    Tartakovsky & Meakin (2005), *Modeling of interfacial dynamics in
+    smoothed particle hydrodynamics*, J. Comput. Phys. 207:610-628:
+
+        n_new = cos(theta) * n_w + sin(theta) * t_hat
+
+    where ``t_hat`` is the unit tangential direction obtained by projecting the
+    incoming normal onto the wall plane.  ``theta = 0`` gives a normal along
+    ``n_w`` (a film lying flat on the wall, complete wetting), ``theta = pi/2``
+    gives a normal in the wall plane (the interface meets the wall at 90 deg),
+    and ``theta = pi`` would invert it (non-wetting limit).  The magnitude
+    ``|grad_c|`` is preserved, so the surface delta function of the CSF model is
+    unaffected and only the direction (hence the curvature) changes.
+
+    The function is non-destructive: the input tensor is not modified.
+
+    Args:
+        grad_c: (N, 2) colour gradient / interface normal field.
+        pos: (N, 2) fluid particle positions.
+        wall: (M, 2) static wall particle positions.
+        h: smoothing length.
+        theta: prescribed contact angle (rad) measured inside the fluid between
+            the interface normal and the wall normal.
+        reach: wall influence range in units of ``h`` (default 2h, the kernel
+            support).
+        chunk: rows per distance block, bounds the (chunk, M) cdist workspace.
+
+    Returns:
+        (N, 2) reoriented field; equal to ``grad_c`` for particles outside the
+        wall influence range or with a vanishing gradient.
+    """
+    if wall.numel() == 0 or pos.numel() == 0 or grad_c.numel() == 0:
+        return grad_c
+    if not math.isfinite(theta):
+        return grad_c
+
+    n = pos.shape[0]
+    wall = wall.to(dtype=pos.dtype, device=pos.device)
+
+    # Nearest wall particle for every fluid particle (chunked cdist keeps the
+    # workspace at chunk x M instead of N x M).
+    dist = torch.empty(n, dtype=pos.dtype, device=pos.device)
+    nearest = torch.empty((n, pos.shape[1]), dtype=pos.dtype, device=pos.device)
+    for start in range(0, n, chunk):
+        stop = min(start + chunk, n)
+        d = torch.cdist(pos[start:stop], wall)
+        dmin, idx = d.min(dim=1)
+        dist[start:stop] = dmin
+        nearest[start:stop] = wall[idx]
+
+    n_wall = pos - nearest
+    n_wall_mag = torch.linalg.vector_norm(n_wall, dim=1, keepdim=True)
+    g_mag = torch.linalg.vector_norm(grad_c, dim=1, keepdim=True).clamp_min(1.0e-30)
+
+    active = ((dist < reach * h)
+              & (n_wall_mag.squeeze() > 1.0e-12)
+              & (g_mag.squeeze() > 1.0e-12))
+    if not bool(active.any()):
+        return grad_c
+
+    n_hat = n_wall[active] / n_wall_mag[active]
+    g_hat = grad_c[active] / g_mag[active]
+
+    cos_orig = (g_hat * n_hat).sum(dim=1, keepdim=True)
+    tangent = g_hat - cos_orig * n_hat
+    t_mag = torch.linalg.vector_norm(tangent, dim=1, keepdim=True)
+
+    # If the incoming normal is already wall-normal the tangential part is zero
+    # and there is no tilt direction to preserve; fall back to a fixed 90 deg
+    # rotation of the wall normal so the prescribed angle is still reachable.
+    perp = torch.stack((-n_hat[:, 1], n_hat[:, 0]), dim=1)
+    t_hat = torch.where(t_mag > 1.0e-12, tangent / t_mag.clamp_min(1.0e-30), perp)
+
+    target = math.cos(theta) * n_hat + math.sin(theta) * t_hat
+    target = target / torch.linalg.vector_norm(target, dim=1, keepdim=True).clamp_min(1.0e-30)
+
+    out = grad_c.clone()
+    out[active] = g_mag[active] * target
+    return out
+
+
 def compute_surface_tension_force(
     pos: torch.Tensor,
     density: torch.Tensor,
     mass: torch.Tensor,
     pairs: torch.Tensor,
     cfg: Config,
+    wall: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Compute surface tension acceleration using CSF model.
 
@@ -178,6 +283,9 @@ def compute_surface_tension_force(
         mass: (N,) particle masses
         pairs: (P, 2) neighbor pair indices
         cfg: simulation configuration
+        wall: (M, 2) static wall particles, or None. When given together with
+            ``cfg.contact_angle`` the interface normal within 2h of the wall is
+            reoriented by :func:`apply_contact_angle_boundary`.
 
     Returns:
         acc_st: (N, 2) surface tension acceleration
@@ -220,6 +328,13 @@ def compute_surface_tension_force(
     # For CSF model, we need normal pointing outward (from fluid to vacuum).
     # So we negate the gradient to get outward normal.
     normal = compute_normal(-grad_c)
+
+    # Contact-angle boundary condition: reorient the outward normal next to a
+    # wall.  |grad(c)| is preserved, so delta_s below is unchanged and only the
+    # curvature (hence the force direction) is affected.
+    if wall is not None and cfg.contact_angle is not None and wall.numel() > 0:
+        normal = apply_contact_angle_boundary(
+            normal, pos, wall, h, float(cfg.contact_angle))
 
     # Compute curvature
     kappa = compute_curvature(pos, normal, mass, density, pairs, h)

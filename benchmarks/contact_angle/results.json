@@ -1,0 +1,74 @@
+{
+  "benchmark": "contact_angle_bc_geometry",
+  "implementation": "tensorsph.surface_tension.apply_contact_angle_boundary",
+  "reference": "angle(n_new, n_wall) = theta with |n_new| = |n_old| (Adami et al. 2012; Tartakovsky & Meakin 2005)",
+  "setup": {
+    "n_random": 4000,
+    "h": 0.065,
+    "influence_band": 0.13,
+    "device": "cpu"
+  },
+  "rows": [
+    {
+      "theta_deg": 0.0,
+      "max_angle_error_deg": 0.03426402062177658,
+      "rms_angle_error_deg": 0.010350342839956284,
+      "max_relative_magnitude_error": 1.5320811996843986e-07,
+      "max_leak_outside_band": 0.0,
+      "degenerate_case": true
+    },
+    {
+      "theta_deg": 30.0,
+      "max_angle_error_deg": 0.00682830810546875,
+      "rms_angle_error_deg": 0.00011645125050563365,
+      "max_relative_magnitude_error": 1.631725723427735e-07,
+      "max_leak_outside_band": 0.0,
+      "degenerate_case": false
+    },
+    {
+      "theta_deg": 60.0,
+      "max_angle_error_deg": 0.0204620361328125,
+      "rms_angle_error_deg": 0.000348568893969059,
+      "max_relative_magnitude_error": 1.5309856848944037e-07,
+      "max_leak_outside_band": 0.0,
+      "degenerate_case": false
+    },
+    {
+      "theta_deg": 90.0,
+      "max_angle_error_deg": 0.02727508544921875,
+      "rms_angle_error_deg": 0.0004645824956241995,
+      "max_relative_magnitude_error": 1.8565347659205145e-07,
+      "max_leak_outside_band": 0.0,
+      "degenerate_case": false
+    },
+    {
+      "theta_deg": 120.0,
+      "max_angle_error_deg": 0.0204620361328125,
+      "rms_angle_error_deg": 0.0003485593479126692,
+      "max_relative_magnitude_error": 1.6968765237379557e-07,
+      "max_leak_outside_band": 0.0,
+      "degenerate_case": false
+    },
+    {
+      "theta_deg": 150.0,
+      "max_angle_error_deg": 0.0068206787109375,
+      "rms_angle_error_deg": 0.0001164369095931761,
+      "max_relative_magnitude_error": 1.5813087372862356e-07,
+      "max_leak_outside_band": 0.0,
+      "degenerate_case": false
+    },
+    {
+      "theta_deg": 180.0,
+      "max_angle_error_deg": 0.03426402062177658,
+      "rms_angle_error_deg": 0.010350342839956284,
+      "max_relative_magnitude_error": 1.5320811996843986e-07,
+      "max_leak_outside_band": 0.0,
+      "degenerate_case": true
+    }
+  ],
+  "worst_angle_error_deg": 0.03426402062177658,
+  "worst_relative_magnitude_error": 1.8565347659205145e-07,
+  "worst_leak_outside_band": 0.0,
+  "tolerance_deg": 0.1,
+  "pass": true
+}

@@ -7,6 +7,7 @@ These tests verify:
 4. Integration with surface tension force computation
 5. Backward compatibility (contact_angle=None disables BC)
 """
+import copy
 import math
 
 import pytest
@@ -152,70 +153,83 @@ class TestContactAngleBoundary:
 class TestContactAngleIntegration:
     """Integration tests for contact angle with surface tension force."""
 
-    def _make_droplet_particles(self, device="cpu"):
-        """Create a droplet-like particle configuration with surface particles."""
-        cfg = Config(dx=0.02, device=device)
-        h = cfg.h_factor * cfg.dx  # ~0.026
+    def _make_wall_film(self, device="cpu"):
+        """Small pool on the production wall lattice (bottom + side layers).
 
-        # Particles within 2h of each other
-        pos = torch.tensor([
-            [0.2, 0.1],    # 0: interior
-            [0.2, 0.12],   # 1: interior
-            [0.22, 0.1],   # 2: interior
-            [0.18, 0.1],   # 3: interior
-            [0.2, 0.08],   # 4: surface (fewer neighbors)
-            [0.24, 0.1],   # 5: surface (fewest neighbors)
-        ], dtype=torch.float32, device=device)
+        The previous fixture was a flat, collinear chain, which is degenerate for
+        a curvature operator: when every particle shares the same normal the
+        stencil differences ``n_j - n_i`` vanish, ``div(n)`` is exactly zero and
+        the CSF force vanishes with it -- independently of any contact-angle
+        treatment.  Measured with the old six-particle chain: ``kappa`` came out
+        as ``[10.10, -4.57, 11.76, -2.91, 0, 0]``, exactly zero on the two
+        particles the assertions inspected.  This fixture is the real geometry
+        (a pool three lattice spacings deep on the Adami wall lattice), so the
+        bottom row sits inside ``2h`` of the wall, the top row sits on the free
+        surface, and both regions carry a non-zero CSF force.
+        """
+        dx = 0.05
+        cfg = Config(
+            dx=dx, pool_width=0.35, pool_depth=0.15, drop_radius=0.04,
+            drop_center_y=0.25, device=device,
+            surface_tension_coefficient=0.072,
+        )
+        h = cfg.h_factor * cfg.dx
+        xs = torch.arange(dx * 0.5, cfg.pool_width, dx, device=device)
+        ys = torch.arange(dx * 0.5, cfg.pool_depth, dx, device=device)
+        gx, gy = torch.meshgrid(xs, ys, indexing="xy")
+        pos = torch.stack((gx.reshape(-1), gy.reshape(-1)), dim=-1)
+        wall = wall_lattice(cfg, torch.device(device))
 
-        # Pairs for particles within interaction range
-        pairs = torch.tensor([
-            [0, 1], [0, 2], [0, 3], [0, 4],
-            [1, 2], [1, 3], [1, 4],
-            [2, 3], [2, 5],
-            [3, 5],
-        ], dtype=torch.long, device=device)
+        d = torch.cdist(pos, pos)
+        iu = torch.triu_indices(pos.shape[0], pos.shape[0], offset=1)
+        keep = d[iu[0], iu[1]] < h
+        pairs = torch.stack((iu[0][keep], iu[1][keep]), dim=1).contiguous()
 
-        density = torch.tensor([1000.0, 1000.0, 1000.0, 1000.0, 800.0, 700.0],
-                               dtype=torch.float32, device=device)
-        mass = torch.full((6,), cfg.rho0 * cfg.dx * cfg.dx, dtype=torch.float32, device=device)
+        density = torch.full((pos.shape[0],), cfg.rho0, dtype=pos.dtype, device=device)
+        mass = torch.full((pos.shape[0],), cfg.rho0 * dx * dx, dtype=pos.dtype,
+                          device=device)
+        return cfg, pos, density, mass, pairs, wall
 
-        return cfg, pos, density, mass, pairs
+    def _near_wall_mask(self, pos, wall, cfg):
+        h = cfg.h_factor * cfg.dx
+        return torch.cdist(pos, wall).min(dim=1).values < 2.0 * h
 
     def test_surface_tension_with_contact_angle(self):
-        """Surface tension force should use contact angle when wall is provided."""
+        """Contact angle must reorient the force inside 2h of the wall only."""
         device = "cpu"
-        cfg, pos, density, mass, pairs = self._make_droplet_particles(device)
-        cfg = Config(
-            dx=0.02, pool_width=0.4, pool_depth=0.15, drop_radius=0.05,
-            drop_center_y=0.25, device=device,
-            surface_tension_coefficient=0.072,
-            contact_angle=math.pi / 3,
-        )
+        cfg_flat, pos, density, mass, pairs, wall = self._make_wall_film(device)
+        cfg_ca = copy.deepcopy(cfg_flat)
+        cfg_ca.contact_angle = math.pi / 3
 
-        wall = _make_simple_wall(device)
+        acc_ca = compute_surface_tension_force(pos, density, mass, pairs, cfg_ca,
+                                               wall=wall)
+        acc_none = compute_surface_tension_force(pos, density, mass, pairs, cfg_flat,
+                                                 wall=wall)
+        assert acc_ca.shape == pos.shape
+        assert torch.isfinite(acc_ca).all()
+        # The curved film must produce a non-zero CSF force in the first place,
+        # otherwise the comparison below would be vacuous.
+        assert acc_none.abs().max() > 0.0
 
-        acc = compute_surface_tension_force(pos, density, mass, pairs, cfg, wall=wall)
-        assert acc.shape == (6, 2)
-        # Surface particles (4, 5) should have non-zero acceleration
-        assert not torch.allclose(acc[4:], torch.zeros(2, 2, dtype=torch.float32, device=device), atol=1e-10)
+        near = self._near_wall_mask(pos, wall, cfg_ca)
+        assert bool(near.any()) and not bool(near.all())
+        # Inside the wall band the prescribed angle changes the force ...
+        assert not torch.allclose(acc_ca[near], acc_none[near], atol=1e-12)
+        # ... and outside it the two runs are identical.
+        assert torch.allclose(acc_ca[~near], acc_none[~near], atol=1e-12)
 
     def test_surface_tension_without_contact_angle(self):
-        """Surface tension force should work without contact angle (backward compat)."""
+        """contact_angle=None must reproduce the wall-free code path exactly."""
         device = "cpu"
-        cfg = Config(
-            dx=0.02, pool_width=0.4, pool_depth=0.15, drop_radius=0.05,
-            drop_center_y=0.25, device=device,
-            surface_tension_coefficient=0.072,
-            contact_angle=None,
-        )
+        cfg, pos, density, mass, pairs, wall = self._make_wall_film(device)
 
-        _, pos, density, mass, pairs = self._make_droplet_particles(device)
-        wall = _make_simple_wall(device)
-
-        acc = compute_surface_tension_force(pos, density, mass, pairs, cfg, wall=wall)
-        assert acc.shape == (6, 2)
-        # Surface particles should have non-zero acceleration
-        assert not torch.allclose(acc[4:], torch.zeros(2, 2, dtype=torch.float32, device=device), atol=1e-10)
+        acc_with_wall = compute_surface_tension_force(pos, density, mass, pairs,
+                                                      cfg, wall=wall)
+        acc_no_wall = compute_surface_tension_force(pos, density, mass, pairs, cfg)
+        assert acc_with_wall.shape == pos.shape
+        assert torch.isfinite(acc_with_wall).all()
+        assert acc_with_wall.abs().max() > 0.0
+        assert torch.allclose(acc_with_wall, acc_no_wall, atol=1e-12)
 
     def test_config_has_contact_angle_parameter(self):
         """Config should have contact_angle parameter."""
