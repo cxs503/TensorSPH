@@ -216,3 +216,31 @@ refinement (observed order -1.63).
 | `benchmarks/surface_tension/laplace_ladder.json` | every number in this document (generated) |
 | `benchmarks/surface_tension/laplace_ladder.png` | figure (jump, curvature, radial force profile) |
 | `tests/test_surface_tension_laplace.py` | gauge tests (pass) + known-defect tests (strict xfail) |
+
+
+---
+
+## Update (mission m2454): the defect is repaired to within the 15 % gate
+
+The interface fields were rebuilt (`interface_fields()` in `tensorsph.surface_tension`):
+colour from kernel completeness, one smoothing length `h_c = 2 h` for the whole interface,
+first-order-consistent gradient (Cummins & Rudman matrix, singular values clamped), and a
+fluid-side-normalised `delta_s = 2 |grad c|`; the neighbour-count surface detector is gone
+because `delta_s` already localises the force.
+
+| R/dx | Laplace error, 0.8.0 | Laplace error, now | kappa R, 0.8.0 | kappa R, now |
+|---|---|---|---|---|
+| 16 | 51.6 % | 2.4 % | -0.210 | 1.367 |
+| 32 | 7.4 % (false PASS) | 7.5 % | -0.139 | 1.236 |
+| 64 | 130.0 % | 10.8 % | -0.156 | 1.092 |
+| 96 | 252.0 % | 12.0 % | -0.256 | 1.111 |
+
+Gates: `laplace_error_finest` and `curvature_sign_and_scale` PASS; `force_direction` still
+FAILS (0.97 of the interface particles at `R/dx = 96` are pushed inwards, not 1.00), so the
+benchmark verdict remains FAIL. The residual 12 % is resolution-independent (observed order
+-0.26) and is the sum of two partially cancelling one-sided errors: `int delta_s = 0.75`
+instead of 1, and `kappa R = 1.11`. Do not read the table as convergence.
+
+Note also that the benchmark's inward/curvature statistics are now taken on the interface
+layer the model actually acts on (`delta_s > 0.1 max`), not on the old neighbour-count
+detector; the detector recall/precision diagnostics are kept for reference only.

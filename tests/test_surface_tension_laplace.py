@@ -6,12 +6,17 @@ Two kinds of test live here, deliberately separated:
    recovers the exact Laplace pressure ``sigma/R`` on a synthetic field whose
    normal integral is known analytically. If these fail, the benchmark's numbers
    are meaningless regardless of what the model does.
-2. **Known-defect tests** (expected to fail, ``xfail(strict=True)``). They assert
-   that the shipped CSF force satisfies the Laplace law. They do not today; the
-   strict marker turns a silent physics failure into a visible, non-blocking
-   signal and forces this file and
-   ``docs/benchmarks/surface-tension-laplace.md`` to be updated by whoever fixes
-   the model (a strict xfail that starts passing fails the suite).
+2. **Physics tests.** They assert that the CSF force satisfies the Laplace law
+   ``dp = sigma/R``, i.e. that the normal integral of the force density equals
+   ``sigma kappa``. Since the interface-field rewrite (colour from kernel
+   completeness, first-order consistent gradient, one-sided surface delta) they
+   pass at ``R/dx = 16, 32`` with 2.4% and 7.5% error; the 15% gate is also met at
+   ``R/dx = 64, 96`` (10.8%, 12.0%), see
+   ``docs/benchmarks/surface-tension-laplace.md``.
+3. **Residual-defect tests** (still ``xfail(strict=True)``). The curvature at
+   ``R/dx = 32`` is 24% high (11% at ``R/dx = 96``), so the strict markers stay
+   until the curvature estimator is improved; they fail the suite the moment
+   they start passing, which is the intended prompt to update the docs.
 """
 import importlib.util
 import math
@@ -101,11 +106,12 @@ def test_detector_covers_the_interface_shell():
     assert recall > 0.9 and precision > 0.9
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "known defect: the shipped CSF force does not satisfy the 2-D Laplace law "
-    "dp = sigma/R; see docs/benchmarks/surface-tension-laplace.md"))
 def test_laplace_law_is_satisfied():
-    """Known defect: the model should reproduce Delta p = sigma/R within 15%."""
+    """The CSF force reproduces Delta p = sigma/R within 15% at R/dx = 16, 32.
+
+    Before the interface-field rewrite this case measured 51.6% and 7.4% and the
+    finest ladder level 252% with a negative observed order.
+    """
     worst = 0.0
     for ratio in (16.0, 32.0):
         row = laplace.measure(0.1, 0.1 / ratio, SIGMA)
@@ -114,10 +120,11 @@ def test_laplace_law_is_satisfied():
 
 
 @pytest.mark.xfail(strict=True, reason=(
-    "known defect: curvature from div(n) on the neighbour-count colour field "
-    "has the wrong sign and 4-7x too small a magnitude"))
+    "residual defect: curvature is 24% high at R/dx = 32 (11% at R/dx = 96); "
+    "the sign and the order of magnitude are now correct, the remaining bias is "
+    "documented in docs/benchmarks/surface-tension-laplace.md"))
 def test_curvature_matches_exact_interface_curvature():
-    """Known defect: median kappa*R should be +1 for the module's convention."""
+    """Median kappa*R should be +1 for the module's convention (24% high at 32)."""
     row = laplace.measure(0.1, 0.1 / 32, SIGMA)
     assert abs(row["curvature_ratio"] - 1.0) <= 0.15
 

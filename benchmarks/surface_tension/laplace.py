@@ -74,6 +74,7 @@ import torch
 from tensorsph import Config
 from tensorsph.neighbor_search import cell_linked_pairs
 from tensorsph.surface_tension import (
+    interface_fields,
     compute_color_gradient,
     compute_curvature,
     compute_normal,
@@ -202,13 +203,13 @@ def measure(radius: float, dx: float, sigma: float = SIGMA) -> dict:
     geometric = r > radius - dx
     hit = int((detected & geometric).sum())
 
-    color = torch.ones(n, dtype=torch.float64)
-    avg = count.mean()
-    color[detected] = count[detected] / avg
-    grad_c = compute_color_gradient(pos, color, mass, density, pairs, h)
-    normal = compute_normal(-grad_c)
-    delta_s = torch.linalg.vector_norm(grad_c, dim=1)
-    kappa = compute_curvature(pos, normal, mass, density, pairs, h)
+    # The interface fields come from the module itself (single source of truth),
+    # so the numbers below describe exactly the force that was returned above.
+    fields = interface_fields(pos, density, mass, pairs, cfg)
+    grad_c = fields["grad_colour"]
+    normal = fields["normal"]
+    delta_s = fields["delta_s"]
+    kappa = fields["curvature"]
 
     # Integral of the model's delta function over the fluid side: a proper
     # one-sided normalised delta must give 1, so that sigma*kappa*int(delta)=sigma*kappa.
@@ -220,7 +221,7 @@ def measure(radius: float, dx: float, sigma: float = SIGMA) -> dict:
     jump_exact_delta, _ = perimeter_jump(RHO0,
         (sigma / RHO0) * kappa * delta_exact, radius, dx)
 
-    on_interface = detected & (delta_s > 0)
+    on_interface = delta_s > 0.1 * delta_s.max()
     # Is the curvature systematically wrong-signed, or noise-dominated? A median
     # alone cannot tell the two apart, so the positive fraction and the
     # force-weighted mean are reported as well.
@@ -265,9 +266,10 @@ def measure(radius: float, dx: float, sigma: float = SIGMA) -> dict:
         "geometric_surface": int(geometric.sum()),
         "detector_recall": hit / max(int(geometric.sum()), 1),
         "detector_precision": hit / max(int(detected.sum()), 1),
-        "inward_fraction": (float((inward_acc[detected] > 0).double().mean())
-                            if int(detected.sum()) else float("nan")),
-        "max_outward_acc": float((-inward_acc[detected]).max()) if int(detected.sum()) else 0.0,
+        "inward_fraction": (float((inward_acc[on_interface] > 0).double().mean())
+                            if int(on_interface.sum()) else float("nan")),
+        "max_outward_acc": (float((-inward_acc[on_interface]).max())
+                            if int(on_interface.sum()) else 0.0),
     }
 
 

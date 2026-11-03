@@ -115,6 +115,11 @@ class Config:
     # backward compatible). When > 0, activates the Continuum Surface Force (CSF)
     # model of Brackbill et al. (1992).
     surface_tension_coefficient: float = 0.0
+    # Smoothing length of the CSF interface fields in units of ``h``. The
+    # colour/normal/curvature fields need a support wider than the particle
+    # spacing or the difference-form derivatives are dominated by particle
+    # noise; 2.0 is the verified default (benchmarks/surface_tension/laplace.py).
+    surface_tension_h_factor: float = 2.0
     # Contact angle at walls (radians). None disables contact angle BC.
     # theta < pi/2: hydrophilic (wetting), theta > pi/2: hydrophobic.
     contact_angle: float | None = None
