@@ -1,0 +1,673 @@
+{
+  "case": {
+    "radius_m": 0.02,
+    "sigma_N_per_m": 7.2,
+    "rho0_kg_per_m3": 1000.0,
+    "analytic": {
+      "kappa_1_per_m": 50.0,
+      "delta_p_Pa": 360.0,
+      "cut_force_N_per_m": -14.4
+    },
+    "tolerances_pct": {
+      "kappa": 15.0,
+      "delta_s": 15.0,
+      "cut_force": 15.0
+    }
+  },
+  "operator_control": [
+    {
+      "name": "mls_divergence(linear field x/R)",
+      "dx_m": 0.002,
+      "exact_div_1_per_m": 100.0,
+      "mean_1_per_m": 100.0,
+      "max_rel_error": 5.684341886080802e-16,
+      "consistent_to_machine_precision": true
+    }
+  ],
+  "static": [
+    {
+      "scheme": "consistent",
+      "dx_m": 0.003,
+      "h_m": 0.0039000000000000003,
+      "R_over_h": 5.128205128205128,
+      "n_particles": 161,
+      "color": {
+        "bulk": 1.0,
+        "surface": 0.6021149208634791,
+        "jump": 0.39788507913652094
+      },
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 65.00010806788606,
+        "rel_error_pct": 30.000216135772124,
+        "within_15pct": false,
+        "transition_band_mean_1_per_m": 59.60027111247834,
+        "transition_band_rel_error_pct": 19.200542224956678,
+        "transition_band_within_15pct": false
+      },
+      "delta_s": {
+        "integral_dn": 0.7545449895898849,
+        "rel_error_pct": -24.54550104101151,
+        "within_15pct": false,
+        "bulk_weight_share": 0.34891106176567166
+      },
+      "cut_force": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -15.978791856355363,
+        "ratio_measured_over_theory": 1.1096383233580114,
+        "rel_error_pct": 10.963832335801138,
+        "within_15pct": true,
+        "predicted_ratio_from_factors": 1.123637550370373,
+        "factor_closure_error_pct": 1.2616026968135805
+      },
+      "direction": {
+        "cos_median": 0.9992852852235228,
+        "fraction_inward": 1.0
+      },
+      "shells": [
+        {
+          "r_over_R": [
+            0.6,
+            0.8
+          ],
+          "n_particles": 43,
+          "delta_s_weight_fraction": 0.19579254045087918,
+          "color_mean": 0.9933331940677573,
+          "kappa_1_per_m": 76.49561507576534
+        },
+        {
+          "r_over_R": [
+            0.8,
+            0.9
+          ],
+          "n_particles": 31,
+          "delta_s_weight_fraction": 0.33698730324636855,
+          "color_mean": 0.8855229518480325,
+          "kappa_1_per_m": 61.77857477594729
+        },
+        {
+          "r_over_R": [
+            0.9,
+            0.97
+          ],
+          "n_particles": 17,
+          "delta_s_weight_fraction": 0.27009327168589714,
+          "color_mean": 0.6922922947340423,
+          "kappa_1_per_m": 59.04974680199403
+        },
+        {
+          "r_over_R": [
+            0.97,
+            1.02
+          ],
+          "n_particles": 11,
+          "delta_s_weight_fraction": 0.19013355851980412,
+          "color_mean": 0.6344852959131726,
+          "kappa_1_per_m": 62.78830970349261
+        }
+      ]
+    },
+    {
+      "scheme": "consistent_jump",
+      "dx_m": 0.003,
+      "h_m": 0.0039000000000000003,
+      "R_over_h": 5.128205128205128,
+      "n_particles": 161,
+      "color": {
+        "bulk": 0.7683414570507592,
+        "surface": 0.5063399362249887,
+        "jump": 0.26200152082577044
+      },
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 65.27545111887815,
+        "rel_error_pct": 30.550902237756304,
+        "within_15pct": false,
+        "transition_band_mean_1_per_m": 65.27545111887815,
+        "transition_band_rel_error_pct": 30.550902237756304,
+        "transition_band_within_15pct": false
+      },
+      "delta_s": {
+        "integral_dn": 0.8839141704006914,
+        "rel_error_pct": -11.608582959930857,
+        "within_15pct": true,
+        "bulk_weight_share": 0.0
+      },
+      "cut_force": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -17.576516506206197,
+        "ratio_measured_over_theory": 1.220591424042097,
+        "rel_error_pct": 22.059142404209698,
+        "within_15pct": false,
+        "predicted_ratio_from_factors": 1.283401872619396,
+        "factor_closure_error_pct": 5.145902825475926
+      },
+      "direction": {
+        "cos_median": 0.9996141398275864,
+        "fraction_inward": 1.0
+      },
+      "shells": [
+        {
+          "r_over_R": [
+            0.6,
+            0.8
+          ],
+          "n_particles": 43,
+          "delta_s_weight_fraction": 0.2964209893853663,
+          "color_mean": 0.7292033589743058,
+          "kappa_1_per_m": 69.63486809478896
+        },
+        {
+          "r_over_R": [
+            0.8,
+            0.9
+          ],
+          "n_particles": 31,
+          "delta_s_weight_fraction": 0.3211788623631532,
+          "color_mean": 0.6348389105844785,
+          "kappa_1_per_m": 62.66787488797804
+        },
+        {
+          "r_over_R": [
+            0.9,
+            0.97
+          ],
+          "n_particles": 17,
+          "delta_s_weight_fraction": 0.19665039253851038,
+          "color_mean": 0.5605126118219514,
+          "kappa_1_per_m": 58.886572828843335
+        },
+        {
+          "r_over_R": [
+            0.97,
+            1.02
+          ],
+          "n_particles": 11,
+          "delta_s_weight_fraction": 0.1347215062005423,
+          "color_mean": 0.5285454622334299,
+          "kappa_1_per_m": 58.707075972380444
+        }
+      ]
+    },
+    {
+      "scheme": "consistent",
+      "dx_m": 0.002,
+      "h_m": 0.0026000000000000003,
+      "R_over_h": 7.692307692307692,
+      "n_particles": 362,
+      "color": {
+        "bulk": 1.0,
+        "surface": 0.5079797774675909,
+        "jump": 0.49202022253240907
+      },
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 62.44653574203292,
+        "rel_error_pct": 24.893071484065842,
+        "within_15pct": false,
+        "transition_band_mean_1_per_m": 55.91520660805813,
+        "transition_band_rel_error_pct": 11.830413216116256,
+        "transition_band_within_15pct": true
+      },
+      "delta_s": {
+        "integral_dn": 0.7509820285052726,
+        "rel_error_pct": -24.90179714947274,
+        "within_15pct": false,
+        "bulk_weight_share": 0.34308888208286714
+      },
+      "cut_force": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -15.503055458458704,
+        "ratio_measured_over_theory": 1.0766010735040765,
+        "rel_error_pct": 7.660107350407652,
+        "within_15pct": true,
+        "predicted_ratio_from_factors": 1.0640069996591202,
+        "factor_closure_error_pct": -1.1697994879352756
+      },
+      "direction": {
+        "cos_median": 0.9997157597673404,
+        "fraction_inward": 1.0
+      },
+      "shells": [
+        {
+          "r_over_R": [
+            0.6,
+            0.8
+          ],
+          "n_particles": 98,
+          "delta_s_weight_fraction": 0.05766175517735581,
+          "color_mean": 1.0,
+          "kappa_1_per_m": 129.61073586263626
+        },
+        {
+          "r_over_R": [
+            0.8,
+            0.9
+          ],
+          "n_particles": 61,
+          "delta_s_weight_fraction": 0.27337027089323307,
+          "color_mean": 0.9808971118314594,
+          "kappa_1_per_m": 63.43184042954112
+        },
+        {
+          "r_over_R": [
+            0.9,
+            0.97
+          ],
+          "n_particles": 47,
+          "delta_s_weight_fraction": 0.41194229672835586,
+          "color_mean": 0.7790779251802864,
+          "kappa_1_per_m": 53.364305617724526
+        },
+        {
+          "r_over_R": [
+            0.97,
+            1.02
+          ],
+          "n_particles": 23,
+          "delta_s_weight_fraction": 0.25702567720105524,
+          "color_mean": 0.6421916090365809,
+          "kappa_1_per_m": 60.88714315170797
+        }
+      ]
+    },
+    {
+      "scheme": "consistent_jump",
+      "dx_m": 0.002,
+      "h_m": 0.0026000000000000003,
+      "R_over_h": 7.692307692307692,
+      "n_particles": 362,
+      "color": {
+        "bulk": 0.7683414570507593,
+        "surface": 0.4555165267473639,
+        "jump": 0.31282493030339537
+      },
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 59.07484316844315,
+        "rel_error_pct": 18.149686336886305,
+        "within_15pct": false,
+        "transition_band_mean_1_per_m": 59.07484316844315,
+        "transition_band_rel_error_pct": 18.149686336886305,
+        "transition_band_within_15pct": false
+      },
+      "delta_s": {
+        "integral_dn": 0.781154986501262,
+        "rel_error_pct": -21.884501349873798,
+        "within_15pct": false,
+        "bulk_weight_share": 0.0
+      },
+      "cut_force": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -13.832939258132857,
+        "ratio_measured_over_theory": 0.9606207818147817,
+        "rel_error_pct": 3.937921818521828,
+        "within_15pct": true,
+        "predicted_ratio_from_factors": 1.016794780905144,
+        "factor_closure_error_pct": 5.8476768516541755
+      },
+      "direction": {
+        "cos_median": 0.9997846933759825,
+        "fraction_inward": 1.0
+      },
+      "shells": [
+        {
+          "r_over_R": [
+            0.6,
+            0.8
+          ],
+          "n_particles": 98,
+          "delta_s_weight_fraction": 0.1613407112914977,
+          "color_mean": 0.7632798601341021,
+          "kappa_1_per_m": 67.61827163211575
+        },
+        {
+          "r_over_R": [
+            0.8,
+            0.9
+          ],
+          "n_particles": 61,
+          "delta_s_weight_fraction": 0.3287664958396922,
+          "color_mean": 0.6975925690649235,
+          "kappa_1_per_m": 59.900942397406524
+        },
+        {
+          "r_over_R": [
+            0.9,
+            0.97
+          ],
+          "n_particles": 47,
+          "delta_s_weight_fraction": 0.3282282019303869,
+          "color_mean": 0.5976592328198752,
+          "kappa_1_per_m": 54.37139677468837
+        },
+        {
+          "r_over_R": [
+            0.97,
+            1.02
+          ],
+          "n_particles": 23,
+          "delta_s_weight_fraction": 0.17968704749121653,
+          "color_mean": 0.5374336111871053,
+          "kappa_1_per_m": 57.60819089937761
+        }
+      ]
+    },
+    {
+      "scheme": "consistent",
+      "dx_m": 0.0015,
+      "h_m": 0.0019500000000000001,
+      "R_over_h": 10.256410256410255,
+      "n_particles": 642,
+      "color": {
+        "bulk": 1.0,
+        "surface": 0.6021149208634793,
+        "jump": 0.3978850791365207
+      },
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 62.59077655385785,
+        "rel_error_pct": 25.181553107715697,
+        "within_15pct": false,
+        "transition_band_mean_1_per_m": 54.79480509032176,
+        "transition_band_rel_error_pct": 9.589610180643518,
+        "transition_band_within_15pct": true
+      },
+      "delta_s": {
+        "integral_dn": 0.7391328039053593,
+        "rel_error_pct": -26.08671960946407,
+        "within_15pct": false,
+        "bulk_weight_share": 0.35599863816875854
+      },
+      "cut_force": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -15.45866965844661,
+        "ratio_measured_over_theory": 1.0735187262810146,
+        "rel_error_pct": 7.3518726281014635,
+        "within_15pct": true,
+        "predicted_ratio_from_factors": 1.0431700853081325,
+        "factor_closure_error_pct": -2.8270248324422607
+      },
+      "direction": {
+        "cos_median": 0.9997337818358333,
+        "fraction_inward": 1.0
+      },
+      "shells": [
+        {
+          "r_over_R": [
+            0.6,
+            0.8
+          ],
+          "n_particles": 176,
+          "delta_s_weight_fraction": 0.006515660129370812,
+          "color_mean": 1.0,
+          "kappa_1_per_m": 304.9571876172468
+        },
+        {
+          "r_over_R": [
+            0.8,
+            0.9
+          ],
+          "n_particles": 115,
+          "delta_s_weight_fraction": 0.23050434201032494,
+          "color_mean": 0.9934193801098008,
+          "kappa_1_per_m": 76.61064609262287
+        },
+        {
+          "r_over_R": [
+            0.9,
+            0.97
+          ],
+          "n_particles": 85,
+          "delta_s_weight_fraction": 0.4903322589300289,
+          "color_mean": 0.8369618411449038,
+          "kappa_1_per_m": 53.9736767512619
+        },
+        {
+          "r_over_R": [
+            0.97,
+            1.02
+          ],
+          "n_particles": 33,
+          "delta_s_weight_fraction": 0.2726477389302754,
+          "color_mean": 0.6518436670878553,
+          "kappa_1_per_m": 60.44303839533452
+        }
+      ]
+    },
+    {
+      "scheme": "consistent_jump",
+      "dx_m": 0.0015,
+      "h_m": 0.0019500000000000001,
+      "R_over_h": 10.256410256410255,
+      "n_particles": 642,
+      "color": {
+        "bulk": 0.7683414570507594,
+        "surface": 0.5072882775885532,
+        "jump": 0.2610531794622062
+      },
+      "kappa": {
+        "exact_1_per_m": 50.0,
+        "delta_s_weighted_mean_1_per_m": 56.750836538495754,
+        "rel_error_pct": 13.501673076991509,
+        "within_15pct": true,
+        "transition_band_mean_1_per_m": 56.750836538495754,
+        "transition_band_rel_error_pct": 13.501673076991509,
+        "transition_band_within_15pct": true
+      },
+      "delta_s": {
+        "integral_dn": 0.919179072999551,
+        "rel_error_pct": -8.082092700044896,
+        "within_15pct": true,
+        "bulk_weight_share": 0.0
+      },
+      "cut_force": {
+        "theory_N_per_m": -14.4,
+        "measured_N_per_m": -16.324096167474575,
+        "ratio_measured_over_theory": 1.1336177894079567,
+        "rel_error_pct": 13.361778940795666,
+        "within_15pct": true,
+        "predicted_ratio_from_factors": 1.143058735662229,
+        "factor_closure_error_pct": 0.8328156405522726
+      },
+      "direction": {
+        "cos_median": 0.999801041945073,
+        "fraction_inward": 1.0
+      },
+      "shells": [
+        {
+          "r_over_R": [
+            0.6,
+            0.8
+          ],
+          "n_particles": 176,
+          "delta_s_weight_fraction": 0.051976096254388995,
+          "color_mean": 0.7680221953911709,
+          "kappa_1_per_m": 70.67141358620174
+        },
+        {
+          "r_over_R": [
+            0.8,
+            0.9
+          ],
+          "n_particles": 115,
+          "delta_s_weight_fraction": 0.3406796418125085,
+          "color_mean": 0.7326074513892714,
+          "kappa_1_per_m": 56.69041307818707
+        },
+        {
+          "r_over_R": [
+            0.9,
+            0.97
+          ],
+          "n_particles": 85,
+          "delta_s_weight_fraction": 0.41839507648994434,
+          "color_mean": 0.6216436430172501,
+          "kappa_1_per_m": 54.887571099545475
+        },
+        {
+          "r_over_R": [
+            0.97,
+            1.02
+          ],
+          "n_particles": 33,
+          "delta_s_weight_fraction": 0.1889470674109641,
+          "color_mean": 0.5453014690298693,
+          "kappa_1_per_m": 57.15279805884347
+        }
+      ]
+    }
+  ],
+  "smoothing_sweep": [
+    {
+      "dx_m": 0.003,
+      "rows": [
+        {
+          "color_smoothing_passes": 0,
+          "kappa_rel_error_pct": 30.000216135772096,
+          "delta_s_integral_dn": 0.9481946284934551,
+          "cut_force_ratio": 1.3944206273908504
+        },
+        {
+          "color_smoothing_passes": 1,
+          "kappa_rel_error_pct": 30.550902237756304,
+          "delta_s_integral_dn": 0.8839141704006914,
+          "cut_force_ratio": 1.220591424042097
+        },
+        {
+          "color_smoothing_passes": 2,
+          "kappa_rel_error_pct": 34.21322728954985,
+          "delta_s_integral_dn": 0.8284536249504203,
+          "cut_force_ratio": 1.2111855394142812
+        },
+        {
+          "color_smoothing_passes": 4,
+          "kappa_rel_error_pct": 41.8635867872847,
+          "delta_s_integral_dn": 0.7503119111161736,
+          "cut_force_ratio": 1.184994134198951
+        }
+      ]
+    },
+    {
+      "dx_m": 0.002,
+      "rows": [
+        {
+          "color_smoothing_passes": 0,
+          "kappa_rel_error_pct": 24.89307148406587,
+          "delta_s_integral_dn": 0.763161750384971,
+          "cut_force_ratio": 1.0940618131129372
+        },
+        {
+          "color_smoothing_passes": 1,
+          "kappa_rel_error_pct": 18.149686336886305,
+          "delta_s_integral_dn": 0.781154986501262,
+          "cut_force_ratio": 0.9606207818147817
+        },
+        {
+          "color_smoothing_passes": 2,
+          "kappa_rel_error_pct": 19.432326501245583,
+          "delta_s_integral_dn": 0.774764729890895,
+          "cut_force_ratio": 0.9513144035279721
+        },
+        {
+          "color_smoothing_passes": 4,
+          "kappa_rel_error_pct": 22.949989150849746,
+          "delta_s_integral_dn": 0.7729898021410619,
+          "cut_force_ratio": 0.9639449051998217
+        }
+      ]
+    },
+    {
+      "dx_m": 0.0015,
+      "rows": [
+        {
+          "color_smoothing_passes": 0,
+          "kappa_rel_error_pct": 25.181553107715715,
+          "delta_s_integral_dn": 0.9288269938513465,
+          "cut_force_ratio": 1.3490311431264719
+        },
+        {
+          "color_smoothing_passes": 1,
+          "kappa_rel_error_pct": 13.501673076991509,
+          "delta_s_integral_dn": 0.919179072999551,
+          "cut_force_ratio": 1.1336177894079567
+        },
+        {
+          "color_smoothing_passes": 2,
+          "kappa_rel_error_pct": 13.966198332938006,
+          "delta_s_integral_dn": 0.916753339886822,
+          "cut_force_ratio": 1.114155700001114
+        },
+        {
+          "color_smoothing_passes": 4,
+          "kappa_rel_error_pct": 16.10722189759663,
+          "delta_s_integral_dn": 0.9172548547326791,
+          "cut_force_ratio": 1.0936066159442552
+        }
+      ]
+    }
+  ],
+  "relaxation": [
+    {
+      "dx_m": 0.003,
+      "scheme": "consistent",
+      "delta_p_measured_Pa": 110.40162046105263,
+      "delta_p_rel_error_pct": -69.33288320526316,
+      "vmax_over_vref": 0.037932027857765976,
+      "steps": 600,
+      "t_over_t_sigma": 1.0529999999999997,
+      "rho_core_over_rho0": 1.0003243695951425
+    },
+    {
+      "dx_m": 0.003,
+      "scheme": "consistent_jump",
+      "delta_p_measured_Pa": 338.53765438117546,
+      "delta_p_rel_error_pct": -5.961762671895706,
+      "vmax_over_vref": 0.02982083984308021,
+      "steps": 600,
+      "t_over_t_sigma": 1.0529999999999997,
+      "rho_core_over_rho0": 1.0012307599945747
+    },
+    {
+      "dx_m": 0.002,
+      "scheme": "consistent",
+      "delta_p_measured_Pa": 87.28192168189366,
+      "delta_p_rel_error_pct": -75.75502175502955,
+      "vmax_over_vref": 0.043812619829636135,
+      "steps": 600,
+      "t_over_t_sigma": 0.702,
+      "rho_core_over_rho0": 1.0010582973478175
+    },
+    {
+      "dx_m": 0.002,
+      "scheme": "consistent_jump",
+      "delta_p_measured_Pa": 72.54388677066453,
+      "delta_p_rel_error_pct": -79.84892034148207,
+      "vmax_over_vref": 0.03995526263733864,
+      "steps": 600,
+      "t_over_t_sigma": 0.702,
+      "rho_core_over_rho0": 1.0009273057413677
+    },
+    {
+      "dx_m": 0.0015,
+      "scheme": "consistent",
+      "delta_p_measured_Pa": 249.2284319772956,
+      "delta_p_rel_error_pct": -30.769880006306778,
+      "vmax_over_vref": 0.04138661425425134,
+      "steps": 600,
+      "t_over_t_sigma": 0.5264999999999999,
+      "rho_core_over_rho0": 1.0013939986248321
+    },
+    {
+      "dx_m": 0.0015,
+      "scheme": "consistent_jump",
+      "delta_p_measured_Pa": -88.38381861323197,
+      "delta_p_rel_error_pct": -124.55106072589777,
+      "vmax_over_vref": 0.030138216121373587,
+      "steps": 600,
+      "t_over_t_sigma": 0.5264999999999999,
+      "rho_core_over_rho0": 1.0004599971151946
+    }
+  ],
+  "figure": "error_budget.png"
+}

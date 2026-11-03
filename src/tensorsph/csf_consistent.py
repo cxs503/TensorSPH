@@ -227,15 +227,44 @@ def csf_fields(
     wall: torch.Tensor | None = None,
     contact_angle: float | None = None,
     normal_smoothing: int = 2,
+    color_smoothing: int = 0,
+    delta_s_mode: str = "half",
 ) -> CSFState:
     """Colour, its gradient, the outward normal, curvature and delta_s.
 
     ``contact_angle`` (radians) activates the wall BC of
     :func:`apply_contact_angle_boundary`; it needs ``wall`` particle positions.
+
+    ``color_smoothing`` shepard-smooths the colour field before differencing.
+    The kernel-sum colour is a *discrete* indicator: on a hexagonal lattice its
+    difference quotient carries lattice-scale noise which shows up as a
+    |grad c| tail one to three layers inside the interface (measured: 20-30 %
+    of the total delta_s weight at dx = 3 mm, where ``c`` is already 0.99).
+    Those particles get a spurious CSF traction and an over-estimated
+    curvature.  One smoothing pass removes the kink and moves the weight back
+    onto the interface.
+
+    ``delta_s_mode`` selects the normalisation of the surface delta function:
+
+    ``"half"``  legacy hard-coded factor 2 -- assumes the outermost particle
+                layer carries ``c = 1/2``;
+    ``"jump"``  ``delta_s = |grad c| / (c_bulk - c_surf)`` with both ends
+                *measured* from the colour field (``c_bulk = max c``,
+                ``c_surf = min c``).  This is the definition that actually
+                normalises the delta function, ``int delta_s dn = 1``; the
+                factor 2 of ``"half"`` is only right when the surface layer
+                happens to sit at exactly ``c = 1/2`` (it sits at 0.62-0.65 on
+                a hex lattice with ``h = 1.3 dx``, so the legacy factor is
+                30 % too small).
     """
+    if delta_s_mode not in ("half", "jump"):
+        raise ValueError(f"delta_s_mode must be 'half' or 'jump', got {delta_s_mode!r}")
     n = pos.shape[0]
     vol = mass / rho0
     color = kernel_sum_color(pos, mass, pairs, h, rho0)
+    if color_smoothing:
+        color = shepard_smooth(color[:, None], pos, vol, pairs, h,
+                               passes=color_smoothing)[:, 0]
     grad_c = mls_gradient(pos, color, vol, pairs, h)
     if wall is not None and contact_angle is not None:
         grad_c = apply_contact_angle_boundary(grad_c, pos, wall, h, contact_angle)
@@ -272,7 +301,17 @@ def csf_fields(
     # did, letting the colour jump be O(0.3) instead of O(1)) makes the CSF
     # force -- and therefore the Laplace pressure jump -- too weak by exactly
     # the missing factor.
-    delta_s = 2.0 * torch.linalg.vector_norm(grad_c, dim=1)
+    grad_mag = torch.linalg.vector_norm(grad_c, dim=1)
+    if delta_s_mode == "jump":
+        # The in-fluid part of the indicator only spans c_bulk -> c_surf, so the
+        # missing out-of-fluid half is (c_bulk - c_surf) wide, not 1/2 wide.
+        # Both ends are read off the colour field, which keeps the factor
+        # geometry-free (it must also hold for a jet or a film, where the
+        # surface layer sees much less than half a kernel).
+        color_jump = float(color.max() - color.min())
+        delta_s = grad_mag / max(color_jump, 1e-6)
+    else:
+        delta_s = 2.0 * grad_mag
     return CSFState(color=color, grad_c=grad_c, normal=normal, kappa=kappa,
                     delta_s=delta_s)
 
@@ -287,13 +326,16 @@ def surface_tension_acceleration(
     rho0: float | None = None,
     wall: torch.Tensor | None = None,
     contact_angle: float | None = None,
+    color_smoothing: int = 0,
+    delta_s_mode: str = "half",
 ) -> tuple[torch.Tensor, CSFState | None]:
     """CSF acceleration ``a = -sigma kappa delta_s n / rho`` and its fields."""
     if sigma <= 0.0:
         return torch.zeros_like(pos), None
     rho0 = float(rho0 if rho0 is not None else density.mean())
     state = csf_fields(pos, mass, pairs, h, rho0, wall=wall,
-                       contact_angle=contact_angle)
+                       contact_angle=contact_angle, color_smoothing=color_smoothing,
+                       delta_s_mode=delta_s_mode)
     # Particles whose colour field is locally flat are not on the interface; the
     # clamped kernel sum makes their |grad c| numerically ~1e-12 rather than
     # exactly zero, so they are masked out. Bulk traction stays a bit-exact

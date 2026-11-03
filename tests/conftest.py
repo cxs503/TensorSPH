@@ -41,3 +41,35 @@ def pytest_collection_modifyitems(config, items):
         if item.originalname in slow_names or item.name in slow_names:
             item.add_marker(pytest.mark.slow)
             item.add_marker(pytest.mark.timeout(SLOW_TIMEOUT))
+
+
+# --------------------------------------------------------------------------- #
+# import guard: make sure the tests run against *this* worktree's src/
+# --------------------------------------------------------------------------- #
+def pytest_sessionstart(session):
+    """Fail loudly when ``tensorsph`` resolves outside the repository.
+
+    A leftover editable install (``pip install -e`` of another worktree) makes
+    ``import tensorsph`` pick up somebody else's sources; the suite then tests
+    code that is not in this tree and passes for the wrong reason.  That is how
+    a ``ModuleNotFoundError`` for a freshly added module shows up while the
+    checkout looks fine.
+    """
+    import sys
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    src = str(root / "src")
+    if src not in sys.path:
+        sys.path.insert(0, src)
+    try:
+        import tensorsph
+    except ImportError:  # pragma: no cover - reported by the first test that imports it
+        return
+    resolved = Path(tensorsph.__file__).resolve()
+    if root.resolve() not in resolved.parents:
+        raise pytest.UsageError(
+            f"tensorsph resolves to {resolved}, which is outside this worktree "
+            f"({root}). Run the suite as `PYTHONPATH=src python -m pytest` or "
+            "reinstall the package from this checkout."
+        )
