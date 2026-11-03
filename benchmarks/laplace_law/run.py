@@ -90,11 +90,41 @@ def hexagonal_droplet(radius: float, dx: float, rho0: float,
 
 
 # --------------------------------------------------------------------------- #
-# CSF pipeline introspection (mirrors compute_surface_tension_force)
+# CSF pipeline introspection
 # --------------------------------------------------------------------------- #
 def csf_fields(pos, rho, mass, pairs, cfg):
     """The (color, grad_c, normal, kappa, delta_s, is_surface) fields the CSF
-    force is built from, so each ingredient can be scored separately."""
+    force is built from, so each ingredient can be scored separately.
+
+    This *delegates to the production pipeline*
+    (:func:`tensorsph.csf_consistent.csf_fields`, i.e. exactly what
+    :func:`tensorsph.surface_tension.compute_surface_tension_force` calls with
+    ``cfg.csf_scheme = "consistent"``).  An earlier revision of this harness
+    scored a private copy of the pre-m2188 neighbour-count pipeline, so the
+    numbers it committed described a code path that no longer shipped.  The old
+    copy is kept below as :func:`legacy_csf_fields` for the A/B arm only.
+    """
+    from tensorsph import csf_consistent
+
+    h = cfg.h_factor * cfg.dx
+    state = csf_consistent.csf_fields(
+        pos, mass, pairs, h, cfg.rho0,
+        curvature_scheme=getattr(cfg, "csf_curvature", "fit_quadratic"))
+    delta_s = state.delta_s
+    # Interface layer: the same 5 % weight cut the curvature fit uses, so
+    # "surface fraction" means the band that actually carries CSF force.
+    is_surface = delta_s > 0.05 * delta_s.max()
+    return (state.color, state.grad_c, state.normal, state.kappa, delta_s,
+            is_surface)
+
+
+def legacy_csf_fields(pos, rho, mass, pairs, cfg):
+    """Pre-m2188 pipeline (neighbour-count colour, uncorrected operators).
+
+    Kept only for the ``--scheme legacy`` A/B arm; this is what the harness
+    itself used to measure.  Its curvature is ``-div n`` and its delta function
+    is ``|grad c|`` without the factor 2 that makes ``int delta_s dn = 1``.
+    """
     h = cfg.h_factor * cfg.dx
     n = pos.shape[0]
     i, j = pairs.unbind(dim=1)
@@ -143,19 +173,30 @@ def pressure_profile(pos, pressure, radius, nbins=20):
     return prof
 
 
-def instant_diagnostics(radius, dx, sigma, rho0, sound_speed, viscosity):
-    """Everything that can be scored on a single static evaluation."""
+def instant_diagnostics(radius, dx, sigma, rho0, sound_speed, viscosity,
+                        scheme="consistent", curvature="fit_quadratic"):
+    """Everything that can be scored on a single static evaluation.
+
+    ``scheme``/``curvature`` select the CSF discretisation that is scored;
+    ``scheme="consistent"`` (the shipped default) is measured end-to-end through
+    :func:`tensorsph.surface_tension.compute_surface_tension_force`.
+    """
     cfg = Config(dx=dx, h_factor=1.3, rho0=rho0, sound_speed=sound_speed,
                  gamma=7.0, gravity=0.0, viscosity=viscosity,
-                 surface_tension_coefficient=sigma)
+                 surface_tension_coefficient=sigma, csf_scheme=scheme,
+                 csf_curvature=curvature)
     h = cfg.h_factor * cfg.dx
     pos, mass = hexagonal_droplet(radius, dx, rho0)
     n = pos.shape[0]
     pairs = cell_linked_pairs(pos, 2.0 * h)
     rho = density_from_neighbor_pairs(pos, mass, h, pairs)
 
-    color, grad_c, normal, kappa, delta_s, is_surface = csf_fields(
-        pos, rho, mass, pairs, cfg)
+    if scheme == "legacy":
+        color, grad_c, normal, kappa, delta_s, is_surface = legacy_csf_fields(
+            pos, rho, mass, pairs, cfg)
+    else:
+        color, grad_c, normal, kappa, delta_s, is_surface = csf_fields(
+            pos, rho, mass, pairs, cfg)
     acc_st = compute_surface_tension_force(pos, rho, mass, pairs, cfg)
 
     # -- cut-force identity (2): force transmitted across the y-axis cut ------- #
@@ -192,6 +233,8 @@ def instant_diagnostics(radius, dx, sigma, rho0, sound_speed, viscosity):
     return {
         "dx_m": dx,
         "h_m": h,
+        "scheme": scheme,
+        "curvature_scheme": curvature if scheme == "consistent" else "div_n",
         "n_particles": n,
         "dt_acoustic_s": float(stable_dt(cfg)),
         "n_surface_particles": int(is_surface.sum()),
@@ -353,8 +396,9 @@ def make_figures(relax_report, instant_rows, out_dir):
 
     kx = [r["curvature"]["exact_1_per_m"] for r in instant_rows]
     axes[2].plot([r["dx_m"] for r in instant_rows],
-                 [r["curvature"]["band"]["mean"] for r in instant_rows], "o-",
-                 label=r"measured $|\kappa|$")
+                 [r["curvature"]["delta_s_weighted_mean_1_per_m"]
+                  for r in instant_rows], "o-",
+                 label=r"measured $|\kappa|$ ($\delta_s$-weighted)")
     axes[2].plot([r["dx_m"] for r in instant_rows], kx, "k--",
                  label=r"analytic $\kappa=1/R$")
     axes[2].set_xscale("log")
@@ -383,7 +427,19 @@ def make_figures(relax_report, instant_rows, out_dir):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mode", choices=["instant", "relax", "both"], default="both")
+    ap.add_argument("--mode",
+                    choices=["instant", "relax", "both", "convergence"],
+                    default="both")
+    ap.add_argument("--scheme", choices=["consistent", "legacy"],
+                    default="consistent",
+                    help="CSF discretisation scored; 'consistent' is the "
+                         "shipped default, 'legacy' the pre-m2188 A/B arm")
+    ap.add_argument("--curvature", choices=["fit_quadratic", "fit_circle", "mls"],
+                    default="fit_quadratic",
+                    help="curvature operator of the consistent scheme")
+    ap.add_argument("--ladder", type=float, nargs="+",
+                    default=[0.003, 0.002, 0.0015, 0.001],
+                    help="dx values of the resolution ladder (convergence mode)")
     ap.add_argument("--radius", type=float, default=0.02)
     ap.add_argument("--dx", type=float, default=0.002)
     ap.add_argument("--sigma", type=float, default=7.2)
@@ -397,8 +453,9 @@ def main():
     relax_path = out / "validation_report.json"
 
     if a.mode in ("instant", "both"):
-        rows = [instant_diagnostics(a.radius, dx, a.sigma, 1000.0, 20.0, 0.01)
-                for dx in (0.001, 0.0015, 0.002, 0.003)]
+        rows = [instant_diagnostics(a.radius, dx, a.sigma, 1000.0, 20.0, 0.01,
+                                    scheme=a.scheme, curvature=a.curvature)
+                for dx in sorted(a.ladder, reverse=True)]
         payload = {
             "benchmark": "csf_surface_tension_instant_diagnostics",
             "reference": {
@@ -408,7 +465,10 @@ def main():
                         "length, so a cut through the drop transmits 2*sigma",
             },
             "setup": {"radius_m": a.radius, "sigma_N_per_m": a.sigma,
-                      "rho0": 1000.0, "sound_speed": 20.0},
+                      "rho0": 1000.0, "sound_speed": 20.0,
+                      "scheme": a.scheme,
+                      "curvature_scheme": (a.curvature if a.scheme == "consistent"
+                                           else "div_n")},
             "resolutions": rows,
         }
         instant_path.write_text(json.dumps(payload, indent=2))
@@ -429,6 +489,19 @@ def main():
               f"measured {rep['laplace']['delta_p_measured_Pa']:.2f} Pa, "
               f"err {rep['laplace']['rel_error_pct']:+.1f}%, "
               f"spurious {rep['spurious_current']['ratio']:.3f}")
+
+    if a.mode == "convergence":
+        conv = out / "convergence"
+        conv.mkdir(exist_ok=True)
+        for dx in sorted(a.ladder):
+            rep = relax(radius=a.radius, dx=dx, sigma=a.sigma, steps=a.steps)
+            path = conv / f"relax_dx{dx:.4f}.json"
+            path.write_text(json.dumps(rep, indent=2))
+            print(f"LADDER dx={dx:.4f} N={rep['setup']['n_particles']:5d} "
+                  f"t/t_sigma={rep['setup']['t_over_t_sigma']:.2f} "
+                  f"dp_err={rep['laplace']['rel_error_pct']:+7.1f}% "
+                  f"spurious={rep['spurious_current']['ratio']:.3f} -> {path.name}",
+                  flush=True)
 
     if a.mode == "both":
         instant_rows = json.loads(instant_path.read_text())["resolutions"]

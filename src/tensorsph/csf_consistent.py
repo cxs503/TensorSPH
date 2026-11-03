@@ -58,6 +58,7 @@ from dataclasses import dataclass
 import torch
 
 from .csf_curvature import fit_curvature
+from .neighbor_search import cell_linked_pairs
 from .droplet_impact import cubic_spline_gradient, cubic_spline_kernel
 
 
@@ -228,8 +229,9 @@ def csf_fields(
     wall: torch.Tensor | None = None,
     contact_angle: float | None = None,
     normal_smoothing: int = 2,
-    curvature_scheme: str = "mls",
+    curvature_scheme: str = "fit_quadratic",
     curvature_stencil: float = 4.0,
+    curvature_pairs: torch.Tensor | None = None,
 ) -> CSFState:
     """Colour, its gradient, the outward normal, curvature and delta_s.
 
@@ -242,9 +244,18 @@ def csf_fields(
         ``kappa = div n`` with MLS-consistent operators and a Shepard-smoothed
         normal.  Measured error on a circle: +25 %
         (``docs/verification_surface_tension_consistent.md``).
-    ``"fit_quadratic"`` / ``"fit_circle"``
+    ``"fit_quadratic"`` (default) / ``"fit_circle"``
         weighted local interface fit, see :mod:`tensorsph.csf_curvature`; the
         MLS value is kept as the fallback where the stencil is too poor.
+
+    The local interface fit needs interface partners out to
+    ``curvature_stencil * h`` (4h, see :mod:`tensorsph.csf_curvature`), while
+    the kernel operators only need the 2h support.  ``pairs`` is therefore *not*
+    reused for the fit: unless ``curvature_pairs`` is supplied (e.g. from a
+    :class:`tensorsph.neighbor_search.PairListCache`), a second neighbour search
+    at the wider cutoff is run here.  Feeding the 2h list to the fit would leave
+    only a 3-4 point staircase on a lattice and put the curvature back into the
+    +55 % regime the fit exists to avoid.
     """
     n = pos.shape[0]
     vol = mass / rho0
@@ -286,8 +297,11 @@ def csf_fields(
     # the missing factor.
     delta_s = 2.0 * torch.linalg.vector_norm(grad_c, dim=1)
     if curvature_scheme != "mls":
-        kappa = fit_curvature(pos, normal, delta_s, pairs, h, fallback=kappa,
-                              method=curvature_scheme, stencil=curvature_stencil)
+        if curvature_pairs is None:
+            curvature_pairs = cell_linked_pairs(pos, curvature_stencil * h)
+        kappa = fit_curvature(pos, normal, delta_s, curvature_pairs, h,
+                              fallback=kappa, method=curvature_scheme,
+                              stencil=curvature_stencil)
 
     return CSFState(color=color, grad_c=grad_c, normal=normal, kappa=kappa,
                     delta_s=delta_s)
@@ -303,8 +317,9 @@ def surface_tension_acceleration(
     rho0: float | None = None,
     wall: torch.Tensor | None = None,
     contact_angle: float | None = None,
-    curvature_scheme: str = "mls",
+    curvature_scheme: str = "fit_quadratic",
     curvature_stencil: float = 4.0,
+    curvature_pairs: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, CSFState | None]:
     """CSF acceleration ``a = -sigma kappa delta_s n / rho`` and its fields."""
     if sigma <= 0.0:
@@ -315,12 +330,12 @@ def surface_tension_acceleration(
         # otherwise hands us 2h pairs, which on a lattice is 3-4 staircase
         # points per particle.  Widening costs one extra neighbour search per
         # step and is only paid when the fit operator is selected.
-        from .neighbor_search import cell_linked_pairs
         pairs = cell_linked_pairs(pos, curvature_stencil * h)
     state = csf_fields(pos, mass, pairs, h, rho0, wall=wall,
                        contact_angle=contact_angle,
                        curvature_scheme=curvature_scheme,
-                       curvature_stencil=curvature_stencil)
+                       curvature_stencil=curvature_stencil,
+                       curvature_pairs=pairs)
     # Particles whose colour field is locally flat are not on the interface; the
     # clamped kernel sum makes their |grad c| numerically ~1e-12 rather than
     # exactly zero, so they are masked out. Bulk traction stays a bit-exact

@@ -123,10 +123,14 @@ class Config:
     # scheme verified against the Young-Laplace law; "legacy" = the original
     # neighbour-count colour with uncorrected operators, kept for A/B.
     csf_scheme: str = "consistent"
-    # CSF curvature operator inside the "consistent" scheme. "mls" = div n (the
-    # historical discretisation, +25 % on a circle); "fit_quadratic"/"fit_circle"
-    # = weighted local interface fit (see tensorsph.csf_curvature).
-    csf_curvature: str = "mls"
+    # CSF curvature operator inside the "consistent" scheme.  "fit_quadratic"
+    # (default) = weighted local interface fit on a 4h stencil; the fit converges
+    # to 1/R on a circle (dx = 4..1 mm: +37/+18/+5/+1/-0.4 %), whereas the
+    # historical "mls" = div n plateaus at +25..30 % whatever the resolution.
+    # "fit_circle" (Pratt algebraic) is kept for A/B only -- it *diverges* on a
+    # lattice staircase (+50 % .. +480 % over the same ladder), see
+    # docs/verification_surface_tension_laplace.md.
+    csf_curvature: str = "fit_quadratic"
 
 
 # --------------------------------------------------------------------------- #
