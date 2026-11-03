@@ -34,6 +34,7 @@ from tensorsph.droplet_impact import (
     next_dt,
     resolve_device,
     rhs,
+    stable_dt,
     wall_lattice,
 )
 from tensorsph.neighbor_search import PairListCache
@@ -64,9 +65,9 @@ def make_capillary_wave(cfg: Config, wavelength: float, amplitude: float,
     fluid_mask = positions[:, 1] < interface_y
     positions = positions[fluid_mask]
 
-    # Hydrostatic initialization
-    mass = hydrostatic_density(positions[:, 1], cfg,
-                               surface=cfg.pool_depth) * dx * dx
+    # Uniform mass (no gravity for pure capillary wave)
+    mass = torch.full((positions.shape[0],), cfg.rho0 * dx * dx,
+                      dtype=positions.dtype, device=device)
     return positions, mass
 
 
@@ -104,7 +105,7 @@ def run_capillary_wave(cfg: Config, wavelength: float, amplitude: float,
 
     amplitudes: list[float] = []
     times: list[float] = []
-    dt = cfg.dt
+    dt = stable_dt(cfg)
     elapsed = 0.0
 
     for step in range(steps + 1):
@@ -200,7 +201,7 @@ def main():
         adaptive_dt=True,
         max_courant=0.25,
     )
-    cfg.dt = cfg.dt_from_courant()
+    cfg.dt = stable_dt(cfg)
     cfg.steps = int(round(args.seconds / cfg.dt))
     cfg.output_every = max(1, cfg.steps // 50)
 
