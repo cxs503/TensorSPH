@@ -360,7 +360,6 @@ def _plot(cases: list[dict], out: Path) -> None:
 
     # force profile figure
     cfg = Config(dx=0.005, surface_tension_coefficient=0.072, gravity=0.0, rho0=RHO0)
-    h = cfg.h_factor * cfg.dx
     fig, ax = plt.subplots(figsize=(6.4, 4.4))
     for dx, style in ((0.01, ":"), (0.005, "-"), (0.0025, "--")):
         pos, mass, _ = droplet_lattice(0.1, dx, "hex")

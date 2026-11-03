@@ -14,7 +14,6 @@ import torch
 
 from tensorsph.surface_tension import (
     apply_contact_angle_boundary,
-    compute_color_gradient,
     compute_surface_tension_force,
 )
 from tensorsph.droplet_impact import Config, wall_lattice
@@ -155,7 +154,6 @@ class TestContactAngleIntegration:
     def _make_droplet_particles(self, device="cpu"):
         """Create a droplet-like particle configuration with surface particles."""
         cfg = Config(dx=0.02, device=device)
-        h = cfg.h_factor * cfg.dx  # ~0.026
 
         # Particles within 2h of each other
         pos = torch.tensor([
@@ -197,7 +195,7 @@ class TestContactAngleIntegration:
         acc = compute_surface_tension_force(pos, density, mass, pairs, cfg, wall=wall)
         assert acc.shape == (6, 2)
         # Surface particles (4, 5) should have non-zero acceleration
-        assert not torch.allclose(acc[4:], torch.zeros(2, 2, dtype=torch.float32, device=device), atol=1e-10)
+        assert not torch.allclose(acc[4:], torch.zeros(2, 2, dtype=torch.float32, device=device), atol=1e-10)  # noqa: E501
 
     def test_surface_tension_without_contact_angle(self):
         """Surface tension force should work without contact angle (backward compat)."""
@@ -215,7 +213,7 @@ class TestContactAngleIntegration:
         acc = compute_surface_tension_force(pos, density, mass, pairs, cfg, wall=wall)
         assert acc.shape == (6, 2)
         # Surface particles should have non-zero acceleration
-        assert not torch.allclose(acc[4:], torch.zeros(2, 2, dtype=torch.float32, device=device), atol=1e-10)
+        assert not torch.allclose(acc[4:], torch.zeros(2, 2, dtype=torch.float32, device=device), atol=1e-10)  # noqa: E501
 
     def test_config_has_contact_angle_parameter(self):
         """Config should have contact_angle parameter."""

@@ -22,7 +22,6 @@ import torch
 
 from tensorsph import Config
 from tensorsph.neighbor_search import cell_linked_pairs
-from tensorsph.surface_tension import compute_surface_tension_force
 
 _BENCH = Path(__file__).resolve().parents[1] / "benchmarks" / "surface_tension" / "laplace.py"
 _spec = importlib.util.spec_from_file_location("laplace_bench", _BENCH)

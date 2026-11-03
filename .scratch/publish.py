@@ -1,4 +1,5 @@
 """Publish the m2502 report with numbers injected from the archived artifact."""
+# ruff: noqa: E501  (long CJK/markdown template lines; see PR notes)
 import base64
 import io
 import json

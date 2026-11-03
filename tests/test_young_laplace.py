@@ -97,7 +97,7 @@ def test_curvature_matches_circle(radius):
     """Measured curvature must be within 25 % of the analytic 1/R."""
     kappa_dS, _, _ = _measure(radius)
     rel = abs(kappa_dS * radius - 1.0)
-    assert rel < 0.25, f"kappa = {kappa_dS:.3f} 1/m vs 1/R = {1.0 / radius:.3f} 1/m ({100 * rel:.1f}%)"
+    assert rel < 0.25, f"kappa = {kappa_dS:.3f} 1/m vs 1/R = {1.0 / radius:.3f} 1/m ({100 * rel:.1f}%)"  # noqa: E501
 
 
 @pytest.mark.parametrize("radius", [0.05, 0.10])

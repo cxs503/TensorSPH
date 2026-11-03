@@ -36,7 +36,6 @@ def test_dam_section_depth_is_four_ninths():
 
 def test_depth_is_undisturbed_behind_the_tail_and_dry_ahead_of_the_front():
     h0, t, g = 0.1, 0.7, 9.81
-    c0 = wave_speed(h0, g)
     x = torch.tensor([tail_x(t, h0, dam_x=1.0, gravity=g) - 0.5,
                       front_x(t, h0, dam_x=1.0, gravity=g) + 0.5], dtype=torch.float64)
     h = depth(x, t, h0, dam_x=1.0, gravity=g)
