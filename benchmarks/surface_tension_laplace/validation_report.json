@@ -1,0 +1,167 @@
+{
+  "benchmark": "surface_tension_laplace",
+  "method": "radial line integral of the CSF volume force, dp = int sigma*kappa*|grad c| dr",
+  "setup": {
+    "radius_m": 0.1,
+    "sigma_N_per_m": 0.072,
+    "rho0_kg_per_m3": 1000.0,
+    "h_factor": 1.3,
+    "kernel": "2-D cubic spline, support 2h",
+    "colour_field": "two-phase step (1 inside, 0 outside, equal density)"
+  },
+  "theory": {
+    "laplace_dp_Pa": 0.7199999999999999
+  },
+  "two_phase_sweep_smoothed_color": [
+    {
+      "n_particles": 584,
+      "dp_Pa": 0.6466745433000467,
+      "resolved_color_jump": 0.9352744162261878,
+      "normal_alignment_mean": 0.9954317461397243,
+      "curvature_shell_mean_per_m": 9.577583349725563,
+      "curvature_shell_std_per_m": 6.966235370822222,
+      "normal_alignment_min": 0.9841512696517201,
+      "dx_m": 0.01,
+      "rel_error": 0.1018409120832683
+    },
+    {
+      "n_particles": 2380,
+      "dp_Pa": 0.6885428157443199,
+      "resolved_color_jump": 0.984582203254567,
+      "normal_alignment_mean": 0.9963345898403044,
+      "curvature_shell_mean_per_m": 9.618928933564455,
+      "curvature_shell_std_per_m": 12.052734964020301,
+      "normal_alignment_min": 0.9772850313730214,
+      "dx_m": 0.005,
+      "rel_error": 0.04369053368844446
+    },
+    {
+      "n_particles": 9692,
+      "dp_Pa": 0.6868230910201514,
+      "resolved_color_jump": 0.9894763834452804,
+      "normal_alignment_mean": 0.9956538812027678,
+      "curvature_shell_mean_per_m": 9.429957377107828,
+      "curvature_shell_std_per_m": 25.50006492632693,
+      "normal_alignment_min": 0.9677623998444169,
+      "dx_m": 0.0025,
+      "rel_error": 0.04607904024978957
+    }
+  ],
+  "two_phase_sweep_sharp_step_color": [
+    {
+      "n_particles": 584,
+      "dp_Pa": 0.6090348265926101,
+      "resolved_color_jump": 0.9501228367886292,
+      "normal_alignment_mean": 0.9800603415982311,
+      "curvature_shell_mean_per_m": 4.91198645381692,
+      "curvature_shell_std_per_m": 28.79809351090654,
+      "normal_alignment_min": 0.9034842476220369,
+      "dx_m": 0.01,
+      "rel_error": 0.15411829639915248
+    },
+    {
+      "n_particles": 2380,
+      "dp_Pa": 0.6511658535234763,
+      "resolved_color_jump": 0.9993464289246161,
+      "normal_alignment_mean": 0.9856700639967502,
+      "curvature_shell_mean_per_m": 4.401898431385567,
+      "curvature_shell_std_per_m": 54.807624215974414,
+      "normal_alignment_min": 0.8907437461287053,
+      "dx_m": 0.005,
+      "rel_error": 0.0956029812173938
+    },
+    {
+      "n_particles": 9692,
+      "dp_Pa": 0.5137793178859518,
+      "resolved_color_jump": 0.9802212488401032,
+      "normal_alignment_mean": 0.9830308272419446,
+      "curvature_shell_mean_per_m": 11.826270751306636,
+      "curvature_shell_std_per_m": 114.58561595725082,
+      "normal_alignment_min": 0.873133835698132,
+      "dx_m": 0.0025,
+      "rel_error": 0.28641761404728905
+    }
+  ],
+  "observed_convergence_order": [
+    1.22092461132524,
+    -0.07678993944829039
+  ],
+  "interpretation": {
+    "smoothed_color": "primary case: the colour field is resolved by the kernel, so the curvature is smooth and the Laplace error converges",
+    "sharp_step_color": "sensitivity case: a lattice step puts the full jump inside one smoothing length; curvature noise scales like 1/h and the error is no longer monotone in dx"
+  },
+  "legacy_gradient_comparison_at_dx_0.005": {
+    "n_particles": 2380,
+    "dp_Pa": 0.029292906833078197,
+    "resolved_color_jump": 0.40832734416449024,
+    "normal_alignment_mean": 4.795014959803477e-16,
+    "curvature_shell_mean_per_m": -3.4792092578598006e-14,
+    "curvature_shell_std_per_m": 100.139387554274,
+    "normal_alignment_min": -0.9999997861331743,
+    "dx_m": 0.005,
+    "rel_error": 0.9593154071762803
+  },
+  "one_sided_free_surface": {
+    "cases": [
+      {
+        "n_particles": 284,
+        "dp_Pa": 0.11296196571245531,
+        "resolved_color_jump": 0.27163706111190955,
+        "normal_alignment_mean": 0.9585158930097073,
+        "curvature_shell_mean_per_m": 8.23418404047831,
+        "curvature_shell_std_per_m": 15.684013493824793,
+        "normal_alignment_min": 0.8391972415456692,
+        "dx_m": 0.01,
+        "rel_error": 0.8431083809549231
+      },
+      {
+        "n_particles": 1208,
+        "dp_Pa": 0.19715555501265666,
+        "resolved_color_jump": 0.2803314191378418,
+        "normal_alignment_mean": 0.9724514308486483,
+        "curvature_shell_mean_per_m": 13.715102085883155,
+        "curvature_shell_std_per_m": 27.151521768562304,
+        "normal_alignment_min": 0.8379679484976122,
+        "dx_m": 0.005,
+        "rel_error": 0.726172840260199
+      }
+    ],
+    "verdict": "cannot close the Laplace law: the colour jump is only partly resolved because the interface has no particles on the outside; needs a two-phase or ghost-particle extension"
+  },
+  "criteria": {
+    "two_phase_laplace_error_at_dx_0.0025_lt_15pct": {
+      "measured": 0.04607904024978957,
+      "limit": 0.15,
+      "result": "pass"
+    },
+    "two_phase_laplace_error_at_dx_0.005_lt_15pct": {
+      "measured": 0.04369053368844446,
+      "limit": 0.15,
+      "result": "pass"
+    },
+    "resolved_color_jump_at_dx_0.0025_within_5pct": {
+      "measured": 0.010523616554719561,
+      "limit": 0.05,
+      "result": "pass"
+    },
+    "error_shrinks_under_refinement": {
+      "measured": true,
+      "expected": true,
+      "result": "pass"
+    },
+    "legacy_gradient_form_is_rejected": {
+      "measured_normal_alignment": 4.795014959803477e-16,
+      "limit": 0.95,
+      "result": "pass",
+      "note": "the pre-fix form must fail the outward-normal gate; this keeps the regression visible in the benchmark itself"
+    },
+    "outward_normal_alignment_gt_0.95": {
+      "measured": 0.9954317461397243,
+      "limit": 0.95,
+      "result": "pass"
+    }
+  },
+  "validation": {
+    "status": "PASS"
+  }
+}
