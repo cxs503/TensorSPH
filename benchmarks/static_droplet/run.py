@@ -1,5 +1,13 @@
 """Static droplet benchmark for surface tension validation.
 
+SUPERSEDED -- do not use the status in validation_report.json as evidence. The
+acceptance criterion here ("force is non-zero and physically reasonable") passed a
+force that was 776x the analytic scale against which it was printed, and a mean
+inward dot product of 0.174 against the 0.5 this module itself states. The analytic
+Young-Laplace gate that replaces it is benchmarks/laplace_pressure (case B5); see
+docs/benchmarks/surface-tension-verification.md. This case is kept because its
+force-decomposition diagnostics are still useful for debugging.
+
 This benchmark validates the surface tension implementation by checking:
 1. Force direction: surface particles should experience inward force
 2. Force magnitude: should be proportional to curvature and surface tension coefficient
