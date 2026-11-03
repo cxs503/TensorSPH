@@ -79,7 +79,7 @@ With `adaptive_dt` the run advances to `cfg.steps * cfg.dt` of simulated time ho
 | B2 density compression | **passing, 8.6–9.0 %** against a 10 % limit | peak is a wall-impact transient; bulk flow stays at 2 %. It failed at 10.0–10.3 % until the wall pressure extrapolation was completed in 0.7.0 — the limit never moved |
 | Time-step policy | passing | adaptive `dt` applies the acoustic limit to `c0 + \|v\|` every step; the dam-break ladder never exceeds 0.300 measured (0.344–0.359 without it) for 23 % more steps |
 | Free-surface treatment comparison | passing (numerics only) | clamp vs density diffusion on B1, B2 and clumping: pressure fluctuation 9.0 % → 6.8 %, worst pair separation 0.053 → 0.088 `dx`, interior error within the band-choice spread, +30 % cost. Default unchanged |
-| B2 experimental comparison | **not evaluated** — no digitized reference bundled | gate named in the same document |
+| B2 experimental comparison | **fail, and `WITHHELD`** — the reference is bundled but the provenance audit flags it (exactly uniform `tau` grid, ordinates quantised to the stated uncertainty), so the table cannot carry a physical-validation claim. Measured MAE 0.57–0.60 flat over a factor-4 refinement; no slip cuts the lag-corrected MAE to 0.16 | [`docs/benchmarks/dam-break-exp-bias-diagnosis.md`](docs/benchmarks/dam-break-exp-bias-diagnosis.md) |
 | Physical validation | **not evaluated** | no published experiment has been reproduced |
 
 Passing a numerical gate is not a claim that a simulation is physically accurate.

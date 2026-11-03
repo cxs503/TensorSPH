@@ -31,7 +31,24 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 
-from tensorsph.dam_break import DamBreakConfig, run_case
+from tensorsph.dam_break import DamBreakConfig, run_case, ritter_front
+
+
+def ritter_za(times, cfg) -> list[float]:
+    """Ritter leading edge in the Martin & Moyce ``Z/a`` convention.
+
+    ``Z`` is measured from the *initial column edge* (``x = a``), so
+
+        Z/a = (x_f - a) / a,   x_f = 2 sqrt(g H) t   (Ritter 1852)
+
+    For the 2:1 column used here (``H = 2a``) this is ``Z/a = 2 tau - 1`` with
+    ``tau = t sqrt(2 g / a)``.  An earlier version of this harness used
+    ``Z/a = tau``, i.e. a reservoir half as deep; every
+    ``ritter_mean_relative_error`` recorded before this fix is therefore
+    wrong by roughly a factor of two and had to be recomputed.
+    """
+    a = cfg.column_width
+    return [(ritter_front(t, cfg) - a) / a for t in times]
 
 
 def load_experimental_data(data_path: str | None = None) -> dict:
@@ -164,15 +181,15 @@ def run_one_exp(dx: float, args, exp_data: list[dict]) -> dict:
     sim_tau = [t * math.sqrt(2.0 * cfg.gravity / a) for t in run.times]
     sim_za = [(z - a) / a for z in run.front]  # Z/a = (x_max - a) / a
 
-    # Ritter analytical solution: Z/a = tau (for semi-infinite reservoir)
-    ritter_za = sim_tau[:]  # Z/a = tau
+    # Ritter analytical solution in the same Z/a convention as the experiment
+    ritter_za_values = ritter_za(run.times, cfg)
 
     # Experimental comparison
     exp_error = compute_exp_error(sim_tau, sim_za, exp_data)
 
     # Ritter comparison (for reference)
     ritter_errors = []
-    for tau_s, za_s, za_r in zip(sim_tau, sim_za, ritter_za):
+    for tau_s, za_s, za_r in zip(sim_tau, sim_za, ritter_za_values):
         if za_r > 0.01:
             ritter_errors.append(abs(za_s - za_r) / za_r)
     ritter_mean_error = sum(ritter_errors) / len(ritter_errors) if ritter_errors else None
@@ -192,13 +209,14 @@ def run_one_exp(dx: float, args, exp_data: list[dict]) -> dict:
         "wall_impact_time": run.wall_impact_time,
         "sim_tau": sim_tau,
         "sim_za": sim_za,
-        "ritter_za": ritter_za,
+        "ritter_za": ritter_za_values,
         "ritter_mean_relative_error": ritter_mean_error,
         "experimental_error": exp_error,
     }
 
 
-def generate_plot(results: list[dict], exp_data: list[dict], output_path: str):
+def generate_plot(results: list[dict], exp_data: list[dict], output_path: str,
+                  column_width: float = 0.2, column_height: float = 0.4):
     """Generate comparison plot: simulation vs experiment vs Ritter."""
     import matplotlib
     matplotlib.use("Agg")
@@ -217,7 +235,9 @@ def generate_plot(results: list[dict], exp_data: list[dict], output_path: str):
     # Plot Ritter analytical solution
     tau_max = max(max(exp_taus), max(r["sim_tau"][-1] for r in results))
     tau_ritter = [t * 0.05 for t in range(int(tau_max / 0.05) + 1)]
-    za_ritter = tau_ritter  # Z/a = tau for Ritter
+    # Z/a = 2 tau - 1 for a 2:1 column on a dry bed (see ritter_za())
+    aspect = column_height / column_width
+    za_ritter = [2.0 * math.sqrt(aspect / 2.0) * t - 1.0 for t in tau_ritter]
     ax.plot(tau_ritter, za_ritter, "r--", linewidth=1.5, alpha=0.7,
             label="Ritter shallow-water (reference)", zorder=1)
 
@@ -389,7 +409,9 @@ def main():
         plot_dir = Path(__file__).parent.parent.parent / "artifacts" / "dam_break_exp"
         plot_dir.mkdir(parents=True, exist_ok=True)
         plot_path = str(plot_dir / "dam_break_exp_comparison.png")
-        generate_plot(results, exp_data, plot_path)
+        generate_plot(results, exp_data, plot_path,
+                      column_width=args.column_width,
+                      column_height=2.0 * args.column_width)
         report["plot_path"] = plot_path
         print(f"\nPlot saved to {plot_path}")
 

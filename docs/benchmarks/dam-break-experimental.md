@@ -123,10 +123,7 @@ would be within the experimental uncertainty band for most points.
 
 ## Comparison with Ritter solution
 
-The Ritter shallow-water solution (Z/a = tau) assumes a semi-infinite reservoir
-on a dry bed. The Martin & Moyce experiment has a finite reservoir (aspect
-ratio 2:1), so the Ritter solution overpredicts the front position. Both the
-simulation and the experiment fall below the Ritter curve, as expected.
+The Ritter shallow-water solution assumes a semi-infinite reservoir. In the `Z/a` convention used here (front measured from the initial column edge) a 2:1 column gives `Z/a = 2 tau - 1`, not `Z/a = tau`; the harness used the wrong form until m2642 and any number recorded against it is superseded. Both the simulation and the experiment fall below the corrected Ritter curve, as expected.
 
 ## Correction (measured, m2502): the resolution prediction is falsified
 
@@ -156,8 +153,7 @@ full write-up (generated from the artifact, no hand-copied numbers):
    within the experimental uncertainty band. This requires ~2 minutes of
    compute time.
 
-2. **Wall friction study:** Compare free-slip vs no-slip walls to quantify
-   the effect on the front trajectory.
+2. ~~**Wall friction study:** Compare free-slip vs no-slip walls to quantify the effect on the front trajectory.~~ **Done (m2642):** measured at `dx` = 0.04 and 0.02 — no slip drops the late-time slope from 1.47–1.53 to 0.88–1.00 and the lag-corrected MAE from 0.55–0.57 to 0.16–0.23. The residual decomposes into a startup lag of `Δtau` ≈ 0.5–0.7 plus a front-speed error, not numerical diffusion. The same study audits the bundled reference and keeps the status `WITHHELD`, not `pass`. See [`dam-break-exp-bias-diagnosis.md`](dam-break-exp-bias-diagnosis.md).
 
 3. **Density diffusion:** Test the Antuono et al. (2012) diffusive term to
    see if it improves the front trajectory.
