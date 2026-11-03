@@ -248,6 +248,19 @@ def csf_fields(
     """
     n = pos.shape[0]
     vol = mass / rho0
+    if curvature_scheme != "mls" and pairs.numel() > 0:
+        # The interface fit needs an *arc*, not a kernel support: with the usual
+        # 2h pair list a shell particle sees only 3-4 staircase neighbours and
+        # the quadratic fit then returns a curvature that is ~2x too large
+        # (measured +96 % on a circle at dx = 1.5 mm) -- silently, because
+        # nothing about the returned field looks wrong.  The widening therefore
+        # belongs here and not in :func:`surface_tension_acceleration`, so that
+        # every consumer (force, diagnostics, tests) is handed the same field as
+        # the force.  Kernel weights vanish beyond 2h, so this changes no number
+        # for the ``"mls"`` path or for callers that already pass a 4h list.
+        from .neighbor_search import cell_linked_pairs
+
+        pairs = cell_linked_pairs(pos, curvature_stencil * h)
     color = kernel_sum_color(pos, mass, pairs, h, rho0)
     grad_c = mls_gradient(pos, color, vol, pairs, h)
     if wall is not None and contact_angle is not None:
@@ -310,13 +323,8 @@ def surface_tension_acceleration(
     if sigma <= 0.0:
         return torch.zeros_like(pos), None
     rho0 = float(rho0 if rho0 is not None else density.mean())
-    if curvature_scheme != "mls" and pairs.numel() > 0:
-        # The interface fit needs an arc, not a kernel support: the force loop
-        # otherwise hands us 2h pairs, which on a lattice is 3-4 staircase
-        # points per particle.  Widening costs one extra neighbour search per
-        # step and is only paid when the fit operator is selected.
-        from .neighbor_search import cell_linked_pairs
-        pairs = cell_linked_pairs(pos, curvature_stencil * h)
+    # ``csf_fields`` widens the pair list itself for the fit operators (one
+    # extra neighbour search per step, only paid when the fit is selected).
     state = csf_fields(pos, mass, pairs, h, rho0, wall=wall,
                        contact_angle=contact_angle,
                        curvature_scheme=curvature_scheme,
