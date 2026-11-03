@@ -137,6 +137,15 @@ Front trajectory at `dx = 0.01`:
 The front advances monotonically and stays below the Ritter shallow-water front
 (ratio 0.62–0.88), which is expected for a finite reservoir.
 
+That offset is no longer anonymous. Benchmark **B2b**
+([`ritter-shallow-limit.md`](ritter-shallow-limit.md)) runs the same solver at
+`H/a = 0.10` and `0.20`, in the regime where Ritter is exact, and separates the
+two causes: the ratio above is dominated by the **non-hydrostatic collapse** at
+`H/a = 2`, which shallow-water theory does not describe, and only a few percent
+per resolution doubling is left as scheme error once the column is shallow. B2
+still makes no physical-validation claim; B2b quantifies how far the solver is
+from an analytic reference, which is the prerequisite for one.
+
 ## Compressibility study
 
 The same geometry at `dx = 0.01` with three sound speeds. A reference
