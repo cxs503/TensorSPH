@@ -145,3 +145,16 @@ fit_quadratic 之间只换了曲率算子；**切割力仍 < 15%（10.7%）**，
 
 图左/中：壳层粒子的 $|\kappa|$ 场（mls vs fit_quadratic，解析值 50 1/m）；
 右：壳层曲率分布与解析值；下：分辨率扫描、误差门、切割力恒等式与伪流时间历程。
+
+## 8. 补记（m2737）：§7 欠账 1 已结清
+
+`delta_s` 归一 0.74 的根因不是「最外层梯度被抹平」，而是**离散色函数的截面跨度只有 1 - c_surf ~ 0.37
+（c_surf ~ 0.63），历史代码却硬编码 2 倍因子（等价于假设 c_surf = 1/2）**。改按实测跳变归一
+`delta_s = |grad c| / (1 - c_surf)` 后，`int delta_s dn` 从 0.74 回到 0.99-1.02。
+同时发现本文 §3「切割力 10.7% 在门内」是**相消误差**：旧度量 `sum m a` 除的是求和密度，
+界面亏 20% 使其放大 1.25 倍，与 delta_s 的 0.75 相乘才落在 1.0 附近。按几何体积口径，
+旧方案实为 0.71-0.79，新方案 0.95-1.03。
+细节、数字表与图：`docs/verification_delta_s_normalization.md`；
+工件：`benchmarks/csf_delta_s/{run.py, run_relax.py, results.json, results_relax.json, delta_s_normalization.png}`；
+回归：`tests/test_csf_delta_s_normalization.py`（8 条）。
+默认方案仍为 `"fixed"`（改写动量注入 +32% 会把伪流顶过 Adami 阈值），见 §7 与本文 §8 的交接。

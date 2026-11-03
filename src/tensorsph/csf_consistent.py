@@ -60,6 +60,21 @@ import torch
 from .csf_curvature import fit_curvature
 from .droplet_impact import cubic_spline_gradient, cubic_spline_kernel
 
+#: ``delta_s`` normalisation schemes (see :func:`csf_fields`).
+DELTA_S_SCHEMES = ("fixed", "jump")
+
+#: Quantile of the colour field over the interface particles that defines the
+#: interface colour value ``c_surf``.  The outermost particle layer of a lattice
+#: carries a discrete value of the kernel sum (0.6195 for hex packing at
+#: h = 1.3 dx); taking a low quantile instead of the extreme minimum keeps one
+#: odd particle from setting the normalisation.
+DELTA_S_QUANTILE = 0.10
+
+#: Bounds on the measured colour span ``1 - c_surf``.  A field with no free
+#: surface has a flat colour, so the span would collapse; the force there is
+#: zero anyway, but the guard keeps the factor finite.
+DELTA_S_SPAN_BOUNDS = (0.10, 1.0)
+
 
 @dataclass
 class CSFState:
@@ -230,6 +245,7 @@ def csf_fields(
     normal_smoothing: int = 2,
     curvature_scheme: str = "mls",
     curvature_stencil: float = 4.0,
+    delta_s_normalization: str = "fixed",
 ) -> CSFState:
     """Colour, its gradient, the outward normal, curvature and delta_s.
 
@@ -245,6 +261,28 @@ def csf_fields(
     ``"fit_quadratic"`` / ``"fit_circle"``
         weighted local interface fit, see :mod:`tensorsph.csf_curvature`; the
         MLS value is kept as the fallback where the stencil is too poor.
+
+    ``delta_s_normalization`` selects how the surface delta function is scaled:
+
+    ``"fixed"`` (default, historical behaviour)
+        ``delta_s = 2 |grad c|``, i.e. it *assumes* an interface colour value of
+        ``1/2``.  On a lattice the outermost layer carries ``c_surf ~ 0.63``, so
+        the delta function integrates to ~0.74 instead of 1 and the scheme is
+        systematically weak by the missing colour span.  It stays the default
+        because raising it changes the *momentum* the interface receives by
+        +32 %, which at the resolutions where the Young-Laplace pressure is
+        measurable pushes the spurious currents past the Adami threshold
+        (0.048 -> 0.147 at R/h = 5); the ``f / rho`` normalisation and the
+        pressure basis have to be fixed first.
+    ``"jump"``
+        ``delta_s = |grad c| / (1 - c_surf)`` with ``c_surf`` the measured colour
+        value on the outermost particle layer
+        (:data:`DELTA_S_QUANTILE` quantile over the interface particles).  The
+        defining property of a CSF delta function is ``int delta_s dn = 1``
+        across the interface; in a one-sided particle cloud the colour only runs
+        from ``c_bulk = 1`` down to ``c_surf``, so the *measured* span
+        ``1 - c_surf`` is what fixes the factor.  See
+        ``docs/verification_delta_s_normalization.md``.
     """
     n = pos.shape[0]
     vol = mass / rho0
@@ -284,7 +322,23 @@ def csf_fields(
     # did, letting the colour jump be O(0.3) instead of O(1)) makes the CSF
     # force -- and therefore the Laplace pressure jump -- too weak by exactly
     # the missing factor.
-    delta_s = 2.0 * torch.linalg.vector_norm(grad_c, dim=1)
+    # One-sided colour: the span the discrete field actually covers.  See the
+    # ``delta_s_normalization`` note in the docstring.
+    if delta_s_normalization not in DELTA_S_SCHEMES:
+        raise ValueError(f"delta_s_normalization must be one of "
+                         f"{DELTA_S_SCHEMES}, got {delta_s_normalization!r}")
+    mag_grad = torch.linalg.vector_norm(grad_c, dim=1)
+    if delta_s_normalization == "fixed":
+        delta_s = 2.0 * mag_grad
+    else:
+        active = mag_grad > 0.05 * mag_grad.max().clamp_min(1e-30)
+        if bool(active.any()):
+            c_surf = torch.quantile(color[active], DELTA_S_QUANTILE)
+        else:
+            c_surf = color.new_tensor(0.5)
+        lo, hi = DELTA_S_SPAN_BOUNDS
+        span = (1.0 - c_surf).clamp(lo, hi)
+        delta_s = mag_grad / span
     if curvature_scheme != "mls":
         kappa = fit_curvature(pos, normal, delta_s, pairs, h, fallback=kappa,
                               method=curvature_scheme, stencil=curvature_stencil)
@@ -305,6 +359,7 @@ def surface_tension_acceleration(
     contact_angle: float | None = None,
     curvature_scheme: str = "mls",
     curvature_stencil: float = 4.0,
+    delta_s_normalization: str = "fixed",
 ) -> tuple[torch.Tensor, CSFState | None]:
     """CSF acceleration ``a = -sigma kappa delta_s n / rho`` and its fields."""
     if sigma <= 0.0:
@@ -320,7 +375,8 @@ def surface_tension_acceleration(
     state = csf_fields(pos, mass, pairs, h, rho0, wall=wall,
                        contact_angle=contact_angle,
                        curvature_scheme=curvature_scheme,
-                       curvature_stencil=curvature_stencil)
+                       curvature_stencil=curvature_stencil,
+                       delta_s_normalization=delta_s_normalization)
     # Particles whose colour field is locally flat are not on the interface; the
     # clamped kernel sum makes their |grad c| numerically ~1e-12 rather than
     # exactly zero, so they are masked out. Bulk traction stays a bit-exact

@@ -227,10 +227,11 @@ def instant_diagnostics(radius, dx, sigma, rho0, sound_speed, viscosity):
 
 
 def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
-          steps=900, viscosity=0.01):
+          steps=900, viscosity=0.01, curvature="mls", delta_s="fixed"):
     cfg = Config(dx=dx, h_factor=1.3, rho0=rho0, sound_speed=sound_speed,
                  gamma=7.0, gravity=0.0, viscosity=viscosity,
-                 surface_tension_coefficient=sigma)
+                 surface_tension_coefficient=sigma, csf_curvature=curvature,
+                 csf_delta_s=delta_s)
     h = cfg.h_factor * cfg.dx
     dt = float(stable_dt(cfg))
     t_sigma = math.sqrt(rho0 * radius ** 3 / sigma)

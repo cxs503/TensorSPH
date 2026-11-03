@@ -1,0 +1,59 @@
+{
+  "setup": {
+    "radius_m": 0.02,
+    "sigma_N_per_m": 7.2,
+    "rho0": 1000.0,
+    "capillary_time_s": 0.03333333333333334,
+    "curvature_operator": "fit_quadratic"
+  },
+  "rows": [
+    {
+      "dx_m": 0.004,
+      "steps": 380,
+      "normalization": "fixed",
+      "curvature_operator": "fit_quadratic",
+      "delta_p_theory_Pa": 360.0,
+      "delta_p_measured_Pa": 389.4232592310956,
+      "rel_error_pct": 8.173127564193218,
+      "within_15pct": true,
+      "spurious_ratio": 0.04782628328712859,
+      "spurious_passes_adami": true
+    },
+    {
+      "dx_m": 0.004,
+      "steps": 380,
+      "normalization": "jump",
+      "curvature_operator": "fit_quadratic",
+      "delta_p_theory_Pa": 360.0,
+      "delta_p_measured_Pa": 763.0163711188754,
+      "rel_error_pct": 111.9489919774654,
+      "within_15pct": false,
+      "spurious_ratio": 0.14723029342045363,
+      "spurious_passes_adami": false
+    },
+    {
+      "dx_m": 0.002,
+      "steps": 600,
+      "normalization": "fixed",
+      "curvature_operator": "fit_quadratic",
+      "delta_p_theory_Pa": 360.0,
+      "delta_p_measured_Pa": -51.234753906412635,
+      "rel_error_pct": -114.2318760851146,
+      "within_15pct": false,
+      "spurious_ratio": 0.032222708961088815,
+      "spurious_passes_adami": true
+    },
+    {
+      "dx_m": 0.002,
+      "steps": 600,
+      "normalization": "jump",
+      "curvature_operator": "fit_quadratic",
+      "delta_p_theory_Pa": 360.0,
+      "delta_p_measured_Pa": -78.40987902543657,
+      "rel_error_pct": -121.78052195151017,
+      "within_15pct": false,
+      "spurious_ratio": 0.052423285001526126,
+      "spurious_passes_adami": true
+    }
+  ]
+}

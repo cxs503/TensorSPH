@@ -127,6 +127,12 @@ class Config:
     # historical discretisation, +25 % on a circle); "fit_quadratic"/"fit_circle"
     # = weighted local interface fit (see tensorsph.csf_curvature).
     csf_curvature: str = "mls"
+    # CSF surface delta function normalisation. "jump" = |grad c| / (1 - c_surf)
+    # with the interface colour value measured from the field (the discrete
+    # colour runs 1 -> ~0.62, not 1 -> 1/2, so the historical hard-coded factor
+    # of 2 is weak); "fixed" = 2 |grad c|, kept for A/B. See
+    # docs/verification_delta_s_normalization.md.
+    csf_delta_s: str = "fixed"
 
 
 # --------------------------------------------------------------------------- #
@@ -729,6 +735,10 @@ def validate_config(cfg: Config) -> None:
         raise ValueError(
             "csf_curvature must be 'mls', 'fit_quadratic' or 'fit_circle', "
             f"got {cfg.csf_curvature!r}")
+    if cfg.csf_delta_s not in ("jump", "fixed"):
+        raise ValueError(
+            "csf_delta_s must be 'jump' or 'fixed', "
+            f"got {cfg.csf_delta_s!r}")
     if cfg.csf_scheme not in ("consistent", "legacy"):
         raise ValueError(
             f"csf_scheme must be 'consistent' or 'legacy', got {cfg.csf_scheme!r}")
