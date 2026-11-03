@@ -15,7 +15,8 @@ reports the absolute front position x_max, so the conversion is::
 
 Usage:
     python benchmarks/dam_break/experimental_validation.py --sizes 0.02,0.01 --seconds 1.5
-    python benchmarks/dam_break/experimental_validation.py --sizes 0.02 --seconds 1.5 --plot --json-out artifacts/dam_break_exp_validation.json
+    python benchmarks/dam_break/experimental_validation.py \
+        --sizes 0.02 --seconds 1.5 --plot --json-out artifacts/dam_break_exp_validation.json
 
 Exit status is non-zero when the experimental comparison gate fails.
 """
@@ -279,7 +280,7 @@ def main():
     print(f"Loaded {len(exp_data)} experimental points from Martin & Moyce (1952)")
     print(f"  Source: {exp_ref['source']['paper']}")
     print(f"  Digitization: {exp_ref['digitization']['method']}")
-    print(f"  Non-dimensionalization: Z/a = (x_max - a) / a, tau = t*sqrt(2g/a)")
+    print("  Non-dimensionalization: Z/a = (x_max - a) / a, tau = t*sqrt(2g/a)")
     print()
 
     # Run simulations
@@ -291,7 +292,8 @@ def main():
         results.append(result)
 
         exp_err = result["experimental_error"]
-        err_str = "N/A" if exp_err["mean_absolute_error"] is None else f"{exp_err['mean_absolute_error']:.4f}"
+        mae = exp_err["mean_absolute_error"]
+        err_str = "N/A" if mae is None else f"{mae:.4f}"
         print(f"  dx={dx:g}: {result['wall_clock_s']:.1f} s, {result['steps_taken']} steps, "
               f"N={result['particles']}, Mach={result['mach_number']:.2f}, "
               f"exp MAE={err_str}", flush=True)
@@ -404,7 +406,9 @@ def main():
     failed = [name for name, gate in report["gates"].items()
               if gate.get("result") == "fail"]
     if failed:
-        raise SystemExit(f"ERROR: dam-break experimental validation gates failed: {', '.join(failed)}")
+        raise SystemExit(
+            f"ERROR: dam-break experimental validation gates failed: {', '.join(failed)}"
+        )
 
 
 if __name__ == "__main__":

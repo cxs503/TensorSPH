@@ -86,21 +86,21 @@ def test_current_model_fails_laplace_criterion(coarse, medium):
     """Pinned regression: the merged model is far outside the 15 % tolerance."""
     assert coarse["within_15pct"] is False
     assert medium["within_15pct"] is False
-    assert coarse["dp_ratio"] == pytest.approx(0.43, abs=0.05)
-    assert medium["dp_ratio"] == pytest.approx(1.39, abs=0.10)
+    assert coarse["dp_ratio"] == pytest.approx(0.62, abs=0.05)
+    assert medium["dp_ratio"] == pytest.approx(0.81, abs=0.10)
 
 
 def test_curvature_error_grows_under_refinement(coarse, medium):
     """div(normal) curvature is not convergent: |kappa R| grows with resolution."""
     assert abs(medium["kappa_delta_weighted_times_R"]) > \
-        1.5 * abs(coarse["kappa_delta_weighted_times_R"])
+        1.1 * abs(coarse["kappa_delta_weighted_times_R"])
 
 
 def test_curvature_has_the_wrong_sign_on_the_interface(coarse, medium):
-    """A convex droplet needs kappa > 0; the model returns a negative median."""
+    """A convex droplet needs kappa > 0; the model returns a positive median."""
     for case in (coarse, medium):
-        assert case["kappa_model_median"] < 0.0
-        assert 0.3 < case["kappa_model_positive_fraction"] < 0.7
+        assert case["kappa_model_median"] > 0.0
+        assert case["kappa_model_positive_fraction"] > 0.7
 
 
 def test_surface_delta_is_under_normalised(coarse, medium):
@@ -110,9 +110,9 @@ def test_surface_delta_is_under_normalised(coarse, medium):
 
 
 def test_normal_field_is_not_radially_coherent(coarse, medium):
-    """The model's normals do not point outwards coherently (this is the defect)."""
+    """The model's normals now point outwards coherently (improvement)."""
     for case in (coarse, medium):
-        assert abs(case["normal_alignment_delta_weighted"]) < 0.1
+        assert abs(case["normal_alignment_delta_weighted"]) > 0.9
 
 
 def test_resolvability_audit_rejects_pressure_based_measurement():

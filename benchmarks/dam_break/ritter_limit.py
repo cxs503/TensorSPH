@@ -200,7 +200,7 @@ def run_one(name, column_width, column_height, dx, device="cpu", seconds=None,
     for t, pos, vel in run.snapshots:
         centres, h_sph = particle_depth(pos, dx, bin_width, lo=lo, hi=x_hi)
         h_ref = ritter_depth(centres, t, column_height, dam_x=column_width)
-        u_ref = ritter_velocity(centres, t, column_height, dam_x=column_width)
+        ritter_velocity(centres, t, column_height, dam_x=column_width)
         # Both profiles are carried on the same grid, so the L1 difference is a
         # shape error and not a sampling artefact of the front moving between
         # the two grids.
@@ -447,7 +447,7 @@ def document(results, orders, gate_rows, rich, probes=()):
     ladder = sorted([r for r in results if abs(r["aspect"] - 0.1) < 1e-9],
                     key=lambda r: -r["dx"])
     finest = min((r for r in results if r["aspect"] <= 0.2), key=lambda r: r["dx"])
-    coarsest = max(ladder, key=lambda r: r["dx"])
+    max(ladder, key=lambda r: r["dx"])
     trend = sorted({(r["aspect"], r["dx"]): r for r in results}.values(),
                    key=lambda r: (r["dx"], r["aspect"]))
     deepest = max(results, key=lambda r: r["aspect"])
@@ -492,7 +492,7 @@ def document(results, orders, gate_rows, rich, probes=()):
         f"| column width `a` | {finest['column_width']:g} m (ladder) |",
         f"| column height `H` | {finest['column_height']:g} m |",
         "| aspect ratios `H/a` | 0.10 (ladder), 0.20, 2.00 (B2 aspect) |",
-        f"| resolutions `dx` | " + ", ".join(f"{r['dx']:.3f}" for r in ladder) + " |",
+        "| resolutions `dx` | " + ", ".join(f"{r['dx']:.3f}" for r in ladder) + " |",
         f"| sound speed `c0` | 20 sqrt(gH) = {finest['sound_speed']:.2f} m/s,"
         f" surge Mach {finest['mach_surge']:.2f} |",
         f"| time step | acoustic Courant 0.30, `dt = {finest['dt']:.3e}` s at the"
@@ -501,7 +501,7 @@ def document(results, orders, gate_rows, rich, probes=()):
         "| viscosity | `nu = 0`; Ritter is inviscid, and the solver has no artificial",
         "  viscosity term |",
         "| walls | free slip, three static layers, Adami et al. (2012) pressure |",
-        f"| tank | three cells of clearance beyond the front's reach |",
+        "| tank | three cells of clearance beyond the front's reach |",
         "| window | `0.8 a / sqrt(gH)`, i.e. 0.8 of Ritter's validity window |",
         "",
         "Ritter's solution is exact for a *semi-infinite* reservoir, so the back wall",
@@ -548,8 +548,8 @@ def document(results, orders, gate_rows, rich, probes=()):
             f"Richardson extrapolation from the two finest runs (`p = {rich['order']:.2f}`):",
             f"the continuum front error would be `{100*abs(rich['front_error_limit']):.1f} %`."
             f" Indicative only -- two points cannot validate a power law, and the third",
-            f" point of the ladder is what tests it. It does say the error is a decaying",
-            f" discretisation error with a finite limit, not a constant offset.",
+            " point of the ladder is what tests it. It does say the error is a decaying",
+            " discretisation error with a finite limit, not a constant offset.",
         ]
     body += [
         "",

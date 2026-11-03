@@ -1,6 +1,4 @@
 """Tests for the dam-break experimental validation infrastructure."""
-import json
-import math
 import pytest
 
 from benchmarks.dam_break.experimental_validation import (

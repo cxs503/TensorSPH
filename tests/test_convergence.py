@@ -31,7 +31,6 @@ from tensorsph.dam_break import DamBreakConfig, run_case
 from tensorsph.droplet_impact import (
     Config,
     apply_boundary,
-    hydrostatic_density,
     make_particles,
     rhs,
     wall_lattice,

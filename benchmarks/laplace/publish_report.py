@@ -28,7 +28,8 @@ token = None
 for creds in ({"username": user, "password": password},):
     try:
         res = post("/auth/login", creds)
-        token = res.get("access_token") or res.get("token") or res.get("data", {}).get("access_token")
+        token = (res.get("access_token") or res.get("token")
+                 or res.get("data", {}).get("access_token"))
     except Exception as exc:                                  # pragma: no cover
         print("login failed:", getattr(exc, "code", exc),
               getattr(exc, "read", lambda: b"")()[:200])
@@ -88,11 +89,13 @@ Stage B：
 | 量 | 值 |
 |---|---|
 | dt | {b['dt']:.3e} s（约束来源 {b['dt_limit_source']}） |
-| 步数 / 物理时间 | {b['steps_run']} / {b['sim_time']:.3f} s = {b['sim_time'] / b['tau_capillary']:.2f} tau_sigma |
+| 步数 / 物理时间 | {b['steps_run']} / {b['sim_time']:.3f} s
+  = {b['sim_time'] / b['tau_capillary']:.2f} tau_sigma |
 | Delta p 实测（弛豫态） | {b['delta_p_measured']:.4f} Pa |
 | Delta p 静态力平衡（t=0） | {b['delta_p_static_force_balance']:.4f} Pa |
 | Delta p 解析 sigma/R_eq | {b['delta_p_analytic']:.4f} Pa |
-| 相对误差（弛豫态 / 静态） | {100 * b['relative_error']:.2f} % / {100 * b['static_force_balance_relative_error']:.2f} % |
+| 相对误差（弛豫态 / 静态） | {100 * b['relative_error']:.2f} %
+    / {100 * b['static_force_balance_relative_error']:.2f} % |
 
 ## 4. 结果图
 
@@ -103,7 +106,8 @@ Stage B：
 
 1. **发现并修复真实缺陷**：compute_color_gradient 的 j 端 index_add 取了负号且用了 V_j。
 每一对粒子两端给出相反符号，在光滑场上相互抵消——线性色场 c=3x 的梯度原本是 1e-18，
-修复后 {a['grad_linear_measured'][0]:.4f}（解析 3.0，相对误差 {100 * a['grad_linear_relative_error']:.2f} %）。
+修复后 {a['grad_linear_measured'][0]:.4f}（解析 3.0，
+相对误差 {100 * a['grad_linear_relative_error']:.2f} %）。
 即 m277 的 CSF 力实际是惰性的，而原 10 个测试全绿（均匀场两种情况梯度都为零）。
 两端贡献符号相同，仅体积下标不同。
 2. 算子测试**必须在界面两侧都布点**：只取液滴晶格（无外部粒子）会丢掉 tanh 外半支，
@@ -121,7 +125,8 @@ int|grad c| dr 从 1 掉到 0.35，所有 Laplace 数被系统性低估约 3 倍
 | 曲率 kappa | 解析 1/R | {100 * hd['kappa_relative_error']:.2f} % | 是 | 是 |
 | 界面 delta 积分 | 解析色跳变 | {100 * hd['integral_relative_error']:.2f} % | 是 | 是 |
 | Laplace 压差（算子级） | 解析 sigma/R | {100 * hd['delta_p_relative_error']:.2f} % | 是 | 是 |
-| Laplace 压差（自由面液滴） | 解析 sigma/R_eq | {100 * b['relative_error']:.2f} % | **否** | **否** |
+| Laplace 压差（自由面液滴） | 解析 sigma/R_eq |
+| | {100 * b['relative_error']:.2f} % | **否** | **否** |
 
 结论（honest）：符号修复后**算子链**复现 Laplace 定律优于 3%；但**自由面液滴力例程**
 低估 {100 * b['relative_error']:.1f}%，不达标，已用 xfail(strict=True) 测试
@@ -132,7 +137,8 @@ int|grad c| dr 从 1 掉到 0.35，所有 Laplace 数被系统性低估约 3 倍
 
 png = (ROOT / "artifacts/laplace/laplace.png").read_bytes()
 payload = {
-    "title": "TensorSPH 表面张力 CSF 模型对 Laplace 定律的解析验证：色函数梯度符号缺陷修复 + 算子达标 2.15%、自由面力例程低估 57.8%",
+    "title": ("TensorSPH 表面张力 CSF 模型对 Laplace 定律的解析验证："
+             "色函数梯度符号缺陷修复 + 算子达标 2.15%、自由面力例程低估 57.8%"),
     "summary": ("对 m277 合入的 CSF 表面张力做解析基准复核（Laplace Δp=σ/R）。发现并修复 "
                 "compute_color_gradient 的符号错误（光滑场梯度原为 0，CSF 力惰性）；修复后算子链"
                 "（κ、∫|∇c|dr、Δp）复现 Laplace 定律误差 2.15%（<3%）；自由面液滴力例程仍低估 "

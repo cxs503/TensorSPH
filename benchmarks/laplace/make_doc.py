@@ -60,7 +60,8 @@ half-width {1000 * a['lattice_half_width']:.0f} mm ({a['pairs']} pairs), `h = 1.
 `integral |grad c| dr` must equal the colour jump (= 1). Their product is the
 Laplace jump implied by the discretised operator.
 
-| w/dx | ring particles | kappa [1/m] | kappa err | int\\|grad c\\|dr | int err | Delta p [Pa] | Delta p err |
+| w/dx | ring particles | kappa [1/m] | kappa err |
+| int\\|grad c\\|dr | int err | Delta p [Pa] | Delta p err |
 |---|---|---|---|---|---|---|---|
 {rows_sweep}
 
@@ -87,7 +88,8 @@ hex lattice `R = {1000 * b['R_lattice']:.0f} mm`, `R_eq = {1000 * b['R_equivalen
 | quantity | value |
 |---|---|
 | dt | {b['dt']:.3e} s (binding limit: {b['dt_limit_source']}) |
-| steps / sim time | {b['steps_run']} / {b['sim_time']:.3f} s = {b['sim_time'] / b['tau_capillary']:.2f} tau_sigma |
+| steps / sim time | {b['steps_run']} / {b['sim_time']:.3f} s
+  = {b['sim_time'] / b['tau_capillary']:.2f} tau_sigma |
 | tau_sigma = sqrt(rho R^3 / sigma) | {b['tau_capillary']:.3f} s |
 | Delta p measured, relaxed | {b['delta_p_measured']:.4f} Pa |
 | Delta p static force balance, t = 0 | {b['delta_p_static_force_balance']:.4f} Pa |
@@ -140,11 +142,15 @@ suite red on purpose, so the fix cannot be merged silently.
 
 | quantity | basis | error | < 3 %? | < 15 %? |
 |---|---|---|---|---|
-| colour-gradient consistency | analytic linear field | {100 * a['grad_linear_relative_error']:.2f} % | yes | yes |
+| colour-gradient consistency | analytic linear field |
+| | {100 * a['grad_linear_relative_error']:.2f} % | yes | yes |
 | curvature kappa | analytic 1/R | {100 * hd['kappa_relative_error']:.2f} % | yes | yes |
-| interface delta integral | analytic colour jump | {100 * hd['integral_relative_error']:.2f} % | yes | yes |
-| Laplace jump, operator level | analytic sigma/R | {100 * hd['delta_p_relative_error']:.2f} % | yes | yes |
-| Laplace jump, free-surface droplet | analytic sigma/R_eq | {100 * b['relative_error']:.2f} % | **no** | **no** |
+| interface delta integral | analytic colour jump |
+| | {100 * hd['integral_relative_error']:.2f} % | yes | yes |
+| Laplace jump, operator level | analytic sigma/R |
+| | {100 * hd['delta_p_relative_error']:.2f} % | yes | yes |
+| Laplace jump, free-surface droplet | analytic sigma/R_eq |
+| | {100 * b['relative_error']:.2f} % | **no** | **no** |
 
 The operator (after the sign fix) reproduces the Laplace law to better than 3 %.
 The free-surface force routine does not, and this report states it rather than

@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import torch
 
-from .droplet_impact import Config, cubic_spline_gradient, cubic_spline_kernel
+from .droplet_impact import Config, cubic_spline_gradient
 
 
 def compute_color_gradient(
@@ -147,7 +147,8 @@ def compute_curvature(
 
     # Symmetric contribution:
     # For particle i: V_j * (n_j - n_i) . grad_W_ij
-    # For particle j: V_i * (n_j - n_i) . grad_W_ij (note: grad_W_ji = -grad_W_ij, but we use the same pair)
+    # For particle j: V_i * (n_j - n_i) . grad_W_ij
+    # (note: grad_W_ji = -grad_W_ij, but we use the same pair)
     kappa = kappa.index_add(0, i, vol_j * div_n)
     kappa = kappa.index_add(0, j, vol_i * div_n)
 
@@ -160,8 +161,12 @@ def compute_surface_tension_force(
     mass: torch.Tensor,
     pairs: torch.Tensor,
     cfg: Config,
+    wall: torch.Tensor = None,
 ) -> torch.Tensor:
     """Compute surface tension acceleration using CSF model.
+
+    Args:
+        wall: Optional wall particle positions for contact angle BC (stub: ignored).
 
     For single-fluid SPH with free surfaces (droplets/bubbles), we detect
     surface particles by counting neighbors. Surface particles have fewer
@@ -194,14 +199,14 @@ def compute_surface_tension_force(
     neighbor_count = torch.zeros(n, dtype=pos.dtype, device=pos.device)
     neighbor_count = neighbor_count.index_add(0, i, torch.ones_like(i, dtype=pos.dtype))
     neighbor_count = neighbor_count.index_add(0, j, torch.ones_like(j, dtype=pos.dtype))
-    
+
     # Detect surface particles: those with fewer neighbors than average
     # Interior particles typically have ~20-30 neighbors in 2D
     # Surface particles have significantly fewer
     avg_neighbors = neighbor_count.mean()
     surface_threshold = 0.7 * avg_neighbors  # 70% of average
     is_surface = neighbor_count < surface_threshold
-    
+
     if not is_surface.any():
         # No surface particles detected
         return torch.zeros((n, 2), dtype=pos.dtype, device=pos.device)
@@ -233,7 +238,7 @@ def compute_surface_tension_force(
     # Since n points outward and kappa > 0, f = sigma * kappa * n points outward.
     # But we want inward force! So we need to negate: f = -sigma * kappa * n * delta_s
     # OR: use inward normal (which we already have from grad(c)) and positive kappa.
-    
+
     # Let's use the convention: force points inward for convex surfaces.
     # With outward normal and kappa = div(n) > 0 for convex surface:
     # f = -sigma * kappa * n points inward (correct!)
@@ -267,3 +272,35 @@ def capillary_dt_limit(cfg: Config, safety: float = 0.25) -> float:
     # Capillary time scale: sqrt(rho * h^3 / sigma)
     dt_cap = safety * (rho * h**3 / sigma) ** 0.5
     return dt_cap
+
+
+def apply_contact_angle_boundary(
+    grad_c: "torch.Tensor",
+    pos: "torch.Tensor",
+    wall_pos: "torch.Tensor",
+    h: float,
+    theta: float,
+) -> "torch.Tensor":
+    """Apply contact angle boundary condition to color gradient near walls.
+
+    This is a stub implementation that returns the gradient unchanged.
+    A full implementation would modify the gradient near wall particles
+    to enforce the specified contact angle theta.
+
+    Args:
+        grad_c: color gradient field, shape (n_particles, dim)
+        pos: particle positions, shape (n_particles, dim)
+        wall_pos: wall particle positions, shape (n_wall, dim)
+        h: smoothing length
+        theta: contact angle in radians (pi/2 = neutral)
+
+    Returns:
+        Modified color gradient with contact angle enforced near walls.
+        Currently returns input unchanged (stub).
+    """
+    # Stub: return gradient unchanged (neutral contact angle behavior)
+    # A full implementation would:
+    # 1. Find particles within 2h of wall
+    # 2. Compute wall normal at each near-wall particle
+    # 3. Rotate gradient to enforce contact angle theta
+    return grad_c

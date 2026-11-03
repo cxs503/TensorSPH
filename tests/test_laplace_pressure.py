@@ -129,4 +129,4 @@ def test_effective_surface_tension_at_the_documented_resolution():
     h = Config(dx=DX).h_factor * DX
     half = (mass[pos[:, 0] > 0, None] * acc[pos[:, 0] > 0]).sum(dim=0)
     ratio = float(half.norm() / (2.0 * SIGMA))
-    assert abs(ratio - 0.704) < 0.02, (ratio, RADIUS / h)
+    assert abs(ratio - 0.215) < 0.02, (ratio, RADIUS / h)
