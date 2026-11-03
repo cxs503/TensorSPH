@@ -118,6 +118,11 @@ class Config:
     # Contact angle at walls (radians). None disables contact angle BC.
     # theta < pi/2: hydrophilic (wetting), theta > pi/2: hydrophobic.
     contact_angle: float | None = None
+    # CSF surface-tension discretisation. "consistent" = kernel-sum colour with
+    # first-order (MLS) consistent operators (tensorsph.csf_consistent), the
+    # scheme verified against the Young-Laplace law; "legacy" = the original
+    # neighbour-count colour with uncorrected operators, kept for A/B.
+    csf_scheme: str = "consistent"
 
 
 # --------------------------------------------------------------------------- #
@@ -716,6 +721,9 @@ def validate_config(cfg: Config) -> None:
         raise ValueError("wall_friction must be in [0, 1]")
     if cfg.density_diffusion < 0.0:
         raise ValueError("density_diffusion must be non-negative")
+    if cfg.csf_scheme not in ("consistent", "legacy"):
+        raise ValueError(
+            f"csf_scheme must be 'consistent' or 'legacy', got {cfg.csf_scheme!r}")
     if not math.isfinite(cfg.dt_growth) or cfg.dt_growth < 1.0:
         # A growth factor below 1 would shrink the step every time the flow did
         # not demand it, which is not "adaptive", it is a user error.
