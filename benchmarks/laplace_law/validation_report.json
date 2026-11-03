@@ -9,11 +9,14 @@
     "rho0": 1000.0,
     "sound_speed": 20.0,
     "viscosity": 0.01,
-    "steps": 860,
-    "physical_time_s": 0.03354000000000001,
-    "t_over_t_sigma": 1.0062,
+    "steps": 900,
+    "physical_time_s": 0.035100000000000006,
+    "t_over_t_sigma": 1.053,
     "lattice": "hexagonal",
-    "gravity": 0.0
+    "gravity": 0.0,
+    "csf_scheme": "consistent",
+    "csf_curvature": "mls",
+    "scheme": "consistent:mls"
   },
   "reference": {
     "delta_p_Pa": 360.0,
@@ -25,153 +28,166 @@
   },
   "laplace": {
     "delta_p_theory_Pa": 360.0,
-    "p_center_Pa": 182.6839519775168,
-    "p_interface_band_Pa": 159.58719157975187,
-    "delta_p_measured_Pa": 23.09676039776494,
-    "rel_error_pct": -93.58423322284308,
+    "p_center_Pa": 302.8051095206643,
+    "p_interface_band_Pa": 258.7129572425429,
+    "delta_p_measured_Pa": 44.092152278121375,
+    "rel_error_pct": -87.75217992274406,
     "within_3pct": false,
     "within_15pct": false
   },
   "curvature_relaxed": {
     "band": {
-      "count": 198,
-      "mean": 205.05179973509505,
-      "median": 163.85405748685304,
-      "std": 163.34910830704283
+      "count": 229,
+      "mean": 65.19608289225367,
+      "median": 60.43507385673826,
+      "std": 26.17278035860489
     },
-    "rel_error_pct": 310.1035994701901
+    "delta_s_weighted_mean_1_per_m": 59.070106205946004,
+    "delta_s_weighted_rel_error_pct": 18.14021241189201
   },
   "spurious_current": {
     "v_ref_m_per_s": 0.6,
-    "vmax_final_m_per_s": 0.21962104393586054,
-    "ratio": 0.36603507322643425,
-    "passes_adami_0p1": false
+    "vmax_final_m_per_s": 0.02220854679123844,
+    "ratio": 0.037014244652064064,
+    "passes_adami_0p1": true
   },
   "density": {
-    "rho_center_over_rho0": 1.0003224694739898,
-    "rho_band_over_rho0": 0.9331944141451923,
+    "rho_center_over_rho0": 1.0007508245961785,
+    "rho_band_over_rho0": 0.9309683057933059,
     "compression_required_by_law": 0.0008975794345598143
+  },
+  "pressure_floor": {
+    "rho_shell_over_rho0": 0.9309683057933059,
+    "shell_density_deficit_pct": 6.903169420669409,
+    "tait_bulk_modulus_Pa": 57142.857142857145,
+    "p_shell_unclamped_Pa": -22508.572407784486,
+    "p_shell_reported_by_tait_Pa": 0.0,
+    "zero_clamp_active": true,
+    "delta_p_signal_Pa": 360.0,
+    "signal_to_floor": 0.015993906387216972,
+    "delta_p_valid": false,
+    "criterion": "delta_p is only a measurement of sigma/R when the pressure the Tait clamp suppresses at the shell (|p_shell_unclamped|) is <= 10 % of sigma/R"
+  },
+  "delta_p_from_cut_force": {
+    "Pa": 238.22492986353518,
+    "rel_error_pct": -33.82640837124023,
+    "within_15pct": false,
+    "note": "Delta p implied by the cut-force identity F_cut = Delta p * 2R; independent of the pressure field, so it is the resolvable stand-in while the pressure floor is above the signal"
   },
   "pressure_profile_final": [
     {
-      "r_over_R": 0.025,
-      "p_mean": 210.54895667207418,
-      "p_std": 0.0,
-      "n": 1
-    },
-    {
       "r_over_R": 0.07500000000000001,
-      "p_mean": 163.24732173867508,
-      "p_std": 87.98714306671039,
-      "n": 4
-    },
-    {
-      "r_over_R": 0.125,
-      "p_mean": 143.1781313140294,
-      "p_std": 71.6558470272335,
+      "p_mean": 210.62146369706775,
+      "p_std": 105.34993590917978,
       "n": 3
     },
     {
+      "r_over_R": 0.125,
+      "p_mean": 428.88696574988523,
+      "p_std": 36.88423187852022,
+      "n": 5
+    },
+    {
       "r_over_R": 0.17500000000000002,
-      "p_mean": 184.16846195677076,
-      "p_std": 86.26212511006685,
-      "n": 7
+      "p_mean": 356.9275577662813,
+      "p_std": 56.438654072566166,
+      "n": 4
     },
     {
       "r_over_R": 0.225,
-      "p_mean": 163.7981853304594,
-      "p_std": 64.37808341178005,
-      "n": 7
+      "p_mean": 185.06568800791644,
+      "p_std": 130.50903447725815,
+      "n": 11
     },
     {
       "r_over_R": 0.275,
-      "p_mean": 155.78959634785377,
-      "p_std": 127.33751520173719,
-      "n": 10
+      "p_mean": 297.2922706634044,
+      "p_std": 61.527335048719486,
+      "n": 7
     },
     {
       "r_over_R": 0.32500000000000007,
-      "p_mean": 146.12497224709358,
-      "p_std": 153.20378972720897,
+      "p_mean": 457.1966034180929,
+      "p_std": 95.10860440288178,
       "n": 14
     },
     {
       "r_over_R": 0.375,
-      "p_mean": 228.66200986468434,
-      "p_std": 176.63714582630723,
-      "n": 9
+      "p_mean": 268.0928163971876,
+      "p_std": 93.23460913271136,
+      "n": 12
     },
     {
       "r_over_R": 0.42500000000000004,
-      "p_mean": 206.81931866216223,
-      "p_std": 189.3557608324958,
-      "n": 19
+      "p_mean": 94.84877390861408,
+      "p_std": 71.63244677290422,
+      "n": 15
     },
     {
       "r_over_R": 0.475,
-      "p_mean": 194.36645547490977,
-      "p_std": 236.43800474409068,
-      "n": 17
+      "p_mean": 404.60449090550884,
+      "p_std": 121.88123063509458,
+      "n": 21
     },
     {
       "r_over_R": 0.5249999999999999,
-      "p_mean": 212.18614595886572,
-      "p_std": 238.8242756945329,
-      "n": 17
+      "p_mean": 532.6236045300494,
+      "p_std": 92.09828501484438,
+      "n": 16
     },
     {
       "r_over_R": 0.575,
-      "p_mean": 340.77703371809025,
-      "p_std": 293.5834444173605,
-      "n": 24
+      "p_mean": 48.18694876401003,
+      "p_std": 86.74243267653755,
+      "n": 23
     },
     {
       "r_over_R": 0.625,
-      "p_mean": 222.63987036530432,
-      "p_std": 277.1371625568044,
+      "p_mean": 134.3800778979957,
+      "p_std": 110.13202488044666,
       "n": 18
     },
     {
       "r_over_R": 0.675,
-      "p_mean": 177.56325416513755,
-      "p_std": 288.89704738202545,
-      "n": 28
+      "p_mean": 624.7737343389131,
+      "p_std": 171.6137055470178,
+      "n": 25
     },
     {
       "r_over_R": 0.725,
-      "p_mean": 210.60533763422274,
-      "p_std": 472.7380117686899,
-      "n": 20
+      "p_mean": 248.20458003090135,
+      "p_std": 294.48679675986017,
+      "n": 26
     },
     {
       "r_over_R": 0.775,
-      "p_mean": 442.83210357263374,
-      "p_std": 495.032666948342,
+      "p_mean": 24.017180936652565,
+      "p_std": 43.773487401305786,
       "n": 33
     },
     {
       "r_over_R": 0.825,
-      "p_mean": 174.71349437074252,
-      "p_std": 333.70973099542135,
-      "n": 32
-    },
-    {
-      "r_over_R": 0.875,
-      "p_mean": 130.12953318111659,
-      "p_std": 329.58419821571044,
-      "n": 32
-    },
-    {
-      "r_over_R": 0.925,
-      "p_mean": 177.93132675753702,
-      "p_std": 332.5984649079854,
+      "p_mean": 453.14068620857995,
+      "p_std": 168.37967563425534,
       "n": 25
     },
     {
+      "r_over_R": 0.875,
+      "p_mean": 496.9966757657955,
+      "p_std": 83.51997231270147,
+      "n": 30
+    },
+    {
+      "r_over_R": 0.925,
+      "p_mean": 40.36377942711563,
+      "p_std": 107.70973648132697,
+      "n": 55
+    },
+    {
       "r_over_R": 0.975,
-      "p_mean": 111.97043108169834,
-      "p_std": 254.57243979554536,
-      "n": 17
+      "p_mean": 0.0,
+      "p_std": 0.0,
+      "n": 19
     }
   ],
   "history": {
@@ -194,91 +210,353 @@
       0.029289000000000006,
       0.031239000000000006,
       0.033189,
-      0.03354000000000001
+      0.035100000000000006
     ],
     "vmax": [
-      0.05009947658307048,
-      0.13836443604092732,
-      0.10759122573885757,
-      0.11697532465137202,
-      0.12880741933244166,
-      0.13929975170423659,
-      0.1503039873197709,
-      0.1400792550242323,
-      0.11499654727343517,
-      0.29934794519280417,
-      0.25026761993312907,
-      0.1739726813825886,
-      0.2551862745970453,
-      0.26168782154921455,
-      0.2186072694869274,
-      0.1921016507403716,
-      0.2307011795537877,
-      0.24135198032848046,
-      0.21962104393586054
+      0.022428666338386753,
+      0.059173405202700036,
+      0.09760587699616662,
+      0.07166250506540058,
+      0.05218150130676691,
+      0.033927529163642015,
+      0.041900786815906796,
+      0.037247432338842305,
+      0.028643401223734388,
+      0.028458462515880734,
+      0.029902561263563398,
+      0.024179478681850157,
+      0.026690818772928376,
+      0.023463698506121466,
+      0.025165059406529213,
+      0.024324385201361612,
+      0.023015391278351255,
+      0.022621651908431684,
+      0.02220854679123844
     ],
     "ke": [
-      0.0001344537021720494,
-      0.0016941006440506744,
-      0.0012622756939089023,
-      0.0011041738283799779,
-      0.000999356383760894,
-      0.0009206796833888244,
-      0.0008985630197868877,
-      0.000847609212364616,
-      0.0006886385623249451,
-      0.002323767077918626,
-      0.0028379296698475597,
-      0.0024735938715601978,
-      0.003835592409941369,
-      0.006477776371539666,
-      0.007192266033876598,
-      0.006661371880444099,
-      0.007270860839197934,
-      0.007657604171000483,
-      0.0078003669108869375
+      7.369021695228403e-05,
+      0.00022600288718769548,
+      0.0010565483985311096,
+      0.0005050158933515367,
+      0.00037593657441472537,
+      8.70519216854347e-05,
+      0.00013421925092235384,
+      0.00016177142302592043,
+      7.488200937690005e-05,
+      8.84505903139034e-05,
+      0.00010873140165179577,
+      8.192067617816324e-05,
+      8.443832453953798e-05,
+      9.403816560247068e-05,
+      8.649276580297221e-05,
+      9.056011937528849e-05,
+      9.838579939673357e-05,
+      9.95237686769389e-05,
+      0.00010331073125692308
     ],
     "p_center": [
       2395.3576787838037,
       0.0,
       0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      50.91843736552009,
-      199.63320056005452,
-      0.0,
-      428.05424596429924,
-      182.49104328467632
+      322.95463729055643,
+      392.177557108194,
+      45.58676781850251,
+      614.2108459140246,
+      372.5891346355144,
+      95.08106627214265,
+      503.81686113059425,
+      293.66796420837613,
+      147.30979610010513,
+      396.733919777703,
+      254.19594969206122,
+      186.80531460745536,
+      322.77054052346523,
+      229.72250151742801,
+      207.67734627467507,
+      278.0723905475869
     ],
     "rho_center": [
       1005.8835223630886,
-      980.0050871347449,
-      962.0512875860894,
-      949.6962999956302,
-      940.2271930513821,
-      932.5861108256887,
-      926.4279155122771,
-      921.5506029750227,
-      917.6195088452631,
-      914.8834806203037,
-      914.9806560188725,
-      921.3626409365694,
-      929.9172404577937,
-      947.0796718826534,
-      981.4112518084132,
-      1000.492941783927,
-      997.8075459012912,
-      1001.0664875119592,
-      1000.4517569765931
+      981.6298253986812,
+      989.0104479472695,
+      1000.8053494034748,
+      1000.7968819898973,
+      1000.0308229090491,
+      1001.5282718902869,
+      1000.9285912044083,
+      1000.1467338784305,
+      1001.2543703747534,
+      1000.707286437275,
+      1000.3065100960091,
+      1000.9884178062367,
+      1000.609058958458,
+      1000.4255280796539,
+      1000.8016151142534,
+      1000.5468856754887,
+      1000.4937784337383,
+      1000.686721642115
     ]
-  }
+  },
+  "scheme_ablation": [
+    {
+      "scheme": "legacy",
+      "setup": {
+        "radius_m": 0.02,
+        "dx_m": 0.004,
+        "h_m": 0.005200000000000001,
+        "dt_s": 7.800000000000001e-05,
+        "n_particles": 88,
+        "sigma_N_per_m": 7.2,
+        "rho0": 1000.0,
+        "sound_speed": 20.0,
+        "viscosity": 0.01,
+        "steps": 380,
+        "physical_time_s": 0.029640000000000003,
+        "t_over_t_sigma": 0.8891999999999999,
+        "lattice": "hexagonal",
+        "gravity": 0.0,
+        "csf_scheme": "legacy",
+        "csf_curvature": "mls",
+        "scheme": "legacy"
+      },
+      "laplace": {
+        "delta_p_theory_Pa": 360.0,
+        "p_center_Pa": 0.0,
+        "p_interface_band_Pa": 0.0,
+        "delta_p_measured_Pa": 0.0,
+        "rel_error_pct": -100.0,
+        "within_3pct": false,
+        "within_15pct": false
+      },
+      "pressure_floor": {
+        "rho_shell_over_rho0": 0.6889908939404965,
+        "shell_density_deficit_pct": 31.10091060595035,
+        "tait_bulk_modulus_Pa": 57142.857142857145,
+        "p_shell_unclamped_Pa": -52931.167838011585,
+        "p_shell_reported_by_tait_Pa": 0.0,
+        "zero_clamp_active": true,
+        "delta_p_signal_Pa": 360.0,
+        "signal_to_floor": 0.006801285796333259,
+        "delta_p_valid": false,
+        "criterion": "delta_p is only a measurement of sigma/R when the pressure the Tait clamp suppresses at the shell (|p_shell_unclamped|) is <= 10 % of sigma/R"
+      },
+      "delta_p_from_cut_force": {
+        "Pa": 4.324416608002463,
+        "rel_error_pct": -98.79877316444376,
+        "within_15pct": false,
+        "note": "Delta p implied by the cut-force identity F_cut = Delta p * 2R; independent of the pressure field, so it is the resolvable stand-in while the pressure floor is above the signal"
+      },
+      "spurious_current": {
+        "v_ref_m_per_s": 0.6,
+        "vmax_final_m_per_s": 0.12831140813319455,
+        "ratio": 0.2138523468886576,
+        "passes_adami_0p1": false
+      },
+      "curvature_relaxed": {
+        "band": {
+          "count": 46,
+          "mean": 53.5728548617119,
+          "median": 48.39411352475008,
+          "std": 35.50185086333292
+        },
+        "delta_s_weighted_mean_1_per_m": 46.99594221535921,
+        "delta_s_weighted_rel_error_pct": -6.0081155692815855
+      }
+    },
+    {
+      "scheme": "consistent:mls",
+      "setup": {
+        "radius_m": 0.02,
+        "dx_m": 0.004,
+        "h_m": 0.005200000000000001,
+        "dt_s": 7.800000000000001e-05,
+        "n_particles": 88,
+        "sigma_N_per_m": 7.2,
+        "rho0": 1000.0,
+        "sound_speed": 20.0,
+        "viscosity": 0.01,
+        "steps": 380,
+        "physical_time_s": 0.029640000000000003,
+        "t_over_t_sigma": 0.8891999999999999,
+        "lattice": "hexagonal",
+        "gravity": 0.0,
+        "csf_scheme": "consistent",
+        "csf_curvature": "mls",
+        "scheme": "consistent:mls"
+      },
+      "laplace": {
+        "delta_p_theory_Pa": 360.0,
+        "p_center_Pa": 380.15753629973267,
+        "p_interface_band_Pa": 0.0,
+        "delta_p_measured_Pa": 380.15753629973267,
+        "rel_error_pct": 5.59931563881463,
+        "within_3pct": false,
+        "within_15pct": true
+      },
+      "pressure_floor": {
+        "rho_shell_over_rho0": 0.8125534588948501,
+        "shell_density_deficit_pct": 18.74465411051499,
+        "tait_bulk_modulus_Pa": 57142.857142857145,
+        "p_shell_unclamped_Pa": -43779.192923843606,
+        "p_shell_reported_by_tait_Pa": 0.0,
+        "zero_clamp_active": true,
+        "delta_p_signal_Pa": 360.0,
+        "signal_to_floor": 0.00822308443708043,
+        "delta_p_valid": false,
+        "criterion": "delta_p is only a measurement of sigma/R when the pressure the Tait clamp suppresses at the shell (|p_shell_unclamped|) is <= 10 % of sigma/R"
+      },
+      "delta_p_from_cut_force": {
+        "Pa": 279.6180942634921,
+        "rel_error_pct": -22.32830714902998,
+        "within_15pct": false,
+        "note": "Delta p implied by the cut-force identity F_cut = Delta p * 2R; independent of the pressure field, so it is the resolvable stand-in while the pressure floor is above the signal"
+      },
+      "spurious_current": {
+        "v_ref_m_per_s": 0.6,
+        "vmax_final_m_per_s": 0.024752930276446747,
+        "ratio": 0.041254883794077914,
+        "passes_adami_0p1": true
+      },
+      "curvature_relaxed": {
+        "band": {
+          "count": 55,
+          "mean": 71.93286464118276,
+          "median": 70.46663625021887,
+          "std": 10.74276265437766
+        },
+        "delta_s_weighted_mean_1_per_m": 72.33639141857222,
+        "delta_s_weighted_rel_error_pct": 44.67278283714444
+      }
+    },
+    {
+      "scheme": "consistent:fit_quadratic",
+      "setup": {
+        "radius_m": 0.02,
+        "dx_m": 0.004,
+        "h_m": 0.005200000000000001,
+        "dt_s": 7.800000000000001e-05,
+        "n_particles": 88,
+        "sigma_N_per_m": 7.2,
+        "rho0": 1000.0,
+        "sound_speed": 20.0,
+        "viscosity": 0.01,
+        "steps": 380,
+        "physical_time_s": 0.029640000000000003,
+        "t_over_t_sigma": 0.8891999999999999,
+        "lattice": "hexagonal",
+        "gravity": 0.0,
+        "csf_scheme": "consistent",
+        "csf_curvature": "fit_quadratic",
+        "scheme": "consistent:fit_quadratic"
+      },
+      "laplace": {
+        "delta_p_theory_Pa": 360.0,
+        "p_center_Pa": 389.4232592310956,
+        "p_interface_band_Pa": 0.0,
+        "delta_p_measured_Pa": 389.4232592310956,
+        "rel_error_pct": 8.173127564193218,
+        "within_3pct": false,
+        "within_15pct": true
+      },
+      "pressure_floor": {
+        "rho_shell_over_rho0": 0.8145611054856515,
+        "shell_density_deficit_pct": 18.543889451434847,
+        "tait_bulk_modulus_Pa": 57142.857142857145,
+        "p_shell_unclamped_Pa": -43546.34123946724,
+        "p_shell_reported_by_tait_Pa": 0.0,
+        "zero_clamp_active": true,
+        "delta_p_signal_Pa": 360.0,
+        "signal_to_floor": 0.008267055044195587,
+        "delta_p_valid": false,
+        "criterion": "delta_p is only a measurement of sigma/R when the pressure the Tait clamp suppresses at the shell (|p_shell_unclamped|) is <= 10 % of sigma/R"
+      },
+      "delta_p_from_cut_force": {
+        "Pa": 274.74728834010386,
+        "rel_error_pct": -23.681308794415592,
+        "within_15pct": false,
+        "note": "Delta p implied by the cut-force identity F_cut = Delta p * 2R; independent of the pressure field, so it is the resolvable stand-in while the pressure floor is above the signal"
+      },
+      "spurious_current": {
+        "v_ref_m_per_s": 0.6,
+        "vmax_final_m_per_s": 0.028695769972277154,
+        "ratio": 0.04782628328712859,
+        "passes_adami_0p1": true
+      },
+      "curvature_relaxed": {
+        "band": {
+          "count": 55,
+          "mean": 75.00226948785415,
+          "median": 74.83992026340134,
+          "std": 3.5106245918921863
+        },
+        "delta_s_weighted_mean_1_per_m": 74.64526692609621,
+        "delta_s_weighted_rel_error_pct": 49.290533852192425
+      }
+    },
+    {
+      "scheme": "consistent:fit_circle",
+      "setup": {
+        "radius_m": 0.02,
+        "dx_m": 0.004,
+        "h_m": 0.005200000000000001,
+        "dt_s": 7.800000000000001e-05,
+        "n_particles": 88,
+        "sigma_N_per_m": 7.2,
+        "rho0": 1000.0,
+        "sound_speed": 20.0,
+        "viscosity": 0.01,
+        "steps": 380,
+        "physical_time_s": 0.029640000000000003,
+        "t_over_t_sigma": 0.8891999999999999,
+        "lattice": "hexagonal",
+        "gravity": 0.0,
+        "csf_scheme": "consistent",
+        "csf_curvature": "fit_circle",
+        "scheme": "consistent:fit_circle"
+      },
+      "laplace": {
+        "delta_p_theory_Pa": 360.0,
+        "p_center_Pa": 331.5344054879857,
+        "p_interface_band_Pa": 0.0,
+        "delta_p_measured_Pa": 331.5344054879857,
+        "rel_error_pct": -7.907109586670645,
+        "within_3pct": false,
+        "within_15pct": true
+      },
+      "pressure_floor": {
+        "rho_shell_over_rho0": 0.8166378792314488,
+        "shell_density_deficit_pct": 18.33621207685512,
+        "tait_bulk_modulus_Pa": 57142.857142857145,
+        "p_shell_unclamped_Pa": -43301.82124529114,
+        "p_shell_reported_by_tait_Pa": 0.0,
+        "zero_clamp_active": true,
+        "delta_p_signal_Pa": 360.0,
+        "signal_to_floor": 0.008313738074911762,
+        "delta_p_valid": false,
+        "criterion": "delta_p is only a measurement of sigma/R when the pressure the Tait clamp suppresses at the shell (|p_shell_unclamped|) is <= 10 % of sigma/R"
+      },
+      "delta_p_from_cut_force": {
+        "Pa": 255.10439487894158,
+        "rel_error_pct": -29.137668089182895,
+        "within_15pct": false,
+        "note": "Delta p implied by the cut-force identity F_cut = Delta p * 2R; independent of the pressure field, so it is the resolvable stand-in while the pressure floor is above the signal"
+      },
+      "spurious_current": {
+        "v_ref_m_per_s": 0.6,
+        "vmax_final_m_per_s": 0.03539883804978386,
+        "ratio": 0.05899806341630644,
+        "passes_adami_0p1": true
+      },
+      "curvature_relaxed": {
+        "band": {
+          "count": 55,
+          "mean": 69.46633773909016,
+          "median": 69.25997666199181,
+          "std": 1.8708629068656115
+        },
+        "delta_s_weighted_mean_1_per_m": 69.94758727369829,
+        "delta_s_weighted_rel_error_pct": 39.89517454739658
+      }
+    }
+  ]
 }

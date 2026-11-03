@@ -50,6 +50,7 @@ from tensorsph.droplet_impact import (
     tait_pressure,
 )
 from tensorsph.neighbor_search import cell_linked_pairs
+from tensorsph.csf_consistent import surface_tension_acceleration
 from tensorsph.surface_tension import (
     compute_color_gradient,
     compute_curvature,
@@ -93,8 +94,17 @@ def hexagonal_droplet(radius: float, dx: float, rho0: float,
 # CSF pipeline introspection (mirrors compute_surface_tension_force)
 # --------------------------------------------------------------------------- #
 def csf_fields(pos, rho, mass, pairs, cfg):
-    """The (color, grad_c, normal, kappa, delta_s, is_surface) fields the CSF
-    force is built from, so each ingredient can be scored separately."""
+    """LEGACY-scheme introspection only.
+
+    This is a copy of the *original* CSF field construction (neighbour-count
+    colour with a 0.7 x mean threshold, uncorrected operators, ``kappa = div n``,
+    no factor 2 on ``delta_s``).  It describes the force only when
+    ``cfg.csf_scheme == "legacy"``; for the production ("consistent") scheme use
+    :func:`production_fields`, which reads the very state the force was built
+    from.  Keeping both is the point of the scheme ablation below: before
+    m2857 this function was used unconditionally, so the reported curvature and
+    ``delta_s`` did **not** describe the force that was actually applied.
+    """
     h = cfg.h_factor * cfg.dx
     n = pos.shape[0]
     i, j = pairs.unbind(dim=1)
@@ -112,6 +122,45 @@ def csf_fields(pos, rho, mass, pairs, cfg):
     return color, grad_c, normal, kappa, delta_s, is_surface
 
 
+def apply_scheme(cfg: Config, scheme: str) -> Config:
+    """Translate a ``scheme`` label into the two ``Config`` switches.
+
+    ``"legacy"`` is the pre-consistent CSF; ``"consistent:mls"`` is the shipped
+    default (kernel-sum colour + MLS operators, ``kappa = div n``);
+    ``"consistent:fit_quadratic"`` / ``"consistent:fit_circle"`` swap in the
+    weighted local interface fit of :mod:`tensorsph.csf_curvature`.
+    """
+    if scheme == "legacy":
+        cfg.csf_scheme, cfg.csf_curvature = "legacy", "mls"
+    else:
+        kind, _, curv = scheme.partition(":")
+        assert kind == "consistent", scheme
+        cfg.csf_scheme, cfg.csf_curvature = "consistent", curv or "mls"
+    return cfg
+
+
+def production_fields(pos, rho, mass, pairs, cfg):
+    """``(kappa, delta_s, is_surface, acc_st)`` from the production CSF path.
+
+    The force and the fields come from one call, so the curvature scored in the
+    report is the curvature the force was actually built with.  The "consistent"
+    path also widens the pair list to the fit stencil internally
+    (``surface_tension_acceleration``); feeding the 2h list straight into
+    ``csf_fields`` under-samples the stencil and inflates ``kappa`` by 3-10x, so
+    the two paths are not interchangeable.
+    """
+    if cfg.csf_scheme == "legacy":
+        color, _, _, kappa, delta_s, is_surface = csf_fields(pos, rho, mass,
+                                                             pairs, cfg)
+        acc = compute_surface_tension_force(pos, rho, mass, pairs, cfg)
+        return kappa, delta_s, is_surface, acc
+    h = cfg.h_factor * cfg.dx
+    acc, state = surface_tension_acceleration(
+        pos, rho, mass, pairs, h, cfg.surface_tension_coefficient, cfg.rho0,
+        curvature_scheme=cfg.csf_curvature)
+    return state.kappa, state.delta_s, state.surface_mask(0.05), acc
+
+
 def radial_band(pos, values, radius, lo=0.6, hi=0.98):
     r = torch.linalg.vector_norm(pos, dim=1) / radius
     m = (r >= lo) & (r <= hi)
@@ -124,6 +173,45 @@ def radial_band(pos, values, radius, lo=0.6, hi=0.98):
         "mean": float(v.mean()),
         "median": float(v.median()),
         "std": float(v.std()) if v.numel() > 1 else 0.0,
+    }
+
+
+def pressure_floor(rho, pos, radius, cfg, dp_theory):
+    """Is the measured pressure jump resolvable at all?
+
+    ``Delta p`` is read as ``p_core - p_shell``, and ``tait_pressure`` clamps at
+    zero, so a shell whose *summation* density sits below ``rho0`` reports
+    ``p_shell = 0`` no matter how far below it is.  Kernel truncation alone puts
+    the free-surface layer several percent under ``rho0``; the unclamped Tait
+    pressure there is then tens of kPa negative, i.e. tens to hundreds of times
+    the ``sigma/R`` signal that is being claimed as measured.  The clamp is a
+    legitimate free-surface treatment, but it makes the *difference* of two
+    pressures a measurement of the clamp, not of the Laplace law.
+
+    The floor is quantified by ``signal_to_floor = Delta p_theory /
+    |p_shell_unclamped|``; ``delta_p_valid`` requires the suppressed pressure to
+    be small compared with the signal (``<= 10 %``, i.e. it could not move the
+    answer by more than one gate width of the 15 % acceptance band).
+    """
+    r = torch.linalg.vector_norm(pos, dim=1) / radius
+    shell = (r > 0.8) & (r < 0.95)
+    rho_s = float(rho[shell].mean())
+    bulk = cfg.rho0 * cfg.sound_speed ** 2 / cfg.gamma
+    p_raw = bulk * ((rho_s / cfg.rho0) ** cfg.gamma - 1.0)
+    deficit = (1.0 - rho_s / cfg.rho0) * 100.0
+    return {
+        "rho_shell_over_rho0": rho_s / cfg.rho0,
+        "shell_density_deficit_pct": deficit,
+        "tait_bulk_modulus_Pa": bulk,
+        "p_shell_unclamped_Pa": p_raw,
+        "p_shell_reported_by_tait_Pa": max(p_raw, 0.0),
+        "zero_clamp_active": p_raw < 0.0,
+        "delta_p_signal_Pa": dp_theory,
+        "signal_to_floor": abs(dp_theory / p_raw) if p_raw else float("inf"),
+        "delta_p_valid": abs(dp_theory / p_raw) >= 10.0 if p_raw else False,
+        "criterion": "delta_p is only a measurement of sigma/R when the "
+                     "pressure the Tait clamp suppresses at the shell "
+                     "(|p_shell_unclamped|) is <= 10 % of sigma/R",
     }
 
 
@@ -143,20 +231,21 @@ def pressure_profile(pos, pressure, radius, nbins=20):
     return prof
 
 
-def instant_diagnostics(radius, dx, sigma, rho0, sound_speed, viscosity):
+def instant_diagnostics(radius, dx, sigma, rho0, sound_speed, viscosity,
+                        scheme="consistent:mls"):
     """Everything that can be scored on a single static evaluation."""
     cfg = Config(dx=dx, h_factor=1.3, rho0=rho0, sound_speed=sound_speed,
                  gamma=7.0, gravity=0.0, viscosity=viscosity,
                  surface_tension_coefficient=sigma)
+    apply_scheme(cfg, scheme)
     h = cfg.h_factor * cfg.dx
     pos, mass = hexagonal_droplet(radius, dx, rho0)
     n = pos.shape[0]
     pairs = cell_linked_pairs(pos, 2.0 * h)
     rho = density_from_neighbor_pairs(pos, mass, h, pairs)
 
-    color, grad_c, normal, kappa, delta_s, is_surface = csf_fields(
-        pos, rho, mass, pairs, cfg)
-    acc_st = compute_surface_tension_force(pos, rho, mass, pairs, cfg)
+    kappa, delta_s, is_surface, acc_st = production_fields(pos, rho, mass,
+                                                           pairs, cfg)
 
     # -- cut-force identity (2): force transmitted across the y-axis cut ------- #
     right = pos[:, 0] > 0.0
@@ -173,6 +262,15 @@ def instant_diagnostics(radius, dx, sigma, rho0, sound_speed, viscosity):
     w = delta_s.abs()
     kappa_w = float((kappa.abs() * w).sum() / w.sum().clamp_min(1e-30))
     ds_band = radial_band(pos, delta_s, radius)
+    # delta_s normalisation, stated as the integral it has to satisfy:
+    #   int_over_the_interface delta_s dn = 1   (Brackbill et al. 1992)
+    # In 2-D the 1-D integral across the interface times the interface length is
+    # the area integral, so with V_i = m_i/rho0 and a circle of length 2 pi R
+    #       S = sum_i delta_s_i V_i / (2 pi R)
+    # must be 1.  A "band mean x 2h" number is a proxy that depends on where the
+    # band edges fall; S does not.
+    vol = mass / cfg.rho0
+    ds_integral = float((delta_s * vol).sum() / (2.0 * math.pi * radius))
     # inward alignment: a_st should oppose the radial unit vector
     r_hat = pos / torch.linalg.vector_norm(pos, dim=1, keepdim=True)
     mag = torch.linalg.vector_norm(acc_st, dim=1)
@@ -190,6 +288,7 @@ def instant_diagnostics(radius, dx, sigma, rho0, sound_speed, viscosity):
     dp_from_force = abs(f_cut) / (2.0 * radius)
 
     return {
+        "scheme": scheme,
         "dx_m": dx,
         "h_m": h,
         "n_particles": n,
@@ -208,6 +307,9 @@ def instant_diagnostics(radius, dx, sigma, rho0, sound_speed, viscosity):
         "delta_s": {
             "band": ds_band,
             "ideal_value_1_per_m": 1.0 / (2.0 * h),   # |grad c| across one h
+            "line_integral": ds_integral,
+            "line_integral_ideal": 1.0,
+            "line_integral_rel_error_pct": (ds_integral - 1.0) * 100.0,
         },
         "cut_force": {
             "theory_N_per_m": f_cut_theory,
@@ -227,10 +329,11 @@ def instant_diagnostics(radius, dx, sigma, rho0, sound_speed, viscosity):
 
 
 def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
-          steps=900, viscosity=0.01):
+          steps=900, viscosity=0.01, scheme="consistent:mls"):
     cfg = Config(dx=dx, h_factor=1.3, rho0=rho0, sound_speed=sound_speed,
                  gamma=7.0, gravity=0.0, viscosity=viscosity,
                  surface_tension_coefficient=sigma)
+    apply_scheme(cfg, scheme)
     h = cfg.h_factor * cfg.dx
     dt = float(stable_dt(cfg))
     t_sigma = math.sqrt(rho0 * radius ** 3 / sigma)
@@ -269,7 +372,10 @@ def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
     dp_meas = p_in - p_band
     err = (dp_meas - dp_theory) / dp_theory * 100.0
     vmax = float(torch.linalg.vector_norm(vel, dim=1).max())
-    _, _, _, kappa_f, _, _ = csf_fields(pos, rho_f, mass, pairs, cfg)
+    kappa_f, ds_f, _, _ = production_fields(pos, rho_f, mass, pairs, cfg)
+    acc_st_f = compute_surface_tension_force(pos, rho_f, mass, pairs, cfg)
+    right = pos[:, 0] > 0.0
+    f_cut = float((mass[right, None] * acc_st_f[right]).sum(dim=0)[0])
     comp_needed = (1.0 + dp_theory / (rho0 * sound_speed ** 2 / 7.0)) ** (1 / 7) - 1
     return {
         "setup": {
@@ -279,6 +385,8 @@ def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
             "steps": steps, "physical_time_s": steps * dt,
             "t_over_t_sigma": steps * dt / t_sigma,
             "lattice": "hexagonal", "gravity": 0.0,
+            "csf_scheme": cfg.csf_scheme, "csf_curvature": cfg.csf_curvature,
+            "scheme": scheme,
         },
         "reference": {
             "delta_p_Pa": dp_theory,
@@ -300,8 +408,11 @@ def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
         },
         "curvature_relaxed": {
             "band": radial_band(pos, kappa_f.abs(), radius),
-            "rel_error_pct": (radial_band(pos, kappa_f.abs(), radius)["mean"]
-                              - 1.0 / radius) / (1.0 / radius) * 100.0,
+            "delta_s_weighted_mean_1_per_m": float(
+                (kappa_f.abs() * ds_f).sum() / ds_f.sum().clamp_min(1e-30)),
+            "delta_s_weighted_rel_error_pct": float(
+                ((kappa_f.abs() * ds_f).sum() / ds_f.sum().clamp_min(1e-30)
+                 - 1.0 / radius) / (1.0 / radius) * 100.0),
         },
         "spurious_current": {
             "v_ref_m_per_s": v_ref,
@@ -313,6 +424,18 @@ def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
             "rho_center_over_rho0": float(rho_f[r < 0.5].mean() / rho0),
             "rho_band_over_rho0": float(rho_f[(r > 0.8) & (r < 0.95)].mean() / rho0),
             "compression_required_by_law": comp_needed,
+        },
+        "pressure_floor": pressure_floor(rho_f, pos, radius, cfg, dp_theory),
+        "delta_p_from_cut_force": {
+            "Pa": abs(f_cut) / (2.0 * radius),
+            "rel_error_pct": (abs(f_cut) / (2.0 * radius) - dp_theory)
+                             / dp_theory * 100.0,
+            "within_15pct": abs(abs(f_cut) / (2.0 * radius) - dp_theory)
+                            / dp_theory < 0.15,
+            "note": "Delta p implied by the cut-force identity "
+                    "F_cut = Delta p * 2R; independent of the pressure field, "
+                    "so it is the resolvable stand-in while the pressure floor "
+                    "is above the signal",
         },
         "pressure_profile_final": pressure_profile(pos, p_f, radius),
         "history": hist,
@@ -381,6 +504,79 @@ def make_figures(relax_report, instant_rows, out_dir):
     return path
 
 
+SCHEME_LABELS = {
+    "legacy": "legacy (neighbour-count colour)",
+    "consistent:mls": "consistent, kappa = div n",
+    "consistent:fit_quadratic": "consistent, quadratic fit",
+    "consistent:fit_circle": "consistent, circle fit",
+}
+
+
+def make_scheme_figure(payload, relax_report, out_dir):
+    """Curvature-scheme ablation + pressure-floor evidence."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    out = Path(out_dir)
+    fig, axes = plt.subplots(1, 3, figsize=(15.5, 4.2))
+    ablation = payload["scheme_ablation"]
+    styles = {"legacy": "s--", "consistent:mls": "o-",
+              "consistent:fit_quadratic": "^-", "consistent:fit_circle": "v:"}
+
+    for scheme, rows in ablation.items():
+        label = SCHEME_LABELS.get(scheme, scheme)
+        st = styles.get(scheme, "o-")
+        dx = [r["dx_m"] for r in rows]
+        axes[0].plot(dx, [r["curvature"]["delta_s_weighted_rel_error_pct"]
+                          for r in rows], st, ms=5, label=label)
+        axes[1].plot(dx, [r["cut_force"]["ratio_measured_over_theory"]
+                          for r in rows], st, ms=5, label=label)
+    for ax in axes[:2]:
+        ax.set_xscale("log")
+        ax.set_xlabel("dx [m]")
+        ax.grid(alpha=0.3)
+    axes[0].axhspan(-15.0, 15.0, color="g", alpha=0.10,
+                    label="15 % acceptance band")
+    axes[0].set_ylabel(r"$\kappa$ error [%]")
+    axes[0].set_title(r"(a) $\kappa$ vs analytic $1/R$ (weighted)")
+    axes[0].legend(fontsize=7)
+    axes[1].axhspan(0.85, 1.15, color="g", alpha=0.10,
+                    label="15 % acceptance band")
+    axes[1].axhline(1.0, color="k", ls="--")
+    axes[1].set_ylabel(r"$F_{cut}/(2\sigma)$")
+    axes[1].set_title("(b) cut-force identity")
+    axes[1].legend(fontsize=7)
+
+    # (c) the pressure jump: direct probe vs cut-force proxy, with the floor
+    names, probe, proxy, valid = [], [], [], []
+    for entry in relax_report["scheme_ablation"]:
+        names.append(entry["scheme"].replace("consistent:", ""))
+        probe.append(entry["laplace"]["rel_error_pct"])
+        proxy.append(entry["delta_p_from_cut_force"]["rel_error_pct"])
+        valid.append(entry["pressure_floor"]["delta_p_valid"])
+    y = range(len(names))
+    axes[2].barh([i + 0.2 for i in y], proxy, height=0.38, color="tab:blue",
+                 label=r"via $F_{cut}/(2R)$")
+    axes[2].barh([i - 0.2 for i in y], probe, height=0.38, color="tab:red",
+                 label=r"direct $p_{core}-p_{shell}$")
+    axes[2].set_yticks(list(y))
+    axes[2].set_yticklabels([f"{n}{'' if v else ' (invalid)'}"
+                             for n, v in zip(names, valid)], fontsize=8)
+    axes[2].axvspan(-15.0, 15.0, color="g", alpha=0.10)
+    axes[2].axvline(0.0, color="k", ls="--", lw=0.8)
+    axes[2].set_xlabel(r"$\Delta p$ error vs $\sigma/R$ [%]")
+    axes[2].set_title(r"(c) $\Delta p$ at dx = 4 mm: probe vs proxy")
+    axes[2].legend(fontsize=7)
+    axes[2].grid(alpha=0.3, axis="x")
+
+    fig.tight_layout()
+    path = out / "curvature_scheme_ablation.png"
+    fig.savefig(path, dpi=140)
+    print(f"figure -> {path}")
+    return path
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--mode", choices=["instant", "relax", "both"], default="both")
@@ -388,6 +584,11 @@ def main():
     ap.add_argument("--dx", type=float, default=0.002)
     ap.add_argument("--sigma", type=float, default=7.2)
     ap.add_argument("--steps", type=int, default=900)
+    ap.add_argument("--schemes", default="legacy,consistent:mls,"
+                                        "consistent:fit_quadratic,"
+                                        "consistent:fit_circle")
+    ap.add_argument("--abl_steps", type=int, default=380,
+                    help="relaxation steps of the scheme ablation (coarse dx)")
     ap.add_argument("--out", default="benchmarks/laplace_law")
     a = ap.parse_args()
 
@@ -396,9 +597,16 @@ def main():
     instant_path = out / "instant_report.json"
     relax_path = out / "validation_report.json"
 
+    schemes = [x for x in a.schemes.split(",") if x]
+    dxs = (0.001, 0.0015, 0.002, 0.003)
     if a.mode in ("instant", "both"):
-        rows = [instant_diagnostics(a.radius, dx, a.sigma, 1000.0, 20.0, 0.01)
-                for dx in (0.001, 0.0015, 0.002, 0.003)]
+        ablation = {}
+        for scheme in schemes:
+            ablation[scheme] = [instant_diagnostics(a.radius, dx, a.sigma,
+                                                    1000.0, 20.0, 0.01,
+                                                    scheme=scheme)
+                                for dx in dxs]
+        rows = ablation.get("consistent:mls", next(iter(ablation.values())))
         payload = {
             "benchmark": "csf_surface_tension_instant_diagnostics",
             "reference": {
@@ -408,31 +616,63 @@ def main():
                         "length, so a cut through the drop transmits 2*sigma",
             },
             "setup": {"radius_m": a.radius, "sigma_N_per_m": a.sigma,
-                      "rho0": 1000.0, "sound_speed": 20.0},
+                      "rho0": 1000.0, "sound_speed": 20.0,
+                      "default_scheme": "consistent:mls",
+                      "introspection": "production: force and kappa/delta_s "
+                                       "come from one surface_tension_"
+                                       "acceleration call"},
             "resolutions": rows,
+            "scheme_ablation": ablation,
         }
         instant_path.write_text(json.dumps(payload, indent=2))
-        for r in rows:
-            print(f"dx={r['dx_m']:.4f} N={r['n_particles']:5d} "
-                  f"kappa_band={r['curvature']['band']['mean']:7.1f} "
-                  f"kappa_w={r['curvature']['delta_s_weighted_mean_1_per_m']:7.1f} "
-                  f"(w err {r['curvature']['delta_s_weighted_rel_error_pct']:+6.1f}%) "
-                  f"Fcut/2sigma={r['cut_force']['ratio_measured_over_theory']:+7.3f} "
-                  f"surf={r['surface_fraction']:.2f}")
+        for scheme, drows in ablation.items():
+            for r in drows:
+                print(f"{scheme:22s} dx={r['dx_m']:.4f} N={r['n_particles']:5d} "
+                      f"kappa_w={r['curvature']['delta_s_weighted_mean_1_per_m']:7.1f} "
+                      f"(w err {r['curvature']['delta_s_weighted_rel_error_pct']:+7.1f}%) "
+                      f"Fcut/2sigma={r['cut_force']['ratio_measured_over_theory']:+7.3f} "
+                      f"cos={r['inward_alignment']['cos_band_median']:+.3f} "
+                      f"surf={r['surface_fraction']:.2f}")
 
     if a.mode in ("relax", "both"):
         rep = relax(radius=a.radius, dx=a.dx, sigma=a.sigma, steps=a.steps)
+        # Scheme ablation in time: same coarse case as the fast regression test.
+        rep["scheme_ablation"] = []
+        for scheme in schemes:
+            sub_rep = relax(radius=a.radius, dx=0.004, sigma=a.sigma,
+                            steps=a.abl_steps, scheme=scheme)
+            rep["scheme_ablation"].append({
+                "scheme": scheme,
+                "setup": sub_rep["setup"],
+                "laplace": sub_rep["laplace"],
+                "pressure_floor": sub_rep["pressure_floor"],
+                "delta_p_from_cut_force": sub_rep["delta_p_from_cut_force"],
+                "spurious_current": sub_rep["spurious_current"],
+                "curvature_relaxed": sub_rep["curvature_relaxed"],
+            })
+            print(f"ablation {scheme:22s} dx=0.004 dp={sub_rep['laplace']['delta_p_measured_Pa']:9.2f} "
+                  f"({sub_rep['laplace']['rel_error_pct']:+7.1f}%) "
+                  f"valid={sub_rep['pressure_floor']['delta_p_valid']} "
+                  f"F/2sigma->dp={sub_rep['delta_p_from_cut_force']['Pa']:7.1f} "
+                  f"({sub_rep['delta_p_from_cut_force']['rel_error_pct']:+6.1f}%)")
         relax_path.write_text(json.dumps(rep, indent=2))
         print(f"RELAX dx={a.dx} steps={a.steps} "
               f"t/t_sigma={rep['setup']['t_over_t_sigma']:.2f}: "
               f"dp theory {rep['laplace']['delta_p_theory_Pa']:.1f} Pa, "
               f"measured {rep['laplace']['delta_p_measured_Pa']:.2f} Pa, "
               f"err {rep['laplace']['rel_error_pct']:+.1f}%, "
-              f"spurious {rep['spurious_current']['ratio']:.3f}")
+              f"spurious {rep['spurious_current']['ratio']:.3f}, "
+              f"pressure floor ratio "
+              f"{rep['pressure_floor']['signal_to_floor']:.4f} "
+              f"(valid={rep['pressure_floor']['delta_p_valid']}), "
+              f"dp(cut force) "
+              f"{rep['delta_p_from_cut_force']['rel_error_pct']:+.1f}%")
 
     if a.mode == "both":
-        instant_rows = json.loads(instant_path.read_text())["resolutions"]
-        make_figures(json.loads(relax_path.read_text()), instant_rows, out)
+        inst_payload = json.loads(instant_path.read_text())
+        make_figures(json.loads(relax_path.read_text()),
+                     inst_payload["resolutions"], out)
+        make_scheme_figure(inst_payload, json.loads(relax_path.read_text()), out)
 
 
 if __name__ == "__main__":

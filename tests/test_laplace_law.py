@@ -136,14 +136,24 @@ def test_cut_force_identity(coarse):
     assert abs(ratio - 1.0) < CUT_FORCE_TOL
 
 
+@pytest.mark.xfail(strict=True, reason="FALSE PASS, corrected in m2857: the "
+                                      "coarse case reads +5.6 % only because "
+                                      "Tait clamps the shell pressure at zero "
+                                      "while the unclamped value is -44 kPa; "
+                                      "the signal sigma/R is 1/120 of that "
+                                      "floor.  See docs/verification_laplace_"
+                                      "pressure_floor.md section 3.2/5.5")
 def test_laplace_pressure_jump(bench):
-    """Was xfail(strict): the legacy CSF was 77-118 % off.  The consistent
-    scheme closes this at the coarse resolution used here (R/h ~ 5); the
-    resolution dependence of the *pressure* measurement is reported in
-    docs/verification_surface_tension_consistent.md section 3.3."""
     """End-to-end: relax one capillary time and compare p_center-p_interface
-    with sigma/R.  Runs at coarse resolution to stay inside a few seconds."""
+    with sigma/R.  Runs at coarse resolution to stay inside a few seconds.
+
+    Kept as a strict xfail on purpose: the assertion is the right requirement,
+    and the measurement cannot currently support it.  When the pressure field
+    stops being dominated by the free-surface density deficit this flips to
+    xpass and forces this record to be updated.
+    """
     rep = bench.relax(radius=0.02, dx=0.004, sigma=7.2, steps=380)
+    assert rep["pressure_floor"]["delta_p_valid"] is True
     err = abs(rep["laplace"]["rel_error_pct"]) / 100.0
     assert err < LAPLACE_TOL
 
@@ -169,10 +179,13 @@ def test_committed_verdicts_are_self_consistent():
         assert rep["setup"]["t_over_t_sigma"] > 0.5, path.name
 
 
-def test_spurious_current_is_above_the_literature_threshold():
+def test_spurious_current_meets_the_literature_threshold():
+    """Was recorded as FAIL (0.37) under the legacy pipeline; the consistent
+    scheme sits near 0.04, below Adami's 0.1 (m2857 re-measurement)."""
     main = json.loads((BENCH / "validation_report.json").read_text())
     sc = main["spurious_current"]
     # criterion (Adami et al. 2012): max|v| / sqrt(sigma/(rho R)) << 1
     assert sc["v_ref_m_per_s"] == pytest.approx(
         math.sqrt(7.2 / (1000.0 * main["setup"]["radius_m"])), rel=1e-9)
-    assert sc["passes_adami_0p1"] is False
+    assert sc["passes_adami_0p1"] is (sc["ratio"] < 0.1)
+    assert sc["ratio"] < 0.1
