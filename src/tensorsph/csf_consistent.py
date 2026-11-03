@@ -57,6 +57,7 @@ from dataclasses import dataclass
 
 import torch
 
+from .csf_curvature import fit_curvature
 from .droplet_impact import cubic_spline_gradient, cubic_spline_kernel
 
 
@@ -227,11 +228,23 @@ def csf_fields(
     wall: torch.Tensor | None = None,
     contact_angle: float | None = None,
     normal_smoothing: int = 2,
+    curvature_scheme: str = "mls",
+    curvature_stencil: float = 4.0,
 ) -> CSFState:
     """Colour, its gradient, the outward normal, curvature and delta_s.
 
     ``contact_angle`` (radians) activates the wall BC of
     :func:`apply_contact_angle_boundary`; it needs ``wall`` particle positions.
+
+    ``curvature_scheme`` selects the curvature operator:
+
+    ``"mls"`` (default, historical)
+        ``kappa = div n`` with MLS-consistent operators and a Shepard-smoothed
+        normal.  Measured error on a circle: +25 %
+        (``docs/verification_surface_tension_consistent.md``).
+    ``"fit_quadratic"`` / ``"fit_circle"``
+        weighted local interface fit, see :mod:`tensorsph.csf_curvature`; the
+        MLS value is kept as the fallback where the stencil is too poor.
     """
     n = pos.shape[0]
     vol = mass / rho0
@@ -253,7 +266,6 @@ def csf_fields(
         normal = torch.where(mag > tiny, smoothed / norm.clamp_min(tiny), normal)
 
     kappa = mls_divergence(pos, normal, vol, pairs, h)
-
     # Surface delta function.  The definition that makes the CSF force
     # mesh-consistent (Brackbill et al. 1992) is the one that satisfies
     #
@@ -273,6 +285,10 @@ def csf_fields(
     # force -- and therefore the Laplace pressure jump -- too weak by exactly
     # the missing factor.
     delta_s = 2.0 * torch.linalg.vector_norm(grad_c, dim=1)
+    if curvature_scheme != "mls":
+        kappa = fit_curvature(pos, normal, delta_s, pairs, h, fallback=kappa,
+                              method=curvature_scheme, stencil=curvature_stencil)
+
     return CSFState(color=color, grad_c=grad_c, normal=normal, kappa=kappa,
                     delta_s=delta_s)
 
@@ -287,13 +303,24 @@ def surface_tension_acceleration(
     rho0: float | None = None,
     wall: torch.Tensor | None = None,
     contact_angle: float | None = None,
+    curvature_scheme: str = "mls",
+    curvature_stencil: float = 4.0,
 ) -> tuple[torch.Tensor, CSFState | None]:
     """CSF acceleration ``a = -sigma kappa delta_s n / rho`` and its fields."""
     if sigma <= 0.0:
         return torch.zeros_like(pos), None
     rho0 = float(rho0 if rho0 is not None else density.mean())
+    if curvature_scheme != "mls" and pairs.numel() > 0:
+        # The interface fit needs an arc, not a kernel support: the force loop
+        # otherwise hands us 2h pairs, which on a lattice is 3-4 staircase
+        # points per particle.  Widening costs one extra neighbour search per
+        # step and is only paid when the fit operator is selected.
+        from .neighbor_search import cell_linked_pairs
+        pairs = cell_linked_pairs(pos, curvature_stencil * h)
     state = csf_fields(pos, mass, pairs, h, rho0, wall=wall,
-                       contact_angle=contact_angle)
+                       contact_angle=contact_angle,
+                       curvature_scheme=curvature_scheme,
+                       curvature_stencil=curvature_stencil)
     # Particles whose colour field is locally flat are not on the interface; the
     # clamped kernel sum makes their |grad c| numerically ~1e-12 rather than
     # exactly zero, so they are masked out. Bulk traction stays a bit-exact

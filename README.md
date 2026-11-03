@@ -152,3 +152,13 @@ is the right thing to do when you use the corresponding code.
 ## Roadmap
 
 See the [algorithm gap analysis and validation roadmap](docs/algorithm-gap-analysis.md), the [engineering review](docs/review-2026-10.md), and the per-benchmark documents under `docs/benchmarks/`.
+
+## Surface-tension curvature operator (opt-in)
+
+The CSF model (`cfg.surface_tension_coefficient > 0`) defaults to
+`csf_curvature="mls"` (textbook `kappa = div n`). Setting
+`csf_curvature="fit_quadratic"` switches to a weighted local interface fit
+(`tensorsph.csf_curvature`), which brings the curvature on a circular drop from
++25 % into the 15 % gate (+0.9 % at `dx = 0.0015 m`) at the cost of one extra
+neighbour search per step. Verification: `docs/verification_surface_tension_curvature.md`,
+harness `benchmarks/csf_curvature_fit/`.
