@@ -18,6 +18,17 @@ Usage:
 
 Exit status is non-zero when the frequency error exceeds the threshold.
 """
+# NOTE (verification audit, see docs/verification_droplet_oscillation.md §6):
+#     THIS GATE CANNOT PRODUCE A MEASUREMENT.  ``track_amplitude`` returns
+#     ``max|y - y0|``, which is non-negative, while ``find_period`` only detects
+#     sign changes -- the period is therefore always ``None`` and ``pass`` always
+#     ``False``.  The default window (0.2-0.5 s) is also 12 % of the 4.2 s
+#     analytic period, and with ``gravity=0``, no periodic boundary and a
+#     one-wavelength domain the flat pool contracts under surface tension instead
+#     of supporting a plane wave.  The working dynamic gate is
+#     ``benchmarks/droplet_oscillation``; this file is kept only as the record of
+#     the defect.  Do not cite it as evidence of anything.
+
 from __future__ import annotations
 
 import argparse

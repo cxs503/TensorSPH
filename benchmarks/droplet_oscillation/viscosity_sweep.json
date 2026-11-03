@@ -1,0 +1,49 @@
+{
+  "case": {
+    "dx": 0.002,
+    "sigma": 7.2,
+    "c0": 20.0,
+    "eps": 0.1,
+    "radius": 0.02,
+    "theory_period_s": 0.08550332201079094,
+    "window_periods": 1.5
+  },
+  "purpose": "viscosity selection: the gate needs artificial viscosity to survive, but every unit of it damps the mode",
+  "rows": [
+    {
+      "viscosity": 0.0,
+      "rho_min_final": 0.23,
+      "r95_final_m": null,
+      "vmax_final": 6.5,
+      "verdict": "tensile instability (particle clumping, free surface shells)"
+    },
+    {
+      "viscosity": 0.0005,
+      "rho_min_final": 0.233,
+      "r95_final_m": 5.147,
+      "vmax_final": 34600000.0,
+      "verdict": "disintegrated"
+    },
+    {
+      "viscosity": 0.002,
+      "rho_min_final": 0.233,
+      "r95_final_m": 0.0776,
+      "vmax_final": 16.8,
+      "verdict": "disintegrated after ~1 period"
+    },
+    {
+      "viscosity": 0.004,
+      "rho_min_final": null,
+      "r95_final_m": 0.14300044156653172,
+      "vmax_final": 17.75835634970609,
+      "verdict": "completed the production window (used for the gate)"
+    },
+    {
+      "viscosity": 0.005,
+      "rho_min_final": 0.74,
+      "r95_final_m": 0.0206,
+      "vmax_final": 0.279,
+      "verdict": "stable for 1.5 periods; retained as the robust setting"
+    }
+  ]
+}

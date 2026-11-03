@@ -1,0 +1,58 @@
+{
+  "benchmark": "droplet_oscillation",
+  "kind": "dynamic surface-tension gate (frequency domain)",
+  "setup": {
+    "radius_m": 0.02,
+    "dx_m": 0.002,
+    "radius_over_dx": 10.0,
+    "eps_initial": 0.1,
+    "sigma_N_per_m": 7.2,
+    "rho0_kg_per_m3": 1000.0,
+    "sound_speed_m_per_s": 20.0,
+    "gravity": 0.0,
+    "viscosity": 0.004,
+    "csf_scheme": "consistent",
+    "periods_simulated": 2.2
+  },
+  "reference": {
+    "source": "Rayleigh (1879); Lamb (1932) Art. 267, 2-D mode m",
+    "formula": "omega^2 = m(m^2-1) sigma / (rho R^3), m=2 -> 6 sigma/(rho R^3)",
+    "omega_rad_s": 73.48469228349533,
+    "period_s": 0.08550332201079094,
+    "velocity_scale_sqrt_sigma_over_rhoR": 0.6
+  },
+  "measured": {
+    "period_s": 0.16466648381265056,
+    "period_s_inviscid_corrected": 0.1420178085371738,
+    "crossing_level": 0.15135086086301056,
+    "damping_ratio": 0.586846288534955,
+    "frequency_error": 0.660962465519766,
+    "crossings_s": [
+      0.00999467661746239,
+      0.11747361290265415,
+      0.17466116043011295
+    ],
+    "first_quarter_period_s": 0.00999467661746239,
+    "omega_from_first_crossing": 157.16329671441795,
+    "error_from_first_crossing": 1.1387215735775331,
+    "half_periods_s": [
+      0.10747893628519176,
+      0.057187547527458804
+    ],
+    "half_period_spread": 0.2940902620800273,
+    "decay_rate_per_s": 22.392316228060647,
+    "dimensionless_vmax_final": 29.597260582843486,
+    "particles": 362,
+    "dt": 3.9000000000000006e-05,
+    "steps": 4823,
+    "wall_clock_s": 84.5116063002497,
+    "q_initial": 0.18706176319522136,
+    "eps_initial": 0.09353088159761068,
+    "r95_initial": 0.020173215770262747,
+    "r95_final": 0.14300044156653172,
+    "vmax_final": 17.75835634970609,
+    "samples": 966
+  },
+  "pass": false,
+  "threshold": 0.15
+}
