@@ -32,7 +32,8 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 
-from tensorsph.dam_break import DamBreakConfig, run_case
+from tensorsph.dam_break import (DamBreakConfig, ritter_front_over_a,
+                                 run_case)
 
 
 def load_experimental_data(data_path: str | None = None) -> dict:
@@ -137,6 +138,26 @@ def _interp(xs: list[float], ys: list[float], xq: float) -> float | None:
     return ys[-1]
 
 
+def front_coefficient(tau: list[float], za: list[float],
+                      lo: float = 0.5, hi: float = 4.0) -> float | None:
+    """Least-squares ``d(Z/a)/d tau``, skipping the startup transient.
+
+    Dimensionless and reference-free: this is the quantity the solver can be
+    held to even when the experimental table is not usable (see
+    ``reference_audit.py``). Ritter's value is 2.
+    """
+    pts = [(t, z) for t, z in zip(tau, za) if lo <= t <= hi]
+    if len(pts) < 3:
+        return None
+    n = len(pts)
+    sx = sum(p[0] for p in pts)
+    sy = sum(p[1] for p in pts)
+    sxx = sum(p[0] * p[0] for p in pts)
+    sxy = sum(p[0] * p[1] for p in pts)
+    den = n * sxx - sx * sx
+    return (n * sxy - sx * sy) / den if den else None
+
+
 def run_one_exp(dx: float, args, exp_data: list[dict]) -> dict:
     """Run a single dam-break case and compare against experimental data."""
     cfg = DamBreakConfig(
@@ -165,8 +186,11 @@ def run_one_exp(dx: float, args, exp_data: list[dict]) -> dict:
     sim_tau = [t * math.sqrt(2.0 * cfg.gravity / a) for t in run.times]
     sim_za = [(z - a) / a for z in run.front]  # Z/a = (x_max - a) / a
 
-    # Ritter analytical solution: Z/a = tau (for semi-infinite reservoir)
-    ritter_za = sim_tau[:]  # Z/a = tau
+    # Ritter analytical solution, non-dimensionalised the same way as the
+    # experiment: with H = 2a, Z = 2 sqrt(g H) t = 2 a tau, so Z/a = 2 tau.
+    # (This file used Z/a = tau until the 2026-11 reference audit; that halved
+    # the reference and corrupted ``ritter_mean_relative_error``.)
+    ritter_za = [ritter_front_over_a(tau) for tau in sim_tau]
 
     # Experimental comparison
     exp_error = compute_exp_error(sim_tau, sim_za, exp_data)
@@ -195,6 +219,7 @@ def run_one_exp(dx: float, args, exp_data: list[dict]) -> dict:
         "sim_za": sim_za,
         "ritter_za": ritter_za,
         "ritter_mean_relative_error": ritter_mean_error,
+        "front_coefficient": front_coefficient(sim_tau, sim_za),
         "experimental_error": exp_error,
     }
 
