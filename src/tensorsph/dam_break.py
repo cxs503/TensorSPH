@@ -18,7 +18,7 @@ Scope of the checks, stated up front:
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import math
 
 import torch
@@ -143,6 +143,11 @@ class DamBreakRun:
     # a fixed-step run is ``dt c0 / h``; this is the number the stability
     # condition actually bounds, and the two differ by |v|/c0.
     max_acoustic_courant: float = 0.0
+    # ``(time, positions, velocities)`` captured at the requested
+    # ``snapshot_times``.
+    # Used by the shallow-water (Ritter) verification, which needs the depth
+    # field at intermediate times and not only the trajectory.
+    snapshots: list = field(default_factory=list)
 
     @property
     def mass_drift(self) -> float:
@@ -160,8 +165,14 @@ class DamBreakRun:
                 [z / scale for z in self.front])
 
 
-def run_case(cfg: DamBreakConfig, pair_skin_factor: float | None = None):
-    """Integrate the dam break and return the measured trajectory."""
+def run_case(cfg: DamBreakConfig, pair_skin_factor: float | None = None,
+             snapshot_times=None):
+    """Integrate the dam break and return the measured trajectory.
+
+    ``snapshot_times`` (seconds, increasing) asks for the fluid positions to be
+    captured at those times, in ``DamBreakRun.snapshots``. Positions only: the
+    trajectory above is unchanged by it.
+    """
     validate_case(cfg)
     device = resolve_device(cfg.device)
     top = cfg.tank_top()
@@ -177,6 +188,9 @@ def run_case(cfg: DamBreakConfig, pair_skin_factor: float | None = None):
              if skin > 0 else None)
     all_positions = torch.cat((positions, wall), dim=0)
 
+    snap_targets = sorted(float(t) for t in (snapshot_times or []))
+    snapshots: list = []
+    snap_next = 0
     times: list[float] = []
     front: list[float] = []
     kinetic: list[float] = []
@@ -244,6 +258,11 @@ def run_case(cfg: DamBreakConfig, pair_skin_factor: float | None = None):
             max_speed = max(max_speed, speed)
             times.append(elapsed)
             front.append(front_position(positions, cfg))
+            while (snap_next < len(snap_targets)
+                   and elapsed >= snap_targets[snap_next] - 1.0e-12):
+                snapshots.append((elapsed, positions.detach().clone(),
+                                  velocity.detach().clone()))
+                snap_next += 1
             kinetic.append(float(0.5 * (mass[:, None] * velocity.square()).sum()))
             potential.append(float((mass * cfg.gravity * positions[:, 1]).sum()))
 
@@ -274,6 +293,7 @@ def run_case(cfg: DamBreakConfig, pair_skin_factor: float | None = None):
         steps_taken=step, simulated_time=elapsed,
         dt_min=dt_min, dt_max=dt_max,
         max_acoustic_courant=float(courant_peak),
+        snapshots=snapshots,
     )
 
 
