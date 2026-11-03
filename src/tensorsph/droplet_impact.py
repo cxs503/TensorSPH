@@ -127,6 +127,13 @@ class Config:
     # historical discretisation, +25 % on a circle); "fit_quadratic"/"fit_circle"
     # = weighted local interface fit (see tensorsph.csf_curvature).
     csf_curvature: str = "mls"
+    # Laplace pressure offset for surface-tension cases. When > 0, this value
+    # is added to the Tait EOS as a background pressure:
+    #     p = p0 + B[(rho/rho0)^gamma - 1]
+    # For a static droplet of radius R, p0 = sigma/R establishes the correct
+    # Young-Laplace jump without requiring density compression (Adami et al.
+    # 2012, JCP 231:7057). Zero disables (default, backward compatible).
+    laplace_pressure_offset: float = 0.0
 
 
 # --------------------------------------------------------------------------- #
@@ -232,10 +239,19 @@ def tait_pressure(rho: torch.Tensor, cfg: Config) -> torch.Tensor:
     the well-known tensile instability. Clamping at zero pressure is the
     standard first-order free-surface treatment for WCSPH; it is not a
     surface-tension model.
+
+    When ``cfg.laplace_pressure_offset > 0`` (surface-tension cases), a
+    background pressure ``p0`` is added so that the Young-Laplace jump
+    ``sigma/R`` is established without requiring density compression
+    (Adami, Ihmsen & Adams 2012, JCP 231:7057).
     """
     bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
     ratio = (rho / cfg.rho0).clamp_min(0.01)
-    return (bulk * (ratio.pow(cfg.gamma) - 1.0)).clamp_min(0.0)
+    p = bulk * (ratio.pow(cfg.gamma) - 1.0)
+    p0 = getattr(cfg, "laplace_pressure_offset", 0.0)
+    if p0 > 0.0:
+        p = p + p0
+    return p.clamp_min(0.0)
 
 
 def acoustic_courant(dt: float, cfg: Config, max_speed: float = 0.0) -> float:

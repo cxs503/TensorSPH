@@ -56,6 +56,7 @@ from tensorsph.surface_tension import (
     compute_normal,
     compute_surface_tension_force,
 )
+# csf_consistent is imported lazily inside csf_fields() to avoid circular deps
 
 torch.set_num_threads(2)
 
@@ -94,8 +95,29 @@ def hexagonal_droplet(radius: float, dx: float, rho0: float,
 # --------------------------------------------------------------------------- #
 def csf_fields(pos, rho, mass, pairs, cfg):
     """The (color, grad_c, normal, kappa, delta_s, is_surface) fields the CSF
-    force is built from, so each ingredient can be scored separately."""
+    force is built from, so each ingredient can be scored separately.
+
+    Dispatches to the consistent scheme (kernel-sum colour + MLS operators)
+    when ``cfg.csf_scheme == "consistent"``, otherwise uses the legacy
+    neighbour-count colour function for A/B comparison.
+    """
     h = cfg.h_factor * cfg.dx
+    scheme = getattr(cfg, "csf_scheme", "legacy")
+
+    if scheme == "consistent":
+        from tensorsph.csf_consistent import csf_fields as _csf_consistent
+        state = _csf_consistent(pos, mass, pairs, h, cfg.rho0)
+        # Legacy interface: return 6-tuple
+        n = pos.shape[0]
+        i, j = pairs.unbind(dim=1)
+        count = torch.zeros(n, dtype=pos.dtype)
+        one = torch.ones_like(i, dtype=pos.dtype)
+        count = count.index_add(0, i, one).index_add(0, j, one)
+        avg = count.mean()
+        is_surface = count < 0.7 * avg
+        return state.color, state.grad_c, state.normal, state.kappa, state.delta_s, is_surface
+
+    # Legacy scheme (neighbour-count colour)
     n = pos.shape[0]
     i, j = pairs.unbind(dim=1)
     count = torch.zeros(n, dtype=pos.dtype)

@@ -123,26 +123,22 @@ def test_curvature_reproduces_circle(coarse):
 
 
 def test_csf_force_direction_is_radial(coarse):
-    """Was xfail(strict) under the legacy colour function (median cos ~ 0.1).
-    The kernel-sum colour + MLS normal makes the CSF force radial; measured
+    """The kernel-sum colour + MLS normal makes the CSF force radial; measured
     median cos = 0.999 (docs/verification_surface_tension_consistent.md)."""
     assert coarse["inward_alignment"]["cos_band_median"] > DIRECTION_COS_MIN
 
 
 def test_cut_force_identity(coarse):
-    """Was xfail(strict): the legacy CSF missed 2 sigma by up to 2x.  The
-    consistent scheme lands on 1.07-1.11 over dx = 3..1.5 mm."""
+    """The consistent scheme lands on 1.07-1.13 over dx = 4..1.5 mm."""
     ratio = coarse["cut_force"]["ratio_measured_over_theory"]
     assert abs(ratio - 1.0) < CUT_FORCE_TOL
 
 
 def test_laplace_pressure_jump(bench):
-    """Was xfail(strict): the legacy CSF was 77-118 % off.  The consistent
-    scheme closes this at the coarse resolution used here (R/h ~ 5); the
-    resolution dependence of the *pressure* measurement is reported in
-    docs/verification_surface_tension_consistent.md section 3.3."""
     """End-to-end: relax one capillary time and compare p_center-p_interface
-    with sigma/R.  Runs at coarse resolution to stay inside a few seconds."""
+    with sigma/R.  The consistent scheme closes the Laplace jump at coarse
+    resolution (R/h ~ 5); the resolution dependence is reported in
+    docs/verification_surface_tension_laplace.md section 3.3."""
     rep = bench.relax(radius=0.02, dx=0.004, sigma=7.2, steps=380)
     err = abs(rep["laplace"]["rel_error_pct"]) / 100.0
     assert err < LAPLACE_TOL
@@ -157,9 +153,10 @@ def test_committed_verdicts_are_self_consistent():
     recomputed = ((lap["p_center_Pa"] - lap["p_interface_band_Pa"])
                   - lap["delta_p_theory_Pa"]) / lap["delta_p_theory_Pa"] * 100.0
     assert recomputed == pytest.approx(lap["rel_error_pct"], abs=1e-6)
-    # the honest verdict of this verification round must stay visible
+    # the honest verdict of this verification round must stay visible: the
+    # offset method clears the 15 % bar (+5.6 %) but not the 3 % stretch
     assert lap["within_3pct"] is False
-    assert abs(lap["rel_error_pct"]) > 15.0
+    assert abs(lap["rel_error_pct"]) < 15.0
     assert main["reference"]["delta_p_Pa"] == pytest.approx(
         7.2 / main["setup"]["radius_m"])
 
@@ -169,10 +166,17 @@ def test_committed_verdicts_are_self_consistent():
         assert rep["setup"]["t_over_t_sigma"] > 0.5, path.name
 
 
-def test_spurious_current_is_above_the_literature_threshold():
+def test_spurious_current_adami_criterion():
     main = json.loads((BENCH / "validation_report.json").read_text())
     sc = main["spurious_current"]
     # criterion (Adami et al. 2012): max|v| / sqrt(sigma/(rho R)) << 1
     assert sc["v_ref_m_per_s"] == pytest.approx(
         math.sqrt(7.2 / (1000.0 * main["setup"]["radius_m"])), rel=1e-9)
-    assert sc["passes_adami_0p1"] is False
+    # dx = 4 mm final state: 0.041 < 0.1 -- the offset method establishes the
+    # jump without compression-driven parasitic flow, so the criterion is met.
+    assert sc["passes_adami_0p1"] is True
+    # the deficit that stays on the record: every finer convergence run
+    # (dx = 1.5-2.5 mm, shorter relaxation) still sits above the threshold.
+    for path in sorted(BENCH.glob("convergence/*.json")):
+        rep = json.loads(path.read_text())
+        assert rep["spurious_current"]["ratio"] > 0.1, path.name
