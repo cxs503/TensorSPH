@@ -1,0 +1,145 @@
+{
+  "benchmark": "B2_dam_break_experimental_validation",
+  "experimental_reference": {
+    "name": "Martin & Moyce (1952)",
+    "source": {
+      "paper": "Martin, J.C. & Moyce, W.J. (1952). An experimental study of the collapse of liquid columns on a rigid horizontal plane. Philosophical Transactions of the Royal Society of London. Series A, Mathematical and Physical Sciences, 244(882), 312-324.",
+      "doi": "10.1098/rsta.1952.0006",
+      "note": "Original paper is paywalled. Data digitized from Figure 4 (Z/a vs tau) in the open-access review: Koshizuka, S. & Oka, Y. (1996). Moving-particle semi-implicit method for fragmentation of incompressible fluid. Nuclear Science and Engineering, 123(3), 421-434. DOI: 10.13182/NSE96-A24205. Additional cross-reference: Aureli et al. (2023). Dam-break flow: A review. Water, 15(6), 1229. DOI: 10.3390/w15061229."
+    },
+    "digitization": {
+      "method": "Manual digitization from published figures in open-access review papers, cross-referenced with multiple CFD validation studies",
+      "uncertainty": "\u00b10.05 in Z/a (estimated from figure resolution and scatter in original data)",
+      "non_dimensionalization": "tau = t * sqrt(2*g/a), Z/a = front_position / column_width, with a = 0.2 m, g = 9.81 m/s\u00b2"
+    },
+    "setup": {
+      "column_width_a_m": 0.2,
+      "column_height_m": 0.4,
+      "aspect_ratio": 2.0,
+      "fluid": "water",
+      "tank": "rectangular, dry bed downstream"
+    },
+    "num_points": 20
+  },
+  "simulation_params": {
+    "tank_width": 2.0,
+    "column_width": 0.2,
+    "column_height": 0.4,
+    "sound_speed": 25.0,
+    "wall_friction": 0.0,
+    "density_diffusion": 0.0,
+    "adaptive_dt": false
+  },
+  "results": [
+    {
+      "dx": 0.04,
+      "particles": 50,
+      "dt": 0.000624,
+      "adaptive_dt": false,
+      "steps_taken": 801,
+      "simulated_time": 0.499824000000008,
+      "wall_clock_s": 20.85095063969493,
+      "max_speed": 3.3093185424804688,
+      "mach_number": 0.13237274169921875,
+      "max_density_compression": 0.02349725341796871,
+      "escaped": 0,
+      "wall_impact_time": null,
+      "ritter_mean_relative_error": 0.41058813948492057,
+      "experimental_error": {
+        "max_absolute_error": 1.2020116158268612,
+        "mean_absolute_error": 0.5987647019431666,
+        "rmse": 0.6766298046774074,
+        "points_compared": 20,
+        "within_uncertainty": 0.05
+      }
+    },
+    {
+      "dx": 0.02,
+      "particles": 200,
+      "dt": 0.000312,
+      "adaptive_dt": false,
+      "steps_taken": 1603,
+      "simulated_time": 0.5001359999999871,
+      "wall_clock_s": 199.44244721904397,
+      "max_speed": 3.335808515548706,
+      "mach_number": 0.13343234062194825,
+      "max_density_compression": 0.02664477539062493,
+      "escaped": 0,
+      "wall_impact_time": null,
+      "ritter_mean_relative_error": 0.3401864135086292,
+      "experimental_error": {
+        "max_absolute_error": 1.4861848221252032,
+        "mean_absolute_error": 0.5773688915333444,
+        "rmse": 0.6817461778271875,
+        "points_compared": 20,
+        "within_uncertainty": 0.05
+      }
+    },
+    {
+      "dx": 0.01,
+      "particles": 800,
+      "dt": 0.000156,
+      "adaptive_dt": false,
+      "steps_taken": 3205,
+      "simulated_time": 0.4999799999999767,
+      "wall_clock_s": 787.7004838697612,
+      "max_speed": 3.3561887741088867,
+      "mach_number": 0.13424755096435548,
+      "max_density_compression": 0.019333618164062427,
+      "escaped": 0,
+      "wall_impact_time": null,
+      "ritter_mean_relative_error": 0.3071453123822171,
+      "experimental_error": {
+        "max_absolute_error": 1.6182109315934694,
+        "mean_absolute_error": 0.5727571197674608,
+        "rmse": 0.6993900256959237,
+        "points_compared": 20,
+        "within_uncertainty": 0.0
+      }
+    }
+  ],
+  "gates": {
+    "experimental_comparison": {
+      "metric": "mean absolute error in Z/a vs Martin & Moyce (1952)",
+      "measured": 0.5727571197674608,
+      "limit": 0.15,
+      "result": "fail",
+      "details": {
+        "max_absolute_error": 1.6182109315934694,
+        "rmse": 0.6993900256959237,
+        "points_compared": 20,
+        "within_uncertainty_fraction": 0.0
+      }
+    },
+    "ritter_comparison": {
+      "metric": "mean relative error vs Ritter shallow-water solution",
+      "measured": 0.3071453123822171,
+      "note": "Ritter assumes semi-infinite reservoir; systematic offset expected"
+    },
+    "mass_conservation": {
+      "metric": "mass drift",
+      "measured": 0.0,
+      "limit": 0.0,
+      "result": "pass"
+    },
+    "bounded_flow": {
+      "metric": "particles escaping tank",
+      "measured": 0,
+      "limit": 0,
+      "result": "pass"
+    },
+    "mach_number": {
+      "metric": "max |v| / c0",
+      "measured": 0.13424755096435548,
+      "limit": 0.25,
+      "result": "pass"
+    },
+    "density_compression": {
+      "metric": "max(rho/rho0 - 1)",
+      "measured": 0.019333618164062427,
+      "limit": 0.1,
+      "result": "pass"
+    }
+  },
+  "plot_path": "/root/tp-agent/work/m2502/artifacts/dam_break_exp/dam_break_exp_comparison.png"
+}
