@@ -24,7 +24,6 @@ import torch
 from tensorsph.csf_consistent import (
     apply_contact_angle_boundary,
     csf_fields,
-    kernel_sum_color,
     mls_divergence,
     mls_gradient,
     nearest_wall,
@@ -233,7 +232,6 @@ def test_contact_angle_reaches_the_force():
     pos = torch.tensor([[i * dx, j * dx] for i in range(6) for j in range(4)],
                        dtype=torch.float64)
     mass = torch.full((pos.shape[0],), RHO0 * dx * dx, dtype=torch.float64)
-    rho = torch.full_like(mass, RHO0)
     pairs = cell_linked_pairs(pos, 2.0 * h)
     wall = torch.tensor([[x * dx, -dx] for x in range(7)], dtype=torch.float64)
 

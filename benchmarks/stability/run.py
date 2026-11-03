@@ -138,7 +138,6 @@ def main(argv=None):
               f"rarefaction={item['peak_rarefaction']*100:7.2f} %  "
               f"Mach={item['peak_mach']:.4f}  -> {item['gate_5pct']}", flush=True)
 
-    scores = {c["particle_count"]: c for c in cases}
     report = {
         "benchmark": "resolution_stability",
         "question": "does the dx=0.006 density-compression failure persist "

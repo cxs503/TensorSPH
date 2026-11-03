@@ -27,7 +27,6 @@ import math
 import os
 import time
 
-import torch
 
 from tensorsph.dam_break import DamBreakConfig, run_case
 
@@ -210,7 +209,8 @@ def main():
     args = parser.parse_args()
 
     # Load experimental data
-    exp_data_path = args.exp_data or os.path.join(os.path.dirname(__file__), "martin_moyce_1952.json")
+    exp_data_path = args.exp_data or os.path.join(
+    os.path.dirname(__file__), "martin_moyce_1952.json")
     exp_data = load_experimental_data(exp_data_path)
     print(f"Loaded {len(exp_data)} experimental data points from {exp_data_path}")
 
@@ -271,7 +271,9 @@ def main():
             "metric": "max(rho/rho0 - 1)",
             "measured": result["max_density_compression"],
             "limit": args.max_density_error,
-            "result": "pass" if result["max_density_compression"] < args.max_density_error else "fail",
+            "result": ("pass"
+           if result["max_density_compression"] < args.max_density_error
+           else "fail"),
         }
 
     for comp in exp_comparison:

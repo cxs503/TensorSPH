@@ -29,12 +29,10 @@ import torch
 
 from tensorsph.droplet_impact import (
     Config,
-    apply_boundary,
     hydrostatic_density,
     next_dt,
     resolve_device,
     rhs,
-    wall_lattice,
 )
 from tensorsph.neighbor_search import PairListCache
 

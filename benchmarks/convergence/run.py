@@ -24,7 +24,6 @@ import torch
 from tensorsph.dam_break import DamBreakConfig, run_case
 from tensorsph.droplet_impact import (
     Config,
-    apply_boundary,
     make_particles,
     rhs,
     wall_lattice,
