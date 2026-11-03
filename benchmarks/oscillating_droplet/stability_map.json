@@ -1,0 +1,59 @@
+{
+  "steps_per_cell": 900,
+  "amplitude_eps": 0.08,
+  "criteria": "failure = max|v| > 0.5 c0 (blowup_mach)",
+  "cells": [
+    {
+      "dx_m": 0.002,
+      "nu_m2_per_s": 0.0005,
+      "R_over_h": 7.692307692307692,
+      "n_particles": 358,
+      "survived": true,
+      "t_survived_s": 0.02992542253349684,
+      "periods_survived": 0.34999134337400484,
+      "step_of_failure": null,
+      "vmax_m_per_s": 2.160162630815681,
+      "vmax_over_vref": 3.600271051359469,
+      "steps_requested": 900
+    },
+    {
+      "dx_m": 0.002,
+      "nu_m2_per_s": 0.001,
+      "R_over_h": 7.692307692307692,
+      "n_particles": 358,
+      "survived": true,
+      "t_survived_s": 0.030591782186063635,
+      "periods_survived": 0.35778472071766754,
+      "step_of_failure": null,
+      "vmax_m_per_s": 1.878674959105646,
+      "vmax_over_vref": 3.131124931842743,
+      "steps_requested": 900
+    },
+    {
+      "dx_m": 0.002,
+      "nu_m2_per_s": 0.002,
+      "R_over_h": 7.692307692307692,
+      "n_particles": 358,
+      "survived": true,
+      "t_survived_s": 0.03142159901029169,
+      "periods_survived": 0.3674898035695751,
+      "step_of_failure": null,
+      "vmax_m_per_s": 0.05676034386791082,
+      "vmax_over_vref": 0.0946005731131847,
+      "steps_requested": 900
+    },
+    {
+      "dx_m": 0.002,
+      "nu_m2_per_s": 0.003,
+      "R_over_h": 7.692307692307692,
+      "n_particles": 358,
+      "survived": true,
+      "t_survived_s": 0.031439405288651974,
+      "periods_survived": 0.36769805604376593,
+      "step_of_failure": null,
+      "vmax_m_per_s": 0.06780865682088529,
+      "vmax_over_vref": 0.11301442803480881,
+      "steps_requested": 900
+    }
+  ]
+}
