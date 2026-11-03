@@ -1,0 +1,231 @@
+{
+ "setup": {
+  "radius_m": 0.02,
+  "dx_m": 0.003,
+  "h_m": 0.0039000000000000003,
+  "n_particles": 161,
+  "r_over_dx": 6.666666666666667,
+  "sigma_N_per_m": 7.2,
+  "rho0": 1000.0,
+  "sound_speed": 20.0,
+  "viscosity": 0.01,
+  "gamma": 7.0,
+  "scheme": "consistent",
+  "curvature": "mls",
+  "steps": 798,
+  "density_renormalization": true,
+  "sample_every": 50,
+  "dt_s": 5.85e-05,
+  "t_end_s": 0.046683,
+  "t_over_t_sigma": 1.4004899999999998,
+  "window_t_over_t_sigma": [
+   0.7002449999999999,
+   1.4004899999999998
+  ],
+  "wall_seconds": 10.205084562301636
+ },
+ "reference": {
+  "delta_p_pa": 360.0,
+  "v_ref_m_per_s": 0.6,
+  "compression_required": 0.0063,
+  "bulk_modulus_pa": 57142.857142857145,
+  "gate_pct": 15.0,
+  "tight_pct": 3.0
+ },
+ "interior": {
+  "criterion": "p(interior) vs sigma/R + p_gas (p_gas = 0, vacuum)",
+  "measured_pa": 232.0531463623047,
+  "theory_pa": 360.0,
+  "rel_error_pct": -35.54079267713759,
+  "within_3pct": false,
+  "within_15pct": false,
+  "note": "time-averaged over the second half; instantaneous one-sample values scatter by p_std"
+ },
+ "resolved_jump": {
+  "p_inside_pa": 178.96388566307058,
+  "p_outside_pa": 0.0,
+  "jump_pa": 178.96388566307058,
+  "rel_error_pct": -50.287809538035944
+ },
+ "legacy_measure": {
+  "criterion": "p(r<0.5R) - p(0.80R<r<0.95R), scored against sigma/R (historical benchmarks/csf_consistent)",
+  "measured_pa": 178.96388566307058,
+  "rel_error_pct_vs_sigma_over_R": -50.287809538035944,
+  "own_theory_pa": 0.0,
+  "note": "this difference is between two interior points; its continuum value is 0 because grad p = 0 inside a static drop, so the sigma/R comparison is not a valid criterion"
+ },
+ "noise": {
+  "temporal_p_std_pa": 48.42732238769531,
+  "temporal_p_sem_pa": 16.142440795898438,
+  "n_samples": 9,
+  "rho_core_over_rho0_time_mean": 1.000133991241455,
+  "rho_core_over_rho0_time_std": 8.084244473138824e-05,
+  "rho_core_over_rho0_spatial_std": 0.0009481251395398674,
+  "eos_noise_pa_from_time_std": 32.336977892555296,
+  "eos_noise_pa_from_spatial_std": 379.25005581594695,
+  "noise_over_theory": 0.08982493859043138
+ },
+ "shell_flux": {
+  "measured_pa": 130.34569541631288,
+  "theory_pa": 360.0,
+  "rel_error_pct": -63.79286238435753,
+  "note": "int f_r dn across the interface shell, from the CSF force itself; independent of the pressure field"
+ },
+ "profile": [
+  {
+   "r_over_R": [
+    0.0,
+    0.2
+   ],
+   "n_particles": 6,
+   "p_over_theory": 0.5306741786753992,
+   "p_pa": 191.04270432314374,
+   "rho_over_rho0": 0.9999494860148883,
+   "abs_a_sf": 4.204471523373311
+  },
+  {
+   "r_over_R": [
+    0.2,
+    0.4
+   ],
+   "n_particles": 19,
+   "p_over_theory": 0.48652644965466396,
+   "p_pa": 175.14952187567903,
+   "rho_over_rho0": 1.000236494885135,
+   "abs_a_sf": 1.4899384655219614
+  },
+  {
+   "r_over_R": [
+    0.4,
+    0.6
+   ],
+   "n_particles": 34,
+   "p_over_theory": 0.24816747653043766,
+   "p_pa": 89.34029155095756,
+   "rho_over_rho0": 0.9983398209537235,
+   "abs_a_sf": 3.017117940585693
+  },
+  {
+   "r_over_R": [
+    0.6,
+    0.7
+   ],
+   "n_particles": 20,
+   "p_over_theory": 0.7095304612676896,
+   "p_pa": 255.43096605636825,
+   "rho_over_rho0": 1.000603260980232,
+   "abs_a_sf": 4.018198308089819
+  },
+  {
+   "r_over_R": [
+    0.7,
+    0.8
+   ],
+   "n_particles": 19,
+   "p_over_theory": 0.5130989363161964,
+   "p_pa": 184.7156170738307,
+   "rho_over_rho0": 0.9984728165647353,
+   "abs_a_sf": 9.045866088007633
+  },
+  {
+   "r_over_R": [
+    0.8,
+    0.9
+   ],
+   "n_particles": 50,
+   "p_over_theory": 0.0,
+   "p_pa": 0.0,
+   "rho_over_rho0": 0.974747334721334,
+   "abs_a_sf": 20.558034015691543
+  },
+  {
+   "r_over_R": [
+    0.9,
+    0.95
+   ],
+   "n_particles": 13,
+   "p_over_theory": 0.0,
+   "p_pa": 0.0,
+   "rho_over_rho0": 0.9582991090231355,
+   "abs_a_sf": 44.76305174643858
+  }
+ ],
+ "history": {
+  "t": [
+   5.85e-05,
+   0.0029835,
+   0.0059085,
+   0.0088335,
+   0.0117585,
+   0.0146835,
+   0.0176085,
+   0.0205335,
+   0.0234585,
+   0.0263835,
+   0.029308499999999998,
+   0.0322335,
+   0.0351585,
+   0.0380835,
+   0.041008499999999996,
+   0.0439335,
+   0.046683
+  ],
+  "p_core": [
+   2395.357678783863,
+   0.0,
+   171.92019798011057,
+   695.9292504323619,
+   538.766430747221,
+   304.44820420204906,
+   315.0203177878301,
+   371.05869275798926,
+   332.70487007637706,
+   263.90308951565396,
+   253.57282366215574,
+   243.2106837523682,
+   228.1968437933034,
+   208.88334745838426,
+   194.03770914809928,
+   185.0051184047875,
+   178.96388566307058
+  ],
+  "rho_core_over_rho0": [
+   1.0058835223630886,
+   0.9934507606540454,
+   0.9994271996271362,
+   1.0017276946563711,
+   1.001323721527366,
+   1.0004405691528409,
+   1.0003748719584054,
+   1.0005026654728497,
+   1.0003384708233565,
+   1.000094748400019,
+   1.000096720150996,
+   1.000094053705426,
+   1.0000946834485414,
+   1.000088936152473,
+   1.0000986599342456,
+   1.0001311295314945,
+   1.0001676127562757
+  ],
+  "vmax_over_vref": [
+   0.0377559362094381,
+   0.2358766392281464,
+   0.09912659598586272,
+   0.08294612924767782,
+   0.08537001237163022,
+   0.06822627164101903,
+   0.05351674251708287,
+   0.057818744818503034,
+   0.05718344151125206,
+   0.05002634586605148,
+   0.039905051311634215,
+   0.038073237721216825,
+   0.03424774486934367,
+   0.03247541974539616,
+   0.030842119869965615,
+   0.029479558563314488,
+   0.028819542589844604
+  ]
+ }
+}

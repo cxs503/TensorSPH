@@ -1,5 +1,11 @@
 # 表面张力 CSF 模型的解析基准核验（consistent 离散）
 
+> **判据更正（2026-11-03, m2716）**：本文 3.3 节的 `Delta p = p_core - p(0.80R..0.95R)`
+> 与 `sigma/R` 比较**不是** Young-Laplace 判据（两个内部点之差的连续解期望值为 0），
+> 该 -75.6% 应读作「判据错误」而非「压强误差」。正确判据与全部实测见
+> `docs/verification_laplace_pressure_audit.md`（三档分辨率 -40%~-41%，且过压随时间衰减）。
+
+
 **范围**: TensorSPH `src/tensorsph/csf_consistent.py`、`surface_tension.py`、`droplet_impact.py`
 **基准**: 2-D 单相静止液滴的 Young-Laplace 定律（本文件所有数字由
 `benchmarks/csf_consistent/run.py` 写出的 JSON 程序化注入，无手抄）

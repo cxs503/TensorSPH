@@ -100,6 +100,16 @@ class Config:
     hydrostatic_init: bool = False
     wall_friction: float = 0.0
     density_diffusion: float = 0.0
+    # Shepard renormalisation of the summation density,
+    #   rho_i <- sum_j m_j W_ij / sum_j V_j W_ij ,   V_j = m_j / rho_j
+    # (Dilts 1999; Colagrossi & Landrini 2003).  It is exact for a locally
+    # uniform density, and it removes the *geometric* free-surface deficit that
+    # a truncated kernel sum produces -- the deficit otherwise pins
+    # ``p = max(Tait, 0)`` to zero on exactly the particle layer where the CSF
+    # surface-tension force acts (see benchmarks/laplace_pressure_audit).
+    # Off by default: it is a change to the density field, so every published
+    # number would move.
+    density_renormalization: bool = False
     # Adaptive time step. Off by default: a fixed step keeps every published
     # number reproducible bit for bit. When on, ``dt`` starts at the configured
     # value, shrinks to whatever the current maximum speed allows, and grows back
@@ -512,6 +522,19 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
     rho_all = rho_all.index_add(0, i, all_mass[j] * wij)
     rho_all = rho_all.index_add(0, j, all_mass[i] * wij)
     rho = rho_all[:n].clamp_min(0.1 * cfg.rho0)
+
+    if cfg.density_renormalization:
+        # num_i = sum_j m_j W_ij is rho_all; den_i = sum_j V_j W_ij.  Same pair
+        # list, same self term, so a locally uniform density passes through
+        # unchanged while a truncated free surface is renormalised back to the
+        # density of its neighbours.
+        vol_all = all_mass / rho_all.clamp_min(0.1 * cfg.rho0)
+        den_all = torch.zeros(n + nw, dtype=pos.dtype, device=pos.device)
+        den_all[:n] = (mass / rho) * cubic_spline_kernel(zero, h)
+        den_all = den_all.index_add(0, i, vol_all[j] * wij)
+        den_all = den_all.index_add(0, j, vol_all[i] * wij)
+        rho = (rho_all[:n] / den_all[:n].clamp_min(1.0e-30)).clamp_min(
+            0.1 * cfg.rho0)
 
     if cfg.density_diffusion > 0.0:
         # Fluid-fluid pairs only: the wall density is extrapolated from the
