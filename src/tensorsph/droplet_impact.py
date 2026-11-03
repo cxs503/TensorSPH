@@ -127,6 +127,15 @@ class Config:
     # historical discretisation, +25 % on a circle); "fit_quadratic"/"fit_circle"
     # = weighted local interface fit (see tensorsph.csf_curvature).
     csf_curvature: str = "mls"
+    # Density-summation calibration. "summation" (default, historical) uses the
+    # raw kernel sum, which over-estimates the density of a perfect lattice by
+    # S(h/dx) - 1: +0.59 % at the default h = 1.3 dx. The gamma = 7 Tait law
+    # turns that lattice bias into a ~4 % pressure offset (2395 Pa on a drop
+    # whose Young-Laplace pressure is 360 Pa), which swamps any surface-tension
+    # pressure jump. "lattice" divides the summation by the analytically known
+    # lattice sum, so a bulk particle reads exactly rho0. See
+    # docs/verification_laplace_protocol.md.
+    density_normalization: str = "summation"
 
 
 # --------------------------------------------------------------------------- #
@@ -429,6 +438,42 @@ def density_from_neighbor_pairs(pos, mass, h: float, pairs=None):
     return rho
 
 
+_LATTICE_SUM_CACHE: dict[tuple[float, float], float] = {}
+
+
+def lattice_kernel_sum(h: float, dx: float) -> float:
+    """Kernel volume sum ``sum_j V_j W_ij`` of a perfect 2-D hex lattice.
+
+    ``V_j = dx * dy`` (hex cell area, ``dy = sqrt(3)/2 dx``) and the sum
+    includes the self term ``V_i W(0)``, which the
+    pair list never carries. This is exactly the factor by which the raw
+    density summation over-estimates ``rho0`` in the bulk, so it is the
+    calibration constant of ``cfg.density_normalization = "lattice"``.
+
+    Measured: 0.99831 at h/dx = 1.1, 1.00588 at 1.3 (the default), 1.00172 at
+    1.5 and 0.99988 at 2.0. It is a property of the lattice and the kernel
+    only -- not of the case -- so it is a calibration, not a fitted parameter.
+    """
+    key = (float(h), float(dx))
+    cached = _LATTICE_SUM_CACHE.get(key)
+    if cached is not None:
+        return cached
+    span = int(math.ceil(2.0 * h / dx)) + 1
+    idx = torch.arange(-span, span + 1, dtype=torch.float64)
+    ax, ay = torch.meshgrid(idx, idx, indexing="ij")
+    # Hexagonal packing: rows at spacing dy with alternating dx/2 offset, so the
+    # cell area (the particle volume) is dx * dy, not dx**2. Using dx**2 here
+    # inflates the sum by 2/sqrt(3) = 15.5 %.
+    dy = dx * math.sqrt(3.0) / 2.0
+    x = dx * (ax + 0.5 * ay)
+    y = dy * ay
+    r = torch.sqrt(x * x + y * y)
+    w = cubic_spline_kernel(r.to(torch.float32), h).to(torch.float64)
+    total = float((w * dx * dy).sum())
+    _LATTICE_SUM_CACHE[key] = total
+    return total
+
+
 def drop_wall_wall_pairs(pairs: torch.Tensor, fluid_count: int) -> torch.Tensor:
     """Remove pairs in which both particles are wall particles.
 
@@ -500,8 +545,12 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
     if pos.shape[1] > 1:
         gravity[:, 1] = -cfg.gravity
 
+    scale = 1.0
+    if cfg.density_normalization == "lattice":
+        scale = 1.0 / lattice_kernel_sum(h, cfg.dx)
+
     if pairs.numel() == 0:
-        rho = rho_all[:n].clamp_min(0.1 * cfg.rho0)
+        rho = (rho_all[:n] * scale).clamp_min(0.1 * cfg.rho0)
         return rho, tait_pressure(rho, cfg), gravity
 
     i, j = pairs.unbind(dim=1)
@@ -511,7 +560,7 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
 
     rho_all = rho_all.index_add(0, i, all_mass[j] * wij)
     rho_all = rho_all.index_add(0, j, all_mass[i] * wij)
-    rho = rho_all[:n].clamp_min(0.1 * cfg.rho0)
+    rho = (rho_all[:n] * scale).clamp_min(0.1 * cfg.rho0)
 
     if cfg.density_diffusion > 0.0:
         # Fluid-fluid pairs only: the wall density is extrapolated from the
@@ -729,6 +778,10 @@ def validate_config(cfg: Config) -> None:
         raise ValueError(
             "csf_curvature must be 'mls', 'fit_quadratic' or 'fit_circle', "
             f"got {cfg.csf_curvature!r}")
+    if cfg.density_normalization not in ("summation", "lattice"):
+        raise ValueError(
+            "density_normalization must be 'summation' or 'lattice', got "
+            f"{cfg.density_normalization!r}")
     if cfg.csf_scheme not in ("consistent", "legacy"):
         raise ValueError(
             f"csf_scheme must be 'consistent' or 'legacy', got {cfg.csf_scheme!r}")
