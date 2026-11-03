@@ -58,6 +58,7 @@ from dataclasses import dataclass
 import torch
 
 from .csf_curvature import fit_curvature
+from .csf_delta_s import profile_delta_s
 from .droplet_impact import cubic_spline_gradient, cubic_spline_kernel
 
 
@@ -230,6 +231,7 @@ def csf_fields(
     normal_smoothing: int = 2,
     curvature_scheme: str = "mls",
     curvature_stencil: float = 4.0,
+    delta_s_scheme: str = "gradient",
 ) -> CSFState:
     """Colour, its gradient, the outward normal, curvature and delta_s.
 
@@ -284,7 +286,13 @@ def csf_fields(
     # did, letting the colour jump be O(0.3) instead of O(1)) makes the CSF
     # force -- and therefore the Laplace pressure jump -- too weak by exactly
     # the missing factor.
-    delta_s = 2.0 * torch.linalg.vector_norm(grad_c, dim=1)
+    if delta_s_scheme == "profile":
+        delta_s = profile_delta_s(color, h)
+    elif delta_s_scheme == "gradient":
+        delta_s = 2.0 * torch.linalg.vector_norm(grad_c, dim=1)
+    else:
+        raise ValueError("delta_s_scheme must be 'gradient' or 'profile', got "
+                         f"{delta_s_scheme!r}")
     if curvature_scheme != "mls":
         kappa = fit_curvature(pos, normal, delta_s, pairs, h, fallback=kappa,
                               method=curvature_scheme, stencil=curvature_stencil)
@@ -305,6 +313,7 @@ def surface_tension_acceleration(
     contact_angle: float | None = None,
     curvature_scheme: str = "mls",
     curvature_stencil: float = 4.0,
+    delta_s_scheme: str = "gradient",
 ) -> tuple[torch.Tensor, CSFState | None]:
     """CSF acceleration ``a = -sigma kappa delta_s n / rho`` and its fields."""
     if sigma <= 0.0:
@@ -320,7 +329,8 @@ def surface_tension_acceleration(
     state = csf_fields(pos, mass, pairs, h, rho0, wall=wall,
                        contact_angle=contact_angle,
                        curvature_scheme=curvature_scheme,
-                       curvature_stencil=curvature_stencil)
+                       curvature_stencil=curvature_stencil,
+                       delta_s_scheme=delta_s_scheme)
     # Particles whose colour field is locally flat are not on the interface; the
     # clamped kernel sum makes their |grad c| numerically ~1e-12 rather than
     # exactly zero, so they are masked out. Bulk traction stays a bit-exact

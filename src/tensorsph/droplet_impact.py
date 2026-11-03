@@ -127,6 +127,12 @@ class Config:
     # historical discretisation, +25 % on a circle); "fit_quadratic"/"fit_circle"
     # = weighted local interface fit (see tensorsph.csf_curvature).
     csf_curvature: str = "mls"
+    # CSF surface delta function inside the "consistent" scheme. "gradient" =
+    # 2 |grad c| with the MLS operator (historical, under-reads the delta
+    # function by ~25 %); "profile" = exact inversion of the smoothed-indicator
+    # profile, which preserves int delta_s dn = 1 by construction
+    # (tensorsph.csf_delta_s).
+    csf_delta_s: str = "gradient"
 
 
 # --------------------------------------------------------------------------- #
@@ -732,6 +738,10 @@ def validate_config(cfg: Config) -> None:
     if cfg.csf_scheme not in ("consistent", "legacy"):
         raise ValueError(
             f"csf_scheme must be 'consistent' or 'legacy', got {cfg.csf_scheme!r}")
+    if cfg.csf_delta_s not in ("gradient", "profile"):
+        raise ValueError(
+            "csf_delta_s must be 'gradient' or 'profile', "
+            f"got {cfg.csf_delta_s!r}")
     if not math.isfinite(cfg.dt_growth) or cfg.dt_growth < 1.0:
         # A growth factor below 1 would shrink the step every time the flow did
         # not demand it, which is not "adaptive", it is a user error.
