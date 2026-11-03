@@ -123,6 +123,10 @@ class Config:
     # scheme verified against the Young-Laplace law; "legacy" = the original
     # neighbour-count colour with uncorrected operators, kept for A/B.
     csf_scheme: str = "consistent"
+    # CSF curvature operator inside the "consistent" scheme. "mls" = div n (the
+    # historical discretisation, +25 % on a circle); "fit_quadratic"/"fit_circle"
+    # = weighted local interface fit (see tensorsph.csf_curvature).
+    csf_curvature: str = "mls"
 
 
 # --------------------------------------------------------------------------- #
@@ -721,6 +725,10 @@ def validate_config(cfg: Config) -> None:
         raise ValueError("wall_friction must be in [0, 1]")
     if cfg.density_diffusion < 0.0:
         raise ValueError("density_diffusion must be non-negative")
+    if cfg.csf_curvature not in ("mls", "fit_quadratic", "fit_circle"):
+        raise ValueError(
+            "csf_curvature must be 'mls', 'fit_quadratic' or 'fit_circle', "
+            f"got {cfg.csf_curvature!r}")
     if cfg.csf_scheme not in ("consistent", "legacy"):
         raise ValueError(
             f"csf_scheme must be 'consistent' or 'legacy', got {cfg.csf_scheme!r}")
