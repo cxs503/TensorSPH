@@ -16,17 +16,12 @@ verification record to be updated instead of drifting.
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import math
 from pathlib import Path
 
 import pytest
-import torch
-
-from tensorsph.droplet_impact import density_from_neighbor_pairs
-from tensorsph.neighbor_search import cell_linked_pairs
-
-import importlib.util
 
 BENCH = Path(__file__).resolve().parents[1] / "benchmarks" / "laplace_pressure_floor"
 REPORT = BENCH / "report.json"

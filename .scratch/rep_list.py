@@ -1,4 +1,6 @@
-import json, os, urllib.request
+import json
+import os
+import urllib.request
 
 BASE = os.environ["TENSOR_API_BASE"]
 tok = open("/tmp/tok").read().strip()
