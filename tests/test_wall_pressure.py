@@ -26,6 +26,7 @@ from tensorsph.droplet_impact import (
     cubic_spline_kernel,
     rhs,
     tait_pressure,
+    wall_mass as wall_mass_function,
 )
 
 SMALL = dict(dx=0.05, pool_width=0.4, pool_depth=0.15, drop_radius=0.05,
@@ -46,7 +47,11 @@ def closed_form(cfg, mass_scale):
     pos, wall, mass = two_particle_state(cfg, mass_scale)
     separation = pos[0] - wall[0]
     distance = torch.linalg.vector_norm(separation)
-    wall_mass = cfg.rho0 * dx * dx
+    # The wall mass is whatever the solver builds (Config.mass_calibration ties it
+    # to the lattice kernel sum), so read it from the same helper instead of
+    # re-deriving the textbook rho0*dx^2 -- otherwise this closed form silently
+    # tests a mass the code no longer uses.
+    wall_mass = float(wall_mass_function(cfg, 1, torch.device("cpu"))[0])
     rho = (mass[0] * cubic_spline_kernel(torch.zeros(()), h)
            + wall_mass * cubic_spline_kernel(distance, h))
     pressure = tait_pressure(rho.reshape(1), cfg)[0]

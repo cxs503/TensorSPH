@@ -1,0 +1,486 @@
+{
+  "harness": "benchmarks/init_mass_calibration/run.py",
+  "question": "does the shipped initial state start at rho0, and how big is the spurious Tait pressure when it does not?",
+  "parameters": {
+    "rho0": 1000.0,
+    "sound_speed": 20.0,
+    "gamma": 7.0,
+    "h_factor": 1.3,
+    "radius": 0.1,
+    "pool_dx": 0.025,
+    "drop_dx": [
+      0.01,
+      0.005
+    ],
+    "pressure_floor": 0.0001,
+    "dtype": "float32 (solver default)"
+  },
+  "cases": [
+    {
+      "case": "pool_square_dx25mm",
+      "lattice": "square",
+      "calibrated": false,
+      "dx": 0.025,
+      "h_over_dx": 1.3,
+      "particles": 608,
+      "core_particles": 272,
+      "analytic_ratio": 0.9999467689558734,
+      "core_ratio_mean": 0.9999467134475708,
+      "core_ratio_min": 0.9999462962150574,
+      "core_ratio_max": 0.9999474883079529,
+      "all_ratio_min": 0.5819826126098633,
+      "all_ratio_max": 0.9999476075172424,
+      "p_max": 0.0,
+      "p_max_over_pressure_scale": 0.0,
+      "core_p_max_over_pressure_scale": 0.0,
+      "pressure_scale": 400000.0
+    },
+    {
+      "case": "hex_drop_dx10mm",
+      "lattice": "hex",
+      "calibrated": false,
+      "dx": 0.01,
+      "h_over_dx": 1.3,
+      "particles": 362,
+      "core_particles": 90,
+      "analytic_ratio": 1.005883522363088,
+      "core_ratio_mean": 1.0058835223630884,
+      "core_ratio_min": 1.0058835223630882,
+      "core_ratio_max": 1.0058835223630884,
+      "all_ratio_min": 0.5079797774675914,
+      "all_ratio_max": 1.005883522363089,
+      "p_max": 2395.3576787840398,
+      "p_max_over_pressure_scale": 0.0059883941969600995,
+      "core_p_max_over_pressure_scale": 0.005988394196959401,
+      "pressure_scale": 400000.0
+    },
+    {
+      "case": "hex_drop_dx5mm",
+      "lattice": "hex",
+      "calibrated": false,
+      "dx": 0.005,
+      "h_over_dx": 1.3,
+      "particles": 1450,
+      "core_particles": 360,
+      "analytic_ratio": 1.005883522363088,
+      "core_ratio_mean": 1.0058835223630886,
+      "core_ratio_min": 1.0058835223630882,
+      "core_ratio_max": 1.005883522363089,
+      "all_ratio_min": 0.5079797774675922,
+      "all_ratio_max": 1.0058835223630902,
+      "p_max": 2395.3576787844963,
+      "p_max_over_pressure_scale": 0.005988394196961241,
+      "core_p_max_over_pressure_scale": 0.0059883941969600995,
+      "pressure_scale": 400000.0
+    },
+    {
+      "case": "square_drop_dx10mm",
+      "lattice": "square",
+      "calibrated": false,
+      "dx": 0.01,
+      "h_over_dx": 1.3,
+      "particles": 317,
+      "core_particles": 69,
+      "analytic_ratio": 0.9999467689558733,
+      "core_ratio_mean": 0.9999467689558736,
+      "core_ratio_min": 0.9999467689558734,
+      "core_ratio_max": 0.9999467689558739,
+      "all_ratio_min": 0.5057907845957986,
+      "all_ratio_max": 0.999946768955874,
+      "p_max": 0.0,
+      "p_max_over_pressure_scale": 0.0,
+      "core_p_max_over_pressure_scale": 0.0,
+      "pressure_scale": 400000.0
+    },
+    {
+      "case": "square_drop_dx5mm",
+      "lattice": "square",
+      "calibrated": false,
+      "dx": 0.005,
+      "h_over_dx": 1.3,
+      "particles": 1257,
+      "core_particles": 305,
+      "analytic_ratio": 0.9999467689558733,
+      "core_ratio_mean": 0.9999467689558734,
+      "core_ratio_min": 0.9999467689558732,
+      "core_ratio_max": 0.9999467689558742,
+      "all_ratio_min": 0.5057907845957984,
+      "all_ratio_max": 0.9999467689558743,
+      "p_max": 0.0,
+      "p_max_over_pressure_scale": 0.0,
+      "core_p_max_over_pressure_scale": 0.0,
+      "pressure_scale": 400000.0
+    },
+    {
+      "case": "pool_square_dx25mm",
+      "lattice": "square",
+      "calibrated": true,
+      "dx": 0.025,
+      "h_over_dx": 1.3,
+      "particles": 608,
+      "core_particles": 272,
+      "analytic_ratio": 0.9999467689558734,
+      "core_ratio_mean": 0.9999998807907104,
+      "core_ratio_min": 0.9999994039535522,
+      "core_ratio_max": 1.0000005960464478,
+      "all_ratio_min": 0.5820134878158569,
+      "all_ratio_max": 1.0000007152557373,
+      "p_max": 0.286102294921875,
+      "p_max_over_pressure_scale": 7.152557373046875e-07,
+      "core_p_max_over_pressure_scale": 5.960464477539062e-07,
+      "pressure_scale": 400000.0
+    },
+    {
+      "case": "hex_drop_dx10mm",
+      "lattice": "hex",
+      "calibrated": true,
+      "dx": 0.01,
+      "h_over_dx": 1.3,
+      "particles": 362,
+      "core_particles": 90,
+      "analytic_ratio": 1.005883522363088,
+      "core_ratio_mean": 1.0,
+      "core_ratio_min": 0.9999999999999999,
+      "core_ratio_max": 1.0,
+      "all_ratio_min": 0.5050085483796491,
+      "all_ratio_max": 1.0000000000000007,
+      "p_max": 2.6645352591003757e-10,
+      "p_max_over_pressure_scale": 6.661338147750939e-16,
+      "core_p_max_over_pressure_scale": 0.0,
+      "pressure_scale": 400000.0
+    },
+    {
+      "case": "hex_drop_dx5mm",
+      "lattice": "hex",
+      "calibrated": true,
+      "dx": 0.005,
+      "h_over_dx": 1.3,
+      "particles": 1450,
+      "core_particles": 360,
+      "analytic_ratio": 1.005883522363088,
+      "core_ratio_mean": 1.0,
+      "core_ratio_min": 0.9999999999999999,
+      "core_ratio_max": 1.0000000000000007,
+      "all_ratio_min": 0.5050085483796499,
+      "all_ratio_max": 1.0000000000000022,
+      "p_max": 8.881784197001252e-10,
+      "p_max_over_pressure_scale": 2.220446049250313e-15,
+      "core_p_max_over_pressure_scale": 6.661338147750939e-16,
+      "pressure_scale": 400000.0
+    },
+    {
+      "case": "square_drop_dx10mm",
+      "lattice": "square",
+      "calibrated": true,
+      "dx": 0.01,
+      "h_over_dx": 1.3,
+      "particles": 317,
+      "core_particles": 69,
+      "analytic_ratio": 0.9999467689558733,
+      "core_ratio_mean": 1.0,
+      "core_ratio_min": 0.9999999999999998,
+      "core_ratio_max": 1.0000000000000002,
+      "all_ratio_min": 0.5058177098006291,
+      "all_ratio_max": 1.0000000000000004,
+      "p_max": 1.7763568394002505e-10,
+      "p_max_over_pressure_scale": 4.440892098500626e-16,
+      "core_p_max_over_pressure_scale": 2.220446049250313e-16,
+      "pressure_scale": 400000.0
+    },
+    {
+      "case": "square_drop_dx5mm",
+      "lattice": "square",
+      "calibrated": true,
+      "dx": 0.005,
+      "h_over_dx": 1.3,
+      "particles": 1257,
+      "core_particles": 305,
+      "analytic_ratio": 0.9999467689558733,
+      "core_ratio_mean": 1.0,
+      "core_ratio_min": 0.9999999999999998,
+      "core_ratio_max": 1.0000000000000009,
+      "all_ratio_min": 0.5058177098006291,
+      "all_ratio_max": 1.000000000000001,
+      "p_max": 4.440892098500626e-10,
+      "p_max_over_pressure_scale": 1.1102230246251565e-15,
+      "core_p_max_over_pressure_scale": 8.881784197001252e-16,
+      "pressure_scale": 400000.0
+    }
+  ],
+  "analytic_sweep": [
+    {
+      "lattice": "square",
+      "h_over_dx": 1.2,
+      "dx": 0.025,
+      "ratio": 0.9997573067322313,
+      "bias_percent": -0.024269326776871214,
+      "spurious_pressure_Pa": 0.0,
+      "p_over_pressure_scale": 0.0
+    },
+    {
+      "lattice": "square",
+      "h_over_dx": 1.2,
+      "dx": 0.01,
+      "ratio": 0.9997573067322312,
+      "bias_percent": -0.024269326776882316,
+      "spurious_pressure_Pa": 0.0,
+      "p_over_pressure_scale": 0.0
+    },
+    {
+      "lattice": "square",
+      "h_over_dx": 1.2,
+      "dx": 0.005,
+      "ratio": 0.9997573067322312,
+      "bias_percent": -0.024269326776882316,
+      "spurious_pressure_Pa": 0.0,
+      "p_over_pressure_scale": 0.0
+    },
+    {
+      "lattice": "square",
+      "h_over_dx": 1.3,
+      "dx": 0.025,
+      "ratio": 0.9999467689558734,
+      "bias_percent": -0.00532310441265782,
+      "spurious_pressure_Pa": 0.0,
+      "p_over_pressure_scale": 0.0
+    },
+    {
+      "lattice": "square",
+      "h_over_dx": 1.3,
+      "dx": 0.01,
+      "ratio": 0.9999467689558733,
+      "bias_percent": -0.005323104412668922,
+      "spurious_pressure_Pa": 0.0,
+      "p_over_pressure_scale": 0.0
+    },
+    {
+      "lattice": "square",
+      "h_over_dx": 1.3,
+      "dx": 0.005,
+      "ratio": 0.9999467689558733,
+      "bias_percent": -0.005323104412668922,
+      "spurious_pressure_Pa": 0.0,
+      "p_over_pressure_scale": 0.0
+    },
+    {
+      "lattice": "square",
+      "h_over_dx": 1.5,
+      "dx": 0.025,
+      "ratio": 1.0034403964801624,
+      "bias_percent": 0.34403964801623665,
+      "spurious_pressure_Pa": 1390.44390969215,
+      "p_over_pressure_scale": 0.0034761097742303754
+    },
+    {
+      "lattice": "square",
+      "h_over_dx": 1.5,
+      "dx": 0.01,
+      "ratio": 1.0034403964801626,
+      "bias_percent": 0.34403964801625886,
+      "spurious_pressure_Pa": 1390.443909692239,
+      "p_over_pressure_scale": 0.0034761097742305974
+    },
+    {
+      "lattice": "square",
+      "h_over_dx": 1.5,
+      "dx": 0.005,
+      "ratio": 1.0034403964801626,
+      "bias_percent": 0.34403964801625886,
+      "spurious_pressure_Pa": 1390.443909692239,
+      "p_over_pressure_scale": 0.0034761097742305974
+    },
+    {
+      "lattice": "hex",
+      "h_over_dx": 1.2,
+      "dx": 0.025,
+      "ratio": 1.003224730462092,
+      "bias_percent": 0.32247304620920403,
+      "spurious_pressure_Pa": 1302.438132605653,
+      "p_over_pressure_scale": 0.0032560953315141326
+    },
+    {
+      "lattice": "hex",
+      "h_over_dx": 1.2,
+      "dx": 0.01,
+      "ratio": 1.0032247304620918,
+      "bias_percent": 0.3224730462091818,
+      "spurious_pressure_Pa": 1302.438132605564,
+      "p_over_pressure_scale": 0.00325609533151391
+    },
+    {
+      "lattice": "hex",
+      "h_over_dx": 1.2,
+      "dx": 0.005,
+      "ratio": 1.0032247304620918,
+      "bias_percent": 0.3224730462091818,
+      "spurious_pressure_Pa": 1302.438132605564,
+      "p_over_pressure_scale": 0.00325609533151391
+    },
+    {
+      "lattice": "hex",
+      "h_over_dx": 1.3,
+      "dx": 0.025,
+      "ratio": 1.0058835223630882,
+      "bias_percent": 0.58835223630882,
+      "spurious_pressure_Pa": 2395.357678783672,
+      "p_over_pressure_scale": 0.00598839419695918
+    },
+    {
+      "lattice": "hex",
+      "h_over_dx": 1.3,
+      "dx": 0.01,
+      "ratio": 1.005883522363088,
+      "bias_percent": 0.5883522363087978,
+      "spurious_pressure_Pa": 2395.3576787835705,
+      "p_over_pressure_scale": 0.005988394196958926
+    },
+    {
+      "lattice": "hex",
+      "h_over_dx": 1.3,
+      "dx": 0.005,
+      "ratio": 1.005883522363088,
+      "bias_percent": 0.5883522363087978,
+      "spurious_pressure_Pa": 2395.3576787835705,
+      "p_over_pressure_scale": 0.005988394196958926
+    },
+    {
+      "lattice": "hex",
+      "h_over_dx": 1.5,
+      "dx": 0.025,
+      "ratio": 1.001717861223636,
+      "bias_percent": 0.17178612236359303,
+      "spurious_pressure_Pa": 690.6959024891485,
+      "p_over_pressure_scale": 0.0017267397562228711
+    },
+    {
+      "lattice": "hex",
+      "h_over_dx": 1.5,
+      "dx": 0.01,
+      "ratio": 1.0017178612236362,
+      "bias_percent": 0.17178612236361523,
+      "spurious_pressure_Pa": 690.6959024892373,
+      "p_over_pressure_scale": 0.0017267397562230932
+    },
+    {
+      "lattice": "hex",
+      "h_over_dx": 1.5,
+      "dx": 0.005,
+      "ratio": 1.0017178612236362,
+      "bias_percent": 0.17178612236361523,
+      "spurious_pressure_Pa": 690.6959024892373,
+      "p_over_pressure_scale": 0.0017267397562230932
+    }
+  ],
+  "criteria": [
+    {
+      "name": "analytic_vs_measured::pool_square_dx25mm",
+      "measured": 5.551125754322105e-08,
+      "limit": 1e-05,
+      "result": "pass"
+    },
+    {
+      "name": "analytic_vs_measured::hex_drop_dx10mm",
+      "measured": 4.414916836561543e-16,
+      "limit": 1e-05,
+      "result": "pass"
+    },
+    {
+      "name": "analytic_vs_measured::hex_drop_dx5mm",
+      "measured": 6.622375254842314e-16,
+      "limit": 1e-05,
+      "result": "pass"
+    },
+    {
+      "name": "analytic_vs_measured::square_drop_dx10mm",
+      "measured": 3.3308463783060124e-16,
+      "limit": 1e-05,
+      "result": "pass"
+    },
+    {
+      "name": "analytic_vs_measured::square_drop_dx5mm",
+      "measured": 1.1102821261020042e-16,
+      "limit": 1e-05,
+      "result": "pass"
+    },
+    {
+      "name": "calibrated_core_ratio::pool_square_dx25mm",
+      "measured": 1.1920928955078125e-07,
+      "limit": 1e-06,
+      "result": "pass"
+    },
+    {
+      "name": "calibrated_core_ratio::hex_drop_dx10mm",
+      "measured": 0.0,
+      "limit": 1e-06,
+      "result": "pass"
+    },
+    {
+      "name": "calibrated_core_ratio::hex_drop_dx5mm",
+      "measured": 0.0,
+      "limit": 1e-06,
+      "result": "pass"
+    },
+    {
+      "name": "calibrated_core_ratio::square_drop_dx10mm",
+      "measured": 0.0,
+      "limit": 1e-06,
+      "result": "pass"
+    },
+    {
+      "name": "calibrated_core_ratio::square_drop_dx5mm",
+      "measured": 0.0,
+      "limit": 1e-06,
+      "result": "pass"
+    },
+    {
+      "name": "p_max_floor::pool_square_dx25mm",
+      "measured": 7.152557373046875e-07,
+      "limit": 0.0001,
+      "result": "pass"
+    },
+    {
+      "name": "p_max_floor::hex_drop_dx10mm",
+      "measured": 6.661338147750939e-16,
+      "limit": 0.0001,
+      "result": "pass"
+    },
+    {
+      "name": "p_max_floor::hex_drop_dx5mm",
+      "measured": 2.220446049250313e-15,
+      "limit": 0.0001,
+      "result": "pass"
+    },
+    {
+      "name": "p_max_floor::square_drop_dx10mm",
+      "measured": 4.440892098500626e-16,
+      "limit": 0.0001,
+      "result": "pass"
+    },
+    {
+      "name": "p_max_floor::square_drop_dx5mm",
+      "measured": 1.1102230246251565e-15,
+      "limit": 0.0001,
+      "result": "pass"
+    },
+    {
+      "name": "hex_bias_reproduces_m2971",
+      "measured": 0.005883522363088423,
+      "limit": 0.00588,
+      "result": "pass"
+    },
+    {
+      "name": "square_lattice_not_precompressed",
+      "measured": -5.328655242919922e-05,
+      "limit": 0.0,
+      "result": "pass"
+    },
+    {
+      "name": "analytic_bias_dx_independent",
+      "measured": 2.220446049250313e-16,
+      "limit": 1e-12,
+      "result": "pass"
+    }
+  ],
+  "all_pass": true,
+  "verdict": "P1 closed for the shipped square-lattice initial state; hex-based verification harnesses must adopt the calibrated mass before their Laplace numbers are re-baselined."
+}

@@ -129,6 +129,14 @@ class Config:
     # "mls" = div n with MLS-consistent operators, +25 % on a circle, kept for A/B;
     # "fit_circle" = algebraic circle fit, unstable on lattice data.
     csf_curvature: str = "fit_quadratic"
+    # Lattice mass calibration (backlog_update_m2971.md P1). With ``m = rho0*dx^2``
+    # the discrete kernel sum of an unbounded uniform lattice is ``1 + b`` rather
+    # than 1, so every initial state starts pre-compressed and the Tait EOS turns
+    # that offset into a spurious pressure (2.4 kPa at c0 = 20 m/s, i.e.
+    # p/(rho0 c0^2) = 6.0e-3). Rescaling the lattice mass by ``1/(1 + b)`` removes
+    # the bulk offset to machine precision. Off restores the pre-m3211 baseline
+    # bit for bit (kept for A/B and for reproducing published numbers).
+    mass_calibration: bool = True
 
 
 # --------------------------------------------------------------------------- #
@@ -363,6 +371,72 @@ def pool_lattice(cfg: Config, device: torch.device) -> torch.Tensor:
     return torch.stack((gx.reshape(-1), gy.reshape(-1)), dim=-1)
 
 
+# --------------------------------------------------------------------------- #
+# Lattice mass calibration
+# --------------------------------------------------------------------------- #
+
+_LATTICES = ("square", "hex")
+
+
+def lattice_area_per_particle(dx: float, lattice: str = "square") -> float:
+    """Area (2-D) occupied by one lattice site, i.e. the volume the mass fills."""
+    if lattice == "square":
+        return dx * dx
+    if lattice == "hex":
+        return dx * dx * math.sqrt(3.0) / 2.0
+    raise ValueError(f"unknown lattice {lattice!r}; expected one of {_LATTICES}")
+
+
+def lattice_offsets(dx: float, h: float, lattice: str = "square") -> torch.Tensor:
+    """Every lattice site inside the kernel support, relative to a bulk site.
+
+    The support of the cubic spline is ``r <= 2h``, so with ``h = 1.3 dx`` the
+    stencil is a few sites wide; enumerating it analytically is cheaper and more
+    accurate than resolving a finite cloud (no surface, no truncation).
+    """
+    if lattice not in _LATTICES:
+        raise ValueError(f"unknown lattice {lattice!r}; expected one of {_LATTICES}")
+    if dx <= 0.0 or h <= 0.0:
+        raise ValueError("dx and h must be positive")
+    reach = int(math.ceil(2.0 * h / dx)) + 1
+    idx = torch.arange(-reach, reach + 1, dtype=torch.float64)
+    gx, gy = torch.meshgrid(idx, idx, indexing="ij")
+    if lattice == "square":
+        x, y = gx * dx, gy * dx
+    else:  # hexagonally close packed rows, alternate rows shifted by dx/2
+        x = gx * dx + torch.remainder(gy, 2.0) * (0.5 * dx)
+        y = gy * dx * math.sqrt(3.0) / 2.0
+    return torch.stack((x.reshape(-1), y.reshape(-1)), dim=-1)
+
+
+def lattice_density_ratio(dx: float, h: float, lattice: str = "square") -> float:
+    """Summation density of an unbounded uniform lattice, relative to ``rho0``.
+
+    For mass ``m = rho0 * A`` (``A`` the lattice area per particle) the density
+    summation gives ``rho/rho0 = 1 + b`` with
+
+        ``b = A * sum_sites W(|r_ij|, h) - 1``
+
+    This ``b`` is a property of the lattice and kernel alone, so it can be
+    evaluated once instead of being measured on a finite (and therefore
+    surface-contaminated) cloud.
+    """
+    offsets = lattice_offsets(dx, h, lattice)
+    weights = cubic_spline_kernel(torch.linalg.vector_norm(offsets, dim=-1), h)
+    return float(weights.sum()) * lattice_area_per_particle(dx, lattice)
+
+
+def calibrated_particle_mass(cfg: Config, lattice: str = "square") -> float:
+    """Lattice mass whose summation density equals ``rho0`` in the bulk.
+
+    ``m = rho0 * A / (1 + b)``. With ``mass_calibration`` off, callers keep the
+    historical ``rho0 * A``.
+    """
+    area = lattice_area_per_particle(cfg.dx, lattice)
+    ratio = lattice_density_ratio(cfg.dx, cfg.h_factor * cfg.dx, lattice)
+    return cfg.rho0 * area / ratio
+
+
 def make_particles(cfg: Config, device: torch.device):
     """Generate a rectangular pool and a circular drop on a regular lattice.
 
@@ -376,6 +450,10 @@ def make_particles(cfg: Config, device: torch.device):
 
     With ``cfg.hydrostatic_init`` the pool masses follow the analytical
     hydrostatic density profile; the drop is in free fall and keeps ``rho0``.
+
+    With ``cfg.mass_calibration`` (default) the lattice mass is
+    ``rho0*dx^2/(1 + b)``, :func:`calibrated_particle_mass`, so the summation
+    density of the bulk is ``rho0`` instead of ``rho0 (1 + b)``.
     """
     dx = cfg.dx
     if cfg.drop_center_y - cfg.drop_radius <= cfg.pool_depth:
@@ -394,9 +472,13 @@ def make_particles(cfg: Config, device: torch.device):
     if drop.shape[0] == 0:
         raise ValueError("drop discretization produced no particles")
     positions = torch.cat((pool, drop), dim=0)
-    mass = torch.full((positions.shape[0],), cfg.rho0 * dx * dx, device=device)
+    unit = (calibrated_particle_mass(cfg, "square")
+            if cfg.mass_calibration else cfg.rho0 * dx * dx)
+    mass = torch.full((positions.shape[0],), unit, device=device)
     if cfg.hydrostatic_init:
-        pool_mass = (hydrostatic_density(pool[:, 1], cfg) * dx * dx)
+        # The analytical profile is a *density*; converting it to a particle mass
+        # carries the same lattice calibration as the uniform part.
+        pool_mass = hydrostatic_density(pool[:, 1], cfg) * unit / cfg.rho0
         mass = torch.cat((pool_mass, mass[pool.shape[0]:]), dim=0)
     return positions, mass
 
@@ -438,7 +520,15 @@ def wall_lattice(cfg: Config, device: torch.device,
 
 
 def wall_mass(cfg: Config, count: int, device: torch.device) -> torch.Tensor:
-    return torch.full((count,), cfg.rho0 * cfg.dx * cfg.dx, device=device)
+    """Mass of the static wall particles.
+
+    Carries the same lattice calibration as the fluid: the fluid density
+    summation counts wall neighbours, so a biased wall mass would leak the bias
+    back into the fluid near the boundary.
+    """
+    unit = (calibrated_particle_mass(cfg, "square")
+            if cfg.mass_calibration else cfg.rho0 * cfg.dx * cfg.dx)
+    return torch.full((count,), unit, device=device)
 
 
 # --------------------------------------------------------------------------- #
