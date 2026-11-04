@@ -129,6 +129,23 @@ class Config:
     # "mls" = div n with MLS-consistent operators, +25 % on a circle, kept for A/B;
     # "fit_circle" = algebraic circle fit, unstable on lattice data.
     csf_curvature: str = "fit_quadratic"
+    # Free-surface pressure closure. ``True`` (default) extrapolates the pressure
+    # of free-surface particles from their fluid neighbours, so the interface
+    # shell can carry a pressure instead of being clamped to p = 0 by the Tait
+    # law. See ``free_surface_pressure`` and
+    # docs/verification_laplace_shell_pressure.md. ``False`` reproduces the
+    # pre-0.9 behaviour (every particle with rho < rho0 sits at p = 0).
+    free_surface_pressure: bool = True
+    # A particle is treated as free-surface when its summation density falls
+    # below this fraction of rho0. 0.99 is the usual WCSPH choice (Adami et al.
+    # 2012 use a kernel-sum criterion of the same order).
+    free_surface_density_ratio: float = 0.99
+    # Sweeps of the (simultaneous) extrapolation. One sweep moves the value one
+    # particle layer inwards, so a particle whose whole neighbourhood is
+    # deficient still reads the clamped zeros; on a drop the deficient shell is
+    # two layers deep, which is why two is the default. Measured on the
+    # Young-Laplace case in benchmarks/laplace_pressure_floor/closure_report.json.
+    free_surface_pressure_sweeps: int = 2
 
 
 # --------------------------------------------------------------------------- #
@@ -238,6 +255,78 @@ def tait_pressure(rho: torch.Tensor, cfg: Config) -> torch.Tensor:
     bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
     ratio = (rho / cfg.rho0).clamp_min(0.01)
     return (bulk * (ratio.pow(cfg.gamma) - 1.0)).clamp_min(0.0)
+
+
+def free_surface_pressure(pos, rho, pressure, cfg: Config, i, j, wij,
+                          sweeps: int | None = None):
+    """Extrapolate a pressure onto free-surface particles (shell closure).
+
+    Why this exists
+    ---------------
+    ``tait_pressure`` clamps at ``p >= 0``, and density summation returns
+    ``rho < rho0`` over the outer ``~2h`` of any free surface. Every particle in
+    that shell therefore sits at exactly ``p = 0``, so an interface cannot hold
+    the pressure jump that surface tension requires: on a drop the interior
+    settles at a *fraction* of ``sigma/R`` (measured 0.57 on the Young-Laplace
+    case, ``docs/verification_laplace_pressure_floor.md``). The deficit is not a
+    physical pressure; it is the kernel sum being incomplete in the void.
+
+    The scheme
+    ----------
+    Adami, Hu & Adams (2012), J. Comput. Phys. 231, eq. (11) / Ihmsen et al.
+    (2013) sec. 3.3 -- a Shepard-renormalised kernel average of the neighbours'
+    pressure, continued to the target particle under the local body
+    acceleration::
+
+        p_i = max[0, sum_j (p_j + rho_j g.(r_i - r_j)) W_ij / sum_j W_ij]
+
+    Two properties make this the right closure rather than an arbitrary
+    smoothing:
+
+    * Renormalisation. Dividing by the *deficient* kernel sum is what makes the
+      average exact for a linearly varying field, so a shell particle inherits
+      the pressure of the interior instead of a fraction of it.
+    * Body-force continuation. With gravity the term ``rho_j g.(r_i - r_j)``
+      carries the hydrostatic drop across the shell, so a flat free surface is
+      left at ``p ~ 0`` rather than being inflated by its own weight. This is the
+      same term the static-wall extrapolation in ``rhs`` already carries.
+
+    Only particles below ``cfg.free_surface_density_ratio * rho0`` are
+    overwritten; the rest keep their Tait pressure. Sweeps are Gauss-Seidel in
+    place, so a second sweep can hand a value to a particle whose entire
+    neighbourhood is deficient.
+
+    ``i``, ``j`` and ``wij`` are the *fluid-fluid* pair arrays (fluid neighbours
+    only); the caller is responsible for masking walls out, because a wall
+    particle has neither a meaningful summation density nor a free surface.
+    """
+    n = pos.shape[0]
+    if (not cfg.free_surface_pressure or n == 0
+            or i.numel() == 0):
+        return pressure
+    deficit = (rho / cfg.rho0) < cfg.free_surface_density_ratio
+    if not bool(deficit.any()):
+        return pressure
+
+    # g.(r_target - r_source), the same y-component convention the rest of the
+    # solver uses (g = (0, -gravity)).
+    g_dot = -cfg.gravity * (pos[i, 1] - pos[j, 1])
+    source_j = rho[j] * g_dot          # contribution seen by the i endpoint
+    source_i = rho[i] * g_dot          # ... by the j endpoint
+    n_sweeps = cfg.free_surface_pressure_sweeps if sweeps is None else int(sweeps)
+    p = pressure
+    for _ in range(max(1, n_sweeps)):
+        numerator = torch.zeros(n, dtype=pos.dtype, device=pos.device)
+        denominator = torch.zeros(n, dtype=pos.dtype, device=pos.device)
+        numerator = numerator.index_add(0, i, (p[j] + source_j) * wij)
+        numerator = numerator.index_add(0, j, (p[i] - source_i) * wij)
+        denominator = denominator.index_add(0, i, wij)
+        denominator = denominator.index_add(0, j, wij)
+        extrapolated = (numerator / denominator.clamp_min(1.0e-30)).clamp_min(0.0)
+        # A particle with no fluid neighbour keeps its own (clamped) value.
+        take = deficit & (denominator > 0.0)
+        p = torch.where(take, extrapolated, p)
+    return p
 
 
 def acoustic_courant(dt: float, cfg: Config, max_speed: float = 0.0) -> float:
@@ -572,6 +661,15 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
 
     pressure = tait_pressure(rho, cfg)
 
+    if cfg.free_surface_pressure:
+        # Shell closure for fluid particles only: the wall already gets its own
+        # extrapolation below, and a wall "density" is not a solution field.
+        fluid_only = (i < n) & (j < n)
+        if bool(fluid_only.any()):
+            pressure = free_surface_pressure(
+                pos, rho, pressure, cfg,
+                i[fluid_only], j[fluid_only], wij[fluid_only])
+
     if nw:
         bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
         # Only fluid/wall pairs extrapolate wall pressure. Instead of selecting
@@ -691,6 +789,12 @@ def rhs_all_pairs(pos, vel, mass, cfg: Config, dt=None):
         rate = -scale * (mass[None, :] / rho[None, :] * coupling).sum(dim=1)
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
     pressure = tait_pressure(rho, cfg)
+    if cfg.free_surface_pressure and pos.shape[0] > 1:
+        support = r < 2.0 * h
+        support.fill_diagonal_(False)
+        di, dj = torch.nonzero(support, as_tuple=True)
+        pressure = free_surface_pressure(pos, rho, pressure, cfg, di, dj,
+                                         w[di, dj])
     grad_w = cubic_spline_gradient(delta, h)
     pressure_term = (
         pressure[:, None] / rho[:, None].square()
