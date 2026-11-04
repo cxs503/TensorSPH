@@ -18,7 +18,8 @@ DOC = ROOT / "docs" / "verification_conservation.md"
 
 TEMPLATE = """# 守恒律、伽利略不变性与时间积分阶：TensorSPH 从未测过的三件事
 
-**仓库**: TensorSPH ｜ **工件**: `benchmarks/conservation/` ｜ **测试**: `tests/test_conservation.py`
+**仓库**: TensorSPH ｜ **工件**: \
+`benchmarks/conservation/` ｜ **测试**: `tests/test_conservation.py`
 
 **结论（先给判定）**: `docs/algorithm-gap-analysis.md` 自己写着「CI 通过
 **并不**establish conservation, convergence, or agreement with experiment」。
@@ -27,14 +28,18 @@ TEMPLATE = """# 守恒律、伽利略不变性与时间积分阶：TensorSPH 从
 
 | 判据 | 基准（解析/闭式） | 实测 | 判定 |
 |---|---|---|---|
-| G1 压强梯度逐体力平衡 | 内部力成对相反 ⇒ `sum_i m_i a_i = M g`，浮点误差量级 | {leak_press:.2e} | **PASS**（float64 舍入） |
-| G1b 粘性项单对动量泄漏闭式 | `C ν m_i m_j (v_i−v_j) L (1/ρ_i − 1/ρ_j)` | 实测/闭式 = {pair_ratio:.6f} | **机制确认**（闭式成立到 1e-15） |
+| G1 压强梯度逐体力平衡 | 内部力成对相反 ⇒ `sum_i m_i a_i = M g`，浮点误差量级 | \
+{leak_press:.2e} | **PASS**（float64 舍入） |
+| G1b 粘性项单对动量泄漏闭式 | `C ν m_i m_j (v_i−v_j) L (1/ρ_i − 1/ρ_j)` | \
+实测/闭式 = {pair_ratio:.6f} | **机制确认**（闭式成立到 1e-15） |
 | G1b 等密度时同式 | 密度相等 ⇒ 泄漏恒为 0 | {pair_eq:.1e} N | **PASS**（精确 0） |
 | G2 压力项动量漂移 | `P(t)=P(0)` 到舍入 | {drift_press:.2e} | **PASS** |
-| G2 粘性项动量漂移（默认 ν={nu:g}） | 同上 | {drift_visc:.2e} | **FAIL**（每步泄漏 {leak_visc:.2e}） |
+| G2 粘性项动量漂移（默认 ν={nu:g}） | 同上 | {drift_visc:.2e} | \
+**FAIL**（每步泄漏 {leak_visc:.2e}） |
 | G2 CSF 表面张力动量漂移 | 同上 | {drift_csf:.2e} | **FAIL**（CSF 自身净力/力模 = {st_leak:.2e}） |
 | G3 伽利略不变性（速度场） | 匀速平移不改变内部运动 | 相对差 {gal_rel:.2e} | **PASS** |
-| G4 一阶弹道位移偏差 | 闭式 `lag = ½ g Δt T`（无自由参数） | 比值 {lag_ratio_min:.4f}…{lag_ratio_max:.4f} | {lag_verdict} |
+| G4 一阶弹道位移偏差 | 闭式 `lag = ½ g Δt T`（无自由参数） | \
+比值 {lag_ratio_min:.4f}…{lag_ratio_max:.4f} | {lag_verdict} |
 | G4 观测阶 | 半隐式 Euler ⇒ 1 阶 | {order} | {order_verdict} |
 
 **一句话**：压力梯度和时间积分器是干净的（舍入级守恒、1 阶偏差精确等于闭式）；
