@@ -129,6 +129,25 @@ class Config:
     # "mls" = div n with MLS-consistent operators, +25 % on a circle, kept for A/B;
     # "fit_circle" = algebraic circle fit, unstable on lattice data.
     csf_curvature: str = "fit_quadratic"
+    # Free-surface pressure closure (validation debt P0, docs/backlog_update_m2971).
+    # A particle whose summation density falls below
+    # ``free_surface_rho_threshold * rho0`` is inside the kernel-deficiency shell
+    # at the free surface. There the Tait law, clamped at p >= 0, returns zero and
+    # the interface cannot carry the capillary pressure jump. With the flag on,
+    # such particles take the kernel-weighted extrapolation of the *interior*
+    # pressure field,
+    #     p_i = max(0, sum_j (p_j + rho_j g.(r_i - r_j)) W_ij / sum_j W_ij),
+    # i.e. the same one-sided extrapolation this file already applies to wall
+    # particles (Adami, Hu & Adams 2012, eq. 11; used for free-surface particles
+    # by Ihmsen et al. 2014, eq. 11). Off by default so every published number
+    # stays reproducible; see docs/verification_laplace_free_surface.md.
+    free_surface_pressure: bool = False
+    free_surface_rho_threshold: float = 0.99
+    # Jacobi sweeps of the extrapolation above. One sweep leaves the outermost
+    # shell averaging against the still-zero pressure of its own outer
+    # neighbours; a second sweep feeds those values back in. Two is what the
+    # Laplace benchmark measured to be worth it -- see the doc for the ladder.
+    free_surface_passes: int = 2
 
 
 # --------------------------------------------------------------------------- #
@@ -494,6 +513,59 @@ def drop_wall_wall_pairs(pairs: torch.Tensor, fluid_count: int) -> torch.Tensor:
     return pairs[usable]
 
 
+def free_surface_pressure_extrapolation(pressure, rho, delta, wij, pair_index,
+                                       n: int, cfg: Config):
+    """Kernel-weighted one-sided extrapolation of ``p`` into the free-surface shell.
+
+    ``pressure``  Tait pressure of the fluid particles (``n`` values).
+    ``rho``       summation density (same length).
+    ``delta``     ``pos_i - pos_j`` for every pair.
+    ``wij``       kernel value of every pair.
+    ``pair_index`` ``(i, j)`` pair index arrays.
+
+    Returns a new pressure vector where every particle flagged as a free-surface
+    particle -- ``rho/rho0 < free_surface_rho_threshold`` -- carries
+
+        p_i = max(0, sum_j (p_j + rho_j g.(r_i - r_j)) W_ij / sum_j W_ij)
+
+    summed over its *fluid* neighbours only. Interior particles are untouched.
+
+    Why one pass is enough: the correction is applied to the pressure used in the
+    momentum equation, not integrated in time, so the next step re-derives it from
+    the interior field again. A Jacobi sweep is what the published schemes
+    (Adami et al. 2012 eq. 11 for walls, Ihmsen et al. 2014 eq. 11 for the free
+    surface) use as well.
+
+    The denominator is the *fluid-neighbour* kernel sum rather than the complete
+    one, which is what makes the average an extrapolation to the particle instead
+    of an attenuation towards the interior: at the surface the sum is ~0.85 of the
+    interior value, and dividing by it restores the missing weight.
+    """
+    i, j = pair_index
+    fluid_only = (i < n) & (j < n)
+    if not bool(fluid_only.any()):
+        return pressure
+    ii, jj = i[fluid_only], j[fluid_only]
+    w = wij[fluid_only]
+    d = delta[fluid_only]
+
+    weight_sum = torch.zeros(n, dtype=pressure.dtype, device=pressure.device)
+    weight_sum = weight_sum.index_add(0, ii, w)
+    weight_sum = weight_sum.index_add(0, jj, w)
+
+    # g = (0, -gravity); g.(r_i - r_j) = -gravity * delta_y.
+    grav = -cfg.gravity * d[:, 1]
+    src_i = pressure[jj] + rho[jj] * grav
+    src_j = pressure[ii] - rho[ii] * grav
+    numerator = torch.zeros(n, dtype=pressure.dtype, device=pressure.device)
+    numerator = numerator.index_add(0, ii, src_i * w)
+    numerator = numerator.index_add(0, jj, src_j * w)
+
+    extrapolated = (numerator / weight_sum.clamp_min(1.0e-30)).clamp_min(0.0)
+    surface = (rho < cfg.free_surface_rho_threshold * cfg.rho0) & (weight_sum > 0.0)
+    return torch.where(surface, extrapolated, pressure)
+
+
 def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
     """Compute WCSPH RHS with pair-based compact-support interactions.
 
@@ -571,6 +643,11 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
 
     pressure = tait_pressure(rho, cfg)
+
+    if cfg.free_surface_pressure:
+        for _ in range(max(1, cfg.free_surface_passes)):
+            pressure = free_surface_pressure_extrapolation(
+                pressure, rho, delta, wij, (i, j), n, cfg)
 
     if nw:
         bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
