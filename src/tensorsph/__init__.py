@@ -31,6 +31,7 @@ from .droplet_impact import (
     viscous_dt_limit,
     wall_lattice,
 )
+from .fs_pressure import free_surface_mask, shell_pressure
 from .dam_break import DamBreakConfig, make_column, run_case
 from .neighbor_search import (
     PairListCache,

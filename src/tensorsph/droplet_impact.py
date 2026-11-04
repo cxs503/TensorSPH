@@ -129,6 +129,16 @@ class Config:
     # "mls" = div n with MLS-consistent operators, +25 % on a circle, kept for A/B;
     # "fit_circle" = algebraic circle fit, unstable on lattice data.
     csf_curvature: str = "fit_quadratic"
+    # Free-surface pressure closure (Adami, Hu & Adams 2012, Sec. 3.3).
+    # "clamp" (default, backward compatible) = Tait pressure clamped at p >= 0,
+    #   i.e. every particle inside 2h of the free surface is at zero pressure;
+    # "shell" = additionally extrapolate the pressure of those free-surface
+    #   fluid particles from their complete-kernel neighbours
+    #   (tensorsph.fs_pressure). Wall particles already get this treatment.
+    free_surface_pressure: str = "clamp"
+    # Relative density deficit that marks a free-surface particle for the
+    # "shell" closure (Adami's c_i < 0.99 in density form).
+    fs_pressure_threshold: float = 0.99
 
 
 # --------------------------------------------------------------------------- #
@@ -611,6 +621,21 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
     else:
         pressure_all, density_all = pressure, rho
 
+    if cfg.free_surface_pressure == "shell":
+        # Extrapolate the pressure onto the fluid free-surface particles from
+        # their complete-kernel neighbours (Adami et al. 2012, Sec. 3.3). Without
+        # it the Tait clamp puts the whole 2h shell at p = 0 and the discrete
+        # gradient sees the interior value collapse over one spacing. The wall
+        # pressure computed above is a valid source (walls are never free
+        # surface), so the two closures are consistent with each other.
+        from .fs_pressure import shell_pressure
+        pressure, _fs_stats = shell_pressure(
+            rho, pressure, pairs, wij, n, rho0=cfg.rho0,
+            threshold=cfg.fs_pressure_threshold,
+            wall_pressure=pressure_all[n:] if nw else None)
+        pressure_all = (torch.cat((pressure, pressure_all[n:])) if nw
+                        else pressure)
+
     if nw:
         all_vel = torch.cat((vel, torch.zeros((nw, pos.shape[1]),
                                              dtype=pos.dtype, device=pos.device)))
@@ -775,6 +800,11 @@ def validate_config(cfg: Config) -> None:
         raise ValueError(
             "csf_curvature must be 'mls', 'fit_quadratic' or 'fit_circle', "
             f"got {cfg.csf_curvature!r}")
+    if cfg.free_surface_pressure not in ("clamp", "shell"):
+        raise ValueError("free_surface_pressure must be 'clamp' or 'shell', "
+                         f"got {cfg.free_surface_pressure!r}")
+    if not 0.0 < cfg.fs_pressure_threshold < 1.0:
+        raise ValueError("fs_pressure_threshold must be in (0, 1)")
     if cfg.csf_scheme not in ("consistent", "legacy"):
         raise ValueError(
             f"csf_scheme must be 'consistent' or 'legacy', got {cfg.csf_scheme!r}")
