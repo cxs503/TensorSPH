@@ -1,0 +1,136 @@
+{
+  "frequency": {
+    "setup": {
+      "radius_m": 0.02,
+      "dx_m": 0.002,
+      "h_m": 0.0026000000000000003,
+      "dt_s": 3.9000000000000006e-05,
+      "n_particles": 357,
+      "sigma_N_per_m": 7.2,
+      "rho0": 1000.0,
+      "sound_speed": 20.0,
+      "viscosity_m2_per_s": 5e-05,
+      "gravity": 0.0,
+      "initial_eps": 0.1,
+      "steps": 3947,
+      "physical_time_s": 0.15393300000000001,
+      "periods_simulated": 1.8003160155645521,
+      "csf_scheme": "consistent",
+      "csf_curvature": "fit_quadratic",
+      "density_diffusion": 0.0,
+      "lattice": "hexagonal",
+      "mode": 2
+    },
+    "reference": {
+      "law": "omega^2 = sigma m (m^2-1) / (rho R^3)  [2-D cylinder]",
+      "omega_rad_per_s": 73.48469228349533,
+      "period_s": 0.08550332201079094,
+      "omega_3d_sphere_rad_per_s": 84.85281374238569,
+      "capillary_time_s": 0.03333333333333334,
+      "period_over_t_sigma": 2.5650996603237277,
+      "damping_estimate_per_s": 1.0,
+      "damping_estimate_provenance": "irrotational plane-capillary-wave estimate lambda = 2 nu k^2 with k = m/R; order-of-magnitude only (no closed-form 2-D viscous coefficient, Chandrasekhar 1961 ch. XII)"
+    },
+    "initial_state": {
+      "s_moment": 0.0969995935977754,
+      "semi_major": 0.0218689757611173,
+      "semi_minor": 0.018001550880364307,
+      "r_eff": 0.020028828409803218
+    },
+    "final_state": {
+      "s_moment": 0.9360076402056162,
+      "semi_major": 141.17816816036577,
+      "semi_minor": 4.666471321916187,
+      "r_eff": 99.8825588371533
+    },
+    "frequency": {
+      "fit_second_moment_rad_per_s": 41.497920989990234,
+      "fit_second_moment_rel_error_pct": -43.52848232677342,
+      "fit_kinetic_energy_rad_per_s": 116.65695190429688,
+      "fit_kinetic_energy_rel_error_pct": -20.62499802390951,
+      "zero_crossing_rad_per_s": 361.45510859929794,
+      "zero_crossing_rel_error_pct": 391.87810055031116,
+      "estimator_agreement_pct": 40.55758592392598,
+      "within_3pct": false,
+      "within_15pct": false,
+      "fit": {
+        "omega": 41.497920989990234,
+        "lambda_per_s": 0.0,
+        "rms": 0.15430438213375217,
+        "amplitude0": 0.16728550527010783,
+        "offset": 0.13355217495645674,
+        "r2": 0.371243575175777
+      },
+      "fit_kinetic_energy": {
+        "omega": 116.65695190429688,
+        "lambda_per_s": 0.0,
+        "rms": 11638800.541035788,
+        "amplitude0": 5500854.77729379,
+        "offset": 2930830.390681519,
+        "r2": 0.10030172561054806
+      },
+      "zero_crossing": {
+        "n_crossings": 5,
+        "half_period": 0.008691515429852456,
+        "period": 0.017383030859704912,
+        "omega": 361.45510859929794
+      }
+    },
+    "damping": {
+      "fit_lambda_per_s": 0.0,
+      "peak_lambda_per_s": -6.308035009709393,
+      "peak_fit_r2": 0.07128022141034751,
+      "ke_over_lambda": 0.0,
+      "peaks": {
+        "n_peaks": 11,
+        "lambda_per_s": -6.308035009709393,
+        "r2": 0.07128022141034751,
+        "peak_times_s": [
+          0.04044300000000001,
+          0.09024600000000002,
+          0.09500400000000002,
+          0.10767900000000001,
+          0.11801400000000002,
+          0.13478400000000001,
+          0.13509600000000002,
+          0.13513500000000003,
+          0.137085,
+          0.146601,
+          0.14671800000000002
+        ],
+        "peak_amplitudes": [
+          0.13133780426840147,
+          0.05586234969545932,
+          0.10409260111794011,
+          0.03646551442504825,
+          0.06294475798243744,
+          0.2109733349264272,
+          0.21089013045705887,
+          0.21092897538050373,
+          0.03737701067391798,
+          0.34015332597151604,
+          0.1195549459768849
+        ]
+      }
+    },
+    "diagnostics": {
+      "mass_relative_drift": 0.0,
+      "max_speed_m_per_s": 181845.40094136473,
+      "capillary_velocity_m_per_s": 0.6,
+      "amplitude_after_sim_periods": 0.9360076402056162
+    }
+  },
+  "verdict": {
+    "rows": [
+      {
+        "case": "frequency_dx2.0mm",
+        "omega_measured": 41.497920989990234,
+        "omega_reference": 73.48469228349533,
+        "rel_error_pct": -43.52848232677342
+      }
+    ],
+    "worst_abs_rel_error_pct": 43.52848232677342,
+    "worst_within_15pct": false,
+    "worst_within_3pct": false
+  }
+}
