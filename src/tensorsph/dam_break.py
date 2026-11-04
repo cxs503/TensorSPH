@@ -110,13 +110,57 @@ def front_position(pos: torch.Tensor, cfg: DamBreakConfig) -> float:
 
 
 def ritter_front(time: float, cfg: DamBreakConfig) -> float:
-    """Ritter shallow-water leading edge on a dry bed, measured from x = 0.
+    """Ritter shallow-water leading edge on a dry bed, measured from the dam.
 
     ``Z(t) = 2 sqrt(g H) t`` for a reservoir that is effectively semi-infinite.
     Reported as a reference only: the reservoir here is finite and the column is
     not shallow.
+
+    **Frame reminder.** This is ``Z`` in the self-similar frame, i.e. the
+    distance travelled *from the initial column face*. The solver's
+    :func:`front_position` reports the lab-frame coordinate ``x_max >= a``, so
+    the two are only comparable as ``front_position - column_width`` against
+    ``ritter_front``. Comparing ``front_position`` itself against this function
+    is a frame error worth one column width in every sample.
+
+    Non-dimensionalised with ``tau = t sqrt(2 g / a)`` the same reference is
+    :func:`ritter_front_over_a`.
     """
     return 2.0 * math.sqrt(cfg.gravity * cfg.column_height) * time
+
+
+def ritter_height_profile(x: float, time: float,
+                          cfg: DamBreakConfig) -> float | None:
+    """Exact Ritter free surface ``h(x, t)`` on a dry bed, ``x`` from the dam.
+
+    With ``c = sqrt(g H)`` the solution on ``-c t <= x <= 2 c t`` is the
+    rarefaction ``h = (2c - x/t)^2 / (9 g)``, ``u = (2/3)(c + x/t)``; upstream of
+    the rarefaction tail the reservoir is still at ``H`` and downstream of the
+    front it is dry. ``None`` is returned before release.
+
+    Landmarks (pinned in ``tests/test_ritter_reference.py``): ``h(-c t) = H``,
+    ``h(0, t) = 4H/9`` (the dam does *not* keep its depth), ``h(2 c t) = 0``, and
+    the Riemann invariant ``u + 2 sqrt(gh) = 2c`` holds across the whole fan.
+    """
+    if time <= 0.0:
+        return None
+    c = math.sqrt(cfg.gravity * cfg.column_height)
+    if x < -c * time:
+        return cfg.column_height
+    if x > 2.0 * c * time:
+        return 0.0
+    return (2.0 * c - x / time) ** 2 / (9.0 * cfg.gravity)
+
+
+def ritter_front_over_a(tau: float) -> float:
+    """Ritter leading edge in the experiment's ``Z/a`` non-dimensionalisation.
+
+    With ``H = 2a`` and ``tau = t sqrt(2 g / a)`` the identity is exactly
+    ``Z/a = 2 tau`` (``2 sqrt(2 g a) t / a``). Using ``Z/a = tau`` instead, as
+    ``benchmarks/dam_break/experimental_validation.py`` did until this audit,
+    halves the reference and silently changes every reported Ritter error.
+    """
+    return 2.0 * tau
 
 
 @dataclass
@@ -299,5 +343,6 @@ def run_case(cfg: DamBreakConfig, pair_skin_factor: float | None = None,
 
 __all__ = [
     "DamBreakConfig", "DamBreakRun", "front_position", "make_column",
-    "ritter_front", "run_case", "validate_case", "boundary_box",
+    "ritter_front", "ritter_front_over_a", "ritter_height_profile",
+    "run_case", "validate_case", "boundary_box",
 ]
