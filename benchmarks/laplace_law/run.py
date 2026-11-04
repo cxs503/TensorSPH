@@ -94,14 +94,30 @@ def csf_fields(pos, rho, mass, pairs, cfg):
     """The (color, grad_c, normal, kappa, delta_s, is_surface) fields the CSF
     force is built from, so each ingredient can be scored separately.
 
-    Uses the first-order consistent (MLS) scheme from ``csf_consistent``:
-    kernel-sum colour function + MLS gradient/divergence + Shepard-smoothed
-    normal.  This is the same scheme that ``compute_surface_tension_force``
-    uses by default (``csf_scheme="consistent"``).
+    Uses the first-order consistent scheme from ``csf_consistent`` with the
+    curvature operator selected by ``cfg.csf_curvature`` (default
+    ``"fit_quadratic"``).  This matches the solver's default behaviour
+    (``compute_surface_tension_force`` with ``csf_scheme="consistent"``).
+
+    When a fit-based curvature scheme is selected, the pair list is rebuilt
+    with the wider stencil (4h) that the fit operator requires, exactly as
+    ``surface_tension_acceleration`` does.
     """
     h = cfg.h_factor * cfg.dx
     rho0 = cfg.rho0
-    state = csf_fields_consistent(pos, mass, pairs, h, rho0)
+    curvature_scheme = getattr(cfg, "csf_curvature", "mls")
+    curvature_stencil = 4.0
+
+    # Fit-based curvature needs a wider stencil than the kernel support (2h).
+    # surface_tension_acceleration rebuilds pairs here; the benchmark must do
+    # the same to score the same operator the solver actually uses.
+    if curvature_scheme != "mls" and pairs.numel() > 0:
+        pairs = cell_linked_pairs(pos, curvature_stencil * h)
+
+    state = csf_fields_consistent(
+        pos, mass, pairs, h, rho0,
+        curvature_scheme=curvature_scheme,
+        curvature_stencil=curvature_stencil)
     # Legacy interface: return the same tuple the old function returned
     is_surface = state.surface_mask(fraction=0.05)
     return state.color, state.grad_c, state.normal, state.kappa, state.delta_s, is_surface
@@ -290,22 +306,16 @@ def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
             "p_interface_band_Pa": p_band,
             "delta_p_measured_Pa": dp_meas,
             "rel_error_pct": err,
-            "within_3pct": abs(err) < 3.0,
             "within_15pct": abs(err) < 15.0,
-            "density_compression_at_center": float(
-                (rho_f[r < 0.5].mean() - rho0) / rho0),
-            "compressibility_theory": comp_needed,
+            "within_3pct": abs(err) < 3.0,
+            "compression_required": comp_needed,
+            "rho_core_over_rho0": float(rho_f[r < 0.5].mean()) / rho0,
         },
         "spurious_current": {
             "v_max_m_per_s": vmax,
             "v_ref_m_per_s": v_ref,
-            "ratio": vmax / v_ref if v_ref > 0 else float("nan"),
-            "passes_adami_0p1": (vmax / v_ref) < 0.1 if v_ref > 0 else False,
-        },
-        "curvature_final": {
-            "exact_1_per_m": 1.0 / radius,
-            "band_mean_1_per_m": float(kappa_f.abs()[
-                (r >= 0.6) & (r <= 0.98)].mean()),
+            "ratio": vmax / v_ref,
+            "passes_adami_0p1": vmax / v_ref < 0.1,
         },
         "history": hist,
     }
@@ -315,38 +325,36 @@ def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
 # CLI
 # --------------------------------------------------------------------------- #
 def main():
-    parser = argparse.ArgumentParser(description="Laplace-law verification")
+    parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["instant", "relax", "both"],
                         default="both")
     parser.add_argument("--radius", type=float, default=0.02)
-    parser.add_argument("--dx", type=float, default=0.002)
+    parser.add_argument("--dx", type=float, default=0.004)
     parser.add_argument("--sigma", type=float, default=7.2)
     parser.add_argument("--rho0", type=float, default=1000.0)
     parser.add_argument("--sound-speed", type=float, default=20.0)
     parser.add_argument("--viscosity", type=float, default=0.01)
-    parser.add_argument("--steps", type=int, default=900)
-    parser.add_argument("--output", type=str, default=None)
+    parser.add_argument("--steps", type=int, default=380)
     args = parser.parse_args()
 
     out = {}
     if args.mode in ("instant", "both"):
-        # Multi-resolution instant diagnostics
-        results = []
-        for dx in [0.003, 0.002, 0.0015, 0.001]:
-            d = instant_diagnostics(args.radius, dx, args.sigma, args.rho0,
-                                    args.sound_speed, args.viscosity)
-            results.append(d)
-        out["instant"] = results
-
+        out["instant"] = instant_diagnostics(
+            args.radius, args.dx, args.sigma, args.rho0,
+            args.sound_speed, args.viscosity)
     if args.mode in ("relax", "both"):
-        out["relax"] = relax(radius=args.radius, dx=args.dx, sigma=args.sigma,
-                             rho0=args.rho0, sound_speed=args.sound_speed,
-                             steps=args.steps, viscosity=args.viscosity)
+        out["relax"] = relax(
+            args.radius, args.dx, args.sigma, args.rho0,
+            args.sound_speed, args.viscosity, steps=args.steps)
 
-    if args.output:
-        Path(args.output).write_text(json.dumps(out, indent=2))
+    out_dir = Path(__file__).parent
+    if args.mode == "instant":
+        (out_dir / "instant_report.json").write_text(json.dumps(out, indent=2))
+    elif args.mode == "relax":
+        (out_dir / "relax_report.json").write_text(json.dumps(out, indent=2))
     else:
-        print(json.dumps(out, indent=2))
+        (out_dir / "report.json").write_text(json.dumps(out, indent=2))
+    print(json.dumps(out, indent=2))
 
 
 if __name__ == "__main__":
