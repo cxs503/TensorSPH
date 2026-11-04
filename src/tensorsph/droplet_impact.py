@@ -129,6 +129,18 @@ class Config:
     # "mls" = div n with MLS-consistent operators, +25 % on a circle, kept for A/B;
     # "fit_circle" = algebraic circle fit, unstable on lattice data.
     csf_curvature: str = "fit_quadratic"
+    # Free-surface pressure closure. WCSPH clamps the Tait law at p >= 0, so a
+    # particle whose sum-density falls below rho0 (every particle in the outer
+    # shell, where the kernel support is incomplete) carries exactly zero
+    # pressure. A drop in vacuum then cannot support the Young-Laplace jump
+    # sigma/R in its interface region and the interior only compresses to a
+    # fraction of sigma/R. With this flag on, ``rhs`` extrapolates pressure
+    # *onto* the surface particles from their fluid neighbours instead
+    # (Adami, Hu & Adams 2012, eq. 11), the same closure already used for the
+    # wall: p_i = max(0, sum_j (p_j + rho_j g.(r_i - r_j)) W_ij / sum_j W_ij).
+    # Only particles with rho/rho0 < free_surface_rho_threshold are touched.
+    free_surface_pressure: bool = False
+    free_surface_rho_threshold: float = 0.99
 
 
 # --------------------------------------------------------------------------- #
@@ -494,6 +506,104 @@ def drop_wall_wall_pairs(pairs: torch.Tensor, fluid_count: int) -> torch.Tensor:
     return pairs[usable]
 
 
+def free_surface_pressure_closure(pos, rho, pressure, pairs, cfg: Config,
+                                  h: float | None = None):
+    """Extrapolate pressure onto the free-surface particles (shell closure).
+
+    ``pos`` holds every particle the pair list refers to (fluid first, then
+    wall); ``rho``/``pressure`` are the fluid fields, so ``n = pressure.shape[0]``
+    marks where the walls start. Returns the closed fluid pressure field.
+
+    Why it is needed
+    ----------------
+    A weakly compressible particle whose kernel support is incomplete sums less
+    than ``rho0``, so the Tait law, clamped at ``p >= 0``, gives it ``p = 0``.
+    The outer shell of a drop is therefore a pressure-free skin: the
+    Young-Laplace jump ``sigma/R`` cannot be held across it, only the interior
+    part of the pressure profile can carry it, and the drop settles at a
+    fraction of ``sigma/R`` (the C3 defect isolated in
+    ``benchmarks/laplace_pressure_floor``).
+
+    The operator
+    ------------
+    Pressure is extrapolated onto the under-supported particles from their
+    *interior* neighbours, exactly as the static wall pressure is extrapolated
+    from the fluid (Adami, Hu & Adams, J. Comput. Phys. 231 (2012) 759,
+    eq. 11 and the free-surface treatment in section 3.3):
+
+        p_i = max(0, sum_{j interior} (p_j + rho_j g.(r_i - r_j)) W_ij /
+                        sum_{j interior} W_ij)          for rho_i < p_i-threshold
+
+    Restricting the source set to interior neighbours is what makes this an
+    extrapolation rather than a smooth average: the shell's own particles carry
+    ``p = 0`` by construction, and averaging them back in dilutes the result to
+    a few per cent of the interior value (measured: 4.4 % of ``p_core`` at
+    0.85-0.95R, versus a documented requirement of order ``p_core``). Interior
+    particles whose support is complete are returned bit-identically: the
+    operator is the identity where it is not needed.
+
+    The body-force term keeps the field a fixed point of the operator for a
+    hydrostatic ``p = p0 - rho0 g y`` on complete support. A free-surface
+    particle with no interior neighbour keeps its (zero) Tait pressure rather
+    than inventing one.
+    """
+    n = pressure.shape[0]
+    if pairs.numel() == 0:
+        return pressure
+    if h is None:
+        h = cfg.h_factor * cfg.dx
+    i, j = pairs.unbind(dim=1)
+    sigma = 10.0 / (7.0 * math.pi * h * h)
+
+    # --- kernel weight per pair, zero on every pair that touches a wall ------
+    delta = pos[i] - pos[j]
+    r = torch.linalg.vector_norm(delta, dim=1)
+    fluid_pair = (i < n) & (j < n)
+    q = r / h
+    shape = torch.where(
+        q < 1.0,
+        1.0 - 1.5 * q.square() + 0.75 * q.pow(3),
+        torch.where(q < 2.0, 0.25 * (2.0 - q).clamp_min(0).pow(3), 0.0))
+    wij = sigma * shape.clamp_min(0.0)
+    fluid_weight = torch.where(fluid_pair, wij, torch.zeros_like(wij))
+
+    # --- interior particles are the extrapolation sources --------------------
+    surface = rho < cfg.free_surface_rho_threshold * cfg.rho0
+    j_safe = j.clamp(max=n - 1)          # wall indices are masked by the weight
+    i_safe = i.clamp(max=n - 1)
+    weight_for_i = torch.where(fluid_pair & ~surface[j_safe], fluid_weight,
+                               torch.zeros_like(fluid_weight))
+    weight_for_j = torch.where(fluid_pair & ~surface[i], fluid_weight,
+                               torch.zeros_like(fluid_weight))
+
+    # --- body-force term, signed per direction -------------------------------
+    # g . (r_i - r_j) with g = (0, -gravity); the pair is stored once, so the
+    # contribution to the j-side particle flips sign.
+    if pos.shape[1] > 1 and cfg.gravity != 0.0:
+        dy = float(cfg.gravity) * delta[:, 1]
+        source_j = pressure[j_safe] + rho[j_safe] * dy      # -> particle i
+        source_i = pressure[i] - rho[i] * dy                # -> particle j
+    else:
+        source_j = pressure[j_safe]
+        source_i = pressure[i]
+
+    numerator = torch.zeros(n, dtype=pos.dtype, device=pos.device)
+    denominator = torch.zeros(n, dtype=pos.dtype, device=pos.device)
+    # wall indices are clamped: their weights are zero, but the accumulator is
+    # fluid-sized
+    numerator = numerator.index_add(0, i_safe, source_j * weight_for_i)
+    numerator = numerator.index_add(0, j_safe, source_i * weight_for_j)
+    denominator = denominator.index_add(0, i_safe, weight_for_i)
+    denominator = denominator.index_add(0, j_safe, weight_for_j)
+
+    has_source = denominator > 0.0
+    closed = torch.where(
+        has_source,
+        (numerator / denominator.clamp_min(1.0e-30)).clamp_min(0.0),
+        pressure)
+    return torch.where(surface, closed, pressure)
+
+
 def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
     """Compute WCSPH RHS with pair-based compact-support interactions.
 
@@ -571,6 +681,9 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
 
     pressure = tait_pressure(rho, cfg)
+    if cfg.free_surface_pressure:
+        pressure = free_surface_pressure_closure(all_pos, rho, pressure, pairs,
+                                                 cfg, h=h)
 
     if nw:
         bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
