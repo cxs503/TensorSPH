@@ -97,6 +97,15 @@ class Config:
     max_mach: float = 0.10
     fail_fast: bool = True
     pair_skin_factor: float = 0.25
+    # Rescale the particle masses at initialisation so that the summation
+    # density of the fully supported particles reproduces ``rho0``. The discrete
+    # kernel sum is not exactly one on a lattice (hex, h = 1.3 dx: +0.588 %,
+    # independent of dx), and the Tait law turns that offset into a spurious
+    # pressure of 2395 Pa at c0 = 20 m/s - 6.7 x the sigma/R signal of the
+    # verification droplet. Off by default: it changes the total mass by
+    # -b/(1+b) and therefore every published number. See
+    # docs/verification_initial_pressure_offset.md.
+    lattice_mass_calibration: bool = False
     hydrostatic_init: bool = False
     wall_friction: float = 0.0
     density_diffusion: float = 0.0
@@ -398,6 +407,11 @@ def make_particles(cfg: Config, device: torch.device):
     if cfg.hydrostatic_init:
         pool_mass = (hydrostatic_density(pool[:, 1], cfg) * dx * dx)
         mass = torch.cat((pool_mass, mass[pool.shape[0]:]), dim=0)
+    if cfg.lattice_mass_calibration:
+        from .initial_conditions import calibrate_lattice_mass
+
+        mass, _ = calibrate_lattice_mass(positions, mass,
+                                        cfg.h_factor * dx, cfg.rho0)
     return positions, mass
 
 

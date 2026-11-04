@@ -31,6 +31,14 @@ from .droplet_impact import (
     viscous_dt_limit,
     wall_lattice,
 )
+
+from .initial_conditions import (
+    TAIT_ACCEPTANCE_LIMIT,
+    calibrate_lattice_mass,
+    measure_density_bias,
+    spurious_pressure,
+    supported_mask,
+)
 from .dam_break import DamBreakConfig, make_column, run_case
 from .neighbor_search import (
     PairListCache,
