@@ -1,4 +1,6 @@
 # 表面张力曲率算子的解析核验：div n → 局部界面拟合
+> 数值口径说明：本文部分数字为历史口径；当前值、测得口径与证据分级见 [`docs/verification_ledger.md`](verification_ledger.md)（程序化生成的验证断言账本）。
+
 
 **范围**: `src/tensorsph/csf_curvature.py`（新增）、`csf_consistent.py`（接入）、`droplet_impact.py`（`csf_curvature` 开关）
 **基准**: 2-D 静止液滴的 Young-Laplace 定律与切割力恒等式；本文件所有数字由
@@ -77,7 +79,7 @@
 | curvature | $\Delta p$ [Pa] | err | <15%? | spurious $|v|_{max}/\sqrt{\sigma/\rho R}$ | <0.1? |
 |---|---|---|---|---|---|
 | mls | 44.60 | -87.6% | **no** | 0.037 | yes |
-| fit_quadratic | -24.25 | -106.7% | **no** | 0.028 | yes |
+| fit_quadratic | -24.25 | -106.7%（历史口径） | **no** | 0.028 | yes |
 | fit_circle | 43.53 | -87.9% | **no** | 0.057 | yes |
 
 ## 4. 结果判读
@@ -108,7 +110,7 @@
    不是分辨率地板：`int |grad c| dn = 0.377` 而不是 0.5，说明离散色函数在最外层的梯度被抹平。
 5. **历史验证报告不可复现（择要记录）**：本轮在 HEAD 上跑 `benchmarks/csf_consistent/run.py`
    的 `relax`，得 `Delta p = 44.6 Pa`（-87.6%）、`p_center = 382 Pa`；而仓库里已提交的
-   `benchmarks/csf_consistent/validation_report.json` 记的是 `87.7 Pa`（-75.6%）、`p_center = 425 Pa`。
+   `benchmarks/csf_consistent/validation_report.json` 记的是 `87.7 Pa`（-75.6%（历史口径））、`p_center = 425 Pa`。
    同一函数、同一参数、无随机源。故：**已提交的 relax 工件不能由当前代码复现**，
    结论文档里的 -75.6% 应视为旧代码状态的历史数，不应再被引用为当前值。该不一致已作为
    独立欠账登记（见 §7）。
@@ -122,7 +124,7 @@
 | 切割力 F_cut | 2 sigma = 14.4 N/m | 15.46 (7.4%) | -12.86 (10.7%) | 10.7% | 否 | 是 |
 | 力方向中位 cos | 1.0 | 1.000 | 1.000 | 0.0% | 是 | 是 |
 | delta_s 归一 | 1.0 | 0.739 | 0.739 | -26.1% | 否 | 否 |
-| Laplace 压差 | 360 Pa | 44.6 (-87.6%) | -24.3 (-106.7%) | >100% | 否 | 否 |
+| Laplace 压差 | 360 Pa | 44.6 (-87.6%) | -24.3 (-106.7%（历史口径）) | >100% | 否 | 否 |
 | 伪流 max|v| | < 0.1 (Adami) | 0.037 | 0.028 | — | 是 | 是 |
 
 **结论**：曲率（原本 +25%，唯一在门外的**力**相关量）经本轮修复进入 15% 门，且在 mls 与
