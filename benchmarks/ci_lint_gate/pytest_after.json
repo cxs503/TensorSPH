@@ -1,0 +1,15 @@
+{
+ "failed": [
+  "tests/test_laplace_law.py::test_committed_verdicts_are_self_consistent",
+  "tests/test_laplace_pressure.py::test_effective_surface_tension_at_the_documented_resolution",
+  "tests/test_oscillating_droplet.py::test_oscillation_frequency_matches_the_analytic_law",
+  "tests/test_paper_laplace_uncertainty.py::test_figures_exist"
+ ],
+ "errors": [],
+ "counts": {
+  "passed": 327,
+  "failed": 4,
+  "xfailed": 12
+ },
+ "summary": "4 failed, 327 passed, 12 xfailed, 3 warnings"
+}

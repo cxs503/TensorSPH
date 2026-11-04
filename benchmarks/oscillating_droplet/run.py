@@ -71,7 +71,6 @@ import torch
 
 from tensorsph.droplet_impact import (
     Config,
-    density_from_neighbor_pairs,
     rhs,
     stable_dt,
 )
