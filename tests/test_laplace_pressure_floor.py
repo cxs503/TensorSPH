@@ -137,12 +137,18 @@ def test_residual_is_not_explained_by_the_eos_noise_floor(report):
     assert worst and min(worst) > 0.15
 
 
-@pytest.mark.xfail(strict=True, reason="free-surface pressure closure (P0) not "
-                                      "implemented: tait_pressure is clamped at "
-                                      "p >= 0 across the deficit shell, so the "
-                                      "interior settles at ~0.57 sigma/R")
-def test_laplace_jump_within_15pct(report):
-    """Acceptance criterion for the open P0: every recorded case inside 15 %."""
+def test_open_loop_still_undershoots_by_about_a_third(report):
+    """Record of the *open* (closure-off) configuration, kept as the baseline.
+
+    This used to be a strict xfail asserting the 15 % criterion, i.e. it encoded
+    the pre-closure failure.  The closure landed in the same mission that added
+    the ladder (``Config.free_surface_pressure``,
+    ``docs/verification_free_surface_pressure_closure.md``), so the failure fact
+    is now pinned as a number instead: every open-loop case stays 30-40 % low.
+    The acceptance gate moved to
+    ``tests/test_free_surface_pressure.py::test_three_sweeps_meet_the_p0_criterion``.
+    """
+    assert report["runs"]
     for run in report["runs"]:
-        err = abs(run["absolute_time_average_tail"]["rel_error_pct"])
-        assert err < 15.0, (run["dx_m"], run["sound_speed"], err)
+        err = run["absolute_time_average_tail"]["rel_error_pct"]
+        assert err < -25.0, (run["dx_m"], run["sound_speed"], err)

@@ -180,7 +180,9 @@ def radial_profile(pos, values, n_bins: int = 12):
 
 def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
           calibrate_mass: bool = True, t_end_over_t_sigma: float = 1.5,
-          max_steps: int = 4000, sample_every: int = 50):
+          max_steps: int = 4000, sample_every: int = 50,
+          free_surface_pressure: bool = False,
+          free_surface_pressure_passes: int = 1):
     """Advance the drop and read ``Delta p`` with three definitions.
 
     ``absolute``  ``p_core - 0``  (Tait is normalised at ``rho0``; the vacuum is
@@ -192,7 +194,9 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     cfg = Config(dx=dx, h_factor=H_FACTOR, rho0=RHO0, sound_speed=c0,
                  gamma=GAMMA, gravity=0.0, viscosity=VISCOSITY,
                  surface_tension_coefficient=SIGMA, csf_scheme="consistent",
-                 csf_curvature=scheme)
+                 csf_curvature=scheme,
+                 free_surface_pressure=free_surface_pressure,
+                 free_surface_pressure_passes=free_surface_pressure_passes)
     h = cfg.h_factor * cfg.dx
     dt = float(stable_dt(cfg))
     t_end = t_end_over_t_sigma * T_SIGMA
@@ -257,6 +261,9 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
         "dx_m": dx, "h_m": h, "n_particles": int(pos.shape[0]),
         "sound_speed": c0, "curvature_scheme": scheme,
         "mass_calibrated": calibrate_mass,
+        "free_surface_pressure": bool(free_surface_pressure),
+        "free_surface_pressure_passes":
+            int(free_surface_pressure_passes) if free_surface_pressure else 0,
         "lattice_bias": bias, "lattice_bias_after_calibration": bias_after,
         "dt_s": dt, "steps": steps, "t_end_s": t_end,
         "t_over_t_sigma": t_end / T_SIGMA,
@@ -271,6 +278,13 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
                 rho[(r >= 0.80) & (r < 0.95)].mean() / RHO0),
             "compression_required": (1.0 + DP_ANALYTIC / (RHO0 * c0 ** 2 / GAMMA))
             ** (1.0 / GAMMA) - 1.0,
+            # Measured interior compression divided by what sigma/R needs.  The
+            # C3 argument predicted 0.57 +- 0.06 with the free-surface pressure
+            # clipped at zero; a working closure should drive this to ~1.
+            "ratio_compression": (
+                (float(rho[r < 0.5].mean() / RHO0) - 1.0)
+                / ((1.0 + DP_ANALYTIC / (RHO0 * c0 ** 2 / GAMMA))
+                   ** (1.0 / GAMMA) - 1.0)),
         },
         "spurious_current": {
             "v_ref_m_per_s": v_ref,
