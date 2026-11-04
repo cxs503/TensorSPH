@@ -132,12 +132,31 @@ def test_residual_is_not_explained_by_the_eos_noise_floor(report):
     assert worst and min(worst) > 0.15
 
 
-@pytest.mark.xfail(strict=True, reason="free-surface pressure closure (P0) not "
-                                      "implemented: tait_pressure is clamped at "
-                                      "p >= 0 across the deficit shell, so the "
-                                      "interior settles at ~0.57 sigma/R")
-def test_laplace_jump_within_15pct(report):
-    """Acceptance criterion for the open P0: every recorded case inside 15 %."""
-    for run in report["runs"]:
+def test_laplace_jump_within_15pct_with_the_closure(report):
+    """Acceptance criterion for P0: every case inside 15 % *with* the closure.
+
+    This used to be a strict-xfail pin on the open P0 (the clamped pressure held
+    the jump at ~0.62 sigma/R).  ``free_surface_pressure="average"`` closed it;
+    the criterion is now asserted, and the legacy path is asserted to still
+    fail, so "green" cannot be read as a claim about the old behaviour.
+    """
+    assert report["criterion"]["free_surface_closure"]["all_within_15pct"] is True
+    for run in report["runs_closed"]:
         err = abs(run["absolute_time_average_tail"]["rel_error_pct"])
         assert err < 15.0, (run["dx_m"], run["sound_speed"], err)
+
+
+def test_the_legacy_clamp_still_fails_the_criterion(report):
+    """The improvement must come from the closure, not from a re-baselined gate."""
+    assert report["criterion"]["legacy_clamp"]["all_within_15pct"] is False
+    worst = abs(report["criterion"]["legacy_clamp"]["worst"]["tail_rel_error_pct"])
+    assert worst > 25.0, worst
+
+
+def test_closure_sweeps_are_a_calibrated_parameter(report):
+    """The sweep ladder is recorded, so a later reader cannot mistake it for a limit."""
+    probe = report["controls"]["closure_sweep_sensitivity"]
+    errs = [probe[k]["absolute_time_average_tail"]["rel_error_pct"]
+            for k in ("1", "2", "4", "8")]
+    assert errs == sorted(errs), errs          # monotone in the sweep count
+    assert errs[-1] - errs[0] > 5.0            # and it genuinely moves: not a limit

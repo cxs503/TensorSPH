@@ -180,7 +180,9 @@ def radial_profile(pos, values, n_bins: int = 12):
 
 def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
           calibrate_mass: bool = True, t_end_over_t_sigma: float = 1.5,
-          max_steps: int = 4000, sample_every: int = 50):
+          max_steps: int = 4000, sample_every: int = 50,
+          free_surface_pressure: str = "clamp",
+          free_surface_pressure_sweeps: int = 4):
     """Advance the drop and read ``Delta p`` with three definitions.
 
     ``absolute``  ``p_core - 0``  (Tait is normalised at ``rho0``; the vacuum is
@@ -192,7 +194,9 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     cfg = Config(dx=dx, h_factor=H_FACTOR, rho0=RHO0, sound_speed=c0,
                  gamma=GAMMA, gravity=0.0, viscosity=VISCOSITY,
                  surface_tension_coefficient=SIGMA, csf_scheme="consistent",
-                 csf_curvature=scheme)
+                 csf_curvature=scheme,
+                 free_surface_pressure=free_surface_pressure,
+                 free_surface_pressure_sweeps=free_surface_pressure_sweeps)
     h = cfg.h_factor * cfg.dx
     dt = float(stable_dt(cfg))
     t_end = t_end_over_t_sigma * T_SIGMA
@@ -256,6 +260,8 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     return {
         "dx_m": dx, "h_m": h, "n_particles": int(pos.shape[0]),
         "sound_speed": c0, "curvature_scheme": scheme,
+        "free_surface_pressure": free_surface_pressure,
+        "free_surface_pressure_sweeps": free_surface_pressure_sweeps,
         "mass_calibrated": calibrate_mass,
         "lattice_bias": bias, "lattice_bias_after_calibration": bias_after,
         "dt_s": dt, "steps": steps, "t_end_s": t_end,
@@ -299,16 +305,25 @@ def main():
 
     structures = [density_structure(dx, c0s) for dx in dxs]
     runs = []
+    runs_closed = []
     for dx in dxs:
         for c0 in c0s:
             run = relax(dx, c0, t_end_over_t_sigma=args.t_end)
             runs.append(run)
+            closed = relax(dx, c0, t_end_over_t_sigma=args.t_end,
+                           free_surface_pressure="average")
+            runs_closed.append(closed)
             print(f"dx={dx:g} c0={c0:5g}: abs {run['definition_absolute']['rel_error_pct']:+7.1f} %"
                   f"  bandA {run['definition_bandA']['rel_error_pct']:+7.1f} %"
                   f"  tail-avg {run['absolute_time_average_tail']['rel_error_pct']:+7.1f} %"
                   f"  comp {run['density']['rho_core_over_rho0'] - 1.0:+.2e}"
                   f"/{run['density']['compression_required']:.2e}"
                   f"  steps {run['steps']}", flush=True)
+            print(f"dx={dx:g} c0={c0:5g}: CLOSED abs "
+                  f"{closed['definition_absolute']['rel_error_pct']:+7.1f} %"
+                  f"  tail-avg {closed['absolute_time_average_tail']['rel_error_pct']:+7.1f} %"
+                  f"  comp {closed['density']['rho_core_over_rho0'] - 1.0:+.2e}"
+                  f"/{closed['density']['compression_required']:.2e}", flush=True)
 
     # controls: (a) uncalibrated mass at the highest c0 (isolates C2),
     #           (b) legacy curvature operator at the lowest c0 (isolates the
@@ -324,18 +339,42 @@ def main():
           f"abs {ctrl_scheme['definition_absolute']['rel_error_pct']:+7.1f} %",
           flush=True)
 
+    # control (c): does the closure depend on the number of Jacobi sweeps?
+    sweep_probe = {str(k): relax(args.dx, ref_c0, t_end_over_t_sigma=args.t_end,
+                                 free_surface_pressure="average",
+                                 free_surface_pressure_sweeps=k)
+                   for k in (1, 2, 4, 8)}
+    for k, v in sweep_probe.items():
+        print(f"control sweeps={k} dx={args.dx:g} c0={ref_c0:g}: tail-avg "
+              f"{v['absolute_time_average_tail']['rel_error_pct']:+7.1f} %", flush=True)
+
+    def criterion(runs_):
+        points = [{"dx_m": r["dx_m"], "sound_speed": r["sound_speed"],
+                   "tail_rel_error_pct": r["absolute_time_average_tail"]["rel_error_pct"]}
+                  for r in runs_]
+        worst = max(points, key=lambda p: abs(p["tail_rel_error_pct"]))
+        return {"all_within_15pct": all(abs(p["tail_rel_error_pct"]) < 15.0
+                                        for p in points),
+                "all_within_3pct": all(abs(p["tail_rel_error_pct"]) < 3.0
+                                       for p in points),
+                "worst": worst, "points": points}
+
     report = {
         "benchmark": "laplace_pressure_floor",
+        "criterion": {"legacy_clamp": criterion(runs),
+                      "free_surface_closure": criterion(runs_closed)},
         "reference": {"delta_p_Pa": DP_ANALYTIC, "sigma_N_per_m": SIGMA,
                       "radius_m": RADIUS, "rho0": RHO0, "gamma": GAMMA,
                       "t_sigma_s": T_SIGMA},
         "structures": structures,
         "runs": runs,
+        "runs_closed": runs_closed,
         "controls": {"uncalibrated_c0_reference": uncal,
-                     "mls_scheme_lowest_c0": ctrl_scheme},
+                     "mls_scheme_lowest_c0": ctrl_scheme,
+                     "closure_sweep_sensitivity": sweep_probe},
     }
     (HERE / "report.json").write_text(json.dumps(report, indent=2))
-    report["figures"] = [make_figures(report)]
+    report["figures"] = [make_figures(report), make_closure_figure(report)]
     (HERE / "report.json").write_text(json.dumps(report, indent=2))
     print("wrote", HERE / "report.json", report["figures"])
 
@@ -426,6 +465,65 @@ def make_figures(report, out_dir=HERE):
     fig.suptitle("TensorSPH: decomposing the Young-Laplace verification miss")
     fig.tight_layout()
     path = Path(out_dir) / "laplace_pressure_floor.png"
+    fig.savefig(path, dpi=130)
+    plt.close(fig)
+    return path.name
+
+
+def make_closure_figure(report, out_dir=HERE):
+    """Legacy clamped pressure vs the Adami shell closure, same cases."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    legacy = report["runs"]
+    closed = report["runs_closed"]
+    label = [f"dx={r['dx_m'] * 1e3:.1f}mm\nc0={r['sound_speed']:g}"
+             for r in legacy]
+    x = range(len(legacy))
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.4))
+
+    ax = axes[0]
+    width = 0.38
+    ax.bar([v - width / 2 for v in x],
+           [r["absolute_time_average_tail"]["rel_error_pct"] for r in legacy],
+           width, label="clamp (legacy)", color="#c44")
+    ax.bar([v + width / 2 for v in x],
+           [r["absolute_time_average_tail"]["rel_error_pct"] for r in closed],
+           width, label="Adami shell closure", color="#2a7")
+    for line, style, txt in ((15.0, "r:", "+15 %"), (-15.0, "r:", "-15 %"),
+                             (3.0, "g--", "+3 %"), (-3.0, "g--", "-3 %")):
+        ax.axhline(line, color=style[0], ls=style[1:], lw=1,
+                   label=txt if line > 0 else None)
+    ax.axhline(0.0, color="k", lw=0.8)
+    ax.set_xticks(list(x))
+    ax.set_xticklabels(label, fontsize=7)
+    ax.set_ylabel(r"$(\Delta p - \sigma/R)/(\sigma/R)$ [%]")
+    ax.set_title("(a) time-averaged absolute jump, all tested points")
+    ax.legend(fontsize=7)
+    ax.grid(alpha=0.3, axis="y")
+
+    ax = axes[1]
+    dx0 = legacy[0]["dx_m"]
+    for runs, name, colour in ((legacy, "clamp (legacy)", "#c44"),
+                               (closed, "Adami shell closure", "#2a7")):
+        pick = [r for r in runs if r["dx_m"] == dx0]
+        pick.sort(key=lambda r: -r["sound_speed"])
+        r = pick[0]
+        ax.plot(r["trace"]["t"], r["trace"]["absolute"], lw=1.1, color=colour,
+                label=rf"{name}, $c_0$={r['sound_speed']:g}")
+    ax.axhline(report["reference"]["delta_p_Pa"], color="k", ls="--", lw=1,
+               label=rf"$\sigma/R$={report['reference']['delta_p_Pa']:.0f} Pa")
+    ax.set_xlabel(r"$t/t_\sigma$")
+    ax.set_ylabel(r"$p_{\rm core}$ [Pa]")
+    ax.set_title(f"(b) core pressure history, dx={dx0 * 1e3:.1f} mm")
+    ax.legend(fontsize=7)
+    ax.grid(alpha=0.3)
+
+    fig.suptitle("TensorSPH: free-surface pressure closure (P0)")
+    fig.tight_layout()
+    path = Path(out_dir) / "laplace_pressure_closure.png"
     fig.savefig(path, dpi=130)
     plt.close(fig)
     return path.name

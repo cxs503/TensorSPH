@@ -66,6 +66,23 @@ class Config:
     Reuse does not change the result, only the cost: the default 0.25 was chosen
     by measurement on the impact case (see docs/benchmarks/neighbor-search.md).
 
+    ``free_surface_pressure`` selects the pressure closure at a free surface.
+    ``"clamp"`` (the default) is the legacy treatment: ``tait_pressure`` is
+    clamped at ``p >= 0``, so every particle with deficient sum-density sits at
+    exactly zero pressure. ``"average"`` replaces that value, on the deficient
+    particles only, with the kernel-weighted extrapolation of eq. (11) of
+    Adami, Ihmsen & Adams (2012), i.e. the "secondary pressure" of their §3.3.
+    Without it the interface cannot carry a Young-Laplace jump and the interior
+    settles at ~0.62 ``sigma/R`` (measured in
+    ``benchmarks/laplace_pressure_floor``); with it the jump lands inside 3 %.
+    ``free_surface_pressure_sweeps`` is the number of Jacobi sweeps.  The
+    iteration is monotone but *not* a contraction: each sweep carries interior
+    pressure further into the shell, so the end-to-end error crosses zero
+    between 4 and 8 sweeps (measured: -20.1 / -6.5 / -0.8 / +9.1 % for
+    1 / 2 / 4 / 8 sweeps at dx = 2 mm, c0 = 20 m/s).  The default 4 is a
+    calibrated choice inside the 15 % band, not a converged limit; see
+    ``docs/verification_free_surface_pressure_closure.md``.
+
     ``density_diffusion`` is the coefficient ``delta`` of the diffusive term of
     Antuono, Colagrossi & Marrone (2012). Zero disables it, which is the
     default. It is *not* delta-SPH proper: delta-SPH integrates the continuity
@@ -100,6 +117,9 @@ class Config:
     hydrostatic_init: bool = False
     wall_friction: float = 0.0
     density_diffusion: float = 0.0
+    free_surface_pressure: str = "clamp"
+    free_surface_pressure_sweeps: int = 4
+    free_surface_threshold: float = 0.99
     # Adaptive time step. Off by default: a fixed step keeps every published
     # number reproducible bit for bit. When on, ``dt`` starts at the configured
     # value, shrinks to whatever the current maximum speed allows, and grows back
@@ -238,6 +258,58 @@ def tait_pressure(rho: torch.Tensor, cfg: Config) -> torch.Tensor:
     bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
     ratio = (rho / cfg.rho0).clamp_min(0.01)
     return (bulk * (ratio.pow(cfg.gamma) - 1.0)).clamp_min(0.0)
+
+
+def free_surface_pressure_closure(rho, pressure, rho0, gravity, i, j, wij,
+                                  delta, n_fluid, sweeps=2, threshold=0.99):
+    r"""Adami/Ihmsen/Adams (2012) §3.3 pressure closure at a free surface.
+
+    ``tait_pressure`` clamps at ``p >= 0``. On the free-surface shell the
+    sum-density is deficient (``rho/rho0 - 1`` reaches -11.6 % at 0.85-0.95 R
+    for a hex lattice), so every particle there is held at exactly zero
+    pressure and the interface cannot carry the Young-Laplace jump: only the
+    interior of the profile can, and it settles at a fraction of ``sigma/R``.
+
+    This replaces the clamped value on the *deficient* particles only by the
+    kernel-weighted extrapolation of eq. (11) of Adami et al.,
+
+        p_i = max(0, sum_j (p_j + rho_j g.(r_i - r_j)) W_ij / sum_j W_ij)
+
+    applied as a Jacobi sweep over the fluid-fluid pairs. Two sweeps let a
+    particle whose neighbours are themselves deficient still receive the
+    interior value. ``sweeps=0`` reproduces the legacy clamped behaviour
+    exactly.
+
+    Parameters are the pair arrays already assembled by :func:`rhs`
+    (``delta = pos[i] - pos[j]``), so the closure costs no new neighbour
+    search. Returns the pressure tensor; the input is not modified.
+    """
+    if sweeps <= 0 or i.numel() == 0:
+        return pressure
+    deficient = rho < threshold * rho0
+    if not bool(deficient.any()):
+        return pressure
+    fluid = (i < n_fluid) & (j < n_fluid)
+    if not bool(fluid.any()):
+        return pressure
+    ii, jj = i[fluid], j[fluid]
+    w = wij[fluid]
+    if delta.shape[1] > 1 and gravity != 0.0:
+        body = -gravity * delta[fluid][:, 1]
+    else:
+        body = torch.zeros_like(w)
+
+    src = pressure
+    for _ in range(int(sweeps)):
+        num = torch.zeros_like(rho)
+        den = torch.zeros_like(rho)
+        num = num.index_add(0, ii, (src[jj] + rho[jj] * body) * w)
+        num = num.index_add(0, jj, (src[ii] - rho[ii] * body) * w)
+        den = den.index_add(0, ii, w)
+        den = den.index_add(0, jj, w)
+        avg = (num / den.clamp_min(1.0e-30)).clamp_min(0.0)
+        src = torch.where(deficient, avg, src)
+    return src
 
 
 def acoustic_courant(dt: float, cfg: Config, max_speed: float = 0.0) -> float:
@@ -572,6 +644,14 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
 
     pressure = tait_pressure(rho, cfg)
 
+    if cfg.free_surface_pressure == "average":
+        # Before the wall extrapolation below, so a wall row next to a free
+        # surface sees the closed pressure rather than the clamped zero.
+        pressure = free_surface_pressure_closure(
+            rho, pressure, cfg.rho0, cfg.gravity, i, j, wij, delta, n,
+            sweeps=cfg.free_surface_pressure_sweeps,
+            threshold=cfg.free_surface_threshold)
+
     if nw:
         bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
         # Only fluid/wall pairs extrapolate wall pressure. Instead of selecting
@@ -691,6 +771,28 @@ def rhs_all_pairs(pos, vel, mass, cfg: Config, dt=None):
         rate = -scale * (mass[None, :] / rho[None, :] * coupling).sum(dim=1)
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
     pressure = tait_pressure(rho, cfg)
+    if cfg.free_surface_pressure == "average":
+        # Same closure as the pair path, written on the dense kernel matrix:
+        # ``w`` is symmetric, so summing over all j for every i already covers
+        # both directions of the pair loop.
+        deficient = rho < cfg.free_surface_threshold * cfg.rho0
+        if cfg.gravity != 0.0 and pos.shape[1] > 1:
+            body = -cfg.gravity * delta[:, :, 1]
+        else:
+            body = torch.zeros_like(w)
+        # Neighbours only: the diagonal is the particle's own kernel weight, and
+        # carrying it would damp the average back toward the clamped zero that
+        # the closure is meant to replace. The pair path has no self pairs, so
+        # this keeps the two assembly paths on the same physics.
+        mask = ~torch.eye(rho.numel(), dtype=torch.bool, device=w.device)
+        w_off = torch.where(mask, w, torch.zeros_like(w))
+        src = pressure
+        for _ in range(int(cfg.free_surface_pressure_sweeps)):
+            num = ((src[None, :] + rho[None, :] * body) * w_off).sum(dim=1)
+            den = w_off.sum(dim=1)
+            avg = (num / den.clamp_min(1.0e-30)).clamp_min(0.0)
+            src = torch.where(deficient, avg, src)
+        pressure = src
     grad_w = cubic_spline_gradient(delta, h)
     pressure_term = (
         pressure[:, None] / rho[:, None].square()
@@ -771,6 +873,14 @@ def validate_config(cfg: Config) -> None:
         raise ValueError("wall_friction must be in [0, 1]")
     if cfg.density_diffusion < 0.0:
         raise ValueError("density_diffusion must be non-negative")
+    if cfg.free_surface_pressure not in ("clamp", "average"):
+        raise ValueError(
+            "free_surface_pressure must be 'clamp' or 'average', got "
+            f"{cfg.free_surface_pressure!r}")
+    if cfg.free_surface_pressure_sweeps < 0:
+        raise ValueError("free_surface_pressure_sweeps must be non-negative")
+    if not 0.0 < cfg.free_surface_threshold <= 1.0:
+        raise ValueError("free_surface_threshold must be in (0, 1]")
     if cfg.csf_curvature not in ("mls", "fit_quadratic", "fit_circle"):
         raise ValueError(
             "csf_curvature must be 'mls', 'fit_quadratic' or 'fit_circle', "
