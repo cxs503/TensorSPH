@@ -100,6 +100,16 @@ class Config:
     hydrostatic_init: bool = False
     wall_friction: float = 0.0
     density_diffusion: float = 0.0
+    # Free-surface pressure closure, Adami et al. (2012) eq. (11) applied to
+    # *fluid* particles. Off by default: it rewrites the pressure field on every
+    # free surface, so every published free-surface number would have to be
+    # re-measured before it could be turned on globally.
+    free_surface_pressure: bool = False
+    # A particle whose sum-density falls below this fraction of rho0 has an
+    # incomplete kernel and cannot hold a pressure; its pressure is
+    # extrapolated from its complete-kernel neighbours instead of being clamped
+    # to zero by the Tait law.
+    free_surface_density_ratio: float = 0.99
     # Adaptive time step. Off by default: a fixed step keeps every published
     # number reproducible bit for bit. When on, ``dt`` starts at the configured
     # value, shrinks to whatever the current maximum speed allows, and grows back
@@ -571,6 +581,47 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
 
     pressure = tait_pressure(rho, cfg)
+
+    if cfg.free_surface_pressure:
+        # Adami et al. (2012) eq. (11) for *fluid* free-surface particles. The
+        # sum-density of a particle in the surface layer is deficient, so the
+        # Tait law would return a negative pressure and the p >= 0 clamp sets it
+        # to zero: the interface then cannot carry sigma/R at all and the
+        # interior settles at a fraction of the Laplace jump. Extrapolating the
+        # pressure from the complete-kernel neighbours restores it:
+        #   p_i = max(0, sum_j (p_j + rho_j (g - a_i).(r_j - r_i)) W_ij / sum_j W_ij)
+        # ``a_i`` is not yet known at this point of the sweep, so it is taken as
+        # zero -- the same choice the wall extrapolation below makes. Only
+        # complete-kernel (non-free-surface) neighbours donate; a free-surface
+        # neighbour would feed the deficient shell back into itself.
+        deficit = rho / cfg.rho0 < cfg.free_surface_density_ratio
+        if bool(deficit.any()) and not bool(deficit.all()):
+            fluid_pair = (i < n) & (j < n)
+            # Both orientations of every fluid-fluid pair: ``centre`` is the
+            # particle whose pressure is being closed, ``donor`` its neighbour.
+            centre = torch.cat((i, j))
+            donor = torch.cat((j, i))
+            weight = torch.cat((wij, wij))
+            r_donor_minus_centre = torch.cat((delta, -delta))
+            usable = (torch.cat((fluid_pair, fluid_pair))
+                      & deficit[centre.clamp_max(n - 1)]
+                      & ~deficit[donor.clamp_max(n - 1)])
+            if bool(usable.any()):
+                centre = centre[usable]
+                donor = donor[usable]
+                weight = weight[usable]
+                offset = r_donor_minus_centre[usable]
+                source = pressure[donor]
+                if cfg.gravity != 0.0:
+                    # g = (0, -gravity), so g.(r_j - r_i) = -gravity * dy.
+                    source = source - cfg.gravity * rho[donor] * offset[:, 1]
+                numerator = torch.zeros(n, dtype=pos.dtype, device=pos.device)
+                denominator = torch.zeros(n, dtype=pos.dtype, device=pos.device)
+                numerator = numerator.index_add(0, centre, source * weight)
+                denominator = denominator.index_add(0, centre, weight)
+                closed = (numerator / denominator.clamp_min(1.0e-30)).clamp_min(0.0)
+                pressure = torch.where(deficit & (denominator > 0.0), closed,
+                                       pressure)
 
     if nw:
         bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma

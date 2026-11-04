@@ -132,10 +132,14 @@ def test_residual_is_not_explained_by_the_eos_noise_floor(report):
     assert worst and min(worst) > 0.15
 
 
-@pytest.mark.xfail(strict=True, reason="free-surface pressure closure (P0) not "
-                                      "implemented: tait_pressure is clamped at "
-                                      "p >= 0 across the deficit shell, so the "
-                                      "interior settles at ~0.57 sigma/R")
+@pytest.mark.xfail(strict=True, reason="un-closed model: tait_pressure is clamped "
+                                      "at p >= 0 across the deficit shell, so the "
+                                      "interior settles at ~0.57 sigma/R. The "
+                                      "closure is implemented (Config."
+                                      "free_surface_pressure) and its own record "
+                                      "passes this criterion -- see "
+                                      "report_shell.json and "
+                                      "tests/test_free_surface_pressure_closure.py")
 def test_laplace_jump_within_15pct(report):
     """Acceptance criterion for the open P0: every recorded case inside 15 %."""
     for run in report["runs"]:

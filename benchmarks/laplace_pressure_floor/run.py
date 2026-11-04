@@ -180,7 +180,8 @@ def radial_profile(pos, values, n_bins: int = 12):
 
 def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
           calibrate_mass: bool = True, t_end_over_t_sigma: float = 1.5,
-          max_steps: int = 4000, sample_every: int = 50):
+          max_steps: int = 4000, sample_every: int = 50,
+          closure: str = "tait"):
     """Advance the drop and read ``Delta p`` with three definitions.
 
     ``absolute``  ``p_core - 0``  (Tait is normalised at ``rho0``; the vacuum is
@@ -192,7 +193,8 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     cfg = Config(dx=dx, h_factor=H_FACTOR, rho0=RHO0, sound_speed=c0,
                  gamma=GAMMA, gravity=0.0, viscosity=VISCOSITY,
                  surface_tension_coefficient=SIGMA, csf_scheme="consistent",
-                 csf_curvature=scheme)
+                 csf_curvature=scheme,
+                 free_surface_pressure=(closure == "shell"))
     h = cfg.h_factor * cfg.dx
     dt = float(stable_dt(cfg))
     t_end = t_end_over_t_sigma * T_SIGMA
@@ -256,6 +258,7 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     return {
         "dx_m": dx, "h_m": h, "n_particles": int(pos.shape[0]),
         "sound_speed": c0, "curvature_scheme": scheme,
+        "pressure_closure": closure,
         "mass_calibrated": calibrate_mass,
         "lattice_bias": bias, "lattice_bias_after_calibration": bias_after,
         "dt_s": dt, "steps": steps, "t_end_s": t_end,
@@ -292,6 +295,10 @@ def main():
                     default=[20.0, 10.0, 5.0])
     ap.add_argument("--t-end", type=float, default=1.5,
                     help="window length in capillary times")
+    ap.add_argument("--closure", choices=("tait", "shell"), default="tait",
+                    help="free-surface pressure closure: 'tait' = p >= 0 clamp "
+                         "(historical), 'shell' = Adami 2012 eq. (11) "
+                         "extrapolation from complete-kernel neighbours")
     args = ap.parse_args()
 
     dxs = [args.dx] if args.quick else [args.dx, 0.0015]
@@ -301,7 +308,8 @@ def main():
     runs = []
     for dx in dxs:
         for c0 in c0s:
-            run = relax(dx, c0, t_end_over_t_sigma=args.t_end)
+            run = relax(dx, c0, t_end_over_t_sigma=args.t_end,
+                        closure=args.closure)
             runs.append(run)
             print(f"dx={dx:g} c0={c0:5g}: abs {run['definition_absolute']['rel_error_pct']:+7.1f} %"
                   f"  bandA {run['definition_bandA']['rel_error_pct']:+7.1f} %"
@@ -315,11 +323,11 @@ def main():
     #               operator from the closure problem)
     ref_c0 = c0s[0]
     uncal = relax(args.dx, ref_c0, calibrate_mass=False,
-                  t_end_over_t_sigma=args.t_end)
+                  t_end_over_t_sigma=args.t_end, closure=args.closure)
     print(f"control uncalibrated dx={args.dx:g} c0={ref_c0:g}: "
           f"abs {uncal['definition_absolute']['rel_error_pct']:+7.1f} %", flush=True)
     ctrl_scheme = relax(args.dx, c0s[-1], scheme="mls",
-                        t_end_over_t_sigma=args.t_end)
+                        t_end_over_t_sigma=args.t_end, closure=args.closure)
     print(f"control mls dx={args.dx:g} c0={c0s[-1]:g}: "
           f"abs {ctrl_scheme['definition_absolute']['rel_error_pct']:+7.1f} %",
           flush=True)
@@ -331,6 +339,7 @@ def main():
                       "t_sigma_s": T_SIGMA},
         "structures": structures,
         "runs": runs,
+        "pressure_closure": args.closure,
         "controls": {"uncalibrated_c0_reference": uncal,
                      "mls_scheme_lowest_c0": ctrl_scheme},
     }
