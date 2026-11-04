@@ -1,0 +1,434 @@
+[
+ {
+  "file": ".scratch/probe_front.py",
+  "row": 2,
+  "col": 1,
+  "code": "E401",
+  "message": "Multiple imports on one line",
+  "fixable": true
+ },
+ {
+  "file": ".scratch/probe_front.py",
+  "row": 2,
+  "col": 8,
+  "code": "F401",
+  "message": "`json` imported but unused",
+  "fixable": true
+ },
+ {
+  "file": ".scratch/probe_front.py",
+  "row": 7,
+  "col": 1,
+  "code": "E402",
+  "message": "Module level import not at top of file",
+  "fixable": false
+ },
+ {
+  "file": ".scratch/probe_front.py",
+  "row": 33,
+  "col": 27,
+  "code": "E702",
+  "message": "Multiple statements on one line (semicolon)",
+  "fixable": false
+ },
+ {
+  "file": ".scratch/probe_front.py",
+  "row": 34,
+  "col": 32,
+  "code": "E702",
+  "message": "Multiple statements on one line (semicolon)",
+  "fixable": false
+ },
+ {
+  "file": ".scratch/probe_front.py",
+  "row": 38,
+  "col": 88,
+  "code": "W292",
+  "message": "No newline at end of file",
+  "fixable": true
+ },
+ {
+  "file": ".scratch/rep_list.py",
+  "row": 1,
+  "col": 1,
+  "code": "E401",
+  "message": "Multiple imports on one line",
+  "fixable": true
+ },
+ {
+  "file": ".scratch/rep_list.py",
+  "row": 10,
+  "col": 83,
+  "code": "W292",
+  "message": "No newline at end of file",
+  "fixable": true
+ },
+ {
+  "file": "benchmarks/dam_break/make_audit_doc.py",
+  "row": 64,
+  "col": 101,
+  "code": "E501",
+  "message": "Line too long (119 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/dam_break/make_audit_doc.py",
+  "row": 164,
+  "col": 11,
+  "code": "W292",
+  "message": "No newline at end of file",
+  "fixable": true
+ },
+ {
+  "file": "benchmarks/dam_break/reference_audit.py",
+  "row": 32,
+  "col": 101,
+  "code": "E501",
+  "message": "Line too long (103 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/dam_break/reference_audit.py",
+  "row": 389,
+  "col": 11,
+  "code": "W292",
+  "message": "No newline at end of file",
+  "fixable": true
+ },
+ {
+  "file": "benchmarks/laplace_plateau/make_doc.py",
+  "row": 67,
+  "col": 7,
+  "code": "F541",
+  "message": "f-string without any placeholders",
+  "fixable": true
+ },
+ {
+  "file": "benchmarks/laplace_plateau/make_doc.py",
+  "row": 238,
+  "col": 95,
+  "code": "E501",
+  "message": "Line too long (101 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_plateau/make_doc.py",
+  "row": 252,
+  "col": 11,
+  "code": "W292",
+  "message": "No newline at end of file",
+  "fixable": true
+ },
+ {
+  "file": "benchmarks/laplace_plateau/run.py",
+  "row": 419,
+  "col": 11,
+  "code": "W292",
+  "message": "No newline at end of file",
+  "fixable": true
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 13,
+  "col": 8,
+  "code": "F401",
+  "message": "`math` imported but unused",
+  "fixable": true
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 22,
+  "col": 93,
+  "code": "E501",
+  "message": "Line too long (121 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 25,
+  "col": 67,
+  "code": "E501",
+  "message": "Line too long (102 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 26,
+  "col": 61,
+  "code": "E501",
+  "message": "Line too long (101 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 27,
+  "col": 78,
+  "code": "E501",
+  "message": "Line too long (103 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 49,
+  "col": 94,
+  "code": "E501",
+  "message": "Line too long (109 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 84,
+  "col": 87,
+  "code": "E501",
+  "message": "Line too long (104 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 98,
+  "col": 87,
+  "code": "E501",
+  "message": "Line too long (153 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 102,
+  "col": 83,
+  "code": "E501",
+  "message": "Line too long (114 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 106,
+  "col": 75,
+  "code": "E501",
+  "message": "Line too long (120 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 112,
+  "col": 83,
+  "code": "E501",
+  "message": "Line too long (101 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 155,
+  "col": 78,
+  "code": "E501",
+  "message": "Line too long (112 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 157,
+  "col": 74,
+  "code": "E501",
+  "message": "Line too long (102 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 160,
+  "col": 60,
+  "code": "E501",
+  "message": "Line too long (101 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 177,
+  "col": 93,
+  "code": "E501",
+  "message": "Line too long (101 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 227,
+  "col": 101,
+  "code": "E501",
+  "message": "Line too long (116 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 307,
+  "col": 92,
+  "code": "E501",
+  "message": "Line too long (113 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 309,
+  "col": 83,
+  "code": "E501",
+  "message": "Line too long (111 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 311,
+  "col": 87,
+  "code": "E501",
+  "message": "Line too long (149 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 314,
+  "col": 91,
+  "code": "E501",
+  "message": "Line too long (123 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 317,
+  "col": 98,
+  "code": "E501",
+  "message": "Line too long (106 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/make_doc.py",
+  "row": 368,
+  "col": 11,
+  "code": "W292",
+  "message": "No newline at end of file",
+  "fixable": true
+ },
+ {
+  "file": "benchmarks/laplace_pressure_floor/run.py",
+  "row": 435,
+  "col": 11,
+  "code": "W292",
+  "message": "No newline at end of file",
+  "fixable": true
+ },
+ {
+  "file": "benchmarks/oscillating_droplet/make_doc.py",
+  "row": 112,
+  "col": 7,
+  "code": "F541",
+  "message": "f-string without any placeholders",
+  "fixable": true
+ },
+ {
+  "file": "benchmarks/oscillating_droplet/make_doc.py",
+  "row": 234,
+  "col": 101,
+  "code": "E501",
+  "message": "Line too long (152 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/oscillating_droplet/make_doc.py",
+  "row": 241,
+  "col": 101,
+  "code": "E501",
+  "message": "Line too long (101 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/oscillating_droplet/make_doc.py",
+  "row": 242,
+  "col": 101,
+  "code": "E501",
+  "message": "Line too long (104 > 100)",
+  "fixable": false
+ },
+ {
+  "file": "benchmarks/oscillating_droplet/make_doc.py",
+  "row": 267,
+  "col": 11,
+  "code": "W292",
+  "message": "No newline at end of file",
+  "fixable": true
+ },
+ {
+  "file": "benchmarks/oscillating_droplet/run.py",
+  "row": 74,
+  "col": 5,
+  "code": "F401",
+  "message": "`tensorsph.droplet_impact.density_from_neighbor_pairs` imported but unused",
+  "fixable": true
+ },
+ {
+  "file": "benchmarks/oscillating_droplet/run.py",
+  "row": 568,
+  "col": 29,
+  "code": "W292",
+  "message": "No newline at end of file",
+  "fixable": true
+ },
+ {
+  "file": "tests/test_dam_break_reference_audit.py",
+  "row": 170,
+  "col": 33,
+  "code": "W292",
+  "message": "No newline at end of file",
+  "fixable": true
+ },
+ {
+  "file": "tests/test_laplace_plateau.py",
+  "row": 130,
+  "col": 66,
+  "code": "W292",
+  "message": "No newline at end of file",
+  "fixable": true
+ },
+ {
+  "file": "tests/test_laplace_pressure_floor.py",
+  "row": 24,
+  "col": 8,
+  "code": "F401",
+  "message": "`torch` imported but unused",
+  "fixable": true
+ },
+ {
+  "file": "tests/test_laplace_pressure_floor.py",
+  "row": 26,
+  "col": 38,
+  "code": "F401",
+  "message": "`tensorsph.droplet_impact.density_from_neighbor_pairs` imported but unused",
+  "fixable": true
+ },
+ {
+  "file": "tests/test_laplace_pressure_floor.py",
+  "row": 27,
+  "col": 39,
+  "code": "F401",
+  "message": "`tensorsph.neighbor_search.cell_linked_pairs` imported but unused",
+  "fixable": true
+ },
+ {
+  "file": "tests/test_laplace_pressure_floor.py",
+  "row": 148,
+  "col": 66,
+  "code": "W292",
+  "message": "No newline at end of file",
+  "fixable": true
+ },
+ {
+  "file": "tests/test_oscillating_droplet.py",
+  "row": 207,
+  "col": 62,
+  "code": "W292",
+  "message": "No newline at end of file",
+  "fixable": true
+ },
+ {
+  "file": "tests/test_ritter_reference.py",
+  "row": 161,
+  "col": 71,
+  "code": "W292",
+  "message": "No newline at end of file",
+  "fixable": true
+ }
+]
