@@ -1,5 +1,13 @@
 # CSF Surface Tension Verification: Consistent Scheme vs Laplace Law
 
+> **[台帐 m3544]** §3.2 的 `Δp = 380.2 Pa (+5.6%) ✅` 判为**不支持通过**：
+> 该读数是 (dx = 4 mm, N = 88, 无质量标定) 算例的**未平衡单快照**。同一工件
+> `benchmarks/laplace_law/validation_report.json` 自带的 `history.p_center` 在记录窗口内
+> 由 416.7 Pa 单调衰减至 137.9 Pa（−61.7%，尾均值 143.4 Pa / −60.2%），即该轨迹的
+> **最优绝对误差也只有 15.76%**，从未进入 15% 门。§3.1 与 §3.3（切割力、方向、伪流）不受影响。
+> 权威读数见 `docs/verification_ledger.md`（−34.0%，WITHHELD）。机器门禁：`tests/test_verification_ledger.py`。
+
+
 **Date**: 2026-11-03  
 **Mission**: m3028 (selfstart · verifier席)  
 **Scope**: TensorSPH CSF surface tension model verification against Young-Laplace law

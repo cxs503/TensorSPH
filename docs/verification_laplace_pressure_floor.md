@@ -1,5 +1,10 @@
 # 端到端 Young–Laplace 压差为什么一直测不到：误差源分解
 
+> **[台帐 m3544]** 本文 `-34.0%` 是当前**唯一权威**的 Laplace 压差读数（绝对压强 + 尾窗时间平均，
+> `runs[2]`：dx = 2 mm, c0 = 5, 质量标定, fit_quadratic）。台帐（`docs/verification_ledger.md`）
+> 用它裁定其余 5 条读数为非权威；证据等级 **WITHHELD**。机器门禁：`tests/test_verification_ledger.py`。
+
+
 **仓库**: TensorSPH ｜ **工件**: `benchmarks/laplace_pressure_floor/` ｜ **测试**: `tests/test_laplace_pressure_floor.py`
 
 **结论（先给判定）**: 连续三轮验证（legacy CSF → consistent CSF → 拟合曲率）都把端到端

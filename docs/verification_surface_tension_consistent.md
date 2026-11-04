@@ -1,5 +1,11 @@
 # 表面张力 CSF 模型的解析基准核验（consistent 离散）
 
+> **[台帐 m3544]** §7 表中 `-75.6%` 为**已被覆盖的中间版本读数**：同一路径
+> `benchmarks/csf_consistent/validation_report.json` 现为 `-78.56%`（同一 600 步 relax 算例）。
+> 两者差 3 pt 来自被覆盖的构建，不是物理差异。压差一项的当前权威读数见
+> `docs/verification_ledger.md`（−34.0%，WITHHELD）。机器门禁：`tests/test_verification_ledger.py`。
+
+
 **范围**: TensorSPH `src/tensorsph/csf_consistent.py`、`surface_tension.py`、`droplet_impact.py`
 **基准**: 2-D 单相静止液滴的 Young-Laplace 定律（本文件所有数字由
 `benchmarks/csf_consistent/run.py` 写出的 JSON 程序化注入，无手抄）

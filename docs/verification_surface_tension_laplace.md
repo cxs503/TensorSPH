@@ -1,5 +1,12 @@
 # 验证欠账复核：CSF 表面张力模型 vs Young–Laplace 解析解
 
+> **[台帐 m3544]** 本文结论中的 Laplace 压差 `-93.6%` 为**孤儿读数**：它引用的
+> `benchmarks/laplace_law/validation_report.json` 已被后续任务**原地覆盖**（该路径现存 +5.6% 的
+> consistent-算例），原始的 −93.6% 证据在本仓已不存在。本文的**力层面**结论（切割力、曲率、伪流）
+> 不受影响；压差一项的当前权威读数见 `docs/verification_ledger.md`（−34.0%，WITHHELD）。
+> 机器门禁：`tests/test_verification_ledger.py`。
+
+
 **仓库**: TensorSPH ｜ **分支**: `agent/m2174` ｜ **工件**: `benchmarks/laplace_law/` ｜ **测试**: `tests/test_laplace_law.py`
 
 **结论（先给判定）**: 表面张力模块（CSF，m277 合入）**未通过**解析验证。Young–Laplace 压差实测偏差 **-93.6%**（阈值 15%），曲率估计偏差 **+1148%** 量级，切割面力恒等式偏差 **54–55%** 且随分辨率不收敛，静滴残余伪流达到毛细速度的 **0.37 倍**（文献判据 < 0.1）。证据等级应从「已实现」下调为 **WITHHELD（实现存在、解析验证不通过）**。

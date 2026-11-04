@@ -1,5 +1,12 @@
 # CSF 曲率判据的偏置归因与修复（TensorSPH）
 
+> **[台帐 m3544]** 文中 `p_center = 409.8 Pa`（→ `-78.6%`）为**噪声未分辨的带压差快照**：
+> 同一工件 `benchmarks/csf_consistent/validation_report.json` 的 `relax.history.p_center` 在
+> 0…2395 Pa 间摆动，尾窗均值 276.4 ± 163.8 Pa（−23.2%），单点读数与尾均值差 4 倍噪声。
+> 该工件不能分辨 15% 门内的差异；曲率结论（§偏置归因）不受影响。
+> 权威读数见 `docs/verification_ledger.md`（−34.0%，WITHHELD）。机器门禁：`tests/test_verification_ledger.py`。
+
+
 **分支**: `agent/m2592` ｜ **工件**: `benchmarks/csf_consistent/curvature_audit.{py,json,png}` ｜ **测试**: `tests/test_csf_curvature_audit.py` ｜ **源码改动**: `src/tensorsph/csf_consistent.py`（`csf_fields(..., curvature_color_smoothing=1)`，显式开启；默认 0 保留 m2447 行为）
 
 > 本文所有数字由 `make_curvature_doc.py` 从 JSON 程序化注入，无手抄。

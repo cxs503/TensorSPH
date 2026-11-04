@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import importlib.util
 import math
+import platform
 from pathlib import Path
 
 import pytest
@@ -201,6 +202,17 @@ RECORDED_MODE2_TOL_PCT = 2.0
 # pinned tests below are strict-xfail until the fit robustness is reviewed
 # (re-baseline item, owner-visible). Strict xfail keeps drift detection in
 # BOTH directions: an XPASS (measurement moving back onto a pin) fails CI.
+#
+# 2026-11-04 (m3544): the marker must be conditioned on the architecture, not
+# applied unconditionally. The pin below records the loong64 value, so on the
+# loong64 reference container the assertion legitimately passes; an
+# unconditional strict xfail turned that pass into XPASS(strict) and the suite
+# went red on the reference platform itself. Reference arch -> run normally
+# (this is where the pin is the truth); any other arch -> strict xfail, so a
+# genuine convergence of the two architectures still fails loudly.
+REFERENCE_ARCHES = ("loongarch64", "loong64")
+IS_REFERENCE_ARCH = platform.machine().lower() in REFERENCE_ARCHES
+XFAIL_CONDITION = not IS_REFERENCE_ARCH
 XFAIL_MODE2_ARCH_FRAGILE = (
     "mode-2 fit is architecture-fragile (x86_64 CI +8.64 % vs loong64 "
     "-31.78 % on identical code); pin re-baseline pending fit-robustness "
@@ -221,7 +233,7 @@ def release_case(bench):
                           periods=1.8)
 
 
-@pytest.mark.xfail(reason=XFAIL_MODE2_ARCH_FRAGILE, strict=True)
+@pytest.mark.xfail(condition=XFAIL_CONDITION, reason=XFAIL_MODE2_ARCH_FRAGILE, strict=True)
 def test_recorded_mode2_frequency_deficiency_is_reproduced(release_case):
     """Pin the *measured* mode-2 frequency, not a gate the model does not meet.
 
@@ -242,7 +254,7 @@ def test_recorded_mode2_frequency_deficiency_is_reproduced(release_case):
 
 
 @pytest.mark.slow
-@pytest.mark.xfail(reason=XFAIL_MODE2_ARCH_FRAGILE, strict=True)
+@pytest.mark.xfail(condition=XFAIL_CONDITION, reason=XFAIL_MODE2_ARCH_FRAGILE, strict=True)
 def test_oscillation_frequency_gate_is_not_met(release_case):
     """The 15 % gate is NOT met; the recorded verdict must stay FAIL.
 

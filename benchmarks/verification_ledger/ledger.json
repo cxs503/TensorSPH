@@ -1,0 +1,337 @@
+{
+  "ledger": "tensorsph-verification-claims",
+  "mission": "m3544",
+  "quantity": "laplace_dp",
+  "case": {
+    "id": "A",
+    "description": "2-D static free droplet, hexagonal lattice, single phase, gravity off",
+    "radius_m": 0.02,
+    "sigma_N_per_m": 7.2,
+    "rho0": 1000.0,
+    "reference_pa": 360.0,
+    "note": "sigma is 10x water deliberately: compresses capillary time so the droplet equilibrates inside the step budget. reference_pa = sigma/R = 7.2/0.02 = 360 Pa."
+  },
+  "definition_classes": {
+    "absolute_instant": "p_core read as absolute pressure at a single time snapshot; ambient reference = 0 Pa. Forbidden by m2971 P2 (snapshot sits inside the breathing-mode noise band).",
+    "absolute_time_avg": "p_core absolute, averaged over the tail window of the run. The definition adopted by m2971 P2 as the only publishable reading.",
+    "band": "p_core minus a shell/interface band value (p_core - p_shell, p_center - p(0.80-0.95R), bandB). Confounded: the shell band lies in the free-surface density-deficit region, so the measured value is dominated by an artefact the law does not contain.",
+    "plateau": "p_plateau(r<0.6R) - p_ambient(r>1.0R). Correct in principle, but in this configuration the plateau carries a large fluctuation (see plateau_std) because the interior is on the EOS pressure floor."
+  },
+  "gates": {
+    "platform_15pct": 15.0,
+    "publication_3pct": 3.0,
+    "quote_tolerance_pct_points": 0.15,
+    "marker": "台帐 m3544"
+  },
+  "claims": [
+    {
+      "id": "C01",
+      "doc": "docs/verification_surface_tension_laplace.md",
+      "section": "conclusion",
+      "quote": "-93.6%",
+      "definition_class": "band",
+      "definition": "p_center - p(0.8-0.95R)",
+      "reported_error_pct": -93.6,
+      "reported_verdict": "WITHHELD",
+      "authoritative": false,
+      "note": "Written against the legacy-CSF run that used to live at this path. The path now holds a later consistent-scheme run, so the evidence for -93.6% no longer exists in the repo.",
+      "checks": {
+        "quote": {
+          "status": "OK",
+          "detail": ""
+        },
+        "provenance": {
+          "artifact": "benchmarks/laplace_law/validation_report.json",
+          "pointer": "/laplace/rel_error_pct",
+          "artifact_error_pct": 5.59931563881463,
+          "delta_pct_points": 99.1993,
+          "status": "OVERWRITTEN",
+          "detail": "document quotes -93.60% but the artifact at this path now holds +5.60% -- the path was reused by a later run and the original evidence for this claim is gone"
+        },
+        "marker": {
+          "status": "OK",
+          "detail": ""
+        }
+      }
+    },
+    {
+      "id": "C02",
+      "doc": "docs/verification_surface_tension_consistent.md",
+      "section": "section 7 table",
+      "quote": "-75.6%",
+      "definition_class": "band",
+      "definition": "p_core - p_shell, dx=2mm, 600 steps",
+      "reported_error_pct": -75.6,
+      "reported_verdict": "WITHHELD",
+      "authoritative": false,
+      "note": "The committed artifact at the same path now reports -78.56% (same 600-step relax run, band definition). The 2.9 pt gap is a superseded intermediate build.",
+      "checks": {
+        "quote": {
+          "status": "OK",
+          "detail": ""
+        },
+        "provenance": {
+          "artifact": "benchmarks/csf_consistent/validation_report.json",
+          "pointer": "/relax/laplace/rel_error_pct",
+          "artifact_error_pct": -78.55799550367372,
+          "delta_pct_points": 2.958,
+          "status": "OVERWRITTEN",
+          "detail": "document quotes -75.60% but the artifact at this path now holds -78.56% -- the path was reused by a later run and the original evidence for this claim is gone"
+        },
+        "marker": {
+          "status": "OK",
+          "detail": ""
+        }
+      }
+    },
+    {
+      "id": "C03",
+      "doc": "docs/verification_csf_laplace_consistent.md",
+      "section": "3.2 Laplace Pressure Jump",
+      "quote": "+5.6%",
+      "definition_class": "absolute_instant",
+      "definition": "absolute p_core at a single snapshot, ambient = 0 Pa; p_interface_band_Pa recorded as 0.0 so the reading is p_core - 0",
+      "reported_error_pct": 5.6,
+      "reported_verdict": "PASS",
+      "authoritative": false,
+      "note": "The only PASS claim on this quantity in the whole repo, and it is the coarsest case (dx=0.004, N=88, 380 steps, no mass calibration). Same file's own history decays 416.7 -> 137.9 Pa over the recorded window, i.e. the run had not equilibrated when 380.16 Pa was sampled.",
+      "checks": {
+        "quote": {
+          "status": "OK",
+          "detail": ""
+        },
+        "provenance": {
+          "artifact": "benchmarks/laplace_law/validation_report.json",
+          "pointer": "/laplace/rel_error_pct",
+          "artifact_error_pct": 5.59931563881463,
+          "delta_pct_points": 0.0007,
+          "status": "RESOLVED",
+          "detail": "",
+          "arithmetic": {
+            "status": "OK",
+            "measured": 380.15753629973267,
+            "reference": 360.0,
+            "recomputed_pct": 5.5993,
+            "stored_pct": 5.5993
+          }
+        },
+        "marker": {
+          "status": "OK",
+          "detail": ""
+        },
+        "consistency": {
+          "trajectory": "/history/p_center",
+          "n_samples": 5,
+          "first": 416.72,
+          "endpoint": 137.86,
+          "endpoint_error_pct": -61.71,
+          "tail_mean": 143.36,
+          "tail_std": 7.78,
+          "swing": 278.87,
+          "quoted_deviation_pa": 20.16,
+          "noise_ratio": 2.59,
+          "settled": false,
+          "resolvable": true,
+          "snapshot_matches_endpoint": false,
+          "status": "FLAGGED",
+          "problems": [
+            "quoted +5.6% vs trajectory endpoint -61.7% (137.9 Pa) -- the headline is not the settled state",
+            "trajectory endpoint -61.7% itself misses the 15% bar"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C04",
+      "doc": "docs/verification_csf_curvature_bias.md",
+      "section": "pressure diagnostic",
+      "quote": "409.8",
+      "definition_class": "band",
+      "definition": "p_center - p_interface_band (same relax run as C02)",
+      "reported_error_pct": -78.55799550367372,
+      "reported_verdict": "WITHHELD",
+      "authoritative": false,
+      "note": "Quote is the p_center value (409.8 Pa); reported_error_pct is the artifact's own rel_error for that reading.",
+      "checks": {
+        "quote": {
+          "status": "OK",
+          "detail": ""
+        },
+        "provenance": {
+          "artifact": "benchmarks/csf_consistent/validation_report.json",
+          "pointer": "/relax/laplace/rel_error_pct",
+          "artifact_error_pct": -78.55799550367372,
+          "delta_pct_points": 0.0,
+          "status": "RESOLVED",
+          "detail": "",
+          "arithmetic": {
+            "status": "OK",
+            "measured": 77.19121618677462,
+            "reference": 360.0,
+            "recomputed_pct": -78.558,
+            "stored_pct": -78.558
+          }
+        },
+        "marker": {
+          "status": "OK",
+          "detail": ""
+        },
+        "consistency": {
+          "trajectory": "/relax/history/p_center",
+          "n_samples": 13,
+          "first": 2395.36,
+          "endpoint": 396.67,
+          "endpoint_error_pct": 10.19,
+          "tail_mean": 276.43,
+          "tail_std": 163.81,
+          "swing": 2395.36,
+          "quoted_deviation_pa": 282.81,
+          "noise_ratio": 1.726,
+          "settled": true,
+          "resolvable": true,
+          "snapshot_matches_endpoint": false,
+          "status": "FLAGGED",
+          "problems": [
+            "quoted -78.6% vs trajectory endpoint +10.2% (396.7 Pa) -- the headline is not the settled state"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C05",
+      "doc": "docs/verification_laplace_plateau.md",
+      "section": "conclusion",
+      "quote": "47.3%",
+      "definition_class": "plateau",
+      "definition": "p_plateau(r<0.6R) - p_ambient(r>1.0R)",
+      "reported_error_pct": 47.30912994559141,
+      "reported_verdict": "WITHHELD",
+      "authoritative": false,
+      "note": "Worst point of a 3-resolution ladder. Separate definition from the band rows, so it is not directly comparable to them; kept because it is the only row that quotes a proper plateau-vs-ambient jump.",
+      "checks": {
+        "quote": {
+          "status": "OK",
+          "detail": ""
+        },
+        "provenance": {
+          "artifact": "benchmarks/laplace_plateau/validation_report.json",
+          "pointer": "/verdict/worst_rel_error_pct",
+          "artifact_error_pct": 47.30912994559141,
+          "delta_pct_points": 0.0,
+          "status": "RESOLVED",
+          "detail": ""
+        },
+        "marker": {
+          "status": "OK",
+          "detail": ""
+        }
+      }
+    },
+    {
+      "id": "C06",
+      "doc": "docs/verification_laplace_pressure_floor.md",
+      "section": "conclusion table",
+      "quote": "-34.0%",
+      "definition_class": "absolute_time_avg",
+      "definition": "absolute p_core, tail-window time average, dx=0.002, c0=5, mass-calibrated, fit_quadratic curvature",
+      "reported_error_pct": -33.989861260443135,
+      "reported_verdict": "WITHHELD",
+      "authoritative": true,
+      "note": "Best reading obtainable under the definition that m2971 P2 adopted. Authoritative for the current evidence grade.",
+      "checks": {
+        "quote": {
+          "status": "OK",
+          "detail": ""
+        },
+        "provenance": {
+          "artifact": "benchmarks/laplace_pressure_floor/report.json",
+          "pointer": "/runs/2/absolute_time_average_tail/rel_error_pct",
+          "artifact_error_pct": -33.989861260443135,
+          "delta_pct_points": 0.0,
+          "status": "RESOLVED",
+          "detail": "",
+          "arithmetic": {
+            "status": "OK",
+            "measured": 237.63649946240471,
+            "reference": 360.0,
+            "recomputed_pct": -33.9899,
+            "stored_pct": -33.9899
+          }
+        },
+        "marker": {
+          "status": "OK",
+          "detail": ""
+        }
+      }
+    }
+  ],
+  "summary": {
+    "n_claims": 6,
+    "n_docs": 6,
+    "error_range_pct": [
+      -93.6,
+      47.31
+    ],
+    "spread_pct_points": 140.91,
+    "provenance_resolved": [
+      "C03",
+      "C04",
+      "C05",
+      "C06"
+    ],
+    "provenance_overwritten": [
+      "C01",
+      "C02"
+    ],
+    "consistency_flagged": [
+      "C03",
+      "C04"
+    ],
+    "docs_needing_marker": [],
+    "claims_asserting_pass": [
+      "C03"
+    ],
+    "unsupported_pass_claims": [
+      "C03"
+    ],
+    "authoritative_claim": "C06",
+    "authoritative_error_pct": -33.99,
+    "authoritative_definition": "absolute p_core, tail-window time average, dx=0.002, c0=5, mass-calibrated, fit_quadratic curvature",
+    "evidence_grade": "WITHHELD",
+    "evidence_grade_reason": "Authoritative reading is -34.0% against sigma/R = 360 Pa, far outside the 15% platform bar and outside the 3% publication bar. The residual is a free-surface pressure closure defect (Tait clamp p>=0 cannot carry sigma/R on a -6%..-31% density-deficit shell), not a surface-tension discretisation defect: the cut-force identity (global force) is inside 15%.",
+    "within_15pct": false,
+    "within_3pct": false,
+    "derived_trajectories": [
+      {
+        "claim": "C03",
+        "artifact": "benchmarks/laplace_law/validation_report.json",
+        "trajectory": "/history/p_center",
+        "n_samples": 5,
+        "raw_range_pa": [
+          137.86,
+          416.72
+        ],
+        "tail_mean_pa": 143.36,
+        "tail_std_pa": 7.78,
+        "tail_mean_error_pct": -60.18,
+        "min_abs_error_achievable_pct": 15.76,
+        "note": "derived by this audit from the committed trajectory, not a claim made by any document"
+      },
+      {
+        "claim": "C04",
+        "artifact": "benchmarks/csf_consistent/validation_report.json",
+        "trajectory": "/relax/history/p_center",
+        "n_samples": 13,
+        "raw_range_pa": [
+          0.0,
+          2395.36
+        ],
+        "tail_mean_pa": 276.43,
+        "tail_std_pa": 163.81,
+        "tail_mean_error_pct": -23.21,
+        "min_abs_error_achievable_pct": 10.19,
+        "note": "derived by this audit from the committed trajectory, not a claim made by any document"
+      }
+    ]
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "ledger": "tensorsph-verification-claims",
+  "mission": "m3544",
+  "purpose": "Single vetted index of every quantitative verdict-bearing claim about the Young-Laplace pressure jump Delta p = sigma/R. Each row is machine-checked against (a) the prose of the document that makes the claim and (b) the committed JSON artifact that claim cites. Rows are curated by hand (no NLP parsing of numbers), but audit.py verifies the quote exists verbatim and recomputes every error from raw values.",
+  "quantity": "laplace_dp",
+  "case": {
+    "id": "A",
+    "description": "2-D static free droplet, hexagonal lattice, single phase, gravity off",
+    "radius_m": 0.02,
+    "sigma_N_per_m": 7.2,
+    "rho0": 1000.0,
+    "reference_pa": 360.0,
+    "note": "sigma is 10x water deliberately: compresses capillary time so the droplet equilibrates inside the step budget. reference_pa = sigma/R = 7.2/0.02 = 360 Pa."
+  },
+  "definition_classes": {
+    "absolute_instant": "p_core read as absolute pressure at a single time snapshot; ambient reference = 0 Pa. Forbidden by m2971 P2 (snapshot sits inside the breathing-mode noise band).",
+    "absolute_time_avg": "p_core absolute, averaged over the tail window of the run. The definition adopted by m2971 P2 as the only publishable reading.",
+    "band": "p_core minus a shell/interface band value (p_core - p_shell, p_center - p(0.80-0.95R), bandB). Confounded: the shell band lies in the free-surface density-deficit region, so the measured value is dominated by an artefact the law does not contain.",
+    "plateau": "p_plateau(r<0.6R) - p_ambient(r>1.0R). Correct in principle, but in this configuration the plateau carries a large fluctuation (see plateau_std) because the interior is on the EOS pressure floor."
+  },
+  "claims": [
+    {
+      "id": "C01",
+      "doc": "docs/verification_surface_tension_laplace.md",
+      "quote": "-93.6%",
+      "section": "conclusion",
+      "definition_class": "band",
+      "definition": "p_center - p(0.8-0.95R)",
+      "reported_error_pct": -93.6,
+      "reported_verdict": "WITHHELD",
+      "cited_artifact": "benchmarks/laplace_law/validation_report.json",
+      "artifact_pointer": "/laplace/rel_error_pct",
+      "note": "Written against the legacy-CSF run that used to live at this path. The path now holds a later consistent-scheme run, so the evidence for -93.6% no longer exists in the repo."
+    },
+    {
+      "id": "C02",
+      "doc": "docs/verification_surface_tension_consistent.md",
+      "quote": "-75.6%",
+      "section": "section 7 table",
+      "definition_class": "band",
+      "definition": "p_core - p_shell, dx=2mm, 600 steps",
+      "reported_error_pct": -75.6,
+      "reported_verdict": "WITHHELD",
+      "cited_artifact": "benchmarks/csf_consistent/validation_report.json",
+      "artifact_pointer": "/relax/laplace/rel_error_pct",
+      "note": "The committed artifact at the same path now reports -78.56% (same 600-step relax run, band definition). The 2.9 pt gap is a superseded intermediate build."
+    },
+    {
+      "id": "C03",
+      "doc": "docs/verification_csf_laplace_consistent.md",
+      "quote": "+5.6%",
+      "section": "3.2 Laplace Pressure Jump",
+      "definition_class": "absolute_instant",
+      "definition": "absolute p_core at a single snapshot, ambient = 0 Pa; p_interface_band_Pa recorded as 0.0 so the reading is p_core - 0",
+      "reported_error_pct": 5.6,
+      "reported_verdict": "PASS",
+      "cited_artifact": "benchmarks/laplace_law/validation_report.json",
+      "artifact_pointer": "/laplace/rel_error_pct",
+      "measured_pointer": "/laplace/delta_p_measured_Pa",
+      "reference_pointer": "/reference/delta_p_Pa",
+      "trajectory_pointer": "/history/p_center",
+      "note": "The only PASS claim on this quantity in the whole repo, and it is the coarsest case (dx=0.004, N=88, 380 steps, no mass calibration). Same file's own history decays 416.7 -> 137.9 Pa over the recorded window, i.e. the run had not equilibrated when 380.16 Pa was sampled."
+    },
+    {
+      "id": "C04",
+      "doc": "docs/verification_csf_curvature_bias.md",
+      "quote": "409.8",
+      "section": "pressure diagnostic",
+      "definition_class": "band",
+      "definition": "p_center - p_interface_band (same relax run as C02)",
+      "reported_error_pct": -78.55799550367372,
+      "reported_verdict": "WITHHELD",
+      "cited_artifact": "benchmarks/csf_consistent/validation_report.json",
+      "artifact_pointer": "/relax/laplace/rel_error_pct",
+      "measured_pointer": "/relax/laplace/delta_p_measured_Pa",
+      "reference_pointer": "/reference/delta_p_Pa",
+      "trajectory_pointer": "/relax/history/p_center",
+      "note": "Quote is the p_center value (409.8 Pa); reported_error_pct is the artifact's own rel_error for that reading."
+    },
+    {
+      "id": "C05",
+      "doc": "docs/verification_laplace_plateau.md",
+      "quote": "47.3%",
+      "section": "conclusion",
+      "definition_class": "plateau",
+      "definition": "p_plateau(r<0.6R) - p_ambient(r>1.0R)",
+      "reported_error_pct": 47.30912994559141,
+      "reported_verdict": "WITHHELD",
+      "cited_artifact": "benchmarks/laplace_plateau/validation_report.json",
+      "artifact_pointer": "/verdict/worst_rel_error_pct",
+      "note": "Worst point of a 3-resolution ladder. Separate definition from the band rows, so it is not directly comparable to them; kept because it is the only row that quotes a proper plateau-vs-ambient jump."
+    },
+    {
+      "id": "C06",
+      "doc": "docs/verification_laplace_pressure_floor.md",
+      "quote": "-34.0%",
+      "section": "conclusion table",
+      "definition_class": "absolute_time_avg",
+      "definition": "absolute p_core, tail-window time average, dx=0.002, c0=5, mass-calibrated, fit_quadratic curvature",
+      "reported_error_pct": -33.989861260443135,
+      "reported_verdict": "WITHHELD",
+      "cited_artifact": "benchmarks/laplace_pressure_floor/report.json",
+      "artifact_pointer": "/runs/2/absolute_time_average_tail/rel_error_pct",
+      "measured_pointer": "/runs/2/absolute_time_average_tail/delta_p_Pa",
+      "reference_pointer": "/reference/delta_p_Pa",
+      "note": "Best reading obtainable under the definition that m2971 P2 adopted. Authoritative for the current evidence grade."
+    }
+  ],
+  "authoritative_claim": "C06",
+  "evidence_grade": "WITHHELD",
+  "evidence_grade_reason": "Authoritative reading is -34.0% against sigma/R = 360 Pa, far outside the 15% platform bar and outside the 3% publication bar. The residual is a free-surface pressure closure defect (Tait clamp p>=0 cannot carry sigma/R on a -6%..-31% density-deficit shell), not a surface-tension discretisation defect: the cut-force identity (global force) is inside 15%.",
+  "known_contradiction": {
+    "spread_pct_points": 140.91,
+    "explanation": "The six claims span +47.3% to -93.6% (140.9 pt) for one physical quantity. They are not all wrong: four different measurement definitions and four different grids/sound speeds are in play, and two of the cited artifacts were overwritten in place by later runs. Until this ledger existed nothing in the repo said which number a reader should quote. The narrowest defensible statement is the authoritative row (C06): -34.0%, WITHHELD."
+  },
+  "audit_allowlists": {
+    "overwritten_claims": [
+      "C01",
+      "C02"
+    ],
+    "withdrawn_pass_claims": [
+      "C03"
+    ],
+    "overwritten_reason": "Artifact paths are reused across missions: a later run overwrites benchmarks/<name>/validation_report.json in place, so a claim's evidence can disappear without any edit to the document that quotes it. Recorded here so the gate fails loudly if a new orphan appears.",
+    "withdrawn_pass_reason": "C03 asserted the 15% platform bar was met. The ledger withdraws that PASS: the quoted reading is a pre-equilibrium snapshot and the artifact's own trajectory never gets inside 15% (best absolute error 15.76%). The document keeps the original text plus a pointer block, because deleting a false PASS is worse than labelling it."
+  }
+}
