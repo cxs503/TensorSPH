@@ -198,3 +198,61 @@ class TestCapillaryWaveAmplitude:
         positions, _ = _make_wave(wave_cfg, 0.2, 0.0, torch.device("cpu"))
         amp = track_amplitude(positions, wave_cfg, 0.2, wave_cfg.pool_depth / 2.0)
         assert amp < 3.0 * wave_cfg.dx, "flat interface should have near-zero amplitude"
+
+
+class TestCapillaryWavePeriod:
+    """Full time-integration verification (m3420).
+
+    The m2153 report only checked the analytical formula against itself; the
+    measured oscillation period was never produced (the amplitude tracker
+    returned a non-negative envelope, so ``find_period`` could never find a
+    zero crossing).  These tests close that debt: integrate the wave for
+    ~2.6 analytical periods and compare the measured period with
+    ``T = 2 pi / sqrt(sigma k^3 / rho)`` (Lamb 1932, Art. 267).
+    """
+
+    @pytest.fixture(scope="class")
+    def measured(self):
+        from benchmarks.capillary_wave import run as cap_run
+
+        cfg = Config(
+            dx=0.01,
+            pool_width=0.2,
+            pool_depth=0.3,
+            sound_speed=20.0,
+            gamma=7.0,
+            gravity=0.0,
+            viscosity=0.0,
+            density_diffusion=0.0,
+            surface_tension_coefficient=0.072,
+            device="cpu",
+            boundary="clamp",
+            adaptive_dt=True,
+            max_courant=0.25,
+        )
+        cfg.dt = suggested_dt(cfg)
+        k = 2.0 * math.pi / 0.2
+        omega = analytical_omega(0.072, k, cfg.rho0)
+        T = 2.0 * math.pi / omega
+        steps = int(round(2.6 * T / cfg.dt))
+        times, amps = cap_run.run_capillary_wave(
+            cfg, 0.2, 0.005, steps, max(1, steps // 60))
+        return cap_run.find_period(times, amps), T, times, amps
+
+    def test_period_is_measurable(self, measured):
+        period, T, times, amps = measured
+        assert period is not None, (
+            "signed modal amplitude must produce zero crossings; "
+            "a non-negative envelope cannot be period-resolved")
+
+    def test_period_within_15pct_of_analytical(self, measured):
+        period, T, times, amps = measured
+        assert period is not None
+        err = abs(period - T) / T
+        assert err < 0.15, f"measured T={period:.4f} s vs analytical {T:.4f} s ({err:.1%})"
+
+    def test_signed_amplitude_recovers_initial_mode(self, wave_cfg):
+        from benchmarks.capillary_wave.run import track_amplitude
+        positions, _ = _make_wave(wave_cfg, 0.2, 0.005, torch.device("cpu"))
+        amp = track_amplitude(positions, wave_cfg, 0.2, wave_cfg.pool_depth / 2.0)
+        assert 0.0 < amp < 2.0 * 0.005, f"modal amplitude {amp} should recover A0=0.005"

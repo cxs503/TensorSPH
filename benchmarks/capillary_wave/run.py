@@ -33,6 +33,7 @@ from tensorsph.droplet_impact import (
     next_dt,
     resolve_device,
     rhs,
+    suggested_dt,
 )
 from tensorsph.neighbor_search import PairListCache
 
@@ -70,22 +71,33 @@ def make_capillary_wave(cfg: Config, wavelength: float, amplitude: float,
 
 def track_amplitude(positions: torch.Tensor, cfg: Config, wavelength: float,
                     interface_y0: float) -> float:
-    """Estimate the interface amplitude from the particle positions.
+    """Signed modal amplitude of the interface on the initial sine mode.
 
-    Uses the maximum deviation of the topmost fluid particles from the mean
-    interface level.
+    The perturbation is a single Fourier mode ``A sin(2 pi x / wavelength)``,
+    so the amplitude is the least-squares projection of the interface
+    displacement onto that mode:
+
+        A(t) = sum_i (y_i - y0) * phi_i / sum_i phi_i^2,   phi_i = sin(2 pi x_i / wavelength)
+
+    over fluid particles within ``3 dx`` of the mean level.  The result is
+    *signed*, which is what ``find_period`` needs: a non-negative envelope
+    (the previous ``max |deviation|``) has no zero crossings, so the period
+    could never be measured.  For a flat interface the projection is O(dx)
+    noise; for the perturbed interface it recovers A0 to within the
+    discretisation error.
     """
-    # Find particles near the interface (within 3*dx of the mean level)
     margin = 3.0 * cfg.dx
     near_interface = torch.abs(positions[:, 1] - interface_y0) < margin
     if not near_interface.any():
         return 0.0
 
     interface_particles = positions[near_interface]
-    # Group by x-position and find the max y in each group
-    # Simple approach: use the max y deviation from the mean
+    phi = torch.sin(2.0 * math.pi * interface_particles[:, 0] / wavelength)
     deviations = interface_particles[:, 1] - interface_y0
-    return float(deviations.abs().max())
+    denom = float((phi * phi).sum())
+    if denom <= 0.0:
+        return 0.0
+    return float((deviations * phi).sum() / denom)
 
 
 def run_capillary_wave(cfg: Config, wavelength: float, amplitude: float,
@@ -198,7 +210,7 @@ def main():
         adaptive_dt=True,
         max_courant=0.25,
     )
-    cfg.dt = cfg.dt_from_courant()
+    cfg.dt = suggested_dt(cfg)
     cfg.steps = int(round(args.seconds / cfg.dt))
     cfg.output_every = max(1, cfg.steps // 50)
 
@@ -237,6 +249,8 @@ def main():
             "elapsed_seconds": elapsed,
             "steps": cfg.steps,
             "n_amplitude_samples": len(amplitudes),
+            "times_s": times,
+            "amplitudes_m": amplitudes,
         },
     }
 

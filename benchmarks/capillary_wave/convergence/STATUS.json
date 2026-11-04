@@ -1,0 +1,88 @@
+{
+ "mission": "m3464",
+ "date": "2026-11-04",
+ "repo": "TensorSPH",
+ "capacity": {
+  "load15": 117.87,
+  "nproc": 128,
+  "policy": "load15>=100 -> docs/tests/analysis only",
+  "cluster_torch": "ABSENT (n330 probe jobs c1793786016_279 / c1793786072_380: ModuleNotFoundError: No module named 'torch')"
+ },
+ "lines": [
+  {
+   "line": "sloshing_dispersion",
+   "grade": "REAL(15%) single-point",
+   "key": "omega",
+   "measured": 4.8999,
+   "ref": 4.8533,
+   "rel_err_pct": 0.96,
+   "below_3pct": true,
+   "debt": "resolution ladder (m3425)"
+  },
+  {
+   "line": "young_laplace_dp",
+   "grade": "WITHHELD",
+   "key": "dp",
+   "measured": 237.6,
+   "ref": 360.0,
+   "rel_err_pct": -34.0,
+   "below_3pct": false,
+   "debt": "free-surface pressure closure (m3428 branch, unmerged)"
+  },
+  {
+   "line": "fs_pressure_closure_AB",
+   "grade": "WITHHELD",
+   "key": "residual",
+   "measured": 20.0,
+   "ref": 15.0,
+   "rel_err_pct": 20.0,
+   "below_3pct": false,
+   "debt": "merge m3428; new P0 = CSF force magnitude ~0.56 sigma/R"
+  },
+  {
+   "line": "csf_curvature_hex",
+   "grade": "WITHHELD",
+   "key": "kappa",
+   "measured": null,
+   "ref": "1/R",
+   "rel_err_pct": 37.0,
+   "below_3pct": false,
+   "debt": "P0 attribution (m3432)"
+  },
+  {
+   "line": "capillary_wave_period",
+   "grade": "WITHHELD",
+   "key": "T",
+   "measured": null,
+   "ref": 2.109,
+   "rel_err_pct": null,
+   "below_3pct": null,
+   "debt": "ladder JSON lost with worktree cleanup (m3420); rerun recipe in docs §7"
+  },
+  {
+   "line": "dam_break_B2_front",
+   "grade": "WITHHELD",
+   "key": "front",
+   "measured": null,
+   "ref": "Ritter+finite-reservoir",
+   "rel_err_pct": null,
+   "below_3pct": false,
+   "debt": "Ritter explains only 29% of deficit (m3397)"
+  },
+  {
+   "line": "droplet_impact_smoke",
+   "grade": "REAL(smoke)",
+   "key": "density_compression",
+   "measured": 0.0355,
+   "ref": 0.05,
+   "rel_err_pct": 3.55,
+   "below_3pct": false,
+   "debt": "none (smoke gate <=5% passed)"
+  }
+ ],
+ "findings": [
+  "F1: cluster nodes lack torch -> 'heavy compute to cluster' route unusable for TensorSPH (report-only per control-repo order)",
+  "F2: worktree cleanup lost m3420 background ladder artifacts -> persist to /root/tp-agent/artifacts/<mission>/",
+  "F3: surface-tension line saturated: 5 unmerged branches + 2 in-flight missions; recommend merging m3428 first"
+ ]
+}
