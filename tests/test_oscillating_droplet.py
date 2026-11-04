@@ -195,16 +195,31 @@ def test_fit_refuses_to_hallucinate_a_frequency_from_a_non_oscillating_trace(ben
 RECORDED_MODE2_ERR_PCT = 31.78
 RECORDED_MODE2_TOL_PCT = 2.0
 
-# 2026-11-04: the mode-2 second-moment fit is architecture-fragile — the same
+# 2026-11-04: the mode-2 second-moment fit is architecture-fragile -- the same
 # code measures +8.64 % on x86_64 GitHub CI and -31.78 % in the loong64
-# reference container. Neither value is architecture-canonical, so the two
-# pinned tests below are strict-xfail until the fit robustness is reviewed
-# (re-baseline item, owner-visible). Strict xfail keeps drift detection in
-# BOTH directions: an XPASS (measurement moving back onto a pin) fails CI.
+# reference container.  Root cause, established by
+# ``benchmarks/oscillating_droplet_stability/`` (docs/verification_mode2_admissibility.md):
+# the release case is numerically inadmissible after ~0.64 T (Mach 9e3,
+# r_eff = 4994 R), so the estimator is handed debris with several comparable
+# spectral peaks and each architecture lands in a different basin.  The
+# recorded -43.5 % is *additionally* the lower edge of the estimator's search
+# box (0.6 * omega_ref * 0.98**3, reproduced to 1e-8), i.e. a property of the
+# estimator, not of surface tension.
+#
+# Consequence for these two pins: a value that is arch-dependent *by
+# construction* cannot be pinned with ``strict=True`` -- that guarantees one
+# architecture is red (this was the loong64 XPASS).  They stay as non-strict
+# xfail to keep the historical numbers visible in the suite; the drift
+# detection that used to live here moved to
+# ``tests/test_oscillating_droplet_stability.py``, which pins the
+# arch-independent facts (inadmissibility, boundary pin, admissible-window
+# fit) straight from the recorded artefacts and never re-simulates.
 XFAIL_MODE2_ARCH_FRAGILE = (
-    "mode-2 fit is architecture-fragile (x86_64 CI +8.64 % vs loong64 "
-    "-31.78 % on identical code); pin re-baseline pending fit-robustness "
-    "review"
+    "mode-2 number is arch-dependent by construction (x86_64 +8.64 % vs "
+    "loong64 -31.78 %): the release case diverges before the fit window ends, "
+    "so the fit lands in different basins; see "
+    "docs/verification_mode2_admissibility.md -- arch-independent pins are in "
+    "tests/test_oscillating_droplet_stability.py"
 )
 
 
@@ -221,7 +236,7 @@ def release_case(bench):
                           periods=1.8)
 
 
-@pytest.mark.xfail(reason=XFAIL_MODE2_ARCH_FRAGILE, strict=True)
+@pytest.mark.xfail(reason=XFAIL_MODE2_ARCH_FRAGILE, strict=False)
 def test_recorded_mode2_frequency_deficiency_is_reproduced(release_case):
     """Pin the *measured* mode-2 frequency, not a gate the model does not meet.
 
@@ -242,7 +257,7 @@ def test_recorded_mode2_frequency_deficiency_is_reproduced(release_case):
 
 
 @pytest.mark.slow
-@pytest.mark.xfail(reason=XFAIL_MODE2_ARCH_FRAGILE, strict=True)
+@pytest.mark.xfail(reason=XFAIL_MODE2_ARCH_FRAGILE, strict=False)
 def test_oscillation_frequency_gate_is_not_met(release_case):
     """The 15 % gate is NOT met; the recorded verdict must stay FAIL.
 
