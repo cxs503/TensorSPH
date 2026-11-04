@@ -8,11 +8,15 @@ milliseconds -- and (b) the numbers recorded in
 the pressure closure, the EOS or the measurement definitions cannot slip
 through unnoticed.
 
-The last test is ``xfail(strict=True)``: it states the acceptance criterion for
-the still-open P0 (free-surface pressure closure, see
-``docs/verification_laplace_pressure_floor.md`` §7).  When that work lands the
-test turns into an ``xpass`` and the suite fails on purpose, forcing the
-verification record to be updated instead of drifting.
+The P0 this benchmark handed over ("free-surface pressure closure") was
+resolved in m3298 by measuring the momentum budget first: the short factor is
+the CSF surface delta, not the pressure boundary condition
+(``docs/verification_laplace_pressure_closure.md``).  As the previous revision of
+this file required, the strict-``xfail`` acceptance test was therefore rewritten
+into ``test_floor_report_pins_the_unclosed_legacy_deficit``: it now pins the
+*legacy* numbers recorded here (delta scale 1.0, no closure) so the historical
+evidence stays reproducible, while the 15 % criterion itself is enforced against
+the closure benchmark in ``tests/test_laplace_pressure_closure.py``.
 """
 from __future__ import annotations
 
@@ -137,12 +141,19 @@ def test_residual_is_not_explained_by_the_eos_noise_floor(report):
     assert worst and min(worst) > 0.15
 
 
-@pytest.mark.xfail(strict=True, reason="free-surface pressure closure (P0) not "
-                                      "implemented: tait_pressure is clamped at "
-                                      "p >= 0 across the deficit shell, so the "
-                                      "interior settles at ~0.57 sigma/R")
-def test_laplace_jump_within_15pct(report):
-    """Acceptance criterion for the open P0: every recorded case inside 15 %."""
-    for run in report["runs"]:
-        err = abs(run["absolute_time_average_tail"]["rel_error_pct"])
-        assert err < 15.0, (run["dx_m"], run["sound_speed"], err)
+def test_floor_report_pins_the_unclosed_legacy_deficit(report):
+    """Historical record: with ``csf_delta_scale = 1`` (legacy) the jump is short.
+
+    m3298 replaced the P0 this benchmark handed over: the momentum budget showed
+    the surface tension *force* itself is short (the CSF surface delta
+    integrates to ~0.53 instead of 1 at a free surface), so no pressure boundary
+    condition could have closed the gap.  The numbers recorded here are the
+    legacy read-out and must stay reproducible; the 15 % criterion is enforced
+    against ``benchmarks/laplace_pressure_closure/`` instead.
+    """
+    errors = [run["absolute_time_average_tail"]["rel_error_pct"]
+              for run in report["runs"]]
+    for err in errors:
+        assert -42.0 < err < -30.0, err
+    # c0- and resolution-independent: a fixed fraction, not discrteisation noise
+    assert max(errors) - min(errors) < 8.0, errors

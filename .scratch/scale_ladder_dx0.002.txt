@@ -1,0 +1,8 @@
+dx=0.002 c0=   20 scale=1.0 tail= 223.65 Pa err=  -37.9% rho_core=1.00051 r/R=0.664 vmax/vref=0.030 finite=True
+dx=0.002 c0=   20 scale=1.6 tail= 297.08 Pa err=  -17.5% rho_core=1.00063 r/R=0.664 vmax/vref=0.052 finite=True
+dx=0.002 c0=   20 scale=1.8 tail= 314.81 Pa err=  -12.6% rho_core=1.00066 r/R=0.664 vmax/vref=0.060 finite=True
+dx=0.002 c0=   20 scale=2.0 tail= 329.43 Pa err=   -8.5% rho_core=1.00066 r/R=0.664 vmax/vref=0.072 finite=True
+dx=0.002 c0=    5 scale=1.0 tail= 237.64 Pa err=  -34.0% rho_core=1.00793 r/R=0.661 vmax/vref=0.026 finite=True
+dx=0.002 c0=    5 scale=1.6 tail= 306.41 Pa err=  -14.9% rho_core=1.00804 r/R=0.661 vmax/vref=0.033 finite=True
+dx=0.002 c0=    5 scale=1.8 tail= 321.88 Pa err=  -10.6% rho_core=1.00779 r/R=0.661 vmax/vref=0.038 finite=True
+dx=0.002 c0=    5 scale=2.0 tail= 333.97 Pa err=   -7.2% rho_core=1.00751 r/R=0.661 vmax/vref=0.041 finite=True

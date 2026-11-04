@@ -129,6 +129,15 @@ class Config:
     # "mls" = div n with MLS-consistent operators, +25 % on a circle, kept for A/B;
     # "fit_circle" = algebraic circle fit, unstable on lattice data.
     csf_curvature: str = "fit_quadratic"
+    # Free-surface truncation of the CSF surface delta function. The diffuse
+    # interface colour profile spans both sides of the free surface, but the
+    # particle set only covers the fluid side, so the discrete delta
+    # ``delta_s = |grad c|`` integrates to ~0.5 of unit instead of 1 and the
+    # modelled surface tension force is short by the same factor
+    # (docs/verification_laplace_pressure_closure.md). 2.0 completes the
+    # missing outer half of a planar profile; 1.0 keeps the legacy (unclosed)
+    # force so existing recorded results stay reproducible.
+    csf_delta_scale: float = 1.0
 
 
 # --------------------------------------------------------------------------- #

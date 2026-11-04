@@ -336,6 +336,7 @@ def surface_tension_acceleration(
     contact_angle: float | None = None,
     curvature_scheme: str = "mls",
     curvature_stencil: float = 4.0,
+    delta_scale: float = 1.0,
 ) -> tuple[torch.Tensor, CSFState | None]:
     """CSF acceleration ``a = -sigma kappa delta_s n / rho`` and its fields."""
     if sigma <= 0.0:
@@ -360,7 +361,7 @@ def surface_tension_acceleration(
     flat = d_s <= 1.0e-3 * d_s.max()
     d_s[flat] = 0.0
     state.delta_s = d_s
-    force = (-sigma * state.kappa * state.delta_s)[:, None] * state.normal
+    force = (-sigma * delta_scale * state.kappa * state.delta_s)[:, None] * state.normal
     return force / density[:, None], state
 
 # --------------------------------------------------------------------------- #
