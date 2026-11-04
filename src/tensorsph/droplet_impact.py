@@ -100,6 +100,24 @@ class Config:
     hydrostatic_init: bool = False
     wall_friction: float = 0.0
     density_diffusion: float = 0.0
+    # Free-surface pressure closure. "clamp" (default) = the first-order Tait
+    # p >= 0 clamp: a free-surface particle carries zero pressure whatever the
+    # neighbouring fluid is doing. "extrapolate" = shell-pressure extrapolation
+    # (Adami, Ihmsen & Adams 2012, J. Comput. Phys. 231:8052, sec. 3.3): a
+    # particle whose sum-density is below ``free_surface_threshold * rho0``
+    # takes p = max(0, sum_j (p_j + rho_j g.r_ji) W_ij / sum_j W_ij) over its
+    # fluid neighbours instead of zero. Zero pressure at the outer shell is a
+    # Dirichlet condition the interior pressure cannot exceed, which is why a
+    # drop cannot hold sigma/R; see docs/verification_free_surface_pressure.md
+    # and docs/verification_laplace_pressure_floor.md.
+    free_surface_pressure: str = "clamp"
+    # Sum-density ratio below which a particle counts as free surface. 0.99 is
+    # the deficit of the outermost shell measured on the calibration drop.
+    free_surface_threshold: float = 0.99
+    # Number of Jacobi sweeps of the extrapolation. 3 is the measured optimum:
+    # 1 sweep still carries the shell's own zeros, 6 overshoots (spurious
+    # current 0.27 v_ref against 0.03 at 3).
+    free_surface_pressure_sweeps: int = 3
     # Adaptive time step. Off by default: a fixed step keeps every published
     # number reproducible bit for bit. When on, ``dt`` starts at the configured
     # value, shrinks to whatever the current maximum speed allows, and grows back
@@ -238,6 +256,103 @@ def tait_pressure(rho: torch.Tensor, cfg: Config) -> torch.Tensor:
     bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
     ratio = (rho / cfg.rho0).clamp_min(0.01)
     return (bulk * (ratio.pow(cfg.gamma) - 1.0)).clamp_min(0.0)
+
+
+def free_surface_pressure_closure(pressure: torch.Tensor, rho: torch.Tensor,
+                                  delta: torch.Tensor, wij: torch.Tensor,
+                                  i: torch.Tensor, j: torch.Tensor, n: int,
+                                  cfg: Config) -> torch.Tensor:
+    """Shell-pressure extrapolation of the free surface (Adami et al. 2012).
+
+    The Tait clamp sets every free-surface particle to zero pressure, so the
+    outer shell is a Dirichlet ``p = 0`` boundary and the interior of a drop in
+    vacuum can never hold ``sigma/R``. Adami, Ihmsen & Adams (2012), sec. 3.3,
+    replace that value by a one-sided kernel interpolation from the fluid:
+
+        p_i = (sum_j p_j W_ij + sum_j rho_j (g - a_i).r_ji W_ij) / sum_j W_ij
+
+    over the fluid neighbours ``j`` of a particle ``i`` whose density is below
+    ``free_surface_threshold * rho0``. The particle acceleration ``a_i`` is not
+    available before the force is assembled and is dropped; gravity is kept.
+    Wall pairs (index ``>= n``) never contribute: the wall pressure is
+    extrapolated from the fluid afterwards, in the other direction.
+
+    The average is applied ``cfg.free_surface_pressure_sweeps`` times (Jacobi
+    sweeps: each re-uses the values the previous one produced). One sweep is
+    the formula as published, but it still carries the neighbouring shell
+    particles' zeros and lands between the clamp and the interior pressure;
+    after ~2-3 sweeps the values have refilled the one-particle-thick shell.
+    More sweeps feed the extrapolation back into itself and overshoot; the
+    measured ladder (1/2/3/6 sweeps) is in
+    docs/verification_free_surface_pressure.md.
+
+    ``delta``/``wij``/``i``/``j`` are the pair arrays of ``rhs``:
+    ``delta = pos[i] - pos[j]``, ``wij = W(|delta|, h)``. Particles that are
+    interior, or that have no fluid neighbour at all, keep their Tait value.
+    """
+    ratio = rho / cfg.rho0
+    surface = ratio < cfg.free_surface_threshold
+    if not bool(surface.any()):
+        return pressure
+
+    fluid = (i < n) & (j < n)
+    weight = torch.where(fluid, wij, torch.zeros_like(wij))
+    # Wall pairs (index >= n) are gathered with a clamped index and then
+    # weighted out, the same trick the wall block below uses: one gather per
+    # side instead of a selection over the pair array. Their weight is zero, so
+    # the clamped value never reaches the sum, but it must not index past the
+    # end of ``rho``/``closed``.
+    i_in = i.clamp(max=n - 1)
+    j_in = j.clamp(max=n - 1)
+    # g.r_ji with g = (0, -gravity): delta_y is y_i - y_j, so the body-force
+    # term flips sign with the direction of a pair.
+    body_i = -cfg.gravity * delta[:, 1] * rho[j_in]
+    body_j = cfg.gravity * delta[:, 1] * rho[i_in]
+    denominator = torch.zeros(n, dtype=pressure.dtype, device=pressure.device)
+    denominator = denominator.index_add(0, i_in, weight)
+    denominator = denominator.index_add(0, j_in, weight)
+    valid = surface & (denominator > 1.0e-30)
+
+    closed = pressure
+    for _ in range(max(1, int(cfg.free_surface_pressure_sweeps))):
+        numerator = torch.zeros(n, dtype=pressure.dtype, device=pressure.device)
+        numerator = numerator.index_add(0, i_in, weight * (closed[j_in] + body_i))
+        numerator = numerator.index_add(0, j_in, weight * (closed[i_in] + body_j))
+        closed = torch.where(
+            valid, (numerator / denominator.clamp_min(1.0e-30)).clamp_min(0.0),
+            pressure)
+    return closed
+
+
+def free_surface_pressure_closure_dense(pressure: torch.Tensor,
+                                        rho: torch.Tensor,
+                                        delta: torch.Tensor,
+                                        wij: torch.Tensor,
+                                        cfg: Config) -> torch.Tensor:
+    """Dense-matrix form of :func:`free_surface_pressure_closure`.
+
+    ``rhs_all_pairs`` uses it so the O(N^2) reference implementation remains a
+    second, independent formulation of the same physics.
+    """
+    n = pressure.shape[0]
+    ratio = rho / cfg.rho0
+    surface = ratio < cfg.free_surface_threshold
+    if not bool(surface.any()):
+        return pressure
+    # g.r_ji = g.(r_i - r_j) = -gravity (y_i - y_j)
+    body = -cfg.gravity * delta[:, :, 1] * rho[None, :]
+    weight = torch.where(torch.eye(n, dtype=torch.bool, device=pressure.device),
+                         torch.zeros_like(wij), wij)
+    denominator = weight.sum(dim=1)
+    valid = surface & (denominator > 1.0e-30)
+
+    closed = pressure
+    for _ in range(max(1, int(cfg.free_surface_pressure_sweeps))):
+        numerator = (weight * (closed[None, :] + body)).sum(dim=1)
+        closed = torch.where(
+            valid, (numerator / denominator.clamp_min(1.0e-30)).clamp_min(0.0),
+            pressure)
+    return closed
 
 
 def acoustic_courant(dt: float, cfg: Config, max_speed: float = 0.0) -> float:
@@ -571,6 +686,9 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
 
     pressure = tait_pressure(rho, cfg)
+    if cfg.free_surface_pressure == "extrapolate":
+        pressure = free_surface_pressure_closure(
+            pressure, rho, delta, wij, i, j, n, cfg)
 
     if nw:
         bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
@@ -692,6 +810,9 @@ def rhs_all_pairs(pos, vel, mass, cfg: Config, dt=None):
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
     pressure = tait_pressure(rho, cfg)
     grad_w = cubic_spline_gradient(delta, h)
+    if cfg.free_surface_pressure == "extrapolate":
+        pressure = free_surface_pressure_closure_dense(
+            pressure, rho, delta, w, cfg)
     pressure_term = (
         pressure[:, None] / rho[:, None].square()
         + pressure[None, :] / rho[None, :].square()
@@ -775,6 +896,14 @@ def validate_config(cfg: Config) -> None:
         raise ValueError(
             "csf_curvature must be 'mls', 'fit_quadratic' or 'fit_circle', "
             f"got {cfg.csf_curvature!r}")
+    if cfg.free_surface_pressure not in ("clamp", "extrapolate"):
+        raise ValueError(
+            "free_surface_pressure must be 'clamp' or 'extrapolate', got "
+            f"{cfg.free_surface_pressure!r}")
+    if not 0.0 < cfg.free_surface_threshold <= 1.0:
+        raise ValueError("free_surface_threshold must be in (0, 1]")
+    if cfg.free_surface_pressure_sweeps < 1:
+        raise ValueError("free_surface_pressure_sweeps must be at least 1")
     if cfg.csf_scheme not in ("consistent", "legacy"):
         raise ValueError(
             f"csf_scheme must be 'consistent' or 'legacy', got {cfg.csf_scheme!r}")

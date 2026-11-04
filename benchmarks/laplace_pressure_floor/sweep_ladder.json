@@ -1,0 +1,13 @@
+{
+  "benchmark": "laplace_pressure_floor",
+  "case": {"dx_m": 0.002, "sound_speed": 20.0, "t_end_over_t_sigma": 1.5,
+           "radius_m": 0.02, "sigma_N_per_m": 7.2, "analytic_delta_p_Pa": 360.0},
+  "operator": "Adami (2012) sec 3.3 shell extrapolation, all fluid neighbours,",
+  "note": "each row = full 1.5 t_sigma relaxation, tail-40% time average of the absolute core pressure; recorded 2026-11-04 on x86_64 (torch 2.7.1, 2 threads)",
+  "ladder": [
+    {"sweeps": 1, "delta_p_Pa": 287.5, "rel_error_pct": -20.13888888888889, "vmax_over_vref_final": 0.020},
+    {"sweeps": 2, "delta_p_Pa": 336.6, "rel_error_pct": -6.5, "vmax_over_vref_final": 0.033},
+    {"sweeps": 3, "delta_p_Pa": 353.5, "rel_error_pct": -1.8, "vmax_over_vref_final": 0.031},
+    {"sweeps": 6, "delta_p_Pa": 403.6, "rel_error_pct": 12.1, "vmax_over_vref_final": 0.267}
+  ]
+}
