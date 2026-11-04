@@ -320,11 +320,57 @@ def hydrostatic_density(y: torch.Tensor, cfg: Config, surface: float | None = No
     return cfg.rho0 * (1.0 + cfg.rho0 * cfg.gravity * depth / bulk).pow(1.0 / cfg.gamma)
 
 
+def cell_centres(extent: float, dx: float, device: torch.device) -> torch.Tensor:
+    """Cell centres of the regular lattice that fits *inside* ``[0, extent]``.
+
+    The cell count is ``floor(extent / dx)``, not ``ceil``. ``arange(dx/2,
+    extent, dx)`` emits a cell whenever its *centre* is still below ``extent``,
+    so it produces ``ceil(extent / dx)`` cells and the last one hangs over the
+    boundary by up to half a spacing. Against a static wall layer anchored half
+    a spacing *outside* that boundary the overhanging column then sits
+    ``< 1 dx`` from the wall particles instead of ``~1.5 dx``: at ``dx = 0.006``
+    (``1/0.006 = 166.67``) the last fluid column landed at ``x = 0.999``, 0.67
+    of a spacing from the wall column at ``x = 1.003``, so it counted the wall
+    at full kernel weight and the run started 17 % over-dense. Flooring the
+    count keeps the far column at ``(frac + 1) dx`` from the wall, with
+    ``frac = extent - floor(extent/dx) dx``, i.e. strictly inside the kernel's
+    near-wall shell. A lattice that does not fit is a discretisation defect,
+    not a resolution choice; see docs/benchmarks/resolution-stability.md.
+    """
+    ratio = float(extent) / float(dx)
+    count = int(math.floor(ratio + 1.0e-9))
+    if count < 1:
+        raise ValueError(
+            f"dx={dx:g} is too coarse for an extent of {extent:g} "
+            f"(only {ratio:.3f} cells fit)")
+    return (torch.arange(count, device=device, dtype=torch.get_default_dtype())
+            + 0.5) * dx
+
+
+def pool_lattice(cfg: Config, device: torch.device) -> torch.Tensor:
+    """Particles of the rectangular pool, on the lattice ``cell_centres`` builds.
+
+    Kept separate from :func:`make_particles` because it is the part of the
+    initial state that must fit inside the tank: the drop starts *above* the
+    pool surface by construction (``make_particles`` rejects configurations
+    where it would not).
+    """
+    xs = cell_centres(cfg.pool_width, cfg.dx, device)
+    ys = cell_centres(cfg.pool_depth, cfg.dx, device)
+    gx, gy = torch.meshgrid(xs, ys, indexing="xy")
+    return torch.stack((gx.reshape(-1), gy.reshape(-1)), dim=-1)
+
+
 def make_particles(cfg: Config, device: torch.device):
     """Generate a rectangular pool and a circular drop on a regular lattice.
 
     The arrangement is deterministic: the solver contains no stochastic step,
     so no random seed is required. Returns ``(positions, mass)``.
+
+    Both lattices are anchored on the tank: the pool columns are the cell
+    centres of ``[0, pool_width] x [0, pool_depth]`` (so the lattice never
+    overhangs a wall, see :func:`cell_centres`), and the drop is the subset of a
+    lattice centred on ``drop_center_y`` that lies inside the impact circle.
 
     With ``cfg.hydrostatic_init`` the pool masses follow the analytical
     hydrostatic density profile; the drop is in free fall and keeps ``rho0``.
@@ -332,10 +378,8 @@ def make_particles(cfg: Config, device: torch.device):
     dx = cfg.dx
     if cfg.drop_center_y - cfg.drop_radius <= cfg.pool_depth:
         raise ValueError("drop must start above the pool surface")
-    xs = torch.arange(dx * 0.5, cfg.pool_width, dx, device=device)
-    ys = torch.arange(dx * 0.5, cfg.pool_depth, dx, device=device)
-    gx, gy = torch.meshgrid(xs, ys, indexing="xy")
-    pool = torch.stack((gx.reshape(-1), gy.reshape(-1)), dim=-1)
+    pool = pool_lattice(cfg, device)
+    xs = cell_centres(cfg.pool_width, dx, device)
 
     drop_y = torch.arange(cfg.drop_center_y - cfg.drop_radius,
                           cfg.drop_center_y + cfg.drop_radius, dx, device=device)

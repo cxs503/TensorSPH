@@ -160,6 +160,40 @@ def particle_depth(positions: torch.Tensor, dx: float, bin_width: float,
     return centres, histogram * (dx * dx) / bin_width
 
 
+def front_speed(times, front, fraction: float = 0.4) -> float:
+    """Leading-edge speed over the *developed* stage of a front trajectory.
+
+    ``(z[-1] - z[k]) / (t[-1] - t[k])`` with ``k`` chosen so that the last
+    ``fraction`` of the samples are used. The mean over the whole record is not
+    a front speed: the initial vertical face is a delta function in the
+    shallow-water initial data, so the first samples sit inside the release
+    transient, where the leading edge has not yet been accelerated to its
+    developed value. At ``dx = 0.02`` (``H/dx = 5``) the leading edge covers
+    10 % of its analytic advance in the first 10 % of the window while the
+    developed-stage speed is already constant at 73 % of ``2 c0``; averaging
+    from ``t = 0`` therefore reports 62 % of ``2 c0`` for the same run. The
+    developed value is the one that can be compared with the analytic wave
+    speed. See ``docs/benchmarks/ritter-shallow-limit.md``.
+
+    Both sequences must be ordered in time and share one sample per entry.
+    """
+    t = torch.as_tensor(times, dtype=torch.float64).reshape(-1)
+    z = torch.as_tensor(front, dtype=torch.float64).reshape(-1)
+    if t.numel() != z.numel():
+        raise ValueError("times and front must have the same length")
+    if t.numel() < 2:
+        raise ValueError("front_speed needs at least two samples")
+    if not 0.0 < fraction <= 1.0:
+        raise ValueError("fraction must lie in (0, 1]")
+    k = int(math.floor((1.0 - float(fraction)) * (t.numel() - 1) + 0.5))
+    if k >= t.numel() - 1:
+        raise ValueError("fraction leaves fewer than two samples")
+    span = float(t[-1] - t[k])
+    if span <= 0.0:
+        raise ValueError("the time samples must be increasing")
+    return float((z[-1] - z[k]) / span)
+
+
 def profile_l1_error(x: torch.Tensor, measured: torch.Tensor,
                      reference: torch.Tensor, mask: torch.Tensor | None = None) -> float:
     """``||measured - reference||_1 / ||reference||_1`` on a sampled grid."""
@@ -177,7 +211,7 @@ def profile_l1_error(x: torch.Tensor, measured: torch.Tensor,
 
 
 __all__ = [
-    "GRAVITY", "depth", "front_x", "particle_depth", "profile_l1_error",
-    "profile_mass", "released_volume", "tail_x", "validity_window", "velocity",
-    "wave_speed",
+    "GRAVITY", "depth", "front_speed", "front_x", "particle_depth",
+    "profile_l1_error", "profile_mass", "released_volume", "tail_x",
+    "validity_window", "velocity", "wave_speed",
 ]
