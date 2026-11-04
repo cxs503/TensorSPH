@@ -1,0 +1,548 @@
+{
+ "benchmark": "csf_curvature_bias_audit",
+ "setup": {
+  "radius_m": 0.02,
+  "sigma_N_per_m": 7.2,
+  "rho0": 1000.0,
+  "sound_speed": 20.0,
+  "h_factor": 1.3,
+  "resolutions_m": [
+   0.003,
+   0.002,
+   0.0015,
+   0.001
+  ],
+  "reference": {
+   "kappa_1_per_m": 50.0,
+   "cut_force_N_per_m": -14.4,
+   "delta_s_integral_dn": 1.0
+  }
+ },
+ "rows": [
+  {
+   "dx_m": 0.003,
+   "h_m": 0.0039000000000000003,
+   "n_particles": 161,
+   "variants": [
+    {
+     "label": "V0 baseline (m2447: kappa from sharp colour)",
+     "kappa_delta_s_weighted_1_per_m": 64.13146241427407,
+     "kappa_rel_error_pct": 28.262924828548137,
+     "kappa_within_15pct": false,
+     "cut_force_ratio": 1.1096383233580114,
+     "cut_force_rel_error_pct": 10.963832335801138,
+     "cut_force_within_15pct": true,
+     "delta_s_integral_dn": 0.7545449895898849,
+     "inward_fraction": 1.0,
+     "cos_band_median": 0.9992852852235228,
+     "normal_angle_err_mean_deg": 2.437764404026144,
+     "normal_angle_err_p90_deg": 4.858283698546142,
+     "n_band": 102
+    },
+    {
+     "label": "V1 control (div n, exact radial normal)",
+     "kappa_delta_s_weighted_1_per_m": 62.273745448926626,
+     "kappa_rel_error_pct": 24.54749089785325,
+     "kappa_within_15pct": false,
+     "cut_force_ratio": 1.0475222864169882,
+     "cut_force_rel_error_pct": 4.752228641698819,
+     "cut_force_within_15pct": true,
+     "delta_s_integral_dn": 0.7545449895898849,
+     "inward_fraction": 1.0,
+     "cos_band_median": 0.9992852852235228,
+     "normal_angle_err_mean_deg": 2.437764404026144,
+     "normal_angle_err_p90_deg": 4.858283698546142,
+     "n_band": 102
+    },
+    {
+     "label": "V2 default (kappa from smoothed colour, shipped)",
+     "kappa_delta_s_weighted_1_per_m": 61.68009770556449,
+     "kappa_rel_error_pct": 23.360195411128984,
+     "kappa_within_15pct": false,
+     "cut_force_ratio": 1.0598671040432046,
+     "cut_force_rel_error_pct": 5.986710404320461,
+     "cut_force_within_15pct": true,
+     "delta_s_integral_dn": 0.7545449895898849,
+     "inward_fraction": 1.0,
+     "cos_band_median": 0.999285285223523,
+     "normal_angle_err_mean_deg": 2.437764404026144,
+     "normal_angle_err_p90_deg": 4.858283698546142,
+     "n_band": 102
+    },
+    {
+     "label": "V3 candidate + delta_s renormalised",
+     "kappa_delta_s_weighted_1_per_m": 61.68009770556449,
+     "kappa_rel_error_pct": 23.360195411128984,
+     "kappa_within_15pct": false,
+     "cut_force_ratio": 1.4046440154870956,
+     "cut_force_rel_error_pct": 40.46440154870956,
+     "cut_force_within_15pct": false,
+     "delta_s_integral_dn": 1.0,
+     "inward_fraction": 1.0,
+     "cos_band_median": 0.9992852852235231,
+     "normal_angle_err_mean_deg": 2.437764404026144,
+     "normal_angle_err_p90_deg": 4.858283698546142,
+     "n_band": 102
+    },
+    {
+     "label": "V3b shipped kappa + renormalised delta_s",
+     "kappa_delta_s_weighted_1_per_m": 64.13146241427407,
+     "kappa_rel_error_pct": 28.262924828548137,
+     "kappa_within_15pct": false,
+     "cut_force_ratio": 1.4706059130564622,
+     "cut_force_rel_error_pct": 47.06059130564621,
+     "cut_force_within_15pct": false,
+     "delta_s_integral_dn": 1.0,
+     "inward_fraction": 1.0,
+     "cos_band_median": 0.999285285223523,
+     "normal_angle_err_mean_deg": 2.437764404026144,
+     "normal_angle_err_p90_deg": 4.858283698546142,
+     "n_band": 102
+    }
+   ],
+   "attribution": [
+    {
+     "group": "c<0.90",
+     "n": 43,
+     "kappa_mean_1_per_m": 59.73097867233985,
+     "kappa_rel_error_pct": 19.461957344679703,
+     "delta_s_mean": 161.04524901775991,
+     "delta_s_share_of_band": 0.6556742823039297,
+     "force_share_of_band": 0.609347791484262,
+     "normal_angle_err_mean_deg": 2.1495057223213374
+    },
+    {
+     "group": "0.90<=c<0.99",
+     "n": 28,
+     "kappa_mean_1_per_m": 63.78127897880539,
+     "kappa_rel_error_pct": 27.562557957610778,
+     "delta_s_mean": 90.91377205824692,
+     "delta_s_share_of_band": 0.2410235535871604,
+     "force_share_of_band": 0.24051958897320957,
+     "normal_angle_err_mean_deg": 2.4453235726535705
+    },
+    {
+     "group": "c>=0.99",
+     "n": 31,
+     "kappa_mean_1_per_m": 97.13840399526092,
+     "kappa_rel_error_pct": 94.27680799052183,
+     "delta_s_mean": 35.19459316013188,
+     "delta_s_share_of_band": 0.10330216410891012,
+     "force_share_of_band": 0.15013261954252835,
+     "normal_angle_err_mean_deg": 2.8307794553725545
+    }
+   ],
+   "selfcheck_default_matches_local": 0.0
+  },
+  {
+   "dx_m": 0.002,
+   "h_m": 0.0026000000000000003,
+   "n_particles": 362,
+   "variants": [
+    {
+     "label": "V0 baseline (m2447: kappa from sharp colour)",
+     "kappa_delta_s_weighted_1_per_m": 61.09665621713912,
+     "kappa_rel_error_pct": 22.19331243427824,
+     "kappa_within_15pct": false,
+     "cut_force_ratio": 1.0766010735040765,
+     "cut_force_rel_error_pct": 7.660107350407652,
+     "cut_force_within_15pct": true,
+     "delta_s_integral_dn": 0.7509820285052726,
+     "inward_fraction": 1.0,
+     "cos_band_median": 0.9997157597673402,
+     "normal_angle_err_mean_deg": 1.668746696264348,
+     "normal_angle_err_p90_deg": 3.307286867191788,
+     "n_band": 165
+    },
+    {
+     "label": "V1 control (div n, exact radial normal)",
+     "kappa_delta_s_weighted_1_per_m": 57.45966132451088,
+     "kappa_rel_error_pct": 14.919322649021765,
+     "kappa_within_15pct": true,
+     "cut_force_ratio": 0.9920893613402199,
+     "cut_force_rel_error_pct": 0.7910638659780145,
+     "cut_force_within_15pct": true,
+     "delta_s_integral_dn": 0.7509820285052726,
+     "inward_fraction": 1.0,
+     "cos_band_median": 0.9997157597673402,
+     "normal_angle_err_mean_deg": 1.668746696264348,
+     "normal_angle_err_p90_deg": 3.307286867191788,
+     "n_band": 165
+    },
+    {
+     "label": "V2 default (kappa from smoothed colour, shipped)",
+     "kappa_delta_s_weighted_1_per_m": 57.08007408580339,
+     "kappa_rel_error_pct": 14.160148171606778,
+     "kappa_within_15pct": true,
+     "cut_force_ratio": 0.9972973424613024,
+     "cut_force_rel_error_pct": 0.2702657538697584,
+     "cut_force_within_15pct": true,
+     "delta_s_integral_dn": 0.7509820285052726,
+     "inward_fraction": 1.0,
+     "cos_band_median": 0.9997157597673403,
+     "normal_angle_err_mean_deg": 1.668746696264348,
+     "normal_angle_err_p90_deg": 3.307286867191788,
+     "n_band": 165
+    },
+    {
+     "label": "V3 candidate + delta_s renormalised",
+     "kappa_delta_s_weighted_1_per_m": 57.08007408580341,
+     "kappa_rel_error_pct": 14.16014817160682,
+     "kappa_within_15pct": true,
+     "cut_force_ratio": 1.3279909566495047,
+     "cut_force_rel_error_pct": 32.79909566495047,
+     "cut_force_within_15pct": false,
+     "delta_s_integral_dn": 1.0,
+     "inward_fraction": 1.0,
+     "cos_band_median": 0.9997157597673402,
+     "normal_angle_err_mean_deg": 1.668746696264348,
+     "normal_angle_err_p90_deg": 3.307286867191788,
+     "n_band": 165
+    },
+    {
+     "label": "V3b shipped kappa + renormalised delta_s",
+     "kappa_delta_s_weighted_1_per_m": 61.09665621713914,
+     "kappa_rel_error_pct": 22.193312434278283,
+     "kappa_within_15pct": false,
+     "cut_force_ratio": 1.4335909950427235,
+     "cut_force_rel_error_pct": 43.35909950427235,
+     "cut_force_within_15pct": false,
+     "delta_s_integral_dn": 1.0,
+     "inward_fraction": 1.0,
+     "cos_band_median": 0.9997157597673403,
+     "normal_angle_err_mean_deg": 1.668746696264348,
+     "normal_angle_err_p90_deg": 3.307286867191788,
+     "n_band": 165
+    }
+   ],
+   "attribution": [
+    {
+     "group": "c<0.90",
+     "n": 67,
+     "kappa_mean_1_per_m": 55.93388042287834,
+     "kappa_rel_error_pct": 11.867760845756678,
+     "delta_s_mean": 240.99093087459156,
+     "delta_s_share_of_band": 0.6553963636051178,
+     "force_share_of_band": 0.6002103225435974,
+     "normal_angle_err_mean_deg": 1.5368237280859876
+    },
+    {
+     "group": "0.90<=c<0.99",
+     "n": 43,
+     "kappa_mean_1_per_m": 59.30214311395936,
+     "kappa_rel_error_pct": 18.60428622791872,
+     "delta_s_mean": 131.82069694165668,
+     "delta_s_share_of_band": 0.23008090899819883,
+     "force_share_of_band": 0.22467589253801054,
+     "normal_angle_err_mean_deg": 1.6582874095341193
+    },
+    {
+     "group": "c>=0.99",
+     "n": 55,
+     "kappa_mean_1_per_m": 101.44971792348856,
+     "kappa_rel_error_pct": 102.89943584697711,
+     "delta_s_mean": 51.29800403245089,
+     "delta_s_share_of_band": 0.11452272739668326,
+     "force_share_of_band": 0.17511378491839194,
+     "normal_angle_err_mean_deg": 1.837630118034348
+    }
+   ],
+   "selfcheck_default_matches_local": 0.0
+  },
+  {
+   "dx_m": 0.0015,
+   "h_m": 0.0019500000000000001,
+   "n_particles": 642,
+   "variants": [
+    {
+     "label": "V0 baseline (m2447: kappa from sharp colour)",
+     "kappa_delta_s_weighted_1_per_m": 60.75481092869496,
+     "kappa_rel_error_pct": 21.509621857389916,
+     "kappa_within_15pct": false,
+     "cut_force_ratio": 1.0735187262810146,
+     "cut_force_rel_error_pct": 7.3518726281014635,
+     "cut_force_within_15pct": true,
+     "delta_s_integral_dn": 0.7391328039053593,
+     "inward_fraction": 1.0,
+     "cos_band_median": 0.9997337818358333,
+     "normal_angle_err_mean_deg": 1.881501838635448,
+     "normal_angle_err_p90_deg": 3.897762432272623,
+     "n_band": 228
+    },
+    {
+     "label": "V1 control (div n, exact radial normal)",
+     "kappa_delta_s_weighted_1_per_m": 55.44207067256512,
+     "kappa_rel_error_pct": 10.884141345130246,
+     "kappa_within_15pct": true,
+     "cut_force_ratio": 0.9641680393803034,
+     "cut_force_rel_error_pct": 3.5831960619696623,
+     "cut_force_within_15pct": true,
+     "delta_s_integral_dn": 0.7391328039053593,
+     "inward_fraction": 1.0,
+     "cos_band_median": 0.9997337818358333,
+     "normal_angle_err_mean_deg": 1.881501838635448,
+     "normal_angle_err_p90_deg": 3.897762432272623,
+     "n_band": 228
+    },
+    {
+     "label": "V2 default (kappa from smoothed colour, shipped)",
+     "kappa_delta_s_weighted_1_per_m": 55.15734696341328,
+     "kappa_rel_error_pct": 10.314693926826564,
+     "kappa_within_15pct": true,
+     "cut_force_ratio": 0.9688665010602462,
+     "cut_force_rel_error_pct": 3.113349893975381,
+     "cut_force_within_15pct": true,
+     "delta_s_integral_dn": 0.7391328039053593,
+     "inward_fraction": 1.0,
+     "cos_band_median": 0.9997337818358333,
+     "normal_angle_err_mean_deg": 1.881501838635448,
+     "normal_angle_err_p90_deg": 3.897762432272623,
+     "n_band": 228
+    },
+    {
+     "label": "V3 candidate + delta_s renormalised",
+     "kappa_delta_s_weighted_1_per_m": 55.157346963413296,
+     "kappa_rel_error_pct": 10.314693926826592,
+     "kappa_within_15pct": true,
+     "cut_force_ratio": 1.3108151822528267,
+     "cut_force_rel_error_pct": 31.081518225282668,
+     "cut_force_within_15pct": false,
+     "delta_s_integral_dn": 1.0000000000000002,
+     "inward_fraction": 1.0,
+     "cos_band_median": 0.9997337818358333,
+     "normal_angle_err_mean_deg": 1.881501838635448,
+     "normal_angle_err_p90_deg": 3.897762432272623,
+     "n_band": 228
+    },
+    {
+     "label": "V3b shipped kappa + renormalised delta_s",
+     "kappa_delta_s_weighted_1_per_m": 60.754810928694965,
+     "kappa_rel_error_pct": 21.50962185738993,
+     "kappa_within_15pct": false,
+     "cut_force_ratio": 1.4524030331340443,
+     "cut_force_rel_error_pct": 45.240303313404425,
+     "cut_force_within_15pct": false,
+     "delta_s_integral_dn": 1.0000000000000002,
+     "inward_fraction": 1.0,
+     "cos_band_median": 0.9997337818358331,
+     "normal_angle_err_mean_deg": 1.881501838635448,
+     "normal_angle_err_p90_deg": 3.897762432272623,
+     "n_band": 228
+    }
+   ],
+   "attribution": [
+    {
+     "group": "c<0.90",
+     "n": 89,
+     "kappa_mean_1_per_m": 54.70270423839935,
+     "kappa_rel_error_pct": 9.405408476798698,
+     "delta_s_mean": 319.1501536430789,
+     "delta_s_share_of_band": 0.6441453350714094,
+     "force_share_of_band": 0.5804451382604764,
+     "normal_angle_err_mean_deg": 1.736429583606748
+    },
+    {
+     "group": "0.90<=c<0.99",
+     "n": 62,
+     "kappa_mean_1_per_m": 55.9854391624735,
+     "kappa_rel_error_pct": 11.970878324946995,
+     "delta_s_mean": 173.32323931432316,
+     "delta_s_share_of_band": 0.2436953756592628,
+     "force_share_of_band": 0.2264326237919063,
+     "normal_angle_err_mean_deg": 1.9738591137974513
+    },
+    {
+     "group": "c>=0.99",
+     "n": 77,
+     "kappa_mean_1_per_m": 114.29944380881524,
+     "kappa_rel_error_pct": 128.59888761763048,
+     "delta_s_mean": 64.23115358199713,
+     "delta_s_share_of_band": 0.11215928926932776,
+     "force_share_of_band": 0.1931222379476174,
+     "normal_angle_err_mean_deg": 1.9748171586031118
+    }
+   ],
+   "selfcheck_default_matches_local": 0.0
+  },
+  {
+   "dx_m": 0.001,
+   "h_m": 0.0013000000000000002,
+   "n_particles": 1450,
+   "variants": [
+    {
+     "label": "V0 baseline (m2447: kappa from sharp colour)",
+     "kappa_delta_s_weighted_1_per_m": 62.35039083345459,
+     "kappa_rel_error_pct": 24.70078166690918,
+     "kappa_within_15pct": false,
+     "cut_force_ratio": 1.1215172438293894,
+     "cut_force_rel_error_pct": 12.151724382938944,
+     "cut_force_within_15pct": true,
+     "delta_s_integral_dn": 0.7336041710443906,
+     "inward_fraction": 1.0,
+     "cos_band_median": 0.999628791151693,
+     "normal_angle_err_mean_deg": 1.8931255287515778,
+     "normal_angle_err_p90_deg": 3.616390292131138,
+     "n_band": 354
+    },
+    {
+     "label": "V1 control (div n, exact radial normal)",
+     "kappa_delta_s_weighted_1_per_m": 53.41058425660824,
+     "kappa_rel_error_pct": 6.821168513216477,
+     "kappa_within_15pct": true,
+     "cut_force_ratio": 0.9514196520746397,
+     "cut_force_rel_error_pct": 4.858034792536026,
+     "cut_force_within_15pct": true,
+     "delta_s_integral_dn": 0.7336041710443906,
+     "inward_fraction": 1.0,
+     "cos_band_median": 0.9996287911516929,
+     "normal_angle_err_mean_deg": 1.8931255287515778,
+     "normal_angle_err_p90_deg": 3.616390292131138,
+     "n_band": 354
+    },
+    {
+     "label": "V2 default (kappa from smoothed colour, shipped)",
+     "kappa_delta_s_weighted_1_per_m": 53.46196236396987,
+     "kappa_rel_error_pct": 6.923924727939735,
+     "kappa_within_15pct": true,
+     "cut_force_ratio": 0.9514562412824532,
+     "cut_force_rel_error_pct": 4.854375871754679,
+     "cut_force_within_15pct": true,
+     "delta_s_integral_dn": 0.7336041710443906,
+     "inward_fraction": 1.0,
+     "cos_band_median": 0.9996287911516929,
+     "normal_angle_err_mean_deg": 1.8931255287515778,
+     "normal_angle_err_p90_deg": 3.616390292131138,
+     "n_band": 354
+    },
+    {
+     "label": "V3 candidate + delta_s renormalised",
+     "kappa_delta_s_weighted_1_per_m": 53.46196236396988,
+     "kappa_rel_error_pct": 6.923924727939763,
+     "kappa_within_15pct": true,
+     "cut_force_ratio": 1.2969613298789167,
+     "cut_force_rel_error_pct": 29.696132987891666,
+     "cut_force_within_15pct": false,
+     "delta_s_integral_dn": 1.0000000000000002,
+     "inward_fraction": 1.0,
+     "cos_band_median": 0.999628791151693,
+     "normal_angle_err_mean_deg": 1.8931255287515778,
+     "normal_angle_err_p90_deg": 3.616390292131138,
+     "n_band": 354
+    },
+    {
+     "label": "V3b shipped kappa + renormalised delta_s",
+     "kappa_delta_s_weighted_1_per_m": 62.3503908334546,
+     "kappa_rel_error_pct": 24.700781666909194,
+     "kappa_within_15pct": false,
+     "cut_force_ratio": 1.5287770818324944,
+     "cut_force_rel_error_pct": 52.87770818324944,
+     "cut_force_within_15pct": false,
+     "delta_s_integral_dn": 1.0000000000000002,
+     "inward_fraction": 1.0,
+     "cos_band_median": 0.999628791151693,
+     "normal_angle_err_mean_deg": 1.8931255287515778,
+     "normal_angle_err_p90_deg": 3.616390292131138,
+     "n_band": 354
+    }
+   ],
+   "attribution": [
+    {
+     "group": "c<0.90",
+     "n": 136,
+     "kappa_mean_1_per_m": 53.24301408170275,
+     "kappa_rel_error_pct": 6.486028163405506,
+     "delta_s_mean": 478.188782310397,
+     "delta_s_share_of_band": 0.6440381045831337,
+     "force_share_of_band": 0.552338859144095,
+     "normal_angle_err_mean_deg": 1.7753700046289091
+    },
+    {
+     "group": "0.90<=c<0.99",
+     "n": 94,
+     "kappa_mean_1_per_m": 54.27281061964462,
+     "kappa_rel_error_pct": 8.545621239289247,
+     "delta_s_mean": 256.3006094363804,
+     "delta_s_share_of_band": 0.23858919033555137,
+     "force_share_of_band": 0.21150797160967036,
+     "normal_angle_err_mean_deg": 1.89804238210513
+    },
+    {
+     "group": "c>=0.99",
+     "n": 124,
+     "kappa_mean_1_per_m": 141.24499385656787,
+     "kappa_rel_error_pct": 182.48998771313575,
+     "delta_s_mean": 95.58112937311111,
+     "delta_s_share_of_band": 0.117372705081315,
+     "force_share_of_band": 0.23615316924623458,
+     "normal_angle_err_mean_deg": 2.0185494566987474
+    }
+   ],
+   "selfcheck_default_matches_local": 0.0
+  }
+ ],
+ "verdicts": {
+  "shipped_kappa_error_pct": [
+   28.262924828548137,
+   22.19331243427824,
+   21.509621857389916,
+   24.70078166690918
+  ],
+  "control_exact_normal_kappa_error_pct": [
+   24.54749089785325,
+   14.919322649021765,
+   10.884141345130246,
+   6.821168513216477
+  ],
+  "candidate_smoothed_colour_kappa_error_pct": [
+   23.360195411128984,
+   14.160148171606778,
+   10.314693926826564,
+   6.923924727939735
+  ],
+  "monotone_convergence_of_shipped": false,
+  "control_converges_below_15pct": false,
+  "candidate_below_15pct_except_coarsest": true,
+  "delta_s_integral_dn": [
+   0.7545449895898849,
+   0.7509820285052726,
+   0.7391328039053593,
+   0.7336041710443906
+  ],
+  "delta_s_deficit_pct": [
+   24.54550104101151,
+   24.90179714947274,
+   26.08671960946407,
+   26.63958289556094
+  ],
+  "saturated_group": {
+   "dx_m_checked": 0.001,
+   "group": "c>=0.99",
+   "n": 124,
+   "kappa_rel_error_pct": 182.48998771313575,
+   "delta_s_share_of_band": 0.117372705081315,
+   "force_share_of_band": 0.23615316924623458,
+   "normal_angle_err_mean_deg": 2.0185494566987474
+  },
+  "joint_fix": {
+   "kappa_error_pct": [
+    23.360195411128984,
+    14.16014817160682,
+    10.314693926826592,
+    6.923924727939763
+   ],
+   "cut_force_ratio": [
+    1.4046440154870956,
+    1.3279909566495047,
+    1.3108151822528267,
+    1.2969613298789167
+   ],
+   "cut_force_within_15pct": [
+    false,
+    false,
+    false,
+    false
+   ]
+  },
+  "conclusion": "The residual curvature error is systematic, not resolution-limited: it plateaus at +21..+28 % between dx = 3 mm and 1 mm for the shipped estimator, while the same MLS divergence fed with the exact radial normal converges to +6.8 %.  The bias therefore lives in the estimated normal field, and it is carried by the saturated (c >= 0.99) inner-shell particles whose normal angle error (~2 deg) is amplified by |div n| ~ 1/dx.  A one-pass Shepard smoothing of the colour field, used for the curvature only, brings the criterion to +14.2/+10.3/+6.9 % at dx = 2/1.5/1 mm while the cut-force identity stays within 15 %; the residual delta_s normalisation deficit (int delta_s dn = 0.75) is what keeps the two errors partially cancelling in the assembled force."
+ }
+}

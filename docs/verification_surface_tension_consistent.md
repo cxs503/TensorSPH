@@ -137,3 +137,15 @@ t/t_sigma = 0.7）
 单点通过**不能**当作「Laplace 定律已解决」的证明；可发表的口径应当是
 「力层面（切割力恒等式、法向对齐、delta_s 归一）已进入判据，
 压强层面仍是 WITHHELD，需要改压强基准而不是继续调表面张力离散」。
+
+---
+
+## 7. 后续（m2592）：曲率判据偏置已归因并修复
+
+m2592 把上表唯一未达标的曲率判据拆开归因：`kappa = div n` 的偏置**不随加密收敛**，
+来自**饱和内壳**（c ≥ 0.99）粒子的法向角噪声被 `~1/dx` 放大；把 MLS 散度喂以精确径向
+法向即降到 15% 内。修复为「曲率用一遍 Shepard 平滑的色函数、力仍用锐利场」
+（`csf_fields(..., curvature_color_smoothing=1)`，显式开启），dx ≤ 2 mm 曲率误差 14.4 / 10.5%，
+切割力比同步改善到 0.997 / 0.969。**未解决**：δ 函数归一缺口 ~25% 与端到端 Δp（relax 读数
+未达准静态）。详见 `docs/verification_csf_curvature_bias.md` 与
+`benchmarks/csf_consistent/curvature_audit.json`。

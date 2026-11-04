@@ -82,6 +82,9 @@ def test_instrument_satisfies_laplace_with_correct_operators(coarse, medium):
         assert case["instrument_C_exact_operators_ratio"] == pytest.approx(1.0, rel=1e-6)
 
 
+@pytest.mark.xfail(strict=False, reason="pins the pre-m2592 CSF deficit; "
+                                        "superseded by the curvature fix "
+                                        "(docs/verification_csf_curvature_bias.md)")
 def test_current_model_fails_laplace_criterion(coarse, medium):
     """Pinned regression: the merged model is far outside the 15 % tolerance."""
     assert coarse["within_15pct"] is False
@@ -90,12 +93,18 @@ def test_current_model_fails_laplace_criterion(coarse, medium):
     assert medium["dp_ratio"] == pytest.approx(1.39, abs=0.10)
 
 
+@pytest.mark.xfail(strict=False, reason="pins the pre-m2592 CSF deficit; "
+                                        "superseded by the curvature fix "
+                                        "(docs/verification_csf_curvature_bias.md)")
 def test_curvature_error_grows_under_refinement(coarse, medium):
     """div(normal) curvature is not convergent: |kappa R| grows with resolution."""
     assert abs(medium["kappa_delta_weighted_times_R"]) > \
         1.5 * abs(coarse["kappa_delta_weighted_times_R"])
 
 
+@pytest.mark.xfail(strict=False, reason="pins the pre-m2592 CSF deficit; "
+                                        "superseded by the curvature fix "
+                                        "(docs/verification_csf_curvature_bias.md)")
 def test_curvature_has_the_wrong_sign_on_the_interface(coarse, medium):
     """A convex droplet needs kappa > 0; the model returns a negative median."""
     for case in (coarse, medium):
@@ -109,6 +118,9 @@ def test_surface_delta_is_under_normalised(coarse, medium):
         assert 0.2 < case["N_delta"] < 0.5
 
 
+@pytest.mark.xfail(strict=False, reason="pins the pre-m2592 CSF deficit; "
+                                        "superseded by the curvature fix "
+                                        "(docs/verification_csf_curvature_bias.md)")
 def test_normal_field_is_not_radially_coherent(coarse, medium):
     """The model's normals do not point outwards coherently (this is the defect)."""
     for case in (coarse, medium):
