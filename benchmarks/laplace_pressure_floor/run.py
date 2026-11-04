@@ -180,7 +180,10 @@ def radial_profile(pos, values, n_bins: int = 12):
 
 def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
           calibrate_mass: bool = True, t_end_over_t_sigma: float = 1.5,
-          max_steps: int = 4000, sample_every: int = 50):
+          max_steps: int = 4000, sample_every: int = 50,
+          free_surface: bool = False,
+          free_surface_rho_ratio: float | None = None,
+          free_surface_layers: int | None = None):
     """Advance the drop and read ``Delta p`` with three definitions.
 
     ``absolute``  ``p_core - 0``  (Tait is normalised at ``rho0``; the vacuum is
@@ -192,7 +195,11 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     cfg = Config(dx=dx, h_factor=H_FACTOR, rho0=RHO0, sound_speed=c0,
                  gamma=GAMMA, gravity=0.0, viscosity=VISCOSITY,
                  surface_tension_coefficient=SIGMA, csf_scheme="consistent",
-                 csf_curvature=scheme)
+                 csf_curvature=scheme, free_surface_pressure=free_surface,
+                 **(dict() if free_surface_rho_ratio is None
+                    else {"free_surface_rho_ratio": free_surface_rho_ratio}),
+                 **(dict() if free_surface_layers is None
+                    else {"free_surface_layers": free_surface_layers}))
     h = cfg.h_factor * cfg.dx
     dt = float(stable_dt(cfg))
     t_end = t_end_over_t_sigma * T_SIGMA
@@ -257,6 +264,9 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
         "dx_m": dx, "h_m": h, "n_particles": int(pos.shape[0]),
         "sound_speed": c0, "curvature_scheme": scheme,
         "mass_calibrated": calibrate_mass,
+        "free_surface_pressure": bool(free_surface),
+        "free_surface_rho_ratio": cfg.free_surface_rho_ratio,
+        "free_surface_layers": cfg.free_surface_layers,
         "lattice_bias": bias, "lattice_bias_after_calibration": bias_after,
         "dt_s": dt, "steps": steps, "t_end_s": t_end,
         "t_over_t_sigma": t_end / T_SIGMA,
@@ -269,6 +279,8 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
             "rho_core_rel_std": float((rho[r < 0.5] / RHO0 - 1.0).std()),
             "rho_shell_0p80_0p95_over_rho0": float(
                 rho[(r >= 0.80) & (r < 0.95)].mean() / RHO0),
+            "shell_fraction": float(
+                (rho / RHO0 < 0.99).to(torch.float64).mean()),
             "compression_required": (1.0 + DP_ANALYTIC / (RHO0 * c0 ** 2 / GAMMA))
             ** (1.0 / GAMMA) - 1.0,
         },

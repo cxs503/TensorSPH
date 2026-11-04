@@ -9,10 +9,12 @@ the pressure closure, the EOS or the measurement definitions cannot slip
 through unnoticed.
 
 The last test is ``xfail(strict=True)``: it states the acceptance criterion for
-the still-open P0 (free-surface pressure closure, see
-``docs/verification_laplace_pressure_floor.md`` §7).  When that work lands the
-test turns into an ``xpass`` and the suite fails on purpose, forcing the
-verification record to be updated instead of drifting.
+the P0 free-surface pressure closure (see
+``docs/verification_laplace_pressure_floor.md`` §7). The closure now exists and
+is verified in ``benchmarks/laplace_pressure_closure/``
+(``docs/verification_free_surface_pressure_closure.md``), but it is *opt-in*:
+this report is the closure-OFF record, so the xfail remains a valid statement
+about the default path rather than a to-do for a future refactor.
 """
 from __future__ import annotations
 
@@ -132,10 +134,14 @@ def test_residual_is_not_explained_by_the_eos_noise_floor(report):
     assert worst and min(worst) > 0.15
 
 
-@pytest.mark.xfail(strict=True, reason="free-surface pressure closure (P0) not "
-                                      "implemented: tait_pressure is clamped at "
-                                      "p >= 0 across the deficit shell, so the "
-                                      "interior settles at ~0.57 sigma/R")
+@pytest.mark.xfail(strict=True, reason="This report is the closure-OFF (before) "
+                                      "record and must stay so: tait_pressure is "
+                                      "clamped at p >= 0 across the deficit shell, so "
+                                      "the interior settles at ~0.57 sigma/R. The P0 "
+                                      "closure is implemented and verified separately "
+                                      "in benchmarks/laplace_pressure_closure/ "
+                                      "(docs/verification_free_surface_pressure_closure.md); "
+                                      "it is opt-in, so this xfail stays valid.")
 def test_laplace_jump_within_15pct(report):
     """Acceptance criterion for the open P0: every recorded case inside 15 %."""
     for run in report["runs"]:

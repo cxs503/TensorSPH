@@ -14,6 +14,7 @@ from .droplet_impact import (
     density_from_neighbor_pairs,
     diffusion_dt_limit,
     drop_wall_wall_pairs,
+    free_surface_pressure_closure,
     evaluate_acceptance,
     gravity_dt_limit,
     hydrostatic_density,
