@@ -98,6 +98,14 @@ class Config:
     fail_fast: bool = True
     pair_skin_factor: float = 0.25
     hydrostatic_init: bool = False
+    # Divide the lattice kernel-sum bias out of the initial particle mass
+    # (tensorsph.initial_density). Off by default so every published number
+    # stays reproducible; on, the sum-density of every complete-support particle
+    # is rho0 to machine precision instead of rho0 (1 + 5.9e-3). That bias is a
+    # *uniform spurious pressure* B[(1+b)^gamma - 1] = 2.4 kPa at c0 = 20 m/s,
+    # 6.7x the 360 Pa Young-Laplace signal of a 2 cm water drop
+    # (docs/verification_initial_density_calibration.md).
+    calibrate_initial_mass: bool = False
     wall_friction: float = 0.0
     density_diffusion: float = 0.0
     # Adaptive time step. Off by default: a fixed step keeps every published
@@ -398,6 +406,10 @@ def make_particles(cfg: Config, device: torch.device):
     if cfg.hydrostatic_init:
         pool_mass = (hydrostatic_density(pool[:, 1], cfg) * dx * dx)
         mass = torch.cat((pool_mass, mass[pool.shape[0]:]), dim=0)
+    if cfg.calibrate_initial_mass:
+        # Both lattices here are the square lattice of ``cell_centres``.
+        from .initial_density import calibrate_mass
+        mass = calibrate_mass(mass, dx, cfg.h_factor * dx, kind="square")
     return positions, mass
 
 
