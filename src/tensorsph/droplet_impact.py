@@ -98,6 +98,13 @@ class Config:
     fail_fast: bool = True
     pair_skin_factor: float = 0.25
     hydrostatic_init: bool = False
+    # Calibrate the particle mass so the interior sum-density is exactly
+    # ``rho0``, removing the discrete kernel-sum bias of the lattice. Off by
+    # default so every published number stays reproducible bit for bit; the
+    # uncalibrated hexagonal drop otherwise starts pre-compressed at a
+    # spurious 2.4 kPa (6.7 x the Young-Laplace signal). See
+    # docs/verification_mass_calibration.md.
+    mass_calibration: bool = False
     wall_friction: float = 0.0
     density_diffusion: float = 0.0
     # Adaptive time step. Off by default: a fixed step keeps every published
@@ -363,6 +370,44 @@ def pool_lattice(cfg: Config, device: torch.device) -> torch.Tensor:
     return torch.stack((gx.reshape(-1), gy.reshape(-1)), dim=-1)
 
 
+def lattice_bias(positions: torch.Tensor, mass: torch.Tensor,
+                 cfg: Config, device: torch.device) -> float:
+    """Relative sum-density bias ``b`` of the interior plateau.
+
+    A regular lattice does not partition unity exactly: with the lattice-
+    constant mass the interior sum-density is ``rho0 (1 + b)`` with a small
+    ``b`` set by the kernel and the packing (measured ``+5.9e-3`` on the
+    hexagonal drop, ``-5.2e-5`` on the square pool).  ``b`` is read from the
+    particles whose sum-density sits on the interior plateau (within 0.1 %
+    of the maximum), where the kernel support is complete, so the free-
+    surface deficit does not contaminate the measurement.
+    """
+    h = cfg.h_factor * cfg.dx
+    pairs = cell_linked_pairs(positions, 2.0 * h)
+    rho = density_from_neighbor_pairs(positions, mass, h, pairs)
+    plateau = rho >= 0.999 * rho.max()
+    if not bool(plateau.any()):
+        return 0.0
+    return float(rho[plateau].mean() / cfg.rho0 - 1.0)
+
+
+def calibrate_mass(positions: torch.Tensor, mass: torch.Tensor,
+                    cfg: Config, device: torch.device) -> torch.Tensor:
+    """Scale the masses so the interior sum-density is exactly ``rho0``.
+
+    One pass of ``m -> m / (1 + b)`` with ``b = :func:`lattice_bias`` removes
+    the uniform lattice offset to machine precision.  With ``c0 = 20 m/s``
+    the uncalibrated hexagonal drop starts at a spurious pressure of
+    ``B[(1+b)^gamma - 1]`` = 2.4 kPa, i.e. 6.7 x the Young-Laplace signal of
+    the static-droplet benchmark; after calibration the initial pressure is
+    below ``1e-4 rho0 c0^2`` (m2971 C2).
+    """
+    b = lattice_bias(positions, mass, cfg, device)
+    if abs(b) < 1.0e-12:
+        return mass
+    return mass / (1.0 + b)
+
+
 def make_particles(cfg: Config, device: torch.device):
     """Generate a rectangular pool and a circular drop on a regular lattice.
 
@@ -398,6 +443,8 @@ def make_particles(cfg: Config, device: torch.device):
     if cfg.hydrostatic_init:
         pool_mass = (hydrostatic_density(pool[:, 1], cfg) * dx * dx)
         mass = torch.cat((pool_mass, mass[pool.shape[0]:]), dim=0)
+    if cfg.mass_calibration:
+        mass = calibrate_mass(positions, mass, cfg, device)
     return positions, mass
 
 
