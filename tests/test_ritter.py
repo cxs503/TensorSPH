@@ -13,6 +13,7 @@ import torch
 from tensorsph.dam_break import DamBreakConfig, run_case
 from tensorsph.ritter import (
     depth,
+    front_speed,
     front_x,
     particle_depth,
     profile_l1_error,
@@ -120,20 +121,11 @@ def test_profile_l1_error_is_zero_for_identical_profiles():
         profile_l1_error(x, h, torch.zeros_like(h))
 
 
-def test_solver_reproduces_the_ritter_front_in_the_shallow_limit():
-    """Fast regression guard: one coarse shallow run reproduces the Ritter front.
-
-    The tolerance is the *coarse* case's, not a claim of accuracy: ``dx = 0.02``
-    with five layers under-predicts the front by ~17 % of ``Z`` at this window
-    (measured: 0.4 a/sqrt(gH)). What this test pins is that the front is on the
-    right side of the analytic value, advances with the analytic speed to within
-    the discretisation error of the configuration, and that the run stays
-    conservative. The error ladder and the observed order live in
-    ``docs/benchmarks/ritter-shallow-limit.md``.
-    """
-    a, h0, dx = 1.0, 0.1, 0.02
+def _shallow_run(dx: float, window: float = 0.4):
+    """One dam-break run in Ritter's regime: ``H/a = 0.1``, dry bed, inviscid."""
+    a, h0 = 1.0, 0.1
     c0 = wave_speed(h0)
-    span = 0.4 * a / c0
+    span = window * a / c0
     cfg = DamBreakConfig(dx=dx, column_width=a, column_height=h0,
                          pool_width=a + 2.0 * c0 * span + 6 * dx,
                          tank_height=1.5 * h0, sound_speed=20.0 * c0,
@@ -141,13 +133,73 @@ def test_solver_reproduces_the_ritter_front_in_the_shallow_limit():
                          output_every=20)
     cfg.dt = cfg.dt_from_courant()
     cfg.steps = int(math.ceil(span / cfg.dt)) + 1
-    run = run_case(cfg)
+    return run_case(cfg), c0
+
+
+def test_front_speed_measure_ignores_the_release_transient():
+    """The estimator must return the developed slope, not the record's mean.
+
+    Synthetic trajectory: a slow release at ``0.2 * 2c0`` for the first fifth of
+    the record, then exactly ``2c0``. The whole-record mean is ``1.64 c0``; the
+    developed-stage estimator sees only the linear part.
+    """
+    t = torch.linspace(0.0, 1.0, 201, dtype=torch.float64)
+    z = torch.where(t < 0.2, 0.2 * t, 0.04 + 2.0 * (t - 0.2))
+    assert front_speed(t, z, fraction=0.4) == pytest.approx(2.0, rel=1e-12)
+    naive = float((z[-1] - z[0]) / (t[-1] - t[0]))
+    assert naive == pytest.approx(1.64, rel=1e-12)
+    with pytest.raises(ValueError):
+        front_speed(t, z[:-1])
+    with pytest.raises(ValueError):
+        front_speed(t, z, fraction=0.0)
+    with pytest.raises(ValueError):
+        front_speed(t[:1], z[:1])
+
+
+def test_solver_reproduces_the_ritter_front_in_the_shallow_limit():
+    """Regression guard: one coarse shallow run reproduces the Ritter front.
+
+    The tolerances are the *coarse* case's, not a claim of accuracy: ``dx = 0.02``
+    is five layers over ``H``, and the module's own error budget
+    (``docs/benchmarks/ritter-shallow-limit.md``) puts the front *position*
+    20.3 % below Ritter at the end of the ``0.8 a/c0`` window, -17.4 % at the
+    ``0.4 a/c0`` window used here.
+
+    The leading edge has two regimes and only one of them is a front speed:
+
+    * **release transient.** The initial vertical face is a delta function in
+      the shallow-water initial data, so the discrete leading edge needs a few
+      hundred steps to reach its developed speed; at ``dx = 0.02`` it covers
+      10 % of its analytic advance in the first 10 % of the window.
+    * **developed stage.** It then moves at a constant ``0.731 * 2c0``
+      (measured on the last 40 % of the record).
+
+    Averaging from ``t = 0`` mixes the two and reports ``0.62 * 2c0``. That is
+    also why a 25 % band on the *mean* speed cannot be met by any run that
+    satisfies the position assertion: the front starts at ``x = 0.99`` and
+    ``Z_rit(t_end) = 1.80``, so a position error of -17.4 % implies a mean
+    advance ratio of ``(0.826 * 1.80 - 0.99) / (1.80 - 0.99) = 0.61``. The two
+    assertions that used to sit side by side were arithmetically inconsistent;
+    this test now measures the developed stage (:func:`front_speed`) and pins
+    the *refinement law* instead.
+
+    What is asserted: the front is on the right side of the analytic value and
+    inside the measured band; its developed speed is a large fraction of
+    ``2c0`` and does not overshoot it (an overshoot is the signature of an
+    unstable run); and halving the spacing cuts the speed deficit by at least a
+    quarter (measured 0.268 -> 0.494 of ``2c0``, a factor 0.55). A stalled or
+    blowing-up front fails the band, a resolution-independent wrong speed fails
+    the refinement law.
+    """
+    run, c0 = _shallow_run(0.02)
     assert run.mass_drift == 0.0
     assert run.escaped == 0
     front = run.front[-1]
-    reference = front_x(run.simulated_time, h0, dam_x=a)
+    reference = front_x(run.simulated_time, 0.1, dam_x=1.0)
     relative = (front - reference) / reference
-    assert -0.25 < relative < 0.05, relative          # measured: about -0.17
-    # the discretisation error must not be an instability: the front still moves
-    speed = (run.front[-1] - run.front[0]) / (run.times[-1] - run.times[0])
-    assert speed == pytest.approx(2.0 * c0, rel=0.25)
+    assert -0.25 < relative < 0.05, relative          # measured: -0.174
+    ratio = front_speed(run.times, run.front) / (2.0 * c0)
+    assert 0.65 <= ratio <= 0.90, ratio               # measured: 0.731
+    coarse, _ = _shallow_run(0.04)
+    coarse_ratio = front_speed(coarse.times, coarse.front) / (2.0 * c0)
+    assert 1.0 - ratio <= 0.75 * (1.0 - coarse_ratio), (ratio, coarse_ratio)
