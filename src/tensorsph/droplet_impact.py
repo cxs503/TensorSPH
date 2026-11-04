@@ -129,6 +129,8 @@ class Config:
     # "mls" = div n with MLS-consistent operators, +25 % on a circle, kept for A/B;
     # "fit_circle" = algebraic circle fit, unstable on lattice data.
     csf_curvature: str = "fit_quadratic"
+    # Free-surface pressure extrapolation (Adami et al. 2012 §3.3).
+    free_surface_pressure_extrapolation: bool = False
 
 
 # --------------------------------------------------------------------------- #
@@ -571,6 +573,69 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
 
     pressure = tait_pressure(rho, cfg)
+
+    # Free-surface pressure closure (Adami et al. 2012 §3.3 + Laplace bias).
+    # Two mechanisms work together to establish the Young-Laplace jump sigma/R:
+    #
+    # 1. Laplace pressure bias: p_i = p0 + B[(rho_i/rho0)^gamma - 1] with
+    #    p0 = sigma / R_eff.  Without this bias the Tait EOS is normalised at
+    #    p(rho0) = 0, but a droplet in vacuum must satisfy p_core = sigma/R.
+    #    R_eff is estimated from the surface tension coefficient and the
+    #    characteristic curvature; for a droplet R_eff = 2*sigma / max(pressure).
+    #
+    # 2. Shell-pressure extrapolation: free-surface particles (rho/rho0 < 0.99)
+    #    get their pressure extrapolated from neighbours instead of using the
+    #    clamped Tait EOS, which would give p = 0.
+    if cfg.free_surface_pressure_extrapolation and cfg.surface_tension_coefficient > 0:
+        # Estimate characteristic radius from the surface tension and a
+        # reference pressure scale.  For a droplet the Laplace jump is sigma/R;
+        # we use the droplet radius from the config if available, otherwise
+        # fall back to a geometric estimate from the particle cloud.
+        # For the general case we use the surface tension coefficient to
+        # compute a reference pressure bias.
+        #
+        # Adami et al. (2012) use p0 = sigma / R where R is the droplet radius.
+        # Here we estimate R from the particle extent.
+        r_extent = torch.linalg.vector_norm(pos, dim=1).max()
+        R_eff = float(r_extent) if float(r_extent) > 0 else 0.01
+        p0 = cfg.surface_tension_coefficient / R_eff
+
+        # Add Laplace bias to the Tait pressure: p = p0 + B[(rho/rho0)^gamma - 1]
+        bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
+        ratio = (rho / cfg.rho0).clamp_min(0.01)
+        pressure = p0 + bulk * (ratio.pow(cfg.gamma) - 1.0)
+        # Still clamp to non-negative (tensile instability prevention)
+        pressure = pressure.clamp_min(0.0)
+
+        # Shell-pressure extrapolation for free-surface particles.
+        # Only fluid-fluid pairs contribute (wall pressure is handled separately).
+        fluid_only = (i < n) & (j < n)
+        fi = i[fluid_only]
+        fj = j[fluid_only]
+        w_fs = wij[fluid_only]
+
+        # Detect free-surface particles: rho/rho0 < 0.99
+        is_free_surface = (rho / cfg.rho0) < 0.99
+
+        if bool(is_free_surface.any()):
+            # Extrapolate pressure for free-surface particles:
+            # p_i = max(0, sum_j (p_j + rho_j g.r_ji) W_ij / sum_all W_ij)
+            dy_fs = -delta[fluid_only, 1]
+            body_fs = -cfg.gravity * dy_fs
+            source_fs = pressure[fj] + rho[fj] * body_fs
+
+            numerator_fs = torch.zeros(n, dtype=pos.dtype, device=pos.device)
+            denominator_fs = torch.zeros(n, dtype=pos.dtype, device=pos.device)
+            numerator_fs = numerator_fs.index_add(0, fi, source_fs * w_fs)
+            denominator_fs = denominator_fs.index_add(0, fi, w_fs)
+
+            # Add self-particle contribution to denominator
+            w_self = 10.0 / (7.0 * 3.141592653589793 * h * h)
+            denominator_fs = denominator_fs + w_self
+
+            p_extrap = (numerator_fs / denominator_fs.clamp_min(1.0e-30)).clamp_min(0.0)
+            pressure = torch.where(is_free_surface, p_extrap, pressure)
+
 
     if nw:
         bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
