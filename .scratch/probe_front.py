@@ -1,10 +1,12 @@
 """Quick probe: dam-break front rate vs the analytic Ritter front (not committed)."""
-import json, math, sys, time
+import math
+import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from tensorsph.dam_break import DamBreakConfig, run_case, ritter_front
+from tensorsph.dam_break import DamBreakConfig, run_case, ritter_front  # noqa: E402
 
 a = 0.2
 cfg = DamBreakConfig(dx=0.04, pool_width=2.0, column_width=a, sound_speed=25.0,
@@ -30,8 +32,10 @@ print("H = %.3f, sqrt(gH) = %.3f, 2sqrt(gH)/ (a*sqrt(2g/a)) = %.3f"
 # least-squares slope of za vs tau over tau in [0.5, 4]
 xs = [(t, z) for t, z in zip(tau, za) if 0.5 <= t <= 4.0]
 n = len(xs)
-sx = sum(x for x, _ in xs); sy = sum(y for _, y in xs)
-sxx = sum(x * x for x, _ in xs); sxy = sum(x * y for x, y in xs)
+sx = sum(x for x, _ in xs)
+sy = sum(y for _, y in xs)
+sxx = sum(x * x for x, _ in xs)
+sxy = sum(x * y for x, y in xs)
 slope = (n * sxy - sx * sy) / (n * sxx - sx * sx)
 print("slope d(Z/a)/d tau = %.4f (n=%d)" % (slope, n))
 print("front speed / sqrt(gH) = %.4f" % (slope * a * math.sqrt(2 * cfg.gravity / a)
