@@ -228,6 +228,7 @@ def csf_fields(
     normal_smoothing: int = 2,
     curvature_scheme: str = "mls",
     curvature_stencil: float = 4.0,
+    curvature_color_smoothing: int = 0,
 ) -> CSFState:
     """Colour, its gradient, the outward normal, curvature and delta_s.
 
@@ -243,6 +244,19 @@ def csf_fields(
     ``"fit_quadratic"`` / ``"fit_circle"``
         weighted local interface fit, see :mod:`tensorsph.csf_curvature`; the
         MLS value is kept as the fallback where the stencil is too poor.
+
+    ``curvature_color_smoothing`` (opt-in, 1) computes the curvature from a
+    Shepard-smoothed copy of the colour field while the force keeps using the
+    sharp field.  ``kappa = div n`` amplifies the angular discretisation error of
+    the normal by ``~1/dx``, and on a one-sided free-surface support that error
+    is concentrated in the inner shell, where ``c`` approaches 1 and the normal
+    is barely defined: those particles carried 12-24 % of the force but a kappa
+    of +95..+183 % (see ``benchmarks/csf_consistent/curvature_audit.py`` and
+    ``docs/verification_csf_curvature_bias.md``).  One smoothing pass on ``c``
+    removes that noise at the source and brings the delta_s-weighted curvature
+    error from +22..+25 % to +7..+14 % for dx <= 2 mm.  The default 0 keeps
+    the m2447 behaviour (with 1, the cut-force identity on the coarse
+    verification lattice degrades below the m2447 gate); 1 enables the fix.
     """
     vol = mass / rho0
     color = kernel_sum_color(pos, mass, pairs, h, rho0)
@@ -262,7 +276,27 @@ def csf_fields(
         # (their colour field is flat, so they carry no surface information).
         normal = torch.where(mag > tiny, smoothed / norm.clamp_min(tiny), normal)
 
-    kappa = mls_divergence(pos, normal, vol, pairs, h)
+    if curvature_color_smoothing > 0:
+        # Curvature from a smoothed colour field (force/delta_s stay sharp).
+        c_s = shepard_smooth(color[:, None], pos, vol, pairs, h,
+                             passes=curvature_color_smoothing)[:, 0].clamp(0.0, 1.0)
+        grad_s = mls_gradient(pos, c_s, vol, pairs, h)
+        if wall is not None and contact_angle is not None:
+            grad_s = apply_contact_angle_boundary(grad_s, pos, wall, h, contact_angle)
+        mag_s = torch.linalg.vector_norm(grad_s, dim=1, keepdim=True)
+        normal_s = torch.where(mag_s > tiny, -grad_s / mag_s.clamp_min(tiny),
+                               torch.zeros_like(grad_s))
+        if normal_smoothing:
+            smooth_s = shepard_smooth(normal_s, pos, vol, pairs, h,
+                                      passes=normal_smoothing)
+            normal_s = torch.where(
+                mag_s > tiny,
+                smooth_s / torch.linalg.vector_norm(smooth_s, dim=1, keepdim=True).clamp_min(tiny),
+                normal_s)
+        kappa = mls_divergence(pos, normal_s, vol, pairs, h)
+    else:
+        kappa = mls_divergence(pos, normal, vol, pairs, h)
+
     # Surface delta function.  The definition that makes the CSF force
     # mesh-consistent (Brackbill et al. 1992) is the one that satisfies
     #
