@@ -177,6 +177,28 @@ After a surface-tension formulation is implemented:
 
 **Gate:** no claim of capillary fidelity until the quantitative comparison is documented. **Status: measured and failed.** The merged CSF model gives `dp_model/dp_theory` = 0.43 / 1.39 / 3.20 at `R/dx` = 10 / 20 / 40 (hexagonal lattice) and 0.23 / 0.62 / 1.55 (square), i.e. no convergence and nothing inside +/-15 %. Instrument checks show the CSF *form* would satisfy the Laplace law exactly with correct operators, so the defect is in the colour field (`int\|grad c\|dr` = 0.31-0.42 vs 1) and in the `div(n)` curvature (wrong sign, divergent). See [`docs/benchmarks/laplace-droplet.md`](benchmarks/laplace-droplet.md). The oscillating-droplet half of B3 is still open.
 
+### B4b — Viscous operator and no-slip wall (plane Poiseuille channel)
+
+- Channel of height `H` driven by a uniform body force, periodic in `x`, no-slip
+  walls, integrated from rest to a statistically steady state.
+- Report the peak velocity against `g H^2/(8 nu)`, the wall shear against
+  `rho g H/2`, the effective viscosity read from the profile curvature, and the
+  position of the effective no-slip plane.
+- Negative control: `wall_friction = 0` leaves the body force unbalanced, so the
+  column must accelerate rigidly as `u = g t` with a flat profile.
+
+**Gate:** all key quantities within 3 %. **Status: measured and failing.** The
+peak velocity reaches the analytic value to 1.5 % at `H/dx = 16`, but the wall
+shear is 42-50 % low at every resolution, the fluid slips at the wall by 31-49 %
+of `u_max`, and the effective no-slip plane sits `0.91 dx` outside the boundary
+because `wall_friction` blends viscosity against wall particles placed one
+spacing out. The peak agreement is the cancellation of those two defects. The
+free-slip control reproduces `u = g t` to 10 %, so the driving force and the
+harness are sound. See
+[`verification_poiseuille_channel.md`](verification_poiseuille_channel.md).
+Consequence: keep `wall_friction = 0` as the default, and treat mirrored/ghost
+particles as the acceptance test for any future no-slip claim.
+
 ### B4 — Droplet impact on a pool
 
 Only after B1–B3 are understood:
