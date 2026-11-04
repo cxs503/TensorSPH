@@ -1,5 +1,7 @@
 # 表面张力曲率算子的解析核验：div n → 局部界面拟合
 
+> **历史口径警示（由 `docs/verification_ledger.md` 机器校验）**：本文中的压差数字使用 `p_core − p(0.80–0.95R)` 口径，`benchmarks/laplace_pressure_floor` 已证明该口径把自由面密度亏缺带当作流体压强来读，单口径本身就贡献约 −55 个百分点的偏差。**本文数字只代表当时离散方案的相对状态，不得作为当前精度引用**；当前可引用值见 `docs/verification_ledger.md`。
+
 **范围**: `src/tensorsph/csf_curvature.py`（新增）、`csf_consistent.py`（接入）、`droplet_impact.py`（`csf_curvature` 开关）
 **基准**: 2-D 静止液滴的 Young-Laplace 定律与切割力恒等式；本文件所有数字由
 `benchmarks/csf_curvature_fit/run.py` 写出的 `validation_report.json` 程序化注入，无手抄。

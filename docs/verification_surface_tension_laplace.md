@@ -1,5 +1,7 @@
 # 验证欠账复核：CSF 表面张力模型 vs Young–Laplace 解析解
 
+> **历史口径警示（由 `docs/verification_ledger.md` 机器校验）**：本文中的压差数字使用 `p_core − p(0.80–0.95R)` 口径，`benchmarks/laplace_pressure_floor` 已证明该口径把自由面密度亏缺带当作流体压强来读，单口径本身就贡献约 −55 个百分点的偏差。**本文数字只代表当时离散方案的相对状态，不得作为当前精度引用**；当前可引用值见 `docs/verification_ledger.md`。
+
 **仓库**: TensorSPH ｜ **分支**: `agent/m2174` ｜ **工件**: `benchmarks/laplace_law/` ｜ **测试**: `tests/test_laplace_law.py`
 
 **结论（先给判定）**: 表面张力模块（CSF，m277 合入）**未通过**解析验证。Young–Laplace 压差实测偏差 **-93.6%**（阈值 15%），曲率估计偏差 **+1148%** 量级，切割面力恒等式偏差 **54–55%** 且随分辨率不收敛，静滴残余伪流达到毛细速度的 **0.37 倍**（文献判据 < 0.1）。证据等级应从「已实现」下调为 **WITHHELD（实现存在、解析验证不通过）**。
