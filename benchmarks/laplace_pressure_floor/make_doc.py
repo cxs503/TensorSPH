@@ -10,21 +10,24 @@ value is typed by hand.  Run order::
 from __future__ import annotations
 
 import json
-import math
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 DOC = ROOT / "docs" / "verification_laplace_pressure_floor.md"
 
-TEMPLATE = """# 端到端 Young–Laplace 压差为什么一直测不到：误差源分解
+TEMPLATE = ("""# 端到端 Young–Laplace 压差为什么一直测不到：误差源分解
 
-**仓库**: TensorSPH ｜ **工件**: `benchmarks/laplace_pressure_floor/` ｜ **测试**: `tests/test_laplace_pressure_floor.py`
+**仓库**: TensorSPH ｜ **工件**: `benchmarks/laplace_pressure_floor/` ｜ **测试**:"""
+""" `tests/test_laplace_pressure_floor.py`
 
 **结论（先给判定）**: 连续三轮验证（legacy CSF → consistent CSF → 拟合曲率）都把端到端
-Young–Laplace 压差判为 WITHHELD（{e_hist}），并把原因归给「表面张力离散/压强基准」。本单把它拆开实测，
-发现原来的失败里有 **{c1_mean:.0f} 个百分点是测量口径造成的**（把自由面密度亏缺带当成流体压强来读），
-剩下一段 **{res_mean:.0f}% 的残差与 c0、与分辨率、与曲率算子都无关**（{res_min:.0f}%…{res_max:.0f}%），
+Young–Laplace 压差判为 WITHHELD（{e_hist}），并把原因归给「表面张力离散/压强基准」"""
+"""。本单把它拆开实测，
+发现原来的失败里有 **{c1_mean:.0f}"""
+""" 个百分点是测量口径造成的**（把自由面密度亏缺带当成流体压强来读），
+剩下一段 **{res_mean:.0f}% 的残差与 c0、与分辨率"""
+"""、与曲率算子都无关**（{res_min:.0f}%…{res_max:.0f}%），
 它是一个**压强闭合**问题：Tait 压强钳在 p≥0，而自由面壳层密度亏缺 −{def085:.0f}%（0.85–0.95R）到
 −{def095:.0f}%（0.95–1.05R），壳层粒子全部落在 p=0 上，界面区无法承载 `sigma/R`，液滴内部只压到
 解析所需的 **{ratio_mean:.2f}** 倍。**换曲率算子/换 c0/提分辨率都救不了它**——这是本单最硬的结论。
@@ -46,7 +49,8 @@ Tait 状态方程以 `rho0` 为压强零点（`p(rho0) = 0`），真空就是 `p
 | 液滴半径 R | {R:g} m | 静止自由液滴 |
 | 表面张力系数 sigma | {sigma:g} N/m | 10× 水，压缩毛细时间 |
 | 参考密度 rho0 | {rho0:g} kg/m³ | 弱可压 Tait，gamma = {gamma:g} |
-| 状态方程 | `p = B[(rho/rho0)^gamma - 1]`，`B = rho0 c0^2/gamma`，钳 p>=0 | `droplet_impact.tait_pressure` |
+| 状态方程 | `p = B[(rho/rho0)^gamma - 1]`，`B = rho0 c0^2/gamma`，钳 p>=0 |"""
+""" `droplet_impact.tait_pressure` |
 | 平滑长度 | h = 1.3 dx | 三次样条核 |
 | 分辨率 | dx = {dx_a:g} / {dx_b:g} m（N = {n_a}/{n_b}） | 六方密排圆盘 |
 | 声速阶梯 | c0 = {c0_list} m/s | 本单的判别器 |
@@ -81,7 +85,8 @@ Tait 状态方程以 `rho0` 为压强零点（`p(rho0) = 0`），真空就是 `p
 
 判别逻辑：C4 预测残差随 c0 下降而下降（`~rho0 c0^2 sigma_rho`），C3 预测残差不随 c0 变。
 
-工具链：`benchmarks/laplace_pressure_floor/run.py`（自带 relax 循环，复用生产 RHS `droplet_impact.rhs`、
+工具链：`benchmarks/laplace_pressure_floor/run.py`（自带 relax 循环，复用生产 RHS"""
+""" `droplet_impact.rhs`、
 `csf_consistent` 表面张力，**不改 src/**）、matplotlib、pytest；本文所有数字由 `make_doc.py`
 从 `report.json` 注入。
 
@@ -95,21 +100,25 @@ Tait 状态方程以 `rho0` 为压强零点（`p(rho0) = 0`），真空就是 `p
 
 ### 3.2 四种口径的压差读数（质量校准后，窗口 {tend:g} t_sigma）
 
-| dx [m] | c0 [m/s] | 步数 | bandA 误差 | bandB 误差 | absolute 误差 | **tail-avg 误差** | 内部压缩/所需 | 动力学 `sigma_rho` | C4 预测噪声/信号 | 伪流 |
+| dx [m] | c0 [m/s] | 步数 | bandA 误差 | bandB 误差 | absolute 误差 | **tail-avg 误差** |"""
+""" 内部压缩/所需 | 动力学 `sigma_rho` | C4 预测噪声/信号 | 伪流 |
 |---|---|---|---|---|---|---|---|---|---|---|
 {rows_runs}
 
-解析值 `sigma/R = {dp:.1f} Pa`；判据 15%（平台标准 3%）。伪流判据 Adami 2012：`max|v|/sqrt(sigma/(rho R)) < 0.1`。
+解析值 `sigma/R = {dp:.1f} Pa`；判据 15%（平台标准 3%）。伪流判据 Adami 2012：`max|v"""
+"""|/sqrt(sigma/(rho R)) < 0.1`。
 
 ### 3.3 误差源分解
 
-| dx [m] | c0 [m/s] | C1 口径代价 | **残差（C1 之后）** | C4 预测噪声占比 | 压缩比（实际/所需） | 残差可否由 C4 解释？ |
+| dx [m] | c0 [m/s] | C1 口径代价 | **残差（C1 之后）** | C4 预测噪声占比 | 压缩比（实际/所需） |"""
+""" 残差可否由 C4 解释？ |
 |---|---|---|---|---|---|---|
 {rows_decomp}
 
 - **C1（口径）均值 {c1_mean:.0f} 个百分点**：前三轮的「-76%…-107%」里，一半以上是减掉了一个
   位于密度亏缺带的压强。这是**测量定义错误**，不是模型错误。
-- **C4 被证伪**：c0 从 {c0_hi:g} 降到 {c0_lo:g}，C4 预测的噪声占比从 {c4_hi:.0f}% 掉到 {c4_lo:.0f}%，
+- **C4 被证伪**：c0 从 {c0_hi:g} 降到 {c0_lo:g}，C4 预测的噪声占比从 {c4_hi:.0f}% 掉到"""
+""" {c4_lo:.0f}%，
   而实测残差只从 {res_hi:.0f}% 变到 {res_lo:.0f}%（{res_spread:.0f} 个百分点的波动，无单调趋势）。
 - **C3 被证成**：压缩比在全部 {n_runs} 个算例上为 **{ratio_mean:.2f} ± {ratio_std:.2f}**，
   对 c0（{c0_list}）与 dx（{dx_a:g}/{dx_b:g}）都不敏感——这正是「界面区压强恒为 0、
@@ -152,12 +161,15 @@ Tait 状态方程以 `rho0` 为压强零点（`p(rho0) = 0`），真空就是 `p
 
 1. **不要把「p_core - p_shell」当成 Laplace 压差**：单相粒子云在真空中，`p_out` 由 Tait 归一化
    （`p(rho0)=0`）决定而不是由某个壳层粒子给出；壳层位于密度亏缺带，读到的不是流体压强。
-2. **时间平均是必须的**：呼吸模态周期 ~ t_sigma，单快照的 absolute 读数在 {snap_lo:.0f}%…{snap_hi:.0f}% 之间摆，
+2. **时间平均是必须的**：呼吸模态周期 ~ t_sigma，单快照的 absolute 读数在"""
+""" {snap_lo:.0f}%…{snap_hi:.0f}% 之间摆，
    时间平均把散布压到 {res_spread:.0f} 个百分点以内。
-3. **初始格子的 std 是 1e-16 而不是「噪声地板」**：`rho/rho0-1 = +{bias:.5f}` 是核和归一化的系统偏置；
+3. **初始格子的 std 是 1e-16 而不是「噪声地板」**：`rho/rho0-1 = +{bias:.5f}`"""
+""" 是核和归一化的系统偏置；
    真正的 C4 噪声来自动力学（粒子离开格子后的求和密度抖动，实测 {std_lo:.1e}…{std_hi:.1e}）。
    用前者当噪声会得出「C4 不存在」的错误结论。
-4. **钳 p>=0 是有代价的**：它压掉了拉伸不稳定，但同时在自由面制造「p=0 墙」，压强梯度无法跨过亏缺带，
+4. **钳 p>=0 是有代价的**：它压掉了拉伸不稳定，但同时在自由面制造「p=0 墙」"""
+"""，压强梯度无法跨过亏缺带，
    这就是 C3。任何「加 Laplace 偏置 p0 = sigma/R」的补丁等于把答案塞进 EOS，本单不采用。
 5. **质量校准必须用核心区测偏置**：0.70R 以外核被自然截断，用那里测出的偏置会把亏缺一起校准进去。
 6. `/tmp` 里放探针脚本会被同机其它 agent 覆盖（本单实际踩到：`/tmp/probe.py` 被换成别人的脚本），
@@ -174,13 +186,14 @@ Tait 状态方程以 `rho0` 为压强零点（`p(rho0) = 0`），真空就是 `p
    色函数 `c < 0.99`）用内部邻域外推
    `p_i = max(0, sum_j (p_j + rho_j g·r_ji) W_ij / sum_j W_ij)`。
    验收判据（机器可裁）：本benchmark的 `absolute_time_average_tail` 在 c0={c0_hi:g} 与
-   c0={c0_lo:g}、dx={dx_a:g}/{dx_b:g} 四点上全部 **< 15%**，且 `tests/test_laplace_pressure_floor.py`
+   c0={c0_lo:g}、dx={dx_a:g}/{dx_b:g} 四点上全部 **< 15%**，且"""
+   """ `tests/test_laplace_pressure_floor.py`
    里 `xfail(strict=True)` 的 15% 用例自动转 xpass。
 2. **P1｜初始化质量校准（C2）**：`make_particles`/密度初始化按核心区实测核和做一次
    `m -> m/(1+b)`；验收：初始 `p_max` 相对 `rho0 c0^2` 的偏置 < 1e-4。
 3. **P2｜验证口径统一**：后续所有 Laplace/表面张力验证一律用「绝对压强 + 时间平均」，禁止
    `p_core - p_shell` 口径；本文件 §③.2 的 bandA 列只作历史对照保留。
-"""
+""")
 
 
 def fmt_pct(x: float, nd: int = 1) -> str:
@@ -224,7 +237,8 @@ def main():
     rows_runs = []
     for run in sorted(runs, key=lambda r: (r["dx_m"], -r["sound_speed"])):
         rows_runs.append(
-            "| {dx:g} | {c0:g} | {st} | {ba} | {bb} | {ab} | **{ta}** | {cr:.2f} | {sr:.1e} | {c4:.0%} | {vv:.3f} |"
+            "| {dx:g} | {c0:g} | {st} | {ba} | {bb} | {ab} | **{ta}** | {cr:.2f} | {sr:.1e} |"
+            " {c4:.0%} | {vv:.3f} |"
             .format(dx=run["dx_m"], c0=run["sound_speed"], st=run["steps"],
                     ba=fmt_pct(run["definition_bandA"]["rel_error_pct"]),
                     bb=fmt_pct(run["definition_bandB"]["rel_error_pct"]),
@@ -304,17 +318,22 @@ def main():
         "| 切割力恒等式 `F_cut/2sigma`（力的幅值） | 1.0 | 由 `docs/verification_surface_tension_"
         "curvature.md` 的 fit_quadratic 扫描：0.89–1.01 | 1.2–10.7% | 否 | 是 | 力层面 PASS |",
         "| 力方向中位 cos | 1.0 | 1.000 | 0.0% | 是 | 是 | PASS |",
-        "| 曲率 kappa（delta_s 加权） | {:.2f} 1/m | 50.43（dx=1.5mm, fit_quadratic） | +0.9% | 是 | 是 | PASS |"
+        "| 曲率 kappa（delta_s 加权） | {:.2f} 1/m | 50.43（dx=1.5mm, fit_quadratic） | +0.9% | 是 "
+        "| 是 | PASS |"
         .format(1.0 / R),
-        "| 初始化密度系统偏置 | 0 | {b:+.5f}（h=1.3dx） | {be:.2f}% of rho0 | 否 | 否 | 已定位（P1） |".format(
+        "| 初始化密度系统偏置 | 0 | {b:+.5f}（h=1.3dx） | {be:.2f}% of rho0 | 否 | 否 |"
+        " 已定位（P1） |".format(
             b=bias, be=100.0 * bias),
-        "| **Laplace 压差（绝对口径，时间平均）** | {dp:.1f} Pa | {best:.1f} Pa（{bdx:g} m, c0={bc:g}） | **{err:+.1f}%** | 否 | 否 | **WITHHELD** |"
+        "| **Laplace 压差（绝对口径，时间平均）** | {dp:.1f} Pa | {best:.1f} Pa（{bdx:g} m,"
+        " c0={bc:g}） | **{err:+.1f}%** | 否 | 否 | **WITHHELD** |"
         .format(dp=dp, best=best_val, bdx=best_run["dx_m"],
                 bc=best_run["sound_speed"], err=best_err),
-        "| Laplace 压差（历史 bandA 口径） | {dp:.1f} Pa | 见 §3.2 bandA 列 | −{ba:.0f}%…−{bb:.0f}% | 否 | 否 | 口径作废 |"
+        "| Laplace 压差（历史 bandA 口径） | {dp:.1f} Pa | 见 §3.2 bandA 列 | −{ba:.0f}%…−{bb:.0f}%"
+        " | 否 | 否 | 口径作废 |"
         .format(dp=dp, ba=abs(min(r["definition_bandA"]["rel_error_pct"] for r in runs)),
                 bb=abs(max(r["definition_bandA"]["rel_error_pct"] for r in runs))),
-        "| 伪流 `max|v|/sqrt(sigma/rhoR)` | < 0.1 (Adami) | {v:.3f}…{w:.3f} | — | — | 是 | PASS |".format(
+        "| 伪流 `max|v|/sqrt(sigma/rhoR)` | < 0.1 (Adami) | {v:.3f}…{w:.3f} | — | — | 是 | PASS "
+        "|".format(
             v=min(r["spurious_current"]["vmax_over_vref_final"] for r in runs),
             w=max(r["spurious_current"]["vmax_over_vref_final"] for r in runs)),
     ]

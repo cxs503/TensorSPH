@@ -1,4 +1,4 @@
-"""B2 dam-break reference audit: is the validation target real, and is the
+("""B2 dam-break reference audit: is the validation target real, and is the
 analytic reference implemented correctly?
 
 Two references are used by the shipped dam-break case:
@@ -29,9 +29,10 @@ This script audits both, without changing the solver:
 
 Usage::
 
-    python benchmarks/dam_break/reference_audit.py --json-out benchmarks/dam_break/reference_audit.json
+    python benchmarks/dam_break/reference_audit.py --json-out"""
+    """ benchmarks/dam_break/reference_audit.json
     python benchmarks/dam_break/reference_audit.py --sizes 0.04 --frictions 0,0.5,1 --plot
-"""
+""")
 from __future__ import annotations
 
 import argparse
