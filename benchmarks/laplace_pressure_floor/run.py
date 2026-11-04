@@ -80,6 +80,7 @@ RHO0 = 1000.0          # kg/m^3
 GAMMA = 7.0
 H_FACTOR = 1.3
 VISCOSITY = 0.01       # m^2/s
+CLOSURE_RATIO = 0.99
 DP_ANALYTIC = SIGMA / RADIUS                      # 360 Pa
 T_SIGMA = math.sqrt(RHO0 * RADIUS ** 3 / SIGMA)   # 0.0333 s
 
@@ -180,7 +181,8 @@ def radial_profile(pos, values, n_bins: int = 12):
 
 def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
           calibrate_mass: bool = True, t_end_over_t_sigma: float = 1.5,
-          max_steps: int = 4000, sample_every: int = 50):
+          max_steps: int = 4000, sample_every: int = 50,
+          free_surface_ratio: float = 0.0):
     """Advance the drop and read ``Delta p`` with three definitions.
 
     ``absolute``  ``p_core - 0``  (Tait is normalised at ``rho0``; the vacuum is
@@ -192,7 +194,8 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     cfg = Config(dx=dx, h_factor=H_FACTOR, rho0=RHO0, sound_speed=c0,
                  gamma=GAMMA, gravity=0.0, viscosity=VISCOSITY,
                  surface_tension_coefficient=SIGMA, csf_scheme="consistent",
-                 csf_curvature=scheme)
+                 csf_curvature=scheme,
+                 free_surface_pressure_ratio=free_surface_ratio)
     h = cfg.h_factor * cfg.dx
     dt = float(stable_dt(cfg))
     t_end = t_end_over_t_sigma * T_SIGMA
@@ -257,6 +260,7 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
         "dx_m": dx, "h_m": h, "n_particles": int(pos.shape[0]),
         "sound_speed": c0, "curvature_scheme": scheme,
         "mass_calibrated": calibrate_mass,
+        "free_surface_pressure_ratio": free_surface_ratio,
         "lattice_bias": bias, "lattice_bias_after_calibration": bias_after,
         "dt_s": dt, "steps": steps, "t_end_s": t_end,
         "t_over_t_sigma": t_end / T_SIGMA,
@@ -292,15 +296,33 @@ def main():
                     default=[20.0, 10.0, 5.0])
     ap.add_argument("--t-end", type=float, default=1.5,
                     help="window length in capillary times")
+    ap.add_argument("--closure-ratio", type=float, default=CLOSURE_RATIO,
+                    help="free_surface_pressure_ratio for the closure runs; "
+                         "0 skips the closure sweep")
+    ap.add_argument("--skip-baseline", action="store_true",
+                    help="reuse the earlier report.json's clamp runs instead "
+                         "of recomputing them (they are unaffected by the "
+                         "closure, which is off when the ratio is 0)")
     args = ap.parse_args()
 
     dxs = [args.dx] if args.quick else [args.dx, 0.0015]
     c0s = [20.0, 5.0] if args.quick else list(args.sound_speeds)
 
+    prev = {}
+    if args.skip_baseline and (HERE / "report.json").exists():
+        prev = json.loads((HERE / "report.json").read_text())
+
     structures = [density_structure(dx, c0s) for dx in dxs]
     runs = []
     for dx in dxs:
         for c0 in c0s:
+            if prev:
+                run = next((r for r in prev.get("runs", [])
+                            if r["dx_m"] == dx and r["sound_speed"] == c0), None)
+                if run is None:
+                    raise SystemExit(f"no baseline run for dx={dx} c0={c0}")
+                runs.append(run)
+                continue
             run = relax(dx, c0, t_end_over_t_sigma=args.t_end)
             runs.append(run)
             print(f"dx={dx:g} c0={c0:5g}: abs {run['definition_absolute']['rel_error_pct']:+7.1f} %"
@@ -324,6 +346,21 @@ def main():
           f"abs {ctrl_scheme['definition_absolute']['rel_error_pct']:+7.1f} %",
           flush=True)
 
+    closure_runs = []
+    if args.closure_ratio > 0.0:
+        for dx in dxs:
+            for c0 in c0s:
+                run = relax(dx, c0, t_end_over_t_sigma=args.t_end,
+                            free_surface_ratio=args.closure_ratio)
+                closure_runs.append(run)
+                clamp_err = next(r["absolute_time_average_tail"]["rel_error_pct"]
+                                 for r in runs
+                                 if r["dx_m"] == dx and r["sound_speed"] == c0)
+                print(f"closure r={args.closure_ratio:g} dx={dx:g} c0={c0:5g}: "
+                      f"tail-avg {run['absolute_time_average_tail']['rel_error_pct']:+7.1f} %"
+                      f"  (clamp was {clamp_err:+7.1f} %)"
+                      f"  steps {run['steps']}", flush=True)
+
     report = {
         "benchmark": "laplace_pressure_floor",
         "reference": {"delta_p_Pa": DP_ANALYTIC, "sigma_N_per_m": SIGMA,
@@ -331,6 +368,8 @@ def main():
                       "t_sigma_s": T_SIGMA},
         "structures": structures,
         "runs": runs,
+        "closure_runs": closure_runs,
+        "closure_ratio": args.closure_ratio,
         "controls": {"uncalibrated_c0_reference": uncal,
                      "mls_scheme_lowest_c0": ctrl_scheme},
     }
@@ -378,9 +417,14 @@ def make_figures(report, out_dir=HERE):
     ax.grid(alpha=0.3)
 
     ax = axes[0][1]
+    closure = [r for r in report.get("closure_runs", []) if r["dx_m"] == dx0]
+    closure.sort(key=lambda r: -r["sound_speed"])
     for run in primary:
         ax.plot(run["trace"]["t"], run["trace"]["absolute"], lw=1,
-                label=rf"$c_0$={run['sound_speed']:g} m/s")
+                label=rf"clamp $c_0$={run['sound_speed']:g}")
+    for run in closure:
+        ax.plot(run["trace"]["t"], run["trace"]["absolute"], lw=1, ls="--",
+                label=rf"closure $c_0$={run['sound_speed']:g}")
     ax.axhline(DP_ANALYTIC, color="k", ls="--", lw=1,
                label=rf"$\sigma/R$={DP_ANALYTIC:.0f} Pa")
     ax.set_xlabel(r"$t/t_\sigma$")
@@ -397,7 +441,12 @@ def make_figures(report, out_dir=HERE):
     for k, run in enumerate(primary):
         vals = [run[key]["rel_error_pct"] for key in keys]
         ax.bar(idx + (k - len(primary) / 2 + 0.5) * width, vals, width,
-               label=rf"$c_0$={run['sound_speed']:g}")
+               label=rf"clamp $c_0$={run['sound_speed']:g}")
+    for k, run in enumerate(closure):
+        vals = [run[key]["rel_error_pct"] for key in keys]
+        ax.bar(idx + (k - len(primary) / 2 + 0.5) * width, vals, width * 0.55,
+               hatch="//", fill=False, edgecolor=f"C{k}",
+               label=rf"+closure $c_0$={run['sound_speed']:g}")
     ax.axhline(15.0, color="r", ls=":", lw=1, label="+15 %")
     ax.axhline(-15.0, color="r", ls=":", lw=1)
     ax.axhline(0.0, color="k", lw=0.8)
