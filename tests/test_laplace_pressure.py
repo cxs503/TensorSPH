@@ -13,6 +13,7 @@ here: it is a documented, measured failure of the current model (see
 """
 import math
 
+import pytest
 import torch
 
 from tensorsph import Config
@@ -33,9 +34,10 @@ DX = 0.005
 RADIUS = 0.04
 
 
-def _droplet_force(radius=RADIUS, dx=DX, sigma=SIGMA):
+def _droplet_force(radius=RADIUS, dx=DX, sigma=SIGMA, **config_kwargs):
+    """Acceleration on a static drop; ``config_kwargs`` selects the scheme."""
     cfg = Config(dx=dx, rho0=1000.0, sound_speed=20.0, gravity=0.0,
-                 surface_tension_coefficient=sigma)
+                 surface_tension_coefficient=sigma, **config_kwargs)
     pos, mass, density = laplace.circular_droplet(radius, dx)
     pairs = cell_linked_pairs(pos, 2.0 * cfg.h_factor * cfg.dx)
     acc = compute_surface_tension_force(pos, density, mass, pairs, cfg)
@@ -117,18 +119,49 @@ def test_force_is_linear_in_sigma():
     assert abs(f2 / f1 - 2.0) < 1e-10
 
 
+def _half_force_ratio(**config_kwargs):
+    """|F_cut| / (2 sigma) on the right half of the documented drop."""
+    pos, mass, density, acc = _droplet_force(**config_kwargs)
+    half = (mass[pos[:, 0] > 0, None] * acc[pos[:, 0] > 0]).sum(dim=0)
+    return float(half.norm() / (2.0 * SIGMA))
+
+
 def test_effective_surface_tension_at_the_documented_resolution():
     """Pin the measured amplitude so a silent change of the model is caught.
 
-    The neighbour-count colour function used to deliver 0.70 of the nominal
-    sigma at R/h = 6.2 -- a *recorded deficiency* (m2399).  The default scheme is
-    now ``csf_scheme="consistent"`` (kernel-sum colour + MLS operators +
-    ``delta_s = 2|grad c|``), which delivers the full amplitude; the band below
-    is the platform's 15 % acceptance window.  The legacy number stays reachable
-    by setting ``csf_scheme="legacy"`` (see docs/verification_surface_tension_consistent.md).
+    Measurement history on this lattice (square, ``R/h = 6.15``, ``dx = 5 mm``,
+    sigma = 0.072 N/m, 2-D), all reproduced by the parametrisations below:
+
+    ===========================================  ===========================
+    formulation                                  ``|F_cut| / (2 sigma)``
+    ===========================================  ===========================
+    legacy neighbour-count colour                0.215
+    consistent colour + MLS curvature            0.791
+    consistent colour + quadratic interface fit  0.711  (current default)
+    ===========================================  ===========================
+
+    * the legacy value is the recorded deficiency of m2399;
+    * 0.791 is what m2447 pinned as ``0.79 +- 0.06`` -- it is the MLS curvature
+      variant, still reachable through ``csf_curvature="mls"``;
+    * m2979 made ``csf_curvature="fit_quadratic"`` the default
+      (``docs/verification_csf_curvature_default.md``).  The quadratic fit reads
+      the curvature *correctly* (error +5.3 % instead of +24.9 % at dx = 2 mm),
+      which removes the accidental cancellation between the +25 % curvature bias
+      and the -25 % ``delta_s`` deficit, so the cut force drops to 0.711.
+      That is a documented trade, not a regression, but m2979 did not update
+      this pin; it is updated here from the measurement above.
+
+    The three-way comparison is asserted, not just the default, so that a silent
+    swap of *either* operator (colour field or curvature) still turns this red.
     """
-    pos, mass, density, acc = _droplet_force()
     h = Config(dx=DX).h_factor * DX
-    half = (mass[pos[:, 0] > 0, None] * acc[pos[:, 0] > 0]).sum(dim=0)
-    ratio = float(half.norm() / (2.0 * SIGMA))
-    assert abs(ratio - 0.79) < 0.06, (ratio, RADIUS / h)
+    assert RADIUS / h == pytest.approx(6.1538, abs=1e-3)  # documented resolution
+
+    default = _half_force_ratio()
+    assert abs(default - 0.711) < 0.01, (default, RADIUS / h)
+
+    mls = _half_force_ratio(csf_curvature="mls")
+    assert abs(mls - 0.791) < 0.01, mls
+
+    legacy = _half_force_ratio(csf_scheme="legacy")
+    assert legacy < 0.4, legacy
