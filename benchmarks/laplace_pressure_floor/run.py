@@ -180,7 +180,8 @@ def radial_profile(pos, values, n_bins: int = 12):
 
 def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
           calibrate_mass: bool = True, t_end_over_t_sigma: float = 1.5,
-          max_steps: int = 4000, sample_every: int = 50):
+          max_steps: int = 4000, sample_every: int = 50,
+          free_surface_pressure: bool = False):
     """Advance the drop and read ``Delta p`` with three definitions.
 
     ``absolute``  ``p_core - 0``  (Tait is normalised at ``rho0``; the vacuum is
@@ -192,7 +193,8 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     cfg = Config(dx=dx, h_factor=H_FACTOR, rho0=RHO0, sound_speed=c0,
                  gamma=GAMMA, gravity=0.0, viscosity=VISCOSITY,
                  surface_tension_coefficient=SIGMA, csf_scheme="consistent",
-                 csf_curvature=scheme)
+                 csf_curvature=scheme,
+                 free_surface_pressure=free_surface_pressure)
     h = cfg.h_factor * cfg.dx
     dt = float(stable_dt(cfg))
     t_end = t_end_over_t_sigma * T_SIGMA
@@ -257,6 +259,7 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
         "dx_m": dx, "h_m": h, "n_particles": int(pos.shape[0]),
         "sound_speed": c0, "curvature_scheme": scheme,
         "mass_calibrated": calibrate_mass,
+        "free_surface_pressure": bool(free_surface_pressure),
         "lattice_bias": bias, "lattice_bias_after_calibration": bias_after,
         "dt_s": dt, "steps": steps, "t_end_s": t_end,
         "t_over_t_sigma": t_end / T_SIGMA,
@@ -292,6 +295,9 @@ def main():
                     default=[20.0, 10.0, 5.0])
     ap.add_argument("--t-end", type=float, default=1.5,
                     help="window length in capillary times")
+    ap.add_argument("--free-surface-pressure", action="store_true",
+                    help="run the ladder with the Adami shell-pressure closure "
+                         "instead of the Tait clamp; writes report_closure.json")
     args = ap.parse_args()
 
     dxs = [args.dx] if args.quick else [args.dx, 0.0015]
@@ -301,7 +307,8 @@ def main():
     runs = []
     for dx in dxs:
         for c0 in c0s:
-            run = relax(dx, c0, t_end_over_t_sigma=args.t_end)
+            run = relax(dx, c0, t_end_over_t_sigma=args.t_end,
+                        free_surface_pressure=args.free_surface_pressure)
             runs.append(run)
             print(f"dx={dx:g} c0={c0:5g}: abs {run['definition_absolute']['rel_error_pct']:+7.1f} %"
                   f"  bandA {run['definition_bandA']['rel_error_pct']:+7.1f} %"
@@ -315,11 +322,13 @@ def main():
     #               operator from the closure problem)
     ref_c0 = c0s[0]
     uncal = relax(args.dx, ref_c0, calibrate_mass=False,
-                  t_end_over_t_sigma=args.t_end)
+                  t_end_over_t_sigma=args.t_end,
+                  free_surface_pressure=args.free_surface_pressure)
     print(f"control uncalibrated dx={args.dx:g} c0={ref_c0:g}: "
           f"abs {uncal['definition_absolute']['rel_error_pct']:+7.1f} %", flush=True)
     ctrl_scheme = relax(args.dx, c0s[-1], scheme="mls",
-                        t_end_over_t_sigma=args.t_end)
+                        t_end_over_t_sigma=args.t_end,
+                        free_surface_pressure=args.free_surface_pressure)
     print(f"control mls dx={args.dx:g} c0={c0s[-1]:g}: "
           f"abs {ctrl_scheme['definition_absolute']['rel_error_pct']:+7.1f} %",
           flush=True)
@@ -333,17 +342,21 @@ def main():
         "runs": runs,
         "controls": {"uncalibrated_c0_reference": uncal,
                      "mls_scheme_lowest_c0": ctrl_scheme},
+        "variant": ("free_surface_pressure" if args.free_surface_pressure
+                    else "tait_clamp"),
     }
-    (HERE / "report.json").write_text(json.dumps(report, indent=2))
-    report["figures"] = [make_figures(report)]
-    (HERE / "report.json").write_text(json.dumps(report, indent=2))
-    print("wrote", HERE / "report.json", report["figures"])
+    stem = "report_closure" if args.free_surface_pressure else "report"
+    out = HERE / f"{stem}.json"
+    (out).write_text(json.dumps(report, indent=2))
+    report["figures"] = [make_figures(report, tag=stem)]
+    out.write_text(json.dumps(report, indent=2))
+    print("wrote", out, report["figures"])
 
 
 # --------------------------------------------------------------------------- #
 # figures
 # --------------------------------------------------------------------------- #
-def make_figures(report, out_dir=HERE):
+def make_figures(report, out_dir=HERE, tag="report"):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -425,7 +438,8 @@ def make_figures(report, out_dir=HERE):
 
     fig.suptitle("TensorSPH: decomposing the Young-Laplace verification miss")
     fig.tight_layout()
-    path = Path(out_dir) / "laplace_pressure_floor.png"
+    path = Path(out_dir) / ("laplace_pressure_floor.png" if tag == "report"
+                            else f"laplace_pressure_floor_{tag}.png")
     fig.savefig(path, dpi=130)
     plt.close(fig)
     return path.name

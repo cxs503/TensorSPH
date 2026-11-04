@@ -129,6 +129,22 @@ class Config:
     # "mls" = div n with MLS-consistent operators, +25 % on a circle, kept for A/B;
     # "fit_circle" = algebraic circle fit, unstable on lattice data.
     csf_curvature: str = "fit_quadratic"
+    # Free-surface pressure closure (Adami, Ihmsen & Adams 2012, section 3.3).
+    # Density summation under-counts neighbours where the kernel support is
+    # truncated, so ``rho < rho0`` there and the Tait clamp of :func:`tait_pressure`
+    # returns exactly zero pressure. That turns the outermost fluid shell into a
+    # p = 0 Dirichlet surface, which puts a spurious pressure gradient across the
+    # last spacing and is the measured gate for the Young-Laplace jump
+    # (docs/verification_laplace_pressure_floor.md, error source C3). When this
+    # flag is on, such particles take their pressure from a kernel-weighted
+    # extrapolation of their *interior* neighbours instead, including the
+    # body-force term that makes the extrapolation exact for a hydrostatic field.
+    # Off by default: it changes every free-surface case, and the flag exists so
+    # that the effect is measurable rather than assumed.
+    free_surface_pressure: bool = False
+    # ``rho / rho0`` below this marks a particle as truncated-support. The value
+    # follows the free-surface criterion used by the Laplace audit.
+    free_surface_rho_threshold: float = 0.99
 
 
 # --------------------------------------------------------------------------- #
@@ -238,6 +254,64 @@ def tait_pressure(rho: torch.Tensor, cfg: Config) -> torch.Tensor:
     bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
     ratio = (rho / cfg.rho0).clamp_min(0.01)
     return (bulk * (ratio.pow(cfg.gamma) - 1.0)).clamp_min(0.0)
+
+
+def free_surface_pressure_closure(pressure: torch.Tensor, rho: torch.Tensor,
+                                   delta_y: torch.Tensor, weight: torch.Tensor,
+                                   neighbours: tuple, n: int, cfg: Config,
+                                   threshold: float | None = None):
+    """Extrapolate pressure onto particles whose kernel support is truncated.
+
+    Adami, Ihmsen & Adams (2012), section 3.3, written for a wall particle and
+    applied here to a free-surface fluid particle: the pressure there is the
+    kernel-weighted average of its neighbours' pressures plus the body-force
+    term ``rho_j g . (r_i - r_j)``,
+
+        p_i = max(0, sum_j (p_j + rho_j g.(r_i - r_j)) W_ij / sum_j W_ij).
+
+    Only *interior* neighbours (``rho_j >= threshold * rho0``) are summed. The
+    truncated neighbours are the ones whose pressure is being reconstructed, so
+    feeding them back would make the estimate depend on itself and drag it
+    towards the clamped zero.
+
+    The body-force term is what makes the rule exact for a hydrostatic field: for
+    ``p(y) = p_ref - rho g y`` every summand collapses to ``p_i``, and a weighted
+    average of a constant is that constant whatever the kernel normalisation is.
+    Without it the closure returns the neighbour average and is biased by
+    ``rho g <y_i - y_j>``, i.e. by half a spacing; that is the same defect the
+    wall extrapolation in :func:`rhs` had before it was added (see the comment
+    there). ``g`` acts on the second coordinate only, as everywhere else in the
+    solver, and enters as ``-g * delta_y`` with ``delta_y = y_i - y_j``.
+
+    Returns ``(pressure_out, replaced)``. ``replaced`` marks the particles whose
+    value was overwritten, so a caller can report how much of the surface the
+    closure actually reached: a particle with truncated support but no interior
+    neighbour keeps its Tait value.
+    """
+    i, j = neighbours
+    thr = (cfg.free_surface_rho_threshold if threshold is None
+           else float(threshold))
+    ic = i.clamp(max=n - 1)
+    jc = j.clamp(max=n - 1)
+    fluid = (i < n) & (j < n)
+    interior = rho >= thr * cfg.rho0
+    interior_i = interior[ic]
+    interior_j = interior[jc]
+    zeros = torch.zeros_like(weight)
+    # target i <- source j : i truncated, j interior (and both fluid particles)
+    w_to_i = torch.where(fluid & interior_j & ~interior_i, weight, zeros)
+    w_to_j = torch.where(fluid & interior_i & ~interior_j, weight, zeros)
+    num = torch.zeros(n, dtype=pressure.dtype, device=pressure.device)
+    den = torch.zeros(n, dtype=pressure.dtype, device=pressure.device)
+    src_from_j = pressure[jc] - cfg.gravity * rho[jc] * delta_y
+    src_from_i = pressure[ic] + cfg.gravity * rho[ic] * delta_y
+    num = num.index_add(0, ic, src_from_j * w_to_i)
+    den = den.index_add(0, ic, w_to_i)
+    num = num.index_add(0, jc, src_from_i * w_to_j)
+    den = den.index_add(0, jc, w_to_j)
+    shell = (num / den.clamp_min(1.0e-30)).clamp_min(0.0)
+    replaced = (den > 0.0) & ~interior
+    return torch.where(replaced, shell, pressure), replaced
 
 
 def acoustic_courant(dt: float, cfg: Config, max_speed: float = 0.0) -> float:
@@ -572,6 +646,12 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
 
     pressure = tait_pressure(rho, cfg)
 
+    if cfg.free_surface_pressure:
+        # Applied before the wall extrapolation, which reads the fluid pressure:
+        # the wall then averages the closed-surface field, not the clamped one.
+        pressure, _ = free_surface_pressure_closure(
+            pressure, rho, delta[:, 1], wij, (i, j), n, cfg)
+
     if nw:
         bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
         # Only fluid/wall pairs extrapolate wall pressure. Instead of selecting
@@ -691,6 +771,15 @@ def rhs_all_pairs(pos, vel, mass, cfg: Config, dt=None):
         rate = -scale * (mass[None, :] / rho[None, :] * coupling).sum(dim=1)
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
     pressure = tait_pressure(rho, cfg)
+    if cfg.free_surface_pressure:
+        interior = rho >= cfg.free_surface_rho_threshold * cfg.rho0
+        mask = interior[None, :] & ~interior[:, None]
+        wm = torch.where(mask, w, torch.zeros_like(w))
+        src = pressure[None, :] - cfg.gravity * rho[None, :] * delta[:, :, 1]
+        num = (src * wm).sum(dim=1)
+        den = wm.sum(dim=1)
+        shell = (num / den.clamp_min(1.0e-30)).clamp_min(0.0)
+        pressure = torch.where((den > 0.0) & ~interior, shell, pressure)
     grad_w = cubic_spline_gradient(delta, h)
     pressure_term = (
         pressure[:, None] / rho[:, None].square()
