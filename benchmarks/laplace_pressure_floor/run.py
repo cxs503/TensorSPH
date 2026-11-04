@@ -180,7 +180,10 @@ def radial_profile(pos, values, n_bins: int = 12):
 
 def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
           calibrate_mass: bool = True, t_end_over_t_sigma: float = 1.5,
-          max_steps: int = 4000, sample_every: int = 50):
+          max_steps: int = 4000, sample_every: int = 50,
+          free_surface_pressure: bool = False,
+          free_surface_iterations: int = 3,
+          free_surface_threshold: float = 0.99):
     """Advance the drop and read ``Delta p`` with three definitions.
 
     ``absolute``  ``p_core - 0``  (Tait is normalised at ``rho0``; the vacuum is
@@ -192,7 +195,10 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     cfg = Config(dx=dx, h_factor=H_FACTOR, rho0=RHO0, sound_speed=c0,
                  gamma=GAMMA, gravity=0.0, viscosity=VISCOSITY,
                  surface_tension_coefficient=SIGMA, csf_scheme="consistent",
-                 csf_curvature=scheme)
+                 csf_curvature=scheme,
+                 free_surface_pressure=free_surface_pressure,
+                 free_surface_iterations=free_surface_iterations,
+                 free_surface_threshold=free_surface_threshold)
     h = cfg.h_factor * cfg.dx
     dt = float(stable_dt(cfg))
     t_end = t_end_over_t_sigma * T_SIGMA
@@ -260,6 +266,9 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
         "lattice_bias": bias, "lattice_bias_after_calibration": bias_after,
         "dt_s": dt, "steps": steps, "t_end_s": t_end,
         "t_over_t_sigma": t_end / T_SIGMA,
+        "free_surface_pressure": bool(free_surface_pressure),
+        "free_surface_iterations": int(free_surface_iterations),
+        "free_surface_threshold": float(free_surface_threshold),
         "definition_absolute": score(final["absolute"]),
         "definition_bandA": score(final["bandA"]),
         "definition_bandB": score(final["bandB"]),
@@ -292,10 +301,54 @@ def main():
                     default=[20.0, 10.0, 5.0])
     ap.add_argument("--t-end", type=float, default=1.5,
                     help="window length in capillary times")
+    ap.add_argument("--free-surface", action="store_true",
+                    help="also run the matrix with the free-surface pressure "
+                         "closure on (Adami/Hu/Adams 2012)")
+    ap.add_argument("--free-surface-only", action="store_true",
+                    help="run only the closure matrix; merge into the existing "
+                         "report.json")
+    ap.add_argument("--iterations", type=int, nargs="+", default=[3],
+                    help="free_surface_iterations values to sweep")
     args = ap.parse_args()
 
     dxs = [args.dx] if args.quick else [args.dx, 0.0015]
     c0s = [20.0, 5.0] if args.quick else list(args.sound_speeds)
+
+    if args.free_surface_only:
+        report = json.loads((HERE / "report.json").read_text())
+        fs_runs = []
+        for dx in dxs:
+            for c0 in c0s:
+                for iters in args.iterations:
+                    run = relax(dx, c0, t_end_over_t_sigma=args.t_end,
+                                free_surface_pressure=True,
+                                free_surface_iterations=iters)
+                    run["free_surface_iterations"] = iters
+                    fs_runs.append(run)
+                    print(f"[fs iters={iters}] dx={dx:g} c0={c0:5g}: "
+                          f"tail-avg "
+                          f"{run['absolute_time_average_tail']['rel_error_pct']:+7.1f} %"
+                          f"  abs {run['definition_absolute']['rel_error_pct']:+7.1f} %"
+                          f"  comp {run['density']['rho_core_over_rho0'] - 1.0:+.2e}"
+                          f"/{run['density']['compression_required']:.2e}"
+                          f"  vmax/vref "
+                          f"{run['spurious_current']['vmax_over_vref_final']:.3f}",
+                          flush=True)
+        # Merge by (dx, c0, iterations) so that separate passes -- e.g. an
+        # iteration ladder at a single resolution -- accumulate instead of
+        # overwriting the acceptance matrix.
+        fresh = {(r["dx_m"], r["sound_speed"], r["free_surface_iterations"])
+                 for r in fs_runs}
+        kept = [r for r in report.get("free_surface_runs", [])
+                if (r["dx_m"], r["sound_speed"],
+                    r["free_surface_iterations"]) not in fresh]
+        report["free_surface_runs"] = sorted(
+            kept + fs_runs,
+            key=lambda r: (r["dx_m"], r["sound_speed"],
+                           r["free_surface_iterations"]))
+        (HERE / "report.json").write_text(json.dumps(report, indent=2))
+        print("merged free_surface_runs into", HERE / "report.json")
+        return
 
     structures = [density_structure(dx, c0s) for dx in dxs]
     runs = []
@@ -334,6 +387,23 @@ def main():
         "controls": {"uncalibrated_c0_reference": uncal,
                      "mls_scheme_lowest_c0": ctrl_scheme},
     }
+    if args.free_surface:
+        fs_runs = []
+        for dx in dxs:
+            for c0 in c0s:
+                for iters in args.iterations:
+                    run = relax(dx, c0, t_end_over_t_sigma=args.t_end,
+                                free_surface_pressure=True,
+                                free_surface_iterations=iters)
+                    run["free_surface_iterations"] = iters
+                    fs_runs.append(run)
+                    print(f"[fs iters={iters}] dx={dx:g} c0={c0:5g}: "
+                          f"tail-avg "
+                          f"{run['absolute_time_average_tail']['rel_error_pct']:+7.1f} %"
+                          f"  abs {run['definition_absolute']['rel_error_pct']:+7.1f} %",
+                          flush=True)
+        report["free_surface_runs"] = fs_runs
+
     (HERE / "report.json").write_text(json.dumps(report, indent=2))
     report["figures"] = [make_figures(report)]
     (HERE / "report.json").write_text(json.dumps(report, indent=2))

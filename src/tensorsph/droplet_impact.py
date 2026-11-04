@@ -130,6 +130,20 @@ class Config:
     # "fit_circle" = algebraic circle fit, unstable on lattice data.
     csf_curvature: str = "fit_quadratic"
 
+    # Free-surface pressure closure (Adami, Hu & Adams 2012, section 3.3).
+    # Skips the Tait law clamped at p = 0 for particles whose kernel support is
+    # truncated by a free surface (``rho / rho0 < free_surface_threshold``):
+    # their pressure is extrapolated from their fluid neighbours,
+    #   p_i = max(0, sum_j (p_j + rho_j g . (r_i - r_j)) W_ij / sum_j W_ij),
+    # iterated ``free_surface_iterations`` times so that shells deeper than one
+    # kernel radius get a value too. Off by default: it changes every published
+    # number, and the verification that motivates it
+    # (docs/verification_laplace_free_surface_pressure.md) is still an
+    # A/B measurement rather than a certified default.
+    free_surface_pressure: bool = False
+    free_surface_threshold: float = 0.99
+    free_surface_iterations: int = 3
+
 
 # --------------------------------------------------------------------------- #
 # Kernels
@@ -494,6 +508,65 @@ def drop_wall_wall_pairs(pairs: torch.Tensor, fluid_count: int) -> torch.Tensor:
     return pairs[usable]
 
 
+def extrapolate_free_surface_pressure(pos, rho, pressure, cfg: Config,
+                                      i, j, wij, delta, n: int):
+    """Replace the clamped pressure of free-surface particles by an extrapolation.
+
+    Density summation under-counts neighbours wherever the kernel support is
+    cut by a free surface (measured deficit -7.4 % at 0.80-0.95 R and -34 % at
+    0.95-1.05 R on the verification drop). The Tait law then sits in its
+    ``p >= 0`` clamp, so the outer shell of a drop carries *zero* pressure and
+    the interface cannot hold ``sigma / R``: the interior settles at a fraction
+    of the analytic jump (measured -34 % on the time-averaged core pressure).
+
+    Adami, Hu & Adams (2012, section 3.3) reach the free surface exactly as they
+    reach a wall: the pressure of a truncated particle is extrapolated from its
+    neighbours instead of read off its own deficient density,
+
+        p_i = max(0, sum_j (p_j + rho_j g . (r_i - r_j)) W_ij / sum_j W_ij).
+
+    The ``max`` keeps the closure from inventing tensile pressure. Iterating it
+    (``free_surface_iterations``) propagates the interior value one kernel
+    radius further out per pass, which matters because the flagged shell is
+    thicker than the support on a lattice with ``h = 1.3 dx``.
+
+    ``i, j, wij, delta`` must describe *fluid-fluid* pairs only (``delta`` is
+    ``x_i - x_j``); wall particles are excluded because their pressure is
+    extrapolated separately, downstream of this closure, from the corrected
+    fluid pressure.
+
+    Returns the pressure array; particles flagged as free surface only ever have
+    their pressure raised, never lowered.
+    """
+    if not cfg.free_surface_pressure:
+        return pressure
+    device, dtype = pos.device, pos.dtype
+    n_iter = max(int(cfg.free_surface_iterations), 1)
+    weight_sum = torch.zeros(n, dtype=dtype, device=device).index_add(0, i, wij)
+    weight_sum = weight_sum.index_add(0, j, wij).clamp_min(1.0e-30)
+
+    has_y = pos.shape[1] > 1
+    dy = delta[:, 1] if has_y else torch.zeros_like(wij)
+    use_gravity = has_y and cfg.gravity != 0.0
+
+    corrected = pressure
+    for _ in range(n_iter):
+        # g = (0, -gravity).  For particle i the pair term is p_j - g_y (dy);
+        # for particle j the same pair contributes p_i + g_y (dy).
+        source_j = corrected[j]
+        source_i = corrected[i]
+        if use_gravity:
+            source_j = source_j - cfg.gravity * rho[j] * dy
+            source_i = source_i + cfg.gravity * rho[i] * dy
+        numerator = torch.zeros(n, dtype=dtype, device=device).index_add(
+            0, i, source_j * wij)
+        numerator = numerator.index_add(0, j, source_i * wij)
+        corrected = torch.maximum(corrected, (numerator / weight_sum).clamp_min(0.0))
+
+    free = (rho / cfg.rho0) < float(cfg.free_surface_threshold)
+    return torch.where(free, corrected, pressure)
+
+
 def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
     """Compute WCSPH RHS with pair-based compact-support interactions.
 
@@ -571,6 +644,12 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
 
     pressure = tait_pressure(rho, cfg)
+
+    if cfg.free_surface_pressure:
+        fluid = (i < n) & (j < n)
+        pressure = extrapolate_free_surface_pressure(
+            pos, rho, pressure, cfg, i[fluid], j[fluid], wij[fluid],
+            delta[fluid], n)
 
     if nw:
         bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
@@ -691,6 +770,13 @@ def rhs_all_pairs(pos, vel, mass, cfg: Config, dt=None):
         rate = -scale * (mass[None, :] / rho[None, :] * coupling).sum(dim=1)
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
     pressure = tait_pressure(rho, cfg)
+    if cfg.free_surface_pressure:
+        # Same closure on the dense reference path: same physics, same numbers.
+        support = (r < 2.0 * h) & (r > 0.0)
+        fi, fj = support.nonzero(as_tuple=True)
+        pressure = extrapolate_free_surface_pressure(
+            pos, rho, pressure, cfg, fi, fj, w[fi, fj], delta[fi, fj],
+            pos.shape[0])
     grad_w = cubic_spline_gradient(delta, h)
     pressure_term = (
         pressure[:, None] / rho[:, None].square()
