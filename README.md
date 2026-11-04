@@ -84,6 +84,8 @@ With `adaptive_dt` the run advances to `cfg.steps * cfg.dt` of simulated time ho
 
 Passing a numerical gate is not a claim that a simulation is physically accurate.
 
+Every number in the table above is bound to the file, JSON pointer or test id that backs it in [`docs/claims/ledger.json`](docs/claims/ledger.json); `python tools/claim_audit.py --check` fails when the prose and the data disagree. [`docs/claim_audit.md`](docs/claim_audit.md) is the generated grade sheet (6 REAL, 4 WITHHELD at the time of writing).
+
 The B2 density gate has a history worth keeping visible. Until 0.5.0 it read
 3.8 % because the metric was sampled every 0.01 s; judged on every step it was
 10.0–10.3 % at a 10 % limit, so 0.5.0 reported it as **failing** rather than
@@ -119,8 +121,8 @@ is the right thing to do when you use the corresponding code.
 
 ## Current limitations
 
-- **Prototype:** no physical-validation claim is made, and no benchmark is compared against measured data.
-- No surface-tension model. Free-surface pressure is clamped at zero, which removes tensile instability but is not a capillary model. An optional density-diffusion term is available and measured, but it smooths density rather than creating a capillary pressure jump.
+- **Prototype:** no physical-validation claim is made. The dam-break front *is* compared with Martin & Moyce (1952) in `benchmarks/dam_break/resolution_ladder.json`, and it **fails**: mean absolute error in `Z/a` is 0.573 against a 0.15 limit, with none of the 20 compared points inside the experimental uncertainty. The comparison is kept so that the failure stays visible.
+- **Surface tension is implemented but not verified.** The CSF model (`Config.surface_tension_coefficient`, Brackbill et al. 1992, plus an MLS/Shepard-consistent variant in `csf_consistent.py` / `csf_curvature.py`) runs, but the Young-Laplace verification records `FAIL` in `benchmarks/laplace/report.json`: the model does not establish the `sigma/R` pressure jump, so no capillary result should be quoted and the capability is graded WITHHELD rather than supported. Free-surface pressure is still clamped at zero, which removes tensile instability but is not a capillary model. An optional density-diffusion term is available and measured, but it smooths density rather than creating a capillary pressure jump.
 - Walls are three layers of static dummy particles. Free slip is the default; `Config.wall_friction = 1.0` gives a verified no-slip condition but is not the default and has not been tuned.
 - Density compression in the dam-break case peaks at 8.6–9.0 % across the three-level ladder, against a 10 % limit. The peak is the surge hitting the far wall; before impact the bulk stays at 1.9–2.7 %. The margin is about one percentage point and the transient is far shorter than the step, so it should be re-checked whenever the wall or the free-surface treatment changes.
 - A pool in a free-slip basin still rings slightly (`H²/nu ≈ 12 s` damping time); completing the wall pressure in 0.7.0 cut the residual speed from 0.044 to 0.013 m/s and the relative pressure fluctuation from 68 % to 9 %, but hydrostatic profiles are still measured as a time average.

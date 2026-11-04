@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "about": [
+    "Machine-readable claim ledger for TensorSPH.",
+    "Every headline number or capability statement this repository publishes must appear here,",
+    "bound to the file / JSON pointer / test id that backs it, so that prose and data cannot drift",
+    "apart silently. `tools/claim_audit.py` evaluates the ledger; `docs/claim_audit.md` is generated.",
+    "Grades: REAL = bound evidence resolves and matches; WITHHELD = the statement is published but",
+    "the bound evidence is missing, records a failure, or records a different quantity."
+  ],
+  "claims": [
+    {
+      "id": "st-model-implemented",
+      "kind": "code_present",
+      "statement": "CSF surface tension is implemented (Config.surface_tension_coefficient).",
+      "public_in": ["README.md"],
+      "evidence": {
+        "file": "src/tensorsph/surface_tension.py",
+        "symbols": ["compute_color_gradient", "compute_normal", "compute_curvature", "compute_surface_tension_force", "capillary_dt_limit"]
+      }
+    },
+    {
+      "id": "st-consistent-variant",
+      "kind": "code_present",
+      "statement": "An MLS/Shepard-consistent CSF variant exists (csf_consistent + csf_curvature).",
+      "public_in": ["docs/verification_csf_laplace_consistent.md"],
+      "evidence": {
+        "file": "src/tensorsph/csf_consistent.py",
+        "symbols": ["csf_fields", "surface_tension_acceleration", "apply_contact_angle_boundary"],
+        "also_require": [
+          {"file": "src/tensorsph/csf_curvature.py", "symbols": ["fit_curvature"]}
+        ]
+      }
+    },
+    {
+      "id": "st-laplace-verification",
+      "kind": "artifact_metric",
+      "statement": "Young-Laplace pressure-jump verification status recorded for the merged CSF model.",
+      "verdict": "WITHHELD: the model is implemented but does not reproduce the sigma/R jump; no capillary accuracy may be quoted.",
+      "evidence": {
+        "artifact": "benchmarks/laplace/report.json",
+        "pointer": "/validation/status",
+        "relation": "eq",
+        "expected": "FAIL"
+      }
+    },
+    {
+      "id": "b1-hydrostatic-interior",
+      "kind": "prose_only",
+      "statement": "B1 hydrostatics: 1.12 % time-averaged interior pressure-profile error, 9.0 % fluctuation.",
+      "public_in": ["README.md", "docs/benchmarks/hydrostatic.md"],
+      "evidence": {
+        "would_need": "benchmarks/hydrostatic/validation_report.json",
+        "why_absent": "benchmarks/hydrostatic/ ships only run.py; the numbers were measured in a mission worktree and the JSON was never committed."
+      }
+    },
+    {
+      "id": "b2-density-compression",
+      "kind": "prose_only",
+      "statement": "B2 dam break: density compression peaks at 8.6-9.0 % across the three-level ladder (10 % limit).",
+      "public_in": ["README.md", "docs/benchmarks/dam-break-2d.md"],
+      "evidence": {
+        "would_need": "benchmarks/dam_break/ladder.json#/density_compression_peak",
+        "why_absent": "the committed benchmarks/dam_break/resolution_ladder.json records only the pre-impact bulk value (1.9 %) at /gates/density_compression/measured, not the ladder peak."
+      }
+    },
+    {
+      "id": "b2-convergence-order",
+      "kind": "prose_only",
+      "statement": "B2 dam break: observed convergence order 1.11 (L2 4.83 % then 2.19 %).",
+      "public_in": ["README.md", "docs/benchmarks/dam-break-2d.md"],
+      "evidence": {
+        "would_need": "benchmarks/dam_break/ladder.json#/convergence",
+        "why_absent": "the committed resolution_ladder.json carries /convergence = null; the ladder numbers exist only in docs/benchmarks/dam-break-2d.md."
+      }
+    },
+    {
+      "id": "b2-experimental-comparison",
+      "kind": "artifact_metric",
+      "statement": "B2 dam break front vs Martin & Moyce (1952): mean absolute error in Z/a is 0.573 against a 0.15 limit -> FAIL.",
+      "public_in": ["README.md"],
+      "verdict": "WITHHELD: an experimental comparison exists and fails at 3.8x the limit; no physical-validation claim may be made.",
+      "evidence": {
+        "artifact": "benchmarks/dam_break/resolution_ladder.json",
+        "pointer": "/gates/experimental_comparison/measured",
+        "relation": "close_to",
+        "expected": 0.5727571197674608,
+        "abs_tol": 0.005,
+        "also_pin": [
+          {"pointer": "/gates/experimental_comparison/limit", "relation": "close_to", "expected": 0.15, "abs_tol": 1e-12},
+          {"pointer": "/gates/experimental_comparison/result", "relation": "eq", "expected": "fail"}
+        ]
+      }
+    },
+    {
+      "id": "gpu-crossover",
+      "kind": "prose_only",
+      "statement": "GPU/CPU crossover at N* ~ 928 particles and 30.89x speedup at 95k (RTX 5090).",
+      "public_in": ["README.md", "docs/benchmarks/gpu-scaling.md"],
+      "evidence": {
+        "would_need": "benchmarks/scaling/summary.json",
+        "why_absent": "benchmarks/scaling/ ships run.py and README.md only; no result JSON is committed, so the numbers cannot be re-read from the repository."
+      }
+    },
+    {
+      "id": "neighbour-pairs-exact",
+      "kind": "test_present",
+      "statement": "Linked-cell neighbour pairs match brute force on random clouds.",
+      "public_in": ["README.md"],
+      "evidence": {
+        "file": "tests/test_neighbor_search.py",
+        "tests": [
+          "test_cell_linked_matches_brute_force_random_clouds",
+          "test_device_search_matches_host_reference_on_large_cloud"
+        ]
+      }
+    },
+    {
+      "id": "pair-rhs-rtol",
+      "kind": "test_present",
+      "statement": "Pair-based RHS matches the dense reference to rtol=2e-10 in float64.",
+      "public_in": ["README.md"],
+      "evidence": {
+        "file": "tests/test_pair_based_rhs.py",
+        "tests": ["test_pair_rhs_matches_dense_reference"]
+      }
+    }
+  ],
+  "absence_claims": [
+    {
+      "id": "readme-no-surface-tension",
+      "capability": "st-model-implemented",
+      "pattern": "No surface-tension model",
+      "note": "Historical README limitation bullet, stale since the CSF model merged (m277). Kept as a regression guard: if the sentence returns while the modules exist, the audit fails."
+    },
+    {
+      "id": "readme-no-experimental-comparison",
+      "capability": "b2-experimental-comparison",
+      "pattern": "no benchmark is compared against measured data",
+      "note": "Stale while benchmarks/dam_break/resolution_ladder.json carries a Martin & Moyce (1952) comparison that fails; the honest statement is 'compared and failed'."
+    }
+  ]
+}

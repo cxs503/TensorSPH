@@ -1,0 +1,205 @@
+{
+ "summary": {
+  "claims": 10,
+  "real": 6,
+  "withheld": 4,
+  "drift": 0,
+  "fatal_findings": 0,
+  "debt_findings": 0,
+  "pass": true
+ },
+ "claims": [
+  {
+   "id": "st-model-implemented",
+   "kind": "code_present",
+   "statement": "CSF surface tension is implemented (Config.surface_tension_coefficient).",
+   "grade": "REAL",
+   "reason": "all declarations present",
+   "verdict": null,
+   "public_in": [
+    "README.md"
+   ],
+   "detail": {
+    "targets": [
+     "src/tensorsph/surface_tension.py"
+    ],
+    "missing": []
+   }
+  },
+  {
+   "id": "st-consistent-variant",
+   "kind": "code_present",
+   "statement": "An MLS/Shepard-consistent CSF variant exists (csf_consistent + csf_curvature).",
+   "grade": "REAL",
+   "reason": "all declarations present",
+   "verdict": null,
+   "public_in": [
+    "docs/verification_csf_laplace_consistent.md"
+   ],
+   "detail": {
+    "targets": [
+     "src/tensorsph/csf_consistent.py",
+     "src/tensorsph/csf_curvature.py"
+    ],
+    "missing": []
+   }
+  },
+  {
+   "id": "st-laplace-verification",
+   "kind": "artifact_metric",
+   "statement": "Young-Laplace pressure-jump verification status recorded for the merged CSF model.",
+   "grade": "REAL",
+   "reason": "artifact matches every pinned value",
+   "verdict": "WITHHELD: the model is implemented but does not reproduce the sigma/R jump; no capillary accuracy may be quoted.",
+   "public_in": [],
+   "detail": {
+    "artifact": "benchmarks/laplace/report.json",
+    "checks": [
+     {
+      "pointer": "/validation/status",
+      "relation": "eq",
+      "expected": "FAIL",
+      "abs_tol": 0.0,
+      "actual": "FAIL",
+      "ok": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "b1-hydrostatic-interior",
+   "kind": "prose_only",
+   "statement": "B1 hydrostatics: 1.12 % time-averaged interior pressure-profile error, 9.0 % fluctuation.",
+   "grade": "WITHHELD",
+   "reason": "benchmarks/hydrostatic/ ships only run.py; the numbers were measured in a mission worktree and the JSON was never committed.",
+   "verdict": null,
+   "public_in": [
+    "README.md",
+    "docs/benchmarks/hydrostatic.md"
+   ],
+   "detail": {
+    "would_need": "benchmarks/hydrostatic/validation_report.json"
+   }
+  },
+  {
+   "id": "b2-density-compression",
+   "kind": "prose_only",
+   "statement": "B2 dam break: density compression peaks at 8.6-9.0 % across the three-level ladder (10 % limit).",
+   "grade": "WITHHELD",
+   "reason": "the committed benchmarks/dam_break/resolution_ladder.json records only the pre-impact bulk value (1.9 %) at /gates/density_compression/measured, not the ladder peak.",
+   "verdict": null,
+   "public_in": [
+    "README.md",
+    "docs/benchmarks/dam-break-2d.md"
+   ],
+   "detail": {
+    "would_need": "benchmarks/dam_break/ladder.json#/density_compression_peak"
+   }
+  },
+  {
+   "id": "b2-convergence-order",
+   "kind": "prose_only",
+   "statement": "B2 dam break: observed convergence order 1.11 (L2 4.83 % then 2.19 %).",
+   "grade": "WITHHELD",
+   "reason": "the committed resolution_ladder.json carries /convergence = null; the ladder numbers exist only in docs/benchmarks/dam-break-2d.md.",
+   "verdict": null,
+   "public_in": [
+    "README.md",
+    "docs/benchmarks/dam-break-2d.md"
+   ],
+   "detail": {
+    "would_need": "benchmarks/dam_break/ladder.json#/convergence"
+   }
+  },
+  {
+   "id": "b2-experimental-comparison",
+   "kind": "artifact_metric",
+   "statement": "B2 dam break front vs Martin & Moyce (1952): mean absolute error in Z/a is 0.573 against a 0.15 limit -> FAIL.",
+   "grade": "REAL",
+   "reason": "artifact matches every pinned value",
+   "verdict": "WITHHELD: an experimental comparison exists and fails at 3.8x the limit; no physical-validation claim may be made.",
+   "public_in": [
+    "README.md"
+   ],
+   "detail": {
+    "artifact": "benchmarks/dam_break/resolution_ladder.json",
+    "checks": [
+     {
+      "pointer": "/gates/experimental_comparison/measured",
+      "relation": "close_to",
+      "expected": 0.5727571197674608,
+      "abs_tol": 0.005,
+      "actual": 0.5727571197674608,
+      "ok": true
+     },
+     {
+      "pointer": "/gates/experimental_comparison/limit",
+      "relation": "close_to",
+      "expected": 0.15,
+      "abs_tol": 1e-12,
+      "actual": 0.15,
+      "ok": true
+     },
+     {
+      "pointer": "/gates/experimental_comparison/result",
+      "relation": "eq",
+      "expected": "fail",
+      "abs_tol": 0.0,
+      "actual": "fail",
+      "ok": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "gpu-crossover",
+   "kind": "prose_only",
+   "statement": "GPU/CPU crossover at N* ~ 928 particles and 30.89x speedup at 95k (RTX 5090).",
+   "grade": "WITHHELD",
+   "reason": "benchmarks/scaling/ ships run.py and README.md only; no result JSON is committed, so the numbers cannot be re-read from the repository.",
+   "verdict": null,
+   "public_in": [
+    "README.md",
+    "docs/benchmarks/gpu-scaling.md"
+   ],
+   "detail": {
+    "would_need": "benchmarks/scaling/summary.json"
+   }
+  },
+  {
+   "id": "neighbour-pairs-exact",
+   "kind": "test_present",
+   "statement": "Linked-cell neighbour pairs match brute force on random clouds.",
+   "grade": "REAL",
+   "reason": "all declarations present",
+   "verdict": null,
+   "public_in": [
+    "README.md"
+   ],
+   "detail": {
+    "targets": [
+     "tests/test_neighbor_search.py"
+    ],
+    "missing": []
+   }
+  },
+  {
+   "id": "pair-rhs-rtol",
+   "kind": "test_present",
+   "statement": "Pair-based RHS matches the dense reference to rtol=2e-10 in float64.",
+   "grade": "REAL",
+   "reason": "all declarations present",
+   "verdict": null,
+   "public_in": [
+    "README.md"
+   ],
+   "detail": {
+    "targets": [
+     "tests/test_pair_based_rhs.py"
+    ],
+    "missing": []
+   }
+  }
+ ],
+ "findings": []
+}
