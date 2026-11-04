@@ -1,9 +1,11 @@
 # 端到端 Young–Laplace 压差为什么一直测不到：误差源分解
+> 数值口径说明：本文部分数字为历史口径；当前值、测得口径与证据分级见 [`docs/verification_ledger.md`](verification_ledger.md)（程序化生成的验证断言账本）。
+
 
 **仓库**: TensorSPH ｜ **工件**: `benchmarks/laplace_pressure_floor/` ｜ **测试**: `tests/test_laplace_pressure_floor.py`
 
 **结论（先给判定）**: 连续三轮验证（legacy CSF → consistent CSF → 拟合曲率）都把端到端
-Young–Laplace 压差判为 WITHHELD（-93.6% / -75.6% / -87.6%），并把原因归给「表面张力离散/压强基准」。本单把它拆开实测，
+Young–Laplace 压差判为 WITHHELD（-93.6% / -75.6%（历史口径） / -87.6%），并把原因归给「表面张力离散/压强基准」。本单把它拆开实测，
 发现原来的失败里有 **48 个百分点是测量口径造成的**（把自由面密度亏缺带当成流体压强来读），
 剩下一段 **37% 的残差与 c0、与分辨率、与曲率算子都无关**（34%…38%），
 它是一个**压强闭合**问题：Tait 压强钳在 p≥0，而自由面壳层密度亏缺 −6%（0.85–0.95R）到
