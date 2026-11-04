@@ -70,7 +70,10 @@ def summarise(run, cfg):
             "front": z,
             "front_over_a": z / cfg.column_width,
             "ritter_front": ritter,
-            "front_over_ritter": (z / ritter) if ritter > 1.0e-6 else None,
+            # like for like: ritter_front is measured from the dam (self-similar
+            # frame), `z` is the lab-frame front, so the column width cancels
+            "front_over_ritter": ((z - cfg.column_width) / ritter
+                                  if ritter > 1.0e-6 else None),
             "kinetic_energy": ke,
             "potential_energy": pe,
         })
