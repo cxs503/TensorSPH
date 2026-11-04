@@ -221,8 +221,29 @@ def instant_diagnostics(radius, dx, sigma, rho0, sound_speed, viscosity):
     }
 
 
+def steps_for_physical_time(dx: float, sound_speed: float, radius: float,
+                            sigma: float, rho0: float,
+                            t_over_t_sigma: float,
+                            h_factor: float = 1.3) -> int:
+    """Steps needed to advance the drop by ``t_over_t_sigma`` capillary times.
+
+    A resolution ladder that fixes the *step count* instead of the physical
+    time is confounded: ``dt ~ h / c0`` shrinks with ``dx``, so the finest run
+    also relaxes for the shortest physical time and the "convergence study"
+    compares three different problems.  This helper makes the physical time the
+    independent variable and lets ``steps`` follow from it.
+    """
+    cfg = Config(dx=dx, h_factor=h_factor, rho0=rho0, sound_speed=sound_speed,
+                 gamma=7.0, gravity=0.0, viscosity=0.0,
+                 surface_tension_coefficient=sigma)
+    dt = float(stable_dt(cfg))
+    t_sigma = math.sqrt(rho0 * radius ** 3 / sigma)
+    return max(1, int(math.ceil(t_over_t_sigma * t_sigma / dt)))
+
+
 def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
-          steps=900, viscosity=0.01):
+          steps=None, viscosity=0.01, t_over_t_sigma: float | None = None,
+          average_tail: float = 0.25, calibrate_mass: bool = False):
     cfg = Config(dx=dx, h_factor=1.3, rho0=rho0, sound_speed=sound_speed,
                  gamma=7.0, gravity=0.0, viscosity=viscosity,
                  surface_tension_coefficient=sigma)
@@ -232,14 +253,34 @@ def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
     v_ref = math.sqrt(sigma / (rho0 * radius))
     dp_theory = sigma / radius
 
+    if t_over_t_sigma is not None:
+        steps = steps_for_physical_time(dx, sound_speed, radius, sigma, rho0,
+                                        t_over_t_sigma)
+    elif steps is None:
+        steps = 900
+
     pos, mass = hexagonal_droplet(radius, dx, rho0)
+    # ``calibrate_mass`` removes the lattice kernel-sum offset: the discrete
+    # kernel does not sum to one on a perfect hex lattice (rho/rho0 = 1 + b with
+    # b ~ 5.9e-3 at h = 1.3 dx), so the drop starts pre-compressed and Tait
+    # reports a spurious B[(1+b)^gamma - 1] = 2.4 kPa at c0 = 20 m/s, 6.7x the
+    # 360 Pa signal.  One pass of m -> m / (1 + b) with b measured where the
+    # kernel is complete removes the offset.
+    lattice_bias = None
+    if calibrate_mass:
+        pairs_c = cell_linked_pairs(pos, 2.0 * h)
+        rho_c = density_from_neighbor_pairs(pos, mass, h, pairs_c)
+        r_c = torch.linalg.vector_norm(pos, dim=1) / radius
+        lattice_bias = float(rho_c[r_c < 0.5].mean() / rho0)
+        mass = mass / lattice_bias
     n = pos.shape[0]
     vel = torch.zeros_like(pos)
     pairs = cell_linked_pairs(pos, 2.0 * h)
     rho = density_from_neighbor_pairs(pos, mass, h, pairs)
     pressure = tait_pressure(rho, cfg)
 
-    hist = {"t": [], "vmax": [], "ke": [], "p_center": [], "rho_center": []}
+    hist = {"t": [], "vmax": [], "ke": [], "p_center": [], "rho_center": [],
+            "p_band": []}
     for step in range(steps):
         pairs = cell_linked_pairs(pos, 2.0 * h)
         rho, pressure, acc = rhs(pos, vel, mass, cfg, pairs=pairs, wall=None,
@@ -254,6 +295,8 @@ def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
             hist["ke"].append(float(0.5 * (mass @ (vel * vel).sum(dim=1))))
             hist["p_center"].append(float(pressure[core].mean()))
             hist["rho_center"].append(float(rho[core].mean()))
+            band = (r > 0.8 * radius) & (r < 0.95 * radius)
+            hist["p_band"].append(float(pressure[band].mean()))
 
     pairs = cell_linked_pairs(pos, 2.0 * h)
     rho_f = density_from_neighbor_pairs(pos, mass, h, pairs)
@@ -263,6 +306,26 @@ def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
     p_band = float(p_f[(r > 0.8) & (r < 0.95)].mean())
     dp_meas = p_in - p_band
     err = (dp_meas - dp_theory) / dp_theory * 100.0
+
+    # Time-averaged tail.  A single frame is not a measurement: the drop
+    # oscillates at the capillary frequency, so consecutive samples of the
+    # jump swing by tens of percent.  Averaging the last ``average_tail``
+    # fraction of the run is the readout the verification uses; the final
+    # frame is kept alongside it so the two can be compared.
+    t_end = steps * dt
+    tail_from = (1.0 - average_tail) * t_end
+    tail_idx = [k for k, tt in enumerate(hist["t"]) if tt >= tail_from - 1e-12]
+    if not tail_idx:
+        tail_idx = [len(hist["t"]) - 1]
+    tail_c = [hist["p_center"][k] for k in tail_idx]
+    tail_b = [hist["p_band"][k] for k in tail_idx]
+    tail_dp_series = [c - b for c, b in zip(tail_c, tail_b)]
+    n_tail = len(tail_dp_series)
+    p_in_tail = sum(tail_c) / n_tail
+    p_band_tail = sum(tail_b) / n_tail
+    dp_tail = sum(tail_dp_series) / n_tail
+    err_tail = (dp_tail - dp_theory) / dp_theory * 100.0
+    tail_std = math.sqrt(sum((d - dp_tail) ** 2 for d in tail_dp_series) / n_tail)
     vmax = float(torch.linalg.vector_norm(vel, dim=1).max())
     _, _, _, kappa_f, _, _ = csf_fields(pos, rho_f, mass, pairs, cfg)
     comp_needed = (1.0 + dp_theory / (rho0 * sound_speed ** 2 / 7.0)) ** (1 / 7) - 1
@@ -274,6 +337,8 @@ def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
             "steps": steps, "physical_time_s": steps * dt,
             "t_over_t_sigma": steps * dt / t_sigma,
             "lattice": "hexagonal", "gravity": 0.0,
+            "calibrate_mass": calibrate_mass,
+            "lattice_bias_rho_over_rho0": lattice_bias,
         },
         "reference": {
             "delta_p_Pa": dp_theory,
@@ -292,6 +357,21 @@ def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
             "rel_error_pct": err,
             "within_3pct": abs(err) < 3.0,
             "within_15pct": abs(err) < 15.0,
+            "readout": "final_frame",
+            "tail": {
+                "readout": "time_average_of_last_%.2f_of_run" % average_tail,
+                "window_over_t_sigma": average_tail * t_end / t_sigma,
+                "t_from_s": tail_from,
+                "n_samples": n_tail,
+                "p_center_Pa": p_in_tail,
+                "p_band_Pa": p_band_tail,
+                "delta_p_measured_Pa": dp_tail,
+                "delta_p_std_Pa": tail_std,
+                "rel_error_pct": err_tail,
+                "within_3pct": abs(err_tail) < 3.0,
+                "within_15pct": abs(err_tail) < 15.0,
+                "final_frame_rel_error_pct": err,
+            },
             "density_compression_at_center": float(
                 (rho_f[r < 0.5].mean() - rho0) / rho0),
             "compressibility_theory": comp_needed,
@@ -312,11 +392,44 @@ def relax(radius=0.02, dx=0.002, sigma=7.2, rho0=1000.0, sound_speed=20.0,
 
 
 # --------------------------------------------------------------------------- #
+# Resolution ladder at fixed physical time
+# --------------------------------------------------------------------------- #
+LADDER_DXS = (0.004, 0.0025, 0.002, 0.0015)
+
+
+def convergence_ladder(dxs=LADDER_DXS, t_over_t_sigma: float = 1.0,
+                       radius: float = 0.02, sigma: float = 7.2,
+                       rho0: float = 1000.0, sound_speed: float = 20.0,
+                       viscosity: float = 0.01, average_tail: float = 0.25,
+                       calibrate_mass: bool = False, outdir=None):
+    """Relaxation ladder over ``dx`` with the *physical time* held fixed.
+
+    Every run advances the drop by the same number of capillary times, so the
+    only thing that changes between rows is the resolution.  Committed as
+    ``convergence/relax_dx<dx>.json``.
+    """
+    here = Path(__file__).resolve().parent
+    outdir = Path(outdir) if outdir is not None else here / "convergence"
+    outdir.mkdir(parents=True, exist_ok=True)
+    written = []
+    for dx in dxs:
+        rep = relax(radius=radius, dx=dx, sigma=sigma, rho0=rho0,
+                    sound_speed=sound_speed, viscosity=viscosity,
+                    calibrate_mass=calibrate_mass,
+                    t_over_t_sigma=t_over_t_sigma, average_tail=average_tail)
+        path = outdir / f"relax_dx{dx:.4f}.json"
+        path.write_text(json.dumps(rep, indent=2))
+        written.append(path)
+    return written
+
+
+# --------------------------------------------------------------------------- #
 # CLI
 # --------------------------------------------------------------------------- #
 def main():
     parser = argparse.ArgumentParser(description="Laplace-law verification")
-    parser.add_argument("--mode", choices=["instant", "relax", "both"],
+    parser.add_argument("--mode", choices=["instant", "relax", "both",
+                                           "ladder"],
                         default="both")
     parser.add_argument("--radius", type=float, default=0.02)
     parser.add_argument("--dx", type=float, default=0.002)
@@ -324,7 +437,12 @@ def main():
     parser.add_argument("--rho0", type=float, default=1000.0)
     parser.add_argument("--sound-speed", type=float, default=20.0)
     parser.add_argument("--viscosity", type=float, default=0.01)
-    parser.add_argument("--steps", type=int, default=900)
+    parser.add_argument("--steps", type=int, default=None,
+                        help="step count; ignored when --t-over-t-sigma is set")
+    parser.add_argument("--t-over-t-sigma", type=float, default=None,
+                        help="relax for this many capillary times (steps derived)")
+    parser.add_argument("--average-tail", type=float, default=0.25,
+                        help="fraction of the run averaged for the readout")
     parser.add_argument("--output", type=str, default=None)
     args = parser.parse_args()
 
@@ -338,10 +456,24 @@ def main():
             results.append(d)
         out["instant"] = results
 
+    if args.mode == "ladder":
+        paths = convergence_ladder(radius=args.radius, sigma=args.sigma,
+                                   rho0=args.rho0,
+                                   sound_speed=args.sound_speed,
+                                   viscosity=args.viscosity,
+                                   t_over_t_sigma=(args.t_over_t_sigma
+                                                   if args.t_over_t_sigma
+                                                   is not None else 1.0),
+                                   average_tail=args.average_tail)
+        print(json.dumps([str(x) for x in paths], indent=2))
+        return
+
     if args.mode in ("relax", "both"):
         out["relax"] = relax(radius=args.radius, dx=args.dx, sigma=args.sigma,
                              rho0=args.rho0, sound_speed=args.sound_speed,
-                             steps=args.steps, viscosity=args.viscosity)
+                             steps=args.steps, viscosity=args.viscosity,
+                             t_over_t_sigma=args.t_over_t_sigma,
+                             average_tail=args.average_tail)
 
     if args.output:
         Path(args.output).write_text(json.dumps(out, indent=2))
