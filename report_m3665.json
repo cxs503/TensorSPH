@@ -1,0 +1,9 @@
+{
+  "title": "TensorSPH CSF Surface Tension: curvature_color_smoothing Parameter Exposure",
+  "summary": "Added curvature_color_smoothing parameter to surface_tension_acceleration(), exposing an existing capability in csf_fields() that reduces curvature noise from +22-25% to +7-14% for dx <= 2mm. Backward compatible (default 0). All 23 surface tension + laplace pressure tests pass.",
+  "scenario_key": "tensorsph_csf_color_smoothing",
+  "mission_id": 3665,
+  "tags": ["TensorSPH", "surface-tension", "CSF", "verification"],
+  "markdown": "# CSF Surface Tension: curvature_color_smoothing\n\n**Mission**: m3665 | **Commit**: 34fc263 | **Date**: 2026-11-04\n\n## Change\nAdded `curvature_color_smoothing: int = 0` to `surface_tension_acceleration()`,\npassing through to `csf_fields()`. Reduces curvature noise +22-25% -> +7-14%.\n\n## Verification\n- 23/23 tests pass\n- 2 xfail (known Laplace deficit)\n- Backward compatible\n\n## Context\nCSF model still has Laplace law deficit (delta_integral=0.688 vs 1.0).",
+  "figures": []
+}
