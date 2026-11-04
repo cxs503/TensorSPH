@@ -14,9 +14,11 @@ correct surface-tension implementation must satisfy on a circular drop:
                                  to one capillary time.
 
 The consistent scheme (kernel-sum colour + MLS operators) meets requirements
-2 and 3 at the 15 % platform bar.  Requirement 1 (curvature) remains at
-~25 % error with the MLS divergence operator; see
-``docs/verification_surface_tension_consistent.md`` for details.
+2 and 3 at the 15 % platform bar.  Requirement 1 (curvature) remains outside
+tolerance with both the MLS divergence operator (~42 % error) and the
+fit_quadratic interface-fit operator (~37 % error on a hex lattice at
+R/dx = 5); see ``docs/verification_csf_curvature_m3432.md`` for the
+decomposition.
 
 Numbers without heavy simulation are pinned as ordinary assertions so that any
 change to the surface-tension or neighbour code shows up as a test failure.
@@ -76,10 +78,6 @@ def test_csf_force_is_net_inward(coarse):
     """Whatever the local noise, the integrated force on a half-drop must pull
     that half toward the interface, i.e. in -x for the x>0 half."""
     assert coarse["cut_force"]["measured_N_per_m"] < 0.0
-    # History: the legacy colour function missed the 2 sigma identity by wide,
-    # non-converging margins (0.45 .. 1.54 of 2 sigma over dx = 3e-3..1e-3).
-    # The consistent scheme must land inside the 15 % acceptance band; the wide
-    # bracket is kept only to keep this test about the *direction*.
     ratio = coarse["cut_force"]["ratio_measured_over_theory"]
     assert 0.85 < ratio < 1.15
 
@@ -112,35 +110,38 @@ def test_gamma_zero_disables_surface_tension():
 # --------------------------------------------------------------------------- #
 # analytic requirements
 # --------------------------------------------------------------------------- #
-@pytest.mark.xfail(strict=True, reason="CSF curvature (MLS div n) on a circle "
-                                      "is ~25 % high; the interface-fit "
-                                      "operators (fit_quadratic/fit_circle) "
-                                      "need further tuning. See "
-                                      "docs/verification_surface_tension_consistent.md")
+@pytest.mark.xfail(strict=True, reason="Curvature on a hex lattice at R/dx=5: "
+    "MLS div n gives +42 %, fit_quadratic gives -37 % (both outside 15 %). "
+    "The fit_quadratic docstring claims <1 % but this is not achieved on the "
+    "verification lattice; see docs/verification_csf_curvature_m3432.md. "
+    "The benchmark now uses the solver's default csf_curvature='fit_quadratic' "
+    "(m3432 fix), exposing the gap that the old xfail was masking.")
 def test_curvature_reproduces_circle(coarse):
+    """The CSF curvature operator must reproduce κ = 1/R on a circle.
+
+    Both the MLS divergence operator and the fit_quadratic interface-fit
+    operator are outside the 15 % platform bar on the verification lattice
+    (R/dx = 5, hex packing).  The fit_quadratic scheme is the solver's default
+    (Config.csf_curvature) but its measured error is ~37 %, not the <1 %
+    claimed in the docstring.
+    """
     err = abs(coarse["curvature"]["delta_s_weighted_rel_error_pct"]) / 100.0
     assert err < CURVATURE_TOL
 
 
 def test_csf_force_direction_is_radial(coarse):
-    """Was xfail(strict) under the legacy colour function (median cos ~ 0.1).
-    The kernel-sum colour + MLS normal makes the CSF force radial; measured
-    median cos = 0.999 (docs/verification_surface_tension_consistent.md)."""
+    """The kernel-sum colour + MLS normal makes the CSF force radial."""
     assert coarse["inward_alignment"]["cos_band_median"] > DIRECTION_COS_MIN
 
 
 def test_cut_force_identity(coarse):
-    """Was xfail(strict): the legacy CSF missed 2 sigma by up to 2x.  The
-    consistent scheme lands on 1.07-1.11 over dx = 3..1.5 mm."""
+    """The consistent scheme lands on 1.07-1.11 over dx = 3..1.5 mm."""
     ratio = coarse["cut_force"]["ratio_measured_over_theory"]
     assert abs(ratio - 1.0) < CUT_FORCE_TOL
 
 
 def test_laplace_pressure_jump(bench):
-    """Was xfail(strict): the legacy CSF was 77-118 % off.  The consistent
-    scheme closes this at the coarse resolution used here (R/h ~ 5); the
-    resolution dependence of the *pressure* measurement is reported in
-    docs/verification_surface_tension_consistent.md section 3.3."""
+    """The consistent scheme closes the Laplace jump at the coarse resolution."""
     rep = bench.relax(radius=0.02, dx=0.004, sigma=7.2, steps=380)
     err = abs(rep["laplace"]["rel_error_pct"]) / 100.0
     assert err < LAPLACE_TOL
@@ -155,7 +156,6 @@ def test_committed_verdicts_are_self_consistent():
     recomputed = ((lap["p_center_Pa"] - lap["p_interface_band_Pa"])
                   - lap["delta_p_theory_Pa"]) / lap["delta_p_theory_Pa"] * 100.0
     assert recomputed == pytest.approx(lap["rel_error_pct"], abs=1e-6)
-    # The consistent scheme meets the 15 % bar but not the 3 % bar.
     assert lap["within_15pct"] is True
     assert lap["within_3pct"] is False
     assert abs(lap["rel_error_pct"]) < 15.0
@@ -164,7 +164,6 @@ def test_committed_verdicts_are_self_consistent():
 
     for path in sorted(BENCH.glob("convergence/*.json")):
         rep = json.loads(path.read_text())
-        # Convergence runs: some may be within 15 %, some may not
         assert rep["setup"]["t_over_t_sigma"] > 0.5, path.name
 
 
