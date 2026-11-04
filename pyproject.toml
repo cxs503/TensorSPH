@@ -36,3 +36,10 @@ target-version = "py310"
 # Correctness-only gate: pyflakes undefined names/unused imports, pycodestyle
 # errors and warnings. Formatting is deliberately not enforced.
 select = ["E", "F", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+# These modules embed long Chinese prose literals that document the generated
+# verification report; splitting them would corrupt the generated markdown.
+"benchmarks/verification_ledger/build.py" = ["E501"]
+"benchmarks/verification_ledger/ledger.py" = ["E501"]
+"benchmarks/verification_ledger/report_payload.py" = ["E501"]

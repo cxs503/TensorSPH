@@ -1,0 +1,15 @@
+{
+ "sigma": 7.2,
+ "steps": 380,
+ "d": {
+  "delta_p_theory_Pa": 360.0,
+  "p_center_Pa": 280.97034908853556,
+  "p_interface_band_Pa": 299.08283904727085,
+  "delta_p_measured_Pa": -18.112489958735296,
+  "rel_error_pct": -105.0312472107598,
+  "within_3pct": false,
+  "within_15pct": false,
+  "density_compression_at_center": 0.0006928291619441324,
+  "compressibility_theory": 0.0008975794345598143
+ }
+}
