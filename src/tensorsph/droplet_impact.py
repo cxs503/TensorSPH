@@ -98,6 +98,14 @@ class Config:
     fail_fast: bool = True
     pair_skin_factor: float = 0.25
     hydrostatic_init: bool = False
+    # One-shot initial-condition mass calibration (error source C2, see
+    # tensorsph.initialization): rescale every mass by 1/(1+b) so the
+    # interior sum-density is exactly rho0 instead of rho0*(1+b).  On the
+    # square lattice b ~ -2.2e-3 (a density deficit the Tait clamp hides);
+    # on the hexagonal Laplace lattice b ~ +5.9e-3 (a 2.4 kPa spurious
+    # pressure at c0 = 20).  Off only for bit-for-bit reproduction of
+    # pre-calibration runs.
+    calibrate_init: bool = True
     wall_friction: float = 0.0
     density_diffusion: float = 0.0
     # Adaptive time step. Off by default: a fixed step keeps every published
@@ -398,6 +406,22 @@ def make_particles(cfg: Config, device: torch.device):
     if cfg.hydrostatic_init:
         pool_mass = (hydrostatic_density(pool[:, 1], cfg) * dx * dx)
         mass = torch.cat((pool_mass, mass[pool.shape[0]:]), dim=0)
+    if cfg.calibrate_init:
+        from .initialization import (
+            calibrate_masses,
+            circular_core_mask,
+            rectangular_core_mask,
+        )
+        h = cfg.h_factor * dx
+        # 2h margin: a particle needs its full kernel support (radius 2h)
+        # inside the cloud for the sum to be the lattice constant, not a
+        # surface average.  The wall lattice restores support at the pool
+        # walls, but the 2h margin keeps the core free of the wall layer too.
+        pool_core = rectangular_core_mask(
+            pool, cfg.pool_width, cfg.pool_depth, 2.0 * h)
+        drop_core = circular_core_mask(drop, center, cfg.drop_radius, 2.0 * h)
+        core = torch.cat((pool_core, drop_core), dim=0)
+        mass, _ = calibrate_masses(positions, mass, h, cfg.rho0, core)
     return positions, mass
 
 

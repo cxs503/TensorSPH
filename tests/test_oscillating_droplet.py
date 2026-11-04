@@ -192,7 +192,15 @@ def test_fit_refuses_to_hallucinate_a_frequency_from_a_non_oscillating_trace(ben
 #: threaded, seed 0).  The reference case R = 2 cm is recorded at -43.5 % in
 #: ``docs/verification_oscillating_droplet.md`` section 3.1 / 5, i.e. the model
 #: is a documented FAIL against the 15 % bar -- this cheap case is not better.
-RECORDED_MODE2_ERR_PCT = 31.78
+# Re-baselined 2026-11-04 (m3372) after the C2 initialisation mass
+# calibration landed in the benchmark: the hexagonal lattice's +5.9e-3
+# sum-density bias carried a 2.4 kPa spurious pressure (6.7x the Laplace
+# signal) that was masking part of the frequency deficiency.  Calibrated,
+# the R = 1 cm release case measures -43.53 % on loong64, matching the
+# -43.5 % the R = 2 cm reference case records in
+# docs/verification_oscillating_droplet.md.  The uncalibrated loong64 value
+# was -31.78 %; the x86_64 CI value was +8.64 % (uncalibrated).
+RECORDED_MODE2_ERR_PCT = 43.53
 RECORDED_MODE2_TOL_PCT = 2.0
 
 # 2026-11-04: the mode-2 second-moment fit is architecture-fragile — the same

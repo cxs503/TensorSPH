@@ -288,6 +288,16 @@ def run_case(radius: float = 0.02, dx: float = 0.002, sigma: float = 7.2,
         steps = int(math.ceil(periods * period_ref / dt))
 
     pos, mass = elliptical_drop(radius, dx, rho0, eps)
+    # C2 initialisation calibration: the hexagonal lattice sums to
+    # rho0*(1+b) with b ~ +5.9e-3, a 2.4 kPa spurious pressure at c0 = 20
+    # (6.7x the Laplace signal).  Rescale so the interior is exactly rho0.
+    # The drop is centred on the origin after elliptical_drop's recentering;
+    # the inscribed circle has the semi-minor axis, so that is the core.
+    from tensorsph.initialization import calibrate_masses, circular_core_mask
+    semi_minor = radius / (1.0 + eps)
+    core = circular_core_mask(pos, torch.zeros(2, dtype=pos.dtype),
+                              semi_minor, 2.0 * h)
+    mass, init_bias = calibrate_masses(pos, mass, h, rho0, core)
     vel = torch.zeros_like(pos)
     n0 = pos.shape[0]
     m0 = float(mass.sum())
@@ -332,6 +342,7 @@ def run_case(radius: float = 0.02, dx: float = 0.002, sigma: float = 7.2,
             "csf_scheme": scheme, "csf_curvature": curvature_scheme,
             "density_diffusion": density_diffusion,
             "lattice": "hexagonal", "mode": MODE,
+            "init_bias_b": init_bias,
         },
         "reference": {
             "law": "omega^2 = sigma m (m^2-1) / (rho R^3)  [2-D cylinder]",
