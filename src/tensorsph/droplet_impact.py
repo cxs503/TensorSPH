@@ -99,6 +99,19 @@ class Config:
     pair_skin_factor: float = 0.25
     hydrostatic_init: bool = False
     wall_friction: float = 0.0
+    # Summation density on a perfect lattice is not exactly ``rho0``: the
+    # discrete kernel sum is ``1 + b``, with ``b`` fixed by ``h/dx`` and the
+    # lattice type (+0.59 % on a hex disc, -0.05 % on the square impact lattice,
+    # both at h/dx = 1.3). With ``b > 0`` the fluid starts pre-compressed and
+    # the Tait law returns a spurious pressure: 2.4 kPa at c0 = 20 m/s, i.e.
+    # 6.7x the Young-Laplace jump of a R = 10 cm water drop. ``True`` measures
+    # the bias on the full-support particles at initialisation and rescales the
+    # mass once, ``m -> m * rho0 / rho_full_support``, so the reference state is
+    # p = 0. The dummy wall masses follow the same factor.
+    init_density_calibration: bool = True
+    # Derived, not a user knob: the factor measured by :func:`make_particles`,
+    # read by :func:`wall_mass` so wall layers keep the same lattice scale.
+    init_density_scale: float = 1.0
     density_diffusion: float = 0.0
     # Adaptive time step. Off by default: a fixed step keeps every published
     # number reproducible bit for bit. When on, ``dt`` starts at the configured
@@ -395,9 +408,22 @@ def make_particles(cfg: Config, device: torch.device):
         raise ValueError("drop discretization produced no particles")
     positions = torch.cat((pool, drop), dim=0)
     mass = torch.full((positions.shape[0],), cfg.rho0 * dx * dx, device=device)
+    target = torch.full((positions.shape[0],), cfg.rho0, device=device)
     if cfg.hydrostatic_init:
-        pool_mass = (hydrostatic_density(pool[:, 1], cfg) * dx * dx)
-        mass = torch.cat((pool_mass, mass[pool.shape[0]:]), dim=0)
+        pool_rho = hydrostatic_density(pool[:, 1], cfg)
+        mass = torch.cat((pool_rho * dx * dx, mass[pool.shape[0]:]), dim=0)
+        target = torch.cat((pool_rho, target[pool.shape[0]:]), dim=0)
+    if cfg.init_density_calibration:
+        # One measured pass, done once per run. The pool, the drop and the wall
+        # layers share the lattice spacing and phase, so a single factor serves
+        # all of them. The full-support mask is used rather than an eroded
+        # geometric core: on this configuration (drop 4 cm above the pool, i.e.
+        # inside 2h = 6.5 cm) both give 1.0000531, against the analytic square
+        # lattice sum 0.9999468, so no geometry is needed here.
+        h = cfg.h_factor * dx
+        pairs = cell_linked_pairs(positions, 2.0 * h)
+        mass, cfg.init_density_scale = calibrate_initial_mass(
+            positions, mass, target, h, pairs)
     return positions, mass
 
 
@@ -437,8 +463,16 @@ def wall_lattice(cfg: Config, device: torch.device,
     return torch.cat(parts, dim=0)
 
 
-def wall_mass(cfg: Config, count: int, device: torch.device) -> torch.Tensor:
-    return torch.full((count,), cfg.rho0 * cfg.dx * cfg.dx, device=device)
+def wall_mass(cfg: Config, count: int, device: torch.device,
+              scale: float | None = None) -> torch.Tensor:
+    """Dummy wall masses, on the same lattice scale as the calibrated fluid.
+
+    The fluid density summation includes the wall layers, so a calibrated fluid
+    against uncalibrated walls would keep half the bias in the first fluid layer
+    next to a wall. ``scale`` defaults to ``cfg.init_density_scale``.
+    """
+    factor = cfg.init_density_scale if scale is None else float(scale)
+    return torch.full((count,), cfg.rho0 * cfg.dx * cfg.dx * factor, device=device)
 
 
 # --------------------------------------------------------------------------- #
@@ -473,6 +507,65 @@ def density_from_neighbor_pairs(pos, mass, h: float, pairs=None):
     rho = rho.index_add(0, i, mass[j] * wij)
     rho = rho.index_add(0, j, mass[i] * wij)
     return rho
+
+
+def full_support_mask(pos, mass, h: float, pairs=None, rel_tol: float = 1.0e-5):
+    """Mask of particles whose kernel support is complete (single body only).
+
+    Summation density is a sum of non-negative kernel terms, so truncation at a
+    free surface can only *remove* contributions and the largest unit-mass
+    kernel sum is attained by a fully supported particle. This needs no
+    geometric core radius, which is why it works for a disc, a pool, a hex
+    lattice or a square one.
+
+    A second body inside ``2h`` of the first adds support to the particles in
+    the gap, so the maximum could in principle be inflated. Measured on the
+    impact case (drop 4 cm above the pool, inside 2h = 6.5 cm) it is not: the
+    gap particles lose lateral support to the free surface and stay below the
+    interior value, and the maximum reproduces the analytic square-lattice sum
+    to 2e-7. Callers that want to be independent of that argument can pass an
+    explicit ``core`` mask to :func:`kernel_consistency_scale`.
+    """
+    unit = density_from_neighbor_pairs(pos, torch.ones_like(mass), h, pairs)
+    peak = unit.max()
+    if not bool(peak > 0):
+        raise ValueError("kernel sum is zero: no particle has support")
+    return unit >= peak * (1.0 - rel_tol)
+
+
+def kernel_consistency_scale(pos, mass, target_rho, h: float, pairs=None,
+                             core=None) -> float:
+    """Mass factor ``s`` such that ``s * mass`` sums to ``target_rho`` exactly.
+
+    ``target_rho`` is the density the lattice *should* carry (``rho0`` for a
+    resting fluid, the analytical hydrostatic profile for ``hydrostatic_init``).
+    ``s`` is the mean of ``target/measured`` over ``core``, the particles whose
+    kernel support is complete. On a perfect lattice that ratio is a single
+    number -- the discrete kernel-sum deficit -- so this is a measurement, not a
+    fit: the spread inside the core is the only thing being averaged away.
+
+    ``core`` defaults to :func:`full_support_mask`.
+    """
+    rho = density_from_neighbor_pairs(pos, mass, h, pairs)
+    mask = full_support_mask(pos, mass, h, pairs) if core is None else core
+    if mask.dtype != torch.bool:
+        raise TypeError("core must be a boolean mask")
+    if not bool(mask.any()):
+        raise ValueError("core mask selects no particle")
+    target = torch.as_tensor(target_rho, dtype=rho.dtype, device=rho.device)
+    if target.ndim == 0:
+        target = target.expand_as(rho)
+    ratio = target[mask] / rho[mask]
+    if not bool(torch.isfinite(ratio).all()) or not bool((ratio > 0).all()):
+        raise ValueError("kernel consistency ratio is not finite and positive")
+    return float(ratio.mean())
+
+
+def calibrate_initial_mass(pos, mass, target_rho, h: float, pairs=None,
+                           core=None):
+    """Apply :func:`kernel_consistency_scale`; returns ``(mass, scale)``."""
+    scale = kernel_consistency_scale(pos, mass, target_rho, h, pairs, core=core)
+    return mass * scale, scale
 
 
 def drop_wall_wall_pairs(pairs: torch.Tensor, fluid_count: int) -> torch.Tensor:
