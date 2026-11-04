@@ -1,5 +1,8 @@
 # CSF Surface Tension Verification: Consistent Scheme vs Laplace Law
 
+> **⚠️ SUPERSEDED-BY: docs/verification_ledger.md** —— 本文数字是**历史口径**，已被后续复核取代/校正，不得再作为当前精度引用。
+> 当前证据分级与逐项误差见机器生成的验证账本 `docs/verification_ledger.md`（由 `benchmarks/verification_ledger/ledger.py` 从已提交工件注入）。
+
 **Date**: 2026-11-03  
 **Mission**: m3028 (selfstart · verifier席)  
 **Scope**: TensorSPH CSF surface tension model verification against Young-Laplace law

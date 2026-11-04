@@ -1,0 +1,189 @@
+{
+  "schema": 1,
+  "note": "Declarative claim table. Every published number in docs/verification_ledger.md is read from the artifact below via value_path; nothing is typed by hand. Add a claim here instead of quoting a number in prose.",
+  "artifacts_root": ".",
+  "claims": [
+    {
+      "id": "laplace_single_phase_best",
+      "group": "Young-Laplace pressure jump (single-phase free surface)",
+      "quantity": "Delta p = p_core, absolute pressure, time-averaged tail",
+      "configuration": "single-phase disc, vacuum outside, R=20 mm, sigma=7.2 N/m, p>=0 Tait",
+      "artifact": "benchmarks/laplace_pressure_floor/report.json",
+      "series": "runs",
+      "filter": {
+        "mass_calibrated": true
+      },
+      "select": "min_abs",
+      "rel_error_path": "absolute_time_average_tail.rel_error_pct",
+      "value_path": "absolute_time_average_tail.delta_p_Pa",
+      "reference_path": "reference.delta_p_Pa",
+      "unit": "Pa",
+      "gate_pct": 15.0,
+      "evidence": "WITHHELD",
+      "why": "best reading over the c0 x dx ladder; still outside the 15 % gate, so the end-to-end jump is not evidence of a correct surface-tension model"
+    },
+    {
+      "id": "laplace_single_phase_worst",
+      "group": "Young-Laplace pressure jump (single-phase free surface)",
+      "quantity": "same quantity, worst reading of the ladder (shows the spread)",
+      "configuration": "single-phase disc, vacuum outside, R=20 mm, sigma=7.2 N/m",
+      "artifact": "benchmarks/laplace_pressure_floor/report.json",
+      "series": "runs",
+      "filter": {
+        "mass_calibrated": true
+      },
+      "select": "max_abs",
+      "rel_error_path": "absolute_time_average_tail.rel_error_pct",
+      "value_path": "absolute_time_average_tail.delta_p_Pa",
+      "reference_path": "reference.delta_p_Pa",
+      "unit": "Pa",
+      "gate_pct": 15.0,
+      "evidence": "WITHHELD",
+      "why": "spread over c0 = 5..20 and dx = 1.5..2 mm is 4.1 pts, i.e. the residual is not an EOS noise floor that tuning can remove"
+    },
+    {
+      "id": "laplace_band_differencing_mouth",
+      "group": "Measurement-mouth artefacts (superseded)",
+      "quantity": "Delta p = p_center - p_interface_band (legacy band differencing)",
+      "configuration": "single-phase disc, R=20 mm, sigma=7.2 N/m, dx=2 mm, c0=20, 600 relax steps",
+      "artifact": "benchmarks/csf_consistent/validation_report.json",
+      "rel_error_pointer": "relax.laplace.rel_error_pct",
+      "value_pointer": "relax.laplace.delta_p_measured_Pa",
+      "reference_pointer": "relax.reference.delta_p_Pa",
+      "unit": "Pa",
+      "gate_pct": 15.0,
+      "evidence": "SUPERSEDED",
+      "superseded_by": "laplace_single_phase_best",
+      "why": "the interface band sits inside the free-surface density deficit (-6..-34 %), so this mouth reports a pressure difference that the fluid does not carry; see laplace_mouth_correction"
+    },
+    {
+      "id": "laplace_mouth_correction",
+      "group": "Measurement-mouth artefacts (superseded)",
+      "quantity": "percentage points of |error| removed by switching from band differencing to absolute + time-averaged pressure",
+      "configuration": "uncalibrated control run, dx=2 mm, c0=20 (same disc, same scheme as the row above)",
+      "artifact": "benchmarks/laplace_pressure_floor/report.json",
+      "derived": "abs_magnitude_drop",
+      "paths": [
+        "controls.uncalibrated_c0_reference.definition_bandA.rel_error_pct",
+        "controls.uncalibrated_c0_reference.absolute_time_average_tail.rel_error_pct"
+      ],
+      "unit": "pt",
+      "gate_pct": null,
+      "evidence": "REAL",
+      "why": "same control run (dx=2 mm, c0=20, 1283 steps): the only change is the measurement mouth, so the drop is attributable to the mouth alone"
+    },
+    {
+      "id": "cut_force_identity",
+      "group": "CSF force operator",
+      "quantity": "F_cut / (2 sigma) vs 1 (cutting-plane force identity)",
+      "configuration": "single-phase disc, R=20 mm, sigma=7.2 N/m, dx=1.5 mm, consistent CSF + fit_quadratic curvature",
+      "artifact": "benchmarks/csf_curvature_fit/validation_report.json",
+      "series": "instant",
+      "filter": {
+        "curvature": "fit_quadratic",
+        "dx_m": 0.0015
+      },
+      "select": "first",
+      "rel_error_path": "cut_force.rel_error_pct",
+      "value_path": "cut_force.measured_N_per_m",
+      "reference_path": "cut_force.theory_N_per_m",
+      "unit": "N/m",
+      "gate_pct": 15.0,
+      "evidence": "REAL",
+      "why": "the volume-force integral is the part that the CSF refactor fixed; it is inside the gate at every resolution in the artifact"
+    },
+    {
+      "id": "curvature_delta_s_weighted",
+      "group": "CSF force operator",
+      "quantity": "delta_s-weighted mean curvature vs 1/R",
+      "configuration": "single-phase disc, R=20 mm, dx=1.5 mm, fit_quadratic curvature",
+      "artifact": "benchmarks/csf_curvature_fit/validation_report.json",
+      "series": "instant",
+      "filter": {
+        "curvature": "fit_quadratic",
+        "dx_m": 0.0015
+      },
+      "select": "first",
+      "rel_error_path": "kappa.rel_error_pct",
+      "value_path": "kappa.delta_s_weighted_mean_1_per_m",
+      "reference_path": "kappa.exact_1_per_m",
+      "unit": "1/m",
+      "gate_pct": 3.0,
+      "evidence": "REAL",
+      "why": "the physically weighted curvature (weight = interface measure) is the quantity that enters the CSF force; it is inside the 3 % band used by the plateau/convergence claims"
+    },
+    {
+      "id": "curvature_band_unweighted",
+      "group": "CSF force operator",
+      "quantity": "unweighted band mean curvature vs 1/R",
+      "configuration": "single-phase disc, R=20 mm, dx=1.5 mm, fit_quadratic curvature",
+      "artifact": "benchmarks/csf_curvature_fit/validation_report.json",
+      "series": "instant",
+      "filter": {
+        "curvature": "fit_quadratic",
+        "dx_m": 0.0015
+      },
+      "select": "first",
+      "rel_error_path": "kappa.band_rel_error_pct",
+      "value_path": "kappa.band.mean",
+      "reference_path": "kappa.exact_1_per_m",
+      "unit": "1/m",
+      "gate_pct": 15.0,
+      "evidence": "WITHHELD",
+      "why": "per-particle curvature scatter on the band is large and biased; the claim only holds after delta_s weighting, which is exactly why the force integral (REAL) is the right instrument and the raw band mean is not"
+    },
+    {
+      "id": "two_phase_force_integral_laplace",
+      "group": "CSF force operator",
+      "quantity": "radial line integral of the CSF volume force vs sigma/R (density-matched two-phase)",
+      "configuration": "two-phase, equal density, sharp colour step + Shepard smoothing, R=100 mm, sigma=0.072 N/m, dx=5 mm",
+      "artifact": "benchmarks/surface_tension_laplace/validation_report.json",
+      "series": "two_phase_sweep_smoothed_color",
+      "filter": {
+        "dx_m": 0.005
+      },
+      "select": "first",
+      "rel_error_path": "rel_error",
+      "value_path": "dp_Pa",
+      "reference_pointer": "theory.laplace_dp_Pa",
+      "rel_error_scale": 100.0,
+      "unit": "Pa",
+      "gate_pct": 15.0,
+      "evidence": "REAL",
+      "why": "with no density jump and no vacuum the pressure closure is not exercised, so this row validates the force operator, not the free-surface pressure closure"
+    },
+    {
+      "id": "surface_delta_integral",
+      "group": "CSF force operator",
+      "quantity": "integral |grad c| dn (CSF colour-field normalisation)",
+      "configuration": "single-phase disc, R=20 mm, dx=1.5 mm, consistent CSF",
+      "artifact": "benchmarks/csf_curvature_fit/validation_report.json",
+      "series": "instant",
+      "filter": {
+        "curvature": "fit_quadratic",
+        "dx_m": 0.0015
+      },
+      "select": "first",
+      "rel_error_path": "delta_s.rel_error_pct",
+      "value_path": "delta_s.integral_dn",
+      "reference_pointer": "reference.delta_s_integral",
+      "unit": "1",
+      "gate_pct": 15.0,
+      "evidence": "WITHHELD",
+      "why": "the colour field carries only ~0.74 of the unit surface delta; it is compensated inside the force normalisation but it is the reason absolute force magnitudes must not be read off N_delta directly"
+    },
+    {
+      "id": "spurious_current_adami",
+      "group": "Stability / spurious currents",
+      "quantity": "max |v| / sqrt(sigma / (rho R)) against the Adami 2012 bound 0.1",
+      "configuration": "single-phase disc, R=20 mm, dx=2 mm, c0=20, relaxed 600 steps",
+      "artifact": "benchmarks/csf_consistent/validation_report.json",
+      "pointer": "relax.spurious_current.vmax_over_vref_final",
+      "gate_value": 0.1,
+      "unit": "1",
+      "gate_pct": null,
+      "evidence": "REAL",
+      "why": "parasitic current is the second necessary condition for a usable surface-tension model; it passes with margin at every resolution in the artifact"
+    }
+  ]
+}

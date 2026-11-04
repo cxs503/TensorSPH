@@ -1,5 +1,8 @@
 # 表面张力 CSF 模型的解析基准核验（consistent 离散）
 
+> **⚠️ SUPERSEDED-BY: docs/verification_ledger.md** —— 本文数字是**历史口径**，已被后续复核取代/校正，不得再作为当前精度引用。
+> 当前证据分级与逐项误差见机器生成的验证账本 `docs/verification_ledger.md`（由 `benchmarks/verification_ledger/ledger.py` 从已提交工件注入）。
+
 **范围**: TensorSPH `src/tensorsph/csf_consistent.py`、`surface_tension.py`、`droplet_impact.py`
 **基准**: 2-D 单相静止液滴的 Young-Laplace 定律（本文件所有数字由
 `benchmarks/csf_consistent/run.py` 写出的 JSON 程序化注入，无手抄）

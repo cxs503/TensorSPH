@@ -1,5 +1,8 @@
 # 表面张力曲率算子的解析核验：div n → 局部界面拟合
 
+> **⚠️ SUPERSEDED-BY: docs/verification_ledger.md** —— 本文数字是**历史口径**，已被后续复核取代/校正，不得再作为当前精度引用。
+> 当前证据分级与逐项误差见机器生成的验证账本 `docs/verification_ledger.md`（由 `benchmarks/verification_ledger/ledger.py` 从已提交工件注入）。
+
 **范围**: `src/tensorsph/csf_curvature.py`（新增）、`csf_consistent.py`（接入）、`droplet_impact.py`（`csf_curvature` 开关）
 **基准**: 2-D 静止液滴的 Young-Laplace 定律与切割力恒等式；本文件所有数字由
 `benchmarks/csf_curvature_fit/run.py` 写出的 `validation_report.json` 程序化注入，无手抄。
