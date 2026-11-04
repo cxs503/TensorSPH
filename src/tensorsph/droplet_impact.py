@@ -240,6 +240,92 @@ def tait_pressure(rho: torch.Tensor, cfg: Config) -> torch.Tensor:
     return (bulk * (ratio.pow(cfg.gamma) - 1.0)).clamp_min(0.0)
 
 
+
+def free_surface_pressure_closure(
+    pos: torch.Tensor,
+    pressure: torch.Tensor,
+    rho: torch.Tensor,
+    mass: torch.Tensor,
+    pairs: torch.Tensor,
+    h: float,
+    cfg: Config,
+    threshold: float = 0.99,
+) -> torch.Tensor:
+    """Extrapolate pressure to free-surface particles (Adami et al. 2012 §3.3).
+
+    The Tait EOS clamps ``p >= 0``, so particles in the density-deficit shell
+    at a free surface sit at ``p = 0`` even though the physical pressure should
+    be continuous across the interface. This makes the interior settle at only
+    ~57 % of the Young-Laplace jump ``sigma/R`` (backlog_update_m2971.md C3).
+
+    For particles whose density ratio ``rho/rho0 < threshold``, replace the
+    Tait pressure with a kernel-weighted extrapolation from neighbours:
+
+        p_i = max(0, sum_j (p_j + rho_j g . r_ji) W_ij / sum_j W_ij)
+
+    The body-force term ``rho_j g . r_ji`` is the hydrostatic correction that
+    makes the extrapolation consistent with the pressure gradient in the bulk.
+    With ``g = 0`` (the Laplace droplet case) it reduces to a plain weighted
+    average, which is the correct closure for a drop in vacuum.
+
+    Args:
+        pos: (N, 2) particle positions.
+        pressure: (N,) Tait pressure (already clamped >= 0).
+        rho: (N,) summation density.
+        mass: (N,) particle masses.
+        pairs: (P, 2) fluid-fluid neighbour pairs.
+        h: smoothing length.
+        cfg: simulation config (for gravity).
+        threshold: density ratio below which a particle is considered free-surface.
+
+    Returns:
+        (N,) pressure with free-surface closure applied.
+    """
+    if pairs.numel() == 0:
+        return pressure
+
+    rel_rho = rho / cfg.rho0
+    is_free_surface = rel_rho < threshold
+    if not is_free_surface.any():
+        return pressure
+
+    i, j = pairs.unbind(dim=1)
+    delta = pos[i] - pos[j]
+    r = torch.linalg.vector_norm(delta, dim=1)
+    w = cubic_spline_kernel(r, h)
+
+    # Only free-surface particles get the closure; bulk particles keep Tait.
+    # For each free-surface particle i, accumulate from all neighbours j.
+    numerator = torch.zeros_like(pressure)
+    denominator = torch.zeros_like(pressure)
+
+    # Body-force correction: rho_j * g . (r_i - r_j)
+    # With g = (0, -gravity), g . r_ji = -gravity * (y_i - y_j) = -gravity * delta_y
+    if cfg.gravity != 0.0:
+        body_force = -cfg.gravity * delta[:, 1]  # g . r_ji for 2D
+        source = pressure[j] + rho[j] * body_force
+    else:
+        source = pressure[j]
+
+    # Accumulate for free-surface targets only
+    fs_i = is_free_surface[i]
+    fs_j = is_free_surface[j]
+
+    # i -> j direction: i is the target
+    numerator = numerator.index_add(0, i, torch.where(fs_i, source * w, torch.zeros_like(w)))
+    denominator = denominator.index_add(0, i, torch.where(fs_i, w, torch.zeros_like(w)))
+
+    # j -> i direction: j is the target
+    numerator = numerator.index_add(0, j, torch.where(fs_j, source * w, torch.zeros_like(w)))
+    denominator = denominator.index_add(0, j, torch.where(fs_j, w, torch.zeros_like(w)))
+
+    # Compute extrapolated pressure for free-surface particles
+    p_extrap = (numerator / denominator.clamp_min(1e-30)).clamp_min(0.0)
+
+    # Blend: free-surface particles use extrapolated, bulk particles keep Tait
+    return torch.where(is_free_surface, p_extrap, pressure)
+
+
 def acoustic_courant(dt: float, cfg: Config, max_speed: float = 0.0) -> float:
     """Acoustic Courant number dt * (c0 + |v|_max) / h."""
     return dt * (cfg.sound_speed + max_speed) / (cfg.h_factor * cfg.dx)
@@ -572,6 +658,12 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
 
     pressure = tait_pressure(rho, cfg)
 
+    # Free-surface pressure closure (Adami et al. 2012 §3.3):
+    # Extrapolate pressure to density-deficit particles instead of clamping at 0.
+    # This is the single remaining barrier to the Young-Laplace jump verification.
+    if cfg.surface_tension_coefficient > 0.0:
+        pressure = free_surface_pressure_closure(pos, pressure, rho, mass, pairs, h, cfg)
+
     if nw:
         bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
         # Only fluid/wall pairs extrapolate wall pressure. Instead of selecting
@@ -691,6 +783,12 @@ def rhs_all_pairs(pos, vel, mass, cfg: Config, dt=None):
         rate = -scale * (mass[None, :] / rho[None, :] * coupling).sum(dim=1)
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
     pressure = tait_pressure(rho, cfg)
+
+    # Free-surface pressure closure (Adami et al. 2012 §3.3):
+    # Extrapolate pressure to density-deficit particles instead of clamping at 0.
+    # This is the single remaining barrier to the Young-Laplace jump verification.
+    if cfg.surface_tension_coefficient > 0.0:
+        pressure = free_surface_pressure_closure(pos, pressure, rho, mass, pairs, h, cfg)
     grad_w = cubic_spline_gradient(delta, h)
     pressure_term = (
         pressure[:, None] / rho[:, None].square()
