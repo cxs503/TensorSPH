@@ -157,7 +157,11 @@ def test_cut_force_identity(droplet):
     right = pos[:, 0] > 0
     f_cut = float((mass[right, None] * acc[right]).sum(dim=0)[0])
     ratio = f_cut / (-2.0 * SIGMA)
-    # 15 % acceptance -- measured 1.08
+    # 15 % acceptance band -- measured 0.8585 (14.15 % error, i.e. the test
+    # passes by 0.85 percentage points) on this lattice. The radial-integral
+    # measure of the same force field gives 0.854, see
+    # docs/verification_csf_force_amplitude.md; the '1.08' that used to be
+    # recorded here was stale.
     assert abs(ratio - 1.0) < 0.15, ratio
 
 
