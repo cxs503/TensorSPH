@@ -109,7 +109,7 @@ def main() -> None:
     A(f"| 运动粘度 ν | {s['viscosity_m2_per_s']:.1e} m²/s | 基准算例；粘度序列另见 ③ |")
     A(f"| 初始扰动 ε | {s['initial_eps']:.2f} | 椭圆 a = R(1+ε)，b = R/(1+ε)（面积守恒）|")
     A(f"| 粒子数 N | {s['n_particles']} | 六角密排，被椭圆裁剪 |")
-    A(f"| 重力 | 0 | 纯毛细振荡 |")
+    A("| 重力 | 0 | 纯毛细振荡 |")
     A(f"| 解析角频率 ω₂ | **{f(ref['omega_rad_per_s'],3)} rad/s** | 待比对基准量 |")
     A(f"| 解析周期 T | **{f(ref['period_s'],5)} s** | = {f(ref['period_over_t_sigma'],3)} t_σ |")
     A(f"| 毛细时间 t_σ | {f(ref['capillary_time_s'],5)} s | √(ρR³/σ) |")
@@ -230,16 +230,20 @@ def main() -> None:
       f"{f(fr['fit_second_moment_rad_per_s'],2)} rad/s | "
       f"{pct(fr['fit_second_moment_rel_error_pct'])} | "
       f"{yn(fr['within_3pct'])} | {yn(fr['within_15pct'])} |")
+    omega_zc = fr["zero_crossing_rad_per_s"]
+    period_zc = (2.0 * 3.141592653589793 / omega_zc) if omega_zc == omega_zc else None
     A(f"| 周期 T（零交叉） | {f(ref['period_s'],5)} s | "
-      f"{f(2.0 * 3.141592653589793 / fr['zero_crossing_rad_per_s'], 5) if fr['zero_crossing_rad_per_s'] == fr['zero_crossing_rad_per_s'] else '—'} s | "
+      f"{f(period_zc, 5) if period_zc is not None else '—'} s | "
       f"{pct(fr['zero_crossing_rel_error_pct'])} | "
       f"{yn(abs(fr['zero_crossing_rel_error_pct']) < 3.0)} | "
       f"{yn(abs(fr['zero_crossing_rel_error_pct']) < GATE)} |")
+    amp_rel = base["initial_state"]["s_moment"] / base["setup"]["initial_eps"] - 1.0
+    amp_err_pct = abs(amp_rel) * 100
     A(f"| 初始模态振幅 ε | 0.10 | "
       f"{f(base['initial_state']['s_moment'],4)} | "
-      f"{pct((base['initial_state']['s_moment'] / base['setup']['initial_eps'] - 1) * 100)} | "
-      f"{yn(abs(base['initial_state']['s_moment'] / base['setup']['initial_eps'] - 1) * 100 < 3)} | "
-      f"{yn(abs(base['initial_state']['s_moment'] / base['setup']['initial_eps'] - 1) * 100 < GATE)} |")
+      f"{pct(amp_rel * 100)} | "
+      f"{yn(amp_err_pct < 3)} | "
+      f"{yn(amp_err_pct < GATE)} |")
     A(f"| 阻尼 λ | 无闭式解（量级 2νm²/R²） | "
       f"{f(base['damping']['fit_lambda_per_s'],3)} 1/s | 不可判定 | "
       f"WITHHELD | WITHHELD |")

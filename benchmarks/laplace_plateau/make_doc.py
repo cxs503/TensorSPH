@@ -64,7 +64,7 @@ def main():
     A(f"| 状态方程 | Tait, gamma = {s['gamma']} |")
     A(f"| 粘度 | {s['viscosity']} Pa s |")
     A(f"| 平滑长度 | h = {s['h_factor']} dx |")
-    A(f"| 分辨率扫描 dx | "
+    A("| 分辨率扫描 dx | "
       + ", ".join(f"{r['dx_m']}" for r in static) + " m |")
     A(f"| 推进时长 | {s['t_end_over_t_sigma']} t_sigma |")
     A(f"| 解析参考 | Delta p = sigma/R = {f(theory,1)} Pa |")
@@ -235,7 +235,8 @@ def main():
     A("")
     A("## 6. 下一个欠账（交接）")
     A("")
-    A("1. `delta_s` 归一 0.74–0.76 → 1.0（见 `docs/verification_surface_tension_curvature.md` §7）；"
+    A("1. `delta_s` 归一 0.74–0.76 → 1.0"
+      "（见 `docs/verification_surface_tension_curvature.md` §7）；"
       "注意**不能**简单按积分标定：本仓库实测把积分标到 1 会让 `F_cut/(2 sigma)` 涨到 "
       f"{f(static[1]['plateau_bounds']['fit_quadratic']['cut_force_ratio_over_theory']/static[1]['plateau_bounds']['fit_quadratic']['delta_s_integral_dn'],2)}，"
       "即积分归一与力恒等式不是同一个约束。")
