@@ -120,15 +120,27 @@ def test_force_is_linear_in_sigma():
 def test_effective_surface_tension_at_the_documented_resolution():
     """Pin the measured amplitude so a silent change of the model is caught.
 
-    The neighbour-count colour function used to deliver 0.70 of the nominal
-    sigma at R/h = 6.2 -- a *recorded deficiency* (m2399).  The default scheme is
-    now ``csf_scheme="consistent"`` (kernel-sum colour + MLS operators +
-    ``delta_s = 2|grad c|``), which delivers the full amplitude; the band below
-    is the platform's 15 % acceptance window.  The legacy number stays reachable
-    by setting ``csf_scheme="legacy"`` (see docs/verification_surface_tension_consistent.md).
+    History (kept as the honest record, do not delete):
+
+    * m2399: the neighbour-count colour function delivered 0.70 of the nominal
+      sigma at R/h = 6.2 -- a *recorded deficiency*.
+    * m2447: the default became ``csf_scheme="consistent"`` (kernel-sum colour
+      + MLS operators + ``delta_s = 2|grad c|``) with the ``mls`` curvature
+      operator; the pin was set at 0.79 +/- 0.06.
+    * m2979: the default curvature operator changed ``mls`` ->
+      ``fit_quadratic`` (pointwise curvature error +25 % -> < 6 %).  The
+      *integrated* force moved to 0.7106, which broke this pin.  The pin was
+      re-measured and re-pinned per scheme in m3188
+      (``tests/test_effective_sigma.py``); the 0.79 value is the mls number and
+      is still reachable via ``csf_curvature="mls"``.
+
+    The "full amplitude" wording of the original docstring was never true:
+    the consistent scheme delivers 0.71-0.79 of the analytic 2 sigma, a
+    systematic bias documented in docs/verification_effective_sigma.md
+    (WITHHELD, > 15 % gate).  The band below is the re-pinned current state.
     """
     pos, mass, density, acc = _droplet_force()
     h = Config(dx=DX).h_factor * DX
     half = (mass[pos[:, 0] > 0, None] * acc[pos[:, 0] > 0]).sum(dim=0)
     ratio = float(half.norm() / (2.0 * SIGMA))
-    assert abs(ratio - 0.79) < 0.06, (ratio, RADIUS / h)
+    assert abs(ratio - 0.7106) < 0.02, (ratio, RADIUS / h)
