@@ -66,6 +66,16 @@ class Config:
     Reuse does not change the result, only the cost: the default 0.25 was chosen
     by measurement on the impact case (see docs/benchmarks/neighbor-search.md).
 
+    ``density_calibration`` builds the lattice mass as ``rho0 / sum_j W`` instead
+    of ``rho0 dx^2``. The discrete kernel sum is not its integral, so the plain
+    lattice mass starts the interior at ``rho/rho0 = 1 + b`` with ``b = 5.88e-3``
+    at ``h = 1.3 dx``; the Tait law converts that offset into a startup pressure
+    of 2.4 kPa at ``c0 = 20 m/s``, independent of the case being solved. The
+    calibrated mass makes the interior start at exactly ``rho0`` so the
+    background pressure is zero to machine precision. Both fluid and wall
+    particles use it. See docs/verification_lattice_mass_calibration.md for the
+    measurements and the (small) cost on the impact transient.
+
     ``density_diffusion`` is the coefficient ``delta`` of the diffusive term of
     Antuono, Colagrossi & Marrone (2012). Zero disables it, which is the
     default. It is *not* delta-SPH proper: delta-SPH integrates the continuity
@@ -100,6 +110,7 @@ class Config:
     hydrostatic_init: bool = False
     wall_friction: float = 0.0
     density_diffusion: float = 0.0
+    density_calibration: bool = True
     # Adaptive time step. Off by default: a fixed step keeps every published
     # number reproducible bit for bit. When on, ``dt`` starts at the configured
     # value, shrinks to whatever the current maximum speed allows, and grows back
@@ -322,6 +333,54 @@ def hydrostatic_density(y: torch.Tensor, cfg: Config, surface: float | None = No
     return cfg.rho0 * (1.0 + cfg.rho0 * cfg.gravity * depth / bulk).pow(1.0 / cfg.gamma)
 
 
+def lattice_kernel_sum(h: float, dx: float) -> float:
+    """Discrete kernel sum ``sum_j W(|x_j - x_i|, h)`` over a *full* square lattice.
+
+    A particle's summation density is ``rho_i = sum_j m_j W_ij``.  On a complete
+    lattice of spacing ``dx`` with the lattice mass ``m = rho0 dx^2`` this gives
+    ``rho0 * dx^2 * S``, not ``rho0``: the discrete sum of the kernel is not its
+    integral ``1/dx^2``.  ``S`` is that sum, and ``dx^2 S - 1`` is the geometric
+    offset -- it depends on ``h/dx`` alone, carries no scatter, and at the
+    default ``h = 1.3 dx`` it is ``+5.88e-3`` (measured, not assumed, by
+    ``tests/test_lattice_mass_calibration.py``).
+
+    Evaluated in float64 over an integer offset stencil wide enough to cover the
+    support radius ``2h``, so the result is deterministic and resolution
+    independent for a fixed ``h/dx``.
+    """
+    if h <= 0.0 or dx <= 0.0:
+        raise ValueError("h and dx must be positive")
+    reach = int(math.ceil(2.0 * h / dx)) + 1
+    offsets = torch.arange(-reach, reach + 1, dtype=torch.float64) * dx
+    gx, gy = torch.meshgrid(offsets, offsets, indexing="xy")
+    r = torch.sqrt(gx.square() + gy.square()).reshape(-1)
+    return float(cubic_spline_kernel(r, h).sum())
+
+
+def calibrated_particle_mass(cfg: "Config", dx: float | None = None,
+                             h: float | None = None) -> float:
+    """Lattice mass whose summation density is exactly ``rho0`` in the interior.
+
+    ``m = rho0 / S`` removes the offset instead of letting the Tait law turn it
+    into a spurious startup pressure.  With the uncorrected ``rho0 dx^2`` the
+    interior starts at ``rho/rho0 = 1 + b``, so every interior particle carries
+    ``B[(1+b)^gamma - 1]`` -- 2.4 kPa at ``c0 = 20 m/s`` with ``b = 5.88e-3``,
+    which is 6.7x the 360 Pa Laplace signal of a 20 mm water drop and of the same
+    order as the stagnation pressure of the impact case.  See
+    ``docs/verification_lattice_mass_calibration.md``.
+    """
+    step = cfg.dx if dx is None else float(dx)
+    smoothing = cfg.h_factor * step if h is None else float(h)
+    return float(cfg.rho0 / lattice_kernel_sum(smoothing, step))
+
+
+def lattice_mass_unit(cfg: "Config") -> float:
+    """Particle mass of the regular lattice, calibrated unless disabled."""
+    if cfg.density_calibration:
+        return calibrated_particle_mass(cfg)
+    return cfg.rho0 * cfg.dx * cfg.dx
+
+
 def cell_centres(extent: float, dx: float, device: torch.device) -> torch.Tensor:
     """Cell centres of the regular lattice that fits *inside* ``[0, extent]``.
 
@@ -394,9 +453,12 @@ def make_particles(cfg: Config, device: torch.device):
     if drop.shape[0] == 0:
         raise ValueError("drop discretization produced no particles")
     positions = torch.cat((pool, drop), dim=0)
-    mass = torch.full((positions.shape[0],), cfg.rho0 * dx * dx, device=device)
+    mass_unit = lattice_mass_unit(cfg)
+    mass = torch.full((positions.shape[0],), mass_unit, device=device)
     if cfg.hydrostatic_init:
-        pool_mass = (hydrostatic_density(pool[:, 1], cfg) * dx * dx)
+        # Scale the analytical profile by the same mass unit, so the calibrated
+        # lattice and the hydrostatic profile are not two different lattices.
+        pool_mass = hydrostatic_density(pool[:, 1], cfg) * (mass_unit / cfg.rho0)
         mass = torch.cat((pool_mass, mass[pool.shape[0]:]), dim=0)
     return positions, mass
 
@@ -438,7 +500,13 @@ def wall_lattice(cfg: Config, device: torch.device,
 
 
 def wall_mass(cfg: Config, count: int, device: torch.device) -> torch.Tensor:
-    return torch.full((count,), cfg.rho0 * cfg.dx * cfg.dx, device=device)
+    """Lattice mass of the static wall particles.
+
+    The wall contributes to the fluid's density summation, so it has to use the
+    same mass unit as the fluid; a calibrated fluid against an uncalibrated wall
+    would put a ``b``-sized density step at the wall face.
+    """
+    return torch.full((count,), lattice_mass_unit(cfg), device=device)
 
 
 # --------------------------------------------------------------------------- #
