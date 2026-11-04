@@ -178,9 +178,44 @@ def radial_profile(pos, values, n_bins: int = 12):
     return rows
 
 
+def implied_jump_from_force(pos, rho, mass, pairs, cfg, n_bins: int = 40):
+    """Read ``Delta p`` off the surface-tension force instead of the pressure.
+
+    In equilibrium the CSF body force is the only radial force, so
+    ``Delta p = rho0 * int_0^{R} a_r dr`` along a radial line -- the same
+    instrument the ``laplace_droplet`` benchmark uses.  It separates "is the
+    pressure closure transmitting the force?" from "is the force the right
+    size?", which the pressure read-out alone cannot.
+    """
+    from tensorsph.surface_tension import compute_surface_tension_force
+    acc = compute_surface_tension_force(pos, rho, mass, pairs, cfg)
+    r = torch.linalg.vector_norm(pos, dim=1)
+    r_hat = pos / r.clamp_min(1.0e-30)[:, None]
+    a_r = (acc * r_hat).sum(dim=1)
+    shell = r < 1.15 * RADIUS
+    edges = torch.linspace(0.0, 1.15 * RADIUS, n_bins + 1, dtype=r.dtype)
+    centres, means = [], []
+    for b in range(n_bins):
+        m = shell & (r >= edges[b]) & (r < edges[b + 1])
+        if not bool(m.any()):
+            continue
+        centres.append(float(0.5 * (edges[b] + edges[b + 1])))
+        means.append(float(a_r[m].mean()))
+    if len(centres) < 3:
+        return {"delta_p_Pa": float("nan"), "rel_error_pct": float("nan")}
+    integral = 0.0
+    for k in range(1, len(centres)):
+        integral += 0.5 * (means[k] + means[k - 1]) * (centres[k] - centres[k - 1])
+    value = RHO0 * integral
+    return {"delta_p_Pa": value,
+            "rel_error_pct": (value - DP_ANALYTIC) / DP_ANALYTIC * 100.0,
+            "n_bins_used": len(centres)}
+
+
 def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
           calibrate_mass: bool = True, t_end_over_t_sigma: float = 1.5,
-          max_steps: int = 4000, sample_every: int = 50):
+          max_steps: int = 4000, sample_every: int = 50,
+          free_surface_pressure: str = "off"):
     """Advance the drop and read ``Delta p`` with three definitions.
 
     ``absolute``  ``p_core - 0``  (Tait is normalised at ``rho0``; the vacuum is
@@ -192,7 +227,8 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     cfg = Config(dx=dx, h_factor=H_FACTOR, rho0=RHO0, sound_speed=c0,
                  gamma=GAMMA, gravity=0.0, viscosity=VISCOSITY,
                  surface_tension_coefficient=SIGMA, csf_scheme="consistent",
-                 csf_curvature=scheme)
+                 csf_curvature=scheme,
+                 free_surface_pressure=free_surface_pressure)
     h = cfg.h_factor * cfg.dx
     dt = float(stable_dt(cfg))
     t_end = t_end_over_t_sigma * T_SIGMA
@@ -253,9 +289,12 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
         return {"delta_p_Pa": value, "rel_error_pct": err * 100.0,
                 "within_3pct": abs(err) < 0.03, "within_15pct": abs(err) < 0.15}
 
+    force_implied = implied_jump_from_force(pos, rho, mass, pairs, cfg)
     return {
         "dx_m": dx, "h_m": h, "n_particles": int(pos.shape[0]),
         "sound_speed": c0, "curvature_scheme": scheme,
+        "free_surface_pressure": free_surface_pressure,
+        "force_implied": force_implied,
         "mass_calibrated": calibrate_mass,
         "lattice_bias": bias, "lattice_bias_after_calibration": bias_after,
         "dt_s": dt, "steps": steps, "t_end_s": t_end,
@@ -324,8 +363,35 @@ def main():
           f"abs {ctrl_scheme['definition_absolute']['rel_error_pct']:+7.1f} %",
           flush=True)
 
+    # P0 closure ladder: same (dx, c0) matrix as the baseline, with the
+    # free-surface pressure closure switched on. The baseline runs above are the
+    # reference for the per-point improvement, so nothing is re-baselined here.
+    p0 = {}
+    for mode in ("shell", "shell_density"):
+        rows = []
+        for dx in dxs:
+            for c0 in c0s:
+                r = relax(dx, c0, t_end_over_t_sigma=args.t_end,
+                          free_surface_pressure=mode)
+                base = next(x for x in runs
+                            if x["dx_m"] == dx and x["sound_speed"] == c0)
+                r["baseline_absolute_rel_error_pct"] = (
+                    base["definition_absolute"]["rel_error_pct"])
+                r["improvement_points"] = (
+                    abs(base["absolute_time_average_tail"]["rel_error_pct"])
+                    - abs(r["absolute_time_average_tail"]["rel_error_pct"]))
+                rows.append(r)
+                print(f"P0 {mode:14s} dx={dx:g} c0={c0:5g}: "
+                      f"tail {r['absolute_time_average_tail']['rel_error_pct']:+7.1f} %"
+                      f" (base {base['absolute_time_average_tail']['rel_error_pct']:+7.1f} %)"
+                      f"  force-implied {r['force_implied']['rel_error_pct']:+7.1f} %"
+                      f"  comp {(r['density']['rho_core_over_rho0'] - 1.0) / r['density']['compression_required']:.3f}",
+                      flush=True)
+        p0[mode] = rows
+
     report = {
         "benchmark": "laplace_pressure_floor",
+        "p0_closure": p0,
         "reference": {"delta_p_Pa": DP_ANALYTIC, "sigma_N_per_m": SIGMA,
                       "radius_m": RADIUS, "rho0": RHO0, "gamma": GAMMA,
                       "t_sigma_s": T_SIGMA},

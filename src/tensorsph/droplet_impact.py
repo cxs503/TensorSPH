@@ -123,6 +123,14 @@ class Config:
     # scheme verified against the Young-Laplace law; "legacy" = the original
     # neighbour-count colour with uncorrected operators, kept for A/B.
     csf_scheme: str = "consistent"
+    # Free-surface pressure closure (Adami et al. 2012, eq. 11). "off" keeps the
+    # historical behaviour: the Tait pressure is clamped at p >= 0, so the
+    # deficient outer shell of a truncated kernel support cannot carry the
+    # capillary pressure jump. "shell" extrapolates the pressure across that
+    # shell; "shell_density" also uses the Tait-consistent density there in the
+    # momentum term (see tensorsph.free_surface_pressure).
+    free_surface_pressure: str = "off"
+    free_surface_density_threshold: float = 0.99
     # CSF curvature operator inside the "consistent" scheme.
     # "fit_quadratic" (default) = weighted local quadratic interface fit,
     #   curvature error < 1 % on a circle (docs/verification_surface_tension_curvature.md);
@@ -572,6 +580,17 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
 
     pressure = tait_pressure(rho, cfg)
 
+    # Free-surface pressure closure: a particle in the deficient shell takes the
+    # kernel-weighted extrapolation of its neighbours' pressure instead of the
+    # clamped Tait value. The corrected density (mode "shell_density") is used
+    # for the momentum denominators only -- rho itself stays the continuity
+    # solution, so mass is conserved and the returned state is unchanged.
+    rho_momentum = rho
+    if cfg.free_surface_pressure != "off":
+        from .free_surface_pressure import extrapolated_pressure
+        pressure, rho_momentum = extrapolated_pressure(
+            pos, rho, pressure, mass, pairs, n, cfg)
+
     if nw:
         bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
         # Only fluid/wall pairs extrapolate wall pressure. Instead of selecting
@@ -607,9 +626,9 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
         wall_density = (cfg.rho0 * (wall_pressure / bulk + 1.0).pow(1.0 / cfg.gamma)
                         ).clamp_min(cfg.rho0)
         pressure_all = torch.cat((pressure, wall_pressure))
-        density_all = torch.cat((rho, wall_density))
+        density_all = torch.cat((rho_momentum, wall_density))
     else:
-        pressure_all, density_all = pressure, rho
+        pressure_all, density_all = pressure, rho_momentum
 
     if nw:
         all_vel = torch.cat((vel, torch.zeros((nw, pos.shape[1]),
@@ -775,6 +794,12 @@ def validate_config(cfg: Config) -> None:
         raise ValueError(
             "csf_curvature must be 'mls', 'fit_quadratic' or 'fit_circle', "
             f"got {cfg.csf_curvature!r}")
+    if cfg.free_surface_pressure not in ("off", "shell", "shell_density"):
+        raise ValueError(
+            "free_surface_pressure must be 'off', 'shell' or 'shell_density', "
+            f"got {cfg.free_surface_pressure!r}")
+    if not 0.0 < cfg.free_surface_density_threshold <= 1.0:
+        raise ValueError("free_surface_density_threshold must be in (0, 1]")
     if cfg.csf_scheme not in ("consistent", "legacy"):
         raise ValueError(
             f"csf_scheme must be 'consistent' or 'legacy', got {cfg.csf_scheme!r}")
