@@ -180,7 +180,9 @@ def radial_profile(pos, values, n_bins: int = 12):
 
 def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
           calibrate_mass: bool = True, t_end_over_t_sigma: float = 1.5,
-          max_steps: int = 4000, sample_every: int = 50):
+          max_steps: int = 4000, sample_every: int = 50,
+          closure: bool = False, pressure_form: str = "symmetric",
+          closure_passes: int = 2):
     """Advance the drop and read ``Delta p`` with three definitions.
 
     ``absolute``  ``p_core - 0``  (Tait is normalised at ``rho0``; the vacuum is
@@ -192,7 +194,9 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     cfg = Config(dx=dx, h_factor=H_FACTOR, rho0=RHO0, sound_speed=c0,
                  gamma=GAMMA, gravity=0.0, viscosity=VISCOSITY,
                  surface_tension_coefficient=SIGMA, csf_scheme="consistent",
-                 csf_curvature=scheme)
+                 csf_curvature=scheme, free_surface_pressure=closure,
+                 free_surface_passes=closure_passes,
+                 pressure_gradient_form=pressure_form)
     h = cfg.h_factor * cfg.dx
     dt = float(stable_dt(cfg))
     t_end = t_end_over_t_sigma * T_SIGMA
@@ -284,15 +288,51 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     }
 
 
+def closure_probe(dx: float, c0: float, passes: int = 2,
+                  pressure_form: str = "symmetric") -> dict:
+    """Run one point with the free-surface pressure closure switched on.
+
+    Same measurement definitions as ``relax`` so the number is directly
+    comparable with ``report.json``'s ``runs`` entries.
+    """
+    run = relax(dx, c0, closure=True, closure_passes=passes,
+                pressure_form=pressure_form)
+    run["closure"] = {"enabled": True, "passes": int(passes),
+                      "pressure_gradient_form": pressure_form}
+    return run
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true")
+    ap.add_argument("--closure-probe", nargs=2, type=float, default=None,
+                    metavar=("DX", "C0"),
+                    help="measure one point with the free-surface pressure "
+                         "closure on and merge it into closure_probe.json")
+    ap.add_argument("--closure-passes", type=int, default=2)
+    ap.add_argument("--pressure-form", default="symmetric",
+                    choices=("symmetric", "difference"))
     ap.add_argument("--dx", type=float, default=0.002)
     ap.add_argument("--sound-speeds", type=float, nargs="+",
                     default=[20.0, 10.0, 5.0])
     ap.add_argument("--t-end", type=float, default=1.5,
                     help="window length in capillary times")
     args = ap.parse_args()
+
+    if args.closure_probe is not None:
+        dx, c0 = args.closure_probe
+        run = closure_probe(dx, c0, passes=args.closure_passes,
+                            pressure_form=args.pressure_form)
+        path = HERE / "closure_probe.json"
+        data = json.loads(path.read_text()) if path.exists() else {"probes": []}
+        data["probes"].append(run)
+        path.write_text(json.dumps(data, indent=2))
+        print(f"closure dx={dx:g} c0={c0:g} form={args.pressure_form}: "
+              f"tail-avg {run['absolute_time_average_tail']['rel_error_pct']:+7.1f} %"
+              f"  abs {run['definition_absolute']['rel_error_pct']:+7.1f} %"
+              f"  vmax/vref {run['spurious_current']['vmax_over_vref_final']:.3f}",
+              flush=True)
+        return
 
     dxs = [args.dx] if args.quick else [args.dx, 0.0015]
     c0s = [20.0, 5.0] if args.quick else list(args.sound_speeds)

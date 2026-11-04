@@ -129,6 +129,29 @@ class Config:
     # "mls" = div n with MLS-consistent operators, +25 % on a circle, kept for A/B;
     # "fit_circle" = algebraic circle fit, unstable on lattice data.
     csf_curvature: str = "fit_quadratic"
+    # Free-surface pressure closure. Sum-density is deficient in the outer shell
+    # of a free surface (rho/rho0 - 1 = -0.12 at 0.85-0.95R for a drop lattice),
+    # so the non-negative Tait law clamps that shell to p = 0 and the interface
+    # cannot hold the capillary pressure sigma/R: measured on the Young-Laplace
+    # drop, the interior only reached 62-66 % of the analytic jump
+    # (docs/verification_laplace_pressure_floor.md).
+    # When on, particles whose sum-density is more than
+    # ``free_surface_threshold`` below rho0 receive their pressure from the
+    # Adami, Ihmsen, Adams & Erhart (2012) eq. (12) extrapolation over their
+    # non-deficient neighbours, instead of from their own deficient density.
+    # ``free_surface_passes`` layers are filled, each pass using the values the
+    # previous one produced.
+    free_surface_pressure: bool = False
+    free_surface_threshold: float = 0.01
+    free_surface_passes: int = 2
+    # Pressure-gradient form. "symmetric" is the classical
+    # ``p_i/rho_i^2 + p_j/rho_j^2`` pair form (conservative, but it produces a
+    # non-zero force where the kernel support is truncated, so a pressure held
+    # at the free surface turns into a spurious inward force).
+    # "difference" is ``(p_j - p_i)/(rho_i rho_j)``, which is exactly zero for a
+    # uniform pressure on *any* (even truncated) neighbourhood and is still
+    # antisymmetric, hence momentum conserving.
+    pressure_gradient_form: str = "symmetric"
 
 
 # --------------------------------------------------------------------------- #
@@ -238,6 +261,69 @@ def tait_pressure(rho: torch.Tensor, cfg: Config) -> torch.Tensor:
     bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
     ratio = (rho / cfg.rho0).clamp_min(0.01)
     return (bulk * (ratio.pow(cfg.gamma) - 1.0)).clamp_min(0.0)
+
+
+def free_surface_pressure_closure(rho, pressure, i, j, dy, wij, n, cfg):
+    """Adami et al. (2012) eq. (12) pressure extrapolation for surface particles.
+
+    ``rho``/``pressure`` are the (N,) fluid fields, ``(i, j)`` the unordered
+    neighbour pairs, ``dy`` the y component of ``r_i - r_j`` on those pairs and
+    ``wij`` the kernel value there. ``n`` is the fluid count; wall pairs
+    (``i >= n`` or ``j >= n``) never propagate a fluid pressure into a fluid
+    particle, so they are masked out.
+
+    For every particle whose sum-density is more than ``cfg.free_surface_threshold``
+    below ``rho0`` -- i.e. whose own Tait pressure is a clamp artefact rather
+    than a fluid pressure -- the pressure becomes
+
+        p_i = max(0, sum_j (p_j + rho_j (g . (r_j - r_i))) W_ij / sum_j W_ij)
+
+    with the sum taken over neighbours that already carry a physical pressure.
+    With ``g`` = (0, -gravity), and ``y_i - y_j = dy``, the body-force term is
+    ``gravity * dy``. Particles outside the kernel, or with no resolved
+    neighbour, keep their Tait value and stay unresolved.
+    """
+    rel = rho / cfg.rho0 - 1.0
+    free = rel < -cfg.free_surface_threshold
+    out = pressure.clone()
+    if not bool(free.any()):
+        return out
+    fluid = (i < n) & (j < n)
+    known = ~free
+    zero = torch.zeros(n, dtype=rho.dtype, device=rho.device)
+    for _ in range(max(1, int(cfg.free_surface_passes))):
+        pending = free & ~known
+        if not bool(pending.any()):
+            break
+        # ``pairs`` is unordered, so both directions have to be accumulated:
+        # a particle that is only ever the second index of its pairs would
+        # otherwise never receive an extrapolation.
+        # ``free``/``known`` are fluid-sized while the pair arrays may also
+        # index wall particles; clamp before the gather (the ``fluid`` mask
+        # discards those entries anyway).
+        i_safe = i.clamp(max=n - 1)
+        j_safe = j.clamp(max=n - 1)
+        forward = fluid & free[i_safe] & known[j_safe]
+        backward = fluid & free[j_safe] & known[i_safe]
+        if not bool(forward.any() or backward.any()):
+            break
+        numerator = zero.clone()
+        denominator = zero.clone()
+        if bool(forward.any()):
+            source = out[j[forward]] + rho[j[forward]] * cfg.gravity * dy[forward]
+            weight = wij[forward]
+            numerator = numerator.index_add(0, i[forward], source * weight)
+            denominator = denominator.index_add(0, i[forward], weight)
+        if bool(backward.any()):
+            source = out[i[backward]] - rho[i[backward]] * cfg.gravity * dy[backward]
+            weight = wij[backward]
+            numerator = numerator.index_add(0, j[backward], source * weight)
+            denominator = denominator.index_add(0, j[backward], weight)
+        got = (numerator / denominator.clamp_min(1.0e-30)).clamp_min(0.0)
+        filled = pending & (denominator > 0)
+        out = torch.where(filled, got, out)
+        known = known | filled
+    return out
 
 
 def acoustic_courant(dt: float, cfg: Config, max_speed: float = 0.0) -> float:
@@ -572,6 +658,10 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
 
     pressure = tait_pressure(rho, cfg)
 
+    if cfg.free_surface_pressure:
+        pressure = free_surface_pressure_closure(
+            rho, pressure, i, j, delta[:, 1], wij, n, cfg)
+
     if nw:
         bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
         # Only fluid/wall pairs extrapolate wall pressure. Instead of selecting
@@ -617,13 +707,21 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
     else:
         all_vel = vel
 
-    pressure_term = (pressure_all[i] / density_all[i].square()
-                     + pressure_all[j] / density_all[j].square())
-    pair_pressure = pressure_term[:, None] * grad_w
-
     acc = torch.zeros((n + nw, pos.shape[1]), dtype=pos.dtype, device=pos.device)
-    acc = acc.index_add(0, i, -all_mass[j, None] * pair_pressure)
-    acc = acc.index_add(0, j, all_mass[i, None] * pair_pressure)
+    if cfg.pressure_gradient_form == "difference":
+        pressure_term = ((pressure_all[j] - pressure_all[i])
+                         / (density_all[i] * density_all[j]))
+        pair_pressure = pressure_term[:, None] * grad_w
+        acc = acc.index_add(0, i, -all_mass[j, None] * pair_pressure)
+        acc = acc.index_add(0, j, -all_mass[i, None] * pair_pressure)
+    elif cfg.pressure_gradient_form == "symmetric":
+        pressure_term = (pressure_all[i] / density_all[i].square()
+                         + pressure_all[j] / density_all[j].square())
+        pair_pressure = pressure_term[:, None] * grad_w
+        acc = acc.index_add(0, i, -all_mass[j, None] * pair_pressure)
+        acc = acc.index_add(0, j, all_mass[i, None] * pair_pressure)
+    else:
+        raise ValueError("pressure_gradient_form must be 'symmetric' or 'difference'")
     acc_pressure = acc[:n]
 
     # Viscosity acts on fluid-fluid pairs and, when a no-slip wall is asked
@@ -691,11 +789,43 @@ def rhs_all_pairs(pos, vel, mass, cfg: Config, dt=None):
         rate = -scale * (mass[None, :] / rho[None, :] * coupling).sum(dim=1)
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
     pressure = tait_pressure(rho, cfg)
+    if cfg.free_surface_pressure:
+        # Same closure as ``rhs``, in the dense (all-pairs) formulation: the
+        # diagonal of ``w`` is the self kernel value and must not enter the
+        # neighbour average.
+        rel = rho / cfg.rho0 - 1.0
+        free = rel < -cfg.free_surface_threshold
+        if bool(free.any()):
+            w_nb = w.clone()
+            w_nb.fill_diagonal_(0.0)
+            out = pressure.clone()
+            known = ~free
+            zero = torch.zeros_like(pressure)
+            for _ in range(max(1, int(cfg.free_surface_passes))):
+                pending = free & ~known
+                if not bool(pending.any()):
+                    break
+                source = (out[None, :] + rho[None, :] * cfg.gravity * delta[:, :, 1])
+                mask = w_nb * known[None, :].to(w_nb.dtype)
+                denominator = mask.sum(dim=1)
+                numerator = torch.where(known[None, :], source, zero[None, :])
+                got = ((mask * numerator).sum(dim=1)
+                       / denominator.clamp_min(1.0e-30)).clamp_min(0.0)
+                filled = pending & (denominator > 0)
+                out = torch.where(filled, got, out)
+                known = known | filled
+            pressure = out
     grad_w = cubic_spline_gradient(delta, h)
-    pressure_term = (
-        pressure[:, None] / rho[:, None].square()
-        + pressure[None, :] / rho[None, :].square()
-    )
+    if cfg.pressure_gradient_form == "difference":
+        pressure_term = ((pressure[None, :] - pressure[:, None])
+                         / (rho[:, None] * rho[None, :]))
+    elif cfg.pressure_gradient_form == "symmetric":
+        pressure_term = (
+            pressure[:, None] / rho[:, None].square()
+            + pressure[None, :] / rho[None, :].square()
+        )
+    else:
+        raise ValueError("pressure_gradient_form must be 'symmetric' or 'difference'")
     acc_pressure = -(mass[None, :, None] * pressure_term[:, :, None] * grad_w).sum(dim=1)
 
     # Symmetric, regularized laminar-viscosity approximation.
