@@ -73,6 +73,14 @@ class Config:
     term here acts as a rate applied to the summation density over ``dt``. The
     scheme, its invariants and what it measured on B1/B2 are documented in
     docs/benchmarks/free-surface-treatment.md.
+
+    ``free_surface_pressure`` switches on the free-surface *pressure closure* of
+    Adami, Ihmsen & Adams (2012): particles whose summation density falls below
+    ``free_surface_pressure * rho0`` do not carry a physical Tait pressure (their
+    kernel support is truncated by the surface), so their pressure is
+    extrapolated from the neighbourhood instead of read off the EOS. Off by
+    default. What it does to the Young-Laplace jump is measured in
+    docs/verification_laplace_free_surface_pressure.md.
     """
 
     dx: float = 0.025
@@ -129,6 +137,17 @@ class Config:
     # "mls" = div n with MLS-consistent operators, +25 % on a circle, kept for A/B;
     # "fit_circle" = algebraic circle fit, unstable on lattice data.
     csf_curvature: str = "fit_quadratic"
+    # Free-surface pressure closure (Adami, Ihmsen, Adams 2012, sec. 3.3).
+    # Value = threshold on the summation density, as a fraction of rho0. A
+    # particle with rho < threshold * rho0 is treated as a free-surface
+    # particle (its kernel support is truncated, so its sum density -- and
+    # therefore its Tait pressure -- is not a fluid pressure) and its pressure
+    # is *extrapolated* from its neighbours instead:
+    #   p_i = max(0, sum_j (p_j + rho_j g.(r_i - r_j)) W_ij / sum_j W_ij).
+    # Zero disables the closure, which is the backward-compatible default.
+    # 0.99 is the shell layer; measured effect and scope:
+    # docs/verification_laplace_free_surface_pressure.md.
+    free_surface_pressure: float = 0.0
 
 
 # --------------------------------------------------------------------------- #
@@ -494,6 +513,78 @@ def drop_wall_wall_pairs(pairs: torch.Tensor, fluid_count: int) -> torch.Tensor:
     return pairs[usable]
 
 
+def free_surface_pressure_closure(rho, pressure, pressure_all, density_all,
+                                   all_pos, pair_i, pair_j, wij, cfg):
+    """Adami/Ihmsen shell-pressure closure for the truncated-support shell.
+
+    A particle whose kernel support is cut by the free surface has a summation
+    density smaller than the local fluid density, and ``tait_pressure`` clamps
+    the resulting pressure to zero. The pressure field therefore has a p = 0
+    shell, and the interior cannot sustain the full Young-Laplace jump. This
+    function replaces the pressure of those particles by the kernel-weighted
+    extrapolation of Adami, Ihmsen & Adams (2012) sec. 3.3,
+
+        p_i = max(0, sum_j (p_j + rho_j g.(r_i - r_j)) W_ij / sum_j W_ij),
+
+    with the sum over the same neighbour set the density sum used (fluid and
+    wall particles alike). Expected accelerations are lumped into ``g``, the
+    usual static approximation: the closure is a boundary condition for the EOS,
+    not a momentum source.
+
+    The closed particle is *also* given the density its extrapolated pressure
+    implies through the inverted Tait law. Without that, ``p/rho^2`` in the
+    momentum equation divides a full pressure by a density deficit of up to 30 %
+    and over-weights the surface push, which leaves the interior short of
+    ``sigma/R`` (measured: docs/verification_laplace_free_surface_pressure.md).
+    This mirrors what the wall block already does.
+
+    Returns ``(pressure, pressure_all, density_pressure_all)``. ``pressure_all``
+    is rebuilt so the pressure force sees the closed field for the fluid while
+    the wall block is passed through unchanged; ``density_pressure_all`` is the
+    density to use *in the pressure term only* (the density used by the
+    continuity/viscosity terms is left alone). Particles above the threshold are
+    untouched, so a threshold of zero reproduces the raw EOS field exactly.
+    """
+    threshold = cfg.free_surface_pressure
+    free = rho < threshold * cfg.rho0
+    if pair_i.numel() == 0 or not bool(free.any()):
+        return pressure, pressure_all, density_all
+
+    body = torch.zeros_like(all_pos[:, 0])
+    if all_pos.shape[1] > 1:
+        # g = (0, -gravity) in 2-D, so g.r = -gravity * y. Only differences
+        # enter, so no origin shift is needed.
+        body = -cfg.gravity * all_pos[:, 1]
+
+    body_i = body[pair_i]
+    body_j = body[pair_j]
+    # Contribution of j to i and of i to j, with the same kernel weights the
+    # density sum used.
+    source_i = pressure_all[pair_j] + density_all[pair_j] * (body_i - body_j)
+    source_j = pressure_all[pair_i] + density_all[pair_i] * (body_j - body_i)
+
+    total = all_pos.shape[0]
+    numerator = torch.zeros(total, dtype=rho.dtype, device=rho.device)
+    denominator = torch.zeros(total, dtype=rho.dtype, device=rho.device)
+    numerator = numerator.index_add(0, pair_i, wij * source_i)
+    numerator = numerator.index_add(0, pair_j, wij * source_j)
+    denominator = denominator.index_add(0, pair_i, wij)
+    denominator = denominator.index_add(0, pair_j, wij)
+
+    n_fluid = int(rho.shape[0])
+    extrapolated = (numerator[:n_fluid]
+                    / denominator[:n_fluid].clamp_min(1.0e-30)).clamp_min(0.0)
+    closed = torch.where(free, extrapolated, pressure)
+
+    # Inverted Tait law for the closed shell: the EOS state that belongs to the
+    # extrapolated pressure, exactly as the wall block derives its density.
+    bulk = cfg.rho0 * cfg.sound_speed ** 2 / cfg.gamma
+    closed_density = cfg.rho0 * (closed / bulk + 1.0).pow(1.0 / cfg.gamma)
+    density_force = torch.where(free, closed_density, density_all[:n_fluid])
+    return (closed, torch.cat((closed, pressure_all[n_fluid:])),
+            torch.cat((density_force, density_all[n_fluid:])))
+
+
 def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
     """Compute WCSPH RHS with pair-based compact-support interactions.
 
@@ -611,14 +702,25 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
     else:
         pressure_all, density_all = pressure, rho
 
+    density_force = density_all
+    if cfg.free_surface_pressure > 0.0:
+        # The wall pressure above is extrapolated from the *EOS* fluid field;
+        # closing the fluid field afterwards keeps the closure from being fed
+        # back into the wall extrapolation. ``density_force`` is the EOS-
+        # consistent density of the closed shell and enters the pressure term
+        # only, so the continuity and viscosity weights keep the summation
+        # density.
+        pressure, pressure_all, density_force = free_surface_pressure_closure(
+            rho, pressure, pressure_all, density_all, all_pos, i, j, wij, cfg)
+
     if nw:
         all_vel = torch.cat((vel, torch.zeros((nw, pos.shape[1]),
                                              dtype=pos.dtype, device=pos.device)))
     else:
         all_vel = vel
 
-    pressure_term = (pressure_all[i] / density_all[i].square()
-                     + pressure_all[j] / density_all[j].square())
+    pressure_term = (pressure_all[i] / density_force[i].square()
+                     + pressure_all[j] / density_force[j].square())
     pair_pressure = pressure_term[:, None] * grad_w
 
     acc = torch.zeros((n + nw, pos.shape[1]), dtype=pos.dtype, device=pos.device)
@@ -771,6 +873,10 @@ def validate_config(cfg: Config) -> None:
         raise ValueError("wall_friction must be in [0, 1]")
     if cfg.density_diffusion < 0.0:
         raise ValueError("density_diffusion must be non-negative")
+    if not 0.0 <= cfg.free_surface_pressure < 2.0:
+        raise ValueError(
+            "free_surface_pressure is a density threshold as a fraction of "
+            f"rho0 and must be in [0, 2); got {cfg.free_surface_pressure!r}")
     if cfg.csf_curvature not in ("mls", "fit_quadratic", "fit_circle"):
         raise ValueError(
             "csf_curvature must be 'mls', 'fit_quadratic' or 'fit_circle', "

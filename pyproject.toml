@@ -36,3 +36,8 @@ target-version = "py310"
 # Correctness-only gate: pyflakes undefined names/unused imports, pycodestyle
 # errors and warnings. Formatting is deliberately not enforced.
 select = ["E", "F", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+# Report generators carry markdown table rows inside f-strings; wrapping them
+# would corrupt the generated document.
+"benchmarks/**/make_doc.py" = ["E501"]
