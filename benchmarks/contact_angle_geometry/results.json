@@ -1,0 +1,610 @@
+{
+  "benchmark": "contact_angle_geometry",
+  "reference": "analytic 2-D spherical cap (Young, 1805; Lamb 1932 art. 1)",
+  "sigma": 0.072,
+  "rho0": 1000.0,
+  "R_arc": 0.01,
+  "tolerances": {
+    "angle_deg": 5.0,
+    "curvature_rel": 0.15
+  },
+  "controls": {
+    "cap_geometry": {
+      "max_abs_error_rad": 3.3306690738754696e-16,
+      "max_abs_error_deg": 1.90833280887811e-14,
+      "result": "pass"
+    },
+    "bc_exactness": {
+      "rows": [
+        {
+          "theta_deg": 30.0,
+          "deviation_deg": 0.0
+        },
+        {
+          "theta_deg": 60.0,
+          "deviation_deg": 0.0
+        },
+        {
+          "theta_deg": 90.0,
+          "deviation_deg": 0.0
+        },
+        {
+          "theta_deg": 120.0,
+          "deviation_deg": 0.0
+        },
+        {
+          "theta_deg": 150.0,
+          "deviation_deg": 0.0
+        }
+      ],
+      "max_deviation_deg": 0.0,
+      "result": "pass"
+    },
+    "wall_normal_fallback": {
+      "n_wall": 243,
+      "n_wall_changed": 243,
+      "n_fluid_changed": 4,
+      "result": "recorded"
+    }
+  },
+  "cases": [
+    {
+      "theta_deg": 60.0,
+      "ratio": 10,
+      "dx": 0.001,
+      "h": 0.0013000000000000002,
+      "n_fluid": 63,
+      "n_wall": 78,
+      "n_pairs": 641,
+      "assembly_max_abs_error_vs_csf_fields": 0.0,
+      "n_shell": 10,
+      "n_shell_near_wall": 2,
+      "fit": {
+        "n_points": 8,
+        "R_fit": 0.00859665632673542,
+        "y_c_fit": -0.003550000000000006,
+        "R_rel_error": -0.14033436732645807,
+        "theta_fit_deg": 65.60963678471893,
+        "theta_error_deg": 5.60963678471893,
+        "result": "fail"
+      },
+      "variants": {
+        "off": {
+          "normal_angle_deg_shell_mean": 38.18788710937589,
+          "normal_angle_deg_shell_median": 26.83748021260139,
+          "normal_angle_deg_near_wall_mean": 88.26781570936458,
+          "kappa_median_rel_shell": 2.3479774503210296,
+          "kappa_delta_s_weighted": 299.2455040778539,
+          "kappa_delta_s_weighted_rel_error": 1.9924550407785393,
+          "n_finite": true
+        },
+        "on": {
+          "normal_angle_deg_shell_mean": 12.726984289889396,
+          "normal_angle_deg_shell_median": 7.966741731417943,
+          "normal_angle_deg_near_wall_mean": 26.403653774742754,
+          "kappa_median_rel_shell": 0.9080889136366925,
+          "kappa_delta_s_weighted": 169.41048048518732,
+          "kappa_delta_s_weighted_rel_error": 0.6941048048518732,
+          "n_finite": true
+        },
+        "fluid_only": {
+          "normal_angle_deg_shell_mean": 25.402584162755062,
+          "normal_angle_deg_shell_median": 10.859404115427106,
+          "normal_angle_deg_near_wall_mean": 56.71942654306788,
+          "kappa_median_rel_shell": 1.4899198709273374,
+          "kappa_delta_s_weighted": 373.04813042969056,
+          "kappa_delta_s_weighted_rel_error": 2.7304813042969056,
+          "n_finite": true
+        }
+      },
+      "locality_max_abs_delta": 0.0,
+      "locality_result": "pass",
+      "rotated_fluid_fraction": 0.5079365079365079,
+      "rotated_wall_fraction": 0.5256410256410257,
+      "n_rotated_wall": 41,
+      "acceptance": {
+        "theta_within_5deg": "fail",
+        "normal_error_improves_with_bc": "pass",
+        "curvature_within_15pct": "fail",
+        "no_non_finite_values": "pass"
+      }
+    },
+    {
+      "theta_deg": 60.0,
+      "ratio": 20,
+      "dx": 0.0005,
+      "h": 0.0006500000000000001,
+      "n_fluid": 246,
+      "n_wall": 129,
+      "n_pairs": 2418,
+      "assembly_max_abs_error_vs_csf_fields": 0.0,
+      "n_shell": 20,
+      "n_shell_near_wall": 2,
+      "fit": {
+        "n_points": 18,
+        "R_fit": 0.009525145813990343,
+        "y_c_fit": -0.004608333333333331,
+        "R_rel_error": -0.04748541860096576,
+        "theta_fit_deg": 61.06565252653134,
+        "theta_error_deg": 1.0656525265313377,
+        "result": "pass"
+      },
+      "variants": {
+        "off": {
+          "normal_angle_deg_shell_mean": 18.13858143565573,
+          "normal_angle_deg_shell_median": 2.4748076219761392,
+          "normal_angle_deg_near_wall_mean": 85.44083697552817,
+          "kappa_median_rel_shell": 0.4282717112203307,
+          "kappa_delta_s_weighted": 295.0795374302374,
+          "kappa_delta_s_weighted_rel_error": 1.9507953743023738,
+          "n_finite": true
+        },
+        "on": {
+          "normal_angle_deg_shell_mean": 5.84176282530218,
+          "normal_angle_deg_shell_median": 2.3686772666351135,
+          "normal_angle_deg_near_wall_mean": 23.61660814900743,
+          "kappa_median_rel_shell": 0.4249392964957368,
+          "kappa_delta_s_weighted": 165.10234019168158,
+          "kappa_delta_s_weighted_rel_error": 0.6510234019168157,
+          "n_finite": true
+        },
+        "fluid_only": {
+          "normal_angle_deg_shell_mean": 11.755193498720661,
+          "normal_angle_deg_shell_median": 2.3686772666351135,
+          "normal_angle_deg_near_wall_mean": 53.51217445592487,
+          "kappa_median_rel_shell": 0.5496029050545161,
+          "kappa_delta_s_weighted": 369.8103200865041,
+          "kappa_delta_s_weighted_rel_error": 2.6981032008650407,
+          "n_finite": true
+        }
+      },
+      "locality_max_abs_delta": 0.0,
+      "locality_result": "pass",
+      "rotated_fluid_fraction": 0.2764227642276423,
+      "rotated_wall_fraction": 0.5891472868217055,
+      "n_rotated_wall": 76,
+      "acceptance": {
+        "theta_within_5deg": "pass",
+        "normal_error_improves_with_bc": "pass",
+        "curvature_within_15pct": "fail",
+        "no_non_finite_values": "pass"
+      }
+    },
+    {
+      "theta_deg": 60.0,
+      "ratio": 40,
+      "dx": 0.00025,
+      "h": 0.00032500000000000004,
+      "n_fluid": 984,
+      "n_wall": 234,
+      "n_pairs": 9884,
+      "assembly_max_abs_error_vs_csf_fields": 0.0,
+      "n_shell": 36,
+      "n_shell_near_wall": 2,
+      "fit": {
+        "n_points": 34,
+        "R_fit": 0.009885100605462957,
+        "y_c_fit": -0.004932513973577236,
+        "R_rel_error": -0.011489939453704356,
+        "theta_fit_deg": 60.06714891466726,
+        "theta_error_deg": 0.06714891466725703,
+        "result": "pass"
+      },
+      "variants": {
+        "off": {
+          "normal_angle_deg_shell_mean": 7.71510227124509,
+          "normal_angle_deg_shell_median": 1.7105620843330278,
+          "normal_angle_deg_near_wall_mean": 82.34365053906694,
+          "kappa_median_rel_shell": 0.305740554270981,
+          "kappa_delta_s_weighted": 286.047056986367,
+          "kappa_delta_s_weighted_rel_error": 1.8604705698636703,
+          "n_finite": true
+        },
+        "on": {
+          "normal_angle_deg_shell_mean": 3.8480115657669,
+          "normal_angle_deg_shell_median": 1.7104710288333496,
+          "normal_angle_deg_near_wall_mean": 26.54563881018246,
+          "kappa_median_rel_shell": 0.29699638012075447,
+          "kappa_delta_s_weighted": 153.82714537784233,
+          "kappa_delta_s_weighted_rel_error": 0.5382714537784232,
+          "n_finite": true
+        },
+        "fluid_only": {
+          "normal_angle_deg_shell_mean": 5.3713141585907405,
+          "normal_angle_deg_shell_median": 1.7104710288333496,
+          "normal_angle_deg_near_wall_mean": 52.39213492514054,
+          "kappa_median_rel_shell": 0.4312621226692521,
+          "kappa_delta_s_weighted": 317.71186191314575,
+          "kappa_delta_s_weighted_rel_error": 2.1771186191314578,
+          "n_finite": true
+        }
+      },
+      "locality_max_abs_delta": 0.0,
+      "locality_result": "pass",
+      "rotated_fluid_fraction": 0.13821138211382114,
+      "rotated_wall_fraction": 0.6196581196581197,
+      "n_rotated_wall": 145,
+      "acceptance": {
+        "theta_within_5deg": "pass",
+        "normal_error_improves_with_bc": "pass",
+        "curvature_within_15pct": "fail",
+        "no_non_finite_values": "pass"
+      }
+    },
+    {
+      "theta_deg": 90.0,
+      "ratio": 10,
+      "dx": 0.001,
+      "h": 0.0013000000000000002,
+      "n_fluid": 156,
+      "n_wall": 84,
+      "n_pairs": 1494,
+      "assembly_max_abs_error_vs_csf_fields": 0.0,
+      "n_shell": 12,
+      "n_shell_near_wall": 0,
+      "fit": {
+        "n_points": 12,
+        "R_fit": 0.009409819014069882,
+        "y_c_fit": 0.0004571428571428548,
+        "R_rel_error": -0.0590180985930118,
+        "theta_fit_deg": 92.78460938412226,
+        "theta_error_deg": 2.7846093841222626,
+        "result": "pass"
+      },
+      "variants": {
+        "off": {
+          "normal_angle_deg_shell_mean": 2.342395388460332,
+          "normal_angle_deg_shell_median": 1.936786729211832,
+          "normal_angle_deg_near_wall_mean": null,
+          "kappa_median_rel_shell": 0.11383760462123815,
+          "kappa_delta_s_weighted": 139.754920495643,
+          "kappa_delta_s_weighted_rel_error": 0.39754920495643,
+          "n_finite": true
+        },
+        "on": {
+          "normal_angle_deg_shell_mean": 2.2583101472712976,
+          "normal_angle_deg_shell_median": 1.936786729211832,
+          "normal_angle_deg_near_wall_mean": null,
+          "kappa_median_rel_shell": 0.11383760462123815,
+          "kappa_delta_s_weighted": 126.68658773675554,
+          "kappa_delta_s_weighted_rel_error": 0.2668658773675554,
+          "n_finite": true
+        },
+        "fluid_only": {
+          "normal_angle_deg_shell_mean": 2.2607458803910236,
+          "normal_angle_deg_shell_median": 1.936786729211832,
+          "normal_angle_deg_near_wall_mean": null,
+          "kappa_median_rel_shell": 0.11383760462123815,
+          "kappa_delta_s_weighted": 129.70702407546105,
+          "kappa_delta_s_weighted_rel_error": 0.2970702407546104,
+          "n_finite": true
+        }
+      },
+      "locality_max_abs_delta": 0.0,
+      "locality_result": "pass",
+      "rotated_fluid_fraction": 0.24358974358974358,
+      "rotated_wall_fraction": 0.5238095238095238,
+      "n_rotated_wall": 44,
+      "acceptance": {
+        "theta_within_5deg": "pass",
+        "normal_error_improves_with_bc": "pass",
+        "curvature_within_15pct": "fail",
+        "no_non_finite_values": "pass"
+      }
+    },
+    {
+      "theta_deg": 90.0,
+      "ratio": 20,
+      "dx": 0.0005,
+      "h": 0.0006500000000000001,
+      "n_fluid": 626,
+      "n_wall": 144,
+      "n_pairs": 6126,
+      "assembly_max_abs_error_vs_csf_fields": 0.0,
+      "n_shell": 24,
+      "n_shell_near_wall": 0,
+      "fit": {
+        "n_points": 24,
+        "R_fit": 0.009890047866381603,
+        "y_c_fit": -4.410499139415067e-05,
+        "R_rel_error": -0.010995213361839756,
+        "theta_fit_deg": 89.74448675349362,
+        "theta_error_deg": -0.2555132465063821,
+        "result": "pass"
+      },
+      "variants": {
+        "off": {
+          "normal_angle_deg_shell_mean": 1.9447452216362529,
+          "normal_angle_deg_shell_median": 1.5060817433691684,
+          "normal_angle_deg_near_wall_mean": null,
+          "kappa_median_rel_shell": 0.224033081922969,
+          "kappa_delta_s_weighted": 110.51625413621511,
+          "kappa_delta_s_weighted_rel_error": 0.10516254136215109,
+          "n_finite": true
+        },
+        "on": {
+          "normal_angle_deg_shell_mean": 1.9447122939010175,
+          "normal_angle_deg_shell_median": 1.5060817433691684,
+          "normal_angle_deg_near_wall_mean": null,
+          "kappa_median_rel_shell": 0.224033081922969,
+          "kappa_delta_s_weighted": 110.34012753655914,
+          "kappa_delta_s_weighted_rel_error": 0.1034012753655913,
+          "n_finite": true
+        },
+        "fluid_only": {
+          "normal_angle_deg_shell_mean": 1.9447122939010175,
+          "normal_angle_deg_shell_median": 1.5060817433691684,
+          "normal_angle_deg_near_wall_mean": null,
+          "kappa_median_rel_shell": 0.224033081922969,
+          "kappa_delta_s_weighted": 110.34319376588014,
+          "kappa_delta_s_weighted_rel_error": 0.10343193765880154,
+          "n_finite": true
+        }
+      },
+      "locality_max_abs_delta": 0.0,
+      "locality_result": "pass",
+      "rotated_fluid_fraction": 0.12460063897763578,
+      "rotated_wall_fraction": 0.5833333333333334,
+      "n_rotated_wall": 84,
+      "acceptance": {
+        "theta_within_5deg": "pass",
+        "normal_error_improves_with_bc": "pass",
+        "curvature_within_15pct": "pass",
+        "no_non_finite_values": "pass"
+      }
+    },
+    {
+      "theta_deg": 90.0,
+      "ratio": 40,
+      "dx": 0.00025,
+      "h": 0.00032500000000000004,
+      "n_fluid": 2508,
+      "n_wall": 264,
+      "n_pairs": 24810,
+      "assembly_max_abs_error_vs_csf_fields": 0.0,
+      "n_shell": 46,
+      "n_shell_near_wall": 0,
+      "fit": {
+        "n_points": 46,
+        "R_fit": 0.009918245736633535,
+        "y_c_fit": 2.49862231351169e-05,
+        "R_rel_error": -0.008175426336646564,
+        "theta_fit_deg": 90.14434071144271,
+        "theta_error_deg": 0.14434071144270888,
+        "result": "pass"
+      },
+      "variants": {
+        "off": {
+          "normal_angle_deg_shell_mean": 2.0355565815131897,
+          "normal_angle_deg_shell_median": 1.5421134216735544,
+          "normal_angle_deg_near_wall_mean": null,
+          "kappa_median_rel_shell": 0.1733901878934947,
+          "kappa_delta_s_weighted": 121.366662144461,
+          "kappa_delta_s_weighted_rel_error": 0.21366662144461013,
+          "n_finite": true
+        },
+        "on": {
+          "normal_angle_deg_shell_mean": 2.0355565815131897,
+          "normal_angle_deg_shell_median": 1.5421134216735544,
+          "normal_angle_deg_near_wall_mean": null,
+          "kappa_median_rel_shell": 0.1733901878934947,
+          "kappa_delta_s_weighted": 121.366662144461,
+          "kappa_delta_s_weighted_rel_error": 0.21366662144461013,
+          "n_finite": true
+        },
+        "fluid_only": {
+          "normal_angle_deg_shell_mean": 2.0355565815131897,
+          "normal_angle_deg_shell_median": 1.5421134216735544,
+          "normal_angle_deg_near_wall_mean": null,
+          "kappa_median_rel_shell": 0.1733901878934947,
+          "kappa_delta_s_weighted": 121.366662144461,
+          "kappa_delta_s_weighted_rel_error": 0.21366662144461013,
+          "n_finite": true
+        }
+      },
+      "locality_max_abs_delta": 0.0,
+      "locality_result": "pass",
+      "rotated_fluid_fraction": 0.06299840510366826,
+      "rotated_wall_fraction": 0.6212121212121212,
+      "n_rotated_wall": 164,
+      "acceptance": {
+        "theta_within_5deg": "pass",
+        "normal_error_improves_with_bc": "pass",
+        "curvature_within_15pct": "fail",
+        "no_non_finite_values": "pass"
+      }
+    },
+    {
+      "theta_deg": 120.0,
+      "ratio": 10,
+      "dx": 0.001,
+      "h": 0.0013000000000000002,
+      "n_fluid": 249,
+      "n_wall": 78,
+      "n_pairs": 2395,
+      "assembly_max_abs_error_vs_csf_fields": 0.0,
+      "n_shell": 14,
+      "n_shell_near_wall": 0,
+      "fit": {
+        "n_points": 14,
+        "R_fit": 0.009636795693683713,
+        "y_c_fit": 0.005144278606965175,
+        "R_rel_error": -0.03632043063162872,
+        "theta_fit_deg": 122.26367125779377,
+        "theta_error_deg": 2.2636712577937743,
+        "result": "pass"
+      },
+      "variants": {
+        "off": {
+          "normal_angle_deg_shell_mean": 2.362540457015522,
+          "normal_angle_deg_shell_median": 2.2822174599869878,
+          "normal_angle_deg_near_wall_mean": null,
+          "kappa_median_rel_shell": 0.1138376383970523,
+          "kappa_delta_s_weighted": 138.95155789339162,
+          "kappa_delta_s_weighted_rel_error": 0.3895155789339162,
+          "n_finite": true
+        },
+        "on": {
+          "normal_angle_deg_shell_mean": 1.967620352613469,
+          "normal_angle_deg_shell_median": 1.9368778892616019,
+          "normal_angle_deg_near_wall_mean": null,
+          "kappa_median_rel_shell": 0.1138376383970523,
+          "kappa_delta_s_weighted": 130.38980868609826,
+          "kappa_delta_s_weighted_rel_error": 0.30389808686098263,
+          "n_finite": true
+        },
+        "fluid_only": {
+          "normal_angle_deg_shell_mean": 2.199851565767846,
+          "normal_angle_deg_shell_median": 2.2822174599869878,
+          "normal_angle_deg_near_wall_mean": null,
+          "kappa_median_rel_shell": 0.1138376383970523,
+          "kappa_delta_s_weighted": 136.0029385598071,
+          "kappa_delta_s_weighted_rel_error": 0.36002938559807096,
+          "n_finite": true
+        }
+      },
+      "locality_max_abs_delta": 0.0,
+      "locality_result": "pass",
+      "rotated_fluid_fraction": 0.14457831325301204,
+      "rotated_wall_fraction": 0.5384615384615384,
+      "n_rotated_wall": 42,
+      "acceptance": {
+        "theta_within_5deg": "pass",
+        "normal_error_improves_with_bc": "pass",
+        "curvature_within_15pct": "fail",
+        "no_non_finite_values": "pass"
+      }
+    },
+    {
+      "theta_deg": 120.0,
+      "ratio": 20,
+      "dx": 0.0005,
+      "h": 0.0006500000000000001,
+      "n_fluid": 1006,
+      "n_wall": 129,
+      "n_pairs": 9792,
+      "assembly_max_abs_error_vs_csf_fields": 0.0,
+      "n_shell": 28,
+      "n_shell_near_wall": 0,
+      "fit": {
+        "n_points": 28,
+        "R_fit": 0.009899937510806063,
+        "y_c_fit": 0.00494199616122841,
+        "R_rel_error": -0.010006248919393682,
+        "theta_fit_deg": 119.94673490166271,
+        "theta_error_deg": -0.05326509833729176,
+        "result": "pass"
+      },
+      "variants": {
+        "off": {
+          "normal_angle_deg_shell_mean": 2.110414063969614,
+          "normal_angle_deg_shell_median": 1.5268030223175613,
+          "normal_angle_deg_near_wall_mean": null,
+          "kappa_median_rel_shell": 0.23212368765646385,
+          "kappa_delta_s_weighted": 136.05762499963768,
+          "kappa_delta_s_weighted_rel_error": 0.36057624999637694,
+          "n_finite": true
+        },
+        "on": {
+          "normal_angle_deg_shell_mean": 1.9038172483377571,
+          "normal_angle_deg_shell_median": 1.512949657329673,
+          "normal_angle_deg_near_wall_mean": null,
+          "kappa_median_rel_shell": 0.23146362985084612,
+          "kappa_delta_s_weighted": 126.19652436592278,
+          "kappa_delta_s_weighted_rel_error": 0.2619652436592279,
+          "n_finite": true
+        },
+        "fluid_only": {
+          "normal_angle_deg_shell_mean": 2.026133168492067,
+          "normal_angle_deg_shell_median": 1.5266608461326314,
+          "normal_angle_deg_near_wall_mean": null,
+          "kappa_median_rel_shell": 0.23146362985084612,
+          "kappa_delta_s_weighted": 133.30602262858812,
+          "kappa_delta_s_weighted_rel_error": 0.3330602262858813,
+          "n_finite": true
+        }
+      },
+      "locality_max_abs_delta": 0.0,
+      "locality_result": "pass",
+      "rotated_fluid_fraction": 0.07157057654075547,
+      "rotated_wall_fraction": 0.5891472868217055,
+      "n_rotated_wall": 76,
+      "acceptance": {
+        "theta_within_5deg": "pass",
+        "normal_error_improves_with_bc": "pass",
+        "curvature_within_15pct": "fail",
+        "no_non_finite_values": "pass"
+      }
+    },
+    {
+      "theta_deg": 120.0,
+      "ratio": 40,
+      "dx": 0.00025,
+      "h": 0.00032500000000000004,
+      "n_fluid": 4032,
+      "n_wall": 234,
+      "n_pairs": 39904,
+      "assembly_max_abs_error_vs_csf_fields": 0.0,
+      "n_shell": 56,
+      "n_shell_near_wall": 0,
+      "fit": {
+        "n_points": 56,
+        "R_fit": 0.009927272467127081,
+        "y_c_fit": 0.00501321270395311,
+        "R_rel_error": -0.007272753287291926,
+        "theta_fit_deg": 120.33095187539102,
+        "theta_error_deg": 0.33095187539102255,
+        "result": "pass"
+      },
+      "variants": {
+        "off": {
+          "normal_angle_deg_shell_mean": 2.1225896783656926,
+          "normal_angle_deg_shell_median": 1.5419753052301974,
+          "normal_angle_deg_near_wall_mean": null,
+          "kappa_median_rel_shell": 0.3049965943432362,
+          "kappa_delta_s_weighted": 145.96008731722446,
+          "kappa_delta_s_weighted_rel_error": 0.45960087317224474,
+          "n_finite": true
+        },
+        "on": {
+          "normal_angle_deg_shell_mean": 2.0140263647052015,
+          "normal_angle_deg_shell_median": 1.5419753052301974,
+          "normal_angle_deg_near_wall_mean": null,
+          "kappa_median_rel_shell": 0.2996726816011972,
+          "kappa_delta_s_weighted": 135.86963741826676,
+          "kappa_delta_s_weighted_rel_error": 0.35869637418266764,
+          "n_finite": true
+        },
+        "fluid_only": {
+          "normal_angle_deg_shell_mean": 2.075248250331904,
+          "normal_angle_deg_shell_median": 1.5419753052301974,
+          "normal_angle_deg_near_wall_mean": null,
+          "kappa_median_rel_shell": 0.2996726816011972,
+          "kappa_delta_s_weighted": 142.81946639092834,
+          "kappa_delta_s_weighted_rel_error": 0.4281946639092835,
+          "n_finite": true
+        }
+      },
+      "locality_max_abs_delta": 0.0,
+      "locality_result": "pass",
+      "rotated_fluid_fraction": 0.034722222222222224,
+      "rotated_wall_fraction": 0.6239316239316239,
+      "n_rotated_wall": 146,
+      "acceptance": {
+        "theta_within_5deg": "pass",
+        "normal_error_improves_with_bc": "pass",
+        "curvature_within_15pct": "fail",
+        "no_non_finite_values": "pass"
+      }
+    }
+  ],
+  "summary": {
+    "theta_max_abs_error_deg": 5.60963678471893,
+    "theta_all_within_5deg": false,
+    "normal_error_improves_all": true,
+    "curvature_all_within_15pct": false,
+    "assembly_max_abs_error": 0.0,
+    "locality_all_pass": true,
+    "any_non_finite": false
+  }
+}
