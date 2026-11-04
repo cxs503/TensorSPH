@@ -21,6 +21,7 @@ from .droplet_impact import (
     pair_kernels,
     resolve_device,
     rhs,
+    free_surface_pressure,
     rhs_all_pairs,
     run,
     next_dt,

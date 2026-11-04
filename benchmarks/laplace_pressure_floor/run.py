@@ -45,10 +45,19 @@ C3 predicts it does not.
 
 Nothing in ``src/`` is touched (verification/instrumentation task).
 
+P0 (free-surface pressure closure) is an opt-in solver switch, not a
+modification of this harness: ``--free-surface-pressure`` turns on the Adami
+et al. (2012) sec. 3.3 shell extrapolation in
+``tensorsph.droplet_impact.rhs`` (``Config.free_surface_pressure``) and writes
+``report_fs.json`` instead of ``report.json``, so the closure-on and closure-off
+readings stay side by side. See docs/verification_free_surface_pressure.md.
+
 Usage
 -----
     PYTHONPATH=src python benchmarks/laplace_pressure_floor/run.py
     PYTHONPATH=src python benchmarks/laplace_pressure_floor/run.py --quick
+    PYTHONPATH=src python benchmarks/laplace_pressure_floor/run.py \
+        --free-surface-pressure --sound-speeds 20 5
 """
 from __future__ import annotations
 
@@ -180,7 +189,9 @@ def radial_profile(pos, values, n_bins: int = 12):
 
 def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
           calibrate_mass: bool = True, t_end_over_t_sigma: float = 1.5,
-          max_steps: int = 4000, sample_every: int = 50):
+          max_steps: int = 4000, sample_every: int = 50,
+          free_surface_pressure: bool = False,
+          free_surface_threshold: float = 0.99):
     """Advance the drop and read ``Delta p`` with three definitions.
 
     ``absolute``  ``p_core - 0``  (Tait is normalised at ``rho0``; the vacuum is
@@ -192,7 +203,9 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     cfg = Config(dx=dx, h_factor=H_FACTOR, rho0=RHO0, sound_speed=c0,
                  gamma=GAMMA, gravity=0.0, viscosity=VISCOSITY,
                  surface_tension_coefficient=SIGMA, csf_scheme="consistent",
-                 csf_curvature=scheme)
+                 csf_curvature=scheme,
+                 free_surface_pressure=free_surface_pressure,
+                 free_surface_threshold=free_surface_threshold)
     h = cfg.h_factor * cfg.dx
     dt = float(stable_dt(cfg))
     t_end = t_end_over_t_sigma * T_SIGMA
@@ -272,6 +285,14 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
             "compression_required": (1.0 + DP_ANALYTIC / (RHO0 * c0 ** 2 / GAMMA))
             ** (1.0 / GAMMA) - 1.0,
         },
+        "free_surface_pressure": {
+            "enabled": bool(free_surface_pressure),
+            "threshold_rho_over_rho0": free_surface_threshold,
+            "n_free_surface_particles": int(
+                (rho < free_surface_threshold * RHO0).sum()),
+            "p_core_over_sigma_R": float(final["absolute"] / DP_ANALYTIC),
+            "p_shell_mean_Pa": float(pressure[(r >= 0.95) & (r < 1.05)].mean()),
+        },
         "spurious_current": {
             "v_ref_m_per_s": v_ref,
             "vmax_over_vref_final": trace["vmax_over_vref"][-1],
@@ -292,7 +313,13 @@ def main():
                     default=[20.0, 10.0, 5.0])
     ap.add_argument("--t-end", type=float, default=1.5,
                     help="window length in capillary times")
+    ap.add_argument("--free-surface-pressure", action="store_true",
+                    help="enable the Adami 2012 sec. 3.3 shell-pressure closure")
+    ap.add_argument("--free-surface-threshold", type=float, default=0.99,
+                    help="rho/rho0 below which a particle is free surface")
     args = ap.parse_args()
+    closure = {"free_surface_pressure": args.free_surface_pressure,
+               "free_surface_threshold": args.free_surface_threshold}
 
     dxs = [args.dx] if args.quick else [args.dx, 0.0015]
     c0s = [20.0, 5.0] if args.quick else list(args.sound_speeds)
@@ -301,7 +328,7 @@ def main():
     runs = []
     for dx in dxs:
         for c0 in c0s:
-            run = relax(dx, c0, t_end_over_t_sigma=args.t_end)
+            run = relax(dx, c0, t_end_over_t_sigma=args.t_end, **closure)
             runs.append(run)
             print(f"dx={dx:g} c0={c0:5g}: abs {run['definition_absolute']['rel_error_pct']:+7.1f} %"
                   f"  bandA {run['definition_bandA']['rel_error_pct']:+7.1f} %"
@@ -315,11 +342,11 @@ def main():
     #               operator from the closure problem)
     ref_c0 = c0s[0]
     uncal = relax(args.dx, ref_c0, calibrate_mass=False,
-                  t_end_over_t_sigma=args.t_end)
+                  t_end_over_t_sigma=args.t_end, **closure)
     print(f"control uncalibrated dx={args.dx:g} c0={ref_c0:g}: "
           f"abs {uncal['definition_absolute']['rel_error_pct']:+7.1f} %", flush=True)
     ctrl_scheme = relax(args.dx, c0s[-1], scheme="mls",
-                        t_end_over_t_sigma=args.t_end)
+                        t_end_over_t_sigma=args.t_end, **closure)
     print(f"control mls dx={args.dx:g} c0={c0s[-1]:g}: "
           f"abs {ctrl_scheme['definition_absolute']['rel_error_pct']:+7.1f} %",
           flush=True)
@@ -329,21 +356,26 @@ def main():
         "reference": {"delta_p_Pa": DP_ANALYTIC, "sigma_N_per_m": SIGMA,
                       "radius_m": RADIUS, "rho0": RHO0, "gamma": GAMMA,
                       "t_sigma_s": T_SIGMA},
+        "closure": {"free_surface_pressure": args.free_surface_pressure,
+                    "free_surface_threshold": args.free_surface_threshold,
+                    "model": "Adami, Ihmsen & Adams (2012) JCP 231:7057 sec. 3.3"},
         "structures": structures,
         "runs": runs,
         "controls": {"uncalibrated_c0_reference": uncal,
                      "mls_scheme_lowest_c0": ctrl_scheme},
     }
-    (HERE / "report.json").write_text(json.dumps(report, indent=2))
-    report["figures"] = [make_figures(report)]
-    (HERE / "report.json").write_text(json.dumps(report, indent=2))
-    print("wrote", HERE / "report.json", report["figures"])
+    name = "report_fs.json" if args.free_surface_pressure else "report.json"
+    (HERE / name).write_text(json.dumps(report, indent=2))
+    report["figures"] = [make_figures(
+        report, suffix="_fs" if args.free_surface_pressure else "")]
+    (HERE / name).write_text(json.dumps(report, indent=2))
+    print("wrote", HERE / name, report["figures"])
 
 
 # --------------------------------------------------------------------------- #
 # figures
 # --------------------------------------------------------------------------- #
-def make_figures(report, out_dir=HERE):
+def make_figures(report, out_dir=HERE, suffix: str = ""):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -425,7 +457,7 @@ def make_figures(report, out_dir=HERE):
 
     fig.suptitle("TensorSPH: decomposing the Young-Laplace verification miss")
     fig.tight_layout()
-    path = Path(out_dir) / "laplace_pressure_floor.png"
+    path = Path(out_dir) / f"laplace_pressure_floor{suffix}.png"
     fig.savefig(path, dpi=130)
     plt.close(fig)
     return path.name
