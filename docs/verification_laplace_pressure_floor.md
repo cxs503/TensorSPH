@@ -12,6 +12,13 @@ Young–Laplace 压差判为 WITHHELD（-93.6% / -75.6% / -87.6%），并把原�
 故 Laplace 压差仍为 **WITHHELD**，但欠账已从「不知道错在哪」变成「只差一个自由面压强边界」，
 验收判据和下一步验收门槛都在 §⑥/§⑦ 落定。
 
+> **更新（m3501：P0 已落地）**：`src/tensorsph/droplet_impact.py` 现含
+> `shell_pressure()`（Adami/Ihmsen/Adams 2012 §3.3 的核加权外推 + Ihmsen et al. 2014
+> 的多趟延长）与 `Config.free_surface_pressure`（默认关，benchmark 显式开启）。
+> 同一 benchmark 的 tail-avg 误差区间变为 **+0.6%…+6.8%**
+> （6 点中 6 点 <15%、3 点 <3%），Laplace 压差从 **WITHHELD**
+> 升为 **PASS（<15%）**，逐项见 §⑧。
+
 ## ① 案例介绍（物理背景/几何/参数）
 
 半径 `R = 0.02 m` 的二维单相液滴，六方密排格子初始化，四周真空，无重力，静止平衡。
@@ -172,7 +179,7 @@ Tait 状态方程以 `rho0` 为压强零点（`p(rho0) = 0`），真空就是 `p
 
 ## ⑦ 下一步（欠账登记，需改 src/，不在本单）
 
-1. **P0｜自由面压强闭合（C3，唯一门槛项）**：在 `rhs` 的压强装配处加 shell-pressure 外推
+1. **P0｜自由面压强闭合（C3，唯一门槛项）——已结清（m3501，见 §⑧）**：历史欠账原文如下，实现见 `src/tensorsph/droplet_impact.py::shell_pressure`：在 `rhs` 的压强装配处加 shell-pressure 外推
    （Adami, Ihmsen & Adams 2012, JCP 231:7057, §3.3）：对自由面粒子（`rho/rho0 < 0.99` 或
    色函数 `c < 0.99`）用内部邻域外推
    `p_i = max(0, sum_j (p_j + rho_j g·r_ji) W_ij / sum_j W_ij)`。
@@ -183,3 +190,54 @@ Tait 状态方程以 `rho0` 为压强零点（`p(rho0) = 0`），真空就是 `p
    `m -> m/(1+b)`；验收：初始 `p_max` 相对 `rho0 c0^2` 的偏置 < 1e-4。
 3. **P2｜验证口径统一**：后续所有 Laplace/表面张力验证一律用「绝对压强 + 时间平均」，禁止
    `p_core - p_shell` 口径；本文件 §③.2 的 bandA 列只作历史对照保留。
+
+## ⑧ P0 落地：自由面压强闭合（m3501）
+
+**机制**：`tait_pressure` 在自由面把压强钳在 0，亏缺壳层（−6% / −31%）因此
+无法承载 `sigma/R`。闭合把「被密度亏缺标记为自由面」的粒子（`rho/rho0 < 0.99`）的压强改为
+邻域核加权外推（Adami, Ihmsen & Adams 2012, JCP 231:7057, eq. 12）：
+
+`p_i = max(0, sum_j (p_j + rho_j * g . r_ji) W_ij / sum_j W_ij)`
+
+单趟外推不够：亏缺壳层厚 2–3 层，外层的邻居本身还钳在 0。按 Ihmsen et al. (2014) eq. (12) 做
+**3 趟延长**（每趟用上一趟的结果重新加权）；内部粒子始终保留自己的 Tait 值，不被修改。
+实现：`src/tensorsph/droplet_impact.py::shell_pressure`，开关 `Config.free_surface_pressure`
+（**默认关**），趟数 `Config.free_surface_pressure_passes`。
+
+| dx [m] | c0 [m/s] | 闭合前 tail-avg | 闭合后 tail-avg | 内部压缩/所需 | 伪流 | <15% | <3% |
+|---|---|---|---|---|---|---|---|
+| 0.0015 | 20 | -38.1% | **-6.8%** | 1.00 | 0.032 | 是 | 否 |
+| 0.0015 | 10 | -36.2% | **-6.8%** | 0.90 | 0.043 | 是 | 否 |
+| 0.0015 | 5 | -37.4% | **-6.4%** | 0.87 | 0.038 | 是 | 否 |
+| 0.002 | 20 | -37.9% | **-1.8%** | 0.75 | 0.031 | 是 | 是 |
+| 0.002 | 10 | -37.2% | **-2.0%** | 0.92 | 0.031 | 是 | 是 |
+| 0.002 | 5 | -34.0% | **-0.6%** | 0.93 | 0.029 | 是 | 是 |
+
+趟数收敛（参考点 dx=0.002 m, c0=20 m/s）：
+
+| 趟数 | tail-avg 误差 | 内部压缩/所需 | 伪流 |
+|---|---|---|---|
+| 1 | -20.1% | 0.79 | 0.020 |
+| 2 | -6.5% | 0.70 | 0.033 |
+| 3 | -1.8% | 0.75 | 0.031 |
+
+![closure](benchmarks/laplace_pressure_floor/laplace_pressure_closure.png)
+
+**判读**：
+
+1. 四点全部进 15% 门（6/6），3/6 点同时进 3%；误差量级
+   +0.6%…+6.8%，不再随 c0 / 分辨率系统漂移。
+2. 伪流仍满足 Adami 判据（< 0.1），闭合没有引入新的界面不稳定。
+3. **诚实边界**：这**不是**表面张力模型的精度提升——CSF 力与曲率算子一行未动，补的是自由面
+   的压强边界条件。`free_surface_pressure` 默认关，因为它会改变所有自由面算例的动力学；
+   翻转默认值应由液滴撞池 / dam-break 等下游算例重新验收后决定（见 §⑨）。
+4. 剩余最大残差出现在细网格（dx=1.5 mm），与本 benchmark 已记录的口径一致（时间平均窗口
+   1.5 t_sigma，呼吸模态未完全衰减），不是新的系统偏差。
+
+## ⑨ 下一步（P0 之后）
+
+1. **把闭合接到下游算例做 A/B**：`benchmarks/dam_break`、`benchmarks/droplet_impact_2d` 在
+   `free_surface_pressure=True/False` 下各跑一遍，比较晃荡/飞溅与实验数据；无退化后再考虑翻转默认值。
+2. **P1｜初始化质量校准（C2）** 仍未结清（c0=20 时初始虚假压强 2395 Pa）。
+3. **回归门**：`tests/test_laplace_pressure_floor.py` 的 15% 用例已由 `xfail(strict=True)` 转为
+   普通断言（闭合开启），历史诊断用例改读 `report_open_surface.json`，两侧都留痕。

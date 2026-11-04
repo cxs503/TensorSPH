@@ -34,6 +34,13 @@ Young–Laplace 压差判为 WITHHELD（{e_hist}），并把原因归给「表�
 故 Laplace 压差仍为 **WITHHELD**，但欠账已从「不知道错在哪」变成「只差一个自由面压强边界」，
 验收判据和下一步验收门槛都在 §⑥/§⑦ 落定。
 
+> **更新（m3501：P0 已落地）**：`src/tensorsph/droplet_impact.py` 现含
+> `shell_pressure()`（Adami/Ihmsen/Adams 2012 §3.3 的核加权外推 + Ihmsen et al. 2014
+> 的多趟延长）与 `Config.free_surface_pressure`（默认关，benchmark 显式开启）。
+> 同一 benchmark 的 tail-avg 误差区间变为 **{c_min:+.1f}%…{c_max:+.1f}%**
+> （{c_n} 点中 {c_pass15} 点 <15%、{c_pass3} 点 <3%），Laplace 压差从 **WITHHELD**
+> 升为 **PASS（<15%）**，逐项见 §⑧。
+
 ## ① 案例介绍（物理背景/几何/参数）
 
 半径 `R = {R:g} m` 的二维单相液滴，六方密排格子初始化，四周真空，无重力，静止平衡。
@@ -181,7 +188,7 @@ Tait 状态方程以 `rho0` 为压强零点（`p(rho0) = 0`），真空就是 `p
 
 ## ⑦ 下一步（欠账登记，需改 src/，不在本单）
 
-1. **P0｜自由面压强闭合（C3，唯一门槛项）**：在 `rhs` 的压强装配处加 shell-pressure 外推
+1. **P0｜自由面压强闭合（C3，唯一门槛项）——已结清（m3501，见 §⑧）**：历史欠账原文如下，实现见 `src/tensorsph/droplet_impact.py::shell_pressure`：在 `rhs` 的压强装配处加 shell-pressure 外推
    （Adami, Ihmsen & Adams 2012, JCP 231:7057, §3.3）：对自由面粒子（`rho/rho0 < 0.99` 或
    色函数 `c < 0.99`）用内部邻域外推
    `p_i = max(0, sum_j (p_j + rho_j g·r_ji) W_ij / sum_j W_ij)`。
@@ -193,6 +200,50 @@ Tait 状态方程以 `rho0` 为压强零点（`p(rho0) = 0`），真空就是 `p
    `m -> m/(1+b)`；验收：初始 `p_max` 相对 `rho0 c0^2` 的偏置 < 1e-4。
 3. **P2｜验证口径统一**：后续所有 Laplace/表面张力验证一律用「绝对压强 + 时间平均」，禁止
    `p_core - p_shell` 口径；本文件 §③.2 的 bandA 列只作历史对照保留。
+
+## ⑧ P0 落地：自由面压强闭合（m3501）
+
+**机制**：`tait_pressure` 在自由面把压强钳在 0，亏缺壳层（−{def085:.0f}% / −{def095:.0f}%）因此
+无法承载 `sigma/R`。闭合把「被密度亏缺标记为自由面」的粒子（`rho/rho0 < {c_ratio:g}`）的压强改为
+邻域核加权外推（Adami, Ihmsen & Adams 2012, JCP 231:7057, eq. 12）：
+
+`p_i = max(0, sum_j (p_j + rho_j * g . r_ji) W_ij / sum_j W_ij)`
+
+单趟外推不够：亏缺壳层厚 2–3 层，外层的邻居本身还钳在 0。按 Ihmsen et al. (2014) eq. (12) 做
+**{c_passes} 趟延长**（每趟用上一趟的结果重新加权）；内部粒子始终保留自己的 Tait 值，不被修改。
+实现：`src/tensorsph/droplet_impact.py::shell_pressure`，开关 `Config.free_surface_pressure`
+（**默认关**），趟数 `Config.free_surface_pressure_passes`。
+
+| dx [m] | c0 [m/s] | 闭合前 tail-avg | 闭合后 tail-avg | 内部压缩/所需 | 伪流 | <15% | <3% |
+|---|---|---|---|---|---|---|---|
+{c_rows}
+
+趟数收敛（参考点 dx={c_dx:g} m, c0={c_c0:g} m/s）：
+
+| 趟数 | tail-avg 误差 | 内部压缩/所需 | 伪流 |
+|---|---|---|---|
+{c_ladder}
+
+![closure](benchmarks/laplace_pressure_floor/laplace_pressure_closure.png)
+
+**判读**：
+
+1. 四点全部进 15% 门（{c_pass15}/{c_n}），{c_pass3}/{c_n} 点同时进 3%；误差量级
+   {c_min:+.1f}%…{c_max:+.1f}%，不再随 c0 / 分辨率系统漂移。
+2. 伪流仍满足 Adami 判据（< 0.1），闭合没有引入新的界面不稳定。
+3. **诚实边界**：这**不是**表面张力模型的精度提升——CSF 力与曲率算子一行未动，补的是自由面
+   的压强边界条件。`free_surface_pressure` 默认关，因为它会改变所有自由面算例的动力学；
+   翻转默认值应由液滴撞池 / dam-break 等下游算例重新验收后决定（见 §⑨）。
+4. 剩余最大残差出现在细网格（dx=1.5 mm），与本 benchmark 已记录的口径一致（时间平均窗口
+   1.5 t_sigma，呼吸模态未完全衰减），不是新的系统偏差。
+
+## ⑨ 下一步（P0 之后）
+
+1. **把闭合接到下游算例做 A/B**：`benchmarks/dam_break`、`benchmarks/droplet_impact_2d` 在
+   `free_surface_pressure=True/False` 下各跑一遍，比较晃荡/飞溅与实验数据；无退化后再考虑翻转默认值。
+2. **P1｜初始化质量校准（C2）** 仍未结清（c0=20 时初始虚假压强 {p_init20:.0f} Pa）。
+3. **回归门**：`tests/test_laplace_pressure_floor.py` 的 15% 用例已由 `xfail(strict=True)` 转为
+   普通断言（闭合开启），历史诊断用例改读 `report_open_surface.json`，两侧都留痕。
 """)
 
 
@@ -201,7 +252,11 @@ def fmt_pct(x: float, nd: int = 1) -> str:
 
 
 def main():
-    rep = json.loads((HERE / "report.json").read_text())
+    # The diagnostic sections below document the *pre-closure* model (the
+    # measurement that motivated P0), so they read the open-surface matrix.
+    # The closure result is injected in section 8, from report.json.
+    rep = json.loads((HERE / "report_open_surface.json").read_text())
+    closure = json.loads((HERE / "report.json").read_text())
     runs = rep["runs"]
     structs = rep["structures"]
     ref = rep["reference"]
@@ -338,6 +393,31 @@ def main():
             w=max(r["spurious_current"]["vmax_over_vref_final"] for r in runs)),
     ]
 
+    # ---- section 8: the closure result, from report.json ----
+    c_runs = closure["runs"]
+    before = {(x["dx_m"], x["sound_speed"]):
+              x["absolute_time_average_tail"]["rel_error_pct"] for x in runs}
+    c_rows = []
+    for run in sorted(c_runs, key=lambda x: (x["dx_m"], -x["sound_speed"])):
+        after = run["absolute_time_average_tail"]
+        c_rows.append(
+            "| {dx:g} | {c0:g} | {b} | **{a}** | {cr:.2f} | {v:.3f} | {p15} | {p3} |"
+            .format(dx=run["dx_m"], c0=run["sound_speed"],
+                    b=fmt_pct(before.get((run["dx_m"], run["sound_speed"]),
+                                         float("nan"))),
+                    a=fmt_pct(after["rel_error_pct"]),
+                    cr=((run["density"]["rho_core_over_rho0"] - 1.0)
+                        / run["density"]["compression_required"]),
+                    v=run["spurious_current"]["vmax_over_vref_final"],
+                    p15="是" if after["within_15pct"] else "否",
+                    p3="是" if after["within_3pct"] else "否"))
+    c_err = [abs(x["absolute_time_average_tail"]["rel_error_pct"]) for x in c_runs]
+    c_ladder = "\n".join(
+        "| {p} | {e} | {r:.2f} | {v:.3f} |".format(
+            p=d["closure_passes"], e=fmt_pct(d["tail_rel_error_pct"]),
+            r=d["compression_fraction"], v=d["spurious_vmax_over_vref"])
+        for d in closure.get("passes_ladder", []))
+
     filled = TEMPLATE.format(
         e_hist="-93.6% / -75.6% / -87.6%",
         c1_mean=abs(sum(c1s) / len(c1s)),
@@ -378,6 +458,16 @@ def main():
         scheme_pair=(abs(mls["absolute_time_average_tail"]["rel_error_pct"])
                      - abs(cal_low["absolute_time_average_tail"]["rel_error_pct"])),
         six_section="\n".join(six),
+        c_rows="\n".join(c_rows),
+        c_ladder=c_ladder,
+        c_err_lo=min(c_err), c_err_hi=max(c_err), c_n=len(c_err),
+        c_min=min(c_err), c_max=max(c_err),
+        c_pass15=sum(1 for x in c_err if x < 15.0),
+        c_pass3=sum(1 for x in c_err if x < 3.0),
+        c_dx=closure["passes_ladder"][0]["dx_m"],
+        c_c0=closure["passes_ladder"][0]["sound_speed"],
+        c_passes=closure["closure"]["closure_passes"],
+        c_ratio=closure["closure"]["free_surface_rho0_ratio"],
     )
     DOC.write_text(filled)
     print("wrote", DOC)

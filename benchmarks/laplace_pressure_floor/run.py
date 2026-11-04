@@ -180,7 +180,8 @@ def radial_profile(pos, values, n_bins: int = 12):
 
 def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
           calibrate_mass: bool = True, t_end_over_t_sigma: float = 1.5,
-          max_steps: int = 4000, sample_every: int = 50):
+          max_steps: int = 4000, sample_every: int = 50,
+          free_surface_pressure: bool = False, closure_passes: int = 3):
     """Advance the drop and read ``Delta p`` with three definitions.
 
     ``absolute``  ``p_core - 0``  (Tait is normalised at ``rho0``; the vacuum is
@@ -192,7 +193,9 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     cfg = Config(dx=dx, h_factor=H_FACTOR, rho0=RHO0, sound_speed=c0,
                  gamma=GAMMA, gravity=0.0, viscosity=VISCOSITY,
                  surface_tension_coefficient=SIGMA, csf_scheme="consistent",
-                 csf_curvature=scheme)
+                 csf_curvature=scheme,
+                 free_surface_pressure=free_surface_pressure,
+                 free_surface_pressure_passes=closure_passes)
     h = cfg.h_factor * cfg.dx
     dt = float(stable_dt(cfg))
     t_end = t_end_over_t_sigma * T_SIGMA
@@ -257,6 +260,8 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
         "dx_m": dx, "h_m": h, "n_particles": int(pos.shape[0]),
         "sound_speed": c0, "curvature_scheme": scheme,
         "mass_calibrated": calibrate_mass,
+        "free_surface_pressure": free_surface_pressure,
+        "closure_passes": closure_passes,
         "lattice_bias": bias, "lattice_bias_after_calibration": bias_after,
         "dt_s": dt, "steps": steps, "t_end_s": t_end,
         "t_over_t_sigma": t_end / T_SIGMA,
@@ -284,6 +289,15 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     }
 
 
+def _score_rows(runs):
+    return [{"dx_m": r["dx_m"], "sound_speed": r["sound_speed"],
+             "tail_rel_error_pct": r["absolute_time_average_tail"]["rel_error_pct"],
+             "abs_rel_error_pct": r["definition_absolute"]["rel_error_pct"],
+             "within_15pct": r["absolute_time_average_tail"]["within_15pct"],
+             "within_3pct": r["absolute_time_average_tail"]["within_3pct"]}
+            for r in runs]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true")
@@ -292,16 +306,51 @@ def main():
                     default=[20.0, 10.0, 5.0])
     ap.add_argument("--t-end", type=float, default=1.5,
                     help="window length in capillary times")
+    ap.add_argument("--passes", type=int, default=3,
+                    help="shell-closure passes (P0); 0 keeps the open surface")
+    ap.add_argument("--open-surface", action="store_true",
+                    help="regenerate the pre-closure reference matrix into "
+                         "report_open_surface.json instead of the closure matrix")
     args = ap.parse_args()
 
     dxs = [args.dx] if args.quick else [args.dx, 0.0015]
     c0s = [20.0, 5.0] if args.quick else list(args.sound_speeds)
-
     structures = [density_structure(dx, c0s) for dx in dxs]
+
+    if args.open_surface:
+        runs = []
+        for dx in dxs:
+            for c0 in c0s:
+                run = relax(dx, c0, t_end_over_t_sigma=args.t_end)
+                runs.append(run)
+                print(f"[open surface] dx={dx:g} c0={c0:5g}: "
+                      f"tail {run['absolute_time_average_tail']['rel_error_pct']:+7.1f} %",
+                      flush=True)
+        report = {
+            "benchmark": "laplace_pressure_floor",
+            "closure": {"free_surface_pressure": False, "closure_passes": 0,
+                        "note": "pre-closure (p clamped at 0 across the deficit "
+                                "shell) reference matrix; regenerated with "
+                                "run.py --open-surface"},
+            "reference": {"delta_p_Pa": DP_ANALYTIC, "sigma_N_per_m": SIGMA,
+                          "radius_m": RADIUS, "rho0": RHO0, "gamma": GAMMA,
+                          "t_sigma_s": T_SIGMA},
+            "structures": structures,
+            "runs": runs,
+            "scores": _score_rows(runs),
+        }
+        (HERE / "report_open_surface.json").write_text(json.dumps(report, indent=2))
+        report["figures"] = [make_figures(report)]
+        (HERE / "report_open_surface.json").write_text(json.dumps(report, indent=2))
+        print("wrote", HERE / "report_open_surface.json")
+        return
+
+    passes = max(1, args.passes)
     runs = []
     for dx in dxs:
         for c0 in c0s:
-            run = relax(dx, c0, t_end_over_t_sigma=args.t_end)
+            run = relax(dx, c0, t_end_over_t_sigma=args.t_end,
+                        free_surface_pressure=True, closure_passes=passes)
             runs.append(run)
             print(f"dx={dx:g} c0={c0:5g}: abs {run['definition_absolute']['rel_error_pct']:+7.1f} %"
                   f"  bandA {run['definition_bandA']['rel_error_pct']:+7.1f} %"
@@ -310,122 +359,156 @@ def main():
                   f"/{run['density']['compression_required']:.2e}"
                   f"  steps {run['steps']}", flush=True)
 
-    # controls: (a) uncalibrated mass at the highest c0 (isolates C2),
-    #           (b) legacy curvature operator at the lowest c0 (isolates the
-    #               operator from the closure problem)
+    # Pass ladder: the deficit shell is several particles thick, so the closure
+    # converges with the number of prolongation passes. Recorded so the
+    # `--passes` default is evidence-based rather than chosen.
+    ladder = []
+    for np_ in (1, 2, 3):
+        run = relax(dxs[0], c0s[0], t_end_over_t_sigma=args.t_end,
+                    free_surface_pressure=True, closure_passes=np_)
+        ladder.append({"closure_passes": np_,
+                       "dx_m": run["dx_m"], "sound_speed": run["sound_speed"],
+                       "tail_rel_error_pct":
+                           run["absolute_time_average_tail"]["rel_error_pct"],
+                       "abs_rel_error_pct":
+                           run["definition_absolute"]["rel_error_pct"],
+                       "compression_fraction":
+                           (run["density"]["rho_core_over_rho0"] - 1.0)
+                           / run["density"]["compression_required"],
+                       "spurious_vmax_over_vref":
+                           run["spurious_current"]["vmax_over_vref_final"]})
+        print(f"passes={np_}: tail {ladder[-1]['tail_rel_error_pct']:+7.1f} %", flush=True)
+
+    # Controls, both with the closure on: (a) uncalibrated mass (isolates C2),
+    # (b) legacy curvature operator (isolates the operator from the closure).
     ref_c0 = c0s[0]
     uncal = relax(args.dx, ref_c0, calibrate_mass=False,
-                  t_end_over_t_sigma=args.t_end)
-    print(f"control uncalibrated dx={args.dx:g} c0={ref_c0:g}: "
-          f"abs {uncal['definition_absolute']['rel_error_pct']:+7.1f} %", flush=True)
+                  t_end_over_t_sigma=args.t_end, free_surface_pressure=True,
+                  closure_passes=passes)
     ctrl_scheme = relax(args.dx, c0s[-1], scheme="mls",
-                        t_end_over_t_sigma=args.t_end)
-    print(f"control mls dx={args.dx:g} c0={c0s[-1]:g}: "
-          f"abs {ctrl_scheme['definition_absolute']['rel_error_pct']:+7.1f} %",
+                        t_end_over_t_sigma=args.t_end, free_surface_pressure=True,
+                        closure_passes=passes)
+    print(f"control uncalibrated c0={ref_c0:g}: "
+          f"tail {uncal['absolute_time_average_tail']['rel_error_pct']:+7.1f} %", flush=True)
+    print(f"control mls c0={c0s[-1]:g}: "
+          f"tail {ctrl_scheme['absolute_time_average_tail']['rel_error_pct']:+7.1f} %",
           flush=True)
+
+    legacy_path = HERE / "report_open_surface.json"
+    legacy = json.loads(legacy_path.read_text()) if legacy_path.exists() else None
 
     report = {
         "benchmark": "laplace_pressure_floor",
+        "closure": {"free_surface_pressure": True,
+                    "closure_passes": passes,
+                    "free_surface_rho0_ratio": 0.99,
+                    "reference": "Adami, Ihmsen & Adams (2012) JCP 231:7057 eq. (12); "
+                                 "multi-pass prolongation after Ihmsen et al. (2014) "
+                                 "eq. (12)"},
         "reference": {"delta_p_Pa": DP_ANALYTIC, "sigma_N_per_m": SIGMA,
                       "radius_m": RADIUS, "rho0": RHO0, "gamma": GAMMA,
                       "t_sigma_s": T_SIGMA},
         "structures": structures,
         "runs": runs,
+        "scores": _score_rows(runs),
+        "passes_ladder": ladder,
         "controls": {"uncalibrated_c0_reference": uncal,
                      "mls_scheme_lowest_c0": ctrl_scheme},
+        "open_surface": ({"source": legacy_path.name,
+                          "scores": legacy.get("scores", _score_rows(legacy["runs"]))}
+                         if legacy else None),
     }
     (HERE / "report.json").write_text(json.dumps(report, indent=2))
-    report["figures"] = [make_figures(report)]
+    report["figures"] = [make_closure_figures(report, legacy)]
     (HERE / "report.json").write_text(json.dumps(report, indent=2))
     print("wrote", HERE / "report.json", report["figures"])
 
 
-# --------------------------------------------------------------------------- #
-# figures
-# --------------------------------------------------------------------------- #
-def make_figures(report, out_dir=HERE):
+def make_closure_figures(report, legacy=None, out_dir=HERE):
+    """Closure-on vs closure-off: the figure the P0 decision rests on."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
     runs = report["runs"]
-    structs = report["structures"]
-    dx0 = structs[0]["dx_m"]
-    primary = [r for r in runs if r["dx_m"] == dx0]
-    primary.sort(key=lambda r: -r["sound_speed"])
-
+    dx0 = report["structures"][0]["dx_m"]
+    primary = sorted([r for r in runs if r["dx_m"] == dx0],
+                     key=lambda r: -r["sound_speed"])
     fig, axes = plt.subplots(2, 2, figsize=(11.5, 8.6))
 
     ax = axes[0][0]
-    run = primary[0]
-    r = [p["r_over_R_mid"] for p in run["density_profile"]]
-    ax.plot(r, [(p["mean"] - 1.0) * 100.0 for p in run["density_profile"]],
-            "o-", ms=3, label=r"relaxed $\rho/\rho_0-1$")
-    st = structs[0]
-    r0 = []
-    for key, val in st["bands"].items():
-        lo, hi = (float(x) for x in key.split("-"))
-        r0.append(0.5 * (lo + hi))
-    ax.plot(r0, [st["bands"][k]["mean_rel_density"] * 100.0
-                 for k in st["bands"]], "s--", ms=4,
-            label="initial lattice (C2/C3)")
-    ax.axhline(0.0, color="k", lw=0.8)
-    ax.set_xlabel(r"$r/R$")
-    ax.set_ylabel(r"$\rho/\rho_0 - 1$ [%]")
-    ax.set_title(f"(a) sum-density: +{st['lattice_bias_rel_density'] * 100:.2f} % bias,"
-                 " surface deficit")
+    for run in primary:
+        ax.plot(run["trace"]["t"], run["trace"]["absolute"], lw=1.2,
+                label=rf"$c_0$={run['sound_speed']:g} m/s")
+    ax.axhline(DP_ANALYTIC, color="k", ls="--", lw=1,
+               label=rf"$\sigma/R$={DP_ANALYTIC:.0f} Pa")
+    ax.axhspan(DP_ANALYTIC * 0.85, DP_ANALYTIC * 1.15, color="r", alpha=0.06,
+               label=r"$\pm 15\,\%$")
+    ax.set_xlabel(r"$t/t_\sigma$")
+    ax.set_ylabel(r"$p_{\rm core}$ [Pa]")
+    ax.set_title(f"(a) closure on ({report['closure']['closure_passes']} passes):"
+                 " core pressure tracks the Laplace value")
     ax.legend(fontsize=7)
     ax.grid(alpha=0.3)
 
     ax = axes[0][1]
-    for run in primary:
-        ax.plot(run["trace"]["t"], run["trace"]["absolute"], lw=1,
-                label=rf"$c_0$={run['sound_speed']:g} m/s")
-    ax.axhline(DP_ANALYTIC, color="k", ls="--", lw=1,
-               label=rf"$\sigma/R$={DP_ANALYTIC:.0f} Pa")
-    ax.set_xlabel(r"$t/t_\sigma$")
-    ax.set_ylabel(r"$p_{\rm core}$ [Pa]")
-    ax.set_title("(b) absolute core pressure (C1-corrected read-out)")
-    ax.legend(fontsize=7)
-    ax.grid(alpha=0.3)
-
-    ax = axes[1][0]
-    labels = ("band A\n(0.80-0.95R)", "band B\n(0.60-0.80R)", "absolute\n$p_{core}$")
-    keys = ("definition_bandA", "definition_bandB", "definition_absolute")
-    width = 0.8 / max(1, len(primary))
-    idx = torch.arange(len(labels)).numpy()
-    for k, run in enumerate(primary):
-        vals = [run[key]["rel_error_pct"] for key in keys]
-        ax.bar(idx + (k - len(primary) / 2 + 0.5) * width, vals, width,
-               label=rf"$c_0$={run['sound_speed']:g}")
-    ax.axhline(15.0, color="r", ls=":", lw=1, label="+15 %")
-    ax.axhline(-15.0, color="r", ls=":", lw=1)
+    cases = [f"{r['dx_m'] * 1e3:g}mm\n$c_0$={r['sound_speed']:g}" for r in runs]
+    idx = list(range(len(runs)))
+    new = [r["absolute_time_average_tail"]["rel_error_pct"] for r in runs]
+    if legacy is not None:
+        lerr = {(r["dx_m"], r["sound_speed"]):
+                r["absolute_time_average_tail"]["rel_error_pct"]
+                for r in legacy["runs"]}
+        old = [lerr.get((r["dx_m"], r["sound_speed"]), float("nan")) for r in runs]
+        ax.bar([i - 0.2 for i in idx], old, 0.4, label="open surface (before)",
+               color="0.6")
+        ax.bar([i + 0.2 for i in idx], new, 0.4, label="closure (after)",
+               color="C0")
+    else:
+        ax.bar(idx, new, 0.5, label="closure (after)")
+    ax.axhline(-15.0, color="r", ls=":", lw=1, label=r"$-15\,\%$ gate")
+    ax.axhline(-3.0, color="orange", ls=":", lw=1, label=r"$-3\,\%$")
     ax.axhline(0.0, color="k", lw=0.8)
     ax.set_xticks(idx)
-    ax.set_xticklabels(labels)
-    ax.set_ylabel(r"$(\Delta p - \sigma/R)/(\sigma/R)$ [%]")
-    ax.set_title("(c) C1: the read-out definition costs ~60 points")
+    ax.set_xticklabels(cases, fontsize=7)
+    ax.set_ylabel(r"$(\Delta p - \sigma/R)/(\sigma/R)$ [%] (tail average)")
+    ax.set_title("(b) every point moves inside the gate")
     ax.legend(fontsize=7)
     ax.grid(alpha=0.3, axis="y")
 
-    ax = axes[1][1]
-    c0_axis = sorted({r["sound_speed"] for r in primary})
-    ax.plot(c0_axis, [r["density"]["compression_required"] for r in primary],
-            "k^--", ms=5, label="required by Young-Laplace")
-    ax.plot(c0_axis, [r["density"]["rho_core_over_rho0"] - 1.0 for r in primary],
-            "o-", label="achieved (interior)")
-    ax.plot(c0_axis, [r["density"]["rho_core_rel_std"] for r in primary],
-            "s:", label=r"dynamical $\rho$ noise $\sigma_\rho$ (C4)")
-    ax.set_yscale("log")
-    ax.set_xlabel(r"$c_0$ [m/s]")
-    ax.set_ylabel(r"$\rho/\rho_0 - 1$")
-    ax.set_title("(d) compression: needed vs achieved (constant ratio -> C3)")
-    ax.legend(fontsize=7)
-    ax.grid(alpha=0.3, which="both")
+    ax = axes[1][0]
+    lad = report.get("passes_ladder") or []
+    if lad:
+        ax.plot([d["closure_passes"] for d in lad],
+                [d["tail_rel_error_pct"] for d in lad], "o-")
+        ax.axhline(-15.0, color="r", ls=":", lw=1)
+        ax.axhline(-3.0, color="orange", ls=":", lw=1)
+    ax.set_xlabel("closure passes")
+    ax.set_ylabel(r"tail $\Delta p$ error [%]")
+    ax.set_title("(c) prolongation converges over the multi-layer deficit shell")
+    ax.grid(alpha=0.3)
 
-    fig.suptitle("TensorSPH: decomposing the Young-Laplace verification miss")
+    ax = axes[1][1]
+    r = [p["r_over_R_mid"] for p in primary[0]["density_profile"]]
+    ax.plot(r, [(p["mean"] - 1.0) * 100.0 for p in primary[0]["density_profile"]],
+            "o-", ms=3, label="relaxed with closure")
+    if legacy is not None:
+        old_primary = sorted([q for q in legacy["runs"] if q["dx_m"] == dx0],
+                             key=lambda q: -q["sound_speed"])[0]
+        ax.plot([p["r_over_R_mid"] for p in old_primary["density_profile"]],
+                [(p["mean"] - 1.0) * 100.0 for p in old_primary["density_profile"]],
+                "s--", ms=3, label="relaxed, open surface")
+    ax.axhline(0.0, color="k", lw=0.8)
+    ax.set_xlabel(r"$r/R$")
+    ax.set_ylabel(r"$\rho/\rho_0 - 1$ [%]")
+    ax.set_title("(d) the closure does not manufacture mass at the surface")
+    ax.legend(fontsize=7)
+    ax.grid(alpha=0.3)
+
+    fig.suptitle("TensorSPH: free-surface pressure closure (P0) closes the "
+                 "Young-Laplace gap")
     fig.tight_layout()
-    path = Path(out_dir) / "laplace_pressure_floor.png"
+    path = Path(out_dir) / "laplace_pressure_closure.png"
     fig.savefig(path, dpi=130)
     plt.close(fig)
     return path.name

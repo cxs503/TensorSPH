@@ -73,8 +73,32 @@ class Config:
     term here acts as a rate applied to the summation density over ``dt``. The
     scheme, its invariants and what it measured on B1/B2 are documented in
     docs/benchmarks/free-surface-treatment.md.
+
+    ``free_surface_pressure`` enables the shell-pressure closure of Adami,
+    Ihmsen & Adams (2012) JCP 231:7057, eq. (12): a particle whose summation
+    density is below ``free_surface_rho0_ratio * rho0`` (i.e. it is missing
+    neighbours, so it sits on the free surface) does not take its pressure from
+    the clamped Tait law but from the kernel-weighted average of its
+    neighbours' pressures plus the body-force term. Without it every free
+    surface particle is pinned at ``p = 0`` by the ``clamp_min(0)`` in
+    ``tait_pressure``, the interface shell cannot carry a pressure jump, and a
+    drop at rest settles far below the Young-Laplace overpressure (see
+    docs/verification_laplace_pressure_floor.md). It is off by default because
+    it changes the free-surface dynamics of every existing case; it is not a
+    surface-tension model, it is the boundary condition the CSF force needs.
+
+    ``free_surface_pressure_passes`` repeats the extrapolation. The density
+    deficit shell of a WCSPH free surface is not one particle thick (measured:
+    -11.6 % mean at 0.85-0.95 R, -34 % at 0.95-1.05 R, so two to three layers),
+    and a single pass averages the outer layers against neighbours that are
+    themselves still clamped at zero. Each extra pass re-averages with the
+    values produced by the previous one, which is the prolongation step of
+    Ihmsen et al. (2014), *Implicit incompressible SPH*, eq. (12).
     """
 
+    free_surface_pressure: bool = False
+    free_surface_rho0_ratio: float = 0.99
+    free_surface_pressure_passes: int = 1
     dx: float = 0.025
     h_factor: float = 1.3
     rho0: float = 1000.0
@@ -238,6 +262,60 @@ def tait_pressure(rho: torch.Tensor, cfg: Config) -> torch.Tensor:
     bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
     ratio = (rho / cfg.rho0).clamp_min(0.01)
     return (bulk * (ratio.pow(cfg.gamma) - 1.0)).clamp_min(0.0)
+
+
+def shell_pressure(pos, rho, pressure, pairs, cfg, kernel=None, delta=None):
+    """Free-surface pressure closure (shell extrapolation), Adami et al. (2012).
+
+    ``tait_pressure`` clamps at ``p >= 0`` because the unclamped tensile branch
+    is unstable. The side effect is that *every* particle in the surface shell
+    -- whose summation density is deficient by 10 % or more -- is pinned at
+    exactly zero. The shell therefore cannot carry the pressure jump that the
+    CSF force needs, and the interior of a drop at rest settles at a fraction of
+    ``sigma/R`` instead of at ``sigma/R``.
+
+    Following Adami, Ihmsen & Adams (2012) sec. 3.3 / eq. (12), a particle that
+    is recognised as a free-surface particle by its density deficit gets the
+    kernel-weighted average of its neighbours' pressures (plus the body-force
+    term) instead of its own Tait value::
+
+        p_i = max(0, sum_j (p_j + rho_j g . (r_i - r_j)) W_ij / sum_j W_ij)
+
+    Interior particles are untouched, so the pressure field inside the fluid is
+    still governed by the equation of state alone.
+
+    ``pairs`` is an ``(i, j)`` pair of index tensors; ``kernel`` and ``delta``
+    may be passed when the caller already has them (``rhs`` does). Both pair
+    directions are accumulated, so a list with one entry per unordered pair is
+    expected, which is what ``cell_linked_pairs`` produces.
+    """
+    i, j = pairs
+    n = pos.shape[0]
+    if delta is None:
+        delta = pos[i] - pos[j]
+    if kernel is None:
+        kernel = cubic_spline_kernel(torch.linalg.vector_norm(delta, dim=1),
+                                     cfg.h_factor * cfg.dx)
+    zeros = torch.zeros(n, dtype=pos.dtype, device=pos.device)
+    denominator = zeros.index_add(0, i, kernel)
+    denominator = denominator.index_add(0, j, kernel)
+    denominator = denominator.clamp_min(1.0e-30)
+    free_surface = rho < cfg.free_surface_rho0_ratio * cfg.rho0
+    passes = max(1, int(cfg.free_surface_pressure_passes))
+    current = pressure
+    for _ in range(passes):
+        # Only the free-surface neighbours are re-read; interior particles keep
+        # their Tait value, so the fluid interior is never modified.
+        src_i = current[j]
+        src_j = current[i]
+        if cfg.gravity != 0.0:
+            src_i = src_i - cfg.gravity * rho[j] * delta[:, 1]
+            src_j = src_j + cfg.gravity * rho[i] * delta[:, 1]
+        numerator = zeros.index_add(0, i, src_i * kernel)
+        numerator = numerator.index_add(0, j, src_j * kernel)
+        extrapolated = (numerator / denominator).clamp_min(0.0)
+        current = torch.where(free_surface, extrapolated, pressure)
+    return current
 
 
 def acoustic_courant(dt: float, cfg: Config, max_speed: float = 0.0) -> float:
@@ -572,6 +650,15 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
 
     pressure = tait_pressure(rho, cfg)
 
+    if cfg.free_surface_pressure:
+        # Fluid-fluid pairs only: wall density is itself extrapolated from the
+        # fluid, so feeding wall pressure back in here would be circular.
+        fluid_only = (i < n) & (j < n)
+        if bool(fluid_only.any()):
+            pressure = shell_pressure(
+                pos, rho, pressure, (i[fluid_only], j[fluid_only]), cfg,
+                kernel=wij[fluid_only], delta=delta[fluid_only])
+
     if nw:
         bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
         # Only fluid/wall pairs extrapolate wall pressure. Instead of selecting
@@ -691,6 +778,15 @@ def rhs_all_pairs(pos, vel, mass, cfg: Config, dt=None):
         rate = -scale * (mass[None, :] / rho[None, :] * coupling).sum(dim=1)
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
     pressure = tait_pressure(rho, cfg)
+    if cfg.free_surface_pressure:
+        idx = torch.arange(pos.shape[0], device=pos.device)
+        ii, jj = torch.meshgrid(idx, idx, indexing="ij")
+        ii, jj = ii.reshape(-1), jj.reshape(-1)
+        keep = ii < jj
+        w_pairs = cubic_spline_kernel(r[ii[keep], jj[keep]], h)
+        pressure = shell_pressure(
+            pos, rho, pressure, (ii[keep], jj[keep]), cfg,
+            kernel=w_pairs, delta=delta[ii[keep], jj[keep]])
     grad_w = cubic_spline_gradient(delta, h)
     pressure_term = (
         pressure[:, None] / rho[:, None].square()
