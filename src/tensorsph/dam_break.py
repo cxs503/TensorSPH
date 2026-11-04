@@ -27,6 +27,7 @@ from .droplet_impact import (
     Config,
     apply_boundary,
     boundary_box,
+    cell_centres,
     hydrostatic_density,
     next_dt,
     resolve_device,
@@ -88,8 +89,13 @@ def validate_case(cfg: DamBreakConfig) -> None:
 def make_column(cfg: DamBreakConfig, device: torch.device):
     """Particles filling the initial water column, resting on the floor."""
     dx = cfg.dx
-    xs = torch.arange(dx * 0.5, cfg.column_width, dx, device=device)
-    ys = torch.arange(dx * 0.5, cfg.column_height, dx, device=device)
+    # Floor-based cell count (see droplet_impact.cell_centres): the last row
+    # and column stay a full spacing from the tank walls even when
+    # column_width/dx or column_height/dx is not an integer.  For integer
+    # ratios the lattice is identical to the historical arange layout, so all
+    # published benchmark numbers are untouched.
+    xs = cell_centres(cfg.column_width, dx, device)
+    ys = cell_centres(cfg.column_height, dx, device)
     if xs.numel() == 0 or ys.numel() == 0:
         raise ValueError("column discretization produced no particles")
     gx, gy = torch.meshgrid(xs, ys, indexing="xy")
