@@ -182,7 +182,8 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
           calibrate_mass: bool = True, t_end_over_t_sigma: float = 1.5,
           max_steps: int = 4000, sample_every: int = 50,
           closure: bool = False, donors: str = "interior", layers: int = 2,
-          threshold: float = 0.99):
+          threshold: float = 0.99, body_force: str = "gravity",
+          density: str = "sum"):
     """Advance the drop and read ``Delta p`` with three definitions.
 
     ``absolute``  ``p_core - 0``  (Tait is normalised at ``rho0``; the vacuum is
@@ -190,6 +191,10 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     ``bandA``     ``p_core - p(0.80..0.95R)``, the definition used by the three
                   previous verification rounds (contaminated by C3).
     ``bandB``     ``p_core - p(0.60..0.80R)``, inside the deficit zone's edge.
+
+    ``body_force`` / ``density`` are forwarded to the closure knobs of the same
+    name: ``"nonpressure"`` feeds the continuum surface force into the Adami
+    body term, ``"tait"`` pairs a filled pressure with the inverse-Tait density.
     """
     cfg = Config(dx=dx, h_factor=H_FACTOR, rho0=RHO0, sound_speed=c0,
                  gamma=GAMMA, gravity=0.0, viscosity=VISCOSITY,
@@ -198,7 +203,9 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
                  surface_pressure_closure=closure,
                  surface_pressure_donors=donors,
                  surface_pressure_layers=layers,
-                 surface_pressure_threshold=threshold)
+                 surface_pressure_threshold=threshold,
+                 surface_pressure_body_force=body_force,
+                 surface_pressure_density=density)
     h = cfg.h_factor * cfg.dx
     dt = float(stable_dt(cfg))
     t_end = t_end_over_t_sigma * T_SIGMA

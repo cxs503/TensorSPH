@@ -167,6 +167,22 @@ class Config:
     # takes part, and one pass suffices.
     surface_pressure_donors: str = "interior"
     surface_pressure_layers: int = 2
+    # Body force inside the extrapolation. Adami et al. (2012) eq. (11) carries
+    # the *non-pressure* acceleration a_i next to gravity:
+    #     p_i = sum_j (p_j + rho_j (g - a_i).(r_i - r_j)) W_ij / sum_j W_ij
+    # "gravity" keeps g only. It vanishes for a drop relaxing in zero gravity,
+    # so the shell cannot carry the capillary jump sigma/R at all: it averages
+    # the interior pressure with the clamped zeros. "nonpressure" feeds the
+    # continuum surface force (the only non-pressure acceleration left in zero
+    # gravity) into a_i, which is what lets the shell hold sigma/R.
+    surface_pressure_body_force: str = "gravity"     # "gravity" | "nonpressure"
+    # Density paired with an extrapolated pressure in the pressure force.
+    # "sum" keeps the under-counted summation density, so the 1/rho^2 factor of
+    # the pressure term is inconsistent with the pressure it multiplies.
+    # "tait" inverts the Tait law for the particles the closure filled, so p/rho
+    # stays on the isentrope the bulk is on. The viscosity and the density
+    # summation keep using the summed density either way.
+    surface_pressure_density: str = "sum"           # "sum" | "tait"
 
 
 # --------------------------------------------------------------------------- #
@@ -277,7 +293,23 @@ def tait_pressure(rho: torch.Tensor, cfg: Config) -> torch.Tensor:
     ratio = (rho / cfg.rho0).clamp_min(0.01)
     return (bulk * (ratio.pow(cfg.gamma) - 1.0)).clamp_min(0.0)
 
-def free_surface_pressure(pos, rho, pressure, delta, wij, i, j, cfg) -> torch.Tensor:
+
+def tait_density(pressure: torch.Tensor, cfg: Config) -> torch.Tensor:
+    """Inverse of :func:`tait_pressure`: the density that carries ``pressure``.
+
+    An extrapolated pressure does not belong to the summation density of the
+    particle it is written onto -- that is the whole point of the closure. Using
+    the two together in the pressure term ``p_i/rho_i^2 + p_j/rho_j^2`` mixes a
+    bulk pressure with a surface density, which scales the pressure force of the
+    boundary layer (the layer the closure exists to fix) by an arbitrary factor.
+    Inverting the Tait law keeps the ratio ``p/rho^gamma`` on the bulk isentrope.
+    """
+    bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
+    return cfg.rho0 * (pressure.clamp_min(0.0) / bulk + 1.0).pow(1.0 / cfg.gamma)
+
+
+def free_surface_pressure(pos, rho, pressure, delta, wij, i, j, cfg,
+                          external=None) -> torch.Tensor:
     """Extrapolate pressure onto the free surface (Adami et al. 2012, section 3.3).
 
     ``delta = x_i - x_j``, ``wij = W_ij`` on the pair list ``(i, j)``, and
@@ -301,9 +333,20 @@ def free_surface_pressure(pos, rho, pressure, delta, wij, i, j, cfg) -> torch.Te
     layer below it filled first. ``"all"`` is the literal formula, where every
     neighbour donates and one pass suffices.
 
+    ``external`` is the non-pressure acceleration ``a_i`` acting on the
+    receiver (gravity excluded -- it is ``cfg.gravity``). Adami et al. (2012)
+    eq. (11) writes the body term with ``(g - a_i)``, not with ``g``: for a wall
+    ``a_w = 0`` and the two agree, but for a free-surface particle of a drop the
+    non-pressure acceleration is the continuum surface force, and it is exactly
+    what carries the capillary jump across the shell. With ``external = None``
+    the term reduces to the gravity-only form, so every earlier number is
+    unchanged.
+
     A receiver with no donor (``sum W = 0``) keeps its Tait pressure. This is a
     pressure *closure*: it changes neither the density nor the Tait law and adds
-    no surface-tension force.
+    no surface-tension force. The density to pair with a filled pressure is the
+    caller's business -- see :func:`tait_density` and
+    ``Config.surface_pressure_density``.
     """
     n = pressure.shape[0]
     free = rho < cfg.surface_pressure_threshold * cfg.rho0
@@ -312,8 +355,18 @@ def free_surface_pressure(pos, rho, pressure, delta, wij, i, j, cfg) -> torch.Te
 
     known = ~free
     p = pressure.clone()
-    dy = delta[:, 1] if delta.shape[1] > 1 else torch.zeros_like(delta[:, 0])
-    grav = cfg.gravity * dy
+    # body = g - a_ext, with g = (0, -gravity); a_ext acts on the *receiver*.
+    ndim = pos.shape[1]
+    body = torch.zeros_like(pos)
+    if ndim > 1:
+        body[:, 1] = -cfg.gravity
+    if external is not None:
+        body = body - external
+    if ndim == 2:
+        bx, by = body[:, 0], body[:, 1]
+        dx_pair, dy_pair = delta[:, 0], delta[:, 1]
+    else:
+        bx = by = dx_pair = dy_pair = None
     literal = cfg.surface_pressure_donors == "all"
     layers = 1 if literal else max(1, cfg.surface_pressure_layers)
 
@@ -327,10 +380,16 @@ def free_surface_pressure(pos, rho, pressure, delta, wij, i, j, cfg) -> torch.Te
         else:
             w_i = wij * known[j].to(wij.dtype)
             w_j = wij * known[i].to(wij.dtype)
-        # receiver i, donor j: r_recv - r_donor = +delta
-        src_i = p[j] - grav * rho[j]
-        # receiver j, donor i: r_recv - r_donor = -delta
-        src_j = p[i] + grav * rho[i]
+        # receiver i, donor j: r_recv - r_donor = +delta, body taken at i
+        # receiver j, donor i: r_recv - r_donor = -delta, body taken at j
+        if ndim == 2:
+            dot_i = bx[i] * dx_pair + by[i] * dy_pair
+            dot_j = -(bx[j] * dx_pair + by[j] * dy_pair)
+        else:
+            dot_i = (body[i] * delta).sum(dim=1)
+            dot_j = -(body[j] * delta).sum(dim=1)
+        src_i = p[j] + rho[j] * dot_i
+        src_j = p[i] + rho[i] * dot_j
         num = torch.zeros(n, dtype=p.dtype, device=p.device)
         den = torch.zeros(n, dtype=p.dtype, device=p.device)
         num = num.index_add(0, i, w_i * src_i)
@@ -735,8 +794,34 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
 
     pressure = tait_pressure(rho, cfg)
+
+    # Surface tension (CSF model) acts on fluid-fluid pairs only. It is
+    # evaluated before the pressure because the shell closure needs the
+    # non-pressure acceleration a_i as an input (Adami et al. 2012 eq. 11).
+    acc_st_total = torch.zeros((n, pos.shape[1]), dtype=pos.dtype,
+                               device=pos.device)
+    if cfg.surface_tension_coefficient > 0.0:
+        from .surface_tension import compute_surface_tension_force
+        # Use fluid-only pairs for surface tension (wall particles don't have surface)
+        fluid_mask = (i < n) & (j < n)
+        if fluid_mask.any():
+            acc_st_total = compute_surface_tension_force(
+                pos, rho, mass, pairs[fluid_mask], cfg, wall=wall)
+
+    # Density that the pressure force pairs with the (possibly extrapolated)
+    # pressure. Viscosity and the density summation keep the summed density.
+    density_for_pressure = rho
     if cfg.surface_pressure_closure:
-        pressure = free_surface_pressure(pos, rho, pressure, delta, wij, i, j, cfg)
+        external = (acc_st_total
+                    if cfg.surface_pressure_body_force == "nonpressure" else None)
+        closed_p = free_surface_pressure(pos, rho, pressure, delta, wij, i, j,
+                                        cfg, external=external)
+        if cfg.surface_pressure_density == "tait":
+            filled = (rho < cfg.surface_pressure_threshold * cfg.rho0) & (
+                closed_p != pressure)
+            density_for_pressure = torch.where(filled,
+                                              tait_density(closed_p, cfg), rho)
+        pressure = closed_p
 
     if nw:
         bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
@@ -773,9 +858,11 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
         wall_density = (cfg.rho0 * (wall_pressure / bulk + 1.0).pow(1.0 / cfg.gamma)
                         ).clamp_min(cfg.rho0)
         pressure_all = torch.cat((pressure, wall_pressure))
-        density_all = torch.cat((rho, wall_density))
+        density_all = torch.cat((density_for_pressure, wall_density))
+        density_visc_all = torch.cat((rho, wall_density))
     else:
-        pressure_all, density_all = pressure, rho
+        pressure_all, density_all = pressure, density_for_pressure
+        density_visc_all = rho
 
     if nw:
         all_vel = torch.cat((vel, torch.zeros((nw, pos.shape[1]),
@@ -811,24 +898,15 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
     denom = distance.square() + 0.01 * h * h
     laplace_weight = torch.relu(-(delta * grad_w).sum(dim=1)) / denom
     visc_i = (-visc_scale * dv
-              * (all_mass[j] / density_all[j] * laplace_weight)[:, None])
+              * (all_mass[j] / density_visc_all[j] * laplace_weight)[:, None])
     visc_j = (visc_scale * dv
-              * (all_mass[i] / density_all[i] * laplace_weight)[:, None])
+              * (all_mass[i] / density_visc_all[i] * laplace_weight)[:, None])
     acc_visc = torch.zeros((n + nw, pos.shape[1]), dtype=pos.dtype,
                            device=pos.device)
     acc_visc = acc_visc.index_add(0, i, visc_i)
     acc_visc = acc_visc.index_add(0, j, visc_j)
 
-    # Surface tension (CSF model) - only if coefficient > 0
-    acc_st_total = torch.zeros((n, pos.shape[1]), dtype=pos.dtype, device=pos.device)
-    if cfg.surface_tension_coefficient > 0.0:
-        from .surface_tension import compute_surface_tension_force
-        # Use fluid-only pairs for surface tension (wall particles don't have surface)
-        fluid_mask = (i < n) & (j < n)
-        if fluid_mask.any():
-            fluid_pairs = pairs[fluid_mask]
-            acc_st_total = compute_surface_tension_force(
-                pos, rho, mass, fluid_pairs, cfg, wall=wall)
+
 
     return rho, pressure, acc_pressure + acc_visc[:n] + acc_st_total + gravity
 
@@ -857,15 +935,34 @@ def rhs_all_pairs(pos, vel, mass, cfg: Config, dt=None):
         rate = -scale * (mass[None, :] / rho[None, :] * coupling).sum(dim=1)
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
     pressure = tait_pressure(rho, cfg)
+    density_for_pressure = rho
     if cfg.surface_pressure_closure:
         dense_i, dense_j = torch.nonzero(w > 0.0, as_tuple=True)
-        pressure = free_surface_pressure(
+        external = None
+        if cfg.surface_pressure_body_force == "nonpressure" and \
+                cfg.surface_tension_coefficient > 0.0:
+            # The dense reference has no surface-tension force of its own (it
+            # never had one); only the closure *input* is reproduced here, so
+            # that the two implementations see the same a_i.
+            from .surface_tension import compute_surface_tension_force
+            upper = torch.triu(w > 0.0, diagonal=1)
+            di, dj = torch.nonzero(upper, as_tuple=True)
+            if di.numel():
+                external = compute_surface_tension_force(
+                    pos, rho, mass, torch.stack((di, dj), dim=1), cfg)
+        closed_p = free_surface_pressure(
             pos, rho, pressure, delta[dense_i, dense_j],
-            w[dense_i, dense_j], dense_i, dense_j, cfg)
+            w[dense_i, dense_j], dense_i, dense_j, cfg, external=external)
+        if cfg.surface_pressure_density == "tait":
+            filled = (rho < cfg.surface_pressure_threshold * cfg.rho0) & (
+                closed_p != pressure)
+            density_for_pressure = torch.where(filled,
+                                              tait_density(closed_p, cfg), rho)
+        pressure = closed_p
     grad_w = cubic_spline_gradient(delta, h)
     pressure_term = (
-        pressure[:, None] / rho[:, None].square()
-        + pressure[None, :] / rho[None, :].square()
+        pressure[:, None] / density_for_pressure[:, None].square()
+        + pressure[None, :] / density_for_pressure[None, :].square()
     )
     acc_pressure = -(mass[None, :, None] * pressure_term[:, :, None] * grad_w).sum(dim=1)
 
@@ -942,6 +1039,14 @@ def validate_config(cfg: Config) -> None:
         raise ValueError("wall_friction must be in [0, 1]")
     if cfg.density_diffusion < 0.0:
         raise ValueError("density_diffusion must be non-negative")
+    if cfg.surface_pressure_body_force not in ("gravity", "nonpressure"):
+        raise ValueError(
+            "surface_pressure_body_force must be 'gravity' or 'nonpressure', "
+            f"got {cfg.surface_pressure_body_force!r}")
+    if cfg.surface_pressure_density not in ("sum", "tait"):
+        raise ValueError(
+            "surface_pressure_density must be 'sum' or 'tait', got "
+            f"{cfg.surface_pressure_density!r}")
     if cfg.csf_curvature not in ("mls", "fit_quadratic", "fit_circle"):
         raise ValueError(
             "csf_curvature must be 'mls', 'fit_quadratic' or 'fit_circle', "

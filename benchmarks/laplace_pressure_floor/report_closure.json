@@ -1,0 +1,1225 @@
+{
+ "benchmark": "laplace_pressure_floor/closure",
+ "schema": 1,
+ "question": "does the free-surface pressure closure carry sigma/R across the shell once Adami eq. (11)'s non-pressure acceleration and the isentropic density pairing are in place?",
+ "reference": {
+  "sigma_N_per_m": 7.2,
+  "radius_m": 0.02,
+  "rho0_kg_per_m3": 1000.0,
+  "gamma": 7.0,
+  "delta_p_analytic_Pa": 360.0,
+  "t_sigma_s": 0.03333333333333334
+ },
+ "settings": {
+  "variants": {
+   "clamped_tait": {
+    "closure": false
+   },
+   "closure_gravity": {
+    "closure": true
+   },
+   "closure_gravity_tait": {
+    "closure": true,
+    "density": "tait"
+   },
+   "closure_nonpressure": {
+    "closure": true,
+    "body_force": "nonpressure"
+   },
+   "closure_nonpressure_tait": {
+    "closure": true,
+    "body_force": "nonpressure",
+    "density": "tait"
+   }
+  },
+  "dx_m": [
+   0.002,
+   0.0015
+  ],
+  "sound_speed_m_per_s": [
+   20.0
+  ],
+  "resolution_check": {
+   "dx_m": 0.001,
+   "variants": [
+    "clamped_tait",
+    "closure_nonpressure_tait"
+   ]
+  },
+  "t_end_over_t_sigma": 1.5,
+  "csf": {
+   "scheme": "consistent",
+   "curvature": "fit_quadratic"
+  },
+  "viscosity_m2_per_s": 0.01,
+  "h_factor": 1.3
+ },
+ "analytic_gate": {
+  "description": "linear field with a non-pressure acceleration, one pass, interior donors (donor density = rho0)",
+  "n_receivers": 15,
+  "external_rel_error_max": 1.403541206439704e-16,
+  "dropped_body_term_abs_error_Pa": 30.0,
+  "flipped_sign_abs_error_Pa": 60.0,
+  "body_scale_rho0_a_h_Pa": 19.5
+ },
+ "single_shot_shell": [
+  {
+   "dx_m": 0.002,
+   "sound_speed": 20.0,
+   "n_particles": 362,
+   "n_shell_particles": 70,
+   "sigma_over_R_Pa": 360.0,
+   "csf_accel_max_m_per_s2": 261.2710464035107,
+   "csf_accel_mean_shell_m_per_s2": 119.46890546425337,
+   "shell_pressure_over_analytic": {
+    "clamped_tait": {
+     "0.80-0.95": 0.0,
+     "0.90-1.05": 0.0,
+     "1.05-1.20": null
+    },
+    "closure_gravity": {
+     "0.80-0.95": 0.0,
+     "0.90-1.05": 0.0,
+     "1.05-1.20": null,
+     "density_tait_over_sum_shell": 1.3959811579164891
+    },
+    "closure_nonpressure": {
+     "0.80-0.95": 0.3719288856512016,
+     "0.90-1.05": 1.0376490740864857,
+     "1.05-1.20": null,
+     "density_tait_over_sum_shell": 1.3973466332742146
+    },
+    "closure_nonpressure_tait": {
+     "0.80-0.95": 0.3719288856512016,
+     "0.90-1.05": 1.0376490740864857,
+     "1.05-1.20": null,
+     "density_tait_over_sum_shell": 1.3973466332742146
+    }
+   },
+   "note": "the lattice sums to rho0 in the core, so p_tait = 0 everywhere and only the body term can produce a shell pressure"
+  },
+  {
+   "dx_m": 0.0015,
+   "sound_speed": 20.0,
+   "n_particles": 642,
+   "n_shell_particles": 118,
+   "sigma_over_R_Pa": 360.0,
+   "csf_accel_max_m_per_s2": 292.2755582248072,
+   "csf_accel_mean_shell_m_per_s2": 130.3074731243615,
+   "shell_pressure_over_analytic": {
+    "clamped_tait": {
+     "0.80-0.95": 1.018421637576048e-13,
+     "0.90-1.05": 0.0,
+     "1.05-1.20": null
+    },
+    "closure_gravity": {
+     "0.80-0.95": 1.9907283847516872e-13,
+     "0.90-1.05": 1.4622021929379785e-13,
+     "1.05-1.20": null,
+     "density_tait_over_sum_shell": 1.3141882534544893
+    },
+    "closure_nonpressure": {
+     "0.80-0.95": 0.1842316257509881,
+     "0.90-1.05": 0.8097376121067894,
+     "1.05-1.20": null,
+     "density_tait_over_sum_shell": 1.315219630944351
+    },
+    "closure_nonpressure_tait": {
+     "0.80-0.95": 0.1842316257509881,
+     "0.90-1.05": 0.8097376121067894,
+     "1.05-1.20": null,
+     "density_tait_over_sum_shell": 1.315219630944351
+    }
+   },
+   "note": "the lattice sums to rho0 in the core, so p_tait = 0 everywhere and only the body term can produce a shell pressure"
+  },
+  {
+   "dx_m": 0.001,
+   "sound_speed": 20.0,
+   "n_particles": 1450,
+   "n_shell_particles": 274,
+   "sigma_over_R_Pa": 360.0,
+   "csf_accel_max_m_per_s2": 454.7861804555057,
+   "csf_accel_mean_shell_m_per_s2": 146.0390156126885,
+   "shell_pressure_over_analytic": {
+    "clamped_tait": {
+     "0.80-0.95": 0.0,
+     "0.90-1.05": 0.0,
+     "1.05-1.20": null
+    },
+    "closure_gravity": {
+     "0.80-0.95": 0.0,
+     "0.90-1.05": 0.0,
+     "1.05-1.20": null,
+     "density_tait_over_sum_shell": 1.209683132113606
+    },
+    "closure_nonpressure": {
+     "0.80-0.95": 0.05686166309154227,
+     "0.90-1.05": 0.5269634104909275,
+     "1.05-1.20": null,
+     "density_tait_over_sum_shell": 1.2103393546064694
+    },
+    "closure_nonpressure_tait": {
+     "0.80-0.95": 0.05686166309154227,
+     "0.90-1.05": 0.5269634104909275,
+     "1.05-1.20": null,
+     "density_tait_over_sum_shell": 1.2103393546064694
+    }
+   },
+   "note": "the lattice sums to rho0 in the core, so p_tait = 0 everywhere and only the body term can produce a shell pressure"
+  }
+ ],
+ "runs": [
+  {
+   "variant": "clamped_tait",
+   "dx_m": 0.002,
+   "sound_speed": 20.0,
+   "h_m": 0.0026000000000000003,
+   "n_particles": 362,
+   "steps": 1283,
+   "t_end_over_t_sigma": 1.5,
+   "wall_time_s": 58.7,
+   "p_core_Pa": 208.50090319517804,
+   "p_core_over_analytic": 0.5791691755421612,
+   "rel_error_pct": -42.08308244578387,
+   "tail_average_rel_error_pct": -37.8760475657692,
+   "band_a_rel_error_pct": -96.82209551324705,
+   "within_3pct": false,
+   "within_15pct": false,
+   "rho_core_over_rho0": 1.0005120533636982,
+   "density_compression_required": 0.0008975794345598143,
+   "vmax_over_vref": 0.0299434340079459,
+   "finite": true,
+   "pressure_profile": [],
+   "rho_rel_profile": []
+  },
+  {
+   "variant": "closure_gravity",
+   "dx_m": 0.002,
+   "sound_speed": 20.0,
+   "h_m": 0.0026000000000000003,
+   "n_particles": 362,
+   "steps": 1283,
+   "t_end_over_t_sigma": 1.5,
+   "wall_time_s": 95.3,
+   "p_core_Pa": 874.1186869606644,
+   "p_core_over_analytic": 2.4281074637796234,
+   "rel_error_pct": 142.81074637796232,
+   "tail_average_rel_error_pct": 8.834844562712666,
+   "band_a_rel_error_pct": 103.5470303083975,
+   "within_3pct": false,
+   "within_15pct": true,
+   "rho_core_over_rho0": 1.002167603681645,
+   "density_compression_required": 0.0008975794345598143,
+   "vmax_over_vref": 0.3881285469675048,
+   "finite": true,
+   "pressure_profile": [],
+   "rho_rel_profile": []
+  },
+  {
+   "variant": "closure_gravity_tait",
+   "dx_m": 0.002,
+   "sound_speed": 20.0,
+   "h_m": 0.0026000000000000003,
+   "n_particles": 362,
+   "steps": 1283,
+   "t_end_over_t_sigma": 1.5,
+   "wall_time_s": 103.8,
+   "p_core_Pa": 361.7632896182644,
+   "p_core_over_analytic": 1.0048980267174012,
+   "rel_error_pct": 0.48980267174011755,
+   "tail_average_rel_error_pct": -7.178345264870181,
+   "band_a_rel_error_pct": -77.38765779704822,
+   "within_3pct": false,
+   "within_15pct": true,
+   "rho_core_over_rho0": 1.000901896487402,
+   "density_compression_required": 0.0008975794345598143,
+   "vmax_over_vref": 0.036034259821869176,
+   "finite": true,
+   "pressure_profile": [],
+   "rho_rel_profile": []
+  },
+  {
+   "variant": "closure_nonpressure",
+   "dx_m": 0.002,
+   "sound_speed": 20.0,
+   "h_m": 0.0026000000000000003,
+   "n_particles": 362,
+   "steps": 1283,
+   "t_end_over_t_sigma": 1.5,
+   "wall_time_s": 78.7,
+   "p_core_Pa": 0.0,
+   "p_core_over_analytic": 0.0,
+   "rel_error_pct": -100.0,
+   "tail_average_rel_error_pct": -100.0,
+   "band_a_rel_error_pct": -100.0,
+   "within_3pct": false,
+   "within_15pct": false,
+   "rho_core_over_rho0": 0.38818625868249196,
+   "density_compression_required": 0.0008975794345598143,
+   "vmax_over_vref": 1.5115508972083898,
+   "finite": true,
+   "pressure_profile": [],
+   "rho_rel_profile": []
+  },
+  {
+   "variant": "closure_nonpressure_tait",
+   "dx_m": 0.002,
+   "sound_speed": 20.0,
+   "h_m": 0.0026000000000000003,
+   "n_particles": 362,
+   "steps": 1283,
+   "t_end_over_t_sigma": 1.5,
+   "wall_time_s": 92.2,
+   "p_core_Pa": 362.76333943581466,
+   "p_core_over_analytic": 1.007675942877263,
+   "rel_error_pct": 0.7675942877262938,
+   "tail_average_rel_error_pct": -0.16950706003310895,
+   "band_a_rel_error_pct": -85.50157083579322,
+   "within_3pct": true,
+   "within_15pct": true,
+   "rho_core_over_rho0": 1.0008873889264553,
+   "density_compression_required": 0.0008975794345598143,
+   "vmax_over_vref": 0.1517093364176852,
+   "finite": true,
+   "pressure_profile": [],
+   "rho_rel_profile": []
+  },
+  {
+   "variant": "clamped_tait",
+   "dx_m": 0.0015,
+   "sound_speed": 20.0,
+   "h_m": 0.0019500000000000001,
+   "n_particles": 642,
+   "steps": 1710,
+   "t_end_over_t_sigma": 1.5,
+   "wall_time_s": 158.0,
+   "p_core_Pa": 203.21520341434183,
+   "p_core_over_analytic": 0.5644866761509495,
+   "rel_error_pct": -43.551332384905045,
+   "tail_average_rel_error_pct": -38.09702683968919,
+   "band_a_rel_error_pct": -90.91010521393821,
+   "within_3pct": false,
+   "within_15pct": false,
+   "rho_core_over_rho0": 1.0005070695868867,
+   "density_compression_required": 0.0008975794345598143,
+   "vmax_over_vref": 0.025407391276862527,
+   "finite": true,
+   "pressure_profile": [
+    {
+     "r_over_R_mid": 0.041666666666666664,
+     "count": 4,
+     "mean": 170.59084737880107,
+     "std": 80.01458011607689
+    },
+    {
+     "r_over_R_mid": 0.125,
+     "count": 14,
+     "mean": 201.47075285835996,
+     "std": 82.17384324482535
+    },
+    {
+     "r_over_R_mid": 0.20833333333333331,
+     "count": 22,
+     "mean": 230.44625114423027,
+     "std": 74.2376631575636
+    },
+    {
+     "r_over_R_mid": 0.29166666666666663,
+     "count": 34,
+     "mean": 150.79895008176547,
+     "std": 66.6477779806119
+    },
+    {
+     "r_over_R_mid": 0.375,
+     "count": 38,
+     "mean": 266.44453159615006,
+     "std": 78.50731275095636
+    },
+    {
+     "r_over_R_mid": 0.45833333333333337,
+     "count": 47,
+     "mean": 180.56147627109192,
+     "std": 130.5623459944162
+    },
+    {
+     "r_over_R_mid": 0.5416666666666667,
+     "count": 63,
+     "mean": 155.63979867869756,
+     "std": 140.36843648068373
+    },
+    {
+     "r_over_R_mid": 0.625,
+     "count": 65,
+     "mean": 319.2482029671474,
+     "std": 97.38740499187354
+    },
+    {
+     "r_over_R_mid": 0.7083333333333333,
+     "count": 71,
+     "mean": 109.6678184406814,
+     "std": 173.2803226679698
+    },
+    {
+     "r_over_R_mid": 0.7916666666666667,
+     "count": 95,
+     "mean": 202.86630140916495,
+     "std": 224.6980407753987
+    },
+    {
+     "r_over_R_mid": 0.875,
+     "count": 86,
+     "mean": 306.3797709402272,
+     "std": 176.673920207339
+    },
+    {
+     "r_over_R_mid": 0.9583333333333333,
+     "count": 103,
+     "mean": 36.65705826785394,
+     "std": 100.83197701433066
+    }
+   ],
+   "rho_rel_profile": [
+    {
+     "r_over_R_mid": 0.041666666666666664,
+     "count": 4,
+     "mean": 1.0004258429085964,
+     "std": 0.00019957556826240375
+    },
+    {
+     "r_over_R_mid": 0.125,
+     "count": 14,
+     "mean": 1.000502800654086,
+     "std": 0.00020483180563238293
+    },
+    {
+     "r_over_R_mid": 0.20833333333333331,
+     "count": 22,
+     "mean": 1.0005750244314464,
+     "std": 0.00018501187114023458
+    },
+    {
+     "r_over_R_mid": 0.29166666666666663,
+     "count": 34,
+     "mean": 1.0003764912954383,
+     "std": 0.00016617496799984987
+    },
+    {
+     "r_over_R_mid": 0.375,
+     "count": 38,
+     "mean": 1.00066467238766,
+     "std": 0.00019561252011553163
+    },
+    {
+     "r_over_R_mid": 0.45833333333333337,
+     "count": 47,
+     "mean": 1.0004504827926728,
+     "std": 0.0003253799765017656
+    },
+    {
+     "r_over_R_mid": 0.5416666666666667,
+     "count": 63,
+     "mean": 1.000376486246344,
+     "std": 0.00036735414669270667
+    },
+    {
+     "r_over_R_mid": 0.625,
+     "count": 65,
+     "mean": 1.000796042720838,
+     "std": 0.00024239372387739746
+    },
+    {
+     "r_over_R_mid": 0.7083333333333333,
+     "count": 71,
+     "mean": 0.9997594066777532,
+     "std": 0.001076653137018894
+    },
+    {
+     "r_over_R_mid": 0.7916666666666667,
+     "count": 95,
+     "mean": 0.9984760317868303,
+     "std": 0.003642471029365692
+    },
+    {
+     "r_over_R_mid": 0.875,
+     "count": 86,
+     "mean": 1.0005152070151724,
+     "std": 0.001244353985854684
+    },
+    {
+     "r_over_R_mid": 0.9583333333333333,
+     "count": 103,
+     "mean": 0.8489445429003456,
+     "std": 0.07234558086823803
+    }
+   ]
+  },
+  {
+   "variant": "closure_gravity",
+   "dx_m": 0.0015,
+   "sound_speed": 20.0,
+   "h_m": 0.0019500000000000001,
+   "n_particles": 642,
+   "steps": 1710,
+   "t_end_over_t_sigma": 1.5,
+   "wall_time_s": 160.3,
+   "p_core_Pa": 382.82406588490596,
+   "p_core_over_analytic": 1.0634001830136277,
+   "rel_error_pct": 6.340018301362768,
+   "tail_average_rel_error_pct": -3.408283131202852,
+   "band_a_rel_error_pct": -76.89089585303253,
+   "within_3pct": false,
+   "within_15pct": true,
+   "rho_core_over_rho0": 1.000954001983859,
+   "density_compression_required": 0.0008975794345598143,
+   "vmax_over_vref": 0.08950309149072329,
+   "finite": true,
+   "pressure_profile": [
+    {
+     "r_over_R_mid": 0.041666666666666664,
+     "count": 4,
+     "mean": 493.00385105892315,
+     "std": 88.58095439055215
+    },
+    {
+     "r_over_R_mid": 0.125,
+     "count": 14,
+     "mean": 480.40039431596705,
+     "std": 83.8581527217842
+    },
+    {
+     "r_over_R_mid": 0.20833333333333331,
+     "count": 23,
+     "mean": 427.21386191489046,
+     "std": 99.7064572944521
+    },
+    {
+     "r_over_R_mid": 0.29166666666666663,
+     "count": 32,
+     "mean": 403.9392574721793,
+     "std": 111.69058489983611
+    },
+    {
+     "r_over_R_mid": 0.375,
+     "count": 37,
+     "mean": 368.20375997433473,
+     "std": 129.913816192174
+    },
+    {
+     "r_over_R_mid": 0.45833333333333337,
+     "count": 50,
+     "mean": 323.57430869446245,
+     "std": 144.66065323844205
+    },
+    {
+     "r_over_R_mid": 0.5416666666666667,
+     "count": 63,
+     "mean": 386.94339735212725,
+     "std": 140.3464007872188
+    },
+    {
+     "r_over_R_mid": 0.625,
+     "count": 64,
+     "mean": 374.8292296388769,
+     "std": 177.98234980910516
+    },
+    {
+     "r_over_R_mid": 0.7083333333333333,
+     "count": 73,
+     "mean": 338.04417501315737,
+     "std": 186.59882710455378
+    },
+    {
+     "r_over_R_mid": 0.7916666666666667,
+     "count": 86,
+     "mean": 484.0178480733051,
+     "std": 206.39049197635896
+    },
+    {
+     "r_over_R_mid": 0.875,
+     "count": 104,
+     "mean": 264.8370215573817,
+     "std": 124.44140353732544
+    },
+    {
+     "r_over_R_mid": 0.9583333333333333,
+     "count": 70,
+     "mean": 218.38259994765335,
+     "std": 83.41853313776625
+    }
+   ],
+   "rho_rel_profile": [
+    {
+     "r_over_R_mid": 0.041666666666666664,
+     "count": 4,
+     "mean": 1.001227867983566,
+     "std": 0.00021982577696400625
+    },
+    {
+     "r_over_R_mid": 0.125,
+     "count": 14,
+     "mean": 1.0011965756185002,
+     "std": 0.00020814222265177392
+    },
+    {
+     "r_over_R_mid": 0.20833333333333331,
+     "count": 23,
+     "mean": 1.0010644525183345,
+     "std": 0.00024763026392563936
+    },
+    {
+     "r_over_R_mid": 0.29166666666666663,
+     "count": 32,
+     "mean": 1.0010065784974096,
+     "std": 0.0002774934499511887
+    },
+    {
+     "r_over_R_mid": 0.375,
+     "count": 37,
+     "mean": 1.0009176733230294,
+     "std": 0.00032293265425955816
+    },
+    {
+     "r_over_R_mid": 0.45833333333333337,
+     "count": 50,
+     "mean": 1.0008065990806663,
+     "std": 0.0003598379603197505
+    },
+    {
+     "r_over_R_mid": 0.5416666666666667,
+     "count": 63,
+     "mean": 1.0009642039486308,
+     "std": 0.00034882698700113685
+    },
+    {
+     "r_over_R_mid": 0.625,
+     "count": 64,
+     "mean": 1.0009319423819747,
+     "std": 0.0004470010788879053
+    },
+    {
+     "r_over_R_mid": 0.7083333333333333,
+     "count": 73,
+     "mean": 1.000840479650814,
+     "std": 0.00046761431394260915
+    },
+    {
+     "r_over_R_mid": 0.7916666666666667,
+     "count": 86,
+     "mean": 1.0012036736063012,
+     "std": 0.0005156180510226628
+    },
+    {
+     "r_over_R_mid": 0.875,
+     "count": 104,
+     "mean": 0.9450681708032166,
+     "std": 0.06001664223133979
+    },
+    {
+     "r_over_R_mid": 0.9583333333333333,
+     "count": 70,
+     "mean": 0.6774533938065407,
+     "std": 0.14320921011254711
+    }
+   ]
+  },
+  {
+   "variant": "closure_gravity_tait",
+   "dx_m": 0.0015,
+   "sound_speed": 20.0,
+   "h_m": 0.0019500000000000001,
+   "n_particles": 642,
+   "steps": 1710,
+   "t_end_over_t_sigma": 1.5,
+   "wall_time_s": 153.9,
+   "p_core_Pa": 335.0567433315276,
+   "p_core_over_analytic": 0.9307131759209101,
+   "rel_error_pct": -6.928682407908992,
+   "tail_average_rel_error_pct": -10.988178576551569,
+   "band_a_rel_error_pct": -81.56002330938826,
+   "within_3pct": false,
+   "within_15pct": true,
+   "rho_core_over_rho0": 1.0008355312892618,
+   "density_compression_required": 0.0008975794345598143,
+   "vmax_over_vref": 0.029348926414971065,
+   "finite": true,
+   "pressure_profile": [
+    {
+     "r_over_R_mid": 0.041666666666666664,
+     "count": 4,
+     "mean": 340.35181615299825,
+     "std": 28.334256529712523
+    },
+    {
+     "r_over_R_mid": 0.125,
+     "count": 14,
+     "mean": 346.75685724417815,
+     "std": 26.25301828836643
+    },
+    {
+     "r_over_R_mid": 0.20833333333333331,
+     "count": 20,
+     "mean": 331.51954664789537,
+     "std": 22.517827868688972
+    },
+    {
+     "r_over_R_mid": 0.29166666666666663,
+     "count": 36,
+     "mean": 341.64744017886255,
+     "std": 22.282088468356356
+    },
+    {
+     "r_over_R_mid": 0.375,
+     "count": 37,
+     "mean": 340.3926733743451,
+     "std": 27.479489525892394
+    },
+    {
+     "r_over_R_mid": 0.45833333333333337,
+     "count": 47,
+     "mean": 323.37732949155617,
+     "std": 27.963181247965924
+    },
+    {
+     "r_over_R_mid": 0.5416666666666667,
+     "count": 65,
+     "mean": 342.3563407123933,
+     "std": 35.26063043385308
+    },
+    {
+     "r_over_R_mid": 0.625,
+     "count": 63,
+     "mean": 328.2892315555236,
+     "std": 42.75996177202938
+    },
+    {
+     "r_over_R_mid": 0.7083333333333333,
+     "count": 75,
+     "mean": 312.4922812055517,
+     "std": 54.63218083233337
+    },
+    {
+     "r_over_R_mid": 0.7916666666666667,
+     "count": 88,
+     "mean": 347.9782327604584,
+     "std": 61.871221825269366
+    },
+    {
+     "r_over_R_mid": 0.875,
+     "count": 97,
+     "mean": 256.7774144246802,
+     "std": 31.1641056114388
+    },
+    {
+     "r_over_R_mid": 0.9583333333333333,
+     "count": 95,
+     "mean": 244.48933037668195,
+     "std": 18.92375880396746
+    }
+   ],
+   "rho_rel_profile": [
+    {
+     "r_over_R_mid": 0.041666666666666664,
+     "count": 4,
+     "mean": 1.000848704361332,
+     "std": 7.047433862860202e-05
+    },
+    {
+     "r_over_R_mid": 0.125,
+     "count": 14,
+     "mean": 1.0008646342038146,
+     "std": 6.529369151845459e-05
+    },
+    {
+     "r_over_R_mid": 0.20833333333333331,
+     "count": 20,
+     "mean": 1.0008267365800818,
+     "std": 5.601164116370537e-05
+    },
+    {
+     "r_over_R_mid": 0.29166666666666663,
+     "count": 36,
+     "mean": 1.0008519291595483,
+     "std": 5.542119777135485e-05
+    },
+    {
+     "r_over_R_mid": 0.375,
+     "count": 37,
+     "mean": 1.0008488035250658,
+     "std": 6.835513633223994e-05
+    },
+    {
+     "r_over_R_mid": 0.45833333333333337,
+     "count": 47,
+     "mean": 1.0008064752262096,
+     "std": 6.956114664292466e-05
+    },
+    {
+     "r_over_R_mid": 0.5416666666666667,
+     "count": 65,
+     "mean": 1.0008536786184752,
+     "std": 8.770586847778332e-05
+    },
+    {
+     "r_over_R_mid": 0.625,
+     "count": 63,
+     "mean": 1.000818676095162,
+     "std": 0.00010637728204001848
+    },
+    {
+     "r_over_R_mid": 0.7083333333333333,
+     "count": 75,
+     "mean": 1.0007793512568428,
+     "std": 0.00013593691807087195
+    },
+    {
+     "r_over_R_mid": 0.7916666666666667,
+     "count": 88,
+     "mean": 1.0008676135180823,
+     "std": 0.000153882926205488
+    },
+    {
+     "r_over_R_mid": 0.875,
+     "count": 97,
+     "mean": 0.9739137987830986,
+     "std": 0.02905966059058136
+    },
+    {
+     "r_over_R_mid": 0.9583333333333333,
+     "count": 95,
+     "mean": 0.7341348126624507,
+     "std": 0.10339625439300355
+    }
+   ]
+  },
+  {
+   "variant": "closure_nonpressure",
+   "dx_m": 0.0015,
+   "sound_speed": 20.0,
+   "h_m": 0.0019500000000000001,
+   "n_particles": 642,
+   "steps": 1710,
+   "t_end_over_t_sigma": 1.5,
+   "wall_time_s": 117.9,
+   "p_core_Pa": 0.0,
+   "p_core_over_analytic": 0.0,
+   "rel_error_pct": -100.0,
+   "tail_average_rel_error_pct": -100.0,
+   "band_a_rel_error_pct": -100.0,
+   "within_3pct": false,
+   "within_15pct": false,
+   "rho_core_over_rho0": 0.28978420224225443,
+   "density_compression_required": 0.0008975794345598143,
+   "vmax_over_vref": 1.86058976926174,
+   "finite": true,
+   "pressure_profile": [
+    {
+     "r_over_R_mid": 0.041666666666666664,
+     "count": 1,
+     "mean": 0.0,
+     "std": 0.0
+    },
+    {
+     "r_over_R_mid": 0.125,
+     "count": 4,
+     "mean": 0.0,
+     "std": 0.0
+    },
+    {
+     "r_over_R_mid": 0.20833333333333331,
+     "count": 7,
+     "mean": 0.0,
+     "std": 0.0
+    },
+    {
+     "r_over_R_mid": 0.29166666666666663,
+     "count": 10,
+     "mean": 0.0,
+     "std": 0.0
+    },
+    {
+     "r_over_R_mid": 0.375,
+     "count": 11,
+     "mean": 0.0,
+     "std": 0.0
+    },
+    {
+     "r_over_R_mid": 0.45833333333333337,
+     "count": 10,
+     "mean": 0.0,
+     "std": 0.0
+    },
+    {
+     "r_over_R_mid": 0.5416666666666667,
+     "count": 14,
+     "mean": 0.0,
+     "std": 0.0
+    },
+    {
+     "r_over_R_mid": 0.625,
+     "count": 11,
+     "mean": 0.0,
+     "std": 0.0
+    },
+    {
+     "r_over_R_mid": 0.7083333333333333,
+     "count": 20,
+     "mean": 0.0,
+     "std": 0.0
+    },
+    {
+     "r_over_R_mid": 0.7916666666666667,
+     "count": 15,
+     "mean": 0.0,
+     "std": 0.0
+    },
+    {
+     "r_over_R_mid": 0.875,
+     "count": 23,
+     "mean": 0.0,
+     "std": 0.0
+    },
+    {
+     "r_over_R_mid": 0.9583333333333333,
+     "count": 23,
+     "mean": 0.0,
+     "std": 0.0
+    }
+   ],
+   "rho_rel_profile": [
+    {
+     "r_over_R_mid": 0.041666666666666664,
+     "count": 1,
+     "mean": 0.33404447664477654,
+     "std": 0.0
+    },
+    {
+     "r_over_R_mid": 0.125,
+     "count": 4,
+     "mean": 0.32889392733432854,
+     "std": 0.008406590431730207
+    },
+    {
+     "r_over_R_mid": 0.20833333333333331,
+     "count": 7,
+     "mean": 0.3134259580472027,
+     "std": 0.005011102245360858
+    },
+    {
+     "r_over_R_mid": 0.29166666666666663,
+     "count": 10,
+     "mean": 0.2962866114359416,
+     "std": 0.00877047715357622
+    },
+    {
+     "r_over_R_mid": 0.375,
+     "count": 11,
+     "mean": 0.27663550760106037,
+     "std": 0.006866288166235132
+    },
+    {
+     "r_over_R_mid": 0.45833333333333337,
+     "count": 10,
+     "mean": 0.26112621061333485,
+     "std": 0.004989094748493028
+    },
+    {
+     "r_over_R_mid": 0.5416666666666667,
+     "count": 14,
+     "mean": 0.2512871228301579,
+     "std": 0.003280287387028935
+    },
+    {
+     "r_over_R_mid": 0.625,
+     "count": 11,
+     "mean": 0.24619614512649007,
+     "std": 0.0019038665456782933
+    },
+    {
+     "r_over_R_mid": 0.7083333333333333,
+     "count": 20,
+     "mean": 0.24663238505384305,
+     "std": 0.00231081763346577
+    },
+    {
+     "r_over_R_mid": 0.7916666666666667,
+     "count": 15,
+     "mean": 0.24643266619585885,
+     "std": 0.003410308319324399
+    },
+    {
+     "r_over_R_mid": 0.875,
+     "count": 23,
+     "mean": 0.24771578440705835,
+     "std": 0.0033216969978827693
+    },
+    {
+     "r_over_R_mid": 0.9583333333333333,
+     "count": 23,
+     "mean": 0.25074635542374485,
+     "std": 0.0069110791959579145
+    }
+   ]
+  },
+  {
+   "variant": "closure_nonpressure_tait",
+   "dx_m": 0.0015,
+   "sound_speed": 20.0,
+   "h_m": 0.0019500000000000001,
+   "n_particles": 642,
+   "steps": 1710,
+   "t_end_over_t_sigma": 1.5,
+   "wall_time_s": 151.6,
+   "p_core_Pa": 308.7576076352323,
+   "p_core_over_analytic": 0.8576600212089787,
+   "rel_error_pct": -14.233997879102134,
+   "tail_average_rel_error_pct": -13.891938739487179,
+   "band_a_rel_error_pct": -85.47079932570063,
+   "within_3pct": false,
+   "within_15pct": true,
+   "rho_core_over_rho0": 1.0007699262319887,
+   "density_compression_required": 0.0008975794345598143,
+   "vmax_over_vref": 0.1416678968301381,
+   "finite": true,
+   "pressure_profile": [
+    {
+     "r_over_R_mid": 0.041666666666666664,
+     "count": 7,
+     "mean": 287.64703866156646,
+     "std": 105.91111492151288
+    },
+    {
+     "r_over_R_mid": 0.125,
+     "count": 12,
+     "mean": 370.5070808075018,
+     "std": 78.05562557859699
+    },
+    {
+     "r_over_R_mid": 0.20833333333333331,
+     "count": 19,
+     "mean": 268.6527154329403,
+     "std": 68.86304252195968
+    },
+    {
+     "r_over_R_mid": 0.29166666666666663,
+     "count": 34,
+     "mean": 325.2336677260264,
+     "std": 95.11778606718937
+    },
+    {
+     "r_over_R_mid": 0.375,
+     "count": 43,
+     "mean": 340.03281405452674,
+     "std": 95.3501549355006
+    },
+    {
+     "r_over_R_mid": 0.45833333333333337,
+     "count": 46,
+     "mean": 271.01311497165244,
+     "std": 107.37821205086858
+    },
+    {
+     "r_over_R_mid": 0.5416666666666667,
+     "count": 59,
+     "mean": 344.34177889850497,
+     "std": 149.4798505246381
+    },
+    {
+     "r_over_R_mid": 0.625,
+     "count": 67,
+     "mean": 330.17024809401545,
+     "std": 159.3638970890022
+    },
+    {
+     "r_over_R_mid": 0.7083333333333333,
+     "count": 76,
+     "mean": 262.345599681932,
+     "std": 205.4814180321015
+    },
+    {
+     "r_over_R_mid": 0.7916666666666667,
+     "count": 87,
+     "mean": 335.57502545803237,
+     "std": 221.4605245667886
+    },
+    {
+     "r_over_R_mid": 0.875,
+     "count": 92,
+     "mean": 234.40434015522334,
+     "std": 115.3041979340748
+    },
+    {
+     "r_over_R_mid": 0.9583333333333333,
+     "count": 64,
+     "mean": 419.4708463722126,
+     "std": 149.7168841833218
+    }
+   ],
+   "rho_rel_profile": [
+    {
+     "r_over_R_mid": 0.041666666666666664,
+     "count": 7,
+     "mean": 1.0007173925710167,
+     "std": 0.0002634871628357458
+    },
+    {
+     "r_over_R_mid": 0.125,
+     "count": 12,
+     "mean": 1.000923600542895,
+     "std": 0.00019413716421412305
+    },
+    {
+     "r_over_R_mid": 0.20833333333333331,
+     "count": 19,
+     "mean": 1.0006701989395148,
+     "std": 0.00017147003526925476
+    },
+    {
+     "r_over_R_mid": 0.29166666666666663,
+     "count": 34,
+     "mean": 1.000810944824531,
+     "std": 0.00023670476191074946
+    },
+    {
+     "r_over_R_mid": 0.375,
+     "count": 43,
+     "mean": 1.0008477573106307,
+     "std": 0.00023724469566310853
+    },
+    {
+     "r_over_R_mid": 0.45833333333333337,
+     "count": 46,
+     "mean": 1.0006759500129638,
+     "std": 0.00026737059607319694
+    },
+    {
+     "r_over_R_mid": 0.5416666666666667,
+     "count": 59,
+     "mean": 1.0008523362993722,
+     "std": 0.0003881867209034161
+    },
+    {
+     "r_over_R_mid": 0.625,
+     "count": 67,
+     "mean": 1.0008131710410473,
+     "std": 0.0004231932409728275
+    },
+    {
+     "r_over_R_mid": 0.7083333333333333,
+     "count": 76,
+     "mean": 1.0003894754843885,
+     "std": 0.0013683090970646656
+    },
+    {
+     "r_over_R_mid": 0.7916666666666667,
+     "count": 87,
+     "mean": 0.9996393697430721,
+     "std": 0.007574518433879972
+    },
+    {
+     "r_over_R_mid": 0.875,
+     "count": 92,
+     "mean": 0.9133781070367601,
+     "std": 0.0777443273586433
+    },
+    {
+     "r_over_R_mid": 0.9583333333333333,
+     "count": 64,
+     "mean": 0.6419000578114276,
+     "std": 0.15588511982589637
+    }
+   ]
+  }
+ ],
+ "resolution_check": [
+  {
+   "variant": "clamped_tait",
+   "dx_m": 0.001,
+   "sound_speed": 20.0,
+   "h_m": 0.0013000000000000002,
+   "n_particles": 1450,
+   "steps": 2565,
+   "t_end_over_t_sigma": 1.5,
+   "wall_time_s": 403.3,
+   "p_core_Pa": 208.06822291827692,
+   "p_core_over_analytic": 0.5779672858841025,
+   "rel_error_pct": -42.203271411589746,
+   "tail_average_rel_error_pct": -40.29823863986073,
+   "band_a_rel_error_pct": -105.61216895041012,
+   "within_3pct": false,
+   "within_15pct": false,
+   "rho_core_over_rho0": 1.000519340314642,
+   "density_compression_required": 0.0008975794345598143,
+   "vmax_over_vref": 0.021456874506648023,
+   "finite": true,
+   "pressure_profile": [],
+   "rho_rel_profile": []
+  },
+  {
+   "variant": "closure_nonpressure_tait",
+   "dx_m": 0.001,
+   "sound_speed": 20.0,
+   "h_m": 0.0013000000000000002,
+   "n_particles": 1450,
+   "steps": 2565,
+   "t_end_over_t_sigma": 1.5,
+   "wall_time_s": 471.7,
+   "p_core_Pa": 240.57216040641254,
+   "p_core_over_analytic": 0.6682560011289237,
+   "rel_error_pct": -33.17439988710763,
+   "tail_average_rel_error_pct": -23.6154141311788,
+   "band_a_rel_error_pct": -91.28899260100582,
+   "within_3pct": false,
+   "within_15pct": false,
+   "rho_core_over_rho0": 1.0006003165887156,
+   "density_compression_required": 0.0008975794345598143,
+   "vmax_over_vref": 0.21535980158177534,
+   "finite": true,
+   "pressure_profile": [],
+   "rho_rel_profile": []
+  }
+ ],
+ "verdict": {
+  "primary_case": {
+   "variant": "closure_nonpressure_tait",
+   "dx_m": 0.0015
+  },
+  "rel_error_pct_final_snapshot": -14.233997879102134,
+  "rel_error_pct_tail_average": -13.891938739487179,
+  "within_3pct": false,
+  "baseline_rel_error_pct_tail_average": -38.09702683968919,
+  "gravity_only_rel_error_pct_tail_average": -3.408283131202852,
+  "delta_vs_baseline_pp": 24.205088100202012,
+  "body_force_without_density_pairing": {
+   "variant": "closure_nonpressure",
+   "dx_m": 0.0015,
+   "rho_core_over_rho0": 0.28978420224225443,
+   "p_core_Pa": 0.0,
+   "finite": true,
+   "status": "FAIL (the drop is driven apart; the coarse grid the defect was measured on is where it shows)"
+  },
+  "limits": [
+   "one geometry: R = 20 mm drop, sigma = 10 x water, zero gravity, no walls; the closure is not exercised in a wall-bounded flow here",
+   "2-D cubic-spline kernel only (the code is 2-D)",
+   "the c0 ladder of the floor benchmark is not repeated; c0 = 20 m/s is where the deficit was localised",
+   "analytic reference is sigma/R = 360.0 Pa; there is no experimental datum for a 10x-scaled surface tension, so the comparison is against the exact Young-Laplace value"
+  ]
+ },
+ "figures": [
+  {
+   "name": "closure_variants",
+   "caption": "Young-Laplace error of every closure variant at both resolutions (tail average over the last 40 % of 1.5 capillary times).",
+   "path": "benchmarks/laplace_pressure_floor/figures/closure_variants.png"
+  },
+  {
+   "name": "closure_profiles",
+   "caption": "Radial pressure profile after 1.5 t_sigma: the clamped law, the gravity-only closure and the full Adami body term with isentropic density.",
+   "path": "benchmarks/laplace_pressure_floor/figures/closure_profiles.png"
+  },
+  {
+   "name": "closure_shell_ramp",
+   "caption": "Shell pressure produced by the body term alone on the un-relaxed (p = 0) lattice: the gravity-only operator writes nothing, the non-pressure term writes the Adami ramp.",
+   "path": "benchmarks/laplace_pressure_floor/figures/closure_shell_ramp.png"
+  }
+ ]
+}
