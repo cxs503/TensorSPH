@@ -19,6 +19,8 @@ from __future__ import annotations
 
 import importlib.util
 import math
+
+import numpy as np
 from pathlib import Path
 
 import pytest
@@ -256,3 +258,167 @@ def test_oscillation_frequency_gate_is_not_met(release_case):
         f"mode-2 frequency error {err:.1f} % now meets the {GATE_PCT:.0f} % gate; "
         "update the benchmark doc verdict (it currently records FAIL) and this test")
     assert release_case["diagnostics"]["mass_relative_drift"] < 1e-12
+
+
+# ========================================================================== #
+# Suite 2 -- preserved from PR #87 (branch agent/m2919).
+# Merged as a union with Suite 1 above: each suite guards a different
+# implementation (run.py vs run_m2919.py) and neither replaces the other.
+# Original module docstring, verbatim:
+#   Oscillating-drop validation: analytic reference, estimator baseline, negative controls.
+#
+#   The point of these tests is that they can *fail* for the right reason:
+#
+#   * the analytic branch is checked against a hand-computed value (2-D ``n = 2``
+#     gives ``sqrt(6 sigma / rho R^3)``) and against the 3-D Rayleigh branch, so the
+#     formula trap documented in ``benchmarks/oscillating_droplet/run.py`` is
+#     guarded rather than remembered;
+#   * the frequency/damping estimator is baselined on a synthetic damped cosine
+#     (it must recover ``omega`` to < 0.5 % and ``gamma`` to < 10 %) and given a
+#     noise negative control (a pure-noise signal must **not** produce a small
+#     residual);
+#   * the mode observable is checked for the exact symmetry ``x^2 - y^2`` that
+#     defines it (a 90 degree rotation flips its sign) and for monotonicity in the
+#     perturbation amplitude;
+#   * the solver is run for one period with and without surface tension: with
+#     ``sigma = 0`` the mode must *not* oscillate at the capillary frequency.
+#
+#   The full validation (three periods, three resolutions/modes) lives in
+#   ``benchmarks/oscillating_droplet/run.py`` and is reported in
+#   ``docs/verification_oscillating_droplet.md``; the tests here are the fast,
+#   deterministic guard rails around it.
+# ========================================================================== #
+# The branch's tests are bound to the preserved PR #87 implementation, not to
+# the canonical run.py (the two expose different APIs: lobed_droplet /
+# drop_frequency_2d / two-level fit vs elliptical_drop / analytic_omega).
+def _bench_m2919():
+    spec = importlib.util.spec_from_file_location(
+        "oscillating_run_m2919", BENCH / "run_m2919.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+_M2919 = _bench_m2919()
+drop_frequency_2d = _M2919.drop_frequency_2d
+drop_frequency_3d = _M2919.drop_frequency_3d
+fit_damped_oscillation = _M2919.fit_damped_oscillation
+lobed_droplet = _M2919.lobed_droplet
+mode_amplitude = _M2919.mode_amplitude
+run_case = _M2919.run_case
+zero_crossing_period = _M2919.zero_crossing_period
+
+SIGMA = 7.2
+RHO = 1000.0
+RADIUS = 0.02
+
+
+class TestAnalyticReference:
+    def test_two_dimensional_n2_is_sqrt_six_sigma_over_rho_r3(self):
+        exact = math.sqrt(6.0 * SIGMA / (RHO * RADIUS**3))
+        assert drop_frequency_2d(SIGMA, RHO, RADIUS, 2) == pytest.approx(exact, rel=1e-12)
+
+    def test_two_dimensional_n3_uses_n_times_n2_minus_1(self):
+        exact = math.sqrt(3.0 * (9.0 - 1.0) * SIGMA / (RHO * RADIUS**3))
+        assert drop_frequency_2d(SIGMA, RHO, RADIUS, 3) == pytest.approx(exact, rel=1e-12)
+
+    def test_mode_one_is_a_translation_and_has_no_frequency(self):
+        """n = 1 is a rigid translation: the formula must be singular there."""
+        with pytest.raises(ValueError):
+            drop_frequency_2d(SIGMA, RHO, RADIUS, 1)
+
+    def test_three_dimensional_branch_is_fifteen_percent_higher_at_n2(self):
+        """Guards the formula trap: 3-D n(n-1)(n+2) is 8, not 6, at n = 2."""
+        ratio = drop_frequency_3d(SIGMA, RHO, RADIUS, 2) / drop_frequency_2d(
+            SIGMA, RHO, RADIUS, 2)
+        assert ratio == pytest.approx(math.sqrt(8.0 / 6.0), rel=1e-12)
+        assert 0.15 < ratio - 1.0 < 0.16  # same size as the 15 % acceptance gate
+
+    def test_branches_agree_for_large_modes(self):
+        n = 200
+        ratio = drop_frequency_3d(SIGMA, RHO, RADIUS, n) / drop_frequency_2d(
+            SIGMA, RHO, RADIUS, n)
+        assert ratio == pytest.approx(1.0, rel=0.02)  # both ~ n^3
+
+    def test_frequency_scales_as_sqrt_sigma_and_r_minus_three_halves(self):
+        base = drop_frequency_2d(SIGMA, RHO, RADIUS, 2)
+        assert drop_frequency_2d(4.0 * SIGMA, RHO, RADIUS, 2) == pytest.approx(
+            2.0 * base, rel=1e-12)
+        assert drop_frequency_2d(SIGMA, RHO, 2.0 * RADIUS, 2) == pytest.approx(
+            base / 2.0**1.5, rel=1e-12)
+
+
+class TestEstimator:
+    def test_recovers_a_synthetic_damped_cosine(self):
+        omega, gamma = 2.0 * math.pi / 0.0855, 6.0
+        t = np.linspace(0.0, 3.0 * 2.0 * math.pi / omega, 900)
+        a = 0.075 * np.exp(-gamma * t) * np.cos(omega * t + 0.3) + 1e-4
+        fit = fit_damped_oscillation(t, a, omega)
+        assert fit["omega"] == pytest.approx(omega, rel=5e-3)
+        assert fit["gamma"] == pytest.approx(gamma, rel=0.10)
+        assert fit["residual_rel"] < 5e-3
+
+    def test_white_noise_is_not_fitted(self):
+        rng = np.random.default_rng(0)
+        omega = 2.0 * math.pi / 0.0855
+        t = np.linspace(0.0, 0.25, 900)
+        fit = fit_damped_oscillation(t, rng.normal(size=t.size) * 0.075, omega)
+        assert fit["residual_rel"] > 0.5, "a noise signal must not look like a fit"
+
+    def test_zero_crossing_period_on_a_clean_sine(self):
+        period = 0.0855
+        t = np.linspace(0.0, 3.0 * period, 3000)
+        a = np.cos(2.0 * math.pi * t / period)
+        assert zero_crossing_period(t, a) == pytest.approx(period, rel=2e-3)
+
+    def test_zero_crossing_period_gives_up_on_a_flat_signal(self):
+        t = np.linspace(0.0, 1.0, 100)
+        assert zero_crossing_period(t, np.zeros_like(t)) is None
+
+
+class TestModeObservable:
+    def test_ninety_degree_rotation_flips_the_sign(self):
+        pos, mass = lobed_droplet(RADIUS, 0.002, RHO, 0.05, 2)
+        m0 = mode_amplitude(pos, mass)
+        rot = torch.stack((-pos[:, 1], pos[:, 0]), dim=1)
+        assert mode_amplitude(rot, mass) == pytest.approx(-m0, rel=1e-9)
+
+    def test_lobed_drop_stays_inside_the_lobe_bound(self):
+        eps = 0.05
+        pos, _ = lobed_droplet(RADIUS, 0.002, RHO, eps, 2)
+        r = torch.linalg.vector_norm(pos, dim=1)
+        theta = torch.atan2(pos[:, 1], pos[:, 0])
+        bound = RADIUS * (1.0 + eps * torch.cos(2.0 * theta)) + 1e-12
+        assert bool((r <= bound).all())
+        assert float(r.max()) == pytest.approx(RADIUS * (1.0 + eps), rel=0.05)
+
+    def test_mode_amplitude_grows_with_the_perturbation(self):
+        vals = []
+        for eps in (0.02, 0.05, 0.10):
+            pos, mass = lobed_droplet(RADIUS, 0.002, RHO, eps, 2)
+            vals.append(mode_amplitude(pos, mass))
+        assert vals[0] < vals[1] < vals[2]
+        # the continuum value is (3/2) eps; the lattice must be within 50 % of it
+        assert vals[1] == pytest.approx(1.5 * 0.05, rel=0.5)
+
+
+class TestSolverRegression:
+    """Short runs of the real solver: cheap guards on the physics, not the validation."""
+
+    @pytest.mark.slow
+    def test_mode_oscillates_near_the_capillary_frequency(self):
+        rep = run_case(radius=RADIUS, dx=0.0025, mode=2, eps=0.05, periods=1.0)
+        omega = rep["measured"]["omega_rad_per_s"]
+        assert math.isfinite(omega)
+        assert rep["measured"]["fit_residual_rel"] < 0.5
+        assert abs(rep["measured"]["omega_rel_error_pct"]) < 30.0
+
+    @pytest.mark.slow
+    def test_without_surface_tension_the_mode_does_not_oscillate(self):
+        rep = run_case(radius=RADIUS, dx=0.0025, mode=2, eps=0.05, periods=1.0,
+                       sigma=0.0)
+        t = rep["history"]["t"]
+        period = zero_crossing_period(t, rep["history"]["mode"])
+        analytic = rep["analytic"]["period_s"]
+        assert period is None or abs(period - analytic) / analytic > 0.5, (
+            "a drop without surface tension must not oscillate at sigma/R")

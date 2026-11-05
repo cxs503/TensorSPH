@@ -1,0 +1,11 @@
+{
+  "case": "radius=0.02, dx=0.0025, mode=2, eps=0.05, periods=1.0",
+  "omega_measured_rad_s": 64.03272373853076,
+  "omega_analytic_rad_s": 73.48469228349533,
+  "omega_rel_error_pct": -12.86249999999998,
+  "fit_residual_rel": 0.05410173658381857,
+  "gamma_measured_1_s": null,
+  "n_particles": 233,
+  "steps": null,
+  "max_speed": null
+}
