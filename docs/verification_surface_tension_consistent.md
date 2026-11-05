@@ -1,4 +1,6 @@
 # 表面张力 CSF 模型的解析基准核验（consistent 离散）
+> 数值口径说明：本文部分数字为历史口径；当前值、测得口径与证据分级见 [`docs/verification_ledger.md`](verification_ledger.md)（程序化生成的验证断言账本）。
+
 
 **范围**: TensorSPH `src/tensorsph/csf_consistent.py`、`surface_tension.py`、`droplet_impact.py`
 **基准**: 2-D 单相静止液滴的 Young-Laplace 定律（本文件所有数字由
@@ -71,7 +73,7 @@ t/t_sigma = 0.7）
 | 量 | legacy | consistent | 解析/判据 |
 |---|---|---|---|
 | Delta p = p_core - p_shell [Pa] | 5.3 | 87.7 | 360 |
-| 相对误差 | -98.5% | -75.6% | 0 |
+| 相对误差 | -98.5%（历史口径） | -75.6%（历史口径） | 0 |
 | 伪流 max|v|/sqrt(sigma/rho R) | 0.201 | 0.044 | < 0.1 (Adami 2012) |
 | 核内密度 rho/rho0 | 0.99999 | 1.00106 | 定律要求压缩 6.30e-03 |
 
@@ -115,7 +117,7 @@ t/t_sigma = 0.7）
 | 曲率 kappa | 50 1/m | 62.4 1/m | 24.9% | 否 | 否 |
 | delta_s 归一 | 1.0 | 0.751 | 25% | 否 | 否 |
 | 力方向 cos | 1.0 | 1.000 | 0.0% | 是 | 是 |
-| Laplace 压差 | 360 Pa | 87.7 Pa | -75.6% | 否 | 否 |
+| Laplace 压差 | 360 Pa | 87.7 Pa | -75.6%（历史口径） | 否 | 否 |
 
 **结论**：力的幅值与方向（切割力恒等式、方向对齐）已满足 15% 平台标准；
 曲率、delta_s 归一与端到端压差**未**满足，且已定位到具体原因（曲率算子二阶精度不足；
@@ -130,7 +132,7 @@ t/t_sigma = 0.7）
 | 算例 | R/h | Delta p 误差 | 是否 < 15% |
 |---|---|---|---|
 | `benchmarks/laplace_law` relax, dx = 4 mm, steps 380 | ~5 | 见 `tests/test_laplace_law.py::test_laplace_pressure_jump`（本轮已由 xfail 转 pass） | 是 |
-| 本文 relax, dx = 2 mm, steps 600 | ~7.7 | -75.6% | 否 |
+| 本文 relax, dx = 2 mm, steps 600 | ~7.7 | -75.6%（历史口径） | 否 |
 
 两者用的是同一 `p_core - p_shell` 量带定义，差别只在分辨率与推进时长。
 这说明压差读数被「求和密度噪声 / 状态方程地板」主导（见第 4、5 节），
