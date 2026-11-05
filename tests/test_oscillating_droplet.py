@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import importlib.util
 import math
+import platform
 from pathlib import Path
 
 import pytest
@@ -207,6 +208,22 @@ XFAIL_MODE2_ARCH_FRAGILE = (
     "review"
 )
 
+# 2026-11-04 (m3597): the pin above is the loongarch64 reference-architecture
+# value.  An *unconditional* strict-xfail therefore turns the suite red on the
+# reference platform itself (the pin holds there, so the test passes and
+# strict-xfail reports XPASS(strict)).  The marker is now applied only OFF the
+# reference architecture: there the pin does not hold, so the strict-xfail
+# keeps drift detection in both directions; on the reference architecture the
+# pinned tests run for real and stay green while the pin holds.
+_IS_REF_ARCH = platform.machine() == "loongarch64"
+
+
+def _mode2_arch_marker(func):
+    """strict-xfail the mode-2 pin only off the reference architecture."""
+    if _IS_REF_ARCH:
+        return func
+    return pytest.mark.xfail(reason=XFAIL_MODE2_ARCH_FRAGILE, strict=True)(func)
+
 
 @pytest.fixture(scope="module")
 def release_case(bench):
@@ -221,7 +238,7 @@ def release_case(bench):
                           periods=1.8)
 
 
-@pytest.mark.xfail(reason=XFAIL_MODE2_ARCH_FRAGILE, strict=True)
+@_mode2_arch_marker
 def test_recorded_mode2_frequency_deficiency_is_reproduced(release_case):
     """Pin the *measured* mode-2 frequency, not a gate the model does not meet.
 
@@ -242,7 +259,7 @@ def test_recorded_mode2_frequency_deficiency_is_reproduced(release_case):
 
 
 @pytest.mark.slow
-@pytest.mark.xfail(reason=XFAIL_MODE2_ARCH_FRAGILE, strict=True)
+@_mode2_arch_marker
 def test_oscillation_frequency_gate_is_not_met(release_case):
     """The 15 % gate is NOT met; the recorded verdict must stay FAIL.
 

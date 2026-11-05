@@ -17,7 +17,9 @@ Repository = "https://github.com/cxs503/TensorSPH"
 
 [project.optional-dependencies]
 plot = ["matplotlib>=3.7"]
-test = ["pytest>=7.4", "matplotlib>=3.7", "ruff>=0.6"]
+# The lint gate is pinned: an unpinned ruff silently changes the rule set
+# between releases, which turns CI red without a code change.
+test = ["pytest>=7.4", "matplotlib>=3.7", "ruff==0.15.0"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -31,8 +33,16 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+# ``.scratch/`` holds throw-away diagnosis scripts committed for provenance;
+# they are not part of the package and are not held to the CI gate.
+exclude = [".scratch"]
 
 [tool.ruff.lint]
 # Correctness-only gate: pyflakes undefined names/unused imports, pycodestyle
 # errors and warnings. Formatting is deliberately not enforced.
 select = ["E", "F", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+# The doc generators emit Markdown tables/prose: a table row cannot be
+# wrapped, so ``line-too-long`` is a false positive there.
+"benchmarks/*/make_doc.py" = ["E501"]
