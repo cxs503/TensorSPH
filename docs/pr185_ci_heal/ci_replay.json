@@ -1,0 +1,100 @@
+{
+  "python": "3.11.6",
+  "arch": "loongarch64",
+  "steps": [
+    {
+      "id": "lint",
+      "rc": 0,
+      "seconds": 0.2,
+      "last_lines": [
+        "All checks passed!"
+      ]
+    },
+    {
+      "id": "pytest",
+      "skipped": true
+    },
+    {
+      "id": "droplet_e2e",
+      "rc": 0,
+      "seconds": 16.0,
+      "last_lines": [
+        "Completed 1 output intervals (3 steps, t=0.0012 s)",
+        "  particles=608 max_speed=0.012 m/s mach=0.001 courant=0.246",
+        "  rho=[582.0, 1000.1] KE=0.02 J"
+      ]
+    },
+    {
+      "id": "manifest_contract",
+      "rc": 0,
+      "seconds": 0.1,
+      "last_lines": [
+        "manifest contract OK: [('finite_state', 'pass'), ('density_compression', 'pass'), ('mach_number', 'pass'), ('acoustic_courant', 'pass'), ('boundary_escape', 'pass')]"
+      ]
+    },
+    {
+      "id": "neighbor_compare_2d",
+      "rc": 0,
+      "seconds": 19.5,
+      "last_lines": [
+        "  \"speedup_host_over_device\": 0.030745500925901174,",
+        "  \"note\": \"Microbenchmark only. The device search keeps all work on the input device; the host search is retained as an independent algorithm for cross-checking. Timings depend on hardware and particle distribution.\"",
+        "}"
+      ]
+    },
+    {
+      "id": "neighbor_compare_3d",
+      "rc": 0,
+      "seconds": 12.7,
+      "last_lines": [
+        "  \"speedup_host_over_device\": 0.04940159566598396,",
+        "  \"note\": \"Microbenchmark only. The device search keeps all work on the input device; the host search is retained as an independent algorithm for cross-checking. Timings depend on hardware and particle distribution.\"",
+        "}"
+      ]
+    },
+    {
+      "id": "rhs_compare",
+      "rc": 0,
+      "seconds": 10.6,
+      "last_lines": [
+        "  ],",
+        "  \"note\": \"Microbenchmark only; timings depend on hardware and particle distribution and are not a production-performance claim.\"",
+        "}"
+      ]
+    },
+    {
+      "id": "free_surface_compare",
+      "skipped": true
+    },
+    {
+      "id": "pair_reuse",
+      "rc": 0,
+      "seconds": 9.2,
+      "last_lines": [
+        "pair reuse is physics-neutral"
+      ]
+    },
+    {
+      "id": "hydrostatic_gate",
+      "skipped": true
+    },
+    {
+      "id": "fluctuation_negative_control",
+      "skipped": true
+    },
+    {
+      "id": "dam_break_gates",
+      "skipped": true
+    },
+    {
+      "id": "fail_fast_negative_control",
+      "rc": 0,
+      "seconds": 9.0,
+      "last_lines": [
+        "fail-fast exit status OK (rc=2)"
+      ]
+    }
+  ],
+  "failed": [],
+  "green": false
+}
