@@ -1,0 +1,342 @@
+{
+ "benchmark": "lattice_equilibrium",
+ "reference": {
+  "dx_m": 0.025,
+  "rho0": 1000.0,
+  "gamma": 7.0,
+  "default_h_factor": 1.3,
+  "trap_h_factor": 1.5,
+  "sigma_over_R_Pa": 360.0,
+  "acceptance_ratio": 0.0001
+ },
+ "bias_curve": [
+  {
+   "h_over_dx": 1.0,
+   "square_bias": 0.0008618327766463096,
+   "hexagonal_bias": -0.0041201124296430525,
+   "calibrated_mass_over_lattice_mass": 0.9991389093395089
+  },
+  {
+   "h_over_dx": 1.05,
+   "square_bias": 0.0017681678570078407,
+   "hexagonal_bias": -0.0034830200776534426,
+   "calibrated_mass_over_lattice_mass": 0.998234953042289
+  },
+  {
+   "h_over_dx": 1.1,
+   "square_bias": 0.0018340025691014894,
+   "hexagonal_bias": -0.0016857503496009452,
+   "calibrated_mass_over_lattice_mass": 0.9981693548388275
+  },
+  {
+   "h_over_dx": 1.15,
+   "square_bias": 0.0008355444430760972,
+   "hexagonal_bias": 0.0007732091752454817,
+   "calibrated_mass_over_lattice_mass": 0.9991651531086049
+  },
+  {
+   "h_over_dx": 1.2,
+   "square_bias": -0.00024269326776871214,
+   "hexagonal_bias": 0.0032247304620918182,
+   "calibrated_mass_over_lattice_mass": 1.0002427521820891
+  },
+  {
+   "h_over_dx": 1.25,
+   "square_bias": -0.0005515133302683717,
+   "hexagonal_bias": 0.005075300956925988,
+   "calibrated_mass_over_lattice_mass": 1.0005518176650667
+  },
+  {
+   "h_over_dx": 1.3,
+   "square_bias": -5.32310441265782e-05,
+   "hexagonal_bias": 0.0058835223630879785,
+   "calibrated_mass_over_lattice_mass": 1.0000532338778219
+  },
+  {
+   "h_over_dx": 1.35,
+   "square_bias": 0.0009532189743211017,
+   "hexagonal_bias": 0.005406170456336845,
+   "calibrated_mass_over_lattice_mass": 0.9990476887867971
+  },
+  {
+   "h_over_dx": 1.4,
+   "square_bias": 0.0020786502489940073,
+   "hexagonal_bias": 0.004170823904884546,
+   "calibrated_mass_over_lattice_mass": 0.9979256615750897
+  },
+  {
+   "h_over_dx": 1.45,
+   "square_bias": 0.0029698111308318342,
+   "hexagonal_bias": 0.0028648353588547337,
+   "calibrated_mass_over_lattice_mass": 0.997038982531804
+  },
+  {
+   "h_over_dx": 1.5,
+   "square_bias": 0.0034403964801623665,
+   "hexagonal_bias": 0.0017178612236359303,
+   "calibrated_mass_over_lattice_mass": 0.9965713992657358
+  },
+  {
+   "h_over_dx": 1.55,
+   "square_bias": 0.003415756758461619,
+   "hexagonal_bias": 0.0007814766131661877,
+   "calibrated_mass_over_lattice_mass": 0.9965958709184555
+  },
+  {
+   "h_over_dx": 1.6,
+   "square_bias": 0.0029750803141157522,
+   "hexagonal_bias": 0.00018631842109262386,
+   "calibrated_mass_over_lattice_mass": 0.9970337445341275
+  },
+  {
+   "h_over_dx": 1.65,
+   "square_bias": 0.002319437320788431,
+   "hexagonal_bias": -7.270963330052727e-05,
+   "calibrated_mass_over_lattice_mass": 0.9976859300194875
+  },
+  {
+   "h_over_dx": 1.7,
+   "square_bias": 0.001705052285001063,
+   "hexagonal_bias": -0.00010971423818917359,
+   "calibrated_mass_over_lattice_mass": 0.9982978499697976
+  },
+  {
+   "h_over_dx": 1.75,
+   "square_bias": 0.0012091687347868252,
+   "hexagonal_bias": -7.898773982273344e-05,
+   "calibrated_mass_over_lattice_mass": 0.9987922915884653
+  },
+  {
+   "h_over_dx": 1.8,
+   "square_bias": 0.0008003454652008024,
+   "hexagonal_bias": -0.00010256184821755276,
+   "calibrated_mass_over_lattice_mass": 0.9992002945754093
+  },
+  {
+   "h_over_dx": 1.85,
+   "square_bias": 0.00043100318759581313,
+   "hexagonal_bias": -0.0002140425642731536,
+   "calibrated_mass_over_lattice_mass": 0.9995691824961217
+  },
+  {
+   "h_over_dx": 1.9,
+   "square_bias": 0.00016428413024316413,
+   "hexagonal_bias": -0.00028759168121783585,
+   "calibrated_mass_over_lattice_mass": 0.9998357428545992
+  },
+  {
+   "h_over_dx": 1.95,
+   "square_bias": 1.9854729100599045e-05,
+   "hexagonal_bias": -0.0002521330307201364,
+   "calibrated_mass_over_lattice_mass": 0.9999801456651021
+  },
+  {
+   "h_over_dx": 2.0,
+   "square_bias": -4.238712603021888e-05,
+   "hexagonal_bias": -0.00011716617066404034,
+   "calibrated_mass_over_lattice_mass": 1.000042388922775
+  }
+ ],
+ "production": [
+  {
+   "h_over_dx": 1.3,
+   "sound_speed": 20.0,
+   "calibrated": false,
+   "hydrostatic_init": false,
+   "n_fluid": 608,
+   "mass_unit": 0.625,
+   "mass_unit_uncorrected": 0.625,
+   "interior_rel_density_mean": -5.325840538716875e-05,
+   "interior_rel_density_max_abs": 5.370378494262695e-05,
+   "p_max_Pa": 0.0,
+   "p_max_over_rho0c02": 0.0,
+   "passes_1e-4": true
+  },
+  {
+   "h_over_dx": 1.3,
+   "sound_speed": 20.0,
+   "calibrated": true,
+   "hydrostatic_init": false,
+   "n_fluid": 608,
+   "mass_unit": 0.6250332593917847,
+   "mass_unit_uncorrected": 0.625,
+   "interior_rel_density_mean": -1.6317690665346163e-07,
+   "interior_rel_density_max_abs": 5.960464477539062e-07,
+   "p_max_Pa": 0.286102294921875,
+   "p_max_over_rho0c02": 7.152557373046875e-07,
+   "passes_1e-4": true
+  },
+  {
+   "h_over_dx": 1.3,
+   "sound_speed": 5.0,
+   "calibrated": false,
+   "hydrostatic_init": false,
+   "n_fluid": 608,
+   "mass_unit": 0.625,
+   "mass_unit_uncorrected": 0.625,
+   "interior_rel_density_mean": -5.325840538716875e-05,
+   "interior_rel_density_max_abs": 5.370378494262695e-05,
+   "p_max_Pa": 0.0,
+   "p_max_over_rho0c02": 0.0,
+   "passes_1e-4": true
+  },
+  {
+   "h_over_dx": 1.3,
+   "sound_speed": 5.0,
+   "calibrated": true,
+   "hydrostatic_init": false,
+   "n_fluid": 608,
+   "mass_unit": 0.6250332593917847,
+   "mass_unit_uncorrected": 0.625,
+   "interior_rel_density_mean": -1.6317690665346163e-07,
+   "interior_rel_density_max_abs": 5.960464477539062e-07,
+   "p_max_Pa": 0.017881393432617188,
+   "p_max_over_rho0c02": 7.152557373046875e-07,
+   "passes_1e-4": true
+  },
+  {
+   "h_over_dx": 1.5,
+   "sound_speed": 20.0,
+   "calibrated": false,
+   "hydrostatic_init": false,
+   "n_fluid": 608,
+   "mass_unit": 0.625,
+   "mass_unit_uncorrected": 0.625,
+   "interior_rel_density_mean": 0.003440380562096834,
+   "interior_rel_density_max_abs": 0.0034410953521728516,
+   "p_max_Pa": 1390.7772216796875,
+   "p_max_over_rho0c02": 0.0034769430541992186,
+   "passes_1e-4": false
+  },
+  {
+   "h_over_dx": 1.5,
+   "sound_speed": 20.0,
+   "calibrated": true,
+   "hydrostatic_init": false,
+   "n_fluid": 608,
+   "mass_unit": 0.6228571534156799,
+   "mass_unit_uncorrected": 0.625,
+   "interior_rel_density_mean": 1.561862461585406e-07,
+   "interior_rel_density_max_abs": 9.5367431640625e-07,
+   "p_max_Pa": 0.3814697265625,
+   "p_max_over_rho0c02": 9.5367431640625e-07,
+   "passes_1e-4": true
+  },
+  {
+   "h_over_dx": 1.5,
+   "sound_speed": 5.0,
+   "calibrated": false,
+   "hydrostatic_init": false,
+   "n_fluid": 608,
+   "mass_unit": 0.625,
+   "mass_unit_uncorrected": 0.625,
+   "interior_rel_density_mean": 0.003440380562096834,
+   "interior_rel_density_max_abs": 0.0034410953521728516,
+   "p_max_Pa": 86.92357635498047,
+   "p_max_over_rho0c02": 0.0034769430541992186,
+   "passes_1e-4": false
+  },
+  {
+   "h_over_dx": 1.5,
+   "sound_speed": 5.0,
+   "calibrated": true,
+   "hydrostatic_init": false,
+   "n_fluid": 608,
+   "mass_unit": 0.6228571534156799,
+   "mass_unit_uncorrected": 0.625,
+   "interior_rel_density_mean": 1.561862461585406e-07,
+   "interior_rel_density_max_abs": 9.5367431640625e-07,
+   "p_max_Pa": 0.02384185791015625,
+   "p_max_over_rho0c02": 9.5367431640625e-07,
+   "passes_1e-4": true
+  }
+ ],
+ "dynamic": [
+  {
+   "h_over_dx": 1.3,
+   "sound_speed": 20.0,
+   "calibrated": false,
+   "steps": 100,
+   "dt_s": 0.0004875000000000001,
+   "courant": 0.30000000000000004,
+   "v_max_m_per_s": 0.0,
+   "density_error_max": 0.23677420616149902,
+   "p_max_Pa": 0.0,
+   "p_max_over_rho0c02": 0.0,
+   "kinetic_energy_density_J_per_m3": 0.0,
+   "finite": true
+  },
+  {
+   "h_over_dx": 1.3,
+   "sound_speed": 20.0,
+   "calibrated": true,
+   "steps": 100,
+   "dt_s": 0.0004875000000000001,
+   "courant": 0.30000000000000004,
+   "v_max_m_per_s": 6.194835441419855e-05,
+   "density_error_max": 0.23673367500305176,
+   "p_max_Pa": 0.286102294921875,
+   "p_max_over_rho0c02": 7.152557373046875e-07,
+   "kinetic_energy_density_J_per_m3": 1.918799307313576e-06,
+   "finite": true
+  },
+  {
+   "h_over_dx": 1.5,
+   "sound_speed": 20.0,
+   "calibrated": false,
+   "steps": 100,
+   "dt_s": 0.0005625,
+   "courant": 0.29999999999999993,
+   "v_max_m_per_s": 0.09561419486999512,
+   "density_error_max": 0.26998019218444824,
+   "p_max_Pa": 1390.7772216796875,
+   "p_max_over_rho0c02": 0.0034769430541992186,
+   "kinetic_energy_density_J_per_m3": 4.5710371303187,
+   "finite": true
+  },
+  {
+   "h_over_dx": 1.5,
+   "sound_speed": 20.0,
+   "calibrated": true,
+   "steps": 100,
+   "dt_s": 0.0005625,
+   "courant": 0.29999999999999993,
+   "v_max_m_per_s": 5.591053195530549e-05,
+   "density_error_max": 0.2724831700325012,
+   "p_max_Pa": 0.4291534423828125,
+   "p_max_over_rho0c02": 1.0728836059570312e-06,
+   "kinetic_energy_density_J_per_m3": 1.562993791762618e-06,
+   "finite": true
+  }
+ ],
+ "hydrostatic_profile": [
+  {
+   "calibrated": false,
+   "sound_speed": 20.0,
+   "n_interior": 324,
+   "rel_error_mean": -5.387229612097144e-05,
+   "rel_error_max_abs": 5.429983139038086e-05,
+   "rel_error_rms": 5.3873030992690474e-05
+  },
+  {
+   "calibrated": true,
+   "sound_speed": 20.0,
+   "n_interior": 324,
+   "rel_error_mean": -6.08188145179156e-07,
+   "rel_error_max_abs": 9.5367431640625e-07,
+   "rel_error_rms": 6.705175223942206e-07
+  }
+ ],
+ "calibration_helpers": {
+  "square_bias_at_default": -5.32310441265782e-05,
+  "hexagonal_bias_at_default": 0.0058835223630879785,
+  "calibrated_particle_mass": 0.6250332711736386,
+  "uncorrected_mass": 0.625
+ },
+ "figures": [
+  {
+   "name": "lattice_equilibrium.png",
+   "caption": "L1 offset vs h/dx for both lattices; L2 its Tait conversion at c0 = 20 m/s against sigma/R = 360 Pa; L3 p_max/(rho0 c0^2) of the production case at t = 0."
+  }
+ ]
+}
