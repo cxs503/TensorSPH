@@ -24,8 +24,8 @@
 
 ## 3. 汇总
 
-- claims **16** ／ 物理量 **10** ／ findings **3**
-- 分级分布：MARGINAL 1，WITHHELD 8，FAIL 6，WITHDRAWN 1
+- claims **20** ／ 物理量 **14** ／ findings **3**
+- 分级分布：PASS 3，MARGINAL 2，WITHHELD 8，FAIL 6，WITHDRAWN 1
 - findings 分类：declared_vs_derived 1，quantity_spread 2
 
 ## 4. 断言表
@@ -33,11 +33,15 @@
 | claim | 物理量 / 口径 | 参考 | 实测 | rel err | 等级 | 工件 → JSON 路径 | 守护测试 |
 |---|---|---|---|---|---|---|---|
 | `colour_surface.delta_s_integral` | colour-surface normalisation, integral |grad c| dr (exact: 1) | 1 - | 0.754545 - | -24.55 % | **WITHHELD** | `benchmarks/csf_consistent/curvature_audit.json` → `verdicts.delta_s_integral_dn` | `tests/test_csf_consistent.py` |
+| `conservation.ballistic_lag.closed_form` | ballistic lag of a free-falling cloud vs the closed-form COM lag | limit 3 | 0 | — | **PASS** | `benchmarks/conservation/report.json` → `verdicts.G4_max_ratio_deviation` | `tests/test_conservation.py::test_ballistic_lag_matches_closed_form` |
 | `csf_force.sigma_eff_over_sigma.dx5mm` | effective surface tension from the half-droplet force integral, sigma_eff/sigma | 1 - | 0.704004 - | -29.60 % | **FAIL** | `benchmarks/laplace_pressure/validation_report.json` → `cases[0]` | `tests/test_laplace_pressure.py` |
 | `curvature_operator.delta_s_weighted.dx3mm` | delta_s-weighted curvature kappa vs analytic 1/R (R = 20 mm) | 50 1/m | 64.1315 1/m | +28.26 % | **WITHHELD** | `benchmarks/csf_consistent/curvature_audit.json` → `rows[0].variants[0]` | `tests/test_csf_curvature_audit.py` |
 | `dam_break.martin_moyce.mae` | dam-break front position vs Martin & Moyce (1952), mean abs error in Z/a | limit 0.15 | 0.572757 | — | **FAIL** | `benchmarks/dam_break/resolution_ladder.json` → `gates.experimental_comparison` | `tests/test_dam_break_experimental.py` |
+| `initial_consistency.spurious_pressure.calibrated` | initial spurious pressure of a WCSPH lattice, |p_false| / (rho0 c0^2), calibrated mass unit | limit 0.0001 | 0 | — | **PASS** | `benchmarks/init_consistency/report.json` → `summary.worst_calibrated_rel_pressure` | `tests/test_kernel_sum_consistency.py::test_calibration_clears_the_spurious_pressure` |
+| `initial_density_bias.square_pool.analytic` | measured vs analytic kernel-sum bias of a square lattice pool | limit 0.1 | 0.048315 | — | **MARGINAL** | `benchmarks/initial_density_bias/report.json` → `validation.square_pool.rel_diff` | `tests/test_initial_density_calibration.py::test_analytic_bias_matches_an_ideal_square_lattice` |
 | `laplace_droplet.merged_csf.8cases` | dp = sigma/R (2-D), sigma=0.072 N/m, R=0.1 m -> 0.72 Pa | 1 - | 3.19723 - | +219.72 % | **FAIL** | `benchmarks/laplace_droplet/results.json` → `verdict` | `tests/test_laplace_droplet.py::test_laplace_jump_current_state` |
 | `laplace_report.laplace_pressure.Rdx10` | pressure balance of a static droplet at R/dx = 10 (code units) | 1.44 - | 1.82627 - | +26.82 % | **FAIL** | `benchmarks/laplace/report.json` → `checks.R/dx=10:laplace_pressure` | `tests/test_laplace_pressure.py` |
+| `lattice_equilibrium.hydrostatic.calibrated` | hydrostatic pressure profile error of a resting pool, calibrated mass unit | limit 0.0001 | 1e-06 | — | **PASS** | `benchmarks/lattice_equilibrium/report.json` → `hydrostatic_profile[1].rel_error_max_abs` | `tests/test_lattice_equilibrium.py::test_hydrostatic_init_is_accurate_only_with_the_calibrated_unit` |
 | `oscillating_droplet.frequency.lamb` | fundamental frequency of an inviscid 2-D droplet (Lamb omega_2) | 73.4847 rad/s | 41.4979 rad/s | -43.53 % | **FAIL** | `benchmarks/oscillating_droplet/validation_report.json` → `verdict.rows[0]` | `tests/test_oscillating_droplet.py` |
 | `paper_uncertainty.band.dx3mm` | Young-Laplace jump (2-D), sigma=7.2 N/m, R=20 mm -> 360 Pa | 360 Pa | 249.626 Pa | -30.66 % | **WITHHELD** | `benchmarks/paper_laplace_uncertainty/out/results.json` → `rows[0].metrics.band` | `tests/test_paper_laplace_uncertainty.py` |
 | `static_droplet.force_direction.WITHDRAWN` | sign/shape of the CSF force on a static droplet (not a physical gate) | 1 - | 0.173549 - | -82.65 % | **WITHDRAWN** | `benchmarks/static_droplet/validation_report.json` → `validation` | `tests/test_laplace_validation.py` |
@@ -69,6 +73,19 @@
   - 守护测试：`tests/test_csf_consistent.py`
 - 欠账指针：`docs/verification_ledger.md`
 - 注：Root cause of the force-path deficit: the delta function carries only 0.755 of unit mass, and the section that does exist is ~28 % overweight, so the cut force comes out ~0.70 sigma. This is the quantity to fix, not the pressure assembly.
+
+### `conservation.ballistic_lag.closed_form` — PASS
+
+- 物理量：ballistic lag of a free-falling cloud vs the closed-form COM lag
+- 参考：0 fraction（exact closed form of the same time series）
+- 实测：0 fraction
+  - 口径：max |lag_measured / lag_predicted - 1| over the dt ladder (dt/T = 0.0033-0.0004)
+- 相对误差：—（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**PASS**
+- 溯源：`benchmarks/conservation/report.json` → `verdicts.G4_max_ratio_deviation`
+  - 守护测试：`tests/test_conservation.py::test_ballistic_lag_matches_closed_form`
+- 欠账指针：`docs/verification_conservation.md`
+- 注：Same report also records the internal-force leaks behind this: G1 pressure-gradient leak 1.09e-17 (symmetric=True), G2 CSF leak median 6.12e-03, viscous pair closed-form ratio 1.000000000000, observed order 1.000000. The lag is roundoff-exact, so the only open item in this artifact is the recorded first-order (not second-order) time integration.
 
 ### `csf_force.sigma_eff_over_sigma.dx5mm` — FAIL
 
@@ -109,6 +126,32 @@
 - 欠账指针：`docs/verification_ledger.md`
 - 注：RMSE 0.699 Z/a, max 1.618 Z/a; fraction inside experimental uncertainty 0.00. Wave breaking is a 3-D/viscous/non-hydrostatic problem: this is not a surface-tension defect.
 
+### `initial_consistency.spurious_pressure.calibrated` — PASS
+
+- 物理量：initial spurious pressure of a WCSPH lattice, |p_false| / (rho0 c0^2), calibrated mass unit
+- 参考：0 fraction of rho0 c0^2（exact: consistent initial condition）
+- 实测：0 fraction of rho0 c0^2
+  - 口径：worst calibrated reading over 20 h/dx cases + 6 resolution levels
+- 相对误差：—（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**PASS**
+- 溯源：`benchmarks/init_consistency/report.json` → `summary.worst_calibrated_rel_pressure`
+  - 守护测试：`tests/test_kernel_sum_consistency.py::test_calibration_clears_the_spurious_pressure`
+- 欠账指针：`backlog_update_m2971.md#P1`
+- 注：criterion read from the artifact: `|p_false| / (rho0 c0^2) < 1e-4` (m2971 backlog P1 acceptance criterion). The uncalibrated worst reading is 5.988e-03 — ~60x over the criterion — so the criterion is met *only* with the calibrated mass unit; the paired test tests/test_initial_density_calibration.py::test_uncalibrated_drop_fails_that_gate_by_six_orders_of_magnitude keeps that asymmetry visible.
+
+### `initial_density_bias.square_pool.analytic` — MARGINAL
+
+- 物理量：measured vs analytic kernel-sum bias of a square lattice pool
+- 参考：0 fraction（analytic bias from the complete-support population of the square lattice）
+- 实测：0.048315 fraction
+  - 口径：|bias_measured / bias_analytic - 1| over 9 complete-support particles
+- 相对误差：—（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**MARGINAL**
+- 溯源：`benchmarks/initial_density_bias/report.json` → `validation.square_pool.rel_diff`
+  - 守护测试：`tests/test_initial_density_calibration.py::test_analytic_bias_matches_an_ideal_square_lattice`
+- 欠账指针：`backlog_update_m2971.md#P1`
+- 注：Only 9 of 5000 pool particles have a complete support, which is the whole 4.8 % (population effect, not an operator error); the hex droplet agrees with its analytic bias to 1.1e-13 and all gates G1-G6 pass = True. The 1e-4 acceptance used by the sibling reports is checked in lattice_equilibrium.hydrostatic.calibrated.
+
 ### `laplace_droplet.merged_csf.8cases` — FAIL
 
 - 物理量：dp = sigma/R (2-D), sigma=0.072 N/m, R=0.1 m -> 0.72 Pa
@@ -134,6 +177,19 @@
   - 守护测试：`tests/test_laplace_pressure.py`
 - 欠账指针：`backlog_update_m2971.md#P0`
 - 注：Platform-level verdict at generation time: 9 of 11 criteria failed.
+
+### `lattice_equilibrium.hydrostatic.calibrated` — PASS
+
+- 物理量：hydrostatic pressure profile error of a resting pool, calibrated mass unit
+- 参考：0 fraction of rho0 c0^2（analytic hydrostatic profile p(y)）
+- 实测：1e-06 fraction of rho0 c0^2
+  - 口径：max |p / p_analytic - 1| over 324 interior particles at c0 = 20 m/s
+- 相对误差：—（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**PASS**
+- 溯源：`benchmarks/lattice_equilibrium/report.json` → `hydrostatic_profile[1].rel_error_max_abs`
+  - 守护测试：`tests/test_lattice_equilibrium.py::test_hydrostatic_init_is_accurate_only_with_the_calibrated_unit`
+- 欠账指针：`docs/verification_lattice_mass_calibration.md`
+- 注：Acceptance ratio 0.0001 read from the artifact. The uncalibrated unit reads 5.43e-05 (still inside the ratio, but 56.9x worse), and the resting-pool production cases at h/dx = 1.3 carry p_max / (rho0 c0^2) = 0.
 
 ### `oscillating_droplet.frequency.lamb` — FAIL
 
