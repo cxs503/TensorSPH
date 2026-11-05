@@ -387,7 +387,11 @@ def run_one(resolution: int, viscosity: float, body_force: float, friction: floa
         "u_max_ratio": u_max_meas / (body_force * height * height / (8.0 * viscosity)),
         "wall_row_slip": first["u_mean"],
         "wall_row_slip_over_umax": first["u_mean"] / u_max_meas if u_max_meas else float("nan"),
-        "asymmetry": abs(first["u_mean"] - last["u_mean"]) / u_max_meas if u_max_meas else float("nan"),
+        "asymmetry": (
+            abs(first["u_mean"] - last["u_mean"]) / u_max_meas
+            if u_max_meas
+            else float("nan")
+        ),
         "max_row_std_over_umax": max(r["u_std_x"] for r in rows) / u_max_meas,
         "max_mach": max(p["max_mach"] for p in case["trace"]),
         "interior_rms_error_nominal": interior_error(rows, height, key="rel_error_nominal"),
