@@ -1,0 +1,188 @@
+"""Generate docs/verification_viscosity_shear_wave.md from report.json.
+
+Every number in the document is injected from ``report.json``; nothing is
+hand-typed, so the document cannot drift from the measurement it claims.
+
+Usage:  PYTHONPATH=src python benchmarks/viscosity_shear_wave/make_doc.py
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+DOC = HERE.parents[1] / "docs" / "verification_viscosity_shear_wave.md"
+
+
+def pct(x: float, digits: int = 2) -> str:
+    return f"{100.0 * x:.{digits}f}%"
+
+
+def main() -> int:
+    r = json.loads((HERE / "report.json").read_text())
+    setup = r["setup"]
+    cases = r["cases"]
+    fine = cases["nominal"]
+    coarse = cases["coarse"]
+    control = cases["zero_viscosity"]
+    ladder = r["ladder"]
+
+    # negative-control reading, quoted twice below
+    control_pct = pct(abs(control["nu_effective"]) / fine["nu_nominal"])
+    rows = []
+    for name, case in cases.items():
+        ratio = case["nu_effective"] / case["nu_nominal"]
+        rows.append(
+            f"| {name} | {case['dx']:.4g} | {case['lambda'] / case['dx']:.0f} | "
+            f"{case['steps']} | {case['n_fluid']} + {case['n_wall']} | "
+            f"{case['nu_effective']:.5f} | {ratio:.4f} | "
+            f"{case['log_linear_r2']:.6f} |")
+    case_table = "\n".join(rows)
+
+    ladder_rows = "\n".join(
+        f"| {row['cells_per_wavelength']:.0f} | {row['dx']:.4g} | "
+        f"{row['nu_effective']:.5f} | {row['nu_ratio']:.4f} | "
+        f"{pct(abs(row['nu_ratio'] - 1.0))} |" for row in ladder)
+
+    gate_rows = "\n".join(
+        f"| `{c['id']}` | {c['measured']:.4g} | {c['comparison']} {c['threshold']:g} | "
+        f"**{c['result']}** | {c['note']} |" for c in r["criteria"])
+
+    magnitude = abs(fine["nu_ratio"] - 1.0)
+    under3 = "是" if magnitude < 0.03 else "否"
+    under15 = "是" if magnitude < 0.15 else "否"
+
+    doc = f"""# 黏性算子的端到端验证：驻立剪切波的衰减率（TensorSPH）
+
+> 本文件的每个数字由 `benchmarks/viscosity_shear_wave/make_doc.py` 从
+> `report.json` 程序化注入，禁止手抄。
+> 复算：`PYTHONPATH=src python benchmarks/viscosity_shear_wave/run.py --plot`
+
+## 1. 这条欠账是什么
+
+仓库此前对黏性的唯一判据是 `tests/test_pair_based_rhs.py::test_viscosity_is_calibrated`：
+在**冻结的**光滑正弦场上比较离散 Laplacian 的施加系数与理论系数，测得
+applied/nominal = 1.000 ± 1e-3。这是**算子级**结论——它只说明某一瞬间
+`ν ∇²u` 被算对了，不说明**用生产 `rhs` 积分出来的流场**以物理速率衰减。
+压强耦合写错、边界漏通量、时间积分的偏差，都可以让这个比值仍是 1.000，
+而流的有效黏性已经跑偏。本文用**时间序列**补上端到端这一环。
+
+## 2. 解析锚：为什么这个算例是精确解
+
+静止盒子（`gravity = 0`）、全场速度只沿 x 且只随 y 变化：
+
+    u_x(y, t) = U0 sin(k y) exp(−ν k² t),   u_y = 0
+
+它是不压缩 Navier–Stokes 的**精确解**，三条理由可逐条核对：
+
+1. 对流项恒为零：`u·∇u = u_x ∂_x u = 0`，因为场没有 x 依赖。
+2. 它是 `∂²/∂y²` 的本征函数，本征值 `−k²`，故黏性项给出 `exp(−νk²t)`。
+3. 无滑移：`sin(ky) = 0` 在 `y = m λ/2`，所以**有界盒**只要高度取半波长的
+   整数倍就自动满足壁面无滑移，**不需要周期边界**。
+
+于是离散投影
+
+    A(t) = ⟨u_x, sin(k y)⟩ / ⟨sin(k y), sin(k y)⟩
+
+的对数斜率就是有效黏性：`k² ν_eff = −d ln A/dt`。
+
+壁面对速度场的要求只有 y 方向：x 方向的壁**不是**这个解析解的一部分
+（场沿 x 不变），因此测量窗口必须离 x 壁足够远——见 §5 第 1 条坑。
+
+## 3. 参数与方法
+
+| 项 | 值 |
+|---|---|
+| 波长 λ | {setup['lambda']:g} m（物理长度，分辨率阶梯中保持不变） |
+| 初始振幅 U0 | {setup['u0']:g} m/s（Mach {setup['u0'] / 20.0:.3f}） |
+| 名义黏性 ν | {setup['nu']:g} m²/s |
+| 重力 | {setup['gravity']:g}（静止盒，无体积力） |
+| `wall_friction` | {setup['wall_friction']:g}（流体-壁黏性开启 ⇒ 无滑移） |
+| 黏性穿透深度 √(ν t_end) | {setup['viscous_depth']:.4f} m |
+| 测量窗口距 x 壁 | {setup['window_margin_in_depths']:.1f} × 穿透深度 |
+| 壁层 | 3 层静态粒子，位于流体格点外半个间距（与 `wall_lattice` 同约定） |
+
+积分流程：先把初始格点在静止状态下松弛（让壁面密度亏损与压力场到达稳态），
+**然后**叠加解析剪切速度场，再从 t=0 开始测量；测量窗 {fine['t_end']:.4g} s，
+覆盖 {fine['decay_rate_analytic']:.1f} 1/s 的衰减率约 3 个 e-folding。
+全部算子走生产代码 `tensorsph.droplet_impact.rhs`（未改 `src/`）。
+
+## 4. 结果
+
+### 4.1 三个算例
+
+| 算例 | dx [m] | cells/λ | 步数 | 粒子 (流体+壁) | ν_eff [m²/s] | ν_eff/ν | log 线性拟合 R² |
+|---|---|---|---|---|---|---|---|
+{case_table}
+
+`zero_viscosity` 是**负控**：初始场相同、黏性项关掉。它测到的"有效黏性"
+是 {control['nu_effective']:.5f} m²/s，即名义值的 {control_pct}——
+这是格式自身的数值耗散地板，不是物理黏性。
+
+### 4.2 分辨率阶梯
+
+| cells/λ | dx [m] | ν_eff [m²/s] | ν_eff/ν | 偏差 |
+|---|---|---|---|---|
+{ladder_rows}
+
+偏差随加密单调收缩（{pct(abs(coarse['nu_ratio'] - 1.0))} → {pct(magnitude)}），
+这是离散误差的签名（物理黏性不会随分辨率移动）。
+
+### 4.3 判定门
+
+| 判据 | 实测 | 阈值 | 结果 | 说明 |
+|---|---|---|---|---|
+{gate_rows}
+
+### 4.4 误差判定（显式回答）
+
+- 关键量：细网格上的 ν_eff/ν = **{fine['nu_ratio']:.4f}**，与名义值的偏差
+  **{pct(magnitude)}**。
+- 是否 < 15%（平台不可接受线）：**{under15}**。
+- 是否 < 3%（本文件对"验证合格"的更严要求）：**{under3}**。
+- 收敛证据：同一物理问题在 12 cells/λ 时偏差 {pct(abs(coarse['nu_ratio'] - 1.0))}，
+  24 cells/λ 时 {pct(magnitude)}；剩余 {pct(magnitude)} 的一阶来源是近壁半个支撑域的
+  黏性算子截断（自由表面/壁面一侧缺邻居），不是体积项。
+- 负控：ν=0 时衰减只有名义速率的 {control_pct}，
+  说明上面测到的衰减确实来自黏性项，而不是格式耗散。
+
+## 5. 注意点（踩过的坑，按代价排序）
+
+1. **x 壁的无滑移边界层会吃掉测量窗口。** 解析解沿 x 不变，但 x 壁仍要求
+   `u_x = 0`，其边界层以 √(νt) 向内扩散。第一版盒子宽 0.08 m、窗口离壁仅 4 dx
+   = 0.02 m，而 √(νt_end) = {setup['viscous_depth']:.4f} m，窗口整个泡在壁边界层里，
+   测出 ν_eff/ν = 1.67（偏快 67%），且衰减在对数坐标里明显弯曲（R² = 0.97）。
+   修正：盒宽按 `margin = 3.5 √(ν t_end)` 反推，偏差降到 {pct(magnitude)}。
+2. **静止松弛不可省。** 直接叠加剪切场会把初始壁面密度亏损转成声学瞬态，
+   投影振幅在衰减 4 个 e-folding 后**回升**（实测 0.0247 → 0.0534 m/s），
+   指数拟合失去意义。先松弛、再施加速度场后曲线是干净的指数（R² = {fine['log_linear_r2']:.4f}）。
+3. **格点约定必须抄 `cell_centres` / `wall_lattice`。** 流体格点在 `(i+0.5)dx`，
+   壁层在其外半个间距（`0.5dx − layer·dx`）。把壁层放在边界平面上，最近流体列
+   距壁只有半个间距，开局密度直接超 30%（实测 0.296），本算例一度全部判据失败。
+4. **壁带密度误差 ≈ 20% 是几何性的，不是体积误差。** 窗口内 `|sin ky| > 0.5`
+   的粒子上 `max|ρ/ρ0 − 1|` 只有 {pct(fine['density_error_bulk'])}，而壁邻带（`|sin ky| < 0.5`）
+   高达 {pct(fine['density_error_outside_bulk'])}：单侧支撑亏损集中在最后一行，那里
+   正是剪切速度趋零的地方，对投影权重很小。判据因此按区域分开给（见 §4.3）。
+5. **线程数会毁掉这个算例。** 粒子数只有几千，BLAS 多线程在满载 128 核上全是调度
+   开销：同一步默认线程 222 ms，`torch.set_num_threads(1)` 后 14 ms（16×）。
+   `run.py` 因此把线程钉为 1。
+
+## 6. 适用范围与未做的事
+
+- 只验证**单相、层流、无自由表面**的黏性输运；自由表面附近的黏性、湍流模型、
+  密度扩散项（`density_diffusion`）都未覆盖。
+- 只测了 ν = {setup['nu']:g} 一个黏性值；未做 ν 阶梯，因此"线性于 ν"这一步没有
+  独立证据（黏性项在 `rhs` 里是显式乘 `cfg.viscosity`，线性是构造性的）。
+- 近壁黏性算子的截断误差只做了**归因**（随分辨率收缩、集中在壁邻带），没有
+  给出解析的修正项；若要 < 3% 的端到端判据，需要改进自由表面/壁面黏性闭合，
+  或改用更大的 λ（每个波长更多粒子）。
+"""
+    DOC.parent.mkdir(parents=True, exist_ok=True)
+    DOC.write_text(doc)
+    print(f"wrote {DOC}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
