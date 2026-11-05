@@ -1,0 +1,261 @@
+{
+ "benchmark": "oscillating_droplet_instability",
+ "question": "is the recorded mode-2 frequency a measurement of the capillary wave, or a property of the fit window over a diverging solution?",
+ "trace_sources": {
+  "reference_R2cm": "benchmarks/oscillating_droplet/trace_data.json",
+  "release_R1cm": "benchmarks/oscillating_droplet_instability/release_case_trace.json"
+ },
+ "setup": {
+  "reference_R2cm": {
+   "radius_m": 0.02,
+   "dx_m": 0.002,
+   "h_m": 0.0026000000000000003,
+   "dt_s": 3.9000000000000006e-05,
+   "n_particles": 357,
+   "sigma_N_per_m": 7.2,
+   "rho0": 1000.0,
+   "sound_speed": 20.0,
+   "viscosity_m2_per_s": 5e-05,
+   "gravity": 0.0,
+   "initial_eps": 0.1,
+   "steps": 3947,
+   "physical_time_s": 0.15393300000000001,
+   "periods_simulated": 1.8003160155645521,
+   "csf_scheme": "consistent",
+   "csf_curvature": "fit_quadratic",
+   "density_diffusion": 0.0,
+   "lattice": "hexagonal",
+   "mode": 2
+  },
+  "release_R1cm": {
+   "radius_m": 0.01,
+   "dx_m": 0.001,
+   "h_m": 0.0013000000000000002,
+   "dt_s": 1.9500000000000003e-05,
+   "n_particles": 357,
+   "sigma_N_per_m": 7.2,
+   "rho0": 1000.0,
+   "sound_speed": 20.0,
+   "viscosity_m2_per_s": 5e-05,
+   "gravity": 0.0,
+   "initial_eps": 0.1,
+   "steps": 2791,
+   "physical_time_s": 0.05442450000000001,
+   "periods_simulated": 1.8003479681329995,
+   "csf_scheme": "consistent",
+   "csf_curvature": "fit_quadratic",
+   "density_diffusion": 0.0,
+   "lattice": "hexagonal",
+   "mode": 2
+  }
+ },
+ "omega_reference_rad_per_s": {
+  "reference_R2cm": 73.48469228349533,
+  "release_R1cm": 207.84609690826525
+ },
+ "energy_budget": {
+  "reference_R2cm": {
+   "semi_major_m": 0.022000000000000002,
+   "semi_minor_m": 0.01818181818181818,
+   "perimeter_ellipse_m": 0.12652001915994104,
+   "perimeter_circle_m": 0.12566370614359174,
+   "surface_energy_total_J": 0.9109441379515756,
+   "available_energy_J": 0.00616545371771502,
+   "linear_kinetic_energy_scale_J": 0.013571680263507907
+  },
+  "release_R1cm": {
+   "semi_major_m": 0.011000000000000001,
+   "semi_minor_m": 0.00909090909090909,
+   "perimeter_ellipse_m": 0.06326000957997052,
+   "perimeter_circle_m": 0.06283185307179587,
+   "surface_energy_total_J": 0.4554720689757878,
+   "available_energy_J": 0.00308272685885751,
+   "linear_kinetic_energy_scale_J": 0.006785840131753954
+  }
+ },
+ "divergence": [
+  {
+   "case": "reference_R2cm",
+   "period_s": 0.08550332201079094,
+   "simulated_time_s": 0.15393300000000001,
+   "simulated_periods": 1.8003160155645521,
+   "kinetic_energy_first_J": 7.606030588870141e-05,
+   "kinetic_energy_max_J": 57847926.5586266,
+   "kinetic_energy_over_available": 9382590350.555033,
+   "kinetic_energy_over_linear_scale": 4262399749.7325726,
+   "energy_creation_decades": 9.972322755185687,
+   "divergence_onset_s": 0.07187700000000001,
+   "divergence_onset_periods": 0.8406340047340941,
+   "divergence_onset_fraction_of_window": 0.4669369141119838,
+   "second_moment_min_m2": 0.004432836475777344,
+   "second_moment_max_m2": 0.9360076402056162,
+   "diverged": true
+  },
+  {
+   "case": "release_R1cm",
+   "period_s": 0.03022998940390363,
+   "simulated_time_s": 0.05442450000000001,
+   "simulated_periods": 1.8003479681329995,
+   "kinetic_energy_first_J": 1.831736481240243e-05,
+   "kinetic_energy_max_J": 1.4627131508338447,
+   "kinetic_energy_over_available": 474.4867832292937,
+   "kinetic_energy_over_linear_scale": 215.55372988956245,
+   "energy_creation_decades": 2.6762241197126713,
+   "divergence_onset_s": 0.033364500000000005,
+   "divergence_onset_periods": 1.103688775878023,
+   "divergence_onset_fraction_of_window": 0.6130419204586169,
+   "second_moment_min_m2": 0.00010033580973939374,
+   "second_moment_max_m2": 0.1531493579307923,
+   "diverged": true
+  }
+ ],
+ "window_study": {
+  "reference_R2cm": [
+   {
+    "window_periods": 0.5,
+    "window_s": 0.04275166100539547,
+    "n_samples": 1096,
+    "fit_omega_rad_per_s": 66.13622283935547,
+    "fit_rel_error_pct": -10.000000293653448,
+    "fit_r2": 0.9989883260728553,
+    "zero_crossing_rel_error_pct": NaN,
+    "fit_lambda_per_s": 0.0,
+    "kinetic_energy_at_window_end_J": 0.011848481705036688,
+    "kinetic_energy_over_available_at_window_end": 1.92175340980872,
+    "energy_growth_in_window": 155.77746587522932
+   },
+   {
+    "window_periods": 0.75,
+    "window_s": 0.06412749150809322,
+    "n_samples": 1644,
+    "fit_omega_rad_per_s": 71.89408874511719,
+    "fit_rel_error_pct": -2.164537251162167,
+    "fit_r2": 0.9977814640985293,
+    "zero_crossing_rel_error_pct": NaN,
+    "fit_lambda_per_s": 15.06881332397461,
+    "kinetic_energy_at_window_end_J": 0.049607691781164136,
+    "kinetic_energy_over_available_at_window_end": 8.046073176841437,
+    "energy_growth_in_window": 652.2152547447649
+   },
+   {
+    "window_periods": 1.0,
+    "window_s": 0.08550332201079094,
+    "n_samples": 2192,
+    "fit_omega_rad_per_s": 59.70631408691406,
+    "fit_rel_error_pct": -18.749997813729564,
+    "fit_r2": 0.9864896370333432,
+    "zero_crossing_rel_error_pct": NaN,
+    "fit_lambda_per_s": 8.699999809265137,
+    "kinetic_energy_at_window_end_J": 0.5778680776934043,
+    "kinetic_energy_over_available_at_window_end": 93.72677245683195,
+    "energy_growth_in_window": 7597.498733951914
+   },
+   {
+    "window_periods": 1.8,
+    "window_s": 0.1539059796194237,
+    "n_samples": 3946,
+    "fit_omega_rad_per_s": 41.497920989990234,
+    "fit_rel_error_pct": -43.52848232677342,
+    "fit_r2": 0.3715767079463571,
+    "zero_crossing_rel_error_pct": 391.6770472269457,
+    "fit_lambda_per_s": 0.0,
+    "kinetic_energy_at_window_end_J": 57847926.43998996,
+    "kinetic_energy_over_available_at_window_end": 9382590331.312874,
+    "energy_growth_in_window": 760553428810.0088
+   }
+  ],
+  "release_R1cm": [
+   {
+    "window_periods": 0.5,
+    "window_s": 0.015114994701951816,
+    "n_samples": 155,
+    "fit_omega_rad_per_s": 282.6239318847656,
+    "fit_rel_error_pct": 35.977502627583256,
+    "fit_r2": 0.9703800782369246,
+    "zero_crossing_rel_error_pct": NaN,
+    "fit_lambda_per_s": 0.0,
+    "kinetic_energy_at_window_end_J": 0.003429626146095246,
+    "kinetic_energy_over_available_at_window_end": 1.112530010967725,
+    "energy_growth_in_window": 187.23359944073914
+   },
+   {
+    "window_periods": 0.75,
+    "window_s": 0.022672492052927724,
+    "n_samples": 233,
+    "fit_omega_rad_per_s": 295.4714050292969,
+    "fit_rel_error_pct": 42.15874602625126,
+    "fit_r2": 0.9340591361984537,
+    "zero_crossing_rel_error_pct": NaN,
+    "fit_lambda_per_s": 0.0,
+    "kinetic_energy_at_window_end_J": 0.009875052650532666,
+    "kinetic_energy_over_available_at_window_end": 3.2033498596085357,
+    "energy_growth_in_window": 539.1088047690357
+   },
+   {
+    "window_periods": 1.0,
+    "window_s": 0.03022998940390363,
+    "n_samples": 310,
+    "fit_omega_rad_per_s": 192.25762939453125,
+    "fit_rel_error_pct": -7.500004929423386,
+    "fit_r2": 0.9628608314937617,
+    "zero_crossing_rel_error_pct": NaN,
+    "fit_lambda_per_s": 0.0,
+    "kinetic_energy_at_window_end_J": 0.050268378739011244,
+    "kinetic_energy_over_available_at_window_end": 16.306465360230202,
+    "energy_growth_in_window": 2744.301882603508
+   },
+   {
+    "window_periods": 1.8,
+    "window_s": 0.05441398092702654,
+    "n_samples": 558,
+    "fit_omega_rad_per_s": 141.8633575439453,
+    "fit_rel_error_pct": -31.74596027821586,
+    "fit_r2": 0.7868802155687721,
+    "zero_crossing_rel_error_pct": -36.59550179558768,
+    "fit_lambda_per_s": 18.506250381469727,
+    "kinetic_energy_at_window_end_J": 1.4627131508338447,
+    "kinetic_energy_over_available_at_window_end": 474.4867832292937,
+    "energy_growth_in_window": 79853.9072521754
+   }
+  ]
+ },
+ "conditioning": {
+  "case": "reference_R2cm",
+  "window_periods": 1.0,
+  "unperturbed_rel_error_pct": -18.749997813729564,
+  "unperturbed_r2": 0.9864896370333432,
+  "rows": [
+   {
+    "relative_perturbation": 1e-06,
+    "errors_pct": [
+     -18.749997813729564,
+     -18.749997813729564
+    ],
+    "spread_pct": 0.0,
+    "max_abs_shift_pct": 0.0
+   },
+   {
+    "relative_perturbation": 0.0001,
+    "errors_pct": [
+     -18.749997813729564,
+     -18.749997813729564
+    ],
+    "spread_pct": 0.0,
+    "max_abs_shift_pct": 0.0
+   },
+   {
+    "relative_perturbation": 0.01,
+    "errors_pct": [
+     -18.993748048698773,
+     -18.749997813729564
+    ],
+    "spread_pct": 0.2437502349692089,
+    "max_abs_shift_pct": 0.2437502349692089
+   }
+  ],
+  "worst_spread_pct": 0.2437502349692089
+ },
+ "figures": [
+  "oscillating_droplet_instability.png"
+ ]
+}

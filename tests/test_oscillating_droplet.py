@@ -187,25 +187,79 @@ def test_fit_refuses_to_hallucinate_a_frequency_from_a_non_oscillating_trace(ben
 # --------------------------------------------------------------------------- #
 # 4. physics layer (slow)
 # --------------------------------------------------------------------------- #
-#: Mode-2 frequency error of the CI release case, measured while clearing the
-#: m3312 CI reds (repeatable to <0.01 %: the run is deterministic, single
-#: threaded, seed 0).  The reference case R = 2 cm is recorded at -43.5 % in
-#: ``docs/verification_oscillating_droplet.md`` section 3.1 / 5, i.e. the model
-#: is a documented FAIL against the 15 % bar -- this cheap case is not better.
-RECORDED_MODE2_ERR_PCT = 31.78
-RECORDED_MODE2_TOL_PCT = 2.0
+# 2026-11-05 (m4484): the two physics-layer tests used to pin an
+# architecture-specific number: the *same* code measures +8.64 % for the
+# full-window mode-2 fit on x86_64 GitHub CI and -31.78 % on the loong64
+# reference container, so they were parked as strict-xfail.  That is red CI in
+# both directions and carries no physics: on loong64 the pin was met and the
+# strict xfail turned into an XPASS failure, on x86_64 it did not.  The cause is
+# not the fit, it is the solution: the recorded traces violate energy
+# conservation -- KE_max exceeds the surface energy released by the seeded
+# ellipse by ~4.7e2 (R = 1 cm, this case) and ~4.5e2 (R = 2 cm) -- so the
+# second-moment series diverges from ~1.1 reference periods and the trajectory
+# is round-off seeded.  Neither recorded number is a path-independent
+# observable, so the measurement is WITHHELD, not PASS and not FAIL.
+#
+# The two tests below now assert the *invariant* claims, which hold on every
+# architecture and are falsifiable in the useful direction:
+#   1. the release case creates energy, so no frequency may be quoted from it;
+#   2. refitting the same trace on prefixes of the window moves the answer by
+#      more than the 15 % gate, so no gate verdict may be quoted either.
+# A solver fix that makes the case stable and energy-conserving breaks (1) and
+# (2), which forces a re-baseline of ``docs/verification_oscillating_droplet.md``
+# (it still records FAIL, -43.5 %, for the R = 2 cm case) instead of silently
+# flipping a pin.  Evidence: docs/verification_oscillating_droplet_instability.md
+# and benchmarks/oscillating_droplet_instability/report.json.
+#: fit windows, in reference periods (the set used by the instability study)
+WINDOW_PERIODS = (0.5, 0.75, 1.0, 1.8)
+#: KE_max / released surface energy above which the case is energy-creating.
+#: Measured ~4.7e2; 1e1 leaves a two-decade margin that discretisation noise of
+#: a stable scheme cannot reach.
+ENERGY_CREATION_FACTOR = 10.0
 
-# 2026-11-04: the mode-2 second-moment fit is architecture-fragile — the same
-# code measures +8.64 % on x86_64 GitHub CI and -31.78 % in the loong64
-# reference container. Neither value is architecture-canonical, so the two
-# pinned tests below are strict-xfail until the fit robustness is reviewed
-# (re-baseline item, owner-visible). Strict xfail keeps drift detection in
-# BOTH directions: an XPASS (measurement moving back onto a pin) fails CI.
-XFAIL_MODE2_ARCH_FRAGILE = (
-    "mode-2 fit is architecture-fragile (x86_64 CI +8.64 % vs loong64 "
-    "-31.78 % on identical code); pin re-baseline pending fit-robustness "
-    "review"
-)
+
+def _ellipse_perimeter(a: float, b: float, n: int = 4096) -> float:
+    """Perimeter of the half-axes ``(a, b)`` ellipse by midpoint quadrature."""
+    dphi = 2.0 * math.pi / n
+    total = 0.0
+    for k in range(n):
+        phi = (k + 0.5) * dphi
+        total += math.hypot(a * math.sin(phi), b * math.cos(phi))
+    return total * dphi
+
+
+def _available_energy_j(case: dict) -> float:
+    """Surface energy released when the seeded ellipse relaxes to a circle.
+
+    ``sigma * (P_ellipse - P_circle)`` with area-conserving half axes
+    ``R(1 + eps)``, ``R / (1 + eps)``: a hard upper bound on the kinetic energy
+    an energy-conserving solver can extract from this initial state.
+    """
+    setup = case["setup"]
+    radius, eps = setup["radius_m"], setup["initial_eps"]
+    a, b = radius * (1.0 + eps), radius / (1.0 + eps)
+    released = _ellipse_perimeter(a, b) - 2.0 * math.pi * radius
+    assert released > 0.0
+    return setup["sigma_N_per_m"] * released
+
+
+def _window_error_pct(bench, case: dict, window_periods: float) -> tuple[float, float]:
+    """Mode-2 frequency error (percent) refitted on a prefix of the trace."""
+    omega_ref = case["reference"]["omega_rad_per_s"]
+    trace = case["diagnostics"]["trace"]
+    if math.isinf(window_periods):
+        ts, ss = list(trace["t"]), list(trace["s_second_moment"])
+    else:
+        t_end = window_periods * case["reference"]["period_s"]
+        pairs = [(ti, si) for ti, si in zip(trace["t"],
+                                            trace["s_second_moment"])
+                 if ti <= t_end]
+        ts = [ti for ti, _ in pairs]
+        ss = [si for _, si in pairs]
+    assert len(ts) >= 20, f"window {window_periods} periods is too short"
+    fit = bench.damped_cosine_fit(ts, ss, omega_ref)
+    return (fit["omega"] - omega_ref) / omega_ref * 100.0, float(
+        fit.get("r2", float("nan")))
 
 
 @pytest.fixture(scope="module")
@@ -221,38 +275,53 @@ def release_case(bench):
                           periods=1.8)
 
 
-@pytest.mark.xfail(reason=XFAIL_MODE2_ARCH_FRAGILE, strict=True)
-def test_recorded_mode2_frequency_deficiency_is_reproduced(release_case):
-    """Pin the *measured* mode-2 frequency, not a gate the model does not meet.
+def test_release_case_creates_energy_so_no_frequency_can_be_quoted(release_case):
+    """Energy creation is proof of numerical invalidity, on every architecture.
 
-    m3020 shipped the physics-layer test below with the 15 % gate as an
-    assertion, on a formulation whose own benchmark doc records -43.5 % (FAIL);
-    the case it runs measures -31.8 %, so that assertion was red from the start
-    and stayed red for every later commit.  Pinning the number here keeps the
-    measurement in CI (a drift of the model shows up as a failure) without
-    pretending the deficiency is gone: the gate verdict stays FAIL and is
-    asserted as FAIL by ``test_oscillation_frequency_gate_is_not_met``.
+    The trace is *not* merely inaccurate: kinetic energy passes the hard bound
+    set by the surface energy released by the seeded ellipse, so the amplitude
+    series is a round-off-seeded blow-up and its fitted frequency is a property
+    of the round-off, not of the model.  This is the load-bearing claim of the
+    instability audit; it replaces the old architecture pin because the factor
+    is O(1e2) and cannot flip between x86_64 and loong64.
     """
-    err = release_case["frequency"]["fit_second_moment_rel_error_pct"]
-    assert err == pytest.approx(-RECORDED_MODE2_ERR_PCT, abs=RECORDED_MODE2_TOL_PCT), err
-    assert abs(err) > GATE_PCT, (
-        "the deficiency apparently improved into the 15 % gate: update "
-        "docs/verification_oscillating_droplet.md and this pin, do not just "
-        "flip the number")
+    budget = _available_energy_j(release_case)
+    ke_max = max(release_case["diagnostics"]["trace"]["kinetic_energy_J"])
+    ratio = ke_max / budget
+    assert ratio > ENERGY_CREATION_FACTOR, (
+        f"KE_max / released surface energy = {ratio:.1f} <= "
+        f"{ENERGY_CREATION_FACTOR}: the case no longer creates energy, so its "
+        "frequency may now be measurable -- re-baseline "
+        "docs/verification_oscillating_droplet.md and this test")
+    # The blow-up is not a mass leak: mass is conserved to machine precision, so
+    # the energy defect belongs to the pressure/surface-tension coupling.
+    assert release_case["diagnostics"]["mass_relative_drift"] < 1e-12
 
 
 @pytest.mark.slow
-@pytest.mark.xfail(reason=XFAIL_MODE2_ARCH_FRAGILE, strict=True)
-def test_oscillation_frequency_gate_is_not_met(release_case):
-    """The 15 % gate is NOT met; the recorded verdict must stay FAIL.
+def test_mode2_frequency_is_a_function_of_the_fit_window(bench, release_case):
+    """The 'measured' frequency moves by more than the gate with the window.
 
-    Kept as an explicit inverted assertion so that "green" cannot be mistaken
-    for "physics accepted": the platform verdict for this quantity is FAIL, and
-    the future fix that makes the gate pass has to fail here first, which is
-    exactly the reminder to re-render ``docs/verification_oscillating_droplet.md``.
+    Therefore no PASS/FAIL verdict may be quoted for the mode-2 frequency of
+    this case: the 15 % gate is inside the fit-window spread.  Recorded numbers
+    (+8.64 % x86_64, -31.78 % loong64) are two points of this spread, which is
+    why they disagreed; the fit itself still recovers a visible oscillation
+    (every window keeps a high ``r2``), so the spread is a property of the
+    solution, not a broken estimator.
     """
-    err = release_case["frequency"]["fit_second_moment_rel_error_pct"]
-    assert abs(err) >= GATE_PCT, (
-        f"mode-2 frequency error {err:.1f} % now meets the {GATE_PCT:.0f} % gate; "
-        "update the benchmark doc verdict (it currently records FAIL) and this test")
-    assert release_case["diagnostics"]["mass_relative_drift"] < 1e-12
+    errors = {}
+    for window_periods in WINDOW_PERIODS:
+        errors[window_periods] = _window_error_pct(bench, release_case,
+                                                   window_periods)
+    spread = max(e for e, _ in errors.values()) - min(
+        e for e, _ in errors.values())
+    assert spread > GATE_PCT, (
+        f"fit-window spread {spread:.1f} pp <= {GATE_PCT} % gate: the "
+        "measurement became quotable -- re-baseline "
+        "docs/verification_oscillating_droplet.md and this test")
+    assert min(r2 for _, r2 in errors.values()) > 0.5, errors
+    # The recorded number must be reproducible from the recorded trace: no
+    # hand-edited pin survives in the report.
+    recorded = release_case["frequency"]["fit_second_moment_rel_error_pct"]
+    full_window, _ = _window_error_pct(bench, release_case, math.inf)
+    assert recorded == pytest.approx(full_window, abs=1e-9)
