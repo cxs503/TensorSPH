@@ -44,7 +44,8 @@ def main() -> None:
     A("`rho`。求和是对核函数的**晶格求积**，因此在完整支撑（complete support）的粒子")
     A("上并不精确等于 `rho0`，而是")
     A("")
-    A("```\nrho_i / rho0 = 1 + b,      b = m * S / rho0 - 1,   S = W(0) + sum_{j!=i} W(r_ij,h)\n```")
+    A("```\nrho_i / rho0 = 1 + b,      b = m * S / rho0 - 1,   "
+      "S = W(0) + sum_{j!=i} W(r_ij,h)\n```")
     A("")
     A("`b` 只由 `h/dx` 与晶格几何决定，与 `dx`、`rho0`、`c0`、物体形状无关。经 Tait 状态")
     A("方程，它变成一个**均匀的虚假初始压强**")
@@ -69,7 +70,8 @@ def main() -> None:
     A(f"| 毛细时间 t_sigma | {S['capillary_time_s']:.4f} s |")
     A(f"| 液滴晶格 | {S['lattice_drop']}（benchmarks/laplace_law 的生成器） |")
     A(f"| 水池晶格 | {S['lattice_pool']}（`make_particles`/`cell_centres`） |")
-    A(f"| m2971 报告的偏置 / 压强 | {S['m2971_reported_bias']} / {S['m2971_reported_pressure_Pa']} Pa |")
+    A(f"| m2971 报告的偏置 / 压强 | {S['m2971_reported_bias']} / "
+      f"{S['m2971_reported_pressure_Pa']} Pa |")
     A("")
     A("## 2. 方法")
     A("")
@@ -94,7 +96,8 @@ def main() -> None:
       f"{'pass' if H_['G1_passed'] else 'FAIL'} (G1 <1e-9) |")
     A(f"| 理想 square 晶格（float64） | {fmt(SY['bias_measured'])} | {fmt(SY['bias_analytic'])} | "
       f"{SY['rel_diff']:.2e} | — | {'pass' if SY['G2a_passed'] else 'FAIL'} (G2a <1e-9) |")
-    A(f"| `make_particles` 水池（float32） | {fmt(Q['bias_measured'])} | {fmt(Q['bias_analytic'])} | "
+    A(f"| `make_particles` 水池（float32） | {fmt(Q['bias_measured'])} | "
+      f"{fmt(Q['bias_analytic'])} | "
       f"{Q['rel_diff']:.2%} | {Q['n_complete_support']} | "
       f"{'pass' if Q['G2_passed'] else 'FAIL'} (G2 <10%) |")
     A("")
@@ -109,7 +112,8 @@ def main() -> None:
     A("| h/dx | square b | square p_spur@c0=20 | hex b | hex p_spur@c0=20 |")
     A("|---|---|---|---|---|")
     for sq, hx in zip(sw["rows"]["square"], sw["rows"]["hex"]):
-        A(f"| {sq['h_over_dx']:.2f} | {fmt(sq['bias'])} | {sq['spurious_pressure_Pa_c0_20']:+8.1f} Pa | "
+        A(f"| {sq['h_over_dx']:.2f} | {fmt(sq['bias'])} | "
+          f"{sq['spurious_pressure_Pa_c0_20']:+8.1f} Pa | "
           f"{fmt(hx['bias'])} | {hx['spurious_pressure_Pa_c0_20']:+8.1f} Pa |")
     A("")
     A("两个结论：(a) `b` **不是**随细化单调下降的误差，而是随 `h/dx` 变号振荡的求积误差；")
@@ -152,10 +156,13 @@ def main() -> None:
     A("| 量 | 未校准 | 校准 |")
     A("|---|---|---|")
     A(f"| 初始核心压强 [Pa] | {off['p_core_initial_Pa']:.2f} | {on['p_core_initial_Pa']:.3e} |")
-    A(f"| t=1.5 t_sigma 核心压强 [Pa] | {off['p_core_final_Pa']:.1f} | {on['p_core_final_Pa']:.1f} |")
-    A(f"| 尾部 40% 时间平均核心压强 [Pa] | {off['p_core_tail_mean_Pa']:.1f} | {on['p_core_tail_mean_Pa']:.1f} |")
+    A(f"| t=1.5 t_sigma 核心压强 [Pa] | {off['p_core_final_Pa']:.1f} | "
+      f"{on['p_core_final_Pa']:.1f} |")
+    A(f"| 尾部 40% 时间平均核心压强 [Pa] | {off['p_core_tail_mean_Pa']:.1f} | "
+      f"{on['p_core_tail_mean_Pa']:.1f} |")
     A(f"| max|v|/v_ref 峰值 | {off['vmax_over_vref_peak']:.3f} | {on['vmax_over_vref_peak']:.3f} |")
-    A(f"| max|v|/v_ref 终值 | {off['vmax_over_vref_final']:.3f} | {on['vmax_over_vref_final']:.3f} |")
+    A(f"| max|v|/v_ref 终值 | {off['vmax_over_vref_final']:.3f} | "
+      f"{on['vmax_over_vref_final']:.3f} |")
     A(f"| 步数 / dt [s] | {off['steps']} / {off['dt_s']:.3e} | {on['steps']} / {on['dt_s']:.3e} |")
     A("")
     A("![initial density bias](benchmarks/initial_density_bias/initial_density_bias.png)")
@@ -171,8 +178,10 @@ def main() -> None:
     A(f"| hex 晶格 `b` | 独立实测（`density_from_neighbor_pairs`） | "
       f"{H_['rel_diff']:.2e} | 是 |")
     A(f"| 理想 square 晶格 `b` | 独立实测 | {SY['rel_diff']:.2e} | 是 |")
+    _pmax_ratio = (abs(H_['spurious_pressure_Pa_c0_20'] - S['m2971_reported_pressure_Pa'])
+                   / S['m2971_reported_pressure_Pa'])
     A(f"| 未校准 `p_max`@c0=20 | m2971 的 2395 Pa | "
-      f"{abs(H_['spurious_pressure_Pa_c0_20']-S['m2971_reported_pressure_Pa'])/S['m2971_reported_pressure_Pa']:.2e} | 是 |")
+      f"{_pmax_ratio:.2e} | 是 |")
     A(f"| 实测 `b` | m2971 的 5.88e-3 | "
       f"{abs(H_['bias_measured']-S['m2971_reported_bias'])/S['m2971_reported_bias']:.2e} | 是 |")
     A(f"| `make_particles` 水池 `b` | 闭式（理想晶格） | {Q['rel_diff']:.2%} | **否（5.0%）** |")
