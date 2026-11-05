@@ -31,6 +31,9 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+# Agent scratch scripts live here; they are throw-away probes, not deliverables,
+# and linting them turns unrelated PRs red (m3804: four PRs stuck on this).
+exclude = [".scratch"]
 
 [tool.ruff.lint]
 # Correctness-only gate: pyflakes undefined names/unused imports, pycodestyle
