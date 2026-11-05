@@ -36,6 +36,10 @@ target-version = "py310"
 exclude = [".scratch"]
 
 [tool.ruff.lint]
+# ``benchmarks/*/make_doc.py`` build the verification documents; the >100 char lines
+# there are literal markdown table rows and prose that is written into docs/, so
+# E501 would force the document text to be chopped up for the linter's sake.
+per-file-ignores = { "benchmarks/*/make_doc.py" = ["E501"] }
 # Correctness-only gate: pyflakes undefined names/unused imports, pycodestyle
 # errors and warnings. Formatting is deliberately not enforced.
 select = ["E", "F", "W"]

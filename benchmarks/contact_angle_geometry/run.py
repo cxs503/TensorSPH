@@ -261,7 +261,7 @@ def run_case(theta_deg: float, ratio: int, normal_smoothing: int = 2) -> dict:
     n_exact = rel / rel.norm(dim=1, keepdim=True).clamp_min(TINY)           # outward normal
     shell = (colour[:n_fluid] > 0.25) & (colour[:n_fluid] < 0.75)
     near_wall = (d[:n_fluid] < h) & shell
-    far = d[:n_fluid] > 2.0 * h
+    _far = d[:n_fluid] > 2.0 * h
 
     out: dict = {
         "theta_deg": theta_deg, "ratio": ratio, "dx": dx, "h": h,
