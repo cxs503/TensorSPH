@@ -181,9 +181,21 @@ def radial_profile(pos, values, n_bins: int = 12):
 def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
           calibrate_mass: bool = True, t_end_over_t_sigma: float = 1.5,
           max_steps: int = 4000, sample_every: int = 50,
-          closure: bool = False, donors: str = "interior", layers: int = 2,
-          threshold: float = 0.99):
+          closure: str | bool = "clamp", threshold: float = 0.99):
     """Advance the drop and read ``Delta p`` with three definitions.
+
+    ``closure`` selects the free-surface pressure treatment:
+
+    ``"clamp"``  (default) the Tait law clamps p at 0 -- the state every number
+                 in ``report.json`` was measured with;
+    ``"shell"``  ``Config.surface_pressure_closure`` on with donor set
+                 ``"interior"``: a particle with ``rho < threshold rho0`` takes the
+                 kernel-weighted, one-sided (bulk-first) extrapolation of its
+                 neighbours' pressures, run in ``surface_pressure_layers`` passes;
+    ``"all"``    the literal Adami et al. (2012) formula in one pass, where the
+                 free-surface neighbours' clamped ``p = 0`` also donates.
+
+    ``True``/``False`` are accepted as aliases for ``"shell"``/``"clamp"``.
 
     ``absolute``  ``p_core - 0``  (Tait is normalised at ``rho0``; the vacuum is
                   the p = 0 reference, so this is the physical jump).
@@ -191,11 +203,19 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
                   previous verification rounds (contaminated by C3).
     ``bandB``     ``p_core - p(0.60..0.80R)``, inside the deficit zone's edge.
     """
+    if isinstance(closure, bool):
+        closure = "shell" if closure else "clamp"
+    closure = str(closure).lower()
+    if closure not in ("clamp", "shell", "all"):
+        raise ValueError(f"closure must be clamp|shell|all, got {closure!r}")
+    donors = "all" if closure == "all" else "interior"
+    layers = 1 if donors == "all" else 2
+
     cfg = Config(dx=dx, h_factor=H_FACTOR, rho0=RHO0, sound_speed=c0,
                  gamma=GAMMA, gravity=0.0, viscosity=VISCOSITY,
                  surface_tension_coefficient=SIGMA, csf_scheme="consistent",
                  csf_curvature=scheme,
-                 surface_pressure_closure=closure,
+                 surface_pressure_closure=closure != "clamp",
                  surface_pressure_donors=donors,
                  surface_pressure_layers=layers,
                  surface_pressure_threshold=threshold)
@@ -263,8 +283,8 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
         "dx_m": dx, "h_m": h, "n_particles": int(pos.shape[0]),
         "sound_speed": c0, "curvature_scheme": scheme,
         "mass_calibrated": calibrate_mass,
-        "closure": {"enabled": closure, "donors": donors, "layers": layers,
-                    "threshold": threshold},
+        "closure": closure, "closure_donors": donors, "closure_layers": layers,
+        "closure_threshold": threshold,
         "lattice_bias": bias, "lattice_bias_after_calibration": bias_after,
         "dt_s": dt, "steps": steps, "t_end_s": t_end,
         "t_over_t_sigma": t_end / T_SIGMA,
@@ -298,6 +318,13 @@ def main():
     ap.add_argument("--dx", type=float, default=0.002)
     ap.add_argument("--sound-speeds", type=float, nargs="+",
                     default=[20.0, 10.0, 5.0])
+    ap.add_argument("--closure", default="clamp",
+                    choices=["clamp", "shell", "all"],
+                    help="free-surface pressure treatment (see relax())")
+    ap.add_argument("--out", default="report.json",
+                    help="output file name inside this directory")
+    ap.add_argument("--no-controls", action="store_true",
+                    help="skip the two control runs (use for closure reports)")
     ap.add_argument("--t-end", type=float, default=1.5,
                     help="window length in capillary times")
     args = ap.parse_args()
@@ -309,7 +336,8 @@ def main():
     runs = []
     for dx in dxs:
         for c0 in c0s:
-            run = relax(dx, c0, t_end_over_t_sigma=args.t_end)
+            run = relax(dx, c0, t_end_over_t_sigma=args.t_end,
+                        closure=args.closure)
             runs.append(run)
             print(f"dx={dx:g} c0={c0:5g}: abs {run['definition_absolute']['rel_error_pct']:+7.1f} %"
                   f"  bandA {run['definition_bandA']['rel_error_pct']:+7.1f} %"
@@ -318,22 +346,38 @@ def main():
                   f"/{run['density']['compression_required']:.2e}"
                   f"  steps {run['steps']}", flush=True)
 
+    if args.no_controls:
+        out = HERE / args.out
+        report = {
+            "benchmark": "laplace_pressure_floor",
+            "closure": args.closure,
+            "reference": {"delta_p_Pa": DP_ANALYTIC, "sigma_N_per_m": SIGMA,
+                          "radius_m": RADIUS, "rho0": RHO0, "gamma": GAMMA,
+                          "t_sigma_s": T_SIGMA},
+            "structures": structures,
+            "runs": runs,
+        }
+        out.write_text(json.dumps(report, indent=2))
+        print("wrote", out)
+        return
+
     # controls: (a) uncalibrated mass at the highest c0 (isolates C2),
     #           (b) legacy curvature operator at the lowest c0 (isolates the
     #               operator from the closure problem)
     ref_c0 = c0s[0]
     uncal = relax(args.dx, ref_c0, calibrate_mass=False,
-                  t_end_over_t_sigma=args.t_end)
+                  t_end_over_t_sigma=args.t_end, closure=args.closure)
     print(f"control uncalibrated dx={args.dx:g} c0={ref_c0:g}: "
           f"abs {uncal['definition_absolute']['rel_error_pct']:+7.1f} %", flush=True)
     ctrl_scheme = relax(args.dx, c0s[-1], scheme="mls",
-                        t_end_over_t_sigma=args.t_end)
+                        t_end_over_t_sigma=args.t_end, closure=args.closure)
     print(f"control mls dx={args.dx:g} c0={c0s[-1]:g}: "
           f"abs {ctrl_scheme['definition_absolute']['rel_error_pct']:+7.1f} %",
           flush=True)
 
     report = {
         "benchmark": "laplace_pressure_floor",
+        "closure": args.closure,
         "reference": {"delta_p_Pa": DP_ANALYTIC, "sigma_N_per_m": SIGMA,
                       "radius_m": RADIUS, "rho0": RHO0, "gamma": GAMMA,
                       "t_sigma_s": T_SIGMA},
@@ -342,10 +386,14 @@ def main():
         "controls": {"uncalibrated_c0_reference": uncal,
                      "mls_scheme_lowest_c0": ctrl_scheme},
     }
-    (HERE / "report.json").write_text(json.dumps(report, indent=2))
-    report["figures"] = [make_figures(report)]
-    (HERE / "report.json").write_text(json.dumps(report, indent=2))
-    print("wrote", HERE / "report.json", report["figures"])
+    out = HERE / args.out
+    out.write_text(json.dumps(report, indent=2))
+    if args.out == "report.json":
+        report["figures"] = [make_figures(report)]
+        out.write_text(json.dumps(report, indent=2))
+        print("wrote", out, report["figures"])
+    else:
+        print("wrote", out)
 
 
 # --------------------------------------------------------------------------- #
