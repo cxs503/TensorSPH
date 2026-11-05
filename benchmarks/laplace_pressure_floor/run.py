@@ -249,6 +249,25 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     final = read(pos, pressure)
     r = torch.linalg.vector_norm(pos, dim=1) / RADIUS
 
+    # Where the closure acts: the pressure the particles in the free-surface
+    # bands actually carry.  Without a closure every one of them is pinned at
+    # the Tait clamp p = 0 (that is C3); with it they carry the extrapolation.
+    surface = {}
+    for name, (lo, hi) in (("shellA", (0.80, 0.95)), ("outer", (0.95, 1.05))):
+        m = (r >= lo) & (r < hi)
+        n_m = int(m.sum())
+        surface[name] = {
+            "r_range": [lo, hi],
+            "count": n_m,
+            "mean_pressure_Pa": float(pressure[m].mean()) if n_m else float("nan"),
+            "zero_pressure_fraction": float(
+                (pressure[m] <= 1.0e-12).to(torch.float64).mean()) if n_m else float("nan"),
+        }
+    surface["core"] = {
+        "count": int((r < 0.5).sum()),
+        "mean_pressure_Pa": float(pressure[r < 0.5].mean()),
+    }
+
     # The breathing mode (period ~ t_sigma) means a single snapshot is not the
     # equilibrium value; average over the last 40 % of the window as well.
     n_tail = max(1, int(0.4 * len(trace["absolute"])))
@@ -280,6 +299,7 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
             "compression_required": (1.0 + DP_ANALYTIC / (RHO0 * c0 ** 2 / GAMMA))
             ** (1.0 / GAMMA) - 1.0,
         },
+        "surface": surface,
         "spurious_current": {
             "v_ref_m_per_s": v_ref,
             "vmax_over_vref_final": trace["vmax_over_vref"][-1],
@@ -292,6 +312,264 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     }
 
 
+# --------------------------------------------------------------------------- #
+# the closure study: does an extrapolated surface pressure close the gap?
+# --------------------------------------------------------------------------- #
+CLOSURE_REFERENCE = {"donors": "interior", "layers": 2, "threshold": 0.99}
+
+
+def _reading(run, detail: bool = False) -> dict:
+    """Compact, comparable view of one relaxation run (tail-averaged jump)."""
+    tail = run["absolute_time_average_tail"]
+    out = {
+        "closure": dict(run["closure"]),
+        "delta_p_Pa": tail["delta_p_Pa"],
+        "rel_error_pct": tail["rel_error_pct"],
+        "within_3pct": tail["within_3pct"],
+        "within_15pct": tail["within_15pct"],
+        "rel_error_final_snapshot_pct": run["definition_absolute"]["rel_error_pct"],
+        "bandA_rel_error_pct": run["definition_bandA"]["rel_error_pct"],
+        "rho_core_over_rho0_minus_1": run["density"]["rho_core_over_rho0"] - 1.0,
+        "compression_required": run["density"]["compression_required"],
+        "compression_ratio": ((run["density"]["rho_core_over_rho0"] - 1.0)
+                              / run["density"]["compression_required"]),
+        "surface": run["surface"],
+        "vmax_over_vref": run["spurious_current"]["vmax_over_vref_final"],
+        "finite": run["finite"],
+        "steps": run["steps"],
+        "dt_s": run["dt_s"],
+        "h_m": run["h_m"],
+        "n_particles": run["n_particles"],
+    }
+    if detail:
+        out["trace"] = run["trace"]
+        out["pressure_profile"] = run["pressure_profile"]
+        out["density_profile"] = run["density_profile"]
+    return out
+
+
+def closure_study(dxs, sound_speeds, t_end_over_t_sigma: float = 1.5,
+                  max_steps: int = 4000, verbose: bool = True) -> dict:
+    """Run every case twice -- Tait clamp off / Adami extrapolation on.
+
+    The ladder is the acceptance experiment: the same drop, the same
+    discretisation, the same measurement, one boolean different.  The variants
+    then ask *which* part of the closure matters (donor set, number of passes,
+    receiver threshold), because a closure that only works for one arbitrary
+    setting is a tuning artefact, not a model.
+    """
+    ladder = []
+    for dx in dxs:
+        for c0 in sound_speeds:
+            detail = dx == dxs[0] and c0 == min(sound_speeds)
+            off = relax(dx, c0, t_end_over_t_sigma=t_end_over_t_sigma,
+                        max_steps=max_steps)
+            on = relax(dx, c0, closure=True,
+                       donors=CLOSURE_REFERENCE["donors"],
+                       layers=CLOSURE_REFERENCE["layers"],
+                       threshold=CLOSURE_REFERENCE["threshold"],
+                       t_end_over_t_sigma=t_end_over_t_sigma,
+                       max_steps=max_steps)
+            row = {"dx_m": dx, "sound_speed": c0,
+                   "off": _reading(off, detail),
+                   "on": _reading(on, detail),
+                   "gain_points": (on["absolute_time_average_tail"]["rel_error_pct"]
+                                   - off["absolute_time_average_tail"]["rel_error_pct"])}
+            if verbose:
+                print(f"closure dx={dx:g} c0={c0:5g}: "
+                      f"off {row['off']['rel_error_pct']:+7.1f} % -> "
+                      f"on {row['on']['rel_error_pct']:+7.1f} %"
+                      f"  (shell p=0: "
+                      f"{row['off']['surface']['outer']['zero_pressure_fraction']:.2f}"
+                      f" -> {row['on']['surface']['outer']['zero_pressure_fraction']:.2f})",
+                      flush=True)
+            ladder.append(row)
+
+    dx_ref, c0_ref = dxs[0], min(sound_speeds)
+    variants = []
+    sweep = (("interior donors, 2 passes (reference)",
+              {}),
+             ("literal Adami: every neighbour donates",
+              {"donors": "all"}),
+             ("one pass only",
+              {"layers": 1}),
+             ("three passes",
+              {"layers": 3}),
+             ("receiver threshold 0.95 rho0",
+              {"threshold": 0.95}),
+             ("receiver threshold 0.995 rho0",
+              {"threshold": 0.995}))
+    for label, override in sweep:
+        settings = dict(CLOSURE_REFERENCE)
+        settings.update(override)
+        run = relax(dx_ref, c0_ref, closure=True,
+                    donors=settings["donors"], layers=settings["layers"],
+                    threshold=settings["threshold"],
+                    t_end_over_t_sigma=t_end_over_t_sigma, max_steps=max_steps)
+        variants.append({"label": label,
+                         "closure": dict(run["closure"]),
+                         "reading": _reading(run)})
+        if verbose:
+            print(f"  variant {label}: "
+                  f"{variants[-1]['reading']['rel_error_pct']:+7.1f} %", flush=True)
+
+    # The worst case of the ladder is the coarse/high-c0 corner, where the
+    # shell is only partially filled by two passes (measured zero-pressure
+    # fraction > 0).  Sweep the pass count there to see whether the residual is
+    # an unfilled shell or something else.
+    c0_max = max(sound_speeds)
+    corner = []
+    for label, override in (("one pass", {"layers": 1}),
+                            ("two passes (reference)", {"layers": 2}),
+                            ("four passes", {"layers": 4}),
+                            ("literal Adami (all donors)", {"donors": "all"})):
+        settings = dict(CLOSURE_REFERENCE)
+        settings.update(override)
+        run = relax(dx_ref, c0_max, closure=True,
+                    donors=settings["donors"], layers=settings["layers"],
+                    threshold=settings["threshold"],
+                    t_end_over_t_sigma=t_end_over_t_sigma, max_steps=max_steps)
+        corner.append({"label": label, "closure": dict(run["closure"]),
+                       "reading": _reading(run)})
+        if verbose:
+            print(f"  corner dx={dx_ref:g} c0={c0_max:g} {label}: "
+                  f"{corner[-1]['reading']['rel_error_pct']:+7.1f} %"
+                  f"  shell p=0: "
+                  f"{corner[-1]['reading']['surface']['outer']['zero_pressure_fraction']:.2f}",
+                  flush=True)
+
+    return {
+        "reference_case": {"dx_m": dx_ref, "sound_speed": c0_ref},
+        "reference_closure": dict(CLOSURE_REFERENCE),
+        "corner_case": {"dx_m": dx_ref, "sound_speed": c0_max},
+        "corner_variants": corner,
+        "criterion": "|Delta p - sigma/R| / (sigma/R) < 15 % (platform floor); "
+                     "< 3 % is the paper grade",
+        "ladder": ladder,
+        "variants": variants,
+        "verdict": closure_verdict(ladder),
+    }
+
+
+def closure_verdict(ladder) -> dict:
+    """Machine-checkable summary of the ladder (no hand-typed numbers)."""
+    if not ladder:
+        return {}
+    errs_on = [r["on"]["rel_error_pct"] for r in ladder]
+    errs_off = [r["off"]["rel_error_pct"] for r in ladder]
+    best = min(ladder, key=lambda r: abs(r["on"]["rel_error_pct"]))
+    worst = max(ladder, key=lambda r: abs(r["on"]["rel_error_pct"]))
+    passing = [r for r in ladder if r["on"]["within_15pct"]]
+    return {
+        "cases": len(ladder),
+        "passing_15pct": len(passing),
+        "all_pass_15pct": len(passing) == len(ladder),
+        "all_pass_3pct": all(r["on"]["within_3pct"] for r in ladder),
+        "mean_abs_error_off_pct": sum(abs(e) for e in errs_off) / len(errs_off),
+        "mean_abs_error_on_pct": sum(abs(e) for e in errs_on) / len(errs_on),
+        "max_abs_error_on_pct": max(abs(e) for e in errs_on),
+        "min_abs_error_on_pct": min(abs(e) for e in errs_on),
+        "best_case": {"dx_m": best["dx_m"], "sound_speed": best["sound_speed"],
+                      "rel_error_pct": best["on"]["rel_error_pct"]},
+        "worst_case": {"dx_m": worst["dx_m"], "sound_speed": worst["sound_speed"],
+                       "rel_error_pct": worst["on"]["rel_error_pct"]},
+        "compression_ratio_range_on": [min(r["on"]["compression_ratio"] for r in ladder),
+                                       max(r["on"]["compression_ratio"] for r in ladder)],
+        "shell_fully_clamped_off": all(
+            r["off"]["surface"]["outer"]["zero_pressure_fraction"] > 0.999
+            for r in ladder),
+        "shell_mean_pressure_off_Pa_range": [
+            min(r["off"]["surface"]["outer"]["mean_pressure_Pa"] for r in ladder),
+            max(r["off"]["surface"]["outer"]["mean_pressure_Pa"] for r in ladder)],
+    }
+
+
+# --------------------------------------------------------------------------- #
+# closure figures
+# --------------------------------------------------------------------------- #
+def make_figures_closure(study: dict, out_dir=HERE) -> str:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    ladder = study["ladder"]
+    dx_ref = study["reference_case"]["dx_m"]
+    primary = [r for r in ladder if r["dx_m"] == dx_ref]
+    primary.sort(key=lambda r: -r["sound_speed"])
+    ref = [r for r in primary
+           if r["sound_speed"] == study["reference_case"]["sound_speed"]][0]
+
+    fig, axes = plt.subplots(2, 2, figsize=(11.5, 8.6))
+
+    ax = axes[0][0]
+    idx = torch.arange(len(primary)).numpy()
+    width = 0.38
+    ax.bar(idx - width / 2, [r["off"]["rel_error_pct"] for r in primary], width,
+           label="Tait clamp (C3 open)", color="tab:red")
+    ax.bar(idx + width / 2, [r["on"]["rel_error_pct"] for r in primary], width,
+           label="free-surface closure on", color="tab:green")
+    ax.axhline(15.0, color="k", ls=":", lw=1)
+    ax.axhline(-15.0, color="k", ls=":", lw=1)
+    ax.axhline(3.0, color="0.5", ls="--", lw=0.8)
+    ax.axhline(-3.0, color="0.5", ls="--", lw=0.8)
+    ax.axhline(0.0, color="k", lw=0.8)
+    ax.set_xticks(idx)
+    ax.set_xticklabels([f"$c_0$={r['sound_speed']:g}" for r in primary])
+    ax.set_ylabel(r"$(\Delta p-\sigma/R)/(\sigma/R)$ [%]")
+    ax.set_title(f"(a) end-to-end jump, $\\Delta x$={dx_ref:g} m")
+    ax.legend(fontsize=7)
+    ax.grid(alpha=0.3, axis="y")
+
+    ax = axes[0][1]
+    ax.plot(ref["off"]["trace"]["t"], ref["off"]["trace"]["absolute"], lw=1.2,
+            color="tab:red", label="clamp off")
+    ax.plot(ref["on"]["trace"]["t"], ref["on"]["trace"]["absolute"], lw=1.2,
+            color="tab:green", label="closure on")
+    ax.axhline(DP_ANALYTIC, color="k", ls="--", lw=1,
+               label=rf"$\sigma/R$={DP_ANALYTIC:.0f} Pa")
+    ax.set_xlabel(r"$t/t_\sigma$")
+    ax.set_ylabel(r"$p_{\rm core}$ [Pa]")
+    ax.set_title(f"(b) core pressure, $c_0$={ref['sound_speed']:g} m/s")
+    ax.legend(fontsize=7)
+    ax.grid(alpha=0.3)
+
+    ax = axes[1][0]
+    r_axis = [p["r_over_R_mid"] for p in ref["off"]["pressure_profile"]]
+    ax.plot(r_axis, [p["mean"] for p in ref["off"]["pressure_profile"]], "o-",
+            ms=3, color="tab:red", label="clamp off")
+    ax.plot(r_axis, [p["mean"] for p in ref["on"]["pressure_profile"]], "s-",
+            ms=3, color="tab:green", label="closure on")
+    ax.axhline(DP_ANALYTIC, color="k", ls="--", lw=1)
+    ax.set_xlabel(r"$r/R$")
+    ax.set_ylabel(r"$p$ [Pa]")
+    ax.set_title("(c) radial pressure profile: shell no longer at $p=0$")
+    ax.legend(fontsize=7)
+    ax.grid(alpha=0.3)
+
+    ax = axes[1][1]
+    labels = [v["label"] for v in study["variants"]]
+    vals = [v["reading"]["rel_error_pct"] for v in study["variants"]]
+    y = torch.arange(len(vals)).numpy()
+    colours = ["tab:green" if abs(v) < 15.0 else "tab:red" for v in vals]
+    ax.barh(y, vals, color=colours)
+    ax.axvline(15.0, color="k", ls=":", lw=1)
+    ax.axvline(-15.0, color="k", ls=":", lw=1)
+    ax.axvline(0.0, color="k", lw=0.8)
+    ax.set_yticks(y)
+    ax.set_yticklabels(labels, fontsize=7)
+    ax.set_xlabel(r"$(\Delta p-\sigma/R)/(\sigma/R)$ [%]")
+    ax.set_title(f"(d) which knob matters ($c_0$={ref['sound_speed']:g} m/s)")
+    ax.grid(alpha=0.3, axis="x")
+
+    fig.suptitle("TensorSPH: closing the free-surface pressure closes the "
+                 "Young-Laplace gap")
+    fig.tight_layout()
+    path = Path(out_dir) / "laplace_free_surface_pressure.png"
+    fig.savefig(path, dpi=130)
+    plt.close(fig)
+    return path.name
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true")
@@ -300,10 +578,29 @@ def main():
                     default=[20.0, 10.0, 5.0])
     ap.add_argument("--t-end", type=float, default=1.5,
                     help="window length in capillary times")
+    ap.add_argument("--no-closure", action="store_true",
+                    help="skip the free-surface closure study")
+    ap.add_argument("--closure-only", action="store_true",
+                    help="keep the recorded C1-C4 ladder and re-run only the "
+                         "closure study (writes it into the existing report.json)")
     args = ap.parse_args()
 
     dxs = [args.dx] if args.quick else [args.dx, 0.0015]
     c0s = [20.0, 5.0] if args.quick else list(args.sound_speeds)
+
+    if args.closure_only:
+        report = json.loads((HERE / "report.json").read_text())
+        if not args.no_closure:
+            print("closure study (C3): does an extrapolated surface pressure "
+                  "close the gap?", flush=True)
+            report["closure_study"] = closure_study(
+                dxs, c0s, t_end_over_t_sigma=args.t_end)
+            fig = make_figures_closure(report["closure_study"])
+            figures = [f for f in report.get("figures", []) if f != fig]
+            report["figures"] = figures + [fig]
+        (HERE / "report.json").write_text(json.dumps(report, indent=2))
+        print("wrote", HERE / "report.json", report["figures"])
+        return
 
     structures = [density_structure(dx, c0s) for dx in dxs]
     runs = []
@@ -342,8 +639,15 @@ def main():
         "controls": {"uncalibrated_c0_reference": uncal,
                      "mls_scheme_lowest_c0": ctrl_scheme},
     }
-    (HERE / "report.json").write_text(json.dumps(report, indent=2))
-    report["figures"] = [make_figures(report)]
+    figures = [make_figures(report)]
+    if not args.no_closure:
+        print("closure study (C3): does an extrapolated surface pressure "
+              "close the gap?", flush=True)
+        report["closure_study"] = closure_study(
+            dxs, c0s, t_end_over_t_sigma=args.t_end)
+    report["figures"] = figures
+    if not args.no_closure:
+        report["figures"] = figures + [make_figures_closure(report["closure_study"])]
     (HERE / "report.json").write_text(json.dumps(report, indent=2))
     print("wrote", HERE / "report.json", report["figures"])
 

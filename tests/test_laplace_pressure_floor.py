@@ -8,11 +8,11 @@ milliseconds -- and (b) the numbers recorded in
 the pressure closure, the EOS or the measurement definitions cannot slip
 through unnoticed.
 
-The last test is ``xfail(strict=True)``: it states the acceptance criterion for
-the still-open P0 (free-surface pressure closure, see
-``docs/verification_laplace_pressure_floor.md`` §7).  When that work lands the
-test turns into an ``xpass`` and the suite fails on purpose, forcing the
-verification record to be updated instead of drifting.
+The last test states the acceptance criterion of the P0 that this benchmark was
+opened for.  It used to be ``xfail(strict=True)``; the free-surface pressure
+closure (``docs/verification_laplace_free_surface_pressure.md``) landed, so it is
+now a real gate that reads the closure ladder and *also* asserts that the
+clamp-off baseline still fails.
 """
 from __future__ import annotations
 
@@ -132,12 +132,26 @@ def test_residual_is_not_explained_by_the_eos_noise_floor(report):
     assert worst and min(worst) > 0.15
 
 
-@pytest.mark.xfail(strict=True, reason="free-surface pressure closure (P0) not "
-                                      "implemented: tait_pressure is clamped at "
-                                      "p >= 0 across the deficit shell, so the "
-                                      "interior settles at ~0.57 sigma/R")
 def test_laplace_jump_within_15pct(report):
-    """Acceptance criterion for the open P0: every recorded case inside 15 %."""
-    for run in report["runs"]:
-        err = abs(run["absolute_time_average_tail"]["rel_error_pct"])
-        assert err < 15.0, (run["dx_m"], run["sound_speed"], err)
+    """P0 acceptance, now closed by the free-surface pressure closure.
+
+    The runs in ``report["runs"]`` are the *clamp-off* baseline: they miss by
+    ~34-38 % and that is the recorded defect this benchmark exists to expose.
+    The acceptance criterion therefore lives on the closure ladder
+    (``report["closure_study"]``), where the same drop, discretisation and
+    read-out with ``surface_pressure_closure=True`` has to land inside 15 %.
+
+    See ``docs/verification_laplace_free_surface_pressure.md``; the gates that
+    hold the closure study to account live in
+    ``tests/test_free_surface_pressure.py``.
+    """
+    study = report.get("closure_study")
+    assert study, ("report.json has no closure_study: run "
+                   "`python benchmarks/laplace_pressure_floor/run.py --closure-only`")
+    for row in study["ladder"]:
+        err = abs(row["on"]["rel_error_pct"])
+        assert err < 15.0, (row["dx_m"], row["sound_speed"], err)
+    # The baseline must keep failing: if the clamp-off runs ever pass, the
+    # decomposition (and the reason the closure exists) has to be revisited.
+    assert not any(run["absolute_time_average_tail"]["within_15pct"]
+                   for run in report["runs"])

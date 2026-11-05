@@ -2881,6 +2881,1692 @@
     }
   },
   "figures": [
-    "laplace_pressure_floor.png"
-  ]
+    "laplace_pressure_floor.png",
+    "laplace_free_surface_pressure.png"
+  ],
+  "closure_study": {
+    "reference_case": {
+      "dx_m": 0.002,
+      "sound_speed": 5.0
+    },
+    "reference_closure": {
+      "donors": "interior",
+      "layers": 2,
+      "threshold": 0.99
+    },
+    "corner_case": {
+      "dx_m": 0.002,
+      "sound_speed": 20.0
+    },
+    "corner_variants": [
+      {
+        "label": "one pass",
+        "closure": {
+          "enabled": true,
+          "donors": "interior",
+          "layers": 1,
+          "threshold": 0.99
+        },
+        "reading": {
+          "closure": {
+            "enabled": true,
+            "donors": "interior",
+            "layers": 1,
+            "threshold": 0.99
+          },
+          "delta_p_Pa": 334.17354047902904,
+          "rel_error_pct": -7.1740165336030435,
+          "within_3pct": false,
+          "within_15pct": true,
+          "rel_error_final_snapshot_pct": 44.63263829257152,
+          "bandA_rel_error_pct": -12.21025279104301,
+          "rho_core_over_rho0_minus_1": 0.0012641312239491942,
+          "compression_required": 0.0008975794345598143,
+          "compression_ratio": 1.4083781059100826,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 78,
+              "mean_pressure_Pa": 204.63440790101228,
+              "zero_pressure_fraction": 0.08974358974358974
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 49,
+              "mean_pressure_Pa": 170.47152637096963,
+              "zero_pressure_fraction": 0.12244897959183673
+            },
+            "core": {
+              "count": 92,
+              "mean_pressure_Pa": 520.6774978532575
+            }
+          },
+          "vmax_over_vref": 0.141933445277059,
+          "finite": true,
+          "steps": 1283,
+          "dt_s": 3.897116134060796e-05,
+          "h_m": 0.0026000000000000003,
+          "n_particles": 362
+        }
+      },
+      {
+        "label": "two passes (reference)",
+        "closure": {
+          "enabled": true,
+          "donors": "interior",
+          "layers": 2,
+          "threshold": 0.99
+        },
+        "reading": {
+          "closure": {
+            "enabled": true,
+            "donors": "interior",
+            "layers": 2,
+            "threshold": 0.99
+          },
+          "delta_p_Pa": 391.8054404257656,
+          "rel_error_pct": 8.834844562712666,
+          "within_3pct": false,
+          "within_15pct": true,
+          "rel_error_final_snapshot_pct": 142.81074637796232,
+          "bandA_rel_error_pct": 103.5470303083975,
+          "rho_core_over_rho0_minus_1": 0.002167603681644925,
+          "compression_required": 0.0008975794345598143,
+          "compression_ratio": 2.41494356731552,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 82,
+              "mean_pressure_Pa": 141.34937785043343,
+              "zero_pressure_fraction": 0.12195121951219512
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 48,
+              "mean_pressure_Pa": 91.33688331512154,
+              "zero_pressure_fraction": 0.375
+            },
+            "core": {
+              "count": 92,
+              "mean_pressure_Pa": 874.1186869606644
+            }
+          },
+          "vmax_over_vref": 0.3881285469675048,
+          "finite": true,
+          "steps": 1283,
+          "dt_s": 3.897116134060796e-05,
+          "h_m": 0.0026000000000000003,
+          "n_particles": 362
+        }
+      },
+      {
+        "label": "four passes",
+        "closure": {
+          "enabled": true,
+          "donors": "interior",
+          "layers": 4,
+          "threshold": 0.99
+        },
+        "reading": {
+          "closure": {
+            "enabled": true,
+            "donors": "interior",
+            "layers": 4,
+            "threshold": 0.99
+          },
+          "delta_p_Pa": 391.8054404257656,
+          "rel_error_pct": 8.834844562712666,
+          "within_3pct": false,
+          "within_15pct": true,
+          "rel_error_final_snapshot_pct": 142.81074637796232,
+          "bandA_rel_error_pct": 103.5470303083975,
+          "rho_core_over_rho0_minus_1": 0.002167603681644925,
+          "compression_required": 0.0008975794345598143,
+          "compression_ratio": 2.41494356731552,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 82,
+              "mean_pressure_Pa": 141.34937785043343,
+              "zero_pressure_fraction": 0.12195121951219512
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 48,
+              "mean_pressure_Pa": 91.33688331512154,
+              "zero_pressure_fraction": 0.375
+            },
+            "core": {
+              "count": 92,
+              "mean_pressure_Pa": 874.1186869606644
+            }
+          },
+          "vmax_over_vref": 0.3881285469675048,
+          "finite": true,
+          "steps": 1283,
+          "dt_s": 3.897116134060796e-05,
+          "h_m": 0.0026000000000000003,
+          "n_particles": 362
+        }
+      },
+      {
+        "label": "literal Adami (all donors)",
+        "closure": {
+          "enabled": true,
+          "donors": "all",
+          "layers": 2,
+          "threshold": 0.99
+        },
+        "reading": {
+          "closure": {
+            "enabled": true,
+            "donors": "all",
+            "layers": 2,
+            "threshold": 0.99
+          },
+          "delta_p_Pa": 287.4728116942682,
+          "rel_error_pct": -20.14644119603661,
+          "within_3pct": false,
+          "within_15pct": false,
+          "rel_error_final_snapshot_pct": -21.343029405987075,
+          "bandA_rel_error_pct": -77.00857138573463,
+          "rho_core_over_rho0_minus_1": 0.0007062254577043792,
+          "compression_required": 0.0008975794345598143,
+          "compression_ratio": 0.7868110949430589,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 108,
+              "mean_pressure_Pa": 200.3959511270912,
+              "zero_pressure_fraction": 0.037037037037037035
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 19,
+              "mean_pressure_Pa": 63.23500235686415,
+              "zero_pressure_fraction": 0.0
+            },
+            "core": {
+              "count": 90,
+              "mean_pressure_Pa": 283.16509413844653
+            }
+          },
+          "vmax_over_vref": 0.01995765033613898,
+          "finite": true,
+          "steps": 1283,
+          "dt_s": 3.897116134060796e-05,
+          "h_m": 0.0026000000000000003,
+          "n_particles": 362
+        }
+      }
+    ],
+    "criterion": "|Delta p - sigma/R| / (sigma/R) < 15 % (platform floor); < 3 % is the paper grade",
+    "ladder": [
+      {
+        "dx_m": 0.002,
+        "sound_speed": 20.0,
+        "off": {
+          "closure": {
+            "enabled": false,
+            "donors": "interior",
+            "layers": 2,
+            "threshold": 0.99
+          },
+          "delta_p_Pa": 223.64622876323088,
+          "rel_error_pct": -37.8760475657692,
+          "within_3pct": false,
+          "within_15pct": false,
+          "rel_error_final_snapshot_pct": -42.08308244578387,
+          "bandA_rel_error_pct": -96.82209551324705,
+          "rho_core_over_rho0_minus_1": 0.000512053363698195,
+          "compression_required": 0.0008975794345598143,
+          "compression_ratio": 0.570482504369447,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 113,
+              "mean_pressure_Pa": 197.0604470428674,
+              "zero_pressure_fraction": 0.4690265486725664
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 14,
+              "mean_pressure_Pa": 0.0,
+              "zero_pressure_fraction": 1.0
+            },
+            "core": {
+              "count": 88,
+              "mean_pressure_Pa": 208.50090319517804
+            }
+          },
+          "vmax_over_vref": 0.0299434340079459,
+          "finite": true,
+          "steps": 1283,
+          "dt_s": 3.897116134060796e-05,
+          "h_m": 0.0026000000000000003,
+          "n_particles": 362
+        },
+        "on": {
+          "closure": {
+            "enabled": true,
+            "donors": "interior",
+            "layers": 2,
+            "threshold": 0.99
+          },
+          "delta_p_Pa": 391.8054404257656,
+          "rel_error_pct": 8.834844562712666,
+          "within_3pct": false,
+          "within_15pct": true,
+          "rel_error_final_snapshot_pct": 142.81074637796232,
+          "bandA_rel_error_pct": 103.5470303083975,
+          "rho_core_over_rho0_minus_1": 0.002167603681644925,
+          "compression_required": 0.0008975794345598143,
+          "compression_ratio": 2.41494356731552,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 82,
+              "mean_pressure_Pa": 141.34937785043343,
+              "zero_pressure_fraction": 0.12195121951219512
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 48,
+              "mean_pressure_Pa": 91.33688331512154,
+              "zero_pressure_fraction": 0.375
+            },
+            "core": {
+              "count": 92,
+              "mean_pressure_Pa": 874.1186869606644
+            }
+          },
+          "vmax_over_vref": 0.3881285469675048,
+          "finite": true,
+          "steps": 1283,
+          "dt_s": 3.897116134060796e-05,
+          "h_m": 0.0026000000000000003,
+          "n_particles": 362
+        },
+        "gain_points": 46.710892128481866
+      },
+      {
+        "dx_m": 0.002,
+        "sound_speed": 10.0,
+        "off": {
+          "closure": {
+            "enabled": false,
+            "donors": "interior",
+            "layers": 2,
+            "threshold": 0.99
+          },
+          "delta_p_Pa": 225.97106187211608,
+          "rel_error_pct": -37.23026059107887,
+          "within_3pct": false,
+          "within_15pct": false,
+          "rel_error_final_snapshot_pct": -50.507441713826694,
+          "bandA_rel_error_pct": -101.02626470285436,
+          "rho_core_over_rho0_minus_1": 0.0017701670263752245,
+          "compression_required": 0.0035617158184919617,
+          "compression_ratio": 0.49699838970440857,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 115,
+              "mean_pressure_Pa": 181.86776276049955,
+              "zero_pressure_fraction": 0.4782608695652174
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 12,
+              "mean_pressure_Pa": 0.0,
+              "zero_pressure_fraction": 1.0
+            },
+            "core": {
+              "count": 88,
+              "mean_pressure_Pa": 178.1732098302239
+            }
+          },
+          "vmax_over_vref": 0.020616043260284763,
+          "finite": true,
+          "steps": 642,
+          "dt_s": 7.788161993769472e-05,
+          "h_m": 0.0026000000000000003,
+          "n_particles": 362
+        },
+        "on": {
+          "closure": {
+            "enabled": true,
+            "donors": "interior",
+            "layers": 2,
+            "threshold": 0.99
+          },
+          "delta_p_Pa": 345.48131588953737,
+          "rel_error_pct": -4.032967808461842,
+          "within_3pct": false,
+          "within_15pct": true,
+          "rel_error_final_snapshot_pct": -6.6754211690745215,
+          "bandA_rel_error_pct": -67.17263019604688,
+          "rho_core_over_rho0_minus_1": 0.003324880248923412,
+          "compression_required": 0.0035617158184919617,
+          "compression_ratio": 0.9335052032116289,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 80,
+              "mean_pressure_Pa": 217.7899524971005,
+              "zero_pressure_fraction": 0.0
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 47,
+              "mean_pressure_Pa": 175.14262983653944,
+              "zero_pressure_fraction": 0.0
+            },
+            "core": {
+              "count": 94,
+              "mean_pressure_Pa": 335.9684837913317
+            }
+          },
+          "vmax_over_vref": 0.05955076923256016,
+          "finite": true,
+          "steps": 642,
+          "dt_s": 7.788161993769472e-05,
+          "h_m": 0.0026000000000000003,
+          "n_particles": 362
+        },
+        "gain_points": 33.197292782617026
+      },
+      {
+        "dx_m": 0.002,
+        "sound_speed": 5.0,
+        "off": {
+          "closure": {
+            "enabled": false,
+            "donors": "interior",
+            "layers": 2,
+            "threshold": 0.99
+          },
+          "delta_p_Pa": 237.63649946240471,
+          "rel_error_pct": -33.989861260443135,
+          "within_3pct": false,
+          "within_15pct": false,
+          "rel_error_final_snapshot_pct": -43.60907393506623,
+          "bandA_rel_error_pct": -88.03320886403142,
+          "rho_core_over_rho0_minus_1": 0.007926298927420694,
+          "compression_required": 0.013814143883756014,
+          "compression_ratio": 0.573781407962689,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 123,
+              "mean_pressure_Pa": 159.9268857442747,
+              "zero_pressure_fraction": 0.5121951219512195
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 4,
+              "mean_pressure_Pa": 0.0,
+              "zero_pressure_fraction": 1.0
+            },
+            "core": {
+              "count": 92,
+              "mean_pressure_Pa": 203.00733383376158
+            }
+          },
+          "vmax_over_vref": 0.026470252980296146,
+          "finite": true,
+          "steps": 592,
+          "dt_s": 8.445945945945948e-05,
+          "h_m": 0.0026000000000000003,
+          "n_particles": 362,
+          "trace": {
+            "t": [
+              0.002533783783783784,
+              0.12922297297297297,
+              0.25591216216216217,
+              0.38260135135135137,
+              0.5092905405405406,
+              0.6359797297297298,
+              0.7626689189189189,
+              0.8893581081081081,
+              1.0160472972972974,
+              1.1427364864864864,
+              1.2694256756756759,
+              1.396114864864865,
+              1.5
+            ],
+            "absolute": [
+              0.0,
+              826.8437892755395,
+              122.4381337349816,
+              119.30025953562564,
+              525.9851484051038,
+              38.01077002830191,
+              437.99953955465134,
+              180.25507227486284,
+              232.6200615441454,
+              308.84659201138635,
+              146.118821196685,
+              297.58968872604527,
+              203.00733383376158
+            ],
+            "bandA": [
+              0.0,
+              558.1520843432611,
+              -65.69966950968934,
+              -113.52274025978097,
+              260.9095256364756,
+              -138.51869958484562,
+              198.186257188912,
+              -5.738064769789474,
+              34.413536342665935,
+              111.87203272593075,
+              -21.467766475364925,
+              116.72116793217504,
+              43.08044808948688
+            ],
+            "bandB": [
+              0.0,
+              162.9242709957066,
+              -72.87583475292796,
+              -134.75785346256447,
+              149.70826776443556,
+              -94.53310531717901,
+              122.25938916419142,
+              0.5953200189624113,
+              19.09429019184887,
+              73.93256740004216,
+              -15.18399335257837,
+              68.26090411221753,
+              23.672564465983612
+            ],
+            "vmax_over_vref": [
+              0.03677801891941312,
+              0.13345691867072365,
+              0.1204678636639472,
+              0.11368132948222961,
+              0.06640639208894901,
+              0.032770847104932985,
+              0.03781403209118138,
+              0.04376863894547763,
+              0.045454762518734676,
+              0.034466454175014066,
+              0.021507152455212522,
+              0.014815357466081388,
+              0.026470252980296146
+            ],
+            "rho_core_rel": [
+              -6.661338147750939e-16,
+              0.030190844435963315,
+              0.004825685071349506,
+              0.00407452442518319,
+              0.019817996123740134,
+              0.0014621974851256603,
+              0.016661509720782064,
+              0.007057032896318649,
+              0.009053182085939637,
+              0.011917693088590697,
+              0.0057410672702766785,
+              0.011497234312639826,
+              0.007926298927420694
+            ]
+          },
+          "pressure_profile": [
+            {
+              "r_over_R_mid": 0.041666666666666664,
+              "count": 3,
+              "mean": 205.20149949012713,
+              "std": 6.391277128565166
+            },
+            {
+              "r_over_R_mid": 0.125,
+              "count": 7,
+              "mean": 185.0392796371366,
+              "std": 4.436810925832671
+            },
+            {
+              "r_over_R_mid": 0.20833333333333331,
+              "count": 13,
+              "mean": 196.7848623301967,
+              "std": 10.574521668547872
+            },
+            {
+              "r_over_R_mid": 0.29166666666666663,
+              "count": 21,
+              "mean": 200.69749257495883,
+              "std": 12.748246857907821
+            },
+            {
+              "r_over_R_mid": 0.375,
+              "count": 19,
+              "mean": 172.218932900191,
+              "std": 6.919936579970503
+            },
+            {
+              "r_over_R_mid": 0.45833333333333337,
+              "count": 29,
+              "mean": 231.75120611397958,
+              "std": 19.368623723279327
+            },
+            {
+              "r_over_R_mid": 0.5416666666666667,
+              "count": 31,
+              "mean": 159.17756375280416,
+              "std": 40.318290759665494
+            },
+            {
+              "r_over_R_mid": 0.625,
+              "count": 39,
+              "mean": 232.76379154045785,
+              "std": 80.97192066802532
+            },
+            {
+              "r_over_R_mid": 0.7083333333333333,
+              "count": 41,
+              "mean": 208.0580023641011,
+              "std": 93.39831000987095
+            },
+            {
+              "r_over_R_mid": 0.7916666666666667,
+              "count": 47,
+              "mean": 153.02444052128348,
+              "std": 141.2021979887115
+            },
+            {
+              "r_over_R_mid": 0.875,
+              "count": 54,
+              "mean": 265.3161679961816,
+              "std": 142.08555013784277
+            },
+            {
+              "r_over_R_mid": 0.9583333333333333,
+              "count": 58,
+              "mean": 3.4800079326548885,
+              "std": 26.502950821706154
+            }
+          ],
+          "density_profile": [
+            {
+              "r_over_R_mid": 0.041666666666666664,
+              "count": 3,
+              "mean": 1.008012731873321,
+              "std": 0.00024359572662680952
+            },
+            {
+              "r_over_R_mid": 0.125,
+              "count": 7,
+              "mean": 1.0072422313715492,
+              "std": 0.0001699215555185548
+            },
+            {
+              "r_over_R_mid": 0.20833333333333331,
+              "count": 13,
+              "mean": 1.0076911700305282,
+              "std": 0.0004040936099474321
+            },
+            {
+              "r_over_R_mid": 0.29166666666666663,
+              "count": 21,
+              "mean": 1.0078403537809673,
+              "std": 0.000486733136463282
+            },
+            {
+              "r_over_R_mid": 0.375,
+              "count": 19,
+              "mean": 1.006750301626844,
+              "std": 0.000265734044430328
+            },
+            {
+              "r_over_R_mid": 0.45833333333333337,
+              "count": 29,
+              "mean": 1.0090205970825756,
+              "std": 0.0007346068713511718
+            },
+            {
+              "r_over_R_mid": 0.5416666666666667,
+              "count": 31,
+              "mean": 1.0062417740971983,
+              "std": 0.001553123892340729
+            },
+            {
+              "r_over_R_mid": 0.625,
+              "count": 39,
+              "mean": 1.0090333268556106,
+              "std": 0.0030621227708516664
+            },
+            {
+              "r_over_R_mid": 0.7083333333333333,
+              "count": 41,
+              "mean": 1.008084694020717,
+              "std": 0.003576712176489243
+            },
+            {
+              "r_over_R_mid": 0.7916666666666667,
+              "count": 47,
+              "mean": 1.0057649618881521,
+              "std": 0.0055780988371055586
+            },
+            {
+              "r_over_R_mid": 0.875,
+              "count": 54,
+              "mean": 0.99467499664893,
+              "std": 0.03793206477222025
+            },
+            {
+              "r_over_R_mid": 0.9583333333333333,
+              "count": 58,
+              "mean": 0.83816710943135,
+              "std": 0.04152100611495785
+            }
+          ]
+        },
+        "on": {
+          "closure": {
+            "enabled": true,
+            "donors": "interior",
+            "layers": 2,
+            "threshold": 0.99
+          },
+          "delta_p_Pa": 377.48163303605736,
+          "rel_error_pct": 4.8560091766825995,
+          "within_3pct": false,
+          "within_15pct": true,
+          "rel_error_final_snapshot_pct": 3.5089315067469014,
+          "bandA_rel_error_pct": -60.135294469632825,
+          "rho_core_over_rho0_minus_1": 0.014277621171972843,
+          "compression_required": 0.013814143883756014,
+          "compression_ratio": 1.0335509237573404,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 74,
+              "mean_pressure_Pa": 229.11921351496702,
+              "zero_pressure_fraction": 0.0
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 43,
+              "mean_pressure_Pa": 172.74202588882324,
+              "zero_pressure_fraction": 0.0
+            },
+            "core": {
+              "count": 94,
+              "mean_pressure_Pa": 372.63215342428884
+            }
+          },
+          "vmax_over_vref": 0.10385716485375503,
+          "finite": true,
+          "steps": 592,
+          "dt_s": 8.445945945945948e-05,
+          "h_m": 0.0026000000000000003,
+          "n_particles": 362,
+          "trace": {
+            "t": [
+              0.002533783783783784,
+              0.12922297297297297,
+              0.25591216216216217,
+              0.38260135135135137,
+              0.5092905405405406,
+              0.6359797297297298,
+              0.7626689189189189,
+              0.8893581081081081,
+              1.0160472972972974,
+              1.1427364864864864,
+              1.2694256756756759,
+              1.396114864864865,
+              1.5
+            ],
+            "absolute": [
+              0.0,
+              711.2615693221201,
+              154.11453207846296,
+              418.62973274097226,
+              351.4392108441199,
+              305.6932343505043,
+              424.8182390208523,
+              320.48070497747665,
+              424.4207231794698,
+              335.22143620165997,
+              399.2322588687113,
+              355.90159350615704,
+              372.63215342428884
+            ],
+            "bandA": [
+              0.0,
+              466.32898449062225,
+              5.439930214435975,
+              181.79433857291224,
+              160.02123289193295,
+              96.04624158550337,
+              210.2060225506352,
+              110.39611750382957,
+              199.94433137267097,
+              121.15020930816968,
+              171.92168177235476,
+              136.31207320453026,
+              143.51293990932183
+            ],
+            "bandB": [
+              0.0,
+              261.81110855895923,
+              -99.76422874448355,
+              41.9700199539609,
+              6.508356838429563,
+              -30.54133070484437,
+              48.738761534278865,
+              -24.046869600438527,
+              38.1998884816914,
+              -20.772654307581035,
+              24.386979155699066,
+              3.3163410793260937,
+              17.977628616097093
+            ],
+            "vmax_over_vref": [
+              0.03677801891941312,
+              0.05565246104314937,
+              0.0784251659763952,
+              0.07829495297862757,
+              0.07832441257773792,
+              0.051498692879826266,
+              0.07054724148295985,
+              0.06122557514643087,
+              0.09148111802553661,
+              0.08972195684949612,
+              0.09455248916533805,
+              0.09601270407206298,
+              0.10385716485375503
+            ],
+            "rho_core_rel": [
+              -6.661338147750939e-16,
+              0.026266264353291824,
+              0.006051857066229571,
+              0.015959868266824495,
+              0.013498390384535153,
+              0.011801367276527586,
+              0.01618459067085576,
+              0.012351780858422812,
+              0.016170050308441875,
+              0.012898405902030285,
+              0.015252407456442407,
+              0.013662239460212389,
+              0.014277621171972843
+            ]
+          },
+          "pressure_profile": [
+            {
+              "r_over_R_mid": 0.041666666666666664,
+              "count": 3,
+              "mean": 372.98119339718454,
+              "std": 3.9342174311838307
+            },
+            {
+              "r_over_R_mid": 0.125,
+              "count": 9,
+              "mean": 380.76288222694916,
+              "std": 2.5755491443105356
+            },
+            {
+              "r_over_R_mid": 0.20833333333333331,
+              "count": 13,
+              "mean": 373.4942010361571,
+              "std": 3.418243449340569
+            },
+            {
+              "r_over_R_mid": 0.29166666666666663,
+              "count": 17,
+              "mean": 376.52191838469275,
+              "std": 8.274228052632623
+            },
+            {
+              "r_over_R_mid": 0.375,
+              "count": 25,
+              "mean": 379.2972083921367,
+              "std": 15.242255509223675
+            },
+            {
+              "r_over_R_mid": 0.45833333333333337,
+              "count": 27,
+              "mean": 360.8476098457709,
+              "std": 25.2525531429849
+            },
+            {
+              "r_over_R_mid": 0.5416666666666667,
+              "count": 30,
+              "mean": 401.4175880267434,
+              "std": 49.239918319189606
+            },
+            {
+              "r_over_R_mid": 0.625,
+              "count": 40,
+              "mean": 335.5079003082119,
+              "std": 70.48160168884475
+            },
+            {
+              "r_over_R_mid": 0.7083333333333333,
+              "count": 38,
+              "mean": 456.4634339896438,
+              "std": 94.84510346115508
+            },
+            {
+              "r_over_R_mid": 0.7916666666666667,
+              "count": 54,
+              "mean": 270.50910335782896,
+              "std": 148.9554830741211
+            },
+            {
+              "r_over_R_mid": 0.875,
+              "count": 49,
+              "mean": 229.79397423008294,
+              "std": 51.53610638760835
+            },
+            {
+              "r_over_R_mid": 0.9583333333333333,
+              "count": 44,
+              "mean": 180.11144131648368,
+              "std": 21.655002392389132
+            }
+          ],
+          "density_profile": [
+            {
+              "r_over_R_mid": 0.041666666666666664,
+              "count": 3,
+              "mean": 1.014291643816293,
+              "std": 0.00014456010067307823
+            },
+            {
+              "r_over_R_mid": 0.125,
+              "count": 9,
+              "mean": 1.0145772823316666,
+              "std": 9.441754097872147e-05
+            },
+            {
+              "r_over_R_mid": 0.20833333333333331,
+              "count": 13,
+              "mean": 1.0143104863826577,
+              "std": 0.00012555613968733839
+            },
+            {
+              "r_over_R_mid": 0.29166666666666663,
+              "count": 17,
+              "mean": 1.0144214476305855,
+              "std": 0.00030370039597209226
+            },
+            {
+              "r_over_R_mid": 0.375,
+              "count": 25,
+              "mean": 1.0145226574528892,
+              "std": 0.0005596876603128056
+            },
+            {
+              "r_over_R_mid": 0.45833333333333337,
+              "count": 27,
+              "mean": 1.0138429092116599,
+              "std": 0.0009280119693882732
+            },
+            {
+              "r_over_R_mid": 0.5416666666666667,
+              "count": 30,
+              "mean": 1.015323791781546,
+              "std": 0.0018067273852607525
+            },
+            {
+              "r_over_R_mid": 0.625,
+              "count": 40,
+              "mean": 1.012889903404765,
+              "std": 0.002598968221902308
+            },
+            {
+              "r_over_R_mid": 0.7083333333333333,
+              "count": 38,
+              "mean": 1.0172968092301853,
+              "std": 0.0034594891068222915
+            },
+            {
+              "r_over_R_mid": 0.7916666666666667,
+              "count": 54,
+              "mean": 0.9960897570574039,
+              "std": 0.045743188782012736
+            },
+            {
+              "r_over_R_mid": 0.875,
+              "count": 49,
+              "mean": 0.8904249327709182,
+              "std": 0.06788278493823963
+            },
+            {
+              "r_over_R_mid": 0.9583333333333333,
+              "count": 44,
+              "mean": 0.5890610314782105,
+              "std": 0.13216059618678633
+            }
+          ]
+        },
+        "gain_points": 38.84587043712573
+      },
+      {
+        "dx_m": 0.0015,
+        "sound_speed": 20.0,
+        "off": {
+          "closure": {
+            "enabled": false,
+            "donors": "interior",
+            "layers": 2,
+            "threshold": 0.99
+          },
+          "delta_p_Pa": 222.85070337711892,
+          "rel_error_pct": -38.09702683968919,
+          "within_3pct": false,
+          "within_15pct": false,
+          "rel_error_final_snapshot_pct": -43.551332384905045,
+          "bandA_rel_error_pct": -90.91010521393821,
+          "rho_core_over_rho0_minus_1": 0.0005070695868867325,
+          "compression_required": 0.0008975794345598143,
+          "compression_ratio": 0.5649300411338042,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 178,
+              "mean_pressure_Pa": 170.4915821845194,
+              "zero_pressure_fraction": 0.47752808988764045
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 51,
+              "mean_pressure_Pa": 0.0,
+              "zero_pressure_fraction": 1.0
+            },
+            "core": {
+              "count": 159,
+              "mean_pressure_Pa": 203.21520341434183
+            }
+          },
+          "vmax_over_vref": 0.025407391276862527,
+          "finite": true,
+          "steps": 1710,
+          "dt_s": 2.923976608187135e-05,
+          "h_m": 0.0019500000000000001,
+          "n_particles": 642
+        },
+        "on": {
+          "closure": {
+            "enabled": true,
+            "donors": "interior",
+            "layers": 2,
+            "threshold": 0.99
+          },
+          "delta_p_Pa": 347.73018072766973,
+          "rel_error_pct": -3.408283131202852,
+          "within_3pct": false,
+          "within_15pct": true,
+          "rel_error_final_snapshot_pct": 6.340018301362768,
+          "bandA_rel_error_pct": -76.89089585303253,
+          "rho_core_over_rho0_minus_1": 0.0009540019838589764,
+          "compression_required": 0.0008975794345598143,
+          "compression_ratio": 1.062860786607519,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 163,
+              "mean_pressure_Pa": 299.6312909558231,
+              "zero_pressure_fraction": 0.018404907975460124
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 68,
+              "mean_pressure_Pa": 221.19200516701272,
+              "zero_pressure_fraction": 0.014705882352941176
+            },
+            "core": {
+              "count": 160,
+              "mean_pressure_Pa": 382.82406588490596
+            }
+          },
+          "vmax_over_vref": 0.08950309149072329,
+          "finite": true,
+          "steps": 1710,
+          "dt_s": 2.923976608187135e-05,
+          "h_m": 0.0019500000000000001,
+          "n_particles": 642
+        },
+        "gain_points": 34.68874370848634
+      },
+      {
+        "dx_m": 0.0015,
+        "sound_speed": 10.0,
+        "off": {
+          "closure": {
+            "enabled": false,
+            "donors": "interior",
+            "layers": 2,
+            "threshold": 0.99
+          },
+          "delta_p_Pa": 229.7096819885495,
+          "rel_error_pct": -36.191755003180695,
+          "within_3pct": false,
+          "within_15pct": false,
+          "rel_error_final_snapshot_pct": -32.6476199480476,
+          "bandA_rel_error_pct": -81.84858019879483,
+          "rho_core_over_rho0_minus_1": 0.0024068833338437567,
+          "compression_required": 0.0035617158184919617,
+          "compression_ratio": 0.6757651245917863,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 182,
+              "mean_pressure_Pa": 177.12345690269004,
+              "zero_pressure_fraction": 0.3626373626373626
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 46,
+              "mean_pressure_Pa": 0.0,
+              "zero_pressure_fraction": 1.0
+            },
+            "core": {
+              "count": 160,
+              "mean_pressure_Pa": 242.46856818702864
+            }
+          },
+          "vmax_over_vref": 0.02345952405562739,
+          "finite": true,
+          "steps": 1052,
+          "dt_s": 4.752851711026617e-05,
+          "h_m": 0.0019500000000000001,
+          "n_particles": 642
+        },
+        "on": {
+          "closure": {
+            "enabled": true,
+            "donors": "interior",
+            "layers": 2,
+            "threshold": 0.99
+          },
+          "delta_p_Pa": 343.4015189085752,
+          "rel_error_pct": -4.61068919206244,
+          "within_3pct": false,
+          "within_15pct": true,
+          "rel_error_final_snapshot_pct": -10.712761571679168,
+          "bandA_rel_error_pct": -76.6256841564061,
+          "rho_core_over_rho0_minus_1": 0.003183620277212418,
+          "compression_required": 0.0035617158184919617,
+          "compression_ratio": 0.8938445511804952,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 161,
+              "mean_pressure_Pa": 237.28652130501692,
+              "zero_pressure_fraction": 0.0
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 68,
+              "mean_pressure_Pa": 162.6602455296443,
+              "zero_pressure_fraction": 0.0
+            },
+            "core": {
+              "count": 159,
+              "mean_pressure_Pa": 321.434058341955
+            }
+          },
+          "vmax_over_vref": 0.0983879436266799,
+          "finite": true,
+          "steps": 1052,
+          "dt_s": 4.752851711026617e-05,
+          "h_m": 0.0019500000000000001,
+          "n_particles": 642
+        },
+        "gain_points": 31.581065811118254
+      },
+      {
+        "dx_m": 0.0015,
+        "sound_speed": 5.0,
+        "off": {
+          "closure": {
+            "enabled": false,
+            "donors": "interior",
+            "layers": 2,
+            "threshold": 0.99
+          },
+          "delta_p_Pa": 225.31935036150904,
+          "rel_error_pct": -37.41129156624749,
+          "within_3pct": false,
+          "within_15pct": false,
+          "rel_error_final_snapshot_pct": -50.1134776496046,
+          "bandA_rel_error_pct": -93.8519730053582,
+          "rho_core_over_rho0_minus_1": 0.007033211835793418,
+          "compression_required": 0.013814143883756014,
+          "compression_ratio": 0.509131213267855,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 188,
+              "mean_pressure_Pa": 157.45858328071296,
+              "zero_pressure_fraction": 0.3191489361702128
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 36,
+              "mean_pressure_Pa": 0.0,
+              "zero_pressure_fraction": 1.0
+            },
+            "core": {
+              "count": 162,
+              "mean_pressure_Pa": 179.59148046142343
+            }
+          },
+          "vmax_over_vref": 0.030652819045413674,
+          "finite": true,
+          "steps": 1052,
+          "dt_s": 4.752851711026617e-05,
+          "h_m": 0.0019500000000000001,
+          "n_particles": 642
+        },
+        "on": {
+          "closure": {
+            "enabled": true,
+            "donors": "interior",
+            "layers": 2,
+            "threshold": 0.99
+          },
+          "delta_p_Pa": 356.73292801896713,
+          "rel_error_pct": -0.9075199947313529,
+          "within_3pct": true,
+          "within_15pct": true,
+          "rel_error_final_snapshot_pct": -4.265868228467204,
+          "bandA_rel_error_pct": -69.14030632200449,
+          "rho_core_over_rho0_minus_1": 0.013247255033303595,
+          "compression_required": 0.013814143883756014,
+          "compression_ratio": 0.9589631572377771,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 155,
+              "mean_pressure_Pa": 233.54797713673423,
+              "zero_pressure_fraction": 0.0
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 69,
+              "mean_pressure_Pa": 162.77183449413,
+              "zero_pressure_fraction": 0.0
+            },
+            "core": {
+              "count": 163,
+              "mean_pressure_Pa": 344.64287437751807
+            }
+          },
+          "vmax_over_vref": 0.10516630181266917,
+          "finite": true,
+          "steps": 1052,
+          "dt_s": 4.752851711026617e-05,
+          "h_m": 0.0019500000000000001,
+          "n_particles": 642
+        },
+        "gain_points": 36.50377157151614
+      }
+    ],
+    "variants": [
+      {
+        "label": "interior donors, 2 passes (reference)",
+        "closure": {
+          "enabled": true,
+          "donors": "interior",
+          "layers": 2,
+          "threshold": 0.99
+        },
+        "reading": {
+          "closure": {
+            "enabled": true,
+            "donors": "interior",
+            "layers": 2,
+            "threshold": 0.99
+          },
+          "delta_p_Pa": 377.48163303605736,
+          "rel_error_pct": 4.8560091766825995,
+          "within_3pct": false,
+          "within_15pct": true,
+          "rel_error_final_snapshot_pct": 3.5089315067469014,
+          "bandA_rel_error_pct": -60.135294469632825,
+          "rho_core_over_rho0_minus_1": 0.014277621171972843,
+          "compression_required": 0.013814143883756014,
+          "compression_ratio": 1.0335509237573404,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 74,
+              "mean_pressure_Pa": 229.11921351496702,
+              "zero_pressure_fraction": 0.0
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 43,
+              "mean_pressure_Pa": 172.74202588882324,
+              "zero_pressure_fraction": 0.0
+            },
+            "core": {
+              "count": 94,
+              "mean_pressure_Pa": 372.63215342428884
+            }
+          },
+          "vmax_over_vref": 0.10385716485375503,
+          "finite": true,
+          "steps": 592,
+          "dt_s": 8.445945945945948e-05,
+          "h_m": 0.0026000000000000003,
+          "n_particles": 362
+        }
+      },
+      {
+        "label": "literal Adami: every neighbour donates",
+        "closure": {
+          "enabled": true,
+          "donors": "all",
+          "layers": 2,
+          "threshold": 0.99
+        },
+        "reading": {
+          "closure": {
+            "enabled": true,
+            "donors": "all",
+            "layers": 2,
+            "threshold": 0.99
+          },
+          "delta_p_Pa": 288.505329719233,
+          "rel_error_pct": -19.859630633546395,
+          "within_3pct": false,
+          "within_15pct": false,
+          "rel_error_final_snapshot_pct": -33.992132035082165,
+          "bandA_rel_error_pct": -80.55714066472652,
+          "rho_core_over_rho0_minus_1": 0.009243690858182774,
+          "compression_required": 0.013814143883756014,
+          "compression_ratio": 0.6691468494875303,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 112,
+              "mean_pressure_Pa": 167.63403106671967,
+              "zero_pressure_fraction": 0.0
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 15,
+              "mean_pressure_Pa": 74.58833412417302,
+              "zero_pressure_fraction": 0.0
+            },
+            "core": {
+              "count": 92,
+              "mean_pressure_Pa": 237.6283246737042
+            }
+          },
+          "vmax_over_vref": 0.023154896594372584,
+          "finite": true,
+          "steps": 592,
+          "dt_s": 8.445945945945948e-05,
+          "h_m": 0.0026000000000000003,
+          "n_particles": 362
+        }
+      },
+      {
+        "label": "one pass only",
+        "closure": {
+          "enabled": true,
+          "donors": "interior",
+          "layers": 1,
+          "threshold": 0.99
+        },
+        "reading": {
+          "closure": {
+            "enabled": true,
+            "donors": "interior",
+            "layers": 1,
+            "threshold": 0.99
+          },
+          "delta_p_Pa": 377.4959463222448,
+          "rel_error_pct": 4.8599850895124375,
+          "within_3pct": false,
+          "within_15pct": true,
+          "rel_error_final_snapshot_pct": 3.501783535392096,
+          "bandA_rel_error_pct": -60.132376522528766,
+          "rho_core_over_rho0_minus_1": 0.014276673738772283,
+          "compression_required": 0.013814143883756014,
+          "compression_ratio": 1.0334823394709358,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 74,
+              "mean_pressure_Pa": 229.08297620851508,
+              "zero_pressure_fraction": 0.0
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 43,
+              "mean_pressure_Pa": 172.71790172717425,
+              "zero_pressure_fraction": 0.0
+            },
+            "core": {
+              "count": 94,
+              "mean_pressure_Pa": 372.60642072741155
+            }
+          },
+          "vmax_over_vref": 0.10381594481926003,
+          "finite": true,
+          "steps": 592,
+          "dt_s": 8.445945945945948e-05,
+          "h_m": 0.0026000000000000003,
+          "n_particles": 362
+        }
+      },
+      {
+        "label": "three passes",
+        "closure": {
+          "enabled": true,
+          "donors": "interior",
+          "layers": 3,
+          "threshold": 0.99
+        },
+        "reading": {
+          "closure": {
+            "enabled": true,
+            "donors": "interior",
+            "layers": 3,
+            "threshold": 0.99
+          },
+          "delta_p_Pa": 377.48163303605736,
+          "rel_error_pct": 4.8560091766825995,
+          "within_3pct": false,
+          "within_15pct": true,
+          "rel_error_final_snapshot_pct": 3.5089315067469014,
+          "bandA_rel_error_pct": -60.135294469632825,
+          "rho_core_over_rho0_minus_1": 0.014277621171972843,
+          "compression_required": 0.013814143883756014,
+          "compression_ratio": 1.0335509237573404,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 74,
+              "mean_pressure_Pa": 229.11921351496702,
+              "zero_pressure_fraction": 0.0
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 43,
+              "mean_pressure_Pa": 172.74202588882324,
+              "zero_pressure_fraction": 0.0
+            },
+            "core": {
+              "count": 94,
+              "mean_pressure_Pa": 372.63215342428884
+            }
+          },
+          "vmax_over_vref": 0.10385716485375503,
+          "finite": true,
+          "steps": 592,
+          "dt_s": 8.445945945945948e-05,
+          "h_m": 0.0026000000000000003,
+          "n_particles": 362
+        }
+      },
+      {
+        "label": "receiver threshold 0.95 rho0",
+        "closure": {
+          "enabled": true,
+          "donors": "interior",
+          "layers": 2,
+          "threshold": 0.95
+        },
+        "reading": {
+          "closure": {
+            "enabled": true,
+            "donors": "interior",
+            "layers": 2,
+            "threshold": 0.95
+          },
+          "delta_p_Pa": 318.8877952055101,
+          "rel_error_pct": -11.420056887358308,
+          "within_3pct": false,
+          "within_15pct": true,
+          "rel_error_final_snapshot_pct": -23.62307117067276,
+          "bandA_rel_error_pct": -70.78286914240327,
+          "rho_core_over_rho0_minus_1": 0.010651114032200093,
+          "compression_required": 0.013814143883756014,
+          "compression_ratio": 0.7710296144174875,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 104,
+              "mean_pressure_Pa": 169.77527269822986,
+              "zero_pressure_fraction": 0.16346153846153846
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 22,
+              "mean_pressure_Pa": 125.06999234548876,
+              "zero_pressure_fraction": 0.0
+            },
+            "core": {
+              "count": 92,
+              "mean_pressure_Pa": 274.95694378557806
+            }
+          },
+          "vmax_over_vref": 0.02195839315085046,
+          "finite": true,
+          "steps": 592,
+          "dt_s": 8.445945945945948e-05,
+          "h_m": 0.0026000000000000003,
+          "n_particles": 362
+        }
+      },
+      {
+        "label": "receiver threshold 0.995 rho0",
+        "closure": {
+          "enabled": true,
+          "donors": "interior",
+          "layers": 2,
+          "threshold": 0.995
+        },
+        "reading": {
+          "closure": {
+            "enabled": true,
+            "donors": "interior",
+            "layers": 2,
+            "threshold": 0.995
+          },
+          "delta_p_Pa": 377.25638973997206,
+          "rel_error_pct": 4.793441594436684,
+          "within_3pct": false,
+          "within_15pct": true,
+          "rel_error_final_snapshot_pct": 4.427440891689748,
+          "bandA_rel_error_pct": -59.309100603466234,
+          "rho_core_over_rho0_minus_1": 0.01439936206086756,
+          "compression_required": 0.013814143883756014,
+          "compression_ratio": 1.042363694922832,
+          "surface": {
+            "shellA": {
+              "r_range": [
+                0.8,
+                0.95
+              ],
+              "count": 74,
+              "mean_pressure_Pa": 229.45154938256152,
+              "zero_pressure_fraction": 0.0
+            },
+            "outer": {
+              "r_range": [
+                0.95,
+                1.05
+              ],
+              "count": 47,
+              "mean_pressure_Pa": 178.28609760845845,
+              "zero_pressure_fraction": 0.0
+            },
+            "core": {
+              "count": 90,
+              "mean_pressure_Pa": 375.9387872100831
+            }
+          },
+          "vmax_over_vref": 0.1069578761723414,
+          "finite": true,
+          "steps": 592,
+          "dt_s": 8.445945945945948e-05,
+          "h_m": 0.0026000000000000003,
+          "n_particles": 362
+        }
+      }
+    ],
+    "verdict": {
+      "cases": 6,
+      "passing_15pct": 6,
+      "all_pass_15pct": true,
+      "all_pass_3pct": false,
+      "mean_abs_error_off_pct": 36.799373804401434,
+      "mean_abs_error_on_pct": 4.441718977642291,
+      "max_abs_error_on_pct": 8.834844562712666,
+      "min_abs_error_on_pct": 0.9075199947313529,
+      "best_case": {
+        "dx_m": 0.0015,
+        "sound_speed": 5.0,
+        "rel_error_pct": -0.9075199947313529
+      },
+      "worst_case": {
+        "dx_m": 0.002,
+        "sound_speed": 20.0,
+        "rel_error_pct": 8.834844562712666
+      },
+      "compression_ratio_range_on": [
+        0.8938445511804952,
+        2.41494356731552
+      ],
+      "shell_fully_clamped_off": true,
+      "shell_mean_pressure_off_Pa_range": [
+        0.0,
+        0.0
+      ]
+    }
+  }
 }
