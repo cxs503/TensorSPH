@@ -1,0 +1,19 @@
+# m3793 test evidence (2026-11-05T02:04Z)
+
+## merged tree — PYTHONPATH=src pytest tests/test_laplace_law.py -q
+9 passed, 1 xfailed, 2 warnings in 48.04s   (run 2026-11-05T02:02Z, merged tree)
+
+## baseline tree (unmerged origin/main, /tmp/base_m3793) — same command
+9 passed, 1 xfailed, 2 warnings in 29.68s   (run 2026-11-05T02:02Z)
+
+## merged tree — PYTHONPATH=src pytest tests/test_laplace_resolution_ladder.py -q
+9 passed, 1 warning in 0.04s   (run 2026-11-05T02:02Z)
+
+## merged tree — python3 -m ruff check .   (the CI lint gate)
+All checks passed!
+## baseline tree — python3 -m ruff check .
+All checks passed!
+
+## full suite (362 tests, -n 16) — started 01:55Z on both trees
+merged  : ...........................x............. [ 79%] .......................................x..x............................
+baseline: ................................................. [ 81%] ........................x............xx......................F.
