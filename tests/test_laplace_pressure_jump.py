@@ -15,6 +15,7 @@ tests guard three things:
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import math
 from pathlib import Path
@@ -217,9 +218,24 @@ def test_document_exists_and_quotes_the_report(baseline):
     assert f"{baseline['corrected_definition']['rel_error_pct']:+.1f}%" in text
 
 
-def test_figure_exists():
+def test_figure_exists(report, tmp_path):
+    """The figure must be rebuildable from the archived report, not a trusted blob.
+
+    Binaries are the first thing a push gate drops (the same failure mode that
+    made ``test_dam_break_status.py`` render its figure), so the assertion is
+    "``run.make_figure`` can rebuild a real plot from ``validation_report.json``"
+    plus "the committed PNG, *when present*, is not a placeholder".
+    """
+    pytest.importorskip("matplotlib")
     fig = ROOT / "benchmarks" / "laplace_pressure_jump" / "laplace_pressure_jump.png"
-    assert fig.exists() and fig.stat().st_size > 10_000
+    if fig.exists():
+        assert fig.stat().st_size > 10_000
+    path = ROOT / "benchmarks" / "laplace_pressure_jump" / "run.py"
+    spec = importlib.util.spec_from_file_location("lpj_run_fig", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    out = mod.make_figure(report, tmp_path)
+    assert out.stat().st_size > 10_000
 
 
 # --------------------------------------------------------------------------- #
