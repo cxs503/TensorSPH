@@ -151,6 +151,13 @@ def test_effective_surface_tension_at_the_documented_resolution():
       That is a documented trade, not a regression, but m2979 did not update
       this pin; it is updated here from the measurement above.
 
+    The "full amplitude" wording of the original docstring was never true:
+    the consistent scheme delivers 0.71-0.79 of the analytic 2 sigma, a
+    systematic bias documented in docs/verification_effective_sigma.md
+    (WITHHELD, > 15 % gate).  The per-scheme re-pins live in
+    ``tests/test_effective_sigma.py`` (m3188); the band below is the
+    re-pinned current state.
+
     The three-way comparison is asserted, not just the default, so that a silent
     swap of *either* operator (colour field or curvature) still turns this red.
     """
