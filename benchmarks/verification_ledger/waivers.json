@@ -8,7 +8,13 @@
     "benchmarks/static_droplet/laplace_validation.json",
     "benchmarks/laplace_law/convergence/relax_dx0.0015.json",
     "benchmarks/laplace_law/convergence/relax_dx0.0020.json",
-    "benchmarks/laplace_law/convergence/relax_dx0.0025.json"
+    "benchmarks/laplace_law/convergence/relax_dx0.0025.json",
+    "benchmarks/conservation/report.json",
+    "benchmarks/init_consistency/report.json",
+    "benchmarks/initial_density_bias/report.json",
+    "benchmarks/laplace_pressure_closure/raw/relax_ladder.json",
+    "benchmarks/lattice_equilibrium/report.json",
+    "benchmarks/oscillating_droplet_instability/report.json"
   ],
   "reasons": {
     "benchmarks/dam_break/reference_audit.json": "audit of the experimental reference table + Ritter comparison; the solver-side gate is claim dam_break.martin_moyce.mae in resolution_ladder.json",
@@ -17,6 +23,12 @@
     "benchmarks/static_droplet/laplace_validation.json": "covered by claim static_droplet.force_direction.WITHDRAWN (same artifact family, formally withdrawn)",
     "benchmarks/laplace_law/convergence/relax_dx0.0015.json": "resolution ladder of claim young_laplace.laplace_law.vacuum_gauge; the ladder is summarised in the parent report",
     "benchmarks/laplace_law/convergence/relax_dx0.0020.json": "resolution ladder of claim young_laplace.laplace_law.vacuum_gauge; the ladder is summarised in the parent report",
-    "benchmarks/laplace_law/convergence/relax_dx0.0025.json": "resolution ladder of claim young_laplace.laplace_law.vacuum_gauge; the ladder is summarised in the parent report"
+    "benchmarks/laplace_law/convergence/relax_dx0.0025.json": "resolution ladder of claim young_laplace.laplace_law.vacuum_gauge; the ladder is summarised in the parent report",
+    "benchmarks/conservation/report.json": "conservation audit (G1 pressure-gradient leak, G1b viscous-pair closed form, G2 CSF/viscous leak, G3 Galilean, G4 ballistic lag) of the sigma=7.2 N/m hexagonal droplet from benchmarks/conservation/run.py; it reports per-invariant leaks and pass/fail verdicts, not one measured-vs-reference reading, so it cannot be a single ladder entry. Guarded by tests/test_conservation.py.",
+    "benchmarks/init_consistency/report.json": "zeroth-moment (kernel-sum) audit of WCSPH initial conditions from benchmarks/init_consistency/run.py (mission m3114), criterion |p_false|/(rho0 c0^2) < 1e-4, with an h/dx sweep and a Laplace-plateau reproduction; a bug-attribution sweep, no single measured-vs-reference reading. The production consequence (initial-mass calibration) is registered separately as the lattice-mass claims.",
+    "benchmarks/initial_density_bias/report.json": "initial sum-density lattice-bias audit (backlog_update_m2971.md P1) from benchmarks/initial_density_bias/run.py: seven analytic/boolean gates on the bias formula, the h/dx dependence and the calibration helper, plus a c0 ladder; nothing in it is a single reading against an experimental reference. Guarded by tests/test_initial_density_calibration.py.",
+    "benchmarks/laplace_pressure_closure/raw/relax_ladder.json": "raw dx-ladder dump behind the free-surface pressure-closure study (benchmarks/laplace_pressure_closure/analysis.py); it holds per-dx intermediate relaxation records that are only meaningful together with the parent study and its figure script, and is treated like the laplace_law/convergence relax_*.json waivers.",
+    "benchmarks/lattice_equilibrium/report.json": "lattice-equilibrium audit of the resting state from benchmarks/lattice_equilibrium/run.py (bias curve, production and dynamic runs, hydrostatic profile, acceptance ratio 1e-4); multi-metric audit with boolean gates rather than one measured-vs-reference reading. Guarded by tests/test_lattice_equilibrium.py.",
+    "benchmarks/oscillating_droplet_instability/report.json": "energy-budget / divergence audit of the recorded oscillating-droplet traces (benchmarks/oscillating_droplet_instability/run.py), i.e. the provenance of the mode-2 reading. It withholds a measurement instead of adding one, so it must not become a ladder entry; the mode-2 numbers stay on the existing oscillating_droplet claim. Guarded by tests/test_oscillating_droplet_instability.py and written up in docs/verification_oscillating_droplet_instability.md."
   }
 }

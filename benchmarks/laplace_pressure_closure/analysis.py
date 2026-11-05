@@ -154,7 +154,8 @@ def main():
         "method": "int_0^R rho * a_r dr from a single CSF evaluation on the "
                   "calibrated lattice (no time stepping); N_BINS=%d" % N_BINS,
         "bin_sensitivity": {
-            f"dx={dx:g}": {str(nb): round(case(lpf, dx, n_bins=nb)["force_side"]["delta_p_force_Pa"], 2)
+            f"dx={dx:g}": {str(nb): round(
+                case(lpf, dx, n_bins=nb)["force_side"]["delta_p_force_Pa"], 2)
                            for nb in BIN_SENSITIVITY} for dx in (0.002,)},
         "cases": [case(lpf, dx) for dx in (0.002, 0.0015)],
     }

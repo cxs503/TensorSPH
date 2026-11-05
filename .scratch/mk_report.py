@@ -1,4 +1,8 @@
-import base64, io, json, os, urllib.request
+import base64
+import io
+import json
+import os
+import urllib.request
 from pathlib import Path
 
 HERE = Path("benchmarks/laplace_pressure_closure")
