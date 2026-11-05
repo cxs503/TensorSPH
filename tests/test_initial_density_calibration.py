@@ -14,14 +14,12 @@ from tensorsph.droplet_impact import (
     Config,
     density_from_neighbor_pairs,
     make_particles,
-    tait_pressure,
 )
 from tensorsph.initial_density import (
     calibration_factor,
     calibrate_mass,
     lattice_bias,
     lattice_kernel_sum,
-    lattice_offsets,
     measure_complete_support_bias,
     spurious_pressure,
     spurious_pressure_ratio,

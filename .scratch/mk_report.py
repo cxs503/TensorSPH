@@ -1,4 +1,11 @@
-import base64, io, json, os, urllib.request
+# ruff: noqa: E501
+# Markdown payload strings are emitted verbatim; wrapping them would change
+# the layout of the generated tables and figure captions.
+import base64
+import io
+import json
+import os
+import urllib.request
 from pathlib import Path
 
 HERE = Path("benchmarks/laplace_pressure_closure")
@@ -11,7 +18,8 @@ def png_b64(path, max_bytes=55000):
     im = Image.open(path).convert("RGB")
     for width in (1500, 1200, 1000, 900, 800, 700):
         im2 = im.resize((width, int(im.height * width / im.width)))
-        buf = io.BytesIO(); im2.save(buf, "PNG", optimize=True)
+        buf = io.BytesIO()
+        im2.save(buf, "PNG", optimize=True)
         if len(buf.getvalue()) <= max_bytes:
             return base64.b64encode(buf.getvalue()).decode()
     return base64.b64encode(buf.getvalue()).decode()
@@ -120,7 +128,8 @@ payload = json.dumps(report).encode()
 print("payload KB", len(payload) / 1024)
 
 base = os.environ.get("TENSOR_API_BASE", "http://127.0.0.1:8010").rstrip("/")
-user = os.environ.get("TENSOR_AGENT_USER"); pw = os.environ.get("TENSOR_AGENT_PASS")
+user = os.environ.get("TENSOR_AGENT_USER")
+pw = os.environ.get("TENSOR_AGENT_PASS")
 tok = os.environ.get("TOKEN")
 if not tok and user:
     req = urllib.request.Request(base + "/auth/login",
