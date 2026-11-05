@@ -24,8 +24,8 @@
 
 ## 3. 汇总
 
-- claims **16** ／ 物理量 **10** ／ findings **3**
-- 分级分布：MARGINAL 1，WITHHELD 8，FAIL 6，WITHDRAWN 1
+- claims **17** ／ 物理量 **10** ／ findings **3**
+- 分级分布：MARGINAL 1，WITHHELD 9，FAIL 6，WITHDRAWN 1
 - findings 分类：declared_vs_derived 1，quantity_spread 2
 
 ## 4. 断言表
@@ -44,6 +44,7 @@
 | `surface_tension_ladder.laplace_error_finest` | Laplace error of the surface-tension-only ladder, finest level | 0.15 fraction | 2.51981 fraction | +251.98 % | **FAIL** | `benchmarks/surface_tension/laplace_ladder.json` → `gates.laplace_error_finest` | `tests/test_surface_tension_laplace.py` |
 | `two_phase_laplace.smoothed_colour.dx2.5mm` | Laplace error on a closed two-phase interface (periodic, no free surface) | limit 0.15 | 0.046079 | — | **MARGINAL** | `benchmarks/surface_tension_laplace/validation_report.json` → `criteria.two_phase_laplace_error_at_dx_0.0025_lt_15pct` | `tests/test_surface_tension_laplace.py` |
 | `young_laplace.absolute_tail.best_of_6` | dp = sigma/R (2-D), sigma=7.2 N/m, R=0.020 m -> 360 Pa | 360 Pa | 237.636 Pa | -33.99 % | **WITHHELD** | `benchmarks/laplace_pressure_floor/report.json` → `runs[2].absolute_time_average_tail` | `tests/test_laplace_pressure_floor.py::test_laplace_jump_within_15pct` |
+| `young_laplace.closure_grid.dx1.5mm` | dp = sigma/R (2-D), sigma=7.2 N/m, R=0.020 m -> 360 Pa | 360 Pa | 347.73 Pa | -3.41 % | **WITHHELD** | `benchmarks/laplace_pressure_closure/raw/closure_grid.json` → `cases[3].delta_p_tail_Pa` | `tests/test_free_surface_pressure_closure_grid.py::test_closure_improves_the_tail_readout_at_every_resolution` |
 | `young_laplace.csf_consistent.dx2mm` | dp = sigma/R (2-D), sigma=7.2 N/m, R=0.020 m -> 360 Pa | 360 Pa | 77.1912 Pa | -78.56 % | **WITHHELD** | `benchmarks/csf_consistent/validation_report.json` → `relax.laplace` | `tests/test_csf_consistent.py` |
 | `young_laplace.csf_curvature_fit.dx2mm` | dp = sigma/R (2-D), sigma=7.2 N/m, R=0.020 m -> 360 Pa | 360 Pa | 44.5997 Pa | -87.61 % | **WITHHELD** | `benchmarks/csf_curvature_fit/validation_report.json` → `relax[0].laplace` | `tests/test_csf_curvature_fit.py` |
 | `young_laplace.laplace_law.vacuum_gauge` | dp = sigma/R (2-D), sigma=7.2 N/m, R=0.020 m -> 360 Pa | 360 Pa | 380.158 Pa | +5.60 % | **WITHHELD** | `benchmarks/laplace_law/validation_report.json` → `laplace` | `tests/test_laplace_law.py` |
@@ -53,7 +54,7 @@
 
 - **declared_vs_derived**（`high`）`young_laplace.laplace_law.vacuum_gauge` — artifact declares PASS, ledger derives WITHHELD: vacuum-gauge readout (additive |p| offset, not a physical dp)
 - **quantity_spread**（`high`）`young_laplace_jump_sigma0.072_R0.1` — 2 active readings of one quantity span +219.7 % … +252.0 % (spread 32.3 pt): laplace_droplet.merged_csf.8cases=+219.7 %, surface_tension_ladder.laplace_error_finest=+252.0 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
-- **quantity_spread**（`high`）`young_laplace_jump_sigma7.2_R0.02` — 6 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
+- **quantity_spread**（`high`）`young_laplace_jump_sigma7.2_R0.02` — 7 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.closure_grid.dx1.5mm=-3.4 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
 
 ## 6. 读数明细（口径决定数字）
 
@@ -212,6 +213,19 @@
   - 守护测试：`tests/test_laplace_pressure_floor.py::test_laplace_jump_within_15pct`
 - 欠账指针：`backlog_update_m2971.md#P0`
 - 注：Best of 6 runs (c0 20/5 x dx 0.002/0.0015 plus controls). Reproduces backlog P0: the residual is the free-surface pressure closure, not the curvature operator.
+
+### `young_laplace.closure_grid.dx1.5mm` — WITHHELD
+
+- 物理量：dp = sigma/R (2-D), sigma=7.2 N/m, R=0.020 m -> 360 Pa
+- 参考：360 Pa（Young-Laplace sigma/R）
+- 实测：347.73 Pa
+  - 口径：p_core - p_vacuum (Tait normalised at rho0), tail time average over the last 40 % of 1.5 t_sigma; dx=0.0015 m, c0=20.0 m/s, closure donors=interior, 2 layers
+- 相对误差：-3.41 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`WITHHELD`；本账等级：**WITHHELD**
+- 溯源：`benchmarks/laplace_pressure_closure/raw/closure_grid.json` → `cases[3].delta_p_tail_Pa`
+  - 守护测试：`tests/test_free_surface_pressure_closure_grid.py::test_closure_improves_the_tail_readout_at_every_resolution`
+- 欠账指针：`docs/verification_free_surface_pressure_closure.md`
+- 注：The closure beats the Tait clamp at every resolution tested (gain 2.0 mm: +29.0 pt, 1.5 mm: +34.7 pt), but the residual is not shown to shrink with dx, and the spurious current v_max/v_ref = 0.090 exceeds Adami's 0.1 criterion -- so the reading is not credited as a pass.
 
 ### `young_laplace.csf_consistent.dx2mm` — WITHHELD
 

@@ -1,0 +1,185 @@
+{
+ "benchmark": "laplace_pressure_closure",
+ "question": "is the residual Young-Laplace deficit after the free-surface pressure closure a discretisation error (shrinks with dx) or a fixed offset, and does the closure meet the 15 % / 3 % criteria at more than one resolution?",
+ "reference": {
+  "sigma_N_per_m": 7.2,
+  "radius_m": 0.02,
+  "rho0": 1000.0,
+  "analytic_dp_Pa": 360.0,
+  "t_sigma_s": 0.03333333333333334
+ },
+ "method": "benchmarks/laplace_pressure_floor/run.py:relax() -- calibrated-mass hex drop, consistent CSF with fit_quadratic curvature, zero gravity, 1.5 t_sigma of WCSPH; readings: absolute p_core - p_vacuum (Tait normalised at rho0), tail = mean over the last 40 % of the window, final = last snapshot",
+ "max_steps": 2000,
+ "cases": [
+  {
+   "case": "grid_dx2.0mm_off",
+   "dx_m": 0.002,
+   "n_particles": 362,
+   "sound_speed": 20.0,
+   "steps": 1283,
+   "t_over_t_sigma": 1.5,
+   "closure": {
+    "enabled": false,
+    "donors": "interior",
+    "layers": 2,
+    "threshold": 0.99
+   },
+   "delta_p_final_Pa": 208.50090319517804,
+   "err_final_pct": -42.08308244578387,
+   "delta_p_tail_Pa": 223.64622876323088,
+   "err_tail_pct": -37.8760475657692,
+   "within_3pct_tail": false,
+   "within_15pct_tail": false,
+   "vmax_over_vref_final": 0.0299434340079459,
+   "rho_core_over_rho0": 1.0005120533636982,
+   "compression_required": 0.0008975794345598143,
+   "compression_achieved_over_required": 0.570482504369447,
+   "wall_clock_s": 78.3
+  },
+  {
+   "case": "grid_dx2.0mm_on",
+   "dx_m": 0.002,
+   "n_particles": 362,
+   "sound_speed": 20.0,
+   "steps": 1283,
+   "t_over_t_sigma": 1.5,
+   "closure": {
+    "enabled": true,
+    "donors": "interior",
+    "layers": 2,
+    "threshold": 0.99
+   },
+   "delta_p_final_Pa": 874.1186869606644,
+   "err_final_pct": 142.81074637796232,
+   "delta_p_tail_Pa": 391.8054404257656,
+   "err_tail_pct": 8.834844562712666,
+   "within_3pct_tail": false,
+   "within_15pct_tail": true,
+   "vmax_over_vref_final": 0.3881285469675048,
+   "rho_core_over_rho0": 1.002167603681645,
+   "compression_required": 0.0008975794345598143,
+   "compression_achieved_over_required": 2.41494356731552,
+   "wall_clock_s": 79.7
+  },
+  {
+   "case": "grid_dx1.5mm_off",
+   "dx_m": 0.0015,
+   "n_particles": 642,
+   "sound_speed": 20.0,
+   "steps": 1710,
+   "t_over_t_sigma": 1.5,
+   "closure": {
+    "enabled": false,
+    "donors": "interior",
+    "layers": 2,
+    "threshold": 0.99
+   },
+   "delta_p_final_Pa": 203.21520341434183,
+   "err_final_pct": -43.551332384905045,
+   "delta_p_tail_Pa": 222.85070337711892,
+   "err_tail_pct": -38.09702683968919,
+   "within_3pct_tail": false,
+   "within_15pct_tail": false,
+   "vmax_over_vref_final": 0.025407391276862527,
+   "rho_core_over_rho0": 1.0005070695868867,
+   "compression_required": 0.0008975794345598143,
+   "compression_achieved_over_required": 0.5649300411338042,
+   "wall_clock_s": 295.9
+  },
+  {
+   "case": "grid_dx1.5mm_on",
+   "dx_m": 0.0015,
+   "n_particles": 642,
+   "sound_speed": 20.0,
+   "steps": 1710,
+   "t_over_t_sigma": 1.5,
+   "closure": {
+    "enabled": true,
+    "donors": "interior",
+    "layers": 2,
+    "threshold": 0.99
+   },
+   "delta_p_final_Pa": 382.82406588490596,
+   "err_final_pct": 6.340018301362768,
+   "delta_p_tail_Pa": 347.73018072766973,
+   "err_tail_pct": -3.408283131202852,
+   "within_3pct_tail": false,
+   "within_15pct_tail": true,
+   "vmax_over_vref_final": 0.08950309149072329,
+   "rho_core_over_rho0": 1.000954001983859,
+   "compression_required": 0.0008975794345598143,
+   "compression_achieved_over_required": 1.062860786607519,
+   "wall_clock_s": 189.1
+  },
+  {
+   "case": "grid_dx2.0mm_c0_10_on",
+   "dx_m": 0.002,
+   "n_particles": 362,
+   "sound_speed": 10.0,
+   "steps": 642,
+   "t_over_t_sigma": 1.5,
+   "closure": {
+    "enabled": true,
+    "donors": "interior",
+    "layers": 2,
+    "threshold": 0.99
+   },
+   "delta_p_final_Pa": 335.9684837913317,
+   "err_final_pct": -6.6754211690745215,
+   "delta_p_tail_Pa": 345.48131588953737,
+   "err_tail_pct": -4.032967808461842,
+   "within_3pct_tail": false,
+   "within_15pct_tail": true,
+   "vmax_over_vref_final": 0.05955076923256016,
+   "rho_core_over_rho0": 1.0033248802489234,
+   "compression_required": 0.0035617158184919617,
+   "compression_achieved_over_required": 0.9335052032116289,
+   "wall_clock_s": 37.3
+  },
+  {
+   "case": "grid_dx1.5mm_c0_10_on",
+   "dx_m": 0.0015,
+   "n_particles": 642,
+   "sound_speed": 10.0,
+   "steps": 1052,
+   "t_over_t_sigma": 1.5,
+   "closure": {
+    "enabled": true,
+    "donors": "interior",
+    "layers": 2,
+    "threshold": 0.99
+   },
+   "delta_p_final_Pa": 321.434058341955,
+   "err_final_pct": -10.712761571679168,
+   "delta_p_tail_Pa": 343.4015189085752,
+   "err_tail_pct": -4.61068919206244,
+   "within_3pct_tail": false,
+   "within_15pct_tail": true,
+   "vmax_over_vref_final": 0.0983879436266799,
+   "rho_core_over_rho0": 1.0031836202772124,
+   "compression_required": 0.0035617158184919617,
+   "compression_achieved_over_required": 0.8938445511804952,
+   "wall_clock_s": 107.7
+  }
+ ],
+ "closure_gain": [
+  {
+   "dx_m": 0.002,
+   "sound_speed": 20.0,
+   "off_err_tail_pct": -37.8760475657692,
+   "on_err_tail_pct": 8.834844562712666,
+   "gain_pt": 29.04120300305653,
+   "off_vmax_over_vref": 0.0299434340079459,
+   "on_vmax_over_vref": 0.3881285469675048
+  },
+  {
+   "dx_m": 0.0015,
+   "sound_speed": 20.0,
+   "off_err_tail_pct": -38.09702683968919,
+   "on_err_tail_pct": -3.408283131202852,
+   "gain_pt": 34.68874370848634,
+   "off_vmax_over_vref": 0.025407391276862527,
+   "on_vmax_over_vref": 0.08950309149072329
+  }
+ ]
+}

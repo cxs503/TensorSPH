@@ -322,6 +322,57 @@ def young_laplace_claims() -> list[dict]:
             ),
         )
     )
+
+    # 6/6 -- free-surface pressure closure on a dx x c0 grid. The closure is the
+    # fix the four entries above point at; the grid is what says whether the
+    # residual it leaves behind is a discretisation error or a fixed offset.
+    rel = "benchmarks/laplace_pressure_closure/raw/closure_grid.json"
+    if (REPO / rel).is_file():
+        grid = _load(rel)
+        index = {c["case"]: i for i, c in enumerate(grid["cases"])}
+        if "grid_dx1.5mm_on" in index:
+            i = index["grid_dx1.5mm_on"]
+            case = grid["cases"][i]
+            closure = case["closure"]
+            out.append(
+                _entry(
+                    claim_id="young_laplace.closure_grid.dx1.5mm",
+                    quantity_id=qid,
+                    quantity=qty,
+                    artifact=rel,
+                    json_path=f"cases[{i}].delta_p_tail_Pa",
+                    reference=(grid["reference"]["analytic_dp_Pa"], "Pa",
+                               "Young-Laplace sigma/R"),
+                    measured=(
+                        case["delta_p_tail_Pa"],
+                        "Pa",
+                        "p_core - p_vacuum (Tait normalised at rho0), tail time average over "
+                        f"the last 40 % of 1.5 t_sigma; dx={case['dx_m']} m, "
+                        f"c0={case['sound_speed']} m/s, closure donors="
+                        f"{closure['donors']}, {closure['layers']} layers",
+                    ),
+                    rel_error_pct=case["err_tail_pct"],
+                    gauge_degenerate=True,
+                    guarding_test=(
+                        "tests/test_free_surface_pressure_closure_grid.py"
+                        "::test_closure_improves_the_tail_readout_at_every_resolution"
+                    ),
+                    artifact_status="WITHHELD",
+                    backlog_ref="docs/verification_free_surface_pressure_closure.md",
+                    notes=(
+                        "The closure beats the Tait clamp at every resolution tested "
+                        "(gain "
+                        + ", ".join(
+                            f"{g['dx_m'] * 1e3:.1f} mm: {g['gain_pt']:+.1f} pt"
+                            for g in grid.get("closure_gain", [])
+                        )
+                        + "), but the residual is not shown to shrink with dx, and the "
+                        f"spurious current v_max/v_ref = {case['vmax_over_vref_final']:.3f} "
+                        "exceeds Adami's 0.1 criterion -- so the reading is not credited as a "
+                        "pass."
+                    ),
+                )
+            )
     return out
 
 

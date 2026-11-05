@@ -361,6 +361,36 @@
       "superseded_by": null
     },
     {
+      "artifact": "benchmarks/laplace_pressure_closure/raw/closure_grid.json",
+      "artifact_status": "WITHHELD",
+      "backlog_ref": "docs/verification_free_surface_pressure_closure.md",
+      "claim_id": "young_laplace.closure_grid.dx1.5mm",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": true,
+      "grade": "WITHHELD",
+      "guarding_test": "tests/test_free_surface_pressure_closure_grid.py::test_closure_improves_the_tail_readout_at_every_resolution",
+      "json_path": "cases[3].delta_p_tail_Pa",
+      "measured": {
+        "definition": "p_core - p_vacuum (Tait normalised at rho0), tail time average over the last 40 % of 1.5 t_sigma; dx=0.0015 m, c0=20.0 m/s, closure donors=interior, 2 layers",
+        "unit": "Pa",
+        "value": 347.730181
+      },
+      "notes": "The closure beats the Tait clamp at every resolution tested (gain 2.0 mm: +29.0 pt, 1.5 mm: +34.7 pt), but the residual is not shown to shrink with dx, and the spurious current v_max/v_ref = 0.090 exceeds Adami's 0.1 criterion -- so the reading is not credited as a pass.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "dp = sigma/R (2-D), sigma=7.2 N/m, R=0.020 m -> 360 Pa",
+      "quantity_id": "young_laplace_jump_sigma7.2_R0.02",
+      "reference": {
+        "source": "Young-Laplace sigma/R",
+        "unit": "Pa",
+        "value": 360.0
+      },
+      "rel_error_pct": -3.408283,
+      "superseded_by": null
+    },
+    {
       "artifact": "benchmarks/csf_consistent/validation_report.json",
       "artifact_status": "WITHHELD",
       "backlog_ref": "backlog_update_m2971.md#P0",
@@ -496,7 +526,7 @@
     },
     {
       "claim_id": "young_laplace_jump_sigma7.2_R0.02",
-      "detail": "6 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
+      "detail": "7 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.closure_grid.dx1.5mm=-3.4 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
       "rule": "quantity_spread",
       "severity": "high"
     }
@@ -508,14 +538,14 @@
       "MARGINAL": 1,
       "PASS": 0,
       "WITHDRAWN": 1,
-      "WITHHELD": 8
+      "WITHHELD": 9
     },
     "criterion_pct": 15.0,
     "findings_by_rule": {
       "declared_vs_derived": 1,
       "quantity_spread": 2
     },
-    "n_claims": 16,
+    "n_claims": 17,
     "n_findings": 3,
     "n_quantities": 10,
     "paper_criterion_pct": 3.0
