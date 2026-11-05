@@ -182,7 +182,7 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
           calibrate_mass: bool = True, t_end_over_t_sigma: float = 1.5,
           max_steps: int = 4000, sample_every: int = 50,
           closure: bool = False, donors: str = "interior", layers: int = 2,
-          threshold: float = 0.99):
+          threshold: float = 0.99, monotone: bool = False):
     """Advance the drop and read ``Delta p`` with three definitions.
 
     ``absolute``  ``p_core - 0``  (Tait is normalised at ``rho0``; the vacuum is
@@ -198,7 +198,8 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
                  surface_pressure_closure=closure,
                  surface_pressure_donors=donors,
                  surface_pressure_layers=layers,
-                 surface_pressure_threshold=threshold)
+                 surface_pressure_threshold=threshold,
+                 surface_pressure_monotone=monotone)
     h = cfg.h_factor * cfg.dx
     dt = float(stable_dt(cfg))
     t_end = t_end_over_t_sigma * T_SIGMA
@@ -264,7 +265,7 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
         "sound_speed": c0, "curvature_scheme": scheme,
         "mass_calibrated": calibrate_mass,
         "closure": {"enabled": closure, "donors": donors, "layers": layers,
-                    "threshold": threshold},
+                    "threshold": threshold, "monotone": monotone},
         "lattice_bias": bias, "lattice_bias_after_calibration": bias_after,
         "dt_s": dt, "steps": steps, "t_end_s": t_end,
         "t_over_t_sigma": t_end / T_SIGMA,
@@ -292,6 +293,60 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     }
 
 
+# Closure variants of ``Config.surface_pressure_closure`` that the A/B matrix
+# sweeps. Main's implementation exposes the donor semantics and the number of
+# extrapolation passes; ``all`` is the literal Adami/Ihmsen/Adams formula (its
+# free-surface neighbours donate their clamped p = 0 too, one pass suffices),
+# ``interior-*`` extrapolates from the bulk only and needs several passes
+# because the outermost particle of a convex surface has no bulk neighbour.
+CLOSURE_VARIANTS = {
+    "all": {"donors": "all", "layers": 1},
+    "interior-2": {"donors": "interior", "layers": 2},
+    "interior-4": {"donors": "interior", "layers": 4},
+    "all-iter-3": {"donors": "all", "layers": 3, "monotone": True},
+    "all-iter-6": {"donors": "all", "layers": 6, "monotone": True},
+}
+
+
+def closure_runs(dxs, c0s, variants, t_end: float = 1.5,
+                 scheme: str = "fit_quadratic"):
+    """Run the (dx, c0) grid with the free-surface pressure closure on.
+
+    Every run is the same drop and the same read-out as ``relax`` with the
+    closure off, so ``free_surface_runs`` is an A/B pair against ``runs``.
+    """
+    out = []
+    for dx in dxs:
+        for c0 in c0s:
+            for label in variants:
+                spec = CLOSURE_VARIANTS[label]
+                run = relax(dx, c0, scheme=scheme, t_end_over_t_sigma=t_end,
+                            closure=True, donors=spec["donors"],
+                            layers=spec["layers"],
+                            monotone=spec.get("monotone", False))
+                run["closure_variant"] = label
+                out.append(run)
+                print(f"[fs {label}] dx={dx:g} c0={c0:5g}: tail-avg "
+                      f"{run['absolute_time_average_tail']['rel_error_pct']:+7.1f} %"
+                      f"  abs {run['definition_absolute']['rel_error_pct']:+7.1f} %"
+                      f"  bandA {run['definition_bandA']['rel_error_pct']:+7.1f} %"
+                      f"  vmax/vref "
+                      f"{run['spurious_current']['vmax_over_vref_final']:.3f}",
+                      flush=True)
+    return out
+
+
+def merge_free_surface(report, runs):
+    """Merge by (dx, c0, variant) so separate passes accumulate."""
+    fresh = {(r["dx_m"], r["sound_speed"], r["closure_variant"]) for r in runs}
+    kept = [r for r in report.get("free_surface_runs", [])
+            if (r["dx_m"], r["sound_speed"], r["closure_variant"]) not in fresh]
+    report["free_surface_runs"] = sorted(
+        kept + runs,
+        key=lambda r: (r["dx_m"], r["sound_speed"], r["closure_variant"]))
+    return report
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true")
@@ -300,10 +355,27 @@ def main():
                     default=[20.0, 10.0, 5.0])
     ap.add_argument("--t-end", type=float, default=1.5,
                     help="window length in capillary times")
+    ap.add_argument("--free-surface", action="store_true",
+                    help="also run the grid with the free-surface pressure "
+                         "closure on (Adami/Ihmsen/Adams 2012)")
+    ap.add_argument("--free-surface-only", action="store_true",
+                    help="run only the closure matrix and merge it into the "
+                         "existing report.json")
+    ap.add_argument("--variants", nargs="+", default=["all", "interior-2"],
+                    choices=sorted(CLOSURE_VARIANTS),
+                    help="closure variants of the A/B matrix")
     args = ap.parse_args()
 
     dxs = [args.dx] if args.quick else [args.dx, 0.0015]
     c0s = [20.0, 5.0] if args.quick else list(args.sound_speeds)
+
+    if args.free_surface_only:
+        report = json.loads((HERE / "report.json").read_text())
+        merge_free_surface(report, closure_runs(dxs, c0s, args.variants,
+                                                args.t_end))
+        (HERE / "report.json").write_text(json.dumps(report, indent=2))
+        print("merged free_surface_runs into", HERE / "report.json")
+        return
 
     structures = [density_structure(dx, c0s) for dx in dxs]
     runs = []
@@ -342,6 +414,9 @@ def main():
         "controls": {"uncalibrated_c0_reference": uncal,
                      "mls_scheme_lowest_c0": ctrl_scheme},
     }
+    if args.free_surface:
+        report["free_surface_runs"] = closure_runs(dxs, c0s, args.variants,
+                                                   args.t_end)
     (HERE / "report.json").write_text(json.dumps(report, indent=2))
     report["figures"] = [make_figures(report)]
     (HERE / "report.json").write_text(json.dumps(report, indent=2))

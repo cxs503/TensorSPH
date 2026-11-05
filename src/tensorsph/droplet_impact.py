@@ -167,6 +167,16 @@ class Config:
     # takes part, and one pass suffices.
     surface_pressure_donors: str = "interior"
     surface_pressure_layers: int = 2
+    # Iterate the extrapolation as ``p <- max(p, extrapolate(p))`` instead of
+    # overwriting the receiver. Off, the loop keeps its original meaning
+    # (``interior`` donors fill the shell layer by layer, ``all`` donors do one
+    # pass). On, the literal donor set is iterated, which is what lets it carry
+    # the interior value outwards instead of being diluted by the clamped zeros
+    # of its own shell: measured -20.1 % -> see
+    # docs/verification_laplace_free_surface_pressure.md. Only applies to
+    # ``donors = "all"``; the one-sided recurrence must not lower a value that
+    # a previous pass set from the bulk.
+    surface_pressure_monotone: bool = False
 
 
 # --------------------------------------------------------------------------- #
@@ -304,6 +314,12 @@ def free_surface_pressure(pos, rho, pressure, delta, wij, i, j, cfg) -> torch.Te
     A receiver with no donor (``sum W = 0``) keeps its Tait pressure. This is a
     pressure *closure*: it changes neither the density nor the Tait law and adds
     no surface-tension force.
+
+    ``cfg.surface_pressure_monotone`` iterates the literal donor set as
+    ``p <- max(p, extrapolate(p))`` over ``surface_pressure_layers`` passes:
+    one literal pass is diluted by the receivers' own clamped zeros, and the
+    monotone update lets the interior value travel outwards without ever
+    lowering a receiver below what a previous pass established.
     """
     n = pressure.shape[0]
     free = rho < cfg.surface_pressure_threshold * cfg.rho0
@@ -315,10 +331,12 @@ def free_surface_pressure(pos, rho, pressure, delta, wij, i, j, cfg) -> torch.Te
     dy = delta[:, 1] if delta.shape[1] > 1 else torch.zeros_like(delta[:, 0])
     grav = cfg.gravity * dy
     literal = cfg.surface_pressure_donors == "all"
-    layers = 1 if literal else max(1, cfg.surface_pressure_layers)
+    monotone = literal and cfg.surface_pressure_monotone
+    layers = (max(1, cfg.surface_pressure_layers) if monotone or not literal
+              else 1)
 
     for _ in range(layers):
-        receive = ~known
+        receive = free if monotone else ~known
         if not bool(receive.any()):
             break
         if literal:
@@ -338,7 +356,11 @@ def free_surface_pressure(pos, rho, pressure, delta, wij, i, j, cfg) -> torch.Te
         num = num.index_add(0, j, w_j * src_j)
         den = den.index_add(0, j, w_j)
         filled = receive & (den > 1.0e-30)
-        p = torch.where(filled, (num / den.clamp_min(1.0e-30)).clamp_min(0.0), p)
+        extrapolated = (num / den.clamp_min(1.0e-30)).clamp_min(0.0)
+        if monotone:
+            p = torch.where(filled, torch.maximum(p, extrapolated), p)
+        else:
+            p = torch.where(filled, extrapolated, p)
         known = known | filled
     return p
 
