@@ -8,3 +8,4 @@ dist/
 *.egg-info/
 artifacts/
 .coverage
+.scratch/
