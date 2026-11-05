@@ -10,7 +10,6 @@ typed by hand.  Run after ``run.py``:
 from __future__ import annotations
 
 import json
-import math
 from pathlib import Path
 
 import matplotlib
@@ -21,6 +20,13 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 DOC = ROOT / "docs" / "verification_contact_angle_geometry.md"
 PNG = HERE / "contact_angle_geometry.png"
+
+# E501 is dropped for this file only: the long lines are rows of the markdown
+# tables / prose inside the DOC f-string template below.  Rewrapping them would
+# change the bytes of the committed docs/verification_contact_angle_geometry.md
+# (a table row cannot be soft-wrapped), so the 100-column rule is not applicable
+# to this generator.  Code added below the template must still be <=100 columns.
+# ruff: noqa: E501
 
 RES = json.loads((HERE / "results.json").read_text())
 CASES = RES["cases"]

@@ -31,7 +31,8 @@ def main():
     a = L.append
     a("# 单相液滴 Young-Laplace 压差复核：判据定义错误与真实残差")
     a("")
-    a("**范围**：TensorSPH `csf_scheme=\"consistent\"`（`src/tensorsph/csf_consistent.py`，m2588 合入）")
+    a("**范围**：TensorSPH `csf_scheme=\"consistent\"`"
+      "（`src/tensorsph/csf_consistent.py`，m2588 合入）")
     a(f"**工件**：`benchmarks/laplace_pressure_jump/`（生成于 {rep['generated']}，"
       f"总墙钟 {rep['total_wall_time_s']:.0f} s）")
     a("")
@@ -75,10 +76,12 @@ def main():
     a("| 判据 | 算式 | 实测 [Pa] | 解析 [Pa] | 相对误差 | < 15%? |")
     a("|---|---|---|---|---|---|")
     a(f"| legacy（历史） | p(core) - p(0.80-0.95R) | "
-      f"{base['legacy_definition']['delta_p_Pa']:.2f} | {base['reference']['dp_theory_Pa']:.1f} | "
+      f"{base['legacy_definition']['delta_p_Pa']:.2f} "
+      f"| {base['reference']['dp_theory_Pa']:.1f} | "
       f"{_fmt_pct(base['legacy_definition']['rel_error_pct'])} | 否 |")
     a(f"| **corrected（本工作）** | p(r<0.7R) - p_amb=0 | "
-      f"{base['corrected_definition']['delta_p_Pa']:.2f} | {base['reference']['dp_theory_Pa']:.1f} | "
+      f"{base['corrected_definition']['delta_p_Pa']:.2f} "
+      f"| {base['reference']['dp_theory_Pa']:.1f} | "
       f"{_fmt_pct(base['corrected_definition']['rel_error_pct'])} | "
       f"{'是' if base['corrected_definition']['within_15pct'] else '否'} |")
     a("")
@@ -131,7 +134,8 @@ def main():
         a(f"- **压强只在最外层被清零**：时间平均剖面显示 `r/R_eff>0.9` 的一层压强只有 "
           f"{outer[0]['p_mean_Pa']:.1f} Pa（该层 `rho/rho0 = "
           f"{outer[0]['rho_over_rho0_mean']:.3f}`，Tait 钳位把它抹平），"
-          f"而内部平台 `r<0.7 R_eff` 平均 {base['corrected_definition']['p_interior_r_lt_0.7R_Pa']:.1f} Pa "
+          f"而内部平台 `r<0.7 R_eff` 平均 "
+          f"{base['corrected_definition']['p_interior_r_lt_0.7R_Pa']:.1f} Pa "
           f"= {base['achieved_over_theory']:.2f}·`sigma/R_eff`。"
           "跳变必须在这一层里从 0 升到 `sigma/R_eff`，而它被钳位吃掉了。")
     a(f"- **噪声与偏置必须分开记账**（这是历史归因出错的地方）：内部压强**均值**与 c0 无关"
