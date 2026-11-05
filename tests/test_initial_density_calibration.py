@@ -173,9 +173,14 @@ def test_uncalibrated_drop_fails_that_gate_by_six_orders_of_magnitude():
 
 
 def test_make_particles_calibration_flag_is_off_by_default_and_scales_mass():
+    # ``density_calibration`` (default on) already builds the lattice mass as
+    # rho0 / sum_j W, so it has to be switched off here for the
+    # ``calibrate_initial_mass`` flag to be measurable at all: the two flags
+    # calibrate the same bias through different routes, and with both defaults
+    # in force ``make_particles`` returns an already-calibrated mass.
     cfg = Config(dx=0.002, h_factor=H_FACTOR, rho0=RHO0, pool_width=0.1,
                  pool_depth=0.05, drop_radius=0.005, drop_center_y=0.1,
-                 gravity=9.81)
+                 gravity=9.81, density_calibration=False)
     pos_off, mass_off = make_particles(cfg, torch.device("cpu"))
     assert torch.allclose(mass_off,
                           torch.full_like(mass_off, RHO0 * cfg.dx * cfg.dx))
@@ -184,6 +189,13 @@ def test_make_particles_calibration_flag_is_off_by_default_and_scales_mass():
     assert torch.equal(pos_off, pos_on)
     factor = calibration_factor(cfg.dx, H_FACTOR * cfg.dx, kind="square")
     assert torch.allclose(mass_on, mass_off * factor)
+
+    # The shipped default (density_calibration=True) is calibrated without the
+    # opt-in flag: its mass is the lattice mass unit, not rho0 dx^2.
+    from tensorsph.droplet_impact import lattice_mass_unit
+    cfg_default = Config(**{**cfg.__dict__, "density_calibration": True})
+    assert lattice_mass_unit(cfg_default) == pytest.approx(
+        RHO0 * cfg.dx * cfg.dx * factor, rel=1e-12)
 
 
 def test_calibrated_pool_starts_at_rest_pressure():

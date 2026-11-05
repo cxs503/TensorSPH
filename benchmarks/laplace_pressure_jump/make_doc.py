@@ -1,3 +1,6 @@
+# ruff: noqa: E501
+# Markdown payload strings are emitted verbatim; wrapping them would change
+# the layout of the generated tables and figure captions.
 """Generate docs/verification_laplace_pressure_jump.md from the JSON report.
 
 All numbers in the document are injected programmatically from

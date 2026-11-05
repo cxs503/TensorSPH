@@ -74,7 +74,10 @@ def test_shipped_square_lattice_carries_no_bias():
     its free surface is kernel deficient -- the same masking trap as for a disc,
     which is why ``calibrate_mass`` takes the mask as an argument.
     """
-    cfg = Config(dx=DX, h_factor=1.3)
+    # ``density_calibration`` defaults to True, i.e. the shipped mass is
+    # already rho0 / sum_j W and the measured bias is zero. Switch it off to
+    # reproduce the raw square-lattice quadrature error this test documents.
+    cfg = Config(dx=DX, h_factor=1.3, density_calibration=False)
     pos, mass = make_particles(cfg, torch.device("cpu"))
     h = cfg.h_factor * cfg.dx
     c = kernel_sum_factor(pos, mass / cfg.rho0, h)
@@ -91,6 +94,13 @@ def test_shipped_square_lattice_carries_no_bias():
 
     # ... whereas masking the whole box (pool + drop) is contaminated: 0.970
     assert abs(float(c[interior_mask(pos, h)].mean()) - 1.0) > 1e-2
+
+    # The shipped default is the calibrated lattice: the same mask then reads
+    # rho = rho0 to machine precision instead of 1 + b.
+    pos_c, mass_c = make_particles(Config(dx=DX, h_factor=1.3, density_calibration=True),
+                                   torch.device("cpu"))
+    c_c = kernel_sum_factor(pos_c, mass_c / cfg.rho0, h)
+    assert abs(float(c_c[:n_pool][pool].mean()) - 1.0) < 1e-6   # float32 lattice
 
 
 # --------------------------------------------------------------------------- #
