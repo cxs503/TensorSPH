@@ -69,6 +69,9 @@ __all__ = [
     "tait_pressure", "validate_config", "viscous_dt_limit", "wall_lattice",
     "PairListCache", "brute_force_pairs", "cell_linked_pairs",
     "cell_linked_pairs_host", "DamBreakConfig", "make_column", "run_case",
+    "calibration_factor", "calibrate_mass", "lattice_bias",
+    "lattice_kernel_sum", "lattice_offsets", "measure_complete_support_bias",
+    "spurious_pressure", "spurious_pressure_ratio",
     "apply_contact_angle_boundary", "compute_color_gradient", "compute_curvature", "compute_normal",
     "compute_surface_tension_force", "capillary_dt_limit",
 ]

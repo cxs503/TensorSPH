@@ -1,0 +1,33 @@
+{
+  "pr": 149,
+  "branch": "agent/m3626",
+  "head_sha": "4fe0ae57",
+  "ci_run": 42001027681,
+  "ci_job": 127155964466,
+  "ci_ruff_version": "0.17.3",
+  "stage": "Lint (`python -m ruff check .`)",
+  "errors_before": 97,
+  "errors_after": 0,
+  "by_rule_before": {
+    "E401": 1,
+    "E702": 2,
+    "E501": 76,
+    "W292": 8,
+    "F401": 10
+  },
+  "by_file_before": {
+    "benchmarks/laplace_pressure_closure/make_doc.py": 38,
+    ".scratch/mk_report.py": 28,
+    "benchmarks/initial_density_bias/make_doc.py": 9,
+    "src/tensorsph/__init__.py": 8,
+    "benchmarks/effective_sigma/make_doc.py": 5,
+    "tests/test_initial_density_calibration.py": 3,
+    "benchmarks/initial_density_bias/run.py": 1,
+    "benchmarks/laplace_pressure_closure/analysis.py": 1,
+    "benchmarks/laplace_pressure_closure/figures.py": 1,
+    "src/tensorsph/initial_density.py": 1,
+    "tests/test_free_surface_pressure_closure.py": 1,
+    "tests/test_laplace_pressure_closure.py": 1
+  },
+  "remaining_after": []
+}

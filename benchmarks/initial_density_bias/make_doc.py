@@ -1,3 +1,6 @@
+# ruff: noqa: E501
+# Markdown payload strings are emitted verbatim; wrapping them would change
+# the layout of the generated tables and figure captions.
 """Generate ``docs/verification_initial_density_calibration.md``.
 
 Every number is injected from ``benchmarks/initial_density_bias/report.json``;
