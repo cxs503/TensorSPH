@@ -14,14 +14,12 @@ from tensorsph.droplet_impact import (
     Config,
     density_from_neighbor_pairs,
     make_particles,
-    tait_pressure,
 )
 from tensorsph.initial_density import (
     calibration_factor,
     calibrate_mass,
     lattice_bias,
     lattice_kernel_sum,
-    lattice_offsets,
     measure_complete_support_bias,
     spurious_pressure,
     spurious_pressure_ratio,
@@ -175,9 +173,12 @@ def test_uncalibrated_drop_fails_that_gate_by_six_orders_of_magnitude():
 
 
 def test_make_particles_calibration_flag_is_off_by_default_and_scales_mass():
+    # ``density_calibration`` (the hydrostatic mass profile) is on by default and
+    # would make the base mass non-uniform, hiding the flag under test; switch it
+    # off so this case measures ``calibrate_initial_mass`` alone.
     cfg = Config(dx=0.002, h_factor=H_FACTOR, rho0=RHO0, pool_width=0.1,
                  pool_depth=0.05, drop_radius=0.005, drop_center_y=0.1,
-                 gravity=9.81)
+                 gravity=9.81, density_calibration=False)
     pos_off, mass_off = make_particles(cfg, torch.device("cpu"))
     assert torch.allclose(mass_off,
                           torch.full_like(mass_off, RHO0 * cfg.dx * cfg.dx))

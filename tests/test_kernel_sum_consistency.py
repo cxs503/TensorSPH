@@ -85,9 +85,14 @@ def test_shipped_square_lattice_carries_no_bias():
     pool = interior_mask(pos[:n_pool], h)
     assert int(pool.sum()) > 100
     bias = float(c[:n_pool][pool].mean()) - 1.0
-    # square lattice at h = 1.3 dx: -5.3e-5, on the tension side -> clamped to 0 Pa
-    assert abs(bias) < 1e-4
-    assert bias == pytest.approx(-5.32e-5, rel=5e-2)
+    # Square lattice at h = 1.3 dx: measured 2026-11-05 (torch 2.7.1, loong64) as
+    # +1.19e-7, i.e. one float32 epsilon at 1.0 -- the lattice sum is complete to
+    # working precision and the bias carries no sign to clamp.  The earlier pin
+    # (-5.32e-5, tension side) no longer reproduces on the shipped code, so the
+    # gate asserted here is the physical claim ("no bias above float32
+    # resolution") rather than the stale number.
+    assert abs(bias) < 1e-6
+    assert abs(bias) <= 4.0 * 1.1920929e-7
 
     # ... whereas masking the whole box (pool + drop) is contaminated: 0.970
     assert abs(float(c[interior_mask(pos, h)].mean()) - 1.0) > 1e-2

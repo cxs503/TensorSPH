@@ -1,0 +1,55 @@
+{
+  "lint": {
+    "before": {
+      "total": 113,
+      "per_rule": {
+        "E501": 83,
+        "E741": 1,
+        "F401": 14,
+        "F841": 1,
+        "W292": 14
+      },
+      "per_file": {
+        "benchmarks/laplace_pressure_closure/make_doc.py": 38,
+        "benchmarks/contact_angle_geometry/make_doc.py": 31,
+        "benchmarks/initial_density_bias/make_doc.py": 9,
+        "src/tensorsph/__init__.py": 8,
+        "benchmarks/effective_sigma/make_doc.py": 5,
+        "benchmarks/laplace_pressure_jump/make_doc.py": 4,
+        "benchmarks/contact_angle/run.py": 3,
+        "tests/test_initial_density_calibration.py": 3,
+        "benchmarks/contact_angle_geometry/run.py": 2,
+        "tests/test_contact_angle_geometry.py": 2,
+        "benchmarks/initial_density_bias/run.py": 1,
+        "benchmarks/laplace_pressure_closure/analysis.py": 1,
+        "benchmarks/laplace_pressure_closure/figures.py": 1,
+        "benchmarks/laplace_pressure_jump/run.py": 1,
+        "src/tensorsph/initial_density.py": 1,
+        "tests/test_free_surface_pressure_closure.py": 1,
+        "tests/test_laplace_pressure_closure.py": 1,
+        "tests/test_laplace_pressure_jump.py": 1
+      },
+      "doc_generator_violations": 87
+    },
+    "after": {
+      "total": 0,
+      "per_rule": {},
+      "per_file": {},
+      "doc_generator_violations": 0
+    }
+  },
+  "mode2_pins_pct": {
+    "x86_64_github_ci": 8.64,
+    "loong64_reference": -31.78
+  },
+  "mode2_pins_spread_pct": 40.42,
+  "reference_case_error_pct": -43.5,
+  "tests": {
+    "passed": 0,
+    "failed": 0,
+    "xfailed": 0,
+    "errors": 0,
+    "green": false,
+    "tail": ".................."
+  }
+}
