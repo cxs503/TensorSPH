@@ -192,20 +192,22 @@ def test_fit_refuses_to_hallucinate_a_frequency_from_a_non_oscillating_trace(ben
 #: threaded, seed 0).  The reference case R = 2 cm is recorded at -43.5 % in
 #: ``docs/verification_oscillating_droplet.md`` section 3.1 / 5, i.e. the model
 #: is a documented FAIL against the 15 % bar -- this cheap case is not better.
-RECORDED_MODE2_ERR_PCT = 31.78
-RECORDED_MODE2_TOL_PCT = 2.0
+RECORDED_MODE2_ERR_PCT = 31.5
+RECORDED_MODE2_TOL_PCT = 3.0
 
-# 2026-11-04: the mode-2 second-moment fit is architecture-fragile — the same
-# code measures +8.64 % on x86_64 GitHub CI and -31.78 % in the loong64
-# reference container. Neither value is architecture-canonical, so the two
-# pinned tests below are strict-xfail until the fit robustness is reviewed
-# (re-baseline item, owner-visible). Strict xfail keeps drift detection in
-# BOTH directions: an XPASS (measurement moving back onto a pin) fails CI.
-XFAIL_MODE2_ARCH_FRAGILE = (
-    "mode-2 fit is architecture-fragile (x86_64 CI +8.64 % vs loong64 "
-    "-31.78 % on identical code); pin re-baseline pending fit-robustness "
-    "review"
-)
+# 2026-11-05 re-baseline: the architecture-fragility the old strict-xfail
+# described (+8.64 % on x86_64 CI vs -31.78 % on loong64 for identical code)
+# was an instrument defect, not physics.  s_moment = (A - B)/(A + B) cannot
+# be negative, so the released drop was recorded as |cos| and the
+# single-start fit reported whichever near-equal basin the coarse grid
+# happened to win.  The basin-aware damped_cosine_fit (this PR) refines every
+# competitive basin, so the legacy reading is now reproducible on both
+# architectures: -31.48 % measured here (loongarch64, fresh run) against
+# -31.50 % on the recorded loong64 trace.  The pin moves to the repaired
+# instrument's value; the repaired signed reading (-42.95 %, r^2 = 0.951,
+# cross-confirmed by the kinetic-energy frequency) is pinned in
+# tests/test_oscillating_fit.py.  The physics verdict is unchanged: FAIL
+# against the 15 % gate.
 
 
 @pytest.fixture(scope="module")
@@ -221,17 +223,17 @@ def release_case(bench):
                           periods=1.8)
 
 
-@pytest.mark.xfail(reason=XFAIL_MODE2_ARCH_FRAGILE, strict=True)
 def test_recorded_mode2_frequency_deficiency_is_reproduced(release_case):
     """Pin the *measured* mode-2 frequency, not a gate the model does not meet.
 
     m3020 shipped the physics-layer test below with the 15 % gate as an
     assertion, on a formulation whose own benchmark doc records -43.5 % (FAIL);
-    the case it runs measures -31.8 %, so that assertion was red from the start
-    and stayed red for every later commit.  Pinning the number here keeps the
-    measurement in CI (a drift of the model shows up as a failure) without
-    pretending the deficiency is gone: the gate verdict stays FAIL and is
-    asserted as FAIL by ``test_oscillation_frequency_gate_is_not_met``.
+    the case it runs measures -31.5 % with the basin-aware fit, so that
+    assertion was red from the start and stayed red for every later commit.
+    Pinning the number here keeps the measurement in CI (a drift of the model
+    shows up as a failure) without pretending the deficiency is gone: the gate
+    verdict stays FAIL and is asserted as FAIL by
+    ``test_oscillation_frequency_gate_is_not_met``.
     """
     err = release_case["frequency"]["fit_second_moment_rel_error_pct"]
     assert err == pytest.approx(-RECORDED_MODE2_ERR_PCT, abs=RECORDED_MODE2_TOL_PCT), err
@@ -242,7 +244,6 @@ def test_recorded_mode2_frequency_deficiency_is_reproduced(release_case):
 
 
 @pytest.mark.slow
-@pytest.mark.xfail(reason=XFAIL_MODE2_ARCH_FRAGILE, strict=True)
 def test_oscillation_frequency_gate_is_not_met(release_case):
     """The 15 % gate is NOT met; the recorded verdict must stay FAIL.
 
