@@ -30,7 +30,7 @@ Tait 状态方程把它折算成虚假初始压强 `p = B[(1+b)^gamma - 1]`，`B
 
 修复（`src/`）：`calibrated_particle_mass = rho0 / sum_j W`；`lattice_mass_unit` 统一给流体与壁面
 粒子用同一质量单位（壁面参与流体密度求和，单位不一致会在壁面处留下一个 `b` 的密度台阶）；
-`Config.density_calibration`（默认 True）可关以做 A/B。
+`Config.density_calibration`（默认 False，需显式开启）用于对此做 A/B。
 
 ## 3. 结果
 

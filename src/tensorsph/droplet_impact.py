@@ -118,7 +118,18 @@ class Config:
     calibrate_initial_mass: bool = False
     wall_friction: float = 0.0
     density_diffusion: float = 0.0
-    density_calibration: bool = True
+    # Build the lattice mass as rho0 / sum_j W (tensorsph.initial_density)
+    # instead of rho0 dx^2.  Opt-in: the shipped square lattice at
+    # h = 1.3 dx already sits at the discrete equilibrium (b = -5.3e-5,
+    # clamped away by the tension floor), so calibrating by default only
+    # rescales every published case by 5.3e-5 for no physical gain and
+    # breaks the pins that record the uncalibrated lattice
+    # (tests/test_initial_density_calibration.py,
+    # tests/test_kernel_sum_consistency.py, tests/test_wall_pressure.py).
+    # It matters for lattices that do carry a bias (hexagonal,
+    # h = 1.5 dx: b = +3.4e-3); benchmarks/lattice_equilibrium/run.py
+    # turns it on explicitly for that A/B.
+    density_calibration: bool = False
     # Adaptive time step. Off by default: a fixed step keeps every published
     # number reproducible bit for bit. When on, ``dt`` starts at the configured
     # value, shrinks to whatever the current maximum speed allows, and grows back
