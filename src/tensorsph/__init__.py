@@ -32,6 +32,16 @@ from .droplet_impact import (
     wall_lattice,
 )
 from .dam_break import DamBreakConfig, make_column, run_case
+from .initial_density import (
+    calibration_factor,
+    calibrate_mass,
+    lattice_bias,
+    lattice_kernel_sum,
+    lattice_offsets,
+    measure_complete_support_bias,
+    spurious_pressure,
+    spurious_pressure_ratio,
+)
 from .neighbor_search import (
     PairListCache,
     brute_force_pairs,
