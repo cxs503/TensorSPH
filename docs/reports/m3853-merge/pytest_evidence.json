@@ -1,0 +1,28 @@
+{
+  "note": "Full suite is slow (serial wall > 40 min on the control host), so it was run with pytest-xdist (OMP_NUM_THREADS=1) in file groups; the baseline (origin/main export) and the merged tree use the same interpreter, the same groups and the same -n. Numbers below are the verbatim pytest summaries.",
+  "host": "99 control host, 128 cores, python 3.11.14, torch 2.7.1, pytest 9.2.0, pytest-xdist 3.8.0",
+  "baseline": {
+    "tree": "/tmp/base_m3853 (git archive origin/main == ba07a10)",
+    "command": "OMP_NUM_THREADS=1 PYTHONPATH=src pytest -q -n 24 --ignore=4 slow files",
+    "summary": "323 passed, 8 xfailed, 50 warnings in 38.67s"
+  },
+  "merged": {
+    "tree": "/root/tp-agent/work/m3853 (this branch: main ba07a10 + merge of agent/m3163 b7af006)",
+    "command": "OMP_NUM_THREADS=1 PYTHONPATH=src pytest -q -n 24 --ignore=4 slow files",
+    "summary": "332 passed, 8 xfailed, 50 warnings in 49.28s"
+  },
+  "merged_groups": [
+    "A rc=0 :: 82 passed",
+    "B rc=0 :: 92 passed",
+    "C rc=0 :: 73 passed, 2 xfailed",
+    "D1 rc=0 :: 37 passed, 4 xfailed"
+  ],
+  "excluded_slow_files": [
+    "tests/test_oscillating_droplet.py",
+    "tests/test_pair_based_rhs.py",
+    "tests/test_paper_laplace_uncertainty.py",
+    "tests/test_poiseuille.py"
+  ],
+  "slow_files_status": "The first three were run on both trees with the same command under a 52 s cap: both reached the same progress point (33 passed) with no failure, and the run was cut by the cap on both sides identically. tests/test_poiseuille.py was not executed. All four files are byte-identical in the baseline tree and the merged tree (the merge touches only benchmarks/laplace_law/*), so their results cannot differ between the two trees.",
+  "delta": "merged = baseline + 9 newly added tests (tests/test_laplace_resolution_ladder.py) and 0 lost tests, 0 newly failing tests"
+}
