@@ -1,0 +1,118 @@
+{
+  "stage": {
+    "worktree": "/root/tp-agent/work/m3851",
+    "branch_head": "merge/m2919-trial",
+    "main_sha": "ba07a1066bcb2be5046dc63ae0179273b9f02ee7",
+    "pr_branch": "agent/m2919",
+    "pr_branch_sha_old": "72f966fd6795fb0fb0b4c183bd86077f56d128a4",
+    "merge_base": "5800532752d8e0f9104e06c412f6af6797b1452f",
+    "ahead_behind": "40\t1"
+  },
+  "probes": {
+    "fit_quadratic (main default)": {
+      "case": "radius=0.02, dx=0.0025, mode=2, eps=0.05, periods=1.0",
+      "omega_measured_rad_s": 28.15382273111415,
+      "omega_analytic_rad_s": 73.48469228349533,
+      "omega_rel_error_pct": -61.68750000000001,
+      "fit_residual_rel": 0.17881817482683254,
+      "gamma_measured_1_s": null,
+      "n_particles": 233,
+      "steps": null,
+      "max_speed": null
+    },
+    "mls (pinned, branch baseline)": {
+      "case": "radius=0.02, dx=0.0025, mode=2, eps=0.05, periods=1.0",
+      "omega_measured_rad_s": 64.03272373853076,
+      "omega_analytic_rad_s": 73.48469228349533,
+      "omega_rel_error_pct": -12.86249999999998,
+      "fit_residual_rel": 0.05410173658381857,
+      "gamma_measured_1_s": null,
+      "n_particles": 233,
+      "steps": null,
+      "max_speed": null
+    }
+  },
+  "omega_analytic_rad_s": 73.48469228349533,
+  "branch_report_rows": [
+    {
+      "case": "mode2",
+      "n": 2,
+      "dx_mm": 1.5,
+      "n_particles": 639,
+      "omega_measured": 28.15382273111415,
+      "omega_analytic": 73.48469228349533,
+      "error_pct": -61.68750000000001,
+      "residual": 0.10509607477744518
+    },
+    {
+      "case": "mode3",
+      "n": 3,
+      "dx_mm": 1.5,
+      "n_particles": 648,
+      "omega_measured": 56.3076454622283,
+      "omega_analytic": 146.96938456699067,
+      "error_pct": -61.68750000000001,
+      "residual": 0.41646745896007176
+    },
+    {
+      "case": "coarse",
+      "n": 2,
+      "dx_mm": 2.0,
+      "n_particles": 365,
+      "omega_measured": 62.11063975599058,
+      "omega_analytic": 73.48469228349533,
+      "error_pct": -15.478124999999984,
+      "residual": 0.20224383295467802
+    },
+    {
+      "case": "no_sigma",
+      "n": 2,
+      "dx_mm": 1.5,
+      "n_particles": 639,
+      "omega_measured": 38.3125,
+      "omega_analytic": 0.0,
+      "error_pct": null,
+      "residual": 0.033963171082777036
+    }
+  ],
+  "test_runs": {
+    "baseline": {
+      "tree": "/tmp/base38 (git worktree add origin/main, ba07a10)",
+      "command": "PYTHONPATH=src python3 -m pytest tests/test_oscillating_droplet.py -p no:cacheprovider -v",
+      "collected": 12,
+      "passed": 10,
+      "failed": 2,
+      "wall_s": 221.98,
+      "log": "docs/merge_pr87/logs/baseline_main.log",
+      "failures": [
+        "test_recorded_mode2_frequency_deficiency_is_reproduced",
+        "test_oscillation_frequency_gate_is_not_met"
+      ],
+      "failure_kind": "XPASS(strict) - main pins the known mode-2 deficiency with xfail(strict=True); on this host the deficiency body passes, so both xfail strict tests report FAILED. Pre-existing on origin/main, unrelated to the merge."
+    },
+    "merged": {
+      "tree": "merge/m2919-trial (main + PR #87)",
+      "command": "PYTHONPATH=src python3 -m pytest tests/test_oscillating_droplet.py -p no:cacheprovider -v",
+      "collected": 27,
+      "passed": 25,
+      "failed": 2,
+      "wall_s": 169.65,
+      "log": "docs/merge_pr87/logs/merged_union.log",
+      "failures": [
+        "test_recorded_mode2_frequency_deficiency_is_reproduced",
+        "test_oscillation_frequency_gate_is_not_met"
+      ],
+      "failure_kind": "identical to baseline: the same two pre-existing strict-xfail XPASS tests"
+    },
+    "pr_branch_tip": {
+      "tree": "/tmp/br38 (git worktree add origin/agent/m2919, 72f966f)",
+      "command": "PYTHONPATH=src python3 -m pytest tests/test_oscillating_droplet.py -k TestSolverRegression -p no:cacheprovider -v",
+      "selected": 2,
+      "passed": 2,
+      "wall_s": 40.56,
+      "log": "docs/merge_pr87/logs/branch_tip_solver.log",
+      "note": "the branch's two solver regressions pass on its own base kernel"
+    },
+    "delta": "merged = baseline + 15 branch tests, all green; no test that passes on main fails after the merge"
+  }
+}

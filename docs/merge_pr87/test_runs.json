@@ -1,0 +1,40 @@
+{
+  "baseline": {
+    "tree": "/tmp/base38 (git worktree add origin/main, ba07a10)",
+    "command": "PYTHONPATH=src python3 -m pytest tests/test_oscillating_droplet.py -p no:cacheprovider -v",
+    "collected": 12,
+    "passed": 10,
+    "failed": 2,
+    "wall_s": 221.98,
+    "log": "docs/merge_pr87/logs/baseline_main.log",
+    "failures": [
+      "test_recorded_mode2_frequency_deficiency_is_reproduced",
+      "test_oscillation_frequency_gate_is_not_met"
+    ],
+    "failure_kind": "XPASS(strict) - main pins the known mode-2 deficiency with xfail(strict=True); on this host the deficiency body passes, so both xfail strict tests report FAILED. Pre-existing on origin/main, unrelated to the merge."
+  },
+  "merged": {
+    "tree": "merge/m2919-trial (main + PR #87)",
+    "command": "PYTHONPATH=src python3 -m pytest tests/test_oscillating_droplet.py -p no:cacheprovider -v",
+    "collected": 27,
+    "passed": 25,
+    "failed": 2,
+    "wall_s": 169.65,
+    "log": "docs/merge_pr87/logs/merged_union.log",
+    "failures": [
+      "test_recorded_mode2_frequency_deficiency_is_reproduced",
+      "test_oscillation_frequency_gate_is_not_met"
+    ],
+    "failure_kind": "identical to baseline: the same two pre-existing strict-xfail XPASS tests"
+  },
+  "pr_branch_tip": {
+    "tree": "/tmp/br38 (git worktree add origin/agent/m2919, 72f966f)",
+    "command": "PYTHONPATH=src python3 -m pytest tests/test_oscillating_droplet.py -k TestSolverRegression -p no:cacheprovider -v",
+    "selected": 2,
+    "passed": 2,
+    "wall_s": 40.56,
+    "log": "docs/merge_pr87/logs/branch_tip_solver.log",
+    "note": "the branch's two solver regressions pass on its own base kernel"
+  },
+  "delta": "merged = baseline + 15 branch tests, all green; no test that passes on main fails after the merge"
+}

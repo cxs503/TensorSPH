@@ -80,6 +80,7 @@ from tensorsph.droplet_impact import (
     apply_boundary,
     resolve_device,
     rhs,
+    stable_dt,
     suggested_dt,
 )
 from tensorsph.neighbor_search import PairListCache
