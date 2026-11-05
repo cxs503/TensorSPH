@@ -1,0 +1,88 @@
+{
+  "base_commit": "3420d0a",
+  "ruff": [
+    {
+      "file": "benchmarks/viscosity_shear_wave/make_doc.py",
+      "before": 3,
+      "after": 0,
+      "rules_before": {
+        "F841": 1,
+        "E501": 1,
+        "W292": 1
+      },
+      "rules_after": {}
+    },
+    {
+      "file": "benchmarks/viscosity_shear_wave/run.py",
+      "before": 1,
+      "after": 0,
+      "rules_before": {
+        "W292": 1
+      },
+      "rules_after": {}
+    },
+    {
+      "file": "tests/test_viscosity_shear_wave.py",
+      "before": 1,
+      "after": 0,
+      "rules_before": {
+        "W292": 1
+      },
+      "rules_after": {}
+    }
+  ],
+  "ci_steps": [
+    {
+      "step": "checkout + pip install",
+      "status": "pass"
+    },
+    {
+      "step": "Lint: ruff check .",
+      "status": "fail"
+    },
+    {
+      "step": "Run unit and smoke tests (pytest)",
+      "status": "skipped"
+    },
+    {
+      "step": "tiny e2e droplet_impact_2d",
+      "status": "skipped"
+    },
+    {
+      "step": "manifest contract assertions",
+      "status": "skipped"
+    },
+    {
+      "step": "neighbour search / pair-RHS refs",
+      "status": "skipped"
+    },
+    {
+      "step": "free-surface side-by-side",
+      "status": "skipped"
+    },
+    {
+      "step": "pair-list reuse neutrality",
+      "status": "skipped"
+    },
+    {
+      "step": "hydrostatic gates",
+      "status": "skipped"
+    },
+    {
+      "step": "ringing-pool negative control",
+      "status": "skipped"
+    },
+    {
+      "step": "dam-break convergence",
+      "status": "skipped"
+    },
+    {
+      "step": "fail-fast exit status",
+      "status": "skipped"
+    },
+    {
+      "step": "upload smoke artifacts (always)",
+      "status": "ran, empty"
+    }
+  ]
+}
