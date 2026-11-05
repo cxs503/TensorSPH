@@ -115,9 +115,61 @@ def elliptical_drop(radius: float, dx: float, rho0: float,
     return pos, mass.expand(pos.shape[0]).clone()
 
 
+def lobed_droplet(radius: float, dx: float, rho0: float, eps: float,
+                  mode: int = MODE) -> tuple[torch.Tensor, torch.Tensor]:
+    """Hexagonal drop with ``r(theta) = R (1 + eps cos m theta)``, centred at 0.
+
+    :func:`elliptical_drop` is the ``m = 2`` special case; this generalisation
+    covers the higher azimuthal modes of the same Rayleigh-Lamb family
+    (``omega_3^2 = 24 sigma / (rho R^3)``), which is what the ``m >= 3`` branch
+    of eq. 2 needs to be scored at all.
+
+    The boundary is the analytic lobe ``r <= R (1 + eps cos m theta)``, so the
+    enclosed area is ``(R^2/2) Int (1 + eps cos m theta)^2 dtheta =
+    pi R^2 (1 + eps^2/2)`` for every ``m >= 1`` -- the ``eps^2/2`` term is the
+    lattice-level area inflation, i.e. the same ``O(eps^2)`` trap that
+    :func:`elliptical_drop` removes by construction for ``m = 2``.
+
+    Merged from the m2919 lineage of this benchmark (PR #87): the m2919
+    implementation scored the ``m = 3`` case with it, and its measurement is
+    preserved verbatim in ``validation_report_m2919.json``.
+    """
+    if mode < 1:
+        raise ValueError(f"mode m = {mode} is not an azimuthal mode")
+    dy = dx * math.sqrt(3.0) / 2.0
+    mass = rho0 * dx * dy
+    reach = radius * (1.0 + abs(eps))
+    pts = []
+    j = 0
+    y = -reach
+    while y <= reach:
+        offset = 0.5 * dx if (j % 2) else 0.0
+        x = -reach + offset
+        while x <= reach:
+            r = math.hypot(x, y)
+            if r > 1e-12:
+                theta = math.atan2(y, x)
+                if r <= radius * (1.0 + eps * math.cos(mode * theta)):
+                    pts.append((x, y))
+            x += dx
+        y += dy
+        j += 1
+    pos = torch.tensor(pts, dtype=torch.float64)
+    pos = pos - pos.mean(dim=0)
+    return pos, torch.full((pos.shape[0],), mass, dtype=torch.float64)
+
+
 def analytic_omega(radius: float, sigma: float, rho0: float,
                    m: int = MODE) -> float:
-    """``omega_m = sqrt(sigma m (m^2 - 1) / (rho R^3))`` (2-D, eq. 2)."""
+    """``omega_m = sqrt(sigma m (m^2 - 1) / (rho R^3))`` (2-D, eq. 2).
+
+    ``m = 1`` is a rigid translation of the cylinder (``m^2 - 1 = 0``, no
+    restoring force), so it is rejected instead of silently returning 0.
+    """
+    if m < 2:
+        raise ValueError(
+            f"mode m = {m} is a translation of the cylinder: no restoring "
+            "force, so there is no frequency (m >= 2 required)")
     return math.sqrt(sigma * m * (m * m - 1.0) / (rho0 * radius ** 3))
 
 
@@ -157,6 +209,28 @@ def mode_amplitude(pos: torch.Tensor, mass: torch.Tensor) -> dict:
     return {"s_moment": (big - small) / (big + small),
             "semi_major": big, "semi_minor": small,
             "r_eff": 2.0 * math.sqrt(0.5 * (lam1 + lam2))}
+
+
+def mode_quadrupole(pos: torch.Tensor, mass: torch.Tensor) -> float:
+    """Signed mode-2 quadrupole ``sum m (x^2 - y^2) / sum m r^2`` about the COM.
+
+    The *oriented* twin of :func:`mode_amplitude`: for
+    ``r = R (1 + eps cos 2 theta)`` a uniform ellipse gives ``3 eps / 2`` up to
+    the ``r^2`` weighting, and a 90 degree rotation flips its sign, whereas the
+    eigenvalue estimator above returns ``|s|`` and is blind to that flip.
+    Both are kept (merged from the m2919 lineage, PR #87) because they answer
+    different questions: :func:`mode_amplitude` is the amplitude used for the
+    frequency fit (robust to lattice jaggedness, no sign), and this one is the
+    estimator the m2919 runs measured -- the numbers in
+    ``validation_report_m2919.json`` are its output.
+    """
+    if mass.dim() == 0:
+        mass = mass.expand(pos.shape[0])
+    com = (mass[:, None] * pos).sum(dim=0) / mass.sum()
+    rel = pos - com
+    r2 = rel.square().sum(dim=1)
+    quad = (mass * (rel[:, 0] ** 2 - rel[:, 1] ** 2)).sum()
+    return float(quad / (mass * r2).sum())
 
 
 # --------------------------------------------------------------------------- #
@@ -282,8 +356,17 @@ def run_case(radius: float = 0.02, dx: float = 0.002, sigma: float = 7.2,
     h = cfg.h_factor * cfg.dx
     dt = float(stable_dt(cfg))
     omega_ref = analytic_omega(radius, sigma, rho0)
-    period_ref = 2.0 * math.pi / omega_ref
-    t_sigma = math.sqrt(rho0 * radius ** 3 / sigma)
+    # ``sigma = 0`` is the negative control of the whole benchmark (it must NOT
+    # oscillate at the capillary frequency), and it has no reference period to
+    # scale from: the caller then has to pass an explicit ``steps``.
+    if sigma > 0.0:
+        period_ref = 2.0 * math.pi / omega_ref
+        t_sigma = math.sqrt(rho0 * radius ** 3 / sigma)
+    elif steps is None:
+        raise ValueError("sigma = 0 has no reference period: pass steps=...")
+    else:
+        period_ref = float("inf")
+        t_sigma = float("inf")
     if steps is None:
         steps = int(math.ceil(periods * period_ref / dt))
 
@@ -317,9 +400,14 @@ def run_case(radius: float = 0.02, dx: float = 0.002, sigma: float = 7.2,
     peaks = peak_decay(ts, s_mom)
     final = mode_amplitude(pos, mass)
 
-    err_pct = (fit_mom["omega"] - omega_ref) / omega_ref * 100.0
-    err_zc = ((zc_mom["omega"] - omega_ref) / omega_ref * 100.0
-              if math.isfinite(zc_mom["omega"]) else float("nan"))
+    if omega_ref > 0.0:
+        err_pct = (fit_mom["omega"] - omega_ref) / omega_ref * 100.0
+        err_zc = ((zc_mom["omega"] - omega_ref) / omega_ref * 100.0
+                  if math.isfinite(zc_mom["omega"]) else float("nan"))
+    else:
+        # sigma = 0 negative control: there is no target frequency to miss.
+        err_pct = float("nan")
+        err_zc = float("nan")
     # numerical (inviscid) dissipation floor implied by the fitted lambda
     return {
         "setup": {
@@ -339,7 +427,8 @@ def run_case(radius: float = 0.02, dx: float = 0.002, sigma: float = 7.2,
             "period_s": period_ref,
             "omega_3d_sphere_rad_per_s": analytic_omega_3d(radius, sigma, rho0),
             "capillary_time_s": t_sigma,
-            "period_over_t_sigma": period_ref / t_sigma,
+            "period_over_t_sigma": (period_ref / t_sigma
+                                    if sigma > 0.0 else float("nan")),
             "damping_estimate_per_s": 2.0 * viscosity * MODE ** 2 / radius ** 2,
             "damping_estimate_provenance":
                 "irrotational plane-capillary-wave estimate lambda = 2 nu k^2 "
@@ -353,13 +442,15 @@ def run_case(radius: float = 0.02, dx: float = 0.002, sigma: float = 7.2,
             "fit_second_moment_rel_error_pct": err_pct,
             "fit_kinetic_energy_rad_per_s": fit_ke["omega"],
             "fit_kinetic_energy_rel_error_pct":
-                (fit_ke["omega"] - 2.0 * omega_ref) / (2.0 * omega_ref) * 100.0,
+                ((fit_ke["omega"] - 2.0 * omega_ref) / (2.0 * omega_ref) * 100.0
+                 if omega_ref > 0.0 else float("nan")),
             "zero_crossing_rad_per_s": zc_mom["omega"],
             "zero_crossing_rel_error_pct": err_zc,
             # KE carries 2*omega; halves it so the two estimators are comparable.
             "estimator_agreement_pct":
-                (0.5 * fit_ke["omega"] - fit_mom["omega"])
-                / fit_mom["omega"] * 100.0,
+                ((0.5 * fit_ke["omega"] - fit_mom["omega"])
+                 / fit_mom["omega"] * 100.0
+                 if fit_mom["omega"] else float("nan")),
             "within_3pct": abs(err_pct) < 3.0,
             "within_15pct": abs(err_pct) < GATE_PCT,
             "fit": fit_mom,
