@@ -686,6 +686,216 @@ SUPERSEDED_NUMBERS = {
 MARKERS = ("历史", "historical", "superseded", "旧代码", "legacy", "verification_ledger", "作废")
 
 
+def coverage_claims() -> list[dict]:
+    """Evidence files that were committed but never registered as claims.
+
+    The m3087 / m3114 / m3151 / m3188 / m3432 merges each landed a
+    machine-readable evidence file without a ledger entry, so
+    ``unregistered_artifact`` findings accumulated and
+    ``tests/test_verification_ledger.py`` (coverage test) went red on every
+    later PR.  These five entries close that gap: every number is read from the
+    artifact at generation time and graded by the same 3 % / 15 % ladder.
+    """
+    out: list[dict] = []
+
+    # ---- conservation (m3188): the viscous pair term is closed-form exact ----
+    rel = "benchmarks/conservation/report.json"
+    d = _load(rel)
+    vp = d["viscous_pair"]
+    out.append(
+        _entry(
+            claim_id="conservation.viscous_pair.closed_form",
+            quantity_id="viscous_pair_force_ratio",
+            quantity="net viscous pair force / closed form, equal densities",
+            artifact=rel,
+            json_path="viscous_pair.closed_form_ratio",
+            reference=(1.0, "-", "closed-form pair viscous force at rho_i = rho_j"),
+            measured=(
+                vp["closed_form_ratio"],
+                "-",
+                "measured net pair force / closed form, separation "
+                f"{vp['separation_m'] * 1e3:.2f} mm, h = {vp['h_m'] * 1e3:.2f} mm",
+            ),
+            guarding_test="tests/test_conservation.py::test_viscous_pair_leak_matches_closed_form",
+            artifact_status=None,
+            backlog_ref="docs/verification_ledger.md",
+            notes=(
+                "Equal densities are the only case in which the un-symmetrised term "
+                "cancels; at the artifact's density contrast "
+                f"{vp['relative_density_contrast']:.3f} the median momentum leak is "
+                f"{d['verdicts']['G2_viscous_leak_median']:.2e}, i.e. the defect is a "
+                "free-surface term, not a pair-force error."
+            ),
+        )
+    )
+
+    # ---- init_consistency (m3114): spurious pressure after calibration ----
+    rel = "benchmarks/init_consistency/report.json"
+    d = _load(rel)
+    s = d["summary"]
+    limit = 1.0e-4
+    out.append(
+        _entry(
+            claim_id="init_consistency.spurious_pressure.calibrated",
+            quantity_id="initial_spurious_pressure_rel",
+            quantity="|p_false| / (rho0 c0^2) at t = 0, worst calibrated case",
+            artifact=rel,
+            json_path="summary.worst_calibrated_rel_pressure",
+            reference=(limit, "-", "m2971 P1 acceptance: |p_false|/(rho0 c0^2) < 1e-4"),
+            measured=(
+                s["worst_calibrated_rel_pressure"],
+                "-",
+                "worst of the calibrated hex-drop and square-pool ladders",
+            ),
+            rel_error_pct=s["worst_calibrated_rel_pressure"] * 100.0,
+            claim_type="gate",
+            gate_result="pass" if s["all_calibrated_meet_criterion"] else "fail",
+            gate_limit=limit,
+            guarding_test="tests/test_kernel_sum_consistency.py::test_calibration_clears_the_spurious_pressure",
+            artifact_status="PASS" if s["all_calibrated_meet_criterion"] else "FAIL",
+            backlog_ref="backlog_update_m2971.md#P1",
+            notes=(
+                "The gate is cleared by twelve orders of magnitude only after the mass "
+                "calibration; the raw lattice carries "
+                f"{s['worst_raw_rel_pressure']:.3e}, i.e. "
+                f"{s['worst_raw_rel_pressure'] / limit:.0f}x the limit."
+            ),
+        )
+    )
+
+    # ---- initial_density_bias (m3114): the closed-form lattice offset ----
+    rel = "benchmarks/initial_density_bias/report.json"
+    d = _load(rel)
+    hex_drop = d["validation"]["hex_drop"]
+    out.append(
+        _entry(
+            claim_id="initial_density.hex_drop.bias",
+            quantity_id="sum_density_bias_h1.3_hex",
+            quantity=(
+                "initial sum-density bias of a sharp hexagonal drop, h/dx = 1.3 "
+                "(fraction of rho0)"
+            ),
+            artifact=rel,
+            json_path="validation.hex_drop.bias_measured",
+            reference=(
+                hex_drop["bias_analytic"],
+                "fraction",
+                "closed-form kernel-sum bias of a sharp hex lattice, complete support only",
+            ),
+            measured=(
+                hex_drop["bias_measured"],
+                "fraction",
+                f"measured over {hex_drop['n_complete_support']} complete-support particles",
+            ),
+            guarding_test=(
+                "tests/test_initial_density_calibration.py"
+                "::test_analytic_bias_matches_the_measured_hex_drop"
+            ),
+            artifact_status="PASS" if d["all_gates_passed"] else "FAIL",
+            backlog_ref="backlog_update_m2971.md#P1",
+            notes=(
+                f"The offset is worth {hex_drop['spurious_pressure_Pa_c0_20']:.1f} Pa at "
+                "c0 = 20 m/s and is removed by the mass calibration alone: the calibrated "
+                "drop starts at |p_false|/(rho0 c0^2) = "
+                f"{d['validation']['calibrated_hex_drop']['spurious_ratio']:.1e}."
+            ),
+        )
+    )
+
+    # ---- lattice_equilibrium (m3087): the acceptance ratio on a resting lattice ----
+    rel = "benchmarks/lattice_equilibrium/report.json"
+    d = _load(rel)
+    row_i, row = next(
+        (i, r)
+        for i, r in enumerate(d["production"])
+        if r["h_over_dx"] == 1.3 and r["sound_speed"] == 20.0 and r["calibrated"]
+    )
+    raw_row = next(
+        r
+        for r in d["production"]
+        if r["h_over_dx"] == 1.3 and r["sound_speed"] == 20.0 and not r["calibrated"]
+    )
+    out.append(
+        _entry(
+            claim_id="lattice_equilibrium.interior_density_offset.calibrated",
+            quantity_id="initial_spurious_pressure_rel",
+            quantity=(
+                "interior |rho/rho0 - 1| of the resting calibrated lattice, "
+                "h/dx = 1.3, c0 = 20 m/s"
+            ),
+            artifact=rel,
+            json_path=f"production[{row_i}].interior_rel_density_max_abs",
+            reference=(
+                d["reference"]["acceptance_ratio"],
+                "-",
+                "acceptance ratio on the interior relative density (m2971 P1)",
+            ),
+            measured=(
+                row["interior_rel_density_max_abs"],
+                "-",
+                f"max over the {row['n_fluid']} fluid particles, calibrated mass unit "
+                f"{row['mass_unit']:.6f}",
+            ),
+            rel_error_pct=row["interior_rel_density_max_abs"] * 100.0,
+            claim_type="gate",
+            gate_result="pass" if row["passes_1e-4"] else "fail",
+            gate_limit=d["reference"]["acceptance_ratio"],
+            guarding_test=(
+                "tests/test_lattice_equilibrium.py"
+                "::test_calibration_meets_the_1e_minus_4_acceptance"
+            ),
+            artifact_status="PASS" if row["passes_1e-4"] else "FAIL",
+            backlog_ref="backlog_update_m2971.md#P1",
+            notes=(
+                "The same configuration without the calibration carries "
+                f"{raw_row['interior_rel_density_max_abs']:.3e} (h/dx = 1.3 is benign); at "
+                "the trap smoothing h/dx = 1.5 the raw offset is kilopascal-scale, which is "
+                "why the calibration is not optional."
+            ),
+        )
+    )
+
+    # ---- laplace_pressure_closure (m3151): the relaxed readout, closure on ----
+    rel = "benchmarks/laplace_pressure_closure/raw/relax_ladder.json"
+    d = _load(rel)
+    case_i, case = next(
+        (i, c) for i, c in enumerate(d["cases"]) if c["case"] == "closure_on_interior_layers2"
+    )
+    worst = max(d["cases"], key=lambda c: abs(c["tail_rel_error_pct"]))
+    out.append(
+        _entry(
+            claim_id="laplace_pressure_closure.relaxed_tail.layers2",
+            quantity_id="young_laplace_jump_sigma7.2_R0.02",
+            quantity="dp = sigma/R (2-D), sigma=7.2 N/m, R=0.020 m -> 360 Pa, relaxed tail mean",
+            artifact=rel,
+            json_path=f"cases[{case_i}].tail_mean_Pa",
+            reference=(d["analytic_dp_Pa"], "Pa", "Young-Laplace sigma/R"),
+            measured=(
+                case["tail_mean_Pa"],
+                "Pa",
+                "tail mean core pressure after "
+                f"{case['steps']} steps, dx = {d['dx_m'] * 1e3:.0f} mm, closure donors = "
+                f"{case['config']['donors']} / {case['config']['layers']} layers",
+            ),
+            rel_error_pct=case["tail_rel_error_pct"],
+            guarding_test=(
+                "tests/test_laplace_pressure_closure.py"
+                "::test_closure_improves_the_relaxed_laplace_readout"
+            ),
+            artifact_status=None,
+            backlog_ref="backlog_update_m2971.md#P0",
+            notes=(
+                "The closure moves the relaxed readout from "
+                f"{worst['tail_rel_error_pct']:+.1f} % (closure off) into the 15 % band, "
+                "but not into the 3 % band; the donor set matters, so the reading is only "
+                "meaningful with its donor definition attached "
+                "(docs/verification_laplace_pressure_closure.md)."
+            ),
+        )
+    )
+    return out
+
+
 def grade(e: dict) -> str:
     """One repo-wide grading rule, applied uniformly to every entry."""
     if e["superseded_by"]:
@@ -822,6 +1032,7 @@ def build() -> dict:
         + operator_level_claims()
         + model_level_claims()
         + other_physics_claims()
+        + coverage_claims()
     )
     for e in entries:
         e["grade"] = grade(e)

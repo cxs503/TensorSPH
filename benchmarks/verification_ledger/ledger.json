@@ -31,6 +31,36 @@
       "superseded_by": null
     },
     {
+      "artifact": "benchmarks/conservation/report.json",
+      "artifact_status": null,
+      "backlog_ref": "docs/verification_ledger.md",
+      "claim_id": "conservation.viscous_pair.closed_form",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_conservation.py::test_viscous_pair_leak_matches_closed_form",
+      "json_path": "viscous_pair.closed_form_ratio",
+      "measured": {
+        "definition": "measured net pair force / closed form, separation 2.00 mm, h = 2.60 mm",
+        "unit": "-",
+        "value": 1.0
+      },
+      "notes": "Equal densities are the only case in which the un-symmetrised term cancels; at the artifact's density contrast 0.286 the median momentum leak is 2.70e-04, i.e. the defect is a free-surface term, not a pair-force error.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "net viscous pair force / closed form, equal densities",
+      "quantity_id": "viscous_pair_force_ratio",
+      "reference": {
+        "source": "closed-form pair viscous force at rho_i = rho_j",
+        "unit": "-",
+        "value": 1.0
+      },
+      "rel_error_pct": -0.0,
+      "superseded_by": null
+    },
+    {
       "artifact": "benchmarks/laplace_pressure/validation_report.json",
       "artifact_status": "FAIL",
       "backlog_ref": "docs/verification_ledger.md",
@@ -121,6 +151,66 @@
       "superseded_by": null
     },
     {
+      "artifact": "benchmarks/init_consistency/report.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "backlog_update_m2971.md#P1",
+      "claim_id": "init_consistency.spurious_pressure.calibrated",
+      "claim_type": "gate",
+      "criterion_pct": 15.0,
+      "gate_limit": 0.0001,
+      "gate_result": "pass",
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_kernel_sum_consistency.py::test_calibration_clears_the_spurious_pressure",
+      "json_path": "summary.worst_calibrated_rel_pressure",
+      "measured": {
+        "definition": "worst of the calibrated hex-drop and square-pool ladders",
+        "unit": "-",
+        "value": 0.0
+      },
+      "notes": "The gate is cleared by twelve orders of magnitude only after the mass calibration; the raw lattice carries 5.988e-03, i.e. 60x the limit.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "|p_false| / (rho0 c0^2) at t = 0, worst calibrated case",
+      "quantity_id": "initial_spurious_pressure_rel",
+      "reference": {
+        "source": "m2971 P1 acceptance: |p_false|/(rho0 c0^2) < 1e-4",
+        "unit": "-",
+        "value": 0.0001
+      },
+      "rel_error_pct": 0.0,
+      "superseded_by": null
+    },
+    {
+      "artifact": "benchmarks/initial_density_bias/report.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "backlog_update_m2971.md#P1",
+      "claim_id": "initial_density.hex_drop.bias",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_initial_density_calibration.py::test_analytic_bias_matches_the_measured_hex_drop",
+      "json_path": "validation.hex_drop.bias_measured",
+      "measured": {
+        "definition": "measured over 235 complete-support particles",
+        "unit": "fraction",
+        "value": 0.005884
+      },
+      "notes": "The offset is worth 2395.4 Pa at c0 = 20 m/s and is removed by the mass calibration alone: the calibrated drop starts at |p_false|/(rho0 c0^2) = 4.4e-16.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "initial sum-density bias of a sharp hexagonal drop, h/dx = 1.3 (fraction of rho0)",
+      "quantity_id": "sum_density_bias_h1.3_hex",
+      "reference": {
+        "source": "closed-form kernel-sum bias of a sharp hex lattice, complete support only",
+        "unit": "fraction",
+        "value": 0.005884
+      },
+      "rel_error_pct": 0.0,
+      "superseded_by": null
+    },
+    {
       "artifact": "benchmarks/laplace_droplet/results.json",
       "artifact_status": "FAIL",
       "backlog_ref": "docs/verification_ledger.md",
@@ -151,6 +241,36 @@
       "superseded_by": null
     },
     {
+      "artifact": "benchmarks/laplace_pressure_closure/raw/relax_ladder.json",
+      "artifact_status": null,
+      "backlog_ref": "backlog_update_m2971.md#P0",
+      "claim_id": "laplace_pressure_closure.relaxed_tail.layers2",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "MARGINAL",
+      "guarding_test": "tests/test_laplace_pressure_closure.py::test_closure_improves_the_relaxed_laplace_readout",
+      "json_path": "cases[2].tail_mean_Pa",
+      "measured": {
+        "definition": "tail mean core pressure after 1283 steps, dx = 2 mm, closure donors = interior / 2 layers",
+        "unit": "Pa",
+        "value": 391.80544
+      },
+      "notes": "The closure moves the relaxed readout from -37.9 % (closure off) into the 15 % band, but not into the 3 % band; the donor set matters, so the reading is only meaningful with its donor definition attached (docs/verification_laplace_pressure_closure.md).",
+      "paper_criterion_pct": 3.0,
+      "quantity": "dp = sigma/R (2-D), sigma=7.2 N/m, R=0.020 m -> 360 Pa, relaxed tail mean",
+      "quantity_id": "young_laplace_jump_sigma7.2_R0.02",
+      "reference": {
+        "source": "Young-Laplace sigma/R",
+        "unit": "Pa",
+        "value": 360.0
+      },
+      "rel_error_pct": 8.834845,
+      "superseded_by": null
+    },
+    {
       "artifact": "benchmarks/laplace/report.json",
       "artifact_status": "FAIL",
       "backlog_ref": "backlog_update_m2971.md#P0",
@@ -178,6 +298,36 @@
         "value": 1.44
       },
       "rel_error_pct": 26.82408,
+      "superseded_by": null
+    },
+    {
+      "artifact": "benchmarks/lattice_equilibrium/report.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "backlog_update_m2971.md#P1",
+      "claim_id": "lattice_equilibrium.interior_density_offset.calibrated",
+      "claim_type": "gate",
+      "criterion_pct": 15.0,
+      "gate_limit": 0.0001,
+      "gate_result": "pass",
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_lattice_equilibrium.py::test_calibration_meets_the_1e_minus_4_acceptance",
+      "json_path": "production[1].interior_rel_density_max_abs",
+      "measured": {
+        "definition": "max over the 608 fluid particles, calibrated mass unit 0.625033",
+        "unit": "-",
+        "value": 1e-06
+      },
+      "notes": "The same configuration without the calibration carries 5.370e-05 (h/dx = 1.3 is benign); at the trap smoothing h/dx = 1.5 the raw offset is kilopascal-scale, which is why the calibration is not optional.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "interior |rho/rho0 - 1| of the resting calibrated lattice, h/dx = 1.3, c0 = 20 m/s",
+      "quantity_id": "initial_spurious_pressure_rel",
+      "reference": {
+        "source": "acceptance ratio on the interior relative density (m2971 P1)",
+        "unit": "-",
+        "value": 0.0001
+      },
+      "rel_error_pct": 6e-05,
       "superseded_by": null
     },
     {
@@ -496,7 +646,7 @@
     },
     {
       "claim_id": "young_laplace_jump_sigma7.2_R0.02",
-      "detail": "6 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
+      "detail": "7 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): laplace_pressure_closure.relaxed_tail.layers2=+8.8 %, paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
       "rule": "quantity_spread",
       "severity": "high"
     }
@@ -505,8 +655,8 @@
   "summary": {
     "by_grade": {
       "FAIL": 6,
-      "MARGINAL": 1,
-      "PASS": 0,
+      "MARGINAL": 2,
+      "PASS": 4,
       "WITHDRAWN": 1,
       "WITHHELD": 8
     },
@@ -515,9 +665,9 @@
       "declared_vs_derived": 1,
       "quantity_spread": 2
     },
-    "n_claims": 16,
+    "n_claims": 21,
     "n_findings": 3,
-    "n_quantities": 10,
+    "n_quantities": 13,
     "paper_criterion_pct": 3.0
   }
 }

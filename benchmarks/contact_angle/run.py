@@ -40,10 +40,8 @@ import torch
 from tensorsph.droplet_impact import (
     Config,
     cell_centres,
-    density_from_neighbor_pairs,
     rhs,
     stable_dt,
-    tait_pressure,
     wall_lattice,
 )
 from tensorsph.neighbor_search import cell_linked_pairs
@@ -309,7 +307,7 @@ def make_doc(report: dict, png: Path) -> str:
         "|---|---|---|",
     ]
     for t in (30.0, 60.0, 90.0, 120.0, 150.0):
-        l = next(r for r in inst["rows"] if r["theta_set_deg"] == t and r["kind"] == "line")
+        l = next(r for r in inst["rows"] if r["theta_set_deg"] == t and r["kind"] == "line")  # noqa: E741
         a = next(r for r in inst["rows"] if r["theta_set_deg"] == t and r["kind"] == "arc")
         lines.append(f"| {t:.0f} | {l['theta_measured_deg']:.2f} ({l['error_deg']:+.2f}) "
                      f"| {a['theta_measured_deg']:.2f} ({a['error_deg']:+.2f}) |")
