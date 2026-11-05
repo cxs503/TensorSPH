@@ -15,7 +15,6 @@ import math
 from pathlib import Path
 
 import pytest
-import torch
 
 BENCH = Path(__file__).resolve().parents[1] / "benchmarks" / "lattice_equilibrium"
 REPORT = BENCH / "report.json"
