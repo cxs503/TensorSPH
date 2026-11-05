@@ -195,16 +195,25 @@ def test_fit_refuses_to_hallucinate_a_frequency_from_a_non_oscillating_trace(ben
 RECORDED_MODE2_ERR_PCT = 31.78
 RECORDED_MODE2_TOL_PCT = 2.0
 
-# 2026-11-04: the mode-2 second-moment fit is architecture-fragile — the same
-# code measures +8.64 % on x86_64 GitHub CI and -31.78 % in the loong64
-# reference container. Neither value is architecture-canonical, so the two
-# pinned tests below are strict-xfail until the fit robustness is reviewed
-# (re-baseline item, owner-visible). Strict xfail keeps drift detection in
-# BOTH directions: an XPASS (measurement moving back onto a pin) fails CI.
+# 2026-11-04: the same code measures +8.64 % on x86_64 GitHub CI and -31.78 %
+# in the loong64 reference container. That two-fold disagreement was booked as
+# "the fit is architecture-fragile"; it is not. Both recorded traces (R = 2 cm
+# and this R = 1 cm case) violate energy conservation -- kinetic energy exceeds
+# the surface energy released by the seeded ellipse (6.2e-3 J) by a factor ~450,
+# onset at ~1.1 reference periods -- and the fitted frequency of one and the
+# same trace moves by more than 40 percentage points depending on the fit
+# window. The measurement is therefore invalid (WITHHELD), the pinned numbers
+# are history, and both tests stay strict-xfail so that a re-baseline on a
+# stable case has to fail them first. Evidence:
+# docs/verification_oscillating_droplet_instability.md,
+# benchmarks/oscillating_droplet_instability/report.json.
 XFAIL_MODE2_ARCH_FRAGILE = (
-    "mode-2 fit is architecture-fragile (x86_64 CI +8.64 % vs loong64 "
-    "-31.78 % on identical code); pin re-baseline pending fit-robustness "
-    "review"
+    "mode-2 frequency of this case is not measurable: the case is numerically "
+    "unstable (kinetic energy exceeds the released surface energy by ~450x, "
+    "energy creation onset ~1.1 periods), so the pinned numbers only record "
+    "history; x86_64 CI +8.64 % vs loong64 -31.78 % is fit-window dependence, "
+    "not architecture. See "
+    "docs/verification_oscillating_droplet_instability.md"
 )
 
 
