@@ -39,3 +39,12 @@ exclude = [".scratch"]
 # Correctness-only gate: pyflakes undefined names/unused imports, pycodestyle
 # errors and warnings. Formatting is deliberately not enforced.
 select = ["E", "F", "W"]
+
+# Markdown/document builders hold whole CJK table rows and LaTeX lines inside
+# string literals.  Recent ruff releases measure E501 in *display columns* (a CJK
+# glyph counts two), so those templates are long by construction and cannot be
+# wrapped without splitting the document text they emit.  E501 stays enforced in
+# every other file (solver, tests, run.py drivers); this is the only exemption.
+[tool.ruff.lint.per-file-ignores]
+"benchmarks/*/make_doc.py" = ["E501"]
+"benchmarks/*/publish_report.py" = ["E501"]

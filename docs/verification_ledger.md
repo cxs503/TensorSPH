@@ -24,9 +24,9 @@
 
 ## 3. 汇总
 
-- claims **16** ／ 物理量 **10** ／ findings **3**
+- claims **16** ／ 物理量 **10** ／ findings **13**
 - 分级分布：MARGINAL 1，WITHHELD 8，FAIL 6，WITHDRAWN 1
-- findings 分类：declared_vs_derived 1，quantity_spread 2
+- findings 分类：declared_vs_derived 1，quantity_spread 2，unmarked_superseded_number 1，unregistered_artifact 9
 
 ## 4. 断言表
 
@@ -54,6 +54,16 @@
 - **declared_vs_derived**（`high`）`young_laplace.laplace_law.vacuum_gauge` — artifact declares PASS, ledger derives WITHHELD: vacuum-gauge readout (additive |p| offset, not a physical dp)
 - **quantity_spread**（`high`）`young_laplace_jump_sigma0.072_R0.1` — 2 active readings of one quantity span +219.7 % … +252.0 % (spread 32.3 pt): laplace_droplet.merged_csf.8cases=+219.7 %, surface_tension_ladder.laplace_error_finest=+252.0 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
 - **quantity_spread**（`high`）`young_laplace_jump_sigma7.2_R0.02` — 6 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
+- **unregistered_artifact**（`medium`）`benchmarks/conservation/report.json` — machine-readable evidence file not referenced by any ledger claim
+- **unregistered_artifact**（`medium`）`benchmarks/contact_angle_geometry/results.json` — machine-readable evidence file not referenced by any ledger claim
+- **unregistered_artifact**（`medium`）`benchmarks/dam_break/reference_ladder.json` — machine-readable evidence file not referenced by any ledger claim
+- **unregistered_artifact**（`medium`）`benchmarks/init_consistency/report.json` — machine-readable evidence file not referenced by any ledger claim
+- **unregistered_artifact**（`medium`）`benchmarks/initial_density_bias/report.json` — machine-readable evidence file not referenced by any ledger claim
+- **unregistered_artifact**（`medium`）`benchmarks/laplace_pressure_closure/raw/relax_ladder.json` — machine-readable evidence file not referenced by any ledger claim
+- **unregistered_artifact**（`medium`）`benchmarks/laplace_pressure_jump/validation_report.json` — machine-readable evidence file not referenced by any ledger claim
+- **unregistered_artifact**（`medium`）`benchmarks/lattice_equilibrium/report.json` — machine-readable evidence file not referenced by any ledger claim
+- **unregistered_artifact**（`medium`）`benchmarks/viscosity_shear_wave/report.json` — machine-readable evidence file not referenced by any ledger claim
+- **unmarked_superseded_number**（`medium`）`docs/verification_surface_tension_consistent.md:158` — quotes -75.6% without a historical marker (csf_consistent relaxed readout was regenerated after the consistent-scheme refactor (the artifact now reports -78.6 %); current value in docs/verification_ledger.md)
 
 ## 6. 读数明细（口径决定数字）
 

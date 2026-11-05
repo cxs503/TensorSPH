@@ -499,6 +499,66 @@
       "detail": "6 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
       "rule": "quantity_spread",
       "severity": "high"
+    },
+    {
+      "claim_id": "benchmarks/conservation/report.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/contact_angle_geometry/results.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/dam_break/reference_ladder.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/init_consistency/report.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/initial_density_bias/report.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/laplace_pressure_closure/raw/relax_ladder.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/laplace_pressure_jump/validation_report.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/lattice_equilibrium/report.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/viscosity_shear_wave/report.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "docs/verification_surface_tension_consistent.md:158",
+      "detail": "quotes -75.6% without a historical marker (csf_consistent relaxed readout was regenerated after the consistent-scheme refactor (the artifact now reports -78.6 %); current value in docs/verification_ledger.md)",
+      "rule": "unmarked_superseded_number",
+      "severity": "medium"
     }
   ],
   "schema_version": 1,
@@ -513,10 +573,12 @@
     "criterion_pct": 15.0,
     "findings_by_rule": {
       "declared_vs_derived": 1,
-      "quantity_spread": 2
+      "quantity_spread": 2,
+      "unmarked_superseded_number": 1,
+      "unregistered_artifact": 9
     },
     "n_claims": 16,
-    "n_findings": 3,
+    "n_findings": 13,
     "n_quantities": 10,
     "paper_criterion_pct": 3.0
   }
