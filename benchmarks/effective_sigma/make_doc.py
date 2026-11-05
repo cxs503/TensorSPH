@@ -1,3 +1,6 @@
+# ruff: noqa: E501
+# Markdown payload strings are emitted verbatim; wrapping them would change
+# the layout of the generated tables and figure captions.
 """Render docs/verification_effective_sigma.md and the ladder figure.
 
 All numbers are injected programmatically from out/report.json (zero
