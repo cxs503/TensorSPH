@@ -1,3 +1,4 @@
+# ruff: noqa: E501  (long CJK/markdown template lines; every row is generated, not hand-wrapped)
 """Generate docs/verification_laplace_pressure_jump.md from the JSON report.
 
 All numbers in the document are injected programmatically from

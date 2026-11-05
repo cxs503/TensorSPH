@@ -1,3 +1,4 @@
+# ruff: noqa: E501  (long CJK/markdown template lines; every row is generated, not hand-wrapped)
 """Generate docs/verification_contact_angle_geometry.md and the figure.
 
 Every number in the generated markdown is read from ``results.json``; nothing is
@@ -10,7 +11,6 @@ typed by hand.  Run after ``run.py``:
 from __future__ import annotations
 
 import json
-import math
 from pathlib import Path
 
 import matplotlib
