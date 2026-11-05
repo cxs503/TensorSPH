@@ -672,6 +672,286 @@ def other_physics_claims() -> list[dict]:
     return out
 
 
+def benchmark_report_gate_claims() -> list[dict]:
+    """Gate claims for the boolean-gate benchmark reports.
+
+    These four artifacts were committed as evidence by earlier missions but never
+    registered, so the coverage rule raised ``unregistered_artifact`` and the
+    anti-drift test was red on ``main`` itself (PR #143 only added a doc file and
+    inherited that red).  Each entry reads the gate *and* its declared limit out
+    of the artifact, so no number in the ledger is typed by hand.
+    """
+    out: list[dict] = []
+
+    rel = "benchmarks/conservation/report.json"
+    d = _load(rel)
+    v = d["verdicts"]
+    lag_ok = bool(v["G4_lag_matches_closed_form_within_3pct"])
+    out.append(
+        _entry(
+            claim_id="conservation.ballistic_lag.closed_form",
+            quantity_id="conservation_lag_ratio",
+            quantity="ballistic lag of a free-falling cloud vs the closed-form COM lag",
+            artifact=rel,
+            json_path="verdicts.G4_max_ratio_deviation",
+            reference=(0.0, "fraction", "exact closed form of the same time series"),
+            measured=(
+                v["G4_max_ratio_deviation"],
+                "fraction",
+                "max |lag_measured / lag_predicted - 1| over the dt ladder "
+                f"(dt/T = {d['ballistic']['rows'][0]['dt_over_t']:.4f}-"
+                f"{d['ballistic']['rows'][-1]['dt_over_t']:.4f})",
+            ),
+            rel_error_pct=v["G4_max_ratio_deviation"] * 100.0,
+            guarding_test="tests/test_conservation.py::test_ballistic_lag_matches_closed_form",
+            artifact_status="PASS" if lag_ok else "FAIL",
+            backlog_ref="docs/verification_conservation.md",
+            claim_type="gate",
+            gate_result="pass" if lag_ok else "fail",
+            # limit is declared by the gate name itself: "..._within_3pct"
+            gate_limit=3.0,
+            notes=(
+                "Same report also records the internal-force leaks behind this: "
+                f"G1 pressure-gradient leak {v['G1_pressure_gradient_leak']:.2e} "
+                f"(symmetric={v['G1_pressure_gradient_symmetric']}), G2 CSF leak median "
+                f"{v['G2_csf_leak_median']:.2e}, viscous pair closed-form ratio "
+                f"{v['G1b_viscous_pair_closed_form_ratio']:.12f}, observed order "
+                f"{v['G4_observed_order']:.6f}. The lag is roundoff-exact, so the only "
+                "open item in this artifact is the recorded first-order (not second-order) "
+                "time integration."
+            ),
+        )
+    )
+
+    rel = "benchmarks/init_consistency/report.json"
+    d = _load(rel)
+    s = d["summary"]
+    limit = 1e-4  # report["criterion"]["expr"]: |p_false| / (rho0 c0^2) < 1e-4
+    calibrated_ok = bool(s["all_calibrated_meet_criterion"])
+    out.append(
+        _entry(
+            claim_id="initial_consistency.spurious_pressure.calibrated",
+            quantity_id="initial_spurious_pressure",
+            quantity="initial spurious pressure of a WCSPH lattice, "
+            "|p_false| / (rho0 c0^2), calibrated mass unit",
+            artifact=rel,
+            json_path="summary.worst_calibrated_rel_pressure",
+            reference=(0.0, "fraction of rho0 c0^2", "exact: consistent initial condition"),
+            measured=(
+                s["worst_calibrated_rel_pressure"],
+                "fraction of rho0 c0^2",
+                "worst calibrated reading over "
+                f"{len(d['sweep_lattice_h_over_dx'])} h/dx cases + "
+                f"{len(d['resolution_ladder'])} resolution levels",
+            ),
+            rel_error_pct=s["worst_calibrated_rel_pressure"] * 100.0,
+            guarding_test="tests/test_kernel_sum_consistency.py::"
+            "test_calibration_clears_the_spurious_pressure",
+            artifact_status="PASS" if calibrated_ok else "FAIL",
+            backlog_ref="backlog_update_m2971.md#P1",
+            claim_type="gate",
+            gate_result="pass" if calibrated_ok else "fail",
+            gate_limit=limit,
+            notes=(
+                f"criterion read from the artifact: `{d['criterion']['expr']}` "
+                f"({d['criterion']['note']}). The uncalibrated worst reading is "
+                f"{s['worst_raw_rel_pressure']:.3e} — ~60x over the criterion — so the "
+                "criterion is met *only* with the calibrated mass unit; the paired test "
+                "tests/test_initial_density_calibration.py::"
+                "test_uncalibrated_drop_fails_that_gate_by_six_orders_of_magnitude keeps "
+                "that asymmetry visible."
+            ),
+        )
+    )
+
+    rel = "benchmarks/initial_density_bias/report.json"
+    d = _load(rel)
+    sq = d["validation"]["square_pool"]
+    square_ok = bool(d["gates"]["G2_analytic_matches_square_pool"])
+    out.append(
+        _entry(
+            claim_id="initial_density_bias.square_pool.analytic",
+            quantity_id="initial_density_bias",
+            quantity="measured vs analytic kernel-sum bias of a square lattice pool",
+            artifact=rel,
+            json_path="validation.square_pool.rel_diff",
+            reference=(
+                0.0,
+                "fraction",
+                "analytic bias from the complete-support population of the square lattice",
+            ),
+            measured=(
+                sq["rel_diff"],
+                "fraction",
+                "|bias_measured / bias_analytic - 1| over "
+                f"{sq['n_complete_support']} complete-support particles",
+            ),
+            rel_error_pct=sq["rel_diff"] * 100.0,
+            guarding_test="tests/test_initial_density_calibration.py::"
+            "test_analytic_bias_matches_an_ideal_square_lattice",
+            artifact_status="PASS" if square_ok else "FAIL",
+            backlog_ref="backlog_update_m2971.md#P1",
+            claim_type="gate",
+            gate_result="pass" if square_ok else "fail",
+            gate_limit=sq["G2_tolerance"],
+            notes=(
+                "Only "
+                f"{sq['n_complete_support']} of {sq['n_particles']} pool particles have a "
+                "complete support, which is the whole 4.8 % (population effect, not an "
+                "operator error); the hex droplet agrees with its analytic bias to "
+                f"{d['validation']['hex_drop']['rel_diff']:.1e} and all gates "
+                f"G1-G6 pass = {d['all_gates_passed']}. The 1e-4 acceptance used by the "
+                "sibling reports is checked in lattice_equilibrium.hydrostatic.calibrated."
+            ),
+        )
+    )
+
+    rel = "benchmarks/lattice_equilibrium/report.json"
+    d = _load(rel)
+    cal = d["hydrostatic_profile"][1]
+    raw = d["hydrostatic_profile"][0]
+    acceptance = d["reference"]["acceptance_ratio"]
+    hydro_ok = cal["rel_error_max_abs"] <= acceptance
+    out.append(
+        _entry(
+            claim_id="lattice_equilibrium.hydrostatic.calibrated",
+            quantity_id="hydrostatic_profile_error",
+            quantity="hydrostatic pressure profile error of a resting pool, "
+            "calibrated mass unit",
+            artifact=rel,
+            json_path="hydrostatic_profile[1].rel_error_max_abs",
+            reference=(0.0, "fraction of rho0 c0^2", "analytic hydrostatic profile p(y)"),
+            measured=(
+                cal["rel_error_max_abs"],
+                "fraction of rho0 c0^2",
+                "max |p / p_analytic - 1| over "
+                f"{cal['n_interior']} interior particles at c0 = {cal['sound_speed']:g} m/s",
+            ),
+            rel_error_pct=cal["rel_error_max_abs"] * 100.0,
+            guarding_test="tests/test_lattice_equilibrium.py::"
+            "test_hydrostatic_init_is_accurate_only_with_the_calibrated_unit",
+            artifact_status="PASS" if d["production"][0]["passes_1e-4"] else "FAIL",
+            backlog_ref="docs/verification_lattice_mass_calibration.md",
+            claim_type="gate",
+            gate_result="pass" if hydro_ok else "fail",
+            gate_limit=acceptance,
+            notes=(
+                f"Acceptance ratio {acceptance:g} read from the artifact. The "
+                f"uncalibrated unit reads {raw['rel_error_max_abs']:.2e} (still inside the "
+                f"ratio, but {raw['rel_error_max_abs'] / cal['rel_error_max_abs']:.1f}x "
+                "worse), and the resting-pool production cases at h/dx = 1.3 carry "
+                f"p_max / (rho0 c0^2) = {d['production'][0]['p_max_over_rho0c02']:g}."
+            ),
+        )
+    )
+
+    return out
+
+
+def unregistered_evidence_claims() -> list[dict]:
+    """Claims for evidence artifacts that landed after the ledger was frozen.
+
+    Two artifacts were committed by later missions and never registered, so the
+    coverage rule raised ``unregistered_artifact`` and the anti-drift test went
+    red as soon as their branches merged (same failure mode as PR #143).  Every
+    reading below is taken from the artifact at generation time.  The companion
+    raw ladder ``benchmarks/dam_break/reference_ladder.json`` stays waived: its
+    graded reading is ``dam_break.martin_moyce.mae``.
+    """
+    out: list[dict] = []
+
+    # Young-Laplace jump with the gauge outside the droplet (corrected readout)
+    rel = "benchmarks/laplace_pressure_jump/validation_report.json"
+    d = _load(rel)
+    case = d["cases"][0]
+    setup = case["setup"]
+    corr = case["corrected_definition"]
+    legacy = case["legacy_definition"]
+    out.append(
+        _entry(
+            claim_id="young_laplace.corrected_definition.dx2mm",
+            quantity_id="young_laplace_jump_sigma7.2_R0.02",
+            quantity="Young-Laplace jump p(r<0.7R) - p_ambient vs sigma/R_eff, 2-D droplet",
+            artifact=rel,
+            json_path="cases[0].corrected_definition",
+            reference=(
+                case["reference"]["dp_theory_Pa"],
+                "Pa",
+                "2-D Young-Laplace sigma/R_eff, R_eff from the particle area",
+            ),
+            measured=(
+                corr["delta_p_Pa"],
+                "Pa",
+                f"p_interior(r < 0.7R) - p_ambient, gauge outside the droplet; "
+                f"dx={setup['dx_m']} m, c0={setup['sound_speed']} m/s, "
+                f"scheme={setup['scheme']}",
+            ),
+            rel_error_pct=corr["rel_error_pct"],
+            guarding_test="tests/test_laplace_pressure_jump.py",
+            artifact_status="PASS" if corr["within_15pct"] else "FAIL",
+            backlog_ref="docs/verification_ledger.md",
+            notes=(
+                "Same family as young_laplace.absolute_tail.best_of_6: the deficit survives "
+                "the gauge fix. The legacy band readout (0.80-0.95 R, still inside the "
+                f"droplet) gives {legacy['rel_error_pct']:+.1f} % and the artifact marks it "
+                f"valid_as_jump={legacy['valid_as_jump']}. Interior std/mean = "
+                f"{corr['interior_std_over_mean_pct']:.1f} % -> the free-surface pressure "
+                "closure, not the curvature operator, is what is left."
+            ),
+        )
+    )
+
+    # contact-angle geometry control, coarsest rung against the artifact's own gate
+    rel = "benchmarks/contact_angle_geometry/results.json"
+    d = _load(rel)
+    tol = d["tolerances"]["angle_deg"]
+    dx_max = max(c["dx"] for c in d["cases"])
+    idx, coarse = max(
+        ((i, c) for i, c in enumerate(d["cases"]) if c["dx"] == dx_max),
+        key=lambda pair: abs(pair[1]["fit"]["theta_error_deg"]),
+    )
+    finer = [c for c in d["cases"] if c["dx"] < dx_max]
+    finer_worst = max(abs(c["fit"]["theta_error_deg"]) for c in finer)
+    out.append(
+        _entry(
+            claim_id="contact_angle.fit.spherical_cap.coarse_rung",
+            quantity_id="contact_angle_theta_error",
+            quantity="contact angle from a circle fit of the colour isoline vs the "
+            "prescribed 2-D spherical-cap angle",
+            artifact=rel,
+            json_path=f"cases[{idx}].fit",
+            reference=(
+                coarse["theta_deg"],
+                "deg",
+                "prescribed analytic 2-D spherical cap (Young, 1805; Lamb 1932 art. 1)",
+            ),
+            measured=(
+                coarse["fit"]["theta_fit_deg"],
+                "deg",
+                "least-squares circle fit to the smoothed colour isoline, worst case of "
+                f"the coarsest rung (dx = {dx_max} m, theta = {coarse['theta_deg']:.0f} deg)",
+            ),
+            rel_error_pct=coarse["fit"]["theta_error_deg"] / coarse["theta_deg"] * 100.0,
+            guarding_test="tests/test_contact_angle_geometry.py",
+            artifact_status="PASS" if coarse["fit"]["result"] == "pass" else "FAIL",
+            backlog_ref="docs/verification_ledger.md",
+            claim_type="gate",
+            gate_result=coarse["fit"]["result"],
+            gate_limit=tol,
+            notes=(
+                f"Gate is {tol:g} deg per case and the coarsest rung misses it on the "
+                f"60 deg case ({coarse['fit']['theta_error_deg']:+.2f} deg), while the "
+                f"fitted radius comes out {coarse['fit']['R_rel_error'] * 100.0:+.1f} % "
+                "short (a truncated-arc artefact of the fit, not a solver error). "
+                f"Rungs dx < {dx_max} m stay within {finer_worst:.2f} deg, so the geometry "
+                "control converges; the analytic-cap checks in the same artifact are exact."
+            ),
+        )
+    )
+
+    return out
+
+
 #: numbers that no longer describe the current code -> explanation that any
 #: document quoting them has to carry next to the number.
 SUPERSEDED_NUMBERS = {
@@ -822,6 +1102,8 @@ def build() -> dict:
         + operator_level_claims()
         + model_level_claims()
         + other_physics_claims()
+        + benchmark_report_gate_claims()
+        + unregistered_evidence_claims()
     )
     for e in entries:
         e["grade"] = grade(e)

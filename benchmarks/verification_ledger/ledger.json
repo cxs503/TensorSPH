@@ -31,6 +31,66 @@
       "superseded_by": null
     },
     {
+      "artifact": "benchmarks/conservation/report.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "docs/verification_conservation.md",
+      "claim_id": "conservation.ballistic_lag.closed_form",
+      "claim_type": "gate",
+      "criterion_pct": 15.0,
+      "gate_limit": 3.0,
+      "gate_result": "pass",
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_conservation.py::test_ballistic_lag_matches_closed_form",
+      "json_path": "verdicts.G4_max_ratio_deviation",
+      "measured": {
+        "definition": "max |lag_measured / lag_predicted - 1| over the dt ladder (dt/T = 0.0033-0.0004)",
+        "unit": "fraction",
+        "value": 0.0
+      },
+      "notes": "Same report also records the internal-force leaks behind this: G1 pressure-gradient leak 1.09e-17 (symmetric=True), G2 CSF leak median 6.12e-03, viscous pair closed-form ratio 1.000000000000, observed order 1.000000. The lag is roundoff-exact, so the only open item in this artifact is the recorded first-order (not second-order) time integration.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "ballistic lag of a free-falling cloud vs the closed-form COM lag",
+      "quantity_id": "conservation_lag_ratio",
+      "reference": {
+        "source": "exact closed form of the same time series",
+        "unit": "fraction",
+        "value": 0.0
+      },
+      "rel_error_pct": 0.0,
+      "superseded_by": null
+    },
+    {
+      "artifact": "benchmarks/contact_angle_geometry/results.json",
+      "artifact_status": "FAIL",
+      "backlog_ref": "docs/verification_ledger.md",
+      "claim_id": "contact_angle.fit.spherical_cap.coarse_rung",
+      "claim_type": "gate",
+      "criterion_pct": 15.0,
+      "gate_limit": 5.0,
+      "gate_result": "fail",
+      "gauge_degenerate": false,
+      "grade": "FAIL",
+      "guarding_test": "tests/test_contact_angle_geometry.py",
+      "json_path": "cases[0].fit",
+      "measured": {
+        "definition": "least-squares circle fit to the smoothed colour isoline, worst case of the coarsest rung (dx = 0.001 m, theta = 60 deg)",
+        "unit": "deg",
+        "value": 65.609637
+      },
+      "notes": "Gate is 5 deg per case and the coarsest rung misses it on the 60 deg case (+5.61 deg), while the fitted radius comes out -14.0 % short (a truncated-arc artefact of the fit, not a solver error). Rungs dx < 0.001 m stay within 1.07 deg, so the geometry control converges; the analytic-cap checks in the same artifact are exact.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "contact angle from a circle fit of the colour isoline vs the prescribed 2-D spherical-cap angle",
+      "quantity_id": "contact_angle_theta_error",
+      "reference": {
+        "source": "prescribed analytic 2-D spherical cap (Young, 1805; Lamb 1932 art. 1)",
+        "unit": "deg",
+        "value": 60.0
+      },
+      "rel_error_pct": 9.349395,
+      "superseded_by": null
+    },
+    {
       "artifact": "benchmarks/laplace_pressure/validation_report.json",
       "artifact_status": "FAIL",
       "backlog_ref": "docs/verification_ledger.md",
@@ -121,6 +181,66 @@
       "superseded_by": null
     },
     {
+      "artifact": "benchmarks/init_consistency/report.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "backlog_update_m2971.md#P1",
+      "claim_id": "initial_consistency.spurious_pressure.calibrated",
+      "claim_type": "gate",
+      "criterion_pct": 15.0,
+      "gate_limit": 0.0001,
+      "gate_result": "pass",
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_kernel_sum_consistency.py::test_calibration_clears_the_spurious_pressure",
+      "json_path": "summary.worst_calibrated_rel_pressure",
+      "measured": {
+        "definition": "worst calibrated reading over 20 h/dx cases + 6 resolution levels",
+        "unit": "fraction of rho0 c0^2",
+        "value": 0.0
+      },
+      "notes": "criterion read from the artifact: `|p_false| / (rho0 c0^2) < 1e-4` (m2971 backlog P1 acceptance criterion). The uncalibrated worst reading is 5.988e-03 — ~60x over the criterion — so the criterion is met *only* with the calibrated mass unit; the paired test tests/test_initial_density_calibration.py::test_uncalibrated_drop_fails_that_gate_by_six_orders_of_magnitude keeps that asymmetry visible.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "initial spurious pressure of a WCSPH lattice, |p_false| / (rho0 c0^2), calibrated mass unit",
+      "quantity_id": "initial_spurious_pressure",
+      "reference": {
+        "source": "exact: consistent initial condition",
+        "unit": "fraction of rho0 c0^2",
+        "value": 0.0
+      },
+      "rel_error_pct": 0.0,
+      "superseded_by": null
+    },
+    {
+      "artifact": "benchmarks/initial_density_bias/report.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "backlog_update_m2971.md#P1",
+      "claim_id": "initial_density_bias.square_pool.analytic",
+      "claim_type": "gate",
+      "criterion_pct": 15.0,
+      "gate_limit": 0.1,
+      "gate_result": "pass",
+      "gauge_degenerate": false,
+      "grade": "MARGINAL",
+      "guarding_test": "tests/test_initial_density_calibration.py::test_analytic_bias_matches_an_ideal_square_lattice",
+      "json_path": "validation.square_pool.rel_diff",
+      "measured": {
+        "definition": "|bias_measured / bias_analytic - 1| over 9 complete-support particles",
+        "unit": "fraction",
+        "value": 0.048315
+      },
+      "notes": "Only 9 of 5000 pool particles have a complete support, which is the whole 4.8 % (population effect, not an operator error); the hex droplet agrees with its analytic bias to 1.1e-13 and all gates G1-G6 pass = True. The 1e-4 acceptance used by the sibling reports is checked in lattice_equilibrium.hydrostatic.calibrated.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "measured vs analytic kernel-sum bias of a square lattice pool",
+      "quantity_id": "initial_density_bias",
+      "reference": {
+        "source": "analytic bias from the complete-support population of the square lattice",
+        "unit": "fraction",
+        "value": 0.0
+      },
+      "rel_error_pct": 4.831512,
+      "superseded_by": null
+    },
+    {
       "artifact": "benchmarks/laplace_droplet/results.json",
       "artifact_status": "FAIL",
       "backlog_ref": "docs/verification_ledger.md",
@@ -178,6 +298,36 @@
         "value": 1.44
       },
       "rel_error_pct": 26.82408,
+      "superseded_by": null
+    },
+    {
+      "artifact": "benchmarks/lattice_equilibrium/report.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "docs/verification_lattice_mass_calibration.md",
+      "claim_id": "lattice_equilibrium.hydrostatic.calibrated",
+      "claim_type": "gate",
+      "criterion_pct": 15.0,
+      "gate_limit": 0.0001,
+      "gate_result": "pass",
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_lattice_equilibrium.py::test_hydrostatic_init_is_accurate_only_with_the_calibrated_unit",
+      "json_path": "hydrostatic_profile[1].rel_error_max_abs",
+      "measured": {
+        "definition": "max |p / p_analytic - 1| over 324 interior particles at c0 = 20 m/s",
+        "unit": "fraction of rho0 c0^2",
+        "value": 1e-06
+      },
+      "notes": "Acceptance ratio 0.0001 read from the artifact. The uncalibrated unit reads 5.43e-05 (still inside the ratio, but 56.9x worse), and the resting-pool production cases at h/dx = 1.3 carry p_max / (rho0 c0^2) = 0.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "hydrostatic pressure profile error of a resting pool, calibrated mass unit",
+      "quantity_id": "hydrostatic_profile_error",
+      "reference": {
+        "source": "analytic hydrostatic profile p(y)",
+        "unit": "fraction of rho0 c0^2",
+        "value": 0.0
+      },
+      "rel_error_pct": 9.5e-05,
       "superseded_by": null
     },
     {
@@ -361,6 +511,36 @@
       "superseded_by": null
     },
     {
+      "artifact": "benchmarks/laplace_pressure_jump/validation_report.json",
+      "artifact_status": "FAIL",
+      "backlog_ref": "docs/verification_ledger.md",
+      "claim_id": "young_laplace.corrected_definition.dx2mm",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "FAIL",
+      "guarding_test": "tests/test_laplace_pressure_jump.py",
+      "json_path": "cases[0].corrected_definition",
+      "measured": {
+        "definition": "p_interior(r < 0.7R) - p_ambient, gauge outside the droplet; dx=0.002 m, c0=20.0 m/s, scheme=consistent",
+        "unit": "Pa",
+        "value": 225.430801
+      },
+      "notes": "Same family as young_laplace.absolute_tail.best_of_6: the deficit survives the gauge fix. The legacy band readout (0.80-0.95 R, still inside the droplet) gives -93.7 % and the artifact marks it valid_as_jump=False. Interior std/mean = 79.8 % -> the free-surface pressure closure, not the curvature operator, is what is left.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "Young-Laplace jump p(r<0.7R) - p_ambient vs sigma/R_eff, 2-D droplet",
+      "quantity_id": "young_laplace_jump_sigma7.2_R0.02",
+      "reference": {
+        "source": "2-D Young-Laplace sigma/R_eff, R_eff from the particle area",
+        "unit": "Pa",
+        "value": 360.377639
+      },
+      "rel_error_pct": -37.445952,
+      "superseded_by": null
+    },
+    {
       "artifact": "benchmarks/csf_consistent/validation_report.json",
       "artifact_status": "WITHHELD",
       "backlog_ref": "backlog_update_m2971.md#P0",
@@ -496,7 +676,7 @@
     },
     {
       "claim_id": "young_laplace_jump_sigma7.2_R0.02",
-      "detail": "6 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
+      "detail": "7 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.corrected_definition.dx2mm=-37.4 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
       "rule": "quantity_spread",
       "severity": "high"
     }
@@ -504,9 +684,9 @@
   "schema_version": 1,
   "summary": {
     "by_grade": {
-      "FAIL": 6,
-      "MARGINAL": 1,
-      "PASS": 0,
+      "FAIL": 8,
+      "MARGINAL": 2,
+      "PASS": 3,
       "WITHDRAWN": 1,
       "WITHHELD": 8
     },
@@ -515,9 +695,9 @@
       "declared_vs_derived": 1,
       "quantity_spread": 2
     },
-    "n_claims": 16,
+    "n_claims": 22,
     "n_findings": 3,
-    "n_quantities": 10,
+    "n_quantities": 15,
     "paper_criterion_pct": 3.0
   }
 }

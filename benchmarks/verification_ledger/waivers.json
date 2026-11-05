@@ -8,7 +8,9 @@
     "benchmarks/static_droplet/laplace_validation.json",
     "benchmarks/laplace_law/convergence/relax_dx0.0015.json",
     "benchmarks/laplace_law/convergence/relax_dx0.0020.json",
-    "benchmarks/laplace_law/convergence/relax_dx0.0025.json"
+    "benchmarks/laplace_law/convergence/relax_dx0.0025.json",
+    "benchmarks/laplace_pressure_closure/raw/relax_ladder.json",
+    "benchmarks/dam_break/reference_ladder.json"
   ],
   "reasons": {
     "benchmarks/dam_break/reference_audit.json": "audit of the experimental reference table + Ritter comparison; the solver-side gate is claim dam_break.martin_moyce.mae in resolution_ladder.json",
@@ -17,6 +19,8 @@
     "benchmarks/static_droplet/laplace_validation.json": "covered by claim static_droplet.force_direction.WITHDRAWN (same artifact family, formally withdrawn)",
     "benchmarks/laplace_law/convergence/relax_dx0.0015.json": "resolution ladder of claim young_laplace.laplace_law.vacuum_gauge; the ladder is summarised in the parent report",
     "benchmarks/laplace_law/convergence/relax_dx0.0020.json": "resolution ladder of claim young_laplace.laplace_law.vacuum_gauge; the ladder is summarised in the parent report",
-    "benchmarks/laplace_law/convergence/relax_dx0.0025.json": "resolution ladder of claim young_laplace.laplace_law.vacuum_gauge; the ladder is summarised in the parent report"
+    "benchmarks/laplace_law/convergence/relax_dx0.0025.json": "resolution ladder of claim young_laplace.laplace_law.vacuum_gauge; the ladder is summarised in the parent report",
+    "benchmarks/laplace_pressure_closure/raw/relax_ladder.json": "raw per-step relaxation ladder behind benchmarks/laplace_pressure_closure/analysis.py; the graded reading of that family is claim young_laplace.absolute_tail.best_of_6 (the ladder itself is summarised in report_force_balance.json and docs/verification_laplace_pressure_closure.md)",
+    "benchmarks/dam_break/reference_ladder.json": "raw per-resolution dam-break ladder (incl. the bundled-vs-crosscheck reference disagreement); the graded reading is claim dam_break.martin_moyce.mae in resolution_ladder.json and the reference-table audit is tests/test_dam_break_reference_audit.py"
   }
 }
