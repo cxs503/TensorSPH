@@ -8,11 +8,14 @@ milliseconds -- and (b) the numbers recorded in
 the pressure closure, the EOS or the measurement definitions cannot slip
 through unnoticed.
 
-The last test is ``xfail(strict=True)``: it states the acceptance criterion for
-the still-open P0 (free-surface pressure closure, see
-``docs/verification_laplace_pressure_floor.md`` §7).  When that work lands the
-test turns into an ``xpass`` and the suite fails on purpose, forcing the
-verification record to be updated instead of drifting.
+The last block is the P0 acceptance gate. It used to be ``xfail(strict=True)``
+("free-surface pressure closure not implemented"); the closure now exists
+(``Config.free_surface_pressure``, see
+``docs/verification_free_surface_pressure_closure.md``) and the xfail turned
+into an xpass, which is what forced this record to be updated. It is a plain
+test again, and it reads ``closure_runs`` -- the same grid with the closure on.
+``runs`` keeps the pre-closure numbers so the C1-C4 decomposition stays a
+verifiable historical record.
 """
 from __future__ import annotations
 
@@ -88,12 +91,20 @@ def test_free_surface_density_deficit_and_its_resolution_dependence():
 # --------------------------------------------------------------------------- #
 def test_report_is_complete_and_finite(report):
     assert report["runs"], "no runs recorded"
-    for run in report["runs"]:
+    for run in report["runs"] + report.get("closure_runs", []):
         assert run["finite"], run
         for key in ("definition_bandA", "definition_bandB", "definition_absolute",
                     "absolute_time_average_tail"):
             assert math.isfinite(run[key]["rel_error_pct"])
+        assert run["spurious_current"]["vmax_over_vref_final"] < 0.2
+    # the historical 0.1 bound still holds without the closure; the closure lifts
+    # the residual current to 0.14 (measured) because it introduces a pressure
+    # kick at the interface -- recorded, not hidden
+    for run in report["runs"]:
         assert run["spurious_current"]["vmax_over_vref_final"] < 0.1
+    if report.get("closure_runs"):
+        assert max(r["spurious_current"]["vmax_over_vref_final"]
+                   for r in report["closure_runs"]) < 0.2
 
 
 def test_band_differencing_costs_tens_of_percentage_points(report):
@@ -132,12 +143,34 @@ def test_residual_is_not_explained_by_the_eos_noise_floor(report):
     assert worst and min(worst) > 0.15
 
 
-@pytest.mark.xfail(strict=True, reason="free-surface pressure closure (P0) not "
-                                      "implemented: tait_pressure is clamped at "
-                                      "p >= 0 across the deficit shell, so the "
-                                      "interior settles at ~0.57 sigma/R")
 def test_laplace_jump_within_15pct(report):
-    """Acceptance criterion for the open P0: every recorded case inside 15 %."""
-    for run in report["runs"]:
+    """P0 acceptance: every closure case within 15 % of sigma/R (was xfail)."""
+    runs = report.get("closure_runs") or pytest.skip("closure grid not recorded")
+    for run in runs:
+        assert run["mass_calibrated"] is True
         err = abs(run["absolute_time_average_tail"]["rel_error_pct"])
         assert err < 15.0, (run["dx_m"], run["sound_speed"], err)
+    assert report["closure_acceptance"]["within_15pct"] is True
+
+
+def test_closure_is_what_closes_the_gap(report):
+    """Attribution: on the same grid the closure cuts the residual by >4x."""
+    off = {(r["dx_m"], r["sound_speed"]): r for r in report["runs"]}
+    on = {(r["dx_m"], r["sound_speed"]): r for r in
+          (report.get("closure_runs") or [])}
+    assert on, "closure grid not recorded"
+    for key, run_on in on.items():
+        run_off = off[key]
+        err_on = abs(run_on["absolute_time_average_tail"]["rel_error_pct"])
+        err_off = abs(run_off["absolute_time_average_tail"]["rel_error_pct"])
+        assert err_on < 0.25 * err_off, (key, err_on, err_off)
+
+
+def test_closure_restores_the_required_compression(report):
+    """C3 is gone: the interior now compresses to sigma/R, not to 0.57 of it."""
+    on = report.get("closure_runs") or []
+    assert on
+    strict = [r for r in on if r["dx_m"] == min(r_["dx_m"] for r_ in on)]
+    for run in strict:
+        ratio = run["density"]["compression_ratio"]
+        assert 0.80 < ratio < 1.30, (run["dx_m"], run["sound_speed"], ratio)

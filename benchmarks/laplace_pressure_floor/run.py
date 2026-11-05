@@ -43,7 +43,12 @@ can be read off the run.
 The c0 ladder is the discriminator: C4 predicts the error shrinks as c0 falls,
 C3 predicts it does not.
 
-Nothing in ``src/`` is touched (verification/instrumentation task).
+The decomposition pointed at C3, and C3 is now fixed: ``rhs`` closes the
+free-surface pressure with the Adami/Hu/Adams extrapolation from *interior*
+neighbours (``Config.free_surface_pressure``). The same grid is therefore run
+twice -- ``runs`` (closure off, the historical record that isolates C1-C4) and
+``closure_runs`` (closure on, the acceptance set: ``|Delta p|`` within 15 % of
+``sigma/R`` at every point).
 
 Usage
 -----
@@ -180,7 +185,7 @@ def radial_profile(pos, values, n_bins: int = 12):
 
 def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
           calibrate_mass: bool = True, t_end_over_t_sigma: float = 1.5,
-          max_steps: int = 4000, sample_every: int = 50):
+          max_steps: int = 4000, sample_every: int = 50, closure: bool = False):
     """Advance the drop and read ``Delta p`` with three definitions.
 
     ``absolute``  ``p_core - 0``  (Tait is normalised at ``rho0``; the vacuum is
@@ -192,7 +197,8 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     cfg = Config(dx=dx, h_factor=H_FACTOR, rho0=RHO0, sound_speed=c0,
                  gamma=GAMMA, gravity=0.0, viscosity=VISCOSITY,
                  surface_tension_coefficient=SIGMA, csf_scheme="consistent",
-                 csf_curvature=scheme)
+                 csf_curvature=scheme,
+                 free_surface_pressure=closure)
     h = cfg.h_factor * cfg.dx
     dt = float(stable_dt(cfg))
     t_end = t_end_over_t_sigma * T_SIGMA
@@ -265,6 +271,9 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
         "definition_bandB": score(final["bandB"]),
         "absolute_time_average_tail": score(tail_abs),
         "density": {
+            "compression_ratio": (float(rho[r < 0.5].mean() / RHO0) - 1.0)
+            / ((1.0 + DP_ANALYTIC / (RHO0 * c0 ** 2 / GAMMA)) ** (1.0 / GAMMA)
+               - 1.0),
             "rho_core_over_rho0": float(rho[r < 0.5].mean() / RHO0),
             "rho_core_rel_std": float((rho[r < 0.5] / RHO0 - 1.0).std()),
             "rho_shell_0p80_0p95_over_rho0": float(
@@ -284,6 +293,29 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     }
 
 
+def closure_acceptance(runs):
+    """Machine-checkable verdict on the P0 acceptance criterion."""
+    if not runs:
+        return {"evaluated": False}
+    worst = max(runs, key=lambda r: abs(r["absolute_time_average_tail"]
+                                        ["rel_error_pct"]))
+    return {
+        "evaluated": True,
+        "criterion": ("|absolute_time_average_tail rel. error| < 15 % of "
+                      "sigma/R at every recorded case"),
+        "worst_case": {"dx_m": worst["dx_m"],
+                       "sound_speed": worst["sound_speed"],
+                       "rel_error_pct":
+                           worst["absolute_time_average_tail"]["rel_error_pct"]},
+        "max_abs_rel_error_pct": abs(
+            worst["absolute_time_average_tail"]["rel_error_pct"]),
+        "within_15pct": abs(worst["absolute_time_average_tail"]
+                            ["rel_error_pct"]) < 15.0,
+        "within_3pct": all(r["absolute_time_average_tail"]["within_3pct"]
+                           for r in runs),
+    }
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true")
@@ -292,6 +324,8 @@ def main():
                     default=[20.0, 10.0, 5.0])
     ap.add_argument("--t-end", type=float, default=1.5,
                     help="window length in capillary times")
+    ap.add_argument("--skip-closure", action="store_true",
+                    help="skip the free-surface-closure acceptance grid")
     args = ap.parse_args()
 
     dxs = [args.dx] if args.quick else [args.dx, 0.0015]
@@ -309,6 +343,18 @@ def main():
                   f"  comp {run['density']['rho_core_over_rho0'] - 1.0:+.2e}"
                   f"/{run['density']['compression_required']:.2e}"
                   f"  steps {run['steps']}", flush=True)
+
+    closure_runs = []
+    if not args.skip_closure:
+        for dx in dxs:
+            for c0 in c0s:
+                run = relax(dx, c0, t_end_over_t_sigma=args.t_end, closure=True)
+                closure_runs.append(run)
+                print(f"closure dx={dx:g} c0={c0:5g}: "
+                      f"tail-avg {run['absolute_time_average_tail']['rel_error_pct']:+7.1f} %"
+                      f"  abs {run['definition_absolute']['rel_error_pct']:+7.1f} %"
+                      f"  comp ratio {run['density']['compression_ratio']:.2f}"
+                      f"  steps {run['steps']}", flush=True)
 
     # controls: (a) uncalibrated mass at the highest c0 (isolates C2),
     #           (b) legacy curvature operator at the lowest c0 (isolates the
@@ -333,6 +379,8 @@ def main():
         "runs": runs,
         "controls": {"uncalibrated_c0_reference": uncal,
                      "mls_scheme_lowest_c0": ctrl_scheme},
+        "closure_runs": closure_runs,
+        "closure_acceptance": closure_acceptance(closure_runs),
     }
     (HERE / "report.json").write_text(json.dumps(report, indent=2))
     report["figures"] = [make_figures(report)]
@@ -380,13 +428,19 @@ def make_figures(report, out_dir=HERE):
     ax = axes[0][1]
     for run in primary:
         ax.plot(run["trace"]["t"], run["trace"]["absolute"], lw=1,
-                label=rf"$c_0$={run['sound_speed']:g} m/s")
+                label=rf"$c_0$={run['sound_speed']:g} m/s, no closure")
+    closure_primary = [r for r in report.get("closure_runs", [])
+                       if r["dx_m"] == dx0]
+    closure_primary.sort(key=lambda r: -r["sound_speed"])
+    for run in closure_primary:
+        ax.plot(run["trace"]["t"], run["trace"]["absolute"], lw=1, ls="--",
+                label=rf"$c_0$={run['sound_speed']:g} m/s, closure")
     ax.axhline(DP_ANALYTIC, color="k", ls="--", lw=1,
                label=rf"$\sigma/R$={DP_ANALYTIC:.0f} Pa")
     ax.set_xlabel(r"$t/t_\sigma$")
     ax.set_ylabel(r"$p_{\rm core}$ [Pa]")
-    ax.set_title("(b) absolute core pressure (C1-corrected read-out)")
-    ax.legend(fontsize=7)
+    ax.set_title("(b) absolute core pressure: closure on vs off")
+    ax.legend(fontsize=6)
     ax.grid(alpha=0.3)
 
     ax = axes[1][0]
@@ -416,10 +470,15 @@ def make_figures(report, out_dir=HERE):
             "o-", label="achieved (interior)")
     ax.plot(c0_axis, [r["density"]["rho_core_rel_std"] for r in primary],
             "s:", label=r"dynamical $\rho$ noise $\sigma_\rho$ (C4)")
+    if closure_primary:
+        c0c = sorted({r["sound_speed"] for r in closure_primary})
+        ax.plot(c0c, [r["density"]["rho_core_over_rho0"] - 1.0
+                      for r in closure_primary], "D-.", ms=5,
+                label="achieved with closure")
     ax.set_yscale("log")
     ax.set_xlabel(r"$c_0$ [m/s]")
     ax.set_ylabel(r"$\rho/\rho_0 - 1$")
-    ax.set_title("(d) compression: needed vs achieved (constant ratio -> C3)")
+    ax.set_title("(d) compression: needed vs achieved (C3 broken by closure)")
     ax.legend(fontsize=7)
     ax.grid(alpha=0.3, which="both")
 
