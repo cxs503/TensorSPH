@@ -129,3 +129,30 @@ PYTHONPATH=src python -m pytest tests/test_oscillating_droplet.py -q
 **未完成的部分（如实列出）**：分辨率阶梯（R/dx 变化）、粘度序列（λ ∝ ν）、零 g 静滴 + 扩散密度项
 开/关对比（gap P1 行点名）本轮**未跑**——预算与机时限制下只完成了基准算例，且该算例发散。
 `make_doc.py` 对缺失分支会写「本轮未跑该分支」，不会伪造数字。
+
+## 附录 A：合并保留的 m2919 独立谱系（PR #87）
+
+`agent/m2919` 分支送来的是同一物理量的**独立实现**（`--case` CLI、任意方位模态几何 `lobed_droplet`、网格搜索阻尼余弦拟合器），与 main 线**互斥地占据同一路径**，因此三方合并不能把两份代码塞进一个文件。处置：main 线保留为规范实现（功能超集：4 个 study + 图 + 本文档的注入器），m2919 线的**测量、文档、通用模态几何与负控测试**逐项并入，未丢一个数字：
+
+| m2919 物证 | 合并后位置 | 处置 |
+|---|---|---|
+| 逐字测量报告 | `benchmarks/oscillating_droplet/validation_report_m2919.json` | 原样保留 |
+| 逐字验证文档 | `docs/verification_oscillating_droplet_m2919_lineage.md` | 原样保留 |
+| `run.py` 实现（被 main 线超集取代） | `artifacts/merge_pr87/m2919/` | 原样保留 |
+| `tests/test_oscillating_droplet.py` | 本仓测试第 5 节 + 上述 `artifacts/` 存档 | 性质并入 |
+| `lobed_droplet`（任意模态几何） | `run.py::lobed_droplet` | 并入主线 |
+| n=1 无回复力守卫、σ=0 负控 | `run.py::analytic_omega` / `run_case(steps=)` | 并入主线 |
+
+m2919 线自己的测量（与其文档一致，同为 honest FAIL）：
+
+| 算例 | n | dx [mm] | ω 解析 [rad/s] | ω 实测 [rad/s] | 误差 | < 15%？ | 稳定性 |
+|---|---|---|---|---|---|---|---|
+| mode2 | 2 | 1.5 | 73.48 | 28.15 | -61.7% | 否 | particle left the box at step 778 (0.44 T) |
+| mode3 | 3 | 1.5 | 146.97 | 56.31 | -61.7% | 否 | particle left the box at step 1280 (1.46 T) |
+| coarse | 2 | 2.0 | 73.48 | 62.11 | -15.5% | 否 | particle left the box at step 1200 (0.91 T) |
+| no_sigma | 2 | 1.5 | 0.00 | 38.31 | — | — | stable |
+
+**两线对照（同一物理构型：R = 20 mm、dx = 2 mm、ε = 0.10）**：main 线基准算例 -43.5%、m2919 线 `coarse` 算例 -15.5%。两条独立实现都判 FAIL，但量值相差 2.8 倍——这不是「互相印证」，而是提示该量在当前格式下**不可复现**：两线各自的运行都在中途发散（main 线见本文「诚实记录」一节，m2919 线见上表的 `stability` 列），发散时刻不同就给出不同的伪频率。因此合并后的口径是**不把任何一方的频率当作结论**，只把「偏差随分辨率/发散程度剧烈漂移」这一事实连同两线原始数据一起锁进仓库；main 线的 strict-xfail 钉子负责让漂移在 CI 里可见。
+
+`no_sigma` 行是 σ = 0 负控（合并后由 `test_without_surface_tension_the_mode_does_not_oscillate` 守住）：无表面张力时二阶矩仍会因压力噪声给出一个**伪频率**，所以负控的判据只能是「离 ω₂ 足够远」，不能写「拟合失败」。
+
