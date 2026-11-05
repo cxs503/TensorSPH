@@ -1,6 +1,4 @@
 # 表面张力 CSF 模型的解析基准核验（consistent 离散）
-> 数值口径说明：本文部分数字为历史口径；当前值、测得口径与证据分级见 [`docs/verification_ledger.md`](verification_ledger.md)（程序化生成的验证断言账本）。
-
 
 **范围**: TensorSPH `src/tensorsph/csf_consistent.py`、`surface_tension.py`、`droplet_impact.py`
 **基准**: 2-D 单相静止液滴的 Young-Laplace 定律（本文件所有数字由
@@ -73,7 +71,7 @@ t/t_sigma = 0.7）
 | 量 | legacy | consistent | 解析/判据 |
 |---|---|---|---|
 | Delta p = p_core - p_shell [Pa] | 5.3 | 87.7 | 360 |
-| 相对误差 | -98.5%（历史口径） | -75.6%（历史口径） | 0 |
+| 相对误差 | -98.5% | -75.6% | 0 |
 | 伪流 max|v|/sqrt(sigma/rho R) | 0.201 | 0.044 | < 0.1 (Adami 2012) |
 | 核内密度 rho/rho0 | 0.99999 | 1.00106 | 定律要求压缩 6.30e-03 |
 
@@ -117,7 +115,7 @@ t/t_sigma = 0.7）
 | 曲率 kappa | 50 1/m | 62.4 1/m | 24.9% | 否 | 否 |
 | delta_s 归一 | 1.0 | 0.751 | 25% | 否 | 否 |
 | 力方向 cos | 1.0 | 1.000 | 0.0% | 是 | 是 |
-| Laplace 压差 | 360 Pa | 87.7 Pa | -75.6%（历史口径） | 否 | 否 |
+| Laplace 压差 | 360 Pa | 87.7 Pa | -75.6% | 否 | 否 |
 
 **结论**：力的幅值与方向（切割力恒等式、方向对齐）已满足 15% 平台标准；
 曲率、delta_s 归一与端到端压差**未**满足，且已定位到具体原因（曲率算子二阶精度不足；
@@ -132,7 +130,7 @@ t/t_sigma = 0.7）
 | 算例 | R/h | Delta p 误差 | 是否 < 15% |
 |---|---|---|---|
 | `benchmarks/laplace_law` relax, dx = 4 mm, steps 380 | ~5 | 见 `tests/test_laplace_law.py::test_laplace_pressure_jump`（本轮已由 xfail 转 pass） | 是 |
-| 本文 relax, dx = 2 mm, steps 600 | ~7.7 | -75.6%（历史口径） | 否 |
+| 本文 relax, dx = 2 mm, steps 600 | ~7.7 | -75.6% | 否 |
 
 两者用的是同一 `p_core - p_shell` 量带定义，差别只在分辨率与推进时长。
 这说明压差读数被「求和密度噪声 / 状态方程地板」主导（见第 4、5 节），
@@ -142,8 +140,7 @@ t/t_sigma = 0.7）
 
 ---
 
-
-## 8. 后续（m2592）：曲率判据偏置已归因并修复
+## 7. 后续（m2592）：曲率判据偏置已归因并修复
 
 m2592 把上表唯一未达标的曲率判据拆开归因：`kappa = div n` 的偏置**不随加密收敛**，
 来自**饱和内壳**（c ≥ 0.99）粒子的法向角噪声被 `~1/dx` 放大；把 MLS 散度喂以精确径向
@@ -152,17 +149,3 @@ m2592 把上表唯一未达标的曲率判据拆开归因：`kappa = div n` 的�
 切割力比同步改善到 0.997 / 0.969。**未解决**：δ 函数归一缺口 ~25% 与端到端 Δp（relax 读数
 未达准静态）。详见 `docs/verification_csf_curvature_bias.md` 与
 `benchmarks/csf_consistent/curvature_audit.json`。
-
-## 9. 勘误（m2923 复核，2026-11-03）
-
-本文 3.3 与 §4 把端到端压差 `-75.6%` 归因为「状态方程的**分辨率地板**把压差吞掉」，
-并以 `Delta p = p(r<0.5R) - p(0.80R<r<0.95R)` 为判据。复核发现**两处都需要修正**：
-
-1. **判据定义错误**：`0.80–0.95 R` 仍在液滴内部，按二维 Young-Laplace 定律其压强与核心
-   压强相同，故该式测的是「内部压强径向非均匀度」（噪声），不是跳变。环境压强在 `R` 之外。
-2. **归因赔率不足**：EOS 放大器只放大**噪声**（内部 `std/mean` 随 c0 从 80%→25%），
-   不解释稳定的 **-37% 均值缺口**；均值缺口与 c0、与 dx 均无关，是系统性的。
-
-修正后的判据、声速阶梯、δ-SPH 假设检验、径向压强剖面与回归测试见
-`docs/verification_laplace_pressure_jump.md`（工件 `benchmarks/laplace_pressure_jump/`）。
-本文其余结论（切割力恒等式 1.07–1.11、方向 cos≈1、伪流低于 Adami 阈值）不受影响。

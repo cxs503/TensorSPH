@@ -1,72 +1,38 @@
-"""Audit of the experimental reference bundled with the B2 dam-break case.
+("""B2 dam-break reference audit: is the validation target real, and is the
+analytic reference implemented correctly?
 
-The B2 case compares the simulated front against a digitised Martin & Moyce
-(1952) table (``martin_moyce_1952.json``), and that comparison is where the
-suite reports its worst numbers.  This module audits the *reference*, not the
-solver, and it does so in two independent layers that share one artifact
-(``reference_audit.json``):
+Two references are used by the shipped dam-break case:
 
-A. **Reference-free and analytic checks** (no table needed)
+* ``benchmarks/dam_break/martin_moyce_1952.json`` — a table attributed to
+  Martin & Moyce (1952), consumed by ``experimental_validation.py`` and quoted
+  as the reason ``physical_validation`` fails;
+* the Ritter shallow-water solution, used as a reference curve in
+  ``run.py`` and in ``experimental_validation.py``.
 
-   1. **Table integrity.** A figure digitisation carries scatter.  The audit
-      measures the abscissa lattice (is ``tau`` an exact arithmetic sequence?),
-      the ordinate quantum (are all ``Z/a`` exact multiples of 0.05?) and the
-      second-difference noise floor, and compares the latter with the
-      uncertainty the bundled JSON claims for itself.
-   2. **Analytic reference.** The Ritter solution is re-derivable in closed
-      form: for a reservoir of depth ``H`` released on a dry bed the free
-      surface is ``h(x,t) = (1/9g)(2 sqrt(gH) - x/t)^2``, the leading edge is
-      ``Z = 2 sqrt(gH) t`` and the depth at the dam is ``H``.  Both front and
-      profile are checked, and ``Z/a = 2 tau`` follows from
-      ``tau = t sqrt(2g/a)`` with ``H = 2a``.
-   3. **Attribution of the front-speed residual.** The measured front speed is
-      reported as the dimensionless coefficient ``c = d(Z/a)/d tau`` and as a
-      fraction of Ritter's ``2``.  It is swept in ``wall_friction`` (0 = free
-      slip, 1 = no-slip floor) and in ``dx`` so the residual can be attributed
-      to the boundary model rather than to the discretisation.
+This script audits both, without changing the solver:
 
-B. **Structural audit of both transcriptions** (tables only, no simulation)
-
-   The resolution ladder showed that the misfit against the bundled table is
-   *resolution independent* (mean absolute error 0.5988 -> 0.5774 -> 0.5728 for
-   ``dx`` = 0.04 -> 0.02 -> 0.01 m), i.e. it is a property of the comparison,
-   not of the front's numerical diffusion.  Three questions are answered here
-   from the tables alone:
-
-   4. *Structure.*  A digitisation read off a published figure inherits the
-      figure's resolution: irregular sample abscissae, values that do not land
-      on a round grid, increments with noise.  A table whose ``tau`` grid is a
-      single repeated step, whose ordinates all sit on a 0.05 grid and whose
-      finite-difference slopes take only four discrete values is a piecewise
-      linear sketch of a few hand-picked vertices, and its +-0.05 uncertainty
-      claim is a guess about the picture, not a measured error bar.
-   5. *Kinematics.*  A front released from rest must first accelerate: the
-      initial slope of ``Z/a`` against ``tau`` has to be small compared with the
-      largest slope that follows.  A table already near its peak slope in the
-      first interval after ``tau = 0`` describes an impulsive start, which the
-      experiment (a gate raised over a finite time) cannot have.
-   6. *Cross-source spread.*  A second, independent transcription of the same
-      figure is bundled in ``martin_moyce_1952_crosscheck.json``.  The spread
-      between the two is a *lower bound* on the reference uncertainty, because
-      both come from the same inaccessible original.  If that spread is much
-      larger than the claimed +-0.05, an error of that size cannot be
-      attributed to the solver at all.
-
-Layer B ends in three explicit gates and a verdict on whether the bundled
-reference can carry a physical-validation verdict at all
-(``physical_validation = withheld`` when it cannot).  Nothing in this module
-touches the solver: layer A reports the measurements, layer B audits the
-reference.
+1. **Table integrity.** A figure digitisation carries scatter. The audit
+   measures the abscissa lattice (is ``tau`` an exact arithmetic sequence?), the
+   ordinate quantum (are all ``Z/a`` exact multiples of 0.05?) and the
+   second-difference noise floor, and compares the latter with the uncertainty
+   the bundled JSON claims.
+2. **Analytic reference.** The Ritter solution is re-derivable in closed form:
+   for a reservoir of depth ``H`` released on a dry bed, the free surface is
+   ``h(x,t) = (1/9g)(2 sqrt(gH) - x/t)^2``, the leading edge is ``Z = 2 sqrt(gH) t``
+   and the depth at the dam is ``H``. Both front and profile are checked here,
+   and ``Z/a = 2 tau`` follows from ``tau = t sqrt(2g/a)`` with ``H = 2a``.
+3. **Attribution of the front-speed residual.** The measured front speed is
+   reported as the dimensionless coefficient ``c = d(Z/a)/d tau`` and as a
+   fraction of Ritter's ``2``. It is swept in ``wall_friction`` (0 = free slip,
+   1 = no-slip floor) and in ``dx`` so the residual can be attributed to the
+   boundary model rather than to the discretisation.
 
 Usage::
 
-    python benchmarks/dam_break/reference_audit.py \
-        --json-out benchmarks/dam_break/reference_audit.json
-    python benchmarks/dam_break/reference_audit.py --skip-runs    # layer B only
-    python benchmarks/dam_break/reference_audit.py \
-        --sizes 0.04 --frictions 0,0.5,1 --plot
-"""
-
+    python benchmarks/dam_break/reference_audit.py --json-out"""
+    """ benchmarks/dam_break/reference_audit.json
+    python benchmarks/dam_break/reference_audit.py --sizes 0.04 --frictions 0,0.5,1 --plot
+""")
 from __future__ import annotations
 
 import argparse
@@ -86,7 +52,6 @@ ASPECT = 2.0                 # column height / width
 ORDINATE_QUANTUM = 0.05      # lattice the bundled ordinates sit on
 WINDOW = (0.5, 4.0)          # tau window used for the front-speed fit
 T_SECONDS = 0.5
-
 
 
 # --------------------------------------------------------------------------- #
@@ -137,267 +102,11 @@ def audit_table(path: Path) -> dict:
         "grade": "WITHHELD",
         "grade_reason": (
             "the ordinates cannot be traced to the cited paper: they are exact "
-            "multiples of 0.05 on an exact tau lattice, and the second-difference "
-            "structure is the 0.05 quantum itself rather than measurement "
-            "scatter. No digitised figure reproduces an exact lattice. A table "
-            "of unknown provenance cannot arbitrate a 15 % gate."),
-        "smoothness_note": (
-            "second-difference RMS %.5f vs the claimed %.2f uncertainty: only "
-            "~%.1fx smoother, so the noise floor alone is NOT the evidence; the "
-            "exact lattice and quantum are."
-            % (rms_second, claimed, claimed / rms_second)),
+            "multiples of 0.05 on an exact tau lattice, with no scatter at all: "
+            "the alternation is the 0.05 quantum itself, not measurement noise. "
+            "No digitised figure reproduces an exact lattice. A table of "
+            "unknown provenance cannot arbitrate a 15 % gate."),
     }
-
-
-
-# --------------------------------------------------------------------------- #
-# table loading
-# --------------------------------------------------------------------------- #
-def _interp(xs: list[float], ys: list[float], xq: float) -> float | None:
-    """Linear interpolation, clamped at both ends."""
-    if not xs:
-        return None
-    if xq <= xs[0]:
-        return ys[0]
-    if xq >= xs[-1]:
-        return ys[-1]
-    for i in range(1, len(xs)):
-        if xs[i] >= xq:
-            span = xs[i] - xs[i - 1]
-            w = (xq - xs[i - 1]) / span if span else 0.0
-            return ys[i - 1] + w * (ys[i] - ys[i - 1])
-    return ys[-1]
-
-
-def load_bundled(path: str | Path | None = None) -> dict:
-    """The table the B2 gate has been using (Z/a convention, measured from x = a)."""
-    p = Path(path) if path is not None else HERE / "martin_moyce_1952.json"
-    raw = json.loads(Path(p).read_text())
-    return {
-        "name": "bundled",
-        "path": _display_path(p),
-        "tau": [float(d["tau"]) for d in raw["data"]],
-        "za": [float(d["Z_over_a"]) for d in raw["data"]],
-        "claimed_uncertainty": _claimed_uncertainty(raw),
-        "source": raw.get("source", {}),
-        "digitisation": raw.get("digitization", {}),
-    }
-
-
-def load_crosscheck(path: str | Path | None = None) -> dict:
-    """The independent transcription, converted to the same Z/a convention."""
-    p = Path(path) if path is not None else HERE / "martin_moyce_1952_crosscheck.json"
-    raw = json.loads(Path(p).read_text())
-    return {
-        "name": "crosscheck",
-        "path": _display_path(p),
-        "tau": [float(d["tau"]) for d in raw["data"]],
-        # X = x_front/a, and Martin & Moyce measure Z from the column edge,
-        # so Z/a = X - 1 keeps both tables in one frame.
-        "za": [float(d["X_over_a"]) - 1.0 for d in raw["data"]],
-        "claimed_uncertainty": float(raw.get("claimed_uncertainty", 0.05)),
-        "source": raw.get("source", {}),
-        "convention": raw.get("convention", {}),
-    }
-
-
-def _claimed_uncertainty(raw: dict) -> float:
-    """Pull the numeric half-width out of the free-text uncertainty field."""
-    text = str(raw.get("digitization", {}).get("uncertainty", ""))
-    for token in text.replace("±", "+-").split():
-        token = token.strip(".,;()")
-        try:
-            value = float(token)
-        except ValueError:
-            continue
-        if 0.0 < value < 1.0:
-            return value
-    return 0.05
-
-
-# --------------------------------------------------------------------------- #
-# structural statistics
-# --------------------------------------------------------------------------- #
-def grid_stats(tau: list[float], za: list[float]) -> dict:
-    """Everything the structure argument needs, as numbers."""
-    steps = [tau[i + 1] - tau[i] for i in range(len(tau) - 1)]
-    dz = [za[i + 1] - za[i] for i in range(len(za) - 1)]
-    slopes = [dz[i] / steps[i] for i in range(len(dz)) if steps[i]]
-    step_spread = (max(steps) - min(steps)) if steps else 0.0
-    # Quantisation: find the coarsest round grid every ordinate sits on.
-    quantum = None
-    for candidate in (0.05, 0.025, 0.02, 0.01, 0.005):
-        if all(abs(v / candidate - round(v / candidate)) < 1e-9 for v in za):
-            quantum = candidate
-            break
-    # Discrete slope levels: group slopes that agree to 0.5 %.
-    levels: list[float] = []
-    for s in sorted(slopes):
-        if not levels or abs(s - levels[-1]) > 5e-3 * max(abs(s), 1e-12):
-            levels.append(s)
-    peak = max(slopes) if slopes else 0.0
-    return {
-        "n_points": len(tau),
-        "tau_first": tau[0] if tau else None,
-        "tau_last": tau[-1] if tau else None,
-        "tau_step_mean": sum(steps) / len(steps) if steps else None,
-        "tau_step_spread": step_spread,
-        "tau_grid_is_arithmetic": step_spread <= 1e-9,
-        "ordinate_quantum": quantum,
-        "slope_first": slopes[0] if slopes else None,
-        "slope_peak": peak,
-        "slope_peak_index": slopes.index(peak) if slopes else None,
-        "slope_last": slopes[-1] if slopes else None,
-        "n_slope_levels": len(levels),
-        "slope_levels": [round(s, 4) for s in levels],
-        "slopes": [round(s, 4) for s in slopes],
-        "first_slope_to_peak": (slopes[0] / peak) if slopes and peak else None,
-        "slope_is_monotone_decreasing": all(
-            slopes[i + 1] <= slopes[i] + 1e-12 for i in range(len(slopes) - 1)
-        ),
-    }
-
-
-def cross_source_spread(bundled: dict, crosscheck: dict) -> dict:
-    """Difference between the two transcriptions over their overlapping window."""
-    deltas = []
-    rows = []
-    for tau, za in zip(bundled["tau"], bundled["za"]):
-        if tau < crosscheck["tau"][0] or tau > crosscheck["tau"][-1]:
-            continue
-        other = _interp(crosscheck["tau"], crosscheck["za"], tau)
-        delta = za - other
-        deltas.append(delta)
-        rows.append({"tau": tau, "bundled_za": za, "crosscheck_za": other,
-                     "delta": delta})
-    if not deltas:
-        return {"n_overlap": 0}
-    max_abs = max(abs(d) for d in deltas)
-    rms = math.sqrt(sum(d * d for d in deltas) / len(deltas))
-    return {
-        "n_overlap": len(deltas),
-        "tau_window": [rows[0]["tau"], rows[-1]["tau"]],
-        "max_abs_delta": max_abs,
-        "rms_delta": rms,
-        "mean_signed_delta": sum(deltas) / len(deltas),
-        "rows": rows,
-    }
-
-
-# --------------------------------------------------------------------------- #
-# gates
-# --------------------------------------------------------------------------- #
-def evaluate(tables: dict[str, dict]) -> dict:
-    """Structural audit of the reference tables plus the derived verdict."""
-    bundled = tables["bundled"]
-    crosscheck = tables["crosscheck"]
-    g_b = grid_stats(bundled["tau"], bundled["za"])
-    g_c = grid_stats(crosscheck["tau"], crosscheck["za"])
-    spread = cross_source_spread(bundled, crosscheck)
-
-    claimed = bundled["claimed_uncertainty"]
-    observed = spread.get("max_abs_delta")
-    uncertainty_ratio = (observed / claimed) if (observed and claimed) else None
-
-    gates = {}
-
-    # 1. Is the bundled ordinate set a point-by-point reading, or a sketch?
-    gates["bundled_is_pointwise"] = {
-        "metric": "arithmetic tau grid AND coarse ordinate quantum AND <= 6 slope levels",
-        "measured": {
-            "tau_grid_is_arithmetic": g_b["tau_grid_is_arithmetic"],
-            "tau_step_spread": g_b["tau_step_spread"],
-            "ordinate_quantum": g_b["ordinate_quantum"],
-            "n_slope_levels": g_b["n_slope_levels"],
-        },
-        "limit": "tau steps must vary (figure pixels), quantum <= 0.01, > 6 slope levels",
-        "result": "fail",
-        "interpretation": (
-            "The bundled table is a piecewise-linear sketch: every tau step is "
-            f"{g_b['tau_step_mean']:.3f} (spread {g_b['tau_step_spread']:.1e}), every "
-            f"ordinate is a multiple of {g_b['ordinate_quantum']}, and the "
-            f"finite-difference slope takes only {g_b['n_slope_levels']} discrete values. "
-            "A point-by-point reading off a figure does not produce that."
-        ),
-    }
-
-    # 2. Does the reference contain the acceleration phase the experiment must have?
-    accel_ok = (g_b["first_slope_to_peak"] or 0.0) <= 0.5
-    gates["acceleration_phase_present"] = {
-        "metric": "slope at the first interval / peak slope",
-        "measured": g_b["first_slope_to_peak"],
-        "crosscheck_measured": g_c["first_slope_to_peak"],
-        "limit": "<= 0.5 (a front released from rest starts well below its later speed)",
-        "result": "pass" if accel_ok else "fail",
-        "interpretation": (
-            "The bundled table reaches "
-            f"{100.0 * (g_b['first_slope_to_peak'] or 0):.0f} % of its peak front speed "
-            "within the first tau interval after release, i.e. it describes an "
-            "impulsive start. The independent transcription reaches only "
-            f"{100.0 * (g_c['first_slope_to_peak'] or 0):.0f} %, growing to a "
-            "steady front speed - the shape a gate-release experiment has."
-        ),
-    }
-
-    # 3. Is the claimed uncertainty consistent with the cross-source spread?
-    consistent = uncertainty_ratio is not None and uncertainty_ratio <= 3.0
-    gates["claimed_uncertainty_consistent"] = {
-        "metric": "max |bundled - crosscheck| / claimed uncertainty",
-        "measured": uncertainty_ratio,
-        "claim": claimed,
-        "cross_source_max_abs_delta": observed,
-        "cross_source_rms_delta": spread.get("rms_delta"),
-        "limit": "<= 3.0",
-        "result": "pass" if consistent else "fail",
-        "interpretation": (
-            "Two independent transcriptions of the same figure differ by up to "
-            f"{observed:.3f} in Z/a (rms {spread.get('rms_delta'):.3f}), "
-            f"{uncertainty_ratio:.1f}x the claimed +-{claimed:.2f}. Since both come "
-            "from the same paywalled original, this spread is a *lower bound* on "
-            "the reference uncertainty."
-        ),
-    }
-
-    verdict_withheld = not all(
-        gates[g]["result"] == "pass"
-        for g in ("bundled_is_pointwise", "acceleration_phase_present",
-                  "claimed_uncertainty_consistent")
-    )
-    return {
-        "tables": {
-            "bundled": {k: bundled[k] for k in ("path", "claimed_uncertainty")},
-            "crosscheck": {k: crosscheck[k] for k in ("path", "claimed_uncertainty")},
-        },
-        "grid_stats": {"bundled": g_b, "crosscheck": g_c},
-        "cross_source_spread": spread,
-        "gates": gates,
-        "verdict": {
-            "physical_validation_status": "withheld" if verdict_withheld else "evaluable",
-            "reason": (
-                "The reference cannot separate a solver error from a digitisation "
-                "error of the same size (0.5-0.9 in Z/a), so no pass/fail verdict on "
-                "physical validation of the B2 case can be issued against it. The "
-                "earlier 'physical validation fails' statement over-attributes to the "
-                "solver what the reference does not support."
-            ) if verdict_withheld else (
-                "The bundled reference survives the structural audit; the B2 "
-                "comparison can be read as a validation verdict."
-            ),
-        },
-    }
-
-
-# --------------------------------------------------------------------------- #
-# display paths: never embed the worktree that happened to run the audit
-# --------------------------------------------------------------------------- #
-def _display_path(p: Path) -> str:
-    """Repo-relative path when the table lives inside the repository."""
-    p = Path(p).resolve()
-    root = HERE.parent.parent
-    try:
-        return p.relative_to(root).as_posix()
-    except ValueError:
-        return p.as_posix()
 
 
 # --------------------------------------------------------------------------- #
@@ -443,7 +152,6 @@ def ritter_checks() -> dict:
         "max_helper_reldiff": max(r["helper_reldiff"] for r in rows),
         "rows": rows,
     }
-
 
 
 # --------------------------------------------------------------------------- #
@@ -516,7 +224,6 @@ def targets(table: dict) -> dict:
     za = [p["Z_over_a"] for p in table["data"]]
     c = front_coefficient(taus, za)
     return {"table_coefficient_c": c, "table_c_over_ritter": c / 2.0}
-
 
 
 # --------------------------------------------------------------------------- #
@@ -618,41 +325,26 @@ def make_figures(payload: dict, outdir: Path) -> list:
 
 
 # --------------------------------------------------------------------------- #
-# unified driver: one artifact, both layers
-# --------------------------------------------------------------------------- #
-def solver_config(seconds: float = T_SECONDS, sound_speed: float = 25.0) -> dict:
-    """Solver settings shared by every rung, read from ``DamBreakConfig``.
+def main():
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--sizes", default="0.04")
+    ap.add_argument("--frictions", default="0,0.25,0.5,0.75,1")
+    ap.add_argument("--seconds", type=float, default=T_SECONDS)
+    ap.add_argument("--json-out", default=None)
+    ap.add_argument("--plot", action="store_true")
+    ap.add_argument("--figdir", default="artifacts/dam_break_reference_audit")
+    ap.add_argument("--from-json", default=None,
+                    help="re-render figures for an existing payload instead of "
+                         "re-running the solver")
+    args = ap.parse_args()
 
-    Emitted into the artifact so a reader can tell which configuration the
-    coefficients were measured with without reading the code.
-    """
-    cfg = DamBreakConfig(dx=0.04, pool_width=2.0, column_width=A,
-                         sound_speed=sound_speed, max_courant=0.3, device="cpu",
-                         wall_friction=0.0, density_diffusion=0.0,
-                         adaptive_dt=False)
-    return {
-        "sound_speed": cfg.sound_speed,
-        "max_courant": cfg.max_courant,
-        "seconds": seconds,
-        "adaptive_dt": cfg.adaptive_dt,
-        "density_diffusion": cfg.density_diffusion,
-        "viscosity": cfg.viscosity,
-        "h_factor": cfg.h_factor,
-    }
+    if args.from_json:
+        payload = json.loads(Path(args.from_json).read_text())
+        payload["figures"] = make_figures(payload, Path(args.figdir))
+        Path(args.from_json).write_text(json.dumps(payload, indent=1))
+        print("figures:", args.figdir)
+        return
 
-
-def structural_audit(bundled_path=None, crosscheck_path=None) -> dict:
-    """Layer B: structure, kinematics, cross-source spread, gates, verdict.
-
-    Needs no solver run, so it can be recomputed on any machine that has the
-    two tables; that is what makes the committed artifact reproducible.
-    """
-    return evaluate({"bundled": load_bundled(bundled_path),
-                     "crosscheck": load_crosscheck(crosscheck_path)})
-
-
-def build_payload(bundled_path=None, crosscheck_path=None) -> dict:
-    """Full payload: layer A (tables + analytic) merged with layer B."""
     table_path = HERE / "martin_moyce_1952.json"
     table = json.loads(table_path.read_text())
     payload = {
@@ -663,94 +355,35 @@ def build_payload(bundled_path=None, crosscheck_path=None) -> dict:
         "ritter": ritter_checks(),
         "table_slope": targets(table),
         "window_tau": list(WINDOW),
-        "solver": solver_config(),
         "runs": [],
     }
-    payload.update(structural_audit(bundled_path, crosscheck_path))
-    return payload
-
-
-def print_summary(payload: dict) -> None:
-    a = payload["table_audit"]
-    print("table:", a["verdict"])
+    print("table:", payload["table_audit"]["verdict"])
     print("ritter identity residual: %.2e, shipped helper residual: %.2e"
           % (payload["ritter"]["max_identity_reldiff"],
              payload["ritter"]["max_helper_reldiff"]))
     print("table slope c = %.4f" % payload["table_slope"]["table_coefficient_c"])
-    for name, gate in payload["gates"].items():
-        print("  %-34s %4s measured=%s" % (name, gate["result"].upper(),
-                                           gate["measured"]))
-    print("  verdict: physical_validation = %s"
-          % payload["verdict"]["physical_validation_status"])
 
-
-def write_payload(payload: dict, out: Path) -> None:
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(payload, indent=1))
-    print("wrote", out)
-
-
-def main():
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--sizes", default="0.04")
-    ap.add_argument("--frictions", default="0,0.25,0.5,0.75,1")
-    ap.add_argument("--seconds", type=float, default=T_SECONDS)
-    ap.add_argument("--json-out", default=str(HERE / "reference_audit.json"))
-    ap.add_argument("--plot", action="store_true")
-    ap.add_argument("--figdir", default="artifacts/dam_break_reference_audit")
-    ap.add_argument("--from-json", default=None,
-                    help="re-render figures for an existing payload instead of "
-                         "re-running the solver")
-    ap.add_argument("--bundled", default=None,
-                    help="override the bundled table (default: the in-repo one)")
-    ap.add_argument("--crosscheck", default=None,
-                    help="override the independent transcription")
-    ap.add_argument("--skip-runs", action="store_true",
-                    help="recompute layer B only and keep the solver runs "
-                         "already stored in --json-out (no simulation)")
-    args = ap.parse_args()
-
-    if args.from_json:
-        payload = json.loads(Path(args.from_json).read_text())
-        payload.update(structural_audit(args.bundled, args.crosscheck))
-        payload["figures"] = make_figures(payload, Path(args.figdir))
-        Path(args.from_json).write_text(json.dumps(payload, indent=1))
-        print("figures:", args.figdir)
-        return
-
-    payload = build_payload(args.bundled, args.crosscheck)
-
-    if args.skip_runs:
-        out = Path(args.json_out)
-        if out.exists():
-            previous = json.loads(out.read_text())
-            payload["runs"] = previous.get("runs", [])
-            payload["figures"] = previous.get("figures", [])
-        print_summary(payload)
-        write_payload(payload, out)
-        return
-
-    payload["solver"] = solver_config(args.seconds)
     sizes = [float(s) for s in args.sizes.split(",")]
     frictions = [float(f) for f in args.frictions.split(",")]
     for dx in sorted(sizes, reverse=True):
         for f in frictions:
             r = run_rung(dx, f, seconds=args.seconds)
             payload["runs"].append(r)
-            print("dx=%g friction=%g: N=%d %.1fs c=%.4f (%.1f%% of Ritter) "
-                  "comp=%.3f mach=%.3f"
-                  % (dx, f, r["particles"], r["wall_clock_s"],
-                     r["front_coefficient_c"], 100.0 * r["c_over_ritter"],
-                     r["max_density_compression"], r["mach_number"]), flush=True)
-
-    print_summary(payload)
+            print("dx=%g friction=%g: N=%d %.1fs c=%.4f (%.1f%% of Ritter) comp=%.3f mach=%.3f"
+                  % (dx, f, r["particles"], r["wall_clock_s"], r["front_coefficient_c"],
+                     100.0 * r["c_over_ritter"], r["max_density_compression"],
+                     r["mach_number"]), flush=True)
 
     if args.plot:
-        payload["figures"] = make_figures(payload, Path(args.figdir))
+        figs = make_figures(payload, Path(args.figdir))
+        payload["figures"] = figs
         print("figures:", args.figdir)
 
     if args.json_out:
-        write_payload(payload, Path(args.json_out))
+        out = Path(args.json_out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(payload, indent=1))
+        print("wrote", out)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 {
  "benchmark": "B2_dam_break_reference_audit",
- "date": "2026-11-05",
+ "date": "2026-11-03",
  "geometry": {
   "a_m": 0.2,
   "H_over_a": 2.0,
@@ -75,15 +75,6 @@
   0.5,
   4.0
  ],
- "solver": {
-  "sound_speed": 25.0,
-  "max_courant": 0.3,
-  "seconds": 0.5,
-  "adaptive_dt": false,
-  "density_diffusion": 0.0,
-  "viscosity": 0.01,
-  "h_factor": 1.3
- },
  "runs": [
   {
    "dx": 0.04,
@@ -1703,237 +1694,14 @@
    ]
   }
  ],
- "tables": {
-  "bundled": {
-   "path": "benchmarks/dam_break/martin_moyce_1952.json",
-   "claimed_uncertainty": 0.05
-  },
-  "crosscheck": {
-   "path": "benchmarks/dam_break/martin_moyce_1952_crosscheck.json",
-   "claimed_uncertainty": 0.05
-  }
- },
- "grid_stats": {
-  "bundled": {
-   "n_points": 20,
-   "tau_first": 0.0,
-   "tau_last": 4.294,
-   "tau_step_mean": 0.22599999999999998,
-   "tau_step_spread": 8.881784197001252e-16,
-   "tau_grid_is_arithmetic": true,
-   "ordinate_quantum": 0.05,
-   "slope_first": 0.8849557522123894,
-   "slope_peak": 1.1061946902654873,
-   "slope_peak_index": 4,
-   "slope_last": 0.4424778761061951,
-   "n_slope_levels": 4,
-   "slope_levels": [
-    0.4425,
-    0.6637,
-    0.885,
-    1.1062
-   ],
-   "slopes": [
-    0.885,
-    1.1062,
-    1.1062,
-    1.1062,
-    1.1062,
-    1.1062,
-    0.885,
-    0.885,
-    0.885,
-    0.6637,
-    0.6637,
-    0.6637,
-    0.6637,
-    0.4425,
-    0.4425,
-    0.4425,
-    0.4425,
-    0.4425,
-    0.4425
-   ],
-   "first_slope_to_peak": 0.7999999999999996,
-   "slope_is_monotone_decreasing": false
-  },
-  "crosscheck": {
-   "n_points": 14,
-   "tau_first": 0.0,
-   "tau_last": 2.96,
-   "tau_step_mean": 0.2276923076923077,
-   "tau_step_spread": 0.31000000000000033,
-   "tau_grid_is_arithmetic": false,
-   "ordinate_quantum": 0.01,
-   "slope_first": 0.2682926829268295,
-   "slope_peak": 1.8333333333333364,
-   "slope_peak_index": 8,
-   "slope_last": 1.6428571428571412,
-   "n_slope_levels": 12,
-   "slope_levels": [
-    0.2683,
-    0.2791,
-    0.6,
-    0.9583,
-    1.0,
-    1.1,
-    1.1579,
-    1.2222,
-    1.4667,
-    1.5714,
-    1.6429,
-    1.8333
-   ],
-   "slopes": [
-    0.2683,
-    0.2791,
-    0.6,
-    0.9583,
-    1.1,
-    1.1579,
-    1.4667,
-    1.0,
-    1.8333,
-    1.2222,
-    1.5714,
-    1.2222,
-    1.6429
-   ],
-   "first_slope_to_peak": 0.14634146341463403,
-   "slope_is_monotone_decreasing": false
-  }
- },
- "cross_source_spread": {
-  "n_overlap": 14,
-  "tau_window": [
-   0.0,
-   2.938
-  ],
-  "max_abs_delta": 0.8509166666666665,
-  "rms_delta": 0.5559429969239825,
-  "mean_signed_delta": 0.47423711410816427,
-  "rows": [
-   {
-    "tau": 0.0,
-    "bundled_za": 0.0,
-    "crosscheck_za": 0.0,
-    "delta": 0.0
-   },
-   {
-    "tau": 0.226,
-    "bundled_za": 0.2,
-    "crosscheck_za": 0.060634146341463475,
-    "delta": 0.13936585365853654
-   },
-   {
-    "tau": 0.452,
-    "bundled_za": 0.45,
-    "crosscheck_za": 0.12172093023255824,
-    "delta": 0.32827906976744176
-   },
-   {
-    "tau": 0.678,
-    "bundled_za": 0.7,
-    "crosscheck_za": 0.18479069767441864,
-    "delta": 0.5152093023255813
-   },
-   {
-    "tau": 0.904,
-    "bundled_za": 0.95,
-    "crosscheck_za": 0.2684,
-    "delta": 0.6816
-   },
-   {
-    "tau": 1.13,
-    "bundled_za": 1.2,
-    "crosscheck_za": 0.4039999999999999,
-    "delta": 0.796
-   },
-   {
-    "tau": 1.356,
-    "bundled_za": 1.45,
-    "crosscheck_za": 0.5990833333333334,
-    "delta": 0.8509166666666665
-   },
-   {
-    "tau": 1.582,
-    "bundled_za": 1.65,
-    "crosscheck_za": 0.8372000000000002,
-    "delta": 0.8127999999999997
-   },
-   {
-    "tau": 1.808,
-    "bundled_za": 1.85,
-    "crosscheck_za": 1.0961052631578947,
-    "delta": 0.7538947368421054
-   },
-   {
-    "tau": 2.034,
-    "bundled_za": 2.05,
-    "crosscheck_za": 1.394,
-    "delta": 0.6559999999999999
-   },
-   {
-    "tau": 2.26,
-    "bundled_za": 2.2,
-    "crosscheck_za": 1.6699999999999995,
-    "delta": 0.5300000000000007
-   },
-   {
-    "tau": 2.486,
-    "bundled_za": 2.35,
-    "crosscheck_za": 1.9828888888888891,
-    "delta": 0.36711111111111094
-   },
-   {
-    "tau": 2.712,
-    "bundled_za": 2.5,
-    "crosscheck_za": 2.3080000000000003,
-    "delta": 0.19199999999999973
-   },
-   {
-    "tau": 2.938,
-    "bundled_za": 2.65,
-    "crosscheck_za": 2.6338571428571433,
-    "delta": 0.01614285714285657
-   }
-  ]
- },
- "gates": {
-  "bundled_is_pointwise": {
-   "metric": "arithmetic tau grid AND coarse ordinate quantum AND <= 6 slope levels",
-   "measured": {
-    "tau_grid_is_arithmetic": true,
-    "tau_step_spread": 8.881784197001252e-16,
-    "ordinate_quantum": 0.05,
-    "n_slope_levels": 4
-   },
-   "limit": "tau steps must vary (figure pixels), quantum <= 0.01, > 6 slope levels",
-   "result": "fail",
-   "interpretation": "The bundled table is a piecewise-linear sketch: every tau step is 0.226 (spread 8.9e-16), every ordinate is a multiple of 0.05, and the finite-difference slope takes only 4 discrete values. A point-by-point reading off a figure does not produce that."
-  },
-  "acceleration_phase_present": {
-   "metric": "slope at the first interval / peak slope",
-   "measured": 0.7999999999999996,
-   "crosscheck_measured": 0.14634146341463403,
-   "limit": "<= 0.5 (a front released from rest starts well below its later speed)",
-   "result": "fail",
-   "interpretation": "The bundled table reaches 80 % of its peak front speed within the first tau interval after release, i.e. it describes an impulsive start. The independent transcription reaches only 15 %, growing to a steady front speed - the shape a gate-release experiment has."
-  },
-  "claimed_uncertainty_consistent": {
-   "metric": "max |bundled - crosscheck| / claimed uncertainty",
-   "measured": 17.01833333333333,
-   "claim": 0.05,
-   "cross_source_max_abs_delta": 0.8509166666666665,
-   "cross_source_rms_delta": 0.5559429969239825,
-   "limit": "<= 3.0",
-   "result": "fail",
-   "interpretation": "Two independent transcriptions of the same figure differ by up to 0.851 in Z/a (rms 0.556), 17.0x the claimed +-0.05. Since both come from the same paywalled original, this spread is a *lower bound* on the reference uncertainty."
-  }
- },
- "verdict": {
-  "physical_validation_status": "withheld",
-  "reason": "The reference cannot separate a solver error from a digitisation error of the same size (0.5-0.9 in Z/a), so no pass/fail verdict on physical validation of the B2 case can be issued against it. The earlier 'physical validation fails' statement over-attributes to the solver what the reference does not support."
+ "solver": {
+  "sound_speed": 25.0,
+  "max_courant": 0.3,
+  "seconds": 0.5,
+  "adaptive_dt": false,
+  "density_diffusion": 0.0,
+  "viscosity": 0.01,
+  "h_factor": 1.3
  },
  "figures": [
   {
