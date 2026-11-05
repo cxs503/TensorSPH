@@ -5,31 +5,46 @@
     "dx_m": 0.005,
     "sigma_N_per_m": 0.072,
     "n_particles": 1224,
-    "n_surface_particles": 344
+    "n_surface_particles": 256,
+    "colour_model": "support_sum"
   },
   "theory": {
     "delta_p_theory_Pa": 0.7199999999999999,
-    "expected_acceleration_scale_m_per_s2": 0.0007199999999999999
+    "expected_acceleration_scale_m_per_s2": 0.144
   },
   "measured": {
-    "max_acceleration_m_per_s2": 0.558504690795122,
-    "mean_acceleration_m_per_s2": 0.04342990239504826,
+    "max_acceleration_m_per_s2": 0.09671227009300465,
+    "mean_acceleration_m_per_s2": 0.025782073750251544,
     "force_direction_check": {
-      "avg_dot_product": 0.17354894679863536,
+      "metric": "mean cosine with the inward radial direction",
+      "measured": 0.9992631228260331,
+      "threshold": 0.5,
+      "comparison": ">=",
       "passes": true
     },
     "force_magnitude_check": {
+      "metric": "mean |acc| over surface particles / (sigma/(rho R dx))",
+      "measured": 0.17904217882119128,
+      "threshold": [
+        0.1,
+        10.0
+      ],
       "passes": true
     }
   },
   "validation": {
     "status": "WITHDRAWN",
-    "criteria": [
-      "Force points inward for surface particles (dot product > 0.5)",
-      "Force magnitude is non-zero and physically reasonable"
-    ],
     "status_before_withdrawal": "PASS",
-    "withdrawal_reason": "The recorded PASS used the criterion 'force magnitude is non-zero and physically reasonable', while the same report shows a measured acceleration of 0.5585 m/s2 against an expected scale of 7.2e-4 m/s2 (776x), and an average inward dot product of 0.174 against the module's own stated criterion of 0.5. A model that applies traction two to three orders of magnitude too large is not validated. Superseded by the analytic Young-Laplace gate in benchmarks/laplace_pressure (case B5)."
+    "sanity_checks_pass": true,
+    "criteria": [
+      "Force points inward for surface particles (mean cosine > 0.5)",
+      "Mean acceleration within a factor of 10 of sigma/(rho R dx)"
+    ],
+    "colour_model": "support_sum",
+    "note": "Direction and order of magnitude only. The Laplace pressure check is benchmarks/surface_tension/laplace.py; the merged neighbour-count colour model fails the direction criterion (measured mean cosine 0.17), the support_sum model passes.",
+    "withdrawal_reason": "The recorded PASS used the criterion 'force magnitude is non-zero and physically reasonable', while the same report shows a measured acceleration of 0.5585 m/s2 against an expected scale of 7.2e-4 m/s2 (776x), and an average inward dot product of 0.174 against the module's own stated criterion of 0.5. A model that applies traction two to three orders of magnitude too large is not validated.",
+    "laplace_law_verified": false,
+    "laplace_law_note": "dp = sigma/R is checked by benchmarks/surface_tension/laplace.py; the merged CSF model is off by +27% to +296% there and does not converge with resolution."
   },
   "superseded_by": "benchmarks/laplace_pressure/validation_report.json",
   "docs": "docs/benchmarks/surface-tension-verification.md"

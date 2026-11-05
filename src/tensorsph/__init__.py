@@ -40,11 +40,15 @@ from .neighbor_search import (
 )
 from .surface_tension import (
     apply_contact_angle_boundary,
+    capillary_dt_limit,
     compute_color_gradient,
     compute_curvature,
     compute_normal,
     compute_surface_tension_force,
-    capillary_dt_limit,
+    kernel_sum_color,
+    kernel_sum_color_field,
+    surface_tension_field,
+    support_vector,
 )
 
 __all__ = [
@@ -61,4 +65,6 @@ __all__ = [
     "cell_linked_pairs_host", "DamBreakConfig", "make_column", "run_case",
     "apply_contact_angle_boundary", "compute_color_gradient", "compute_curvature", "compute_normal",
     "compute_surface_tension_force", "capillary_dt_limit",
+    "kernel_sum_color", "kernel_sum_color_field", "surface_tension_field",
+    "support_vector",
 ]

@@ -129,6 +129,24 @@ class Config:
     # "mls" = div n with MLS-consistent operators, +25 % on a circle, kept for A/B;
     # "fit_circle" = algebraic circle fit, unstable on lattice data.
     csf_curvature: str = "fit_quadratic"
+    # Colour function of the CSF surface-tension model:
+    #   "neighbor_count" -- historical two-valued heuristic (see 0.9.0 notes);
+    #   "kernel_sum"     -- smooth kernel-sum indicator, c = sum_j V_j W_ij;
+    #   "support_sum"    -- normal from the missing-support vector (verified
+    #                       against the 2-D Laplace law, see 0.9.0 notes).
+    surface_tension_color: str = "neighbor_count"
+    # Smoothing passes applied to the support vector before it is normalised.
+    # Only the "support_sum" colour model reads it; see
+    # docs/benchmarks/surface-tension.md for the measured convergence.
+    surface_tension_smoothing: int = 4
+    # Multiplier on the surface delta function |grad c| of the CSF force. The
+    # continuum delta function is symmetric about the interface, but a
+    # single-phase discretisation only samples its fluid half, so the force
+    # reproduces about half of sigma/R with the factor 1 (measured integral of
+    # |grad c| over the fluid: 0.54). The default keeps the historical
+    # behaviour; 2.0 restores the full surface tension. See
+    # docs/benchmarks/surface-tension.md.
+    surface_tension_delta_scale: float = 1.0
 
 
 # --------------------------------------------------------------------------- #
@@ -775,9 +793,19 @@ def validate_config(cfg: Config) -> None:
         raise ValueError(
             "csf_curvature must be 'mls', 'fit_quadratic' or 'fit_circle', "
             f"got {cfg.csf_curvature!r}")
-    if cfg.csf_scheme not in ("consistent", "legacy"):
+    if cfg.csf_scheme not in ("consistent", "legacy", "colour"):
         raise ValueError(
-            f"csf_scheme must be 'consistent' or 'legacy', got {cfg.csf_scheme!r}")
+            "csf_scheme must be 'consistent', 'colour' or 'legacy', got "
+            f"{cfg.csf_scheme!r}")
+    if cfg.surface_tension_color not in ("neighbor_count", "kernel_sum",
+                                         "support_sum"):
+        raise ValueError(
+            "surface_tension_color must be 'neighbor_count', 'kernel_sum' or "
+            f"'support_sum', got {cfg.surface_tension_color!r}")
+    if cfg.surface_tension_smoothing < 0:
+        raise ValueError("surface_tension_smoothing must be non-negative")
+    if cfg.surface_tension_delta_scale < 0.0:
+        raise ValueError("surface_tension_delta_scale must be non-negative")
     if not math.isfinite(cfg.dt_growth) or cfg.dt_growth < 1.0:
         # A growth factor below 1 would shrink the step every time the flow did
         # not demand it, which is not "adaptive", it is a user error.

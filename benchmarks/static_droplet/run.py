@@ -8,6 +8,14 @@ Young-Laplace gate that replaces it is benchmarks/laplace_pressure (case B5); se
 docs/benchmarks/surface-tension-verification.md. This case is kept because its
 force-decomposition diagnostics are still useful for debugging.
 
+The two criteria are now measured against the thresholds this module states (mean
+cosine > 0.5; mean acceleration within a factor of 10 of sigma/(rho R dx)) and the
+colour function is selectable through ``model``, because the historical
+neighbour-count heuristic and the 0.9.0 ``support_sum`` colour differ by more than
+those criteria can resolve. A PASS on the two checks is recorded as
+``status_before_withdrawal``; ``status`` stays WITHDRAWN because neither check is
+the Laplace law, which this benchmark does not test.
+
 This benchmark validates the surface tension implementation by checking:
 1. Force direction: surface particles should experience inward force
 2. Force magnitude: should be proportional to curvature and surface tension coefficient
@@ -93,6 +101,7 @@ def run_static_droplet_benchmark(
     dx: float = 0.005,
     sigma: float = 0.072,
     output_dir: str = "benchmarks/static_droplet",
+    model: str = "support_sum",
 ):
     """Run static droplet benchmark and validate surface tension force.
 
@@ -101,6 +110,8 @@ def run_static_droplet_benchmark(
         dx: particle spacing (m)
         sigma: surface tension coefficient (N/m)
         output_dir: output directory for results
+        model: CSF colour function (Config.surface_tension_color); the
+            "support_sum" colour is the only one that carries a surface normal
 
     Returns:
         dict with validation results
@@ -130,7 +141,13 @@ def run_static_droplet_benchmark(
         dx=dx,
         rho0=1000.0,
         surface_tension_coefficient=sigma,
+        # The colour-function family is selected explicitly: the default
+        # "consistent" scheme carries its own colour function and would ignore
+        # ``model`` entirely.
+        surface_tension_color=model,
+        csf_scheme="colour",
     )
+    print(f"  Colour model: {model}")
 
     print("\nSimulation parameters:")
     print(f"  Surface tension coefficient: σ = {sigma} N/m")
@@ -182,34 +199,42 @@ def run_static_droplet_benchmark(
         print(f"  Median dot product: {median_dot:.3f}")
         print(f"  Positive ratio: {positive_ratio:.1%}")
 
-        # SPH curvature calculation has noise, especially at droplet edges
-        # We accept if median dot > 0.3 or positive ratio > 60%
-        if median_dot > 0.3 or positive_ratio > 0.6:
-            print("  ✓ Force predominantly points inward (correct)")
-            force_direction_ok = True
-        else:
-            print("  ✗ Force does not predominantly point inward (incorrect)")
-            force_direction_ok = False
+        # The criterion is the one the report states: the mean cosine between
+        # the force and the inward radial direction must exceed 0.5. An earlier
+        # version tested the *median* against 0.3 instead, printed PASS at a
+        # measured mean of 0.17, and recorded "dot product > 0.5" in the JSON --
+        # a criterion nothing evaluated. The threshold is unchanged; the
+        # measurement now matches it.
+        force_direction_ok = avg_dot > 0.5
+        print("  {} Force mean cosine {:.3f} vs 0.5 ({})".format(
+            "OK" if force_direction_ok else "FAIL", avg_dot,
+            "pass" if force_direction_ok else "fail"))
     else:
         print("\n✗ No surface particles detected!")
         force_direction_ok = False
 
     # Check force magnitude is reasonable
-    # For a droplet of radius R, the acceleration should be on the order of σ/(ρ*R)
-    expected_acc_scale = sigma / (1000.0 * radius)
-    actual_acc_mean = acc_mag.mean().item()
+    # The CSF force is a volume force sigma*kappa*|grad c|, so with kappa ~ 1/R
+    # and |grad c| ~ 1/dx its acceleration scale is sigma/(rho R dx) -- not
+    # sigma/(rho R), which is a pressure divided by rho and off by 1/dx.
+    expected_acc_scale = sigma / (1000.0 * radius * dx)
+    # Mean over the *surface* particles: the force is a surface force, so a mean
+    # over all particles would be diluted by the interior ones that carry none.
+    actual_acc_mean = (acc_mag[surface_mask].mean().item()
+                       if n_surface > 0 else 0.0)
 
     print("\nForce magnitude check:")
-    print(f"  Expected acceleration scale: σ/(ρR) = {expected_acc_scale:.6f} m/s²")
+    print(f"  Expected acceleration scale: σ/(ρRΔx) = {expected_acc_scale:.6f} m/s²")
     print(f"  Actual mean acceleration: {actual_acc_mean:.6f} m/s²")
 
     # Allow for order-of-magnitude variation due to SPH discretization
-    magnitude_ok = actual_acc_mean > 1e-6
-
-    if magnitude_ok:
-        print("  ✓ Force magnitude is reasonable")
-    else:
-        print("  ✗ Force magnitude too small")
+    acc_ratio = actual_acc_mean / expected_acc_scale
+    magnitude_ok = 0.1 <= acc_ratio <= 10.0
+    print("  {} Measured/scale = {:.2f} in [0.1, 10] ({})".format(
+        "OK" if magnitude_ok else "FAIL", acc_ratio,
+        "pass" if magnitude_ok else "fail"))
+    print("  Note: a force of the wrong magnitude also points the right way;")
+    print("  the quantitative check is benchmarks/surface_tension/laplace.py")
 
     results = {
         "benchmark": "static_droplet_surface_tension",
@@ -236,23 +261,45 @@ def run_static_droplet_benchmark(
             },
         },
         "validation": {
-            "status": "PASS" if (force_direction_ok and magnitude_ok) else "FAIL",
-            # These are the checks actually performed. An earlier revision of
-            # this file claimed "dot product > 0.5" while reporting an average
-            # dot product of 0.17, which is not the test that ran.
+            # A PASS on the two checks below is not a physics validation: the
+            # benchmark tests neither the Laplace law nor the force magnitude
+            # against a reference. The status therefore stays WITHDRAWN and the
+            # sanity checks are recorded separately, so that neither this file
+            # nor a reader can mistake them for a capillary-fidelity gate.
+            "status": "WITHDRAWN",
+            "status_before_withdrawal": (
+                "PASS" if (force_direction_ok and magnitude_ok) else "FAIL"),
+            "sanity_checks_pass": force_direction_ok and magnitude_ok,
             "criteria": [
-                "Force points inward for surface particles "
-                "(median dot > 0.3 or positive ratio > 0.6)",
-                "Force magnitude is non-zero (order-of-magnitude sanity only)",
+                "Force points inward for surface particles (mean cosine > 0.5)",
+                "Mean acceleration within a factor of 10 of sigma/(rho R dx)",
             ],
+            "colour_model": model,
+            "note": (
+                "Direction and order of magnitude only. The Laplace pressure "
+                "check is benchmarks/surface_tension/laplace.py; the merged "
+                "neighbour-count colour model fails the direction criterion "
+                "(measured mean cosine 0.17), the support_sum model passes."),
+            "withdrawal_reason": (
+                "The recorded PASS used the criterion 'force magnitude is "
+                "non-zero and physically reasonable', while the same report "
+                "shows a measured acceleration of 0.5585 m/s2 against an "
+                "expected scale of 7.2e-4 m/s2 (776x), and an average inward "
+                "dot product of 0.174 against the module's own stated "
+                "criterion of 0.5. A model that applies traction two to three "
+                "orders of magnitude too large is not validated."),
             # This benchmark does not test the Laplace pressure jump, and the
-            # model fails it: see docs/benchmarks/laplace-verification.md.
+            # merged CSF model fails it: see docs/benchmarks/laplace-verification.md.
             "laplace_law_verified": False,
             "laplace_law_note": (
-                "dp = sigma/R is checked by benchmarks/laplace/run.py; the "
-                "merged CSF model is off by +27% to +296% there and does not "
+                "dp = sigma/R is checked by benchmarks/surface_tension/laplace.py; "
+                "the merged CSF model is off by +27% to +296% there and does not "
                 "converge with resolution."),
         },
+        # Registered outside ``validation`` so that a consumer of the top-level
+        # report cannot read the withdrawn status without its replacement.
+        "superseded_by": "benchmarks/laplace_pressure/validation_report.json",
+        "docs": "docs/benchmarks/surface-tension-verification.md",
     }
 
     # Save results
@@ -270,10 +317,9 @@ def run_static_droplet_benchmark(
 
 if __name__ == "__main__":
     results = run_static_droplet_benchmark()
+    sanity = results["validation"]["sanity_checks_pass"]
 
-    if results["validation"]["status"] == "PASS":
-        print("\n✓ Benchmark PASSED")
-        exit(0)
-    else:
-        print("\n✗ Benchmark FAILED")
-        exit(1)
+    print("\nSanity checks: {}. Status: WITHDRAWN (no Laplace-law gate here; "
+          "see benchmarks/surface_tension/laplace.py).".format(
+              "PASS" if sanity else "FAIL"))
+    exit(0 if sanity else 1)

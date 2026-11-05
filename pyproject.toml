@@ -36,3 +36,8 @@ target-version = "py310"
 # Correctness-only gate: pyflakes undefined names/unused imports, pycodestyle
 # errors and warnings. Formatting is deliberately not enforced.
 select = ["E", "F", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+# Markdown table rows are emitted verbatim from f-strings; wrapping them would
+# change the generated document.
+"benchmarks/surface_tension/gen_docs.py" = ["E501"]
