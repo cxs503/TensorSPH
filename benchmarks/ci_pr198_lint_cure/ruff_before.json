@@ -1,0 +1,567 @@
+[
+ {
+  "file": "benchmarks/contact_angle/run.py",
+  "code": "F401",
+  "row": 43
+ },
+ {
+  "file": "benchmarks/contact_angle/run.py",
+  "code": "F401",
+  "row": 46
+ },
+ {
+  "file": "benchmarks/contact_angle/run.py",
+  "code": "E741",
+  "row": 312
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "F401",
+  "row": 13
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 54
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 55
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 93
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 94
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 129
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 130
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 131
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 140
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 142
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 180
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 181
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 182
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 183
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 197
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 200
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 210
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 211
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 215
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 224
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 226
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 237
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 238
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 239
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 240
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 241
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 243
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 248
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 257
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "E501",
+  "row": 260
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/make_doc.py",
+  "code": "W292",
+  "row": 268
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/run.py",
+  "code": "F841",
+  "row": 264
+ },
+ {
+  "file": "benchmarks/contact_angle_geometry/run.py",
+  "code": "W292",
+  "row": 448
+ },
+ {
+  "file": "benchmarks/effective_sigma/make_doc.py",
+  "code": "E501",
+  "row": 66
+ },
+ {
+  "file": "benchmarks/effective_sigma/make_doc.py",
+  "code": "E501",
+  "row": 80
+ },
+ {
+  "file": "benchmarks/effective_sigma/make_doc.py",
+  "code": "E501",
+  "row": 95
+ },
+ {
+  "file": "benchmarks/effective_sigma/make_doc.py",
+  "code": "E501",
+  "row": 96
+ },
+ {
+  "file": "benchmarks/effective_sigma/make_doc.py",
+  "code": "E501",
+  "row": 97
+ },
+ {
+  "file": "benchmarks/initial_density_bias/make_doc.py",
+  "code": "E501",
+  "row": 47
+ },
+ {
+  "file": "benchmarks/initial_density_bias/make_doc.py",
+  "code": "E501",
+  "row": 72
+ },
+ {
+  "file": "benchmarks/initial_density_bias/make_doc.py",
+  "code": "E501",
+  "row": 97
+ },
+ {
+  "file": "benchmarks/initial_density_bias/make_doc.py",
+  "code": "E501",
+  "row": 112
+ },
+ {
+  "file": "benchmarks/initial_density_bias/make_doc.py",
+  "code": "E501",
+  "row": 155
+ },
+ {
+  "file": "benchmarks/initial_density_bias/make_doc.py",
+  "code": "E501",
+  "row": 156
+ },
+ {
+  "file": "benchmarks/initial_density_bias/make_doc.py",
+  "code": "E501",
+  "row": 158
+ },
+ {
+  "file": "benchmarks/initial_density_bias/make_doc.py",
+  "code": "E501",
+  "row": 175
+ },
+ {
+  "file": "benchmarks/initial_density_bias/make_doc.py",
+  "code": "W292",
+  "row": 219
+ },
+ {
+  "file": "benchmarks/initial_density_bias/run.py",
+  "code": "W292",
+  "row": 469
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/analysis.py",
+  "code": "E501",
+  "row": 157
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/figures.py",
+  "code": "W292",
+  "row": 113
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 41
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 51
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 53
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 54
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 59
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 69
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 74
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 75
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 77
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 80
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 81
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 82
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 91
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 99
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 112
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 113
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 122
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 134
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 144
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 145
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 146
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 147
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 149
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 150
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 151
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 152
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 155
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 157
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 167
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 172
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 178
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 179
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 180
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 183
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 185
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 192
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "E501",
+  "row": 195
+ },
+ {
+  "file": "benchmarks/laplace_pressure_closure/make_doc.py",
+  "code": "W292",
+  "row": 203
+ },
+ {
+  "file": "benchmarks/laplace_pressure_jump/make_doc.py",
+  "code": "E501",
+  "row": 34
+ },
+ {
+  "file": "benchmarks/laplace_pressure_jump/make_doc.py",
+  "code": "E501",
+  "row": 81
+ },
+ {
+  "file": "benchmarks/laplace_pressure_jump/make_doc.py",
+  "code": "E501",
+  "row": 134
+ },
+ {
+  "file": "benchmarks/laplace_pressure_jump/make_doc.py",
+  "code": "W292",
+  "row": 201
+ },
+ {
+  "file": "benchmarks/laplace_pressure_jump/run.py",
+  "code": "W292",
+  "row": 374
+ },
+ {
+  "file": "src/tensorsph/__init__.py",
+  "code": "F401",
+  "row": 36
+ },
+ {
+  "file": "src/tensorsph/__init__.py",
+  "code": "F401",
+  "row": 37
+ },
+ {
+  "file": "src/tensorsph/__init__.py",
+  "code": "F401",
+  "row": 38
+ },
+ {
+  "file": "src/tensorsph/__init__.py",
+  "code": "F401",
+  "row": 39
+ },
+ {
+  "file": "src/tensorsph/__init__.py",
+  "code": "F401",
+  "row": 40
+ },
+ {
+  "file": "src/tensorsph/__init__.py",
+  "code": "F401",
+  "row": 41
+ },
+ {
+  "file": "src/tensorsph/__init__.py",
+  "code": "F401",
+  "row": 42
+ },
+ {
+  "file": "src/tensorsph/__init__.py",
+  "code": "F401",
+  "row": 43
+ },
+ {
+  "file": "src/tensorsph/initial_density.py",
+  "code": "W292",
+  "row": 225
+ },
+ {
+  "file": "tests/test_contact_angle_geometry.py",
+  "code": "F401",
+  "row": 20
+ },
+ {
+  "file": "tests/test_contact_angle_geometry.py",
+  "code": "W292",
+  "row": 163
+ },
+ {
+  "file": "tests/test_free_surface_pressure_closure.py",
+  "code": "W292",
+  "row": 258
+ },
+ {
+  "file": "tests/test_initial_density_calibration.py",
+  "code": "F401",
+  "row": 17
+ },
+ {
+  "file": "tests/test_initial_density_calibration.py",
+  "code": "F401",
+  "row": 24
+ },
+ {
+  "file": "tests/test_initial_density_calibration.py",
+  "code": "W292",
+  "row": 210
+ },
+ {
+  "file": "tests/test_laplace_pressure_closure.py",
+  "code": "W292",
+  "row": 119
+ },
+ {
+  "file": "tests/test_laplace_pressure_jump.py",
+  "code": "W292",
+  "row": 252
+ }
+]

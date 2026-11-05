@@ -39,3 +39,12 @@ exclude = [".scratch"]
 # Correctness-only gate: pyflakes undefined names/unused imports, pycodestyle
 # errors and warnings. Formatting is deliberately not enforced.
 select = ["E", "F", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+# ``make_doc.py`` generators emit long-form Markdown verbatim: single table rows
+# and prose paragraphs run to 600+ characters, and their output is byte-locked by
+# the anti-drift tests (``tests/test_verification_ledger.py``) and the committed
+# report files. Re-wrapping them would either change those documents or split a
+# table row into invalid Markdown, so line length is not a meaningful gate here;
+# every other rule still applies to these files.
+"benchmarks/**/make_doc.py" = ["E501"]

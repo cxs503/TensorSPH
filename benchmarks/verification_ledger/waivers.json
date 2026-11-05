@@ -8,7 +8,15 @@
     "benchmarks/static_droplet/laplace_validation.json",
     "benchmarks/laplace_law/convergence/relax_dx0.0015.json",
     "benchmarks/laplace_law/convergence/relax_dx0.0020.json",
-    "benchmarks/laplace_law/convergence/relax_dx0.0025.json"
+    "benchmarks/laplace_law/convergence/relax_dx0.0025.json",
+    "benchmarks/conservation/report.json",
+    "benchmarks/contact_angle_geometry/results.json",
+    "benchmarks/dam_break/reference_ladder.json",
+    "benchmarks/init_consistency/report.json",
+    "benchmarks/initial_density_bias/report.json",
+    "benchmarks/laplace_pressure_closure/raw/relax_ladder.json",
+    "benchmarks/laplace_pressure_jump/validation_report.json",
+    "benchmarks/lattice_equilibrium/report.json"
   ],
   "reasons": {
     "benchmarks/dam_break/reference_audit.json": "audit of the experimental reference table + Ritter comparison; the solver-side gate is claim dam_break.martin_moyce.mae in resolution_ladder.json",
@@ -17,6 +25,14 @@
     "benchmarks/static_droplet/laplace_validation.json": "covered by claim static_droplet.force_direction.WITHDRAWN (same artifact family, formally withdrawn)",
     "benchmarks/laplace_law/convergence/relax_dx0.0015.json": "resolution ladder of claim young_laplace.laplace_law.vacuum_gauge; the ladder is summarised in the parent report",
     "benchmarks/laplace_law/convergence/relax_dx0.0020.json": "resolution ladder of claim young_laplace.laplace_law.vacuum_gauge; the ladder is summarised in the parent report",
-    "benchmarks/laplace_law/convergence/relax_dx0.0025.json": "resolution ladder of claim young_laplace.laplace_law.vacuum_gauge; the ladder is summarised in the parent report"
+    "benchmarks/laplace_law/convergence/relax_dx0.0025.json": "resolution ladder of claim young_laplace.laplace_law.vacuum_gauge; the ladder is summarised in the parent report",
+    "benchmarks/conservation/report.json": "global-conservation gates (mass/Galilean/first-order lagrangian) guarded by tests/test_conservation.py; ledger claim set is the Young-Laplace/dam-break family",
+    "benchmarks/contact_angle_geometry/results.json": "geometric contact-angle assembly audit guarded by tests/test_contact_angle_geometry.py; not a pressure-jump reading",
+    "benchmarks/dam_break/reference_ladder.json": "Martin-Moyce ladder is registered under claim dam_break.martin_moyce.mae (resolution_ladder.json); this file is the same ladder against the cross-check reference table",
+    "benchmarks/init_consistency/report.json": "initial-lattice spurious-pressure gates guarded by tests/test_initial_density_calibration.py; the ledger records the derived bias readouts instead",
+    "benchmarks/initial_density_bias/report.json": "analytic lattice-bias derivation (hex/square) guarded by tests/test_initial_density_calibration.py; underlying constants, not a solver gate",
+    "benchmarks/laplace_pressure_closure/raw/relax_ladder.json": "raw relaxation ladder feeding laplace_pressure_closure; the summarised report is the artifact a claim would cite, as for the laplace_law/convergence ladders above",
+    "benchmarks/laplace_pressure_jump/validation_report.json": "one-sided free-surface jump sweep guarded by tests/test_laplace_pressure_jump.py; its verdict is FAIL and it is summarised in docs/verification_laplace_pressure_jump.md",
+    "benchmarks/lattice_equilibrium/report.json": "lattice equilibrium (bias curve, hydrostatic init) guarded by tests/test_lattice_equilibrium.py; init-side evidence, not a Laplace reading"
   }
 }

@@ -71,4 +71,7 @@ __all__ = [
     "cell_linked_pairs_host", "DamBreakConfig", "make_column", "run_case",
     "apply_contact_angle_boundary", "compute_color_gradient", "compute_curvature", "compute_normal",
     "compute_surface_tension_force", "capillary_dt_limit",
+    "calibration_factor", "calibrate_mass", "lattice_bias", "lattice_kernel_sum",
+    "lattice_offsets", "measure_complete_support_bias", "spurious_pressure",
+    "spurious_pressure_ratio",
 ]
