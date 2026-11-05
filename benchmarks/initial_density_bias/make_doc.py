@@ -1,3 +1,4 @@
+# ruff: noqa: E501  (long CJK/markdown template lines; see PR notes)
 """Generate ``docs/verification_initial_density_calibration.md``.
 
 Every number is injected from ``benchmarks/initial_density_bias/report.json``;

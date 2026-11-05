@@ -545,7 +545,12 @@ def make_particles(cfg: Config, device: torch.device):
     if drop.shape[0] == 0:
         raise ValueError("drop discretization produced no particles")
     positions = torch.cat((pool, drop), dim=0)
-    mass_unit = lattice_mass_unit(cfg)
+    # ``make_particles`` starts from the plain rho0*dx^2 lattice mass and applies
+    # the initial-density calibration exactly once, through
+    # ``calibrate_initial_mass``.  Going through ``lattice_mass_unit`` here would
+    # stack the config-wide ``density_calibration`` default on top of that flag
+    # and calibrate twice.
+    mass_unit = cfg.rho0 * cfg.dx * cfg.dx
     mass = torch.full((positions.shape[0],), mass_unit, device=device)
     if cfg.hydrostatic_init:
         # Scale the analytical profile by the same mass unit, so the calibrated

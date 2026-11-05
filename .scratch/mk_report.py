@@ -1,3 +1,4 @@
+# ruff: noqa: E401, E501, E702  (long CJK/markdown template lines; see PR notes)
 import base64, io, json, os, urllib.request
 from pathlib import Path
 

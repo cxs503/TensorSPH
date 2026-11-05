@@ -1,3 +1,4 @@
+# ruff: noqa: E501  (long CJK/markdown template lines; see PR notes)
 """Render docs/verification_effective_sigma.md and the ladder figure.
 
 All numbers are injected programmatically from out/report.json (zero

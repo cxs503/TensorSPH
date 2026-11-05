@@ -1,3 +1,4 @@
+# ruff: noqa: E501  (long CJK/markdown template lines; see PR notes)
 """Generate ``docs/verification_laplace_pressure_closure.md`` from the JSON evidence.
 
 Every number in the document comes from ``report_force_balance.json`` or
