@@ -1,0 +1,36 @@
+{
+  "baseline_main": {
+    "failed": 2,
+    "passed": 363,
+    "xfailed": 8,
+    "failed_tests": [
+      "tests/test_oscillating_droplet.py::test_recorded_mode2_frequency_deficiency_is_reproduced",
+      "tests/test_oscillating_droplet.py::test_oscillation_frequency_gate_is_not_met"
+    ]
+  },
+  "merge_agent_m3293": {
+    "failed": 2,
+    "passed": 374,
+    "xfailed": 7,
+    "failed_tests": [
+      "tests/test_oscillating_droplet.py::test_recorded_mode2_frequency_deficiency_is_reproduced",
+      "tests/test_oscillating_droplet.py::test_oscillation_frequency_gate_is_not_met"
+    ]
+  },
+  "same_failure_set": true,
+  "closure_acceptance": {
+    "evaluated": true,
+    "criterion": "|absolute_time_average_tail rel. error| < 15 % of sigma/R at every recorded case",
+    "worst_case": {
+      "dx_m": 0.002,
+      "sound_speed": 20.0,
+      "rel_error_pct": -7.1740165336030435
+    },
+    "max_abs_rel_error_pct": 7.1740165336030435,
+    "within_15pct": true,
+    "within_3pct": false
+  },
+  "worst_closure_off_pct": 38.09702683968919,
+  "worst_closure_on_pct": 7.1740165336030435,
+  "figure": "pr118_merge_evidence.png"
+}
