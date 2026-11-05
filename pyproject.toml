@@ -39,3 +39,11 @@ exclude = [".scratch"]
 # Correctness-only gate: pyflakes undefined names/unused imports, pycodestyle
 # errors and warnings. Formatting is deliberately not enforced.
 select = ["E", "F", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+# The benchmark doc generators hold Markdown/LaTeX prose inside triple-quoted
+# document templates: every one of those lines must stay on a single physical
+# line, otherwise the generated document changes byte-for-byte.  Line length is
+# therefore not enforced there; all other rules (unused imports, undefined
+# names, ...) still are.
+"benchmarks/*/make_doc.py" = ["E501"]
