@@ -14,14 +14,12 @@ Two kinds of test live here:
   change to the viscous term or to the wall treatment cannot pass unnoticed.
 """
 
-import math
 
 import pytest
 import torch
 
 from benchmarks.poiseuille.run import (
     analytic,
-    bin_rows,
     build_fluid,
     build_walls,
     fit_profile,
@@ -91,7 +89,6 @@ def test_the_offset_sign_is_not_symmetric():
 # --------------------------------------------------------------------------- #
 
 def test_periodic_images_are_the_channel_shifted_in_x():
-    device = torch.device("cpu")
     pos = torch.tensor([[0.01, 0.02], [0.19, 0.05]], dtype=torch.float64)
     images = periodic_images(pos, 0.2)
     assert images.shape == (6, 2)

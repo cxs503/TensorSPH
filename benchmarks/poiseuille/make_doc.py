@@ -103,9 +103,6 @@ def figure_field(data):
     res = data["results"][-1]
     field = res["field"]
     height = data["height"]
-    force = data["body_force"]
-    nu = data["viscosity"]
-    delta = res["fit"]["delta"]
 
     fig, axes = plt.subplots(1, 2, figsize=(11, 3.8))
 
@@ -193,7 +190,8 @@ def main() -> int:
     A(f"with peak velocity `u_max = g_x H^2 / (8 nu) = {u_max_theory:.4f} m/s` and wall")
     A(f"shear `tau_w = rho g_x H / 2 = {fine['wall_shear_analytic']:.1f} Pa`. The")
     A("steady state is reached by starting from rest and integrating long enough")
-    A(f"(`t_end = {data['t_end']} s`, about {data['t_end'] / (height * height / (math.pi ** 2 * nu)):.1f} viscous")
+    A(f"(`t_end = {data['t_end']} s`, about"
+    f" {data['t_end'] / (height * height / (math.pi ** 2 * nu)):.1f} viscous")
     A("time scales `H^2/(pi^2 nu)`).")
     A("")
     A("| parameter | value |")
@@ -202,11 +200,12 @@ def main() -> int:
     A(f"| channel length | {data['columns']} fluid columns (`columns * dx`) |")
     A(f"| kinematic viscosity `nu` | {nu} m^2/s (Re = O({fine['reynolds_number']:.0f})) |")
     A(f"| body force `g_x` | {force} m/s^2 |")
-    A(f"| sound speed `c0` | 20 m/s, `h = 1.3 dx`, cubic spline kernel |")
-    A(f"| wall model | Adami et al. (2012) pressure extrapolation, "
-      f"`wall_layers = 3`, `wall_friction = 1` |")
-    A(f"| x boundary | periodic (two image copies of the fluid cloud) |")
-    A(f"| averaging window | last {data['t_average']} s of the run, per-row mean over the columns |")
+    A("| sound speed `c0` | 20 m/s, `h = 1.3 dx`, cubic spline kernel |")
+    A("| wall model | Adami et al. (2012) pressure extrapolation, "
+      "`wall_layers = 3`, `wall_friction = 1` |")
+    A("| x boundary | periodic (two image copies of the fluid cloud) |")
+    A(f"| averaging window | last {data['t_average']} s of the run, per-row mean over the"
+    f" columns |")
     A("")
     A("## 2. Method")
     A("")
@@ -236,11 +235,12 @@ def main() -> int:
     A("")
     A("![profiles](figures/poiseuille_profiles.png)")
     A("")
-    A(f"*Left: measured and analytic profiles. Right: start-up transient of the peak")
-    A(f"velocity against the analytic steady value (the overshoot is the wall defect, not")
-    A(f"a transient).*")
+    A("*Left: measured and analytic profiles. Right: start-up transient of the peak")
+    A("velocity against the analytic steady value (the overshoot is the wall defect, not")
+    A("a transient).*")
     A("")
-    A("| H/dx | rows | u_max meas. [m/s] | u_max analytic | ratio | interior RMS vs nominal H | interior RMS vs offset walls |")
+    A("| H/dx | rows | u_max meas. [m/s] | u_max analytic | ratio | interior RMS vs nominal"
+    " H | interior RMS vs offset walls |")
     A("|---|---|---|---|---|---|---|")
     for res in results:
         A(f"| {res['resolution_H_over_dx']} | {len(res['rows'])} | "
@@ -251,7 +251,8 @@ def main() -> int:
     A("")
     A("### 3.2 The two mechanisms, separated")
     A("")
-    A("| H/dx | nu_eff/nu (all rows) | nu_eff/nu (bulk half) | delta/dx | wall-row slip / u_max | wall shear meas./analytic |")
+    A("| H/dx | nu_eff/nu (all rows) | nu_eff/nu (bulk half) | delta/dx | wall-row slip /"
+    " u_max | wall shear meas./analytic |")
     A("|---|---|---|---|---|---|")
     for res in results:
         A(f"| {res['resolution_H_over_dx']} | "
@@ -261,7 +262,8 @@ def main() -> int:
           f"{pct(res['wall_row_slip_over_umax'], 1)} | "
           f"{fmt(res['wall_shear_ratio'], 3)} |")
     A("")
-    A("| H/dx | dt [s] | steps | fluid / wall particles | max Mach | steady drift | parabola fit residual / u_max | 2-D scatter / u_max | wall clock |")
+    A("| H/dx | dt [s] | steps | fluid / wall particles | max Mach | steady drift | parabola"
+    " fit residual / u_max | 2-D scatter / u_max | wall clock |")
     A("|---|---|---|---|---|---|---|---|---|")
     for res in results:
         A(f"| {res['resolution_H_over_dx']} | {res['dt']:.3g} | {res['steps']} | "
@@ -293,8 +295,8 @@ def main() -> int:
     A("")
     A("### 3.4 Negative control: free slip")
     A("")
-    A(f"With `wall_friction = 0` no tangential stress acts at the wall, so nothing")
-    A(f"balances the body force and the column accelerates rigidly: `u -> g_x t` with a")
+    A("With `wall_friction = 0` no tangential stress acts at the wall, so nothing")
+    A("balances the body force and the column accelerates rigidly: `u -> g_x t` with a")
     A(f"flat profile. Measured at `H/dx = 8`, `t = {data['t_end']} s`: mean")
     A(f"`u = {fmt(control['u_max_measured'], 3)} m/s` against the analytic")
     A(f"`g_x t = {fmt(force * data['t_end'], 3)} m/s` "
@@ -336,7 +338,8 @@ def main() -> int:
       f"The peak velocity is inside 3 % at `H/dx = {fine['resolution_H_over_dx']}` "
       f"({pct(fine['u_max_ratio'] - 1.0, 1)}), but the wall shear is "
       f"{pct(fine['wall_shear_ratio'] - 1.0, 0)} off at that resolution and stays "
-      f"there across the ladder ({', '.join(pct(abs(r['wall_shear_ratio'] - 1.0), 0) for r in results)} off "
+      f"there across the ladder"
+      f" ({', '.join(pct(abs(r['wall_shear_ratio'] - 1.0), 0) for r in results)} off "
       f"at `H/dx = {', '.join(str(r['resolution_H_over_dx']) for r in results)}`).")
     A("A momentum balance that a steady channel must satisfy pointwise is violated by")
     A("half, so the peak agreement cannot be presented as the wall being right. The")
@@ -355,7 +358,8 @@ def main() -> int:
     A("* the flow stays *nearly* two-dimensional, but not exactly: the standard")
     A(f"  deviation of `u_x` inside a lattice row peaks at "
       f"{pct(fine['max_row_std_over_umax'], 1)} of `u_max` (in the wall rows) and is")
-    A(f"  {pct(1e-9, 0) if False else 'under 1 %'} in the middle rows. See the caveat in section 5.")
+    A(f"  {pct(1e-9, 0) if False else 'under 1 %'} in the middle rows. See the caveat in"
+    f" section 5.")
     A("* the bulk effective viscosity of the operator is within")
     A(f"  {pct(abs(fine['fit_interior']['nu_eff_over_nu'] - 1.0), 1)} of 1 in the middle")
     A("  half of the channel, i.e. the operator itself is calibrated to better than the")
@@ -392,7 +396,7 @@ def main() -> int:
     A("  average reproduces the wall value to second order, so this is a small")
     A("  contribution to the wall defect, not its cause.")
     A("* **The residual x-scatter is acoustic, and it lives at the wall.** The field")
-    A(f"  figure shows rows that are uniform to well under 1 % of `u_max` in the middle")
+    A("  figure shows rows that are uniform to well under 1 % of `u_max` in the middle")
     A(f"  of the channel and rows with up to {pct(fine['max_row_std_over_umax'], 0)} scatter")
     A("  next to the walls. At Mach 0.07 the pressure waves from the wall-pressure")
     A("  extrapolation are not negligible, which is another reason not to read the peak")
@@ -411,7 +415,8 @@ def main() -> int:
     A("is used at for a 0.1 m channel (`H/dx = 8 .. 16`), the blended no-slip condition")
     A(f"produces a slip velocity of {pct(coarse['wall_row_slip_over_umax'], 0)} to "
       f"{pct(fine['wall_row_slip_over_umax'], 0)} of the centre-line speed and carries")
-    A(f"only {pct(coarse['wall_shear_ratio'], 0)} to {pct(fine['wall_shear_ratio'], 0)} of the wall shear the")
+    A(f"only {pct(coarse['wall_shear_ratio'], 0)} to {pct(fine['wall_shear_ratio'], 0)} of"
+    f" the wall shear the")
     A("momentum balance requires. Concrete consequences:")
     A("")
     A("* keep `wall_friction = 0` (free slip) as the default, as it is now. A no-slip")
@@ -436,15 +441,16 @@ def main() -> int:
     A("PYTHONPATH=src python -m pytest tests/test_poiseuille.py -q")
     A("```")
     A("")
-    A(f"Total wall clock for the ladder and the control: {data['wall_clock_s']:.0f} s on one CPU thread.")
+    A(f"Total wall clock for the ladder and the control: {data['wall_clock_s']:.0f} s on"
+    f" one CPU thread.")
     A("")
-    A(f"![field](figures/poiseuille_field.png)")
+    A("![field](figures/poiseuille_field.png)")
     A("")
     A(f"*Left: time-averaged `u_x` field at `H/dx = {fine['resolution_H_over_dx']}` (x")
-    A(f"is periodic, so the field is a set of horizontal bands). Right: pointwise error")
-    A(f"of the same profile against the nominal channel and against the channel whose")
-    A(f"walls are offset by the fitted `delta`; the residual band structure is the wall")
-    A(f"layer, and the 3 % gate is drawn for scale.*")
+    A("is periodic, so the field is a set of horizontal bands). Right: pointwise error")
+    A("of the same profile against the nominal channel and against the channel whose")
+    A("walls are offset by the fitted `delta`; the residual band structure is the wall")
+    A("layer, and the 3 % gate is drawn for scale.*")
     A("")
 
     DOC.write_text("\n".join(lines) + "\n")
