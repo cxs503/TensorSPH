@@ -1,0 +1,180 @@
+{
+  "checker": "docs/merge/verify_content_preservation_m3866.py",
+  "checks": {
+    "disjoint_change_sets": true,
+    "no_path_from_nowhere": true,
+    "no_path_lost_from_branch": true,
+    "no_path_lost_from_main": true,
+    "shared_paths": [],
+    "single_side_paths_byte_identical": true
+  },
+  "counts": {
+    "paths_changed_by_both": 0,
+    "paths_changed_by_branch": 12,
+    "paths_changed_by_main": 16,
+    "paths_checked": 28
+  },
+  "per_path": [
+    {
+      "merged_blob_matches": true,
+      "path": ".scratch/sim040.json",
+      "sides": "agent/m2905"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "benchmarks/dam_break/make_audit_doc.py",
+      "sides": "agent/m2905"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "benchmarks/dam_break/make_reference_audit_doc.py",
+      "sides": "agent/m2905"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "benchmarks/dam_break/martin_moyce_1952_crosscheck.json",
+      "sides": "agent/m2905"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "benchmarks/dam_break/reference_audit.json",
+      "sides": "agent/m2905"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "benchmarks/dam_break/reference_audit.py",
+      "sides": "agent/m2905"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "benchmarks/dam_break/reference_ladder.json",
+      "sides": "agent/m2905"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "benchmarks/dam_break/reference_ladder.png",
+      "sides": "agent/m2905"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "benchmarks/dam_break/reference_ladder.py",
+      "sides": "agent/m2905"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "benchmarks/dam_break_lattice_clearance/summary.json",
+      "sides": "main"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "benchmarks/init_consistency/make_doc.py",
+      "sides": "main"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "benchmarks/init_consistency/report.json",
+      "sides": "main"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "benchmarks/init_consistency/run.py",
+      "sides": "main"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "benchmarks/poiseuille/make_doc.py",
+      "sides": "main"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "benchmarks/poiseuille/out/results.json",
+      "sides": "main"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "benchmarks/poiseuille/run.py",
+      "sides": "main"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "docs/algorithm-gap-analysis.md",
+      "sides": "main"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "docs/benchmarks/dam-break-lattice-clearance.md",
+      "sides": "main"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "docs/benchmarks/dam-break-reference-audit.md",
+      "sides": "agent/m2905"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "docs/merge/agent-m2905-into-main.md",
+      "sides": "agent/m2905"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "docs/verification_kernel_sum_consistency.md",
+      "sides": "main"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "docs/verification_poiseuille_channel.md",
+      "sides": "main"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "src/tensorsph/dam_break.py",
+      "sides": "main"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "src/tensorsph/lattice_consistency.py",
+      "sides": "main"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "tests/test_dam_break_lattice_clearance.py",
+      "sides": "main"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "tests/test_dam_break_reference_audit.py",
+      "sides": "agent/m2905"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "tests/test_kernel_sum_consistency.py",
+      "sides": "main"
+    },
+    {
+      "merged_blob_matches": true,
+      "path": "tests/test_poiseuille.py",
+      "sides": "main"
+    }
+  ],
+  "refs": {
+    "branch": {
+      "ref": "agent/m2905",
+      "sha": "39fa4af2d226858d56acac0d0ca8f0a0a8942311"
+    },
+    "main": {
+      "ref": "origin/main",
+      "sha": "ba07a1066bcb2be5046dc63ae0179273b9f02ee7"
+    },
+    "merge_base": "a6610546dc1d96c400ce1c2777a3a3b0580c09b5",
+    "result": {
+      "ref": "HEAD",
+      "sha": "acb8d0908c459a22a5172e7c7201a0932d4c7a80"
+    },
+    "result_parents": [
+      "ba07a1066bcb2be5046dc63ae0179273b9f02ee7",
+      "39fa4af2d226858d56acac0d0ca8f0a0a8942311"
+    ]
+  },
+  "verdict": "PASS",
+  "violations": []
+}
