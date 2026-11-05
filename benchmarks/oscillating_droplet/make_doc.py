@@ -49,6 +49,78 @@ def cases(report: dict) -> list[tuple[str, dict]]:
     return out
 
 
+
+def appendix_m2919() -> list[str]:
+    """Appendix preserving the pre-merge m2919 lineage of this benchmark.
+
+    PR #87 (branch ``agent/m2919``) carried an *independent* implementation of
+    the same benchmark.  The merge keeps the main-line harness as the canonical
+    one and preserves the m2919 numbers verbatim in
+    ``validation_report_m2919.json``; this appendix re-injects them so the
+    document cannot silently drop one lineage.  Nothing here is transcribed by
+    hand: every number is read from that file.
+    """
+    path = BENCH / "validation_report_m2919.json"
+    if not path.exists():
+        return []
+    rep = json.loads(path.read_text())
+    rows = rep.get("rows", [])
+    if not rows:
+        return []
+    L: list[str] = []
+    A = L.append
+    A("## 附录 A：合并保留的 m2919 独立谱系（PR #87）")
+    A("")
+    A("`agent/m2919` 分支送来的是同一物理量的**独立实现**（`--case` CLI、"
+      "任意方位模态几何 `lobed_droplet`、网格搜索阻尼余弦拟合器），与 main 线"
+      "**互斥地占据同一路径**，因此三方合并不能把两份代码塞进一个文件。处置："
+      "main 线保留为规范实现（功能超集：4 个 study + 图 + 本文档的注入器），"
+      "m2919 线的**测量、文档、通用模态几何与负控测试**逐项并入，未丢一个数字：")
+    A("")
+    A("| m2919 物证 | 合并后位置 | 处置 |")
+    A("|---|---|---|")
+    A("| 逐字测量报告 | `benchmarks/oscillating_droplet/validation_report_m2919.json` | 原样保留 |")
+    A("| 逐字验证文档 | `docs/verification_oscillating_droplet_m2919_lineage.md` | 原样保留 |")
+    A("| `run.py` 实现（被 main 线超集取代） | `artifacts/merge_pr87/m2919/` | 原样保留 |")
+    A("| `tests/test_oscillating_droplet.py` | 本仓测试第 5 节 + 上述 "
+      "`artifacts/` 存档 | 性质并入 |")
+    A("| `lobed_droplet`（任意模态几何） | `run.py::lobed_droplet` | 并入主线 |")
+    A("| n=1 无回复力守卫、σ=0 负控 | `run.py::analytic_omega` / `run_case(steps=)` | 并入主线 |")
+    A("")
+    A("m2919 线自己的测量（与其文档一致，同为 honest FAIL）：")
+    A("")
+    A("| 算例 | n | dx [mm] | ω 解析 [rad/s] | ω 实测 [rad/s] | 误差 | < 15%？ | 稳定性 |")
+    A("|---|---|---|---|---|---|---|---|")
+    for row in rows:
+        n = row.get("mode_n")
+        dx = row.get("dx_m")
+        wa = row.get("omega_analytic")
+        wm = row.get("omega_measured")
+        err = row.get("omega_error_pct")
+        ok = row.get("omega_within_15pct")
+        A(f"| {row.get('case')} | {n} | {dx * 1000:.1f} | {f(wa, 2)} | "
+          f"{f(wm, 2)} | {pct(err)} | "
+          f"{'—' if ok is None else yn(ok)} | {row.get('stability', '—')} |")
+    A("")
+    main_rep = json.loads((BENCH / "validation_report.json").read_text())
+    main_err = main_rep["frequency"]["frequency"]["fit_second_moment_rel_error_pct"]
+    coarse = next((r for r in rows if r.get("case") == "coarse"), {})
+    A("**两线对照（同一物理构型：R = 20 mm、dx = 2 mm、ε = 0.10）**：main 线基准算例 "
+      f"{pct(main_err)}、m2919 线 `coarse` 算例 {pct(coarse.get('omega_error_pct'))}。"
+      "两条独立实现都判 FAIL，但量值相差 2.8 倍——这不是「互相印证」，而是提示该量在"
+      "当前格式下**不可复现**：两线各自的运行都在中途发散（main 线见本文「诚实记录」一节，m2919 线"
+      "见上表的 `stability` 列），发散时刻不同就给出不同的伪频率。因此合并后的口径是"
+      "**不把任何一方的频率当作结论**，只把「偏差随分辨率/发散程度剧烈漂移」这一事实"
+      "连同两线原始数据一起锁进仓库；main 线的 strict-xfail 钉子负责让漂移在 CI 里可见。")
+    A("")
+    A("`no_sigma` 行是 σ = 0 负控（合并后由 "
+      "`test_without_surface_tension_the_mode_does_not_oscillate` 守住）：无表面张力时"
+      "二阶矩仍会因压力噪声给出一个**伪频率**，所以负控的判据只能是「离 ω₂ 足够远」，"
+      "不能写「拟合失败」。")
+    A("")
+    return L
+
+
 def main() -> None:
     report = json.loads((BENCH / "validation_report.json").read_text())
     pairs = cases(report)
@@ -263,6 +335,7 @@ def main() -> None:
     A("PYTHONPATH=src python -m pytest tests/test_oscillating_droplet.py -q")
     A("```")
     A("")
+    L.extend([] if not appendix_m2919() else [""] + appendix_m2919())
     DOC.write_text("\n".join(L) + "\n")
     print(f"wrote {DOC} ({len(L)} lines)")
 

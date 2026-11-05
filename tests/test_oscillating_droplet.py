@@ -256,3 +256,84 @@ def test_oscillation_frequency_gate_is_not_met(release_case):
         f"mode-2 frequency error {err:.1f} % now meets the {GATE_PCT:.0f} % gate; "
         "update the benchmark doc verdict (it currently records FAIL) and this test")
     assert release_case["diagnostics"]["mass_relative_drift"] < 1e-12
+
+
+# --------------------------------------------------------------------------- #
+# 5. properties ported from the m2919 lineage (PR #87 semantic union)
+# --------------------------------------------------------------------------- #
+# The pre-merge m2919 branch of this benchmark shipped its own implementation
+# (``--case`` CLI, ``lobed_droplet``, ``fit_damped_oscillation``).  The merge
+# keeps the main-line harness (it is the functional superset: four studies plus
+# the document generator) and carries the m2919 *properties* over here, so
+# nothing the m2919 tests guarded is lost.  Name map:
+#   drop_frequency_2d(sigma, rho, R, n)  -> analytic_omega(R, sigma, rho, m=n)
+#   drop_frequency_3d(sigma, rho, R, n)  -> analytic_omega_3d(R, sigma, rho, m=n)
+#   lobed_droplet(...)                   -> lobed_droplet(...)  (same signature)
+def test_mode_one_is_a_translation_and_has_no_frequency(bench):
+    """``m = 1`` is a rigid translation: the formula must refuse it, not return 0."""
+    with pytest.raises(ValueError):
+        bench.analytic_omega(0.02, 7.2, 1000.0, 1)
+    with pytest.raises(ValueError):
+        bench.analytic_omega(0.02, 7.2, 1000.0, 0)
+
+
+def test_frequency_scales_as_sqrt_sigma_and_r_minus_three_halves(bench):
+    base = bench.analytic_omega(0.02, 7.2, 1000.0, 2)
+    assert bench.analytic_omega(0.02, 4.0 * 7.2, 1000.0, 2) == pytest.approx(
+        2.0 * base, rel=1e-12)
+    assert bench.analytic_omega(0.04, 7.2, 1000.0, 2) == pytest.approx(
+        base / 2.0 ** 1.5, rel=1e-12)
+
+
+def test_branches_agree_for_large_azimuthal_modes(bench):
+    m = 200
+    ratio = (bench.analytic_omega_3d(0.02, 7.2, 1000.0, m)
+             / bench.analytic_omega(0.02, 7.2, 1000.0, m))
+    assert ratio == pytest.approx(1.0, rel=0.02)   # both ~ m^3
+
+
+def test_mode_estimator_flips_sign_under_a_ninety_degree_rotation(bench):
+    """``s ~ x^2 - y^2``: the azimuthal symmetry the mode-2 estimator relies on."""
+    pos, mass = bench.elliptical_drop(0.02, 0.002, 1000.0, 0.05)
+    s0 = bench.mode_quadrupole(pos, mass)
+    assert s0 > 0.0
+    rot = torch.stack((-pos[:, 1], pos[:, 0]), dim=1)
+    assert bench.mode_quadrupole(rot, mass) == pytest.approx(-s0, rel=1e-9)
+    # the eigen estimator is |s|: it must NOT see the flip, which is exactly why
+    # the frequency fit uses it and the phase-sensitive runs use the quadrupole
+    assert bench.mode_amplitude(rot, mass)["s_moment"] == pytest.approx(
+        bench.mode_amplitude(pos, mass)["s_moment"], rel=1e-9)
+
+
+@pytest.mark.parametrize("m", [2, 3, 5])
+def test_generalised_lobe_geometry_fills_the_analytic_lobe_area(bench, m):
+    """``lobed_droplet`` (m2919 lineage) must enclose ``pi R^2 (1 + eps^2/2)``."""
+    radius, dx, rho0, eps = 0.02, 0.001, 1000.0, 0.05
+    pos, mass = bench.lobed_droplet(radius, dx, rho0, eps, m)
+    dy = dx * math.sqrt(3.0) / 2.0
+    cell = dx * dy
+    area = pos.shape[0] * cell
+    target = math.pi * radius ** 2 * (1.0 + 0.5 * eps ** 2)
+    assert area == pytest.approx(target, rel=0.05)
+    r = torch.linalg.vector_norm(pos, dim=1)
+    # the outermost lobe tip is at R (1 + eps); nothing may poke outside it
+    assert float(r.max()) <= radius * (1.0 + eps) + dx
+    assert float(r.max()) >= radius * (1.0 + eps) - 2.0 * dx
+    assert float(mass.sum()) == pytest.approx(rho0 * area, rel=1e-12)
+
+
+@pytest.mark.slow
+def test_without_surface_tension_the_mode_does_not_oscillate(bench):
+    """Negative control ported from m2919: no sigma, no capillary frequency."""
+    # Coarse lattice on purpose: the negative control asks whether the mode can
+    # track omega_2 at all without surface tension, not for a converged number.
+    rep = bench.run_case(radius=0.02, dx=0.004, sigma=0.0, eps=0.10, steps=1200)
+    trace = rep["diagnostics"]["trace"]
+    omega_ref = bench.analytic_omega(0.02, 7.2, 1000.0, 2)
+    span = trace["t"][-1] - trace["t"][0]
+    assert span > 0.5 * 2.0 * math.pi / omega_ref, (
+        f"the control only covers {span:.4f} s, less than half a period")
+    omega = bench.zero_crossing_period(trace["t"], trace["s_second_moment"])["omega"]
+    assert not math.isfinite(omega) or abs(omega - omega_ref) / omega_ref > 0.3, (
+        f"a drop without surface tension returned omega = {omega} rad/s, "
+        f"within 30 % of the capillary value {omega_ref:.1f} rad/s")
