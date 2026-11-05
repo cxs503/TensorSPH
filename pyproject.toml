@@ -39,3 +39,12 @@ exclude = [".scratch"]
 # Correctness-only gate: pyflakes undefined names/unused imports, pycodestyle
 # errors and warnings. Formatting is deliberately not enforced.
 select = ["E", "F", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+# The doc generators write Markdown through Python string literals, and a
+# Markdown table row *must* be a single physical line. In those files one source
+# line is one Markdown line, so E501 can only be satisfied by corrupting the
+# rendered document (m4455: 32 E501 hits, all inside `| ... |` rows / prose
+# templates). Line length stays enforced for every other file, including the
+# numbers they print.
+"benchmarks/*/make_doc.py" = ["E501"]

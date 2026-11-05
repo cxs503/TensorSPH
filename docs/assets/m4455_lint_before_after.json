@@ -1,0 +1,16 @@
+{
+ "ruff_errors": {
+  "7d91b89a\n(PR #229 base)": 113,
+  "b90a8a1\n(main)": 41,
+  "m4455\n(after fix)": 0
+ },
+ "pr229_ci": {
+  "fail_step": "5 Lint",
+  "skipped": [
+   "6 unit+smoke",
+   "7 droplet e2e",
+   "8 manifest",
+   "9-16 benches"
+  ]
+ }
+}
