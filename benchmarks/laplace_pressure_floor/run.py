@@ -180,7 +180,9 @@ def radial_profile(pos, values, n_bins: int = 12):
 
 def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
           calibrate_mass: bool = True, t_end_over_t_sigma: float = 1.5,
-          max_steps: int = 4000, sample_every: int = 50):
+          max_steps: int = 4000, sample_every: int = 50,
+          closure: bool = False, donors: str = "interior", layers: int = 2,
+          threshold: float = 0.99):
     """Advance the drop and read ``Delta p`` with three definitions.
 
     ``absolute``  ``p_core - 0``  (Tait is normalised at ``rho0``; the vacuum is
@@ -192,7 +194,11 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
     cfg = Config(dx=dx, h_factor=H_FACTOR, rho0=RHO0, sound_speed=c0,
                  gamma=GAMMA, gravity=0.0, viscosity=VISCOSITY,
                  surface_tension_coefficient=SIGMA, csf_scheme="consistent",
-                 csf_curvature=scheme)
+                 csf_curvature=scheme,
+                 surface_pressure_closure=closure,
+                 surface_pressure_donors=donors,
+                 surface_pressure_layers=layers,
+                 surface_pressure_threshold=threshold)
     h = cfg.h_factor * cfg.dx
     dt = float(stable_dt(cfg))
     t_end = t_end_over_t_sigma * T_SIGMA
@@ -257,6 +263,8 @@ def relax(dx: float, c0: float, scheme: str = "fit_quadratic",
         "dx_m": dx, "h_m": h, "n_particles": int(pos.shape[0]),
         "sound_speed": c0, "curvature_scheme": scheme,
         "mass_calibrated": calibrate_mass,
+        "closure": {"enabled": closure, "donors": donors, "layers": layers,
+                    "threshold": threshold},
         "lattice_bias": bias, "lattice_bias_after_calibration": bias_after,
         "dt_s": dt, "steps": steps, "t_end_s": t_end,
         "t_over_t_sigma": t_end / T_SIGMA,

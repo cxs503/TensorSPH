@@ -129,6 +129,25 @@ class Config:
     # "mls" = div n with MLS-consistent operators, +25 % on a circle, kept for A/B;
     # "fit_circle" = algebraic circle fit, unstable on lattice data.
     csf_curvature: str = "fit_quadratic"
+    # Free-surface pressure closure. Density summation under-counts neighbours at
+    # a free surface, so an outer-shell particle has rho < rho0 and the Tait law
+    # (which clamps at p = 0) gives it zero pressure whatever the interior
+    # pressure is. The pressure then cannot follow the analytic profile across
+    # the interface and the interior relaxes to a fraction of the Laplace value
+    # (measured: -34 % to -38 %, docs/verification_laplace_pressure_floor.md).
+    # When on, a particle with rho < surface_pressure_threshold * rho0 gets the
+    # kernel-weighted extrapolation of its neighbours' pressures instead:
+    #     p_i = max(0, sum_j (p_j + rho_j g.r_ji) W_ij / sum_j W_ij)
+    # (Adami, Ihmsen & Adams 2012, J. Comput. Phys. 231:7057, section 3.3). Off
+    # by default so every published number stays reproducible.
+    surface_pressure_closure: bool = False
+    surface_pressure_threshold: float = 0.99
+    # "interior": only already-known particles donate (a one-sided extrapolation
+    # from the bulk, applied in surface_pressure_layers passes); "all": the
+    # literal Adami formula, in which the free-surface neighbours' p = 0 also
+    # takes part, and one pass suffices.
+    surface_pressure_donors: str = "interior"
+    surface_pressure_layers: int = 2
 
 
 # --------------------------------------------------------------------------- #
@@ -238,6 +257,71 @@ def tait_pressure(rho: torch.Tensor, cfg: Config) -> torch.Tensor:
     bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
     ratio = (rho / cfg.rho0).clamp_min(0.01)
     return (bulk * (ratio.pow(cfg.gamma) - 1.0)).clamp_min(0.0)
+
+def free_surface_pressure(pos, rho, pressure, delta, wij, i, j, cfg) -> torch.Tensor:
+    """Extrapolate pressure onto the free surface (Adami et al. 2012, section 3.3).
+
+    ``delta = x_i - x_j``, ``wij = W_ij`` on the pair list ``(i, j)``, and
+    ``pressure`` is the Tait pressure of the fluid particles. A particle whose
+    summation density is below ``surface_pressure_threshold * rho0`` is a
+    receiver; its pressure is replaced by
+
+        p_i = max(0, sum_j (p_j + rho_j g.(r_i - r_j)) W_ij / sum_j W_ij)
+
+    the first-order extrapolation of the bulk pressure to the receiver's
+    position. With ``gravity = (0, -g)`` the body term is ``-g rho_j (y_i -
+    y_j)``: it keeps a hydrostatic profile consistent with the extrapolation
+    used for static wall particles, and vanishes for a drop relaxing in zero
+    gravity.
+
+    Two donor sets are available. ``"interior"`` lets only particles with a
+    known (bulk, or previously extrapolated) pressure donate, so the surface
+    value is extrapolated from the bulk instead of being averaged with the
+    clamped zeros; it runs ``surface_pressure_layers`` passes, because on a
+    convex surface the outermost particle has no bulk neighbour and needs the
+    layer below it filled first. ``"all"`` is the literal formula, where every
+    neighbour donates and one pass suffices.
+
+    A receiver with no donor (``sum W = 0``) keeps its Tait pressure. This is a
+    pressure *closure*: it changes neither the density nor the Tait law and adds
+    no surface-tension force.
+    """
+    n = pressure.shape[0]
+    free = rho < cfg.surface_pressure_threshold * cfg.rho0
+    if not bool(free.any()):
+        return pressure
+
+    known = ~free
+    p = pressure.clone()
+    dy = delta[:, 1] if delta.shape[1] > 1 else torch.zeros_like(delta[:, 0])
+    grav = cfg.gravity * dy
+    literal = cfg.surface_pressure_donors == "all"
+    layers = 1 if literal else max(1, cfg.surface_pressure_layers)
+
+    for _ in range(layers):
+        receive = ~known
+        if not bool(receive.any()):
+            break
+        if literal:
+            w_i = wij
+            w_j = wij
+        else:
+            w_i = wij * known[j].to(wij.dtype)
+            w_j = wij * known[i].to(wij.dtype)
+        # receiver i, donor j: r_recv - r_donor = +delta
+        src_i = p[j] - grav * rho[j]
+        # receiver j, donor i: r_recv - r_donor = -delta
+        src_j = p[i] + grav * rho[i]
+        num = torch.zeros(n, dtype=p.dtype, device=p.device)
+        den = torch.zeros(n, dtype=p.dtype, device=p.device)
+        num = num.index_add(0, i, w_i * src_i)
+        den = den.index_add(0, i, w_i)
+        num = num.index_add(0, j, w_j * src_j)
+        den = den.index_add(0, j, w_j)
+        filled = receive & (den > 1.0e-30)
+        p = torch.where(filled, (num / den.clamp_min(1.0e-30)).clamp_min(0.0), p)
+        known = known | filled
+    return p
 
 
 def acoustic_courant(dt: float, cfg: Config, max_speed: float = 0.0) -> float:
@@ -571,6 +655,8 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
 
     pressure = tait_pressure(rho, cfg)
+    if cfg.surface_pressure_closure:
+        pressure = free_surface_pressure(pos, rho, pressure, delta, wij, i, j, cfg)
 
     if nw:
         bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
@@ -691,6 +777,11 @@ def rhs_all_pairs(pos, vel, mass, cfg: Config, dt=None):
         rate = -scale * (mass[None, :] / rho[None, :] * coupling).sum(dim=1)
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
     pressure = tait_pressure(rho, cfg)
+    if cfg.surface_pressure_closure:
+        dense_i, dense_j = torch.nonzero(w > 0.0, as_tuple=True)
+        pressure = free_surface_pressure(
+            pos, rho, pressure, delta[dense_i, dense_j],
+            w[dense_i, dense_j], dense_i, dense_j, cfg)
     grad_w = cubic_spline_gradient(delta, h)
     pressure_term = (
         pressure[:, None] / rho[:, None].square()
