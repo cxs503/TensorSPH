@@ -12,6 +12,10 @@ tests guard three things:
    does not carry the full radial momentum balance);
 3. the open acceptance gate, as a strict xfail that turns into a failure once
    the jump is fixed, forcing the record to be updated.
+
+The figure of the document is regenerated from the report rather than
+committed (binary artefacts are stripped by the delivery gate), so the tests
+assert that it *renders*, not that a PNG file is checked in.
 """
 from __future__ import annotations
 
@@ -217,9 +221,29 @@ def test_document_exists_and_quotes_the_report(baseline):
     assert f"{baseline['corrected_definition']['rel_error_pct']:+.1f}%" in text
 
 
-def test_figure_exists():
-    fig = ROOT / "benchmarks" / "laplace_pressure_jump" / "laplace_pressure_jump.png"
-    assert fig.exists() and fig.stat().st_size > 10_000
+def test_figure_renders_from_the_committed_report(report, tmp_path):
+    """The figure is a *regenerable* artefact, not a committed one: binary
+    files are stripped by the delivery gate, so asserting on a checked-in PNG
+    fails on a clean CI checkout even though the plotting code is intact.
+
+    What matters for the record is that the committed numbers still *render*:
+    the test drives ``run.make_figure`` on ``validation_report.json`` and
+    checks the PNG it writes.
+    """
+    pytest.importorskip("matplotlib")
+    import importlib.util
+
+    path = ROOT / "benchmarks" / "laplace_pressure_jump" / "run.py"
+    spec = importlib.util.spec_from_file_location("lpj_run_figure", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    fig = Path(mod.make_figure(report, out_dir=tmp_path))
+    assert fig == tmp_path / "laplace_pressure_jump.png"
+    assert fig.exists(), f"figure not written to {fig}"
+    size = fig.stat().st_size
+    assert size > 10_000, f"rendered figure is suspiciously small ({size} B)"
+    assert fig.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n", "not a PNG stream"
 
 
 # --------------------------------------------------------------------------- #
