@@ -129,6 +129,28 @@ class Config:
     # "mls" = div n with MLS-consistent operators, +25 % on a circle, kept for A/B;
     # "fit_circle" = algebraic circle fit, unstable on lattice data.
     csf_curvature: str = "fit_quadratic"
+    # Free-surface pressure closure (Adami, Ihmsen & Adams 2012, section 3.3).
+    # The Tait law is normalised at rho0 and clamped at p >= 0, so every particle
+    # whose sum-density is deficient -- the whole free-surface shell -- carries
+    # p = 0.  That shell therefore cannot hold the pressure jump a curved
+    # interface must support, and an interior reading loses the shell's share of
+    # it: measured as a 0.57 +- 0.06 compression ratio for a static drop, see
+    # docs/verification_laplace_pressure_floor.md.  When this flag is on, the
+    # pressure used in the momentum flux is replaced, for those particles only,
+    # by the shell value
+    #     p_i = max(0, sum_j (p_j + rho_j g.(r_i - r_j)) W_ij / sum_j W_ij),
+    # which extrapolates the interior pressure through the interface instead of
+    # truncating it there.  Off by default: every published number in
+    # docs/benchmarks/ was produced without it, and it changes the pressure
+    # boundary condition, not the discretisation.
+    free_surface_pressure: bool = False
+    # Density ratio below which a particle is treated as free surface.
+    free_surface_pressure_density: float = 0.99
+    # Number of closure sweeps per step.  One sweep extrapolates a single layer;
+    # a band n layers thick needs ~n sweeps, because the sweep reads the
+    # thermodynamic pressure (p = 0 in the whole band) rather than its own
+    # output.  Measured 1 vs 3 vs 6 on the Laplace benchmark; see the doc.
+    free_surface_pressure_passes: int = 1
 
 
 # --------------------------------------------------------------------------- #
@@ -494,6 +516,61 @@ def drop_wall_wall_pairs(pairs: torch.Tensor, fluid_count: int) -> torch.Tensor:
     return pairs[usable]
 
 
+def extrapolate_free_surface_pressure(pos, pressure, rho, i, j, wij, n, cfg,
+                                     passes: int = 1):
+    """Shell-pressure closure for free-surface particles (Adami et al. 2012).
+
+    ``pressure`` is the thermodynamic (Tait) pressure from the summation
+    density, which is zero wherever that density is deficient.  Every particle
+    with ``rho < free_surface_pressure_density * rho0`` is re-assigned the
+    kernel-weighted average of its fluid neighbours' pressures, each shifted by
+    the hydrostatic increment ``rho_j g . (r_i - r_j)`` so that a pressure
+
+    field under gravity is continued, not flattened, through the interface::
+
+        p_shell = sum_j (p_j + rho_j g . (r_i - r_j)) W_ij / sum_j W_ij
+
+    The body force uses the particle's own acceleration, which is taken as zero
+    here (the shell is evaluated statically, as for the wall-pressure
+    extrapolation below).  Wall pairs do not contribute; the wall pressure is
+    extrapolated *from* the fluid, so feeding it back would close the loop.
+    The result is clamped at zero: the closure cannot pull.
+
+    Returns a new pressure tensor; the input is not modified.
+    """
+    free = rho < cfg.free_surface_pressure_density * cfg.rho0
+    fluid_pair = (i < n) & (j < n)
+    if not (bool(free.any()) and bool(fluid_pair.any())):
+        return pressure
+    weight = torch.where(fluid_pair, wij, torch.zeros_like(wij))
+    active = weight > 0.0
+    if not bool(active.any()):
+        return pressure
+    # Wall indices are not valid indices for the fluid arrays; their pair weight
+    # is already zero, so clamping them is free and keeps every gather in bounds.
+    idx_i = i.clamp_max(n - 1)
+    idx_j = j.clamp_max(n - 1)
+    # y_i - y_j, the only component g = (0, -gravity) selects.
+    dy = pos[idx_i, 1] - pos[idx_j, 1]
+    p = pressure
+    for _ in range(max(1, int(passes))):
+        # Target i reads neighbour j and vice versa; the pair list holds each
+        # pair once, so both directions are accumulated explicitly.
+        src_for_i = p[idx_j] - cfg.gravity * dy * rho[idx_j]
+        src_for_j = p[idx_i] + cfg.gravity * dy * rho[idx_i]
+        numerator = torch.zeros(n, dtype=pos.dtype, device=pos.device)
+        denominator = torch.zeros(n, dtype=pos.dtype, device=pos.device)
+        # Scattering into a clamped wall index adds exactly zero, because the
+        # weight of every pair that crosses to the wall is zero.
+        numerator = numerator.index_add(0, idx_i, src_for_i * weight)
+        numerator = numerator.index_add(0, idx_j, src_for_j * weight)
+        denominator = denominator.index_add(0, idx_i, weight)
+        denominator = denominator.index_add(0, idx_j, weight)
+        shell = (numerator / denominator.clamp_min(1.0e-30)).clamp_min(0.0)
+        p = torch.where(free, shell, p)
+    return p
+
+
 def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
     """Compute WCSPH RHS with pair-based compact-support interactions.
 
@@ -571,6 +648,15 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
 
     pressure = tait_pressure(rho, cfg)
+    if cfg.free_surface_pressure:
+        # Only the pressure that enters the momentum flux is closed; ``rho`` and
+        # hence the EOS that the next step reads are untouched, so the closure
+        # is a boundary condition on p, not a fudge on the density field.
+        pressure_flux = extrapolate_free_surface_pressure(
+            pos, pressure, rho, i, j, wij, n, cfg,
+            passes=cfg.free_surface_pressure_passes)
+    else:
+        pressure_flux = pressure
 
     if nw:
         bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
@@ -584,7 +670,7 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
         wall_idx = (torch.where(i_fluid, j, i) - n).clamp_(0, nw - 1)
         weight = torch.where(crossing, wij, torch.zeros_like(wij))
         zeros = torch.zeros(nw, dtype=pos.dtype, device=pos.device)
-        pressure_ext = torch.cat((pressure, zeros))
+        pressure_ext = torch.cat((pressure_flux, zeros))
         numerator = torch.zeros(nw, dtype=pos.dtype, device=pos.device)
         denominator = torch.zeros(nw, dtype=pos.dtype, device=pos.device)
 
@@ -606,10 +692,10 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
         wall_pressure = (numerator / denominator.clamp_min(1.0e-30)).clamp_min(0.0)
         wall_density = (cfg.rho0 * (wall_pressure / bulk + 1.0).pow(1.0 / cfg.gamma)
                         ).clamp_min(cfg.rho0)
-        pressure_all = torch.cat((pressure, wall_pressure))
+        pressure_all = torch.cat((pressure_flux, wall_pressure))
         density_all = torch.cat((rho, wall_density))
     else:
-        pressure_all, density_all = pressure, rho
+        pressure_all, density_all = pressure_flux, rho
 
     if nw:
         all_vel = torch.cat((vel, torch.zeros((nw, pos.shape[1]),
@@ -664,7 +750,10 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
             acc_st_total = compute_surface_tension_force(
                 pos, rho, mass, fluid_pairs, cfg, wall=wall)
 
-    return rho, pressure, acc_pressure + acc_visc[:n] + acc_st_total + gravity
+    # The returned pressure is the one the momentum flux used, so a caller that
+    # measures a pressure profile sees the closed field rather than a truncated
+    # one.  With the closure off the two are the same tensor.
+    return rho, pressure_flux, acc_pressure + acc_visc[:n] + acc_st_total + gravity
 
 
 
