@@ -1,0 +1,79 @@
+{
+  "mission": 3850,
+  "task": "heal PR #86 (agent/m2926) against main: semantic-union merge",
+  "shas": {
+    "merge_base": "5800532752d8e0f9104e06c412f6af6797b1452f",
+    "main": "ba07a1066bcb2be5046dc63ae0179273b9f02ee7",
+    "pr_head_old": "34cf6227afb6bd93be9885c44b5ae20c0192342d"
+  },
+  "conflicts": {
+    "files": [
+      "src/tensorsph/csf_consistent.py",
+      "src/tensorsph/droplet_impact.py"
+    ],
+    "hunks": 3,
+    "other_co_modified_auto_merged": "src/tensorsph/surface_tension.py"
+  },
+  "preservation": [
+    {
+      "path": "src/tensorsph/csf_consistent.py",
+      "m2926": {
+        "added_lines": 90,
+        "missing_in_merged": 0
+      },
+      "main": {
+        "added_lines": 35,
+        "missing_in_merged": 0
+      }
+    },
+    {
+      "path": "src/tensorsph/droplet_impact.py",
+      "m2926": {
+        "added_lines": 19,
+        "missing_in_merged": 0
+      },
+      "main": {
+        "added_lines": 54,
+        "missing_in_merged": 0
+      }
+    },
+    {
+      "path": "src/tensorsph/surface_tension.py",
+      "m2926": {
+        "added_lines": 3,
+        "missing_in_merged": 0
+      },
+      "main": {
+        "added_lines": 6,
+        "missing_in_merged": 0
+      }
+    }
+  ],
+  "tests": {
+    "merged": {
+      "summary_line": "2 failed, 369 passed, 8 xfailed, 18 warnings in 154.00s (0:02:34)",
+      "counts": {
+        "passed": 369,
+        "failed": 2,
+        "xfailed": 8
+      },
+      "failed": [
+        "tests/test_oscillating_droplet.py::test_oscillation_frequency_gate_is_not_met",
+        "tests/test_oscillating_droplet.py::test_recorded_mode2_frequency_deficiency_is_reproduced"
+      ]
+    },
+    "main_baseline": {
+      "summary_line": "2 failed, 363 passed, 8 xfailed, 18 warnings in 168.35s (0:02:48)",
+      "counts": {
+        "passed": 363,
+        "failed": 2,
+        "xfailed": 8
+      },
+      "failed": [
+        "tests/test_oscillating_droplet.py::test_oscillation_frequency_gate_is_not_met",
+        "tests/test_oscillating_droplet.py::test_recorded_mode2_frequency_deficiency_is_reproduced"
+      ]
+    }
+  },
+  "preservation_total_missing": 0
+}
