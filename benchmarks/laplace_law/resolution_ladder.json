@@ -1,0 +1,103 @@
+{
+  "benchmark": "laplace_law_resolution_ladder",
+  "reference": {
+    "delta_p_Pa": 360.0,
+    "radius_m": 0.02,
+    "sigma_N_per_m": 7.2,
+    "rho0": 1000.0,
+    "sound_speed": 20.0,
+    "viscosity": 0.01
+  },
+  "protocol": {
+    "duration_t_over_t_sigma": 1.0,
+    "start": "hexagonal lattice, at rest, uniform mass",
+    "read_out": "absolute = p(r<0.5R) - 0; bandA = p(r<0.5R) - p(0.80-0.95R)",
+    "tail_window_fraction": 0.4
+  },
+  "rungs": [
+    {
+      "dx_m": 0.0025,
+      "n_particles": 228,
+      "dt_s": 4.8750000000000006e-05,
+      "steps": 684,
+      "t_over_t_sigma": 1.00035,
+      "artifact": "convergence/relax_dx0.0025.json",
+      "bandA": {
+        "delta_p_Pa": 54.62489991646163,
+        "rel_error_pct": -84.82641668987176,
+        "within_15pct": false
+      },
+      "absolute": {
+        "delta_p_Pa": 238.540462039518,
+        "rel_error_pct": -33.738760544578334,
+        "rel_error_tailavg_pct": -40.814139134846,
+        "within_3pct": false,
+        "within_15pct": false
+      },
+      "compression_ratio_measured_over_required": 0.25958030667615306,
+      "density_readout": {
+        "rho_core_rel_std": 0.0012041619484472134,
+        "p_from_mean_core_density_Pa": 93.26274667233697,
+        "rel_error_from_mean_core_density_pct": -74.09368147990641
+      },
+      "spurious_current_ratio": 0.021890202781352126,
+      "curvature_band_mean_over_exact": 1.3478799841111422
+    },
+    {
+      "dx_m": 0.002,
+      "n_particles": 362,
+      "dt_s": 3.9000000000000006e-05,
+      "steps": 855,
+      "t_over_t_sigma": 1.00035,
+      "artifact": "convergence/relax_dx0.0020.json",
+      "bandA": {
+        "delta_p_Pa": 36.759941113801375,
+        "rel_error_pct": -89.7889052461663,
+        "within_15pct": false
+      },
+      "absolute": {
+        "delta_p_Pa": 291.973969371961,
+        "rel_error_pct": -18.89611961889972,
+        "rel_error_tailavg_pct": -35.52963540605992,
+        "within_3pct": false,
+        "within_15pct": false
+      },
+      "compression_ratio_measured_over_required": 0.8106031703324453,
+      "density_readout": {
+        "rho_core_rel_std": 0.0003806313347808919,
+        "p_from_mean_core_density_Pa": 291.66831346823284,
+        "rel_error_from_mean_core_density_pct": -18.98102403660199
+      },
+      "spurious_current_ratio": 0.026272117178513372,
+      "curvature_band_mean_over_exact": 1.288326698947337
+    },
+    {
+      "dx_m": 0.0015,
+      "n_particles": 642,
+      "dt_s": 2.925e-05,
+      "steps": 1140,
+      "t_over_t_sigma": 1.0003499999999999,
+      "artifact": "convergence/relax_dx0.0015.json",
+      "bandA": {
+        "delta_p_Pa": 70.43405908344391,
+        "rel_error_pct": -80.43498358793225,
+        "within_15pct": false
+      },
+      "absolute": {
+        "delta_p_Pa": 283.81081797000746,
+        "rel_error_pct": -21.16366167499793,
+        "rel_error_tailavg_pct": -28.256815125007854,
+        "within_3pct": false,
+        "within_15pct": false
+      },
+      "compression_ratio_measured_over_required": 0.7886566575024642,
+      "density_readout": {
+        "rho_core_rel_std": 0.0002163219627244014,
+        "p_from_mean_core_density_Pa": 283.75482492409685,
+        "rel_error_from_mean_core_density_pct": -21.179215298861987
+      },
+      "spurious_current_ratio": 0.025380321463899333,
+      "curvature_band_mean_over_exact": 1.5336583556645167
+    }
+  ]
+}
