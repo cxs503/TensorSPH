@@ -13,7 +13,6 @@ Run::
 from __future__ import annotations
 
 import json
-import math
 import os
 from pathlib import Path
 
@@ -111,10 +110,12 @@ def main() -> int:
 
     A("# WCSPH 初始条件核和一致性验证（kernel zeroth moment）")
     A("")
-    A("**Mission**: m3114 ｜ **仓库**: TensorSPH ｜ **对象**: 求和密度 `rho_i = Σ_j m_j W_ij` 的初始偏置")
+    A("**Mission**: m3114 ｜ **仓库**: TensorSPH ｜ **对象**: 求和密度 `rho_i = Σ_j m_j W_ij`"
+    " 的初始偏置")
     A("")
     A("数字全部由 `benchmarks/init_consistency/run.py` 程序化注入"
-      "（`make_doc.py` 读 `report.json`），无手抄。测试：`tests/test_kernel_sum_consistency.py`（11 项）。")
+      "（`make_doc.py` 读 `report.json`），无手抄。测试：`tests/test_kernel_sum_consistency.py`（11"
+      " 项）。")
     A("")
     A("## 1. 案例介绍")
     A("")
@@ -137,18 +138,20 @@ def main() -> int:
     A("| 晶格 | 方阵（面积/粒子 `Δx²`）· 六角（`Δx²√3/2`，nn = Δx） |")
     A("| `h/Δx` 扫描 | " + " / ".join(f"{r['h_over_dx']:.1f}" for r in sweep[:10]) + " |")
     A(f"| `ρ0` / `γ` / `c0` | {RHO0:.0f} kg/m³ / {rep['constants']['gamma']:.0f} / {C0:.0f} m/s |")
-    A(f"| 分辨率阶梯 `Δx` | " + " / ".join(f"{r['dx_m']}" for r in ladder[:3]) + " m |")
+    A("| 分辨率阶梯 `Δx` | " + " / ".join(f"{r['dx_m']}" for r in ladder[:3]) + " m |")
     A(f"| Laplace 复现用液滴 | R = {legacy[0]['radius_m']} m，σ = {SIGMA} N/m |")
     A("")
     A("## 2. 怎么做的")
     A("")
     A("1. `kernel_sum_factor(pos, V, h)` 直接对粒子对求和离散零阶矩（自项 `V_i W(0)` 含在内），")
-    A("   与 `rhs` 用的是**同一个** `cubic_spline_kernel`/`cell_linked_pairs` 路径，因此测的就是求解器读数。")
+    A("   与 `rhs` 用的是**同一个** `cubic_spline_kernel`/`cell_linked_pairs`"
+    " 路径，因此测的就是求解器读数。")
     A("2. **内部掩膜**是关键参数，不是细节。三种掩膜都实测过：")
     A("   - 轴对齐盒（`interior_mask`，距各面 2h）：池/槽类算例正确；")
     A("   - 径向（`radial_interior_mask`，距圆边 2h）：圆盘类算例必需；")
     A("   - 无掩膜/漏掉底壁余量：贴壁 1 格流体缺邻居，`C ≈ 0.98`，会被误读成\"偏置\"。")
-    A("3. 对每个 `(晶格, h/Δx)`：先测原始 `b`，再用 `calibrate_mass` 按内部 `C` 把质量除以 `C`，重测。")
+    A("3. 对每个 `(晶格, h/Δx)`：先测原始 `b`，再用 `calibrate_mass` 按内部 `C` 把质量除以"
+    " `C`，重测。")
     A("4. 判据（沿 m2971 backlog P1）：标定后 `|p_false|/(ρ0 c0²) < 1e-4`。")
     A("")
     A("## 3. 计算结果")
@@ -171,12 +174,15 @@ def main() -> int:
     for r in ladder:
         A(f"| {r['lattice']} | {r['dx_m']} | {r['density_bias_raw']:+.6e} | {r['n_particles']} |")
     A("")
-    A(f"同一晶格上 3 个 Δx 的 b 相对差 < 1e-12：**偏置不是分辨率伪影**，"
-      f"细化网格不会把它赶走。")
+    A("同一晶格上 3 个 Δx 的 b 相对差 < 1e-12：**偏置不是分辨率伪影**，"
+      "细化网格不会把它赶走。")
     A("")
     A("### 3.3 复现 `laplace_plateau` 报告的 +5.889e-3 / 2395 Pa")
     A("")
-    A("| Δx [m] | 粒子数 | 核区 b（r<0.5R） | p_false [Pa] | 该基准自用 r<0.6R 口径 | 径向标定后 b | 标定后 p_false [Pa] |")
+    A("| Δx [m] | 粒子数 | 核区 b（r<0.5R） | p_false [Pa] | 该基准自用 r<0.6R 口径 | 径向标定后 b"
+    " |"
+    " 标定后"
+    " p_false [Pa] |")
     A("|---|---|---|---|---|---|---|")
     for r in legacy:
         A(f"| {r['dx_m']} | {r['n_particles']} | {r['density_bias_core_raw']:+.4e} | "
@@ -201,7 +207,11 @@ def main() -> int:
     sq_rows = [r for r in sweep if r["lattice"] == "square"]
     clean = next(r for r in sq_rows if r["h_over_dx"] == 1.3)
     worst_sq = max(sq_rows, key=lambda r: abs(r["density_bias_raw"]))
-    ratio = abs(hx["density_bias_raw"] / sq["density_bias_raw"]) if sq["density_bias_raw"] else float("nan")
+    ratio = (
+        abs(hx["density_bias_raw"] / sq["density_bias_raw"])
+        if sq["density_bias_raw"]
+        else float("nan")
+    )
     A(f"(a) 两晶格的 `|b|` 对 `h/Δx`：两条曲线都随 `h/Δx` 剧烈摆动而不是单调收敛——"
       f"方阵在求解器默认 h = 1.3Δx 处为 {clean['density_bias_raw']:+.2e}"
       f"（`|b| < 1e-4` 判据内），最差在 {worst_sq['h_over_dx']:.1f} 处"
@@ -228,14 +238,17 @@ def main() -> int:
     A("4. **只修初值，不修算子。** 本工具扣掉的是一个常数偏移，不改变 SPH 算子、不保证守恒，"
       "也不解决自由面压强闭合（m2971 的 P0）——后者仍需 shell-pressure 外推。")
     A("5. **非均匀晶格没有单一 C。** `kernel_sum_factor` 返回逐粒子场以便检查离散度；"
-      "内部离散度在均匀晶格上 `std ≈ 0`（测试 `test_interior_kernel_sum_is_uniform` 钉住 `<1e-12`），"
+      "内部离散度在均匀晶格上 `std ≈ 0`（测试 `test_interior_kernel_sum_is_uniform` 钉住"
+      " `<1e-12`），"
       "这是\"一个全局因子\"合法的前提。")
     A("")
     A("## 6. 误差判定")
     A("")
     A("| 关键量 | 参考值 | 本单测量 | 相对误差 | <3% ? |")
     A("|---|---|---|---|---|")
-    A(f"| 六角 `b`（h=1.3Δx） | m2971/laplace_plateau 报告 +5.889e-3 | {hx['density_bias_raw']:+.4e} | "
+    A(f"| 六角 `b`（h=1.3Δx） | m2971/laplace_plateau 报告 +5.889e-3 |"
+    f" {hx['density_bias_raw']:+.4e}"
+    f" | "
       f"{abs(hx['density_bias_raw'] / 5.889e-3 - 1) * 100:.3f}% | 是 |")
     A(f"| 六角虚假压强 | 2395.36 Pa | {f(hx['p_false_raw_Pa_c0_20'], 1)} Pa | "
       f"{abs(hx['p_false_raw_Pa_c0_20'] / 2395.36 - 1) * 100:.3f}% | 是 |")
@@ -250,7 +263,8 @@ def main() -> int:
     A("")
     A("## 7. 结论与建议")
     A("")
-    A(f"1. backlog m2971 的 P1 表述（\"任何 wcSPH 算例在 c0=20 时都带 2.4 kPa 初始虚假压强\"）**过度推广**：")
+    A("1. backlog m2971 的 P1 表述（\"任何 wcSPH 算例在 c0=20 时都带 2.4 kPa"
+    " 初始虚假压强\"）**过度推广**：")
     A(f"   求解器默认方阵（`make_particles`, h=1.3Δx）实测 b = {sq['density_bias_raw']:+.2e}，"
       f"虚假压强 {f(sq['p_false_raw_Pa_c0_20'], 1)} Pa，且在**张力侧被 Tait 钳零**，无害。")
     A("   真实缺陷只属于六角晶格（表面张力/Laplace 系列验证基准使用的晶格）。")
@@ -258,7 +272,8 @@ def main() -> int:
     A("2. 需要标定的算例应显式调用 `tensorsph.lattice_consistency.calibrate_mass`，")
     A("   并传入正确的掩膜；`h/Δx` 的选择与晶格同样重要（方阵 1.3 处干净、1.5 处 +3.4e-3）。")
     A("3. 仍开放（需重算力，本单未做）：`laplace_plateau` / `laplace_law` 的重跑复核——")
-    A("   把其初值改成标定后质量，确认稳态平台读数是否移动（预期移动 <1%，因为该偏置在张弛中已衰减）。")
+    A("   把其初值改成标定后质量，确认稳态平台读数是否移动（预期移动"
+    " <1%，因为该偏置在张弛中已衰减）。")
     A("")
 
     DOC.write_text("\n".join(lines) + "\n")
