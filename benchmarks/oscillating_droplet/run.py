@@ -130,7 +130,8 @@ def analytic_omega_3d(radius: float, sigma: float, rho0: float,
 # --------------------------------------------------------------------------- #
 # mode amplitude estimators
 # --------------------------------------------------------------------------- #
-def mode_amplitude(pos: torch.Tensor, mass: torch.Tensor) -> dict:
+def mode_amplitude(pos: torch.Tensor, mass: torch.Tensor,
+                   reference_axis=None) -> dict:
     """Mode-2 amplitude from the mass-weighted second-moment tensor.
 
     A uniform ellipse has ``<x^2> = a^2/4``, ``<y^2> = b^2/4``, so the
@@ -141,6 +142,17 @@ def mode_amplitude(pos: torch.Tensor, mass: torch.Tensor) -> dict:
     jaggedness than an interface-radius estimator (see the note in
     ``docs/verification_oscillating_droplet.md``: the radius-hull Fourier
     coefficient of this very lattice returns 0.055-0.13 for ``eps = 0.10``).
+
+    ``s_moment`` is a *magnitude*: ``A >= B`` by construction, so the sign of
+    ``eps`` is lost and a released drop reads as ``|cos(w t)|`` -- rectified at
+    ``2 w``.  ``s_signed = s_moment * cos(2 theta)`` restores it, with ``theta``
+    the angle between the current major axis and ``reference_axis`` (the initial
+    major axis): ``cos 2 theta = 2 (e_major . e_ref)^2 - 1`` is smooth, equals
+    +1 when the ellipse is still aligned with the launch axis and -1 when it has
+    turned through 90 degrees.  Without a reference axis the major axis is its
+    own reference and ``s_signed == s_moment``.  See
+    ``docs/verification_oscillating_droplet_fit.md`` for the measurement this
+    repairs.
     """
     # ``mass`` is a broadcast scalar for a monodisperse lattice (as in
     # benchmarks/laplace_law); expand it so the estimator is dimension-safe.
@@ -150,11 +162,24 @@ def mode_amplitude(pos: torch.Tensor, mass: torch.Tensor) -> dict:
     com = (mass[:, None] * pos).sum(dim=0) / m_tot
     d = pos - com
     cov = (mass[:, None, None] * (d[:, :, None] * d[:, None, :])).sum(dim=0) / m_tot
-    lam = torch.linalg.eigvalsh(cov)          # ascending
+    lam, vecs = torch.linalg.eigh(cov)        # ascending
     lam1 = float(lam[-1].clamp_min(1e-30))
     lam2 = float(lam[0].clamp_min(1e-30))
     big, small = 2.0 * math.sqrt(lam1), 2.0 * math.sqrt(lam2)
-    return {"s_moment": (big - small) / (big + small),
+    s_moment = (big - small) / (big + small)
+    major = vecs[:, -1]
+    cos2 = 1.0
+    if reference_axis is not None:
+        ref = torch.as_tensor(reference_axis, dtype=pos.dtype, device=pos.device)
+        norm = float(torch.linalg.vector_norm(ref))
+        if norm > 0.0:
+            cos2 = float(2.0 * (float(major @ ref) / norm) ** 2 - 1.0)
+    return {"s_moment": s_moment,
+            "s_signed": s_moment * cos2,
+            "cos2theta": cos2,
+            # JSON-safe, so the report/manifest can carry it and the next call
+            # can use it as reference_axis.
+            "major_axis": [float(major[0]), float(major[1])],
             "semi_major": big, "semi_minor": small,
             "r_eff": 2.0 * math.sqrt(0.5 * (lam1 + lam2))}
 
@@ -185,56 +210,134 @@ def zero_crossing_period(t: list[float], s: list[float]) -> dict:
             "period": 2.0 * half, "omega": 2.0 * math.pi / (2.0 * half)}
 
 
-def damped_cosine_fit(t: list[float], s: list[float],
-                      omega_guess: float) -> dict:
+def _damped_cosine_solve(tt: torch.Tensor, ss: torch.Tensor, om: float,
+                         lam: float):
+    """Closed-form ``(c, P, Q)`` for a fixed ``(omega, lambda)`` plus its rms.
+
+    ``s = c + exp(-lam (t - t0)) (P cos(w t) + Q sin(w t))`` is linear in
+    ``(c, P, Q)``, so only the two nonlinear parameters are searched.  The
+    envelope is measured from the first sample, which keeps ``P`` and ``Q``
+    O(amplitude) instead of exp(+lam t0) times it.
+    """
+    env = torch.exp(-lam * (tt - tt[0]))
+    design = torch.stack((torch.ones_like(tt), env * torch.cos(om * tt),
+                          env * torch.sin(om * tt)), dim=1)
+    coef, *_ = torch.linalg.lstsq(design, ss[:, None])
+    coef = coef[:, 0]
+    residual = design @ coef - ss
+    return coef, float(torch.sqrt((residual * residual).mean()))
+
+
+def _refine_damped_cosine(ts: torch.Tensor, ss: torch.Tensor, om: float,
+                          lam: float, iterations: int = 6):
+    """Coordinate descent in ``(omega, lambda)`` with a bracket that shrinks.
+
+    The bracket halves every ``1.6`` iterations, so the first sweep can move
+    the seed by up to 2 % in ``omega`` and the last one resolves 1e-3 of it --
+    the same policy regardless of which basin the seed came from, which is what
+    makes the multi-start result independent of the coarse-grid ordering.
+    """
+    _, rms = _damped_cosine_solve(ts, ss, om, lam)
+    for step in range(iterations):
+        shrink = 1.6 ** step
+        span = max(1e-9, 0.02 * om / shrink)
+        for cand in torch.linspace(om - span, om + span, 41):
+            _, r = _damped_cosine_solve(ts, ss, float(cand), lam)
+            if r < rms:
+                om, rms = float(cand), r
+        span_lam = max(1e-6, 0.25 * max(lam, 1.0) / shrink)
+        for cand in torch.linspace(max(0.0, lam - span_lam), lam + span_lam, 21):
+            _, r = _damped_cosine_solve(ts, ss, om, float(cand))
+            if r < rms:
+                lam, rms = float(cand), r
+    return om, lam, rms
+
+
+#: Basins refined by :func:`damped_cosine_fit` by default.  ``1`` restores the
+#: historical single-start behaviour and is only used to demonstrate the defect.
+FIT_STARTS = 6
+
+
+def damped_cosine_fit(t: list[float], s: list[float], omega_guess: float,
+                      starts: int = FIT_STARTS) -> dict:
     """Least-squares fit of ``s = c + e^{-lam t}(P cos wt + Q sin wt)``.
 
-    Grid search over ``(omega, lam)`` around ``omega_guess``; for each pair the
-    three linear coefficients ``(c, P, Q)`` are solved in closed form, so the
-    search has no local minima of its own.  The trace is subsampled for the
-    coarse grid and the winner is refined on the full trace.
+    ``(omega, lambda)`` are searched on a coarse ``(omega, lambda)`` grid (the
+    trace is subsampled for it) and then refined on the full trace; the three
+    linear coefficients are solved in closed form at every grid point.
+
+    Why the search is multi-start
+    -----------------------------
+    A release trace covers only a couple of periods, so the rms landscape has
+    several near-equal basins and the historical single-start search reported
+    whichever basin the *subsampled* coarse grid happened to win.  A round-off
+    level difference between BLAS implementations can reorder two near-equal
+    coarse minima, after which the local refinement (which only descends) locks
+    onto a different basin: identical code then measured ``+8.64 %`` on x86_64
+    CI and ``-31.78 %`` on loong64.  That spread is an instrument defect, not
+    physics, and it is diagnosed in ``fit_robustness.py``.
+
+    Here the coarse grid is clustered into basins separated by at least one
+    Rayleigh bin ``2 pi / T`` (the finest frequency difference the recorded
+    window can resolve), up to ``starts`` basins are refined, and the lowest
+    rms wins.  Since every competitive basin is refined, the winner no longer
+    depends on the coarse-grid ordering.
+
+    The returned ``ambiguity_rms_gap`` is the honest precision statement: it is
+    the relative rms advantage of the winner over the best *other* basin.  A
+    gap near zero means the data do not determine the frequency, whatever the
+    point estimate says; callers should then quote an uncertainty of one
+    Rayleigh bin instead of the fitted value to more digits.
     """
+    if starts < 1:
+        raise ValueError("starts must be >= 1")
     ts = torch.tensor(t, dtype=torch.float64)
     ss = torch.tensor(s, dtype=torch.float64)
-    stride = max(1, len(t) // 900)
+    if ts.numel() < 8:
+        raise ValueError("need at least 8 samples to fit a damped cosine")
+    stride = max(1, ts.numel() // 900)
     tc, sc = ts[::stride], ss[::stride]
 
-    def solve(tt, ss_, om, lam):
-        env = torch.exp(-lam * (tt - tt[0]))
-        A = torch.stack([torch.ones_like(tt), env * torch.cos(om * tt),
-                         env * torch.sin(om * tt)], dim=1)
-        coef, *_ = torch.linalg.lstsq(A, ss_[:, None])
-        coef = coef[:, 0]
-        res = A @ coef - ss_
-        return coef, float(torch.sqrt((res * res).mean()))
+    window = float(ts[-1] - ts[0])
+    rayleigh = 2.0 * math.pi / window if window > 0.0 else float("inf")
+    separation = max(rayleigh, 0.02 * omega_guess)
 
-    best = None
-    for om in torch.linspace(0.6 * omega_guess, 1.6 * omega_guess, 161):
-        for lam in torch.linspace(0.0, 12.0, 41):
-            coef, rms = solve(tc, sc, float(om), float(lam))
-            if best is None or rms < best[2]:
-                best = (float(om), float(lam), rms)
-    om0, lam0 = best[0], best[1]
-    # refine on the full trace
-    for _ in range(3):
-        span_om = 0.02 * om0
-        for om in torch.linspace(om0 - span_om, om0 + span_om, 81):
-            coef, rms = solve(ts, ss, float(om), lam0)
-            if rms < best[2]:
-                best = (float(om), lam0, rms)
-        om0 = best[0]
-        for lam in torch.linspace(max(0.0, lam0 - 0.25 * max(lam0, 1.0)),
-                                  lam0 + 0.25 * max(lam0, 1.0), 41):
-            coef, rms = solve(ts, ss, om0, float(lam))
-            if rms < best[2]:
-                best = (om0, float(lam), rms)
-        lam0 = best[1]
-    coef, rms = solve(ts, ss, best[0], best[1])
+    coarse = []
+    for om in torch.linspace(0.6 * omega_guess, 1.6 * omega_guess, 121):
+        for lam in torch.linspace(0.0, 12.0, 25):
+            _, rms = _damped_cosine_solve(tc, sc, float(om), float(lam))
+            coarse.append((rms, float(om), float(lam)))
+    coarse.sort(key=lambda row: row[0])
+    seeds: list[tuple[float, float]] = []
+    for _, om, lam in coarse:
+        if all(abs(om - seed_om) > separation for seed_om, _ in seeds):
+            seeds.append((om, lam))
+        if len(seeds) >= starts:
+            break
+
+    iterations = 6 if starts > 1 else 3
+    refined = []
+    for om, lam in seeds:
+        r_om, r_lam, r_rms = _refine_damped_cosine(ts, ss, om, lam, iterations)
+        refined.append((r_rms, r_om, r_lam))
+    refined.sort(key=lambda row: row[0])
+    rms_best, om_best, lam_best = refined[0]
+    runner = next((row for row in refined
+                   if abs(row[1] - om_best) > separation), None)
+    ambiguity = ((runner[0] - rms_best) / rms_best
+                 if runner is not None and rms_best > 0.0 else float("inf"))
+
+    coef, rms = _damped_cosine_solve(ts, ss, om_best, lam_best)
     amp = float(torch.sqrt(coef[1] ** 2 + coef[2] ** 2))
     var = float(((ss - ss.mean()) ** 2).mean())
-    return {"omega": best[0], "lambda_per_s": best[1], "rms": rms,
+    return {"omega": om_best, "lambda_per_s": lam_best, "rms": rms,
             "amplitude0": amp, "offset": float(coef[0]),
-            "r2": 1.0 - rms ** 2 / var if var > 0 else float("nan")}
+            "r2": 1.0 - rms ** 2 / var if var > 0 else float("nan"),
+            "starts": len(refined), "rayleigh_rad_per_s": rayleigh,
+            "ambiguity_rms_gap": ambiguity,
+            "omega_alternatives": [
+                {"omega": row[1], "lambda_per_s": row[2], "rms": row[0]}
+                for row in refined[1:]]}
 
 
 def peak_decay(t: list[float], s: list[float]) -> dict:
@@ -292,8 +395,9 @@ def run_case(radius: float = 0.02, dx: float = 0.002, sigma: float = 7.2,
     n0 = pos.shape[0]
     m0 = float(mass.sum())
     a0 = mode_amplitude(pos, mass)
+    reference_axis = a0["major_axis"]
 
-    ts, s_mom, ke_hist = [], [], []
+    ts, s_mom, s_sig, ke_hist = [], [], [], []
     vmax_hist = []
     for step in range(steps):
         pairs = cell_linked_pairs(pos, 2.0 * h)
@@ -302,9 +406,10 @@ def run_case(radius: float = 0.02, dx: float = 0.002, sigma: float = 7.2,
         vel = vel + dt * acc
         pos = pos + dt * vel
         if step % sample_every == 0 or step == steps - 1:
-            amp = mode_amplitude(pos, mass)
+            amp = mode_amplitude(pos, mass, reference_axis=reference_axis)
             ts.append((step + 1) * dt)
             s_mom.append(amp["s_moment"])
+            s_sig.append(amp["s_signed"])
             # Kinetic energy is a kinematic observable independent of the
             # geometric estimator: KE ~ amplitude^2 * cos^2(omega t), i.e. it
             # oscillates at 2*omega.  It is the cross-check on the frequency.
@@ -312,12 +417,15 @@ def run_case(radius: float = 0.02, dx: float = 0.002, sigma: float = 7.2,
             vmax_hist.append(float(torch.linalg.vector_norm(vel, dim=1).max()))
 
     fit_mom = damped_cosine_fit(ts, s_mom, omega_ref)
+    fit_sig = damped_cosine_fit(ts, s_sig, omega_ref)
     fit_ke = damped_cosine_fit(ts, ke_hist, 2.0 * omega_ref)
     zc_mom = zero_crossing_period(ts, s_mom)
+    zc_sig = zero_crossing_period(ts, s_sig)
     peaks = peak_decay(ts, s_mom)
     final = mode_amplitude(pos, mass)
 
     err_pct = (fit_mom["omega"] - omega_ref) / omega_ref * 100.0
+    err_sig = (fit_sig["omega"] - omega_ref) / omega_ref * 100.0
     err_zc = ((zc_mom["omega"] - omega_ref) / omega_ref * 100.0
               if math.isfinite(zc_mom["omega"]) else float("nan"))
     # numerical (inviscid) dissipation floor implied by the fitted lambda
@@ -363,6 +471,16 @@ def run_case(radius: float = 0.02, dx: float = 0.002, sigma: float = 7.2,
             "within_3pct": abs(err_pct) < 3.0,
             "within_15pct": abs(err_pct) < GATE_PCT,
             "fit": fit_mom,
+            # Signed-observable path: the same estimator on the rectification-
+            # free trace.  ``fit_second_moment_*`` above is kept verbatim as
+            # the historical reading, so the two can be compared directly.
+            "fit_signed_rad_per_s": fit_sig["omega"],
+            "fit_signed_rel_error_pct": err_sig,
+            "fit_signed": fit_sig,
+            "zero_crossing_signed_rad_per_s": zc_sig["omega"],
+            "zero_crossing_signed_rel_error_pct":
+                ((zc_sig["omega"] - omega_ref) / omega_ref * 100.0
+                 if math.isfinite(zc_sig["omega"]) else float("nan")),
             "fit_kinetic_energy": fit_ke,
             "zero_crossing": zc_mom,
         },
@@ -381,7 +499,7 @@ def run_case(radius: float = 0.02, dx: float = 0.002, sigma: float = 7.2,
             "capillary_velocity_m_per_s": math.sqrt(sigma / (rho0 * radius)),
             "amplitude_after_sim_periods": abs(final["s_moment"]),
             "trace": {"t": ts, "s_second_moment": s_mom,
-                      "kinetic_energy_J": ke_hist},
+                      "s_signed": s_sig, "kinetic_energy_J": ke_hist},
         },
     }
 
