@@ -1,0 +1,60 @@
+{
+ "repo": "/root/tp-agent/work/m4814",
+ "head": "d61b6c2",
+ "before_ruff": {
+  "total": 27,
+  "by_file": {
+   "benchmarks/oscillating_droplet/gauge_audit.py": 15,
+   "gen_report.py": 10,
+   "tests/test_oscillating_droplet_gauges.py": 2
+  },
+  "clean": false
+ },
+ "after_ruff": {
+  "total": 0,
+  "by_file": {},
+  "clean": true
+ },
+ "before": {
+  "kernel first (CI order)": {
+   "passed": 12,
+   "failed": 6,
+   "error": 0,
+   "exit": 1,
+   "summary_line": "6 failed, 12 passed, 1 warning in 13.01s"
+  },
+  "gauges first (reversed)": {
+   "passed": 0,
+   "failed": 0,
+   "error": 1,
+   "exit": 2,
+   "summary_line": "1 warning, 1 error in 4.24s"
+  }
+ },
+ "after": {
+  "kernel first (CI order)": {
+   "passed": 20,
+   "failed": 0,
+   "error": 0,
+   "exit": 0,
+   "summary_line": "20 passed, 1 warning in 18.01s"
+  },
+  "gauges first (reversed)": {
+   "passed": 20,
+   "failed": 0,
+   "error": 0,
+   "exit": 0,
+   "summary_line": "20 passed, 1 warning in 17.33s"
+  }
+ },
+ "doc_render": {
+  "sha256_before_reflow": "03e4cd8619616aa63ffa5d89527b1d4b5cde72abce31cce9fb93b72826808d0a",
+  "bytes_before_reflow": 8248,
+  "sha256_after_fix": "03e4cd8619616aa63ffa5d89527b1d4b5cde72abce31cce9fb93b72826808d0a",
+  "bytes_after_fix": 8248,
+  "identical": true
+ },
+ "full_suite": {
+  "after": "558 passed, 9 xfailed, 2 warnings in 505.46s (0:08:25)"
+ }
+}
