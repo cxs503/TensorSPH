@@ -77,7 +77,9 @@ Relaxation at `dx = 2.0 mm`, `c0 = 20 m/s`, up to 2000 steps.
 | closure on, donors = interior, 2 layers | 391.8 | +8.8 | +142.8 | 0.388 | +2.17e-03 | 8.98e-04 |
 | closure on, donors = interior, 4 layers | 391.8 | +8.8 | +142.8 | 0.388 | +2.17e-03 | 8.98e-04 |
 
-The best variant is **closure on, donors = interior, 2 layers** at +8.8 %, against -37.9 % with the closure off; its spurious current is `v_max/v_ref = 0.388` (Adami's criterion is < 0.1).
+The best **admissible** variant is **closure on, donors = all** at -20.1 %, against -37.9 % with the closure off; its spurious current is `v_max/v_ref = 0.020` (Adami's criterion is < 0.1).
+
+The interior-donor row reads +8.8 % on the time average, which *is* inside the +/-15 % band, but it is **not admissible evidence**: `v_max/v_ref = 0.388` is 3.9x Adami's limit and the final snapshot is +142.8 % off. The surface breathes, so the time average of a breathing drop is not a static Laplace measurement; neither row of the two interior-donor rungs may be quoted as a closure success.
 
 ## 4. Notes, and the trap that nearly produced a wrong conclusion
 
@@ -110,21 +112,48 @@ The best variant is **closure on, donors = interior, 2 layers** at +8.8 %, again
 | relaxed `p_core`, closure on, donors = interior, 2 layers | 391.8 Pa | `sigma/R` = 360 Pa | +8.8 % | no |
 | relaxed `p_core`, closure on, donors = interior, 4 layers | 391.8 Pa | `sigma/R` = 360 Pa | +8.8 % | no |
 
-**Young-Laplace capability stays WITHHELD.** The best closure variant is +8.8 % from the analytic jump, i.e. better than the -34 % to -38 % of the previous three rounds but
-not inside the 15 % acceptance band, and its transient still has to be checked on a resolution
-ladder. The one thing that is now settled: the surface-tension force is not where the missing
-20 % lives.
+**Young-Laplace capability stays WITHHELD.** `verdict_matrix.json` evaluates every recorded read-out against the same two rules (band: `|error| < 15 %`; admissibility: `v_max/v_ref < 0.1 (Adami et al. 2012)`). 2 of the 4 capability read-outs are inside the band, but **0 of them are admissible and independent**: the only in-band one is the breathing interior-donor run described in section 3.2.
+
+The best admissible relaxation read-out is `relaxed <p_core>, closure_on_all_donors` at -20.1 %, i.e. outside the band. What *is* settled and machine-checked: the surface-tension force is not where the missing jump lives (flux integral, section 3.1), so further work belongs on the pressure side.
+
+Read-outs from the other groups are **consistency checks, not capability evidence**: the static flux integral is the identity `dp/dr = rho a_r` integrated over the drop, so it stays inside the band by construction and cannot upgrade the grading. That distinction is the whole point of `verdict_audit.py`; an earlier revision of this document took its headline number from the in-band-but-inadmissible row and then called it a failure of the acceptance band, which is arithmetically false (the number is inside the band; the run is what is unusable). Both errors are now gated by `tests/test_laplace_verdict_matrix.py`.
+
+## 6. Verdict matrix (machine-checked)
+
+| read-out | source | value [Pa] | error [%] | in +/-15 % band | admissible | independent evidence |
+|---|---|---|---|---|---|---|
+| flux integral -int rho a_r dr, dx = 2.0 mm | `report_force_balance.json` | 359.1 | -0.3 | yes | yes | yes |
+| flux integral -int rho a_r dr, dx = 1.5 mm | `report_force_balance.json` | 333.1 | -7.5 | yes | yes | yes |
+| relaxed <p_core>, closure_off | `relax_ladder.json` | 223.6 | -37.9 | no | yes | yes |
+| relaxed <p_core>, closure_on_all_donors | `relax_ladder.json` | 287.5 | -20.1 | no | yes | yes |
+| relaxed <p_core>, closure_on_interior_layers2 | `relax_ladder.json` | 391.8 | +8.8 | yes | no | yes |
+| relaxed <p_core>, closure_on_interior_layers4 | `relax_ladder.json` | 391.8 | +8.8 | yes | no | no (same run as previous) |
+| floor <p_core> tail, dx = 2.0 mm, c0 = 20 m/s (closure off) | `report.json` | 223.6 | -37.9 | no | yes | yes |
+| floor <p_core> tail, dx = 2.0 mm, c0 = 10 m/s (closure off) | `report.json` | 226.0 | -37.2 | no | yes | yes |
+| floor <p_core> tail, dx = 2.0 mm, c0 = 5 m/s (closure off) | `report.json` | 237.6 | -34.0 | no | yes | yes |
+| floor <p_core> tail, dx = 1.5 mm, c0 = 20 m/s (closure off) | `report.json` | 222.9 | -38.1 | no | yes | yes |
+| floor <p_core> tail, dx = 1.5 mm, c0 = 10 m/s (closure off) | `report.json` | 229.7 | -36.2 | no | yes | yes |
+| floor <p_core> tail, dx = 1.5 mm, c0 = 5 m/s (closure off) | `report.json` | 225.3 | -37.4 | no | yes | yes |
+
+11 independent read-outs out of 12; admissibility = v_max/v_ref < 0.1 (Adami et al. 2012).
+
+1. **in-band-but-inadmissible** -- relaxed <p_core>, closure_on_interior_layers2: tail error +8.8 % is inside the +/-15 % band, but the same run's spurious current is 3.9x the Adami limit and its final snapshot is +142.8 % off: the surface is breathing, so the time average is not a static Laplace measurement. Consequence: it may not be quoted as 'the best closure variant' nor as a capability win.
+2. **in-band-but-inadmissible** -- relaxed <p_core>, closure_on_interior_layers4: tail error +8.8 % is inside the +/-15 % band, but the same run's spurious current is 3.9x the Adami limit and its final snapshot is +142.8 % off: the surface is breathing, so the time average is not a static Laplace measurement. Consequence: it may not be quoted as 'the best closure variant' nor as a capability win.
+3. **duplicate-row-counted-as-variant** -- relaxed <p_core>, closure_on_interior_layers4: bit-identical to 'relaxed <p_core>, closure_on_interior_layers2' (value, tail, final snapshot and spurious current all equal to 1e-12): the surface_pressure_layers knob is inert on a one-particle-thick interface, every receiver is filled in the first pass. Consequence: the two table rows are one piece of evidence, not two.
+4. **resolution-not-laddered** -- relaxation group: the whole relaxation group sits at one grid and one sound speed (dx = 2.0 mm, c0 = 20 m/s); the static force balance already moves by 7.2 percentage points between the two grids it covers, so the closure read-out cannot be assumed grid-converged. Consequence: WITHHELD until rung dx = 1.5 mm (and one c0 change) is recorded.
 
 ![force balance and closure ladder](../benchmarks/laplace_pressure_closure/laplace_pressure_closure.png)
 
 *(a)* cumulative flux integral `-int_0^r rho a_r`, reaching `sigma/R`; *(b)* relaxation read-out per
 closure variant against the +/-15 % gate; *(c)* relaxed pressure profiles.
 
-## 6. Reproduction
+## 7. Reproduction
 
 ```bash
 PYTHONPATH=src python benchmarks/laplace_pressure_closure/analysis.py        # seconds
+PYTHONPATH=src python benchmarks/laplace_pressure_closure/verdict_audit.py  # seconds
 PYTHONPATH=src python benchmarks/laplace_pressure_closure/relax_ladder.py   # ~1-2 min per case
+PYTHONPATH=src python benchmarks/laplace_pressure_closure/relax_ladder.py --dx 0.0015  # the open rung
 PYTHONPATH=src python benchmarks/laplace_pressure_closure/figures.py
 PYTHONPATH=src python benchmarks/laplace_pressure_closure/make_doc.py
 PYTHONPATH=src python -m pytest tests/test_free_surface_pressure_closure.py tests/test_laplace_pressure_closure.py -q

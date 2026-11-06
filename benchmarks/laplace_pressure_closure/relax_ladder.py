@@ -21,7 +21,19 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-OUT = HERE / "raw" / "relax_ladder.json"
+RAW = HERE / "raw"
+
+
+def ladder_path(dx: float, c0: float) -> Path:
+    """One evidence file per (grid, sound speed).
+
+    The first ladder (`dx = 2.0 mm`, `c0 = 20 m/s`) keeps the historical name so
+    that the existing figure/doc pipeline reads it unchanged; every other rung
+    gets its own file, so a ladder can never mix resolutions in one record.
+    """
+    if abs(dx - 0.002) < 1e-12 and abs(c0 - 20.0) < 1e-12:
+        return RAW / "relax_ladder.json"
+    return RAW / f"relax_ladder_dx{dx * 1e3:.4f}mm_c0{c0:g}.json"
 
 CASES = (
     ("closure_off", dict(closure=False)),
@@ -48,12 +60,16 @@ def main():
     args = ap.parse_args()
 
     lpf = load_floor()
+    out = ladder_path(args.dx, args.c0)
     record = {"dx_m": args.dx, "sound_speed": args.c0,
               "max_steps": args.max_steps, "analytic_dp_Pa": lpf.DP_ANALYTIC,
               "cases": []}
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    if OUT.exists():
-        record["cases"] = json.loads(OUT.read_text()).get("cases", [])
+    out.parent.mkdir(parents=True, exist_ok=True)
+    if out.exists():
+        prev = json.loads(out.read_text())
+        if (abs(prev.get("dx_m", args.dx) - args.dx) < 1e-12
+                and abs(prev.get("sound_speed", args.c0) - args.c0) < 1e-12):
+            record["cases"] = prev.get("cases", [])
 
     for name, kw in CASES:
         if name not in args.cases:
@@ -74,12 +90,12 @@ def main():
             "density_profile": run["density_profile"],
         }
         record["cases"] = [c for c in record["cases"] if c["case"] != name] + [entry]
-        OUT.write_text(json.dumps(record, indent=2))
+        out.write_text(json.dumps(record, indent=2))
         print(f"{name:30s} tail {entry['tail_rel_error_pct']:+7.1f} % "
               f"final {entry['final_abs_rel_error_pct']:+7.1f} % "
               f"vmax/vref {entry['vmax_over_vref']:.3f} "
               f"{entry['wall_clock_s']}s", flush=True)
-    print("wrote", OUT)
+    print("wrote", out)
 
 
 if __name__ == "__main__":
