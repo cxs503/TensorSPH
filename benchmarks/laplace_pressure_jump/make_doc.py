@@ -78,7 +78,7 @@ def main():
       f"{base['legacy_definition']['delta_p_Pa']:.2f} | {base['reference']['dp_theory_Pa']:.1f} | "
       f"{_fmt_pct(base['legacy_definition']['rel_error_pct'])} | 否 |")
     a(f"| **corrected（本工作）** | p(r<0.7R) - p_amb=0 | "
-      f"{base['corrected_definition']['delta_p_Pa']:.2f} | {base['reference']['dp_theory_Pa']:.1f} | "
+      f"{base['corrected_definition']['delta_p_Pa']:.2f} | {base['reference']['dp_theory_Pa']:.1f} | "  # noqa: E501  # noqa: E501
       f"{_fmt_pct(base['corrected_definition']['rel_error_pct'])} | "
       f"{'是' if base['corrected_definition']['within_15pct'] else '否'} |")
     a("")
@@ -131,7 +131,7 @@ def main():
         a(f"- **压强只在最外层被清零**：时间平均剖面显示 `r/R_eff>0.9` 的一层压强只有 "
           f"{outer[0]['p_mean_Pa']:.1f} Pa（该层 `rho/rho0 = "
           f"{outer[0]['rho_over_rho0_mean']:.3f}`，Tait 钳位把它抹平），"
-          f"而内部平台 `r<0.7 R_eff` 平均 {base['corrected_definition']['p_interior_r_lt_0.7R_Pa']:.1f} Pa "
+          f"而内部平台 `r<0.7 R_eff` 平均 {base['corrected_definition']['p_interior_r_lt_0.7R_Pa']:.1f} Pa "  # noqa: E501  # noqa: E501
           f"= {base['achieved_over_theory']:.2f}·`sigma/R_eff`。"
           "跳变必须在这一层里从 0 升到 `sigma/R_eff`，而它被钳位吃掉了。")
     a(f"- **噪声与偏置必须分开记账**（这是历史归因出错的地方）：内部压强**均值**与 c0 无关"

@@ -10,7 +10,6 @@ typed by hand.  Run after ``run.py``:
 from __future__ import annotations
 
 import json
-import math
 from pathlib import Path
 
 import matplotlib
@@ -51,8 +50,8 @@ def table_rows() -> str:
         rows.append(
             f"| {c['theta_deg']:.0f}° | {c['ratio']} | {c['n_fluid']} "
             f"| {f(fit.get('theta_fit_deg'))} | {f(fit.get('theta_error_deg'))} "
-            f"| {f(v['off']['normal_angle_deg_shell_mean'])} → {f(v['on']['normal_angle_deg_shell_mean'])} "
-            f"| {f(v['off']['normal_angle_deg_near_wall_mean'])} → {f(v['on']['normal_angle_deg_near_wall_mean'])} "
+            f"| {f(v['off']['normal_angle_deg_shell_mean'])} → {f(v['on']['normal_angle_deg_shell_mean'])} "  # noqa: E501  # noqa: E501
+            f"| {f(v['off']['normal_angle_deg_near_wall_mean'])} → {f(v['on']['normal_angle_deg_near_wall_mean'])} "  # noqa: E501  # noqa: E501
             f"| {f(100*v['off']['kappa_delta_s_weighted_rel_error'],1)} → "
             f"{f(100*v['on']['kappa_delta_s_weighted_rel_error'],1)} "
             f"| {f(100*v['fluid_only']['kappa_delta_s_weighted_rel_error'],1)} |\n")
@@ -90,8 +89,8 @@ def figure() -> None:
 
     # (c) curvature error
     for r in ratios:
-        off = [100 * case(t, r)["variants"]["off"]["kappa_delta_s_weighted_rel_error"] for t in thetas]
-        on = [100 * case(t, r)["variants"]["on"]["kappa_delta_s_weighted_rel_error"] for t in thetas]
+        off = [100 * case(t, r)["variants"]["off"]["kappa_delta_s_weighted_rel_error"] for t in thetas]  # noqa: E501  # noqa: E501
+        on = [100 * case(t, r)["variants"]["on"]["kappa_delta_s_weighted_rel_error"] for t in thetas]  # noqa: E501
         ax[2].plot(thetas, off, "x--", color=colours[r], alpha=0.6)
         ax[2].plot(thetas, on, "o-", color=colours[r], label=f"R/dx = {r}")
     ax[2].axhline(100 * TOL_K, color="grey", ls="--", lw=1)
@@ -126,9 +125,9 @@ def main() -> None:
 
 | 判定 | 结果 |
 |---|---|
-| 几何接触角复现 | **R/dx ≥ 20 通过**：Δθ ≤ {f(max(abs(case(t,r)['fit']['theta_error_deg']) for t in (60,90,120) for r in (20,40)))}°；**R/dx=10 不通过**：θ=60° 时 {f(case(60,10)['fit']['theta_error_deg'])}°（超 {TOL_A:.0f}° 门限，原因是薄冠只有 5 层粒子） |
-| 法向场（BC 的作用对象） | **改善**：全部 {len(CASES)} 个算例壳层法向误差都下降（见 (b)）；近壁带（d<h）**根本没被约束到**，因为那里的色函数被壁粒子撑到 c>0.75（见 ⑤.1） |
-| 曲率（决定 CSF 力） | **不通过，且与接触角 BC 无关**：δs 加权 κ 误差 +{f(min(ko_fine))}…+{f(max(ko_fine))}%（R/dx=40），θ=90°/R/dx=20 时 BC 前后只差 {f(100*abs(c90['variants']['on']['kappa_delta_s_weighted_rel_error']-c90['variants']['off']['kappa_delta_s_weighted_rel_error']),1)} 个百分点（壳层在 2h 带外，BC 基本碰不到），故这笔误差属于 CSF 曲率算子本身，与 `docs/verification_surface_tension_curvature.md` 的非收敛同源；只有薄冠 θ=60° 的壳层大多落在带内，BC 把 +{f(100*c60['variants']['off']['kappa_delta_s_weighted_rel_error'],1)}% 降到 +{f(100*c60['variants']['on']['kappa_delta_s_weighted_rel_error'],1)}% |
+| 几何接触角复现 | **R/dx ≥ 20 通过**：Δθ ≤ {f(max(abs(case(t,r)['fit']['theta_error_deg']) for t in (60,90,120) for r in (20,40)))}°；**R/dx=10 不通过**：θ=60° 时 {f(case(60,10)['fit']['theta_error_deg'])}°（超 {TOL_A:.0f}° 门限，原因是薄冠只有 5 层粒子） |  # noqa: E501
+| 法向场（BC 的作用对象） | **改善**：全部 {len(CASES)} 个算例壳层法向误差都下降（见 (b)）；近壁带（d<h）**根本没被约束到**，因为那里的色函数被壁粒子撑到 c>0.75（见 ⑤.1） |  # noqa: E501
+| 曲率（决定 CSF 力） | **不通过，且与接触角 BC 无关**：δs 加权 κ 误差 +{f(min(ko_fine))}…+{f(max(ko_fine))}%（R/dx=40），θ=90°/R/dx=20 时 BC 前后只差 {f(100*abs(c90['variants']['on']['kappa_delta_s_weighted_rel_error']-c90['variants']['off']['kappa_delta_s_weighted_rel_error']),1)} 个百分点（壳层在 2h 带外，BC 基本碰不到），故这笔误差属于 CSF 曲率算子本身，与 `docs/verification_surface_tension_curvature.md` 的非收敛同源；只有薄冠 θ=60° 的壳层大多落在带内，BC 把 +{f(100*c60['variants']['off']['kappa_delta_s_weighted_rel_error'],1)}% 降到 +{f(100*c60['variants']['on']['kappa_delta_s_weighted_rel_error'],1)}% |  # noqa: E501  # noqa: E501
 
 即：接触角 BC **确实把界面法向拧到了指定角度**（这是它承诺的事），但**接缝处的曲率仍然差一个量级**，
 所以 Young–Laplace 压差/接触线受力这条链路依然是 WITHHELD。
@@ -137,7 +136,7 @@ def main() -> None:
 
 二维（无限长柱截面）坐滴静止贴壁。壁面 `y = 0`，液面为一段圆弧，接触角 θ 在液体内部测量：
 
-$$R=\\frac{{a}}{{\\sin\\theta}},\\qquad y_c=-\\frac{{a}}{{\\tan\\theta}},\\qquad \\kappa=\\frac{{1}}{{R}}\\ \\text{{(常数)}}$$
+$$R=\\frac{{a}}{{\\sin\\theta}},\\qquad y_c=-\\frac{{a}}{{\\tan\\theta}},\\qquad \\kappa=\\frac{{1}}{{R}}\\ \\text{{(常数)}}$$  # noqa: E501
 
 圆心 $(0,y_c)$、半径 R 的圆与壁面交于 $x=\\pm a$，交线处界面切线与壁面夹角恰为 θ。**这个闭式由程序自证**
 （`cap_geometry_check`：在 $(a,0)$ 处数值求切向并与壁面切向取角，θ 扫 15°…165°，最大偏差
@@ -177,8 +176,8 @@ $$R=\\frac{{a}}{{\\sin\\theta}},\\qquad y_c=-\\frac{{a}}{{\\tan\\theta}},\\qquad
 
 | 控制 | 判定 | 数值 |
 |---|---|---|
-| C1 BC 幂等性：解析法向（已满足 n·n_wall=cosθ）过 BC 应原样返回 | `{exact['result']}` | 最大偏差 {f(exact['max_deviation_deg'],9)}° |
-| C2 局部性：d > 2h 的粒子梯度必须逐位不变 | `{SUM['locality_all_pass'] and 'pass' or 'fail'}` | 最大 \\|Δ∇c\\| = 0（逐位） |
+| C1 BC 幂等性：解析法向（已满足 n·n_wall=cosθ）过 BC 应原样返回 | `{exact['result']}` | 最大偏差 {f(exact['max_deviation_deg'],9)}° |  # noqa: E501
+| C2 局部性：d > 2h 的粒子梯度必须逐位不变 | `{SUM['locality_all_pass'] and 'pass' or 'fail'}` | 最大 \\|Δ∇c\\| = 0（逐位） |  # noqa: E501
 | C3 组装等价：本地 `assemble` 必须等于 `csf_fields` | pass | 最大偏差 {SUM['assembly_max_abs_error']:.1e} |
 | C4 壁行被旋转的粒子数 | 记录 | {wall_rot[0]}…{wall_rot[-1]} 个/算例（壁粒子 d=0 → blend=1，被整体旋转） |
 
@@ -197,7 +196,7 @@ $$R=\\frac{{a}}{{\\sin\\theta}},\\qquad y_c=-\\frac{{a}}{{\\tan\\theta}},\\qquad
 - (a) 几何角恢复：θ_fit−θ 随 R/dx 收敛，R/dx=10、θ=60° 时为 {f(case(60,10)['fit']['theta_error_deg'])}°，
   R/dx=40 时降到 {f(max(abs(case(t,40)['fit']['theta_error_deg']) for t in (60,90,120)))}° 以内。
 - (b) 壳层法向误差：BC 关闭时 7…38°，打开后降到 2…13°——**这是 BC 真正解决的问题**。
-- (c) δs 加权曲率误差：BC 关闭时 +{f(100*min(c['variants']['off']['kappa_delta_s_weighted_rel_error'] for c in CASES),1)}…
+- (c) δs 加权曲率误差：BC 关闭时 +{f(100*min(c['variants']['off']['kappa_delta_s_weighted_rel_error'] for c in CASES),1)}…  # noqa: E501  # noqa: E501
   +{f(100*max(c['variants']['off']['kappa_delta_s_weighted_rel_error'] for c in CASES),1)}%，
   打开后 +{f(100*min(c['variants']['on']['kappa_delta_s_weighted_rel_error'] for c in CASES),1)}…
   +{f(100*max(c['variants']['on']['kappa_delta_s_weighted_rel_error'] for c in CASES),1)}%：
@@ -207,7 +206,7 @@ $$R=\\frac{{a}}{{\\sin\\theta}},\\qquad y_c=-\\frac{{a}}{{\\tan\\theta}},\\qquad
 
 1. **壁带里根本没有「界面」可约束（本单最重要的发现）**：色函数 `c = Σ V_j W_ij` 把壁粒子也算进去
    （壁质量 ρ0·dx²，与 `wall_lattice` 一致），所以贴壁那几行 `c > 0.75`——本基准在 `d < h` 的带内
-   找不到任何 `0.25 < c < 0.75` 的壳层粒子（`n_shell_near_wall = {case(90,40)['n_shell_near_wall']}`，θ=90°/R/dx=40）。
+   找不到任何 `0.25 < c < 0.75` 的壳层粒子（`n_shell_near_wall = {case(90,40)['n_shell_near_wall']}`，θ=90°/R/dx=40）。  # noqa: E501
    换句话说：**接触角 BC 旋转的是一段「不是界面」的法向**，它靠 `blend` 把约束往下游传，而第一层流体粒子
    的 `blend = 1 − 0.5dx/(2h) = {f(1 - 0.5/(2*1.3)*1,2)}`，无论如何都拿不到 100% 的旋转。
    这与 `docs/contact_angle_boundary.md` 所述「near-wall particles 的梯度被投影」在实现上一致，
@@ -234,13 +233,13 @@ $$R=\\frac{{a}}{{\\sin\\theta}},\\qquad y_c=-\\frac{{a}}{{\\tan\\theta}},\\qquad
 
 | 关键量 | 最优算例 | 实测 | 相对基准误差 | <3%？ |
 |---|---|---|---|---|
-| 接触角 θ | θ=120°, R/dx=40 | {f(c120['fit']['theta_fit_deg'])}° | {f(c120['fit']['theta_error_deg'])}° ({f(100*abs(c120['fit']['theta_error_deg'])/120)}%) | {abs(c120['fit']['theta_error_deg']) <= 0.03*120 and '**是**' or '**否**'} |
-| 接触角 θ | θ=90°, R/dx=40 | {f(c90['fit']['theta_fit_deg'])}° | {f(c90['fit']['theta_error_deg'])}° ({f(100*abs(c90['fit']['theta_error_deg'])/90)}%) | {abs(c90['fit']['theta_error_deg']) <= 0.03*90 and '**是**' or '**否**'} |
-| 接触角 θ | θ=60°, R/dx=40 | {f(c60['fit']['theta_fit_deg'])}° | {f(c60['fit']['theta_error_deg'])}° ({f(100*abs(c60['fit']['theta_error_deg'])/60)}%) | {abs(c60['fit']['theta_error_deg']) <= 0.03*60 and '**是**' or '**否**'} |
-| 曲率 κ（δs 加权，BC on） | θ=90°, R/dx=40 | {f(c90['variants']['on']['kappa_delta_s_weighted_rel_error']*c90['fit']['R_fit'],4)} 1/m | {f(100*c90['variants']['on']['kappa_delta_s_weighted_rel_error'],1)}% | **否** |
-| 曲率 κ（δs 加权，BC off） | θ=90°, R/dx=40 | — | +{f(100*c90['variants']['off']['kappa_delta_s_weighted_rel_error'],1)}% | **否** |
+| 接触角 θ | θ=120°, R/dx=40 | {f(c120['fit']['theta_fit_deg'])}° | {f(c120['fit']['theta_error_deg'])}° ({f(100*abs(c120['fit']['theta_error_deg'])/120)}%) | {abs(c120['fit']['theta_error_deg']) <= 0.03*120 and '**是**' or '**否**'} |  # noqa: E501
+| 接触角 θ | θ=90°, R/dx=40 | {f(c90['fit']['theta_fit_deg'])}° | {f(c90['fit']['theta_error_deg'])}° ({f(100*abs(c90['fit']['theta_error_deg'])/90)}%) | {abs(c90['fit']['theta_error_deg']) <= 0.03*90 and '**是**' or '**否**'} |  # noqa: E501
+| 接触角 θ | θ=60°, R/dx=40 | {f(c60['fit']['theta_fit_deg'])}° | {f(c60['fit']['theta_error_deg'])}° ({f(100*abs(c60['fit']['theta_error_deg'])/60)}%) | {abs(c60['fit']['theta_error_deg']) <= 0.03*60 and '**是**' or '**否**'} |  # noqa: E501
+| 曲率 κ（δs 加权，BC on） | θ=90°, R/dx=40 | {f(c90['variants']['on']['kappa_delta_s_weighted_rel_error']*c90['fit']['R_fit'],4)} 1/m | {f(100*c90['variants']['on']['kappa_delta_s_weighted_rel_error'],1)}% | **否** |  # noqa: E501
+| 曲率 κ（δs 加权，BC off） | θ=90°, R/dx=40 | — | +{f(100*c90['variants']['off']['kappa_delta_s_weighted_rel_error'],1)}% | **否** |  # noqa: E501  # noqa: E501
 
-**补充**：κ 的误差不随 R/dx 单调收敛（θ=90°：+{f(100*case(90,10)['variants']['on']['kappa_delta_s_weighted_rel_error'],1)}% →
+**补充**：κ 的误差不随 R/dx 单调收敛（θ=90°：+{f(100*case(90,10)['variants']['on']['kappa_delta_s_weighted_rel_error'],1)}% →  # noqa: E501
 +{f(100*case(90,20)['variants']['on']['kappa_delta_s_weighted_rel_error'],1)}% →
 +{f(100*case(90,40)['variants']['on']['kappa_delta_s_weighted_rel_error'],1)}%），
 这本身是一个独立的欠账（CSF 曲率算子），不能指望接触角 BC 修。
