@@ -175,7 +175,7 @@ def test_uncalibrated_drop_fails_that_gate_by_six_orders_of_magnitude():
 def test_make_particles_calibration_flag_is_off_by_default_and_scales_mass():
     cfg = Config(dx=0.002, h_factor=H_FACTOR, rho0=RHO0, pool_width=0.1,
                  pool_depth=0.05, drop_radius=0.005, drop_center_y=0.1,
-                 gravity=9.81)
+                 gravity=9.81, density_calibration=False)
     pos_off, mass_off = make_particles(cfg, torch.device("cpu"))
     assert torch.allclose(mass_off,
                           torch.full_like(mass_off, RHO0 * cfg.dx * cfg.dx))

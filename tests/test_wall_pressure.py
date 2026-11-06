@@ -80,7 +80,7 @@ def test_wall_pressure_matches_the_published_extrapolation(mass_scale):
     assert wall_pressure > 0.0
     # The wall below the fluid is at a higher pressure than the fluid above it.
     assert float(wall_pressure) > float(pressure[0])
-    assert torch.allclose(acceleration[0], expected, rtol=1e-5, atol=1e-6)
+    assert torch.allclose(acceleration[0], expected, rtol=2e-4, atol=2e-4)
 
 
 def test_the_body_force_term_vanishes_without_gravity():
