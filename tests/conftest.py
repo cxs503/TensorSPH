@@ -9,7 +9,18 @@ The current environment (torch 2.7.1, Python 3.11) is measurably slower on
 large particle counts, so the timeouts below are generous enough to pass on
 both platforms while still catching genuine hangs.
 """
+import sys
+from pathlib import Path
+
 import pytest
+
+# Import `tensorsph` from *this* worktree. A `pip install -e` from a sibling
+# worktree puts its `src` first on the path, and then the suite silently tests
+# somebody else's checkout; pinning the local `src` makes the gate test the tree
+# it runs in (and keeps injected-bug checks meaningful).
+_SRC = Path(__file__).resolve().parents[1] / "src"
+if _SRC.is_dir() and str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
 
 
 def pytest_configure(config):
