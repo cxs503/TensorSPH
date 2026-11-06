@@ -111,7 +111,10 @@ def appendix_m2919() -> list[str]:
       "当前格式下**不可复现**：两线各自的运行都在中途发散（main 线见本文「诚实记录」一节，m2919 线"
       "见上表的 `stability` 列），发散时刻不同就给出不同的伪频率。因此合并后的口径是"
       "**不把任何一方的频率当作结论**，只把「偏差随分辨率/发散程度剧烈漂移」这一事实"
-      "连同两线原始数据一起锁进仓库；main 线的 strict-xfail 钉子负责让漂移在 CI 里可见。")
+      "连同两线原始数据一起锁进仓库。漂移由 `test_oscillating_droplet.py` 的数值钉子"
+      "守在 CI 里（m4786 更正：该钉子曾写成 strict-xfail，语义自相矛盾——xfail 要求"
+      "断言**失败**，于是复现记录值的运行变成 XPASS 把 main 判红；现改为普通断言 +"
+      "loong64 架构限定，复现记录值即通过，漂移才失败）。")
     A("")
     A("`no_sigma` 行是 σ = 0 负控（合并后由 "
       "`test_without_surface_tension_the_mode_does_not_oscillate` 守住）：无表面张力时"
