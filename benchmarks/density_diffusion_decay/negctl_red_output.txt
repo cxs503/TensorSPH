@@ -1,0 +1,73 @@
+# command: PYTHONPATH=src:benchmarks/density_diffusion_decay TORCH_DEVICE_BACKEND_AUTOLOAD=0 python3 -m pytest tests/test_density_diffusion_decay.py -q -p negctl_shift_reference
+
+[negctl] shifted theory_decay_rate by x1.1 in ['test_density_diffusion_decay']
+FF..                                                                     [100%]
+=================================== FAILURES ===================================
+_______ test_the_diffusive_term_decays_a_plane_wave_at_the_analytic_rate _______
+
+    def test_the_diffusive_term_decays_a_plane_wave_at_the_analytic_rate():
+        """D = delta c0 h is fixed by the model constants, so gamma = D k^2 is a prediction."""
+        cfg, *_ = plane_wave_state()
+>       measured, theory = assert_rate_matches_theory()
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_density_diffusion_decay.py:205: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+rtol = 0.03, state_kw = {}
+
+    def assert_rate_matches_theory(rtol: float = RTOL_RATE, **state_kw) -> tuple[float, float]:
+        """Compare the operator's decay rate with ``D k^2``; returns (measured, theory)."""
+        cfg, pos, rho, mass, geometry, k, interior, amplitude = plane_wave_state(**state_kw)
+        measured = measured_decay_rate(cfg, pos, rho, mass, geometry, k, interior, amplitude)
+        theory = theory_decay_rate(cfg.density_diffusion, cfg.sound_speed,
+                                   cfg.h_factor * cfg.dx, k)
+        relative = abs(measured - theory) / theory
+>       assert relative < rtol, (
+            f"plane-wave decay rate {measured:.6g} 1/s differs from the analytic "
+            f"D k^2 = {theory:.6g} 1/s by {100.0 * relative:.2f} % (gate {100.0 * rtol:g} %)"
+        )
+E       AssertionError: plane-wave decay rate 41.4206 1/s differs from the analytic D k^2 = 45.1633 1/s by 8.29 % (gate 3 %)
+E       assert 0.0828706832243752 < 0.03
+
+tests/test_density_diffusion_decay.py:195: AssertionError
+_________ test_the_decay_rate_scales_with_the_square_of_the_wavenumber _________
+
+    def test_the_decay_rate_scales_with_the_square_of_the_wavenumber():
+        """Halving the wavelength must quadruple the rate: the operator is a Laplacian."""
+>       long_wave = assert_rate_matches_theory(wavelength=WAVELENGTH)[0]
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_density_diffusion_decay.py:213: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+rtol = 0.03, state_kw = {'wavelength': 0.5}
+
+    def assert_rate_matches_theory(rtol: float = RTOL_RATE, **state_kw) -> tuple[float, float]:
+        """Compare the operator's decay rate with ``D k^2``; returns (measured, theory)."""
+        cfg, pos, rho, mass, geometry, k, interior, amplitude = plane_wave_state(**state_kw)
+        measured = measured_decay_rate(cfg, pos, rho, mass, geometry, k, interior, amplitude)
+        theory = theory_decay_rate(cfg.density_diffusion, cfg.sound_speed,
+                                   cfg.h_factor * cfg.dx, k)
+        relative = abs(measured - theory) / theory
+>       assert relative < rtol, (
+            f"plane-wave decay rate {measured:.6g} 1/s differs from the analytic "
+            f"D k^2 = {theory:.6g} 1/s by {100.0 * relative:.2f} % (gate {100.0 * rtol:g} %)"
+        )
+E       AssertionError: plane-wave decay rate 41.4206 1/s differs from the analytic D k^2 = 45.1633 1/s by 8.29 % (gate 3 %)
+E       assert 0.08287068322437505 < 0.03
+
+tests/test_density_diffusion_decay.py:195: AssertionError
+=============================== warnings summary ===============================
+../../../../usr/lib/python3.11/site-packages/anyio/pytest_plugin.py:14
+  /usr/lib/python3.11/site-packages/anyio/pytest_plugin.py:14: PytestRemovedIn10Warning: _pytest.python.CallSpec2 has been renamed to CallSpec.
+  The CallSpec2 alias will be removed in pytest 10.
+  Update imports to use CallSpec instead.
+  See https://docs.pytest.org/en/stable/deprecations.html#callspec2-renamed
+    from _pytest.python import CallSpec2
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_density_diffusion_decay.py::test_the_diffusive_term_decays_a_plane_wave_at_the_analytic_rate
+FAILED tests/test_density_diffusion_decay.py::test_the_decay_rate_scales_with_the_square_of_the_wavenumber
+2 failed, 2 passed, 1 warning in 3.21s
