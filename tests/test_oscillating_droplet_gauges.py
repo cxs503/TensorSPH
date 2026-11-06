@@ -10,6 +10,7 @@ Background: ``docs/verification_oscillating_droplet_gauge_audit.md``.
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import math
 import sys
@@ -22,7 +23,30 @@ BENCH = Path(__file__).resolve().parents[1] / "benchmarks" / "oscillating_drople
 REPO = BENCH.parents[1]
 sys.path.insert(0, str(BENCH))
 
-import run as bench  # noqa: E402
+
+def _load_harness():
+    """Import ``benchmarks/oscillating_droplet/run.py`` under a unique name.
+
+    ``import run`` is not usable here: :mod:`sys.modules` has one global slot
+    called ``"run"``, and ``tests/test_kernel_sum_consistency.py`` imports
+    ``benchmarks/init_consistency/run.py`` under that same name.  Whichever
+    test file is collected first wins, so under the alphabetical CI collection
+    order this module silently received the *init-consistency* harness and died
+    with ``AttributeError: module 'run' has no attribute 'elliptical_drop'``
+    (main CI red at d61b6c26).  Loading by file path keeps the two harnesses
+    distinct regardless of collection order.
+    """
+    name = "benchmarks_oscillating_droplet_run"
+    if name in sys.modules:
+        return sys.modules[name]
+    spec = importlib.util.spec_from_file_location(name, BENCH / "run.py")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+bench = _load_harness()
 
 R = 0.02
 RHO = 1000.0
@@ -30,6 +54,23 @@ RHO = 1000.0
 
 def _artifact() -> dict:
     return json.loads((BENCH / "validation_report.json").read_text())
+
+
+# --------------------------------------------------------------------------- #
+# harness identity: a stale ``sys.modules["run"]`` slot must not be reused
+# --------------------------------------------------------------------------- #
+def test_gauges_harness_is_this_benchmarks_run_module():
+    """Negative control for the collection-order bug that reddened main CI.
+
+    Before the fix this module did ``import run``, which resolves to whatever
+    ``sys.modules["run"]`` happens to hold -- under CI's alphabetical order that
+    is ``benchmarks/init_consistency/run.py``.  This guard fails in exactly that
+    situation instead of letting the gauge tests error out one by one.
+    """
+    assert Path(bench.__file__).resolve() == (BENCH / "run.py").resolve()
+    for fn in ("elliptical_drop", "containment_diagnostics", "divergence_onset",
+               "windowed_frequency", "spurious_momentum"):
+        assert callable(getattr(bench, fn)), fn
 
 
 # --------------------------------------------------------------------------- #
@@ -124,7 +165,6 @@ def test_divergence_onset_reports_the_first_crossing_and_none_when_quiet():
 # --------------------------------------------------------------------------- #
 def test_spurious_momentum_is_zero_for_a_translation_and_grows_for_outflow():
     pos, mass = bench.elliptical_drop(R, 0.002, RHO, 0.10)
-    n = pos.shape[0]
     v_cap = math.sqrt(7.2 / (RHO * R))          # 0.6 m/s
     zero = torch.zeros_like(pos)
     assert bench.spurious_momentum(zero, mass, v_cap) == 0.0

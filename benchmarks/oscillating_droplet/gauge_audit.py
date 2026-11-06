@@ -177,7 +177,8 @@ def figure(audit: dict, path: Path) -> None:
     ax.set_xlabel("t [s]")
     ax.set_ylabel(r"$s=(A-B)/(A+B)$")
     ax.set_title("mode-2 amplitude (recorded run, reproduced)\n"
-                 f"seeded eps=0.10, record ends at s={rep['containment']['amplitude_after_sim_periods']:.2f}",
+                 "seeded eps=0.10, record ends at s="
+                 f"{rep['containment']['amplitude_after_sim_periods']:.2f}",
                  fontsize=9)
     ax.grid(alpha=0.3)
 
@@ -229,7 +230,9 @@ def figure(audit: dict, path: Path) -> None:
     ax.set_ylabel("J")
     ax.set_title("energy: the scheme injects 12 orders of magnitude\n"
                  f"max |v| = {rep['containment']['max_speed_m_per_s']:.3g} m/s "
-                 f"= {rep['containment']['max_speed_over_capillary_velocity']:.3g} $v_{{\\rm cap}}$",
+                 "= "
+                 f"{rep['containment']['max_speed_over_capillary_velocity']:.3g} "
+                 "$v_{\\rm cap}$",
                  fontsize=9)
     ax.legend(fontsize=7)
     ax.grid(alpha=0.3, which="both")
@@ -251,6 +254,8 @@ def make_doc(audit: dict, fig_name: str, path: Path) -> None:
     rec, cont, deg = rep["recorded_claim"], rep["containment"], rep["gauge_degeneracy"]
     live, best, full = re_["liveness"], re_["best_window"], re_["full_trace_fit"]
     rows = re_["windowed_frequency"]
+    verdict = ("<3 %，达到论文级" if abs(best["rel_error_pct"]) <= 3.0
+               else "未达 3 %，仅过 ±15 % 平台线")
 
     L = []
     A = L.append
@@ -267,13 +272,18 @@ def make_doc(audit: dict, fig_name: str, path: Path) -> None:
     A("")
     A("| 参数 | 值 | 来源 |")
     A("|---|---|---|")
-    A(f"| 半径 R | {rep['setup']['radius_m']*1e3:.1f} mm | `validation_report.json` → `setup.radius_m` |")
+    A(f"| 半径 R | {rep['setup']['radius_m']*1e3:.1f} mm | "
+      "`validation_report.json` → `setup.radius_m` |")
     A(f"| 粒子间距 dx | {rep['setup']['dx_m']*1e3:.1f} mm | `setup.dx_m` |")
     A(f"| 粒子数 | {rep['setup']['n_particles']} | `setup.n_particles` |")
     A(f"| 时间步 dt | {rep['setup']['dt_s']:.3e} s | `setup.dt_s` |")
-    A(f"| σ, ρ₀, c₀ | {rep['setup']['sigma_N_per_m']} N/m, {rep['setup']['rho0']:.0f} kg/m³, {rep['setup']['sound_speed']:.0f} m/s | `setup` |")
-    A(f"| 解析频率 ω₂ | {rec['omega_reference_rad_per_s']:.2f} rad/s | `reference`：ω²=σm(m²−1)/(ρR³), m=2 |")
-    A(f"| 已登记读数 | {rec['omega_measured_rad_per_s']:.2f} rad/s（{rec['rel_error_pct']:+.2f} %） | `verdict.rows[0]` → 账本 FAIL |")
+    A(f"| σ, ρ₀, c₀ | {rep['setup']['sigma_N_per_m']} N/m, "
+      f"{rep['setup']['rho0']:.0f} kg/m³, "
+      f"{rep['setup']['sound_speed']:.0f} m/s | `setup` |")
+    A(f"| 解析频率 ω₂ | {rec['omega_reference_rad_per_s']:.2f} rad/s | "
+      "`reference`：ω²=σm(m²−1)/(ρR³), m=2 |")
+    A(f"| 已登记读数 | {rec['omega_measured_rad_per_s']:.2f} rad/s（"
+      f"{rec['rel_error_pct']:+.2f} %） | `verdict.rows[0]` → 账本 FAIL |")
     A("")
     A("平台判据：|误差| ≤ 15 %（过线）、≤ 3 %（论文级）。账本把本 claim 记为 **FAIL**，"
       "并据此把「振荡动力学」列为表面张力模块的未结欠账。")
@@ -299,10 +309,15 @@ def make_doc(audit: dict, fig_name: str, path: Path) -> None:
     A("")
     A("| 量纲一判据 | 健康液滴应为 | 工件实测 | 判定 |")
     A("|---|---|---|---|")
-    A(f"| rms 半径 / R（末态） | 0.71 | **{cont['final_rms_radius_over_radius']:,.0f}** | 散架 {cont['final_rms_radius_over_radius']/0.714:.0f}× |")
+    A(f"| rms 半径 / R（末态） | 0.71 | "
+      f"**{cont['final_rms_radius_over_radius']:,.0f}** | "
+      f"散架 {cont['final_rms_radius_over_radius']/0.714:.0f}× |")
     A(f"| 半长轴 / R（末态） | ~1.1 | **{cont['final_semi_major_over_radius']:,.0f}** | 散架 |")
-    A(f"| 模态幅度 s（末态） | ≤ 0.10（输入 eps） | **{cont['amplitude_after_sim_periods']:.3f}** | 放大 {cont['amplitude_after_sim_periods']/max(cont['initial_amplitude'],1e-9):.1f}× |")
-    A(f"| max\\|v\\| / v_cap | ≤ ~2 | **{cont['max_speed_over_capillary_velocity']:,.0f}** | 毛细流被彻底淹没 |")
+    A(f"| 模态幅度 s（末态） | ≤ 0.10（输入 eps） | "
+      f"**{cont['amplitude_after_sim_periods']:.3f}** | "
+      f"放大 {cont['amplitude_after_sim_periods']/max(cont['initial_amplitude'],1e-9):.1f}× |")
+    A(f"| max\\|v\\| / v_cap | ≤ ~2 | "
+      f"**{cont['max_speed_over_capillary_velocity']:,.0f}** | 毛细流被彻底淹没 |")
     A("")
     A(f"`containment.intact` 判据在工件上判 **{cont['intact_by_gauge']}**"
       f"（门槛 rms/R ≤ {cont['gate_rms_radius_over_radius']:.2f}）。"
@@ -323,10 +338,17 @@ def make_doc(audit: dict, fig_name: str, path: Path) -> None:
     A("")
     A("| 事件（同一配置重跑） | 时刻 t [s] | 折算参考周期 | 读数 |")
     A("|---|---|---|---|")
-    A(f"| 质量逸出 > 1 %（r > 1.5R） | {_f(audit['events']['escape_time_s'], 4)} | {_f(audit['events']['escape_periods'], 2)} | — |")
-    A(f"| 首个粒子 \\|v\\| > c₀ = {live['speed_limit_m_per_s']:.0f} m/s | {_f(live['onset_time_s'], 4)} | {_f(audit['events']['onset_periods'], 2)} | {_f(live['speed_at_onset'], 2)} m/s |")
-    A(f"| 动能在位（毛细尺度 σR） | — | — | 峰值 {live['kinetic_energy_over_capillary_scale']:.3g} σR |")
-    A(f"| 最大伪动量 \\|Σmv\\|/(M v_cap) | — | — | {re_['spurious_momentum']['max_over_mv']:.3g} |")
+    A(f"| 质量逸出 > 1 %（r > 1.5R） | "
+      f"{_f(audit['events']['escape_time_s'], 4)} | "
+      f"{_f(audit['events']['escape_periods'], 2)} | — |")
+    A(f"| 首个粒子 \\|v\\| > c₀ = {live['speed_limit_m_per_s']:.0f} m/s | "
+      f"{_f(live['onset_time_s'], 4)} | "
+      f"{_f(audit['events']['onset_periods'], 2)} | "
+      f"{_f(live['speed_at_onset'], 2)} m/s |")
+    A(f"| 动能在位（毛细尺度 σR） | — | — | "
+      f"峰值 {live['kinetic_energy_over_capillary_scale']:.3g} σR |")
+    A(f"| 最大伪动量 \\|Σmv\\|/(M v_cap) | — | — | "
+      f"{re_['spurious_momentum']['max_over_mv']:.3g} |")
     A(f"| 质量判据（结构性） | — | — | {re_['mass_relative_drift']} |")
     A("")
     A(f"重跑的全迹拟合复现了工件的 **{full['omega_rad_per_s']:.5f} rad/s "
@@ -360,14 +382,16 @@ def make_doc(audit: dict, fig_name: str, path: Path) -> None:
     A("| 关键量 | 基准 | 实测 | 相对误差 | < 3 % ? |")
     A("|---|---|---|---|---|")
     A(f"| ω₂（全迹，已登记口径） | {rec['omega_reference_rad_per_s']:.2f} rad/s "
-      f"| {full['omega_rad_per_s']:.2f} rad/s | {full['rel_error_pct']:+.2f} % | **否**（口径无效） |")
-    A(f"| ω₂（稳定窗口 w={best['window_periods']}） | {rec['omega_reference_rad_per_s']:.2f} rad/s "
+      f"| {full['omega_rad_per_s']:.2f} rad/s | {full['rel_error_pct']:+.2f} % | "
+      "**否**（口径无效） |")
+    A(f"| ω₂（稳定窗口 w={best['window_periods']}） | "
+      f"{rec['omega_reference_rad_per_s']:.2f} rad/s "
       f"| {best['omega_rad_per_s']:.2f} rad/s | {best['rel_error_pct']:+.2f} % "
       f"| **{'是' if abs(best['rel_error_pct']) <= 3.0 else '否'}** |")
     A("")
     A("**回答「是否 <3 %」**：按可证伪的稳定窗口口径，ω₂ 相对 Rayleigh–Lamb 的误差为 "
       f"{best['rel_error_pct']:+.2f} %，"
-      f"{'<3 %，达到论文级' if abs(best['rel_error_pct']) <= 3.0 else '未达 3 %，仅过 ±15 % 平台线'}；"
+      f"{verdict}；"
       "按已登记的全迹口径为 "
       f"{full['rel_error_pct']:+.2f} %，但该口径已被本审计判为无效（量纲一判据显示云半径 "
       f"{cont['final_rms_radius_over_radius']:,.0f} R、速度 "
