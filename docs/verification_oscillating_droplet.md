@@ -202,3 +202,31 @@ XPASS → strict 判红。**strict-xfail + 跨平台不可移植的量 = 必有�
 程序化写入 `benchmarks/oscillating_droplet/ci_pin_evidence.json`（无手抄），并由
 `test_pin_table_matches_the_evidence_json` 守住「钉子表 = 证据文件」的一致性；
 画图见 `docs/figures/m4795_oscillating_droplet_ci_pin.png`、`docs/figures/m4795_platform_spread.png`。
+
+## 附录 C（m4880）：证据账本补上生成器 —— 从「不可复现的声明」到「可复算的账本」
+
+m4795 的附录 B 把 -31.78 % / +8.64 % 钉进测试，并声明证据由脚本「程序化写入、无手抄」，
+但**那个脚本从未入库**：`benchmarks/oscillating_droplet/ci_pin_evidence.json` 在仓库里是孤证，
+既不能重算，也察觉不到被手改——`test_pin_table_matches_the_evidence_json` 只把账本与测试里的钉子表对账，
+两份文件一起手改就仍然「自洽」。
+
+本轮补上生成器 `benchmarks/oscillating_droplet/ci_pin_evidence.py` 与两条守护断言：
+
+| 断言 / 命令 | 守什么 | CI 成本 |
+|---|---|---|
+| `test_evidence_ledger_has_a_committed_generator` | 生成器在库、五个入口函数齐全、写出的路径 == 测试读的路径、CI 算例参数只有 `CI_CASE` 一个出处（fixture 直接取它） | 无（纯读，不跑算例） |
+| `test_evidence_ledger_matches_a_live_run` | 账本里每个数 == 本机同配置实跑的测量（复用 `release_case` fixture，**不额外跑算例**）；仅在账本记录平台（loongarch64）上比对 | 0 增量 |
+| `python benchmarks/oscillating_droplet/ci_pin_evidence.py --check` | 仓库外/CI 之外同样可核，漂移时非零退出 | 一次 2791 步（~170 s） |
+
+**复算实测（loongarch64，m4880）**：生成器重跑 CI 算例（R = 1 cm、dx = 1 mm、ε = 0.10、1.8 T、2791 步、
+dt = 1.95e-05 s、N = 357；本机负载 ~150 时 wall ≈ 170 s），`case / analytic / measured / stability`
+四块与已入库账本**逐位一致**（`compare_blocks()` 返回空差集：-31.781235649048384 %、r² = 0.7866569690951994、
+零交叉 -36.5733778831281 %、动能 -43.528481069707176 %、max|v|/c₀ = 1.6316247914198012）。也就是说
+m4795 记录的那条发散轨迹是**可重放的**，不是随手抄的数；同时这也说明 -31.78 % 的「不可移植」不是噪声，
+而是平台间求解路径差（见附录 B 表）。
+
+**注意点**：`--write` 只刷新本机能测的块与**本平台**的钉子；x86_64 的 +8.64 % 只能在 x86_64 上重记，
+在 loong64 上「重算」它等于编造，脚本因此原样保留其他平台的钉子，文档在此写明。
+
+**逐项回答「是否 < 3%」**：否。CI 算例 -31.78 %（loongarch64）/ +8.64 %（x86_64），release 尺度 -43.5 %，
+判定仍是 WITHHELD + honest-FAIL；本附录只补「证据可复算」，**没有**改动任何物理判定，也没有放宽 15 % 门。
