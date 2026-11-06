@@ -17,7 +17,6 @@ Numbers come from ``benchmarks/contact_angle_geometry/run.py``; the doc is
 """
 
 import importlib.util
-import math
 from pathlib import Path
 
 import pytest
