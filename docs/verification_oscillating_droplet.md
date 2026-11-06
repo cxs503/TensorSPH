@@ -156,3 +156,49 @@ m2919 线自己的测量（与其文档一致，同为 honest FAIL）：
 
 `no_sigma` 行是 σ = 0 负控（合并后由 `test_without_surface_tension_the_mode_does_not_oscillate` 守住）：无表面张力时二阶矩仍会因压力噪声给出一个**伪频率**，所以负控的判据只能是「离 ω₂ 足够远」，不能写「拟合失败」。
 
+
+## 附录 B（m4795）：CI 钉子按平台钉 —— main CI 红的根因与处置
+
+**红的是什么**：`main@799310b` 的 CI 上 `test_recorded_mode2_frequency_deficiency_is_reproduced`
+与 `test_oscillation_frequency_gate_is_not_met` 红（strict-xfail 被判 XPASS）。
+
+**根因（不是物理变了，是门禁平台与钉子平台重合了）**：这两个钉子写成
+`pytest.mark.xfail(..., strict=True)`，钉住的 -31.78% 是在 loong64 参考容器里测的；
+CI 迁到 self-hosted `ci-loong64`（#310）后，CI 报出的正是 -31.78%，落在钉子 ±2pp 内 →
+XPASS → strict 判红。**strict-xfail + 跨平台不可移植的量 = 必有一平台常红**，这是测试设计缺陷。
+
+**为什么这个量跨平台不可移植（实测，不是猜测）**：本附录新增的复核把 CI 算例
+（R = 1 cm, dx = 1 mm, 1.8 T）在 loongarch64 上重跑一遍（用与 `run_case` 逐行等价的
+带检查点复算脚本，dt = 1.95e-05 s、N = 357、2791 步，质量漂移 0）：
+
+| 量 | 实测（loongarch64） | 说明 |
+|---|---|---|
+| 二阶矩阻尼余弦拟合误差 | **-31.78 %** | 与钉子 -31.78 % 逐位吻合 → 复算脚本可信 |
+| 同一轨迹的另两个估计器 | 过零周期 -36.6 %；动能（ω→ω/2）-43.5 % | 三个估计器相差 5–12 pp |
+| 拟合质量 r² | 0.787 | 单频衰减余弦模型只解释 79% 方差 |
+| 最大速度 max\|v\| | 32.6 m/s = **1.63 c₀** | 声学上已经超 Mach 1，轨迹在窗内发散 |
+| 平台内线程确定性 | 1/4/8/16 线程 200 步后 `max|Δpos| = 0.0`（逐位相同） | 积分器无 RNG、无原子归约 |
+| 跨平台（同 commit 同代码） | loong64 **-31.78 %** vs GitHub x86_64 **+8.64 %** | 相差 ~40 pp |
+
+结论：这个数是**发散轨迹上的伪频率**（正文 ⑦ 已如实记录运行发散），不是可移植的物理测量。
+发散时刻稍有差别 → 拟合落到另一个伪模态 → 40 pp 的差。因此**任何单平台数值都不能作为物理判定**。
+
+**处置**：
+
+1. `tests/test_oscillating_droplet.py` 的两个 strict-xfail 改为**按平台钉**：
+   `RECORDED_MODE2_ERR_PCT = {"loongarch64": -31.78, "x86_64": +8.64}`，容差 ±2 pp/平台
+   （每平台上仍是紧钉子，漂移照样红），未记录平台走 `pytest.xfail`（报欠账，不静默放过）。
+2. 判定测试改名 `test_oscillation_frequency_gate_verdict_stays_fail`，断言的是**跨平台成立的判定**：
+   文档仍记 FAIL 与 -43.5%（release 尺度的缺陷）、`within_3pct is False`（任何平台都不得声称达 3%）、
+   质量漂移 < 1e-12，外加固有平台钉子。**没有放宽到「跌进 15% 就算通过」**——x86_64 的 +8.64 %
+   恰好落在 15% 门内，这正是「不得用单平台数值翻案」的最好反例。
+3. 发散本身**未修**（属 `tensorsph.droplet_impact` 的自由面/初始化欠账，正文 ⑦ 的三条线索仍开放），
+   本轮只修测试口径：**CI 绿 ≠ 物理通过**，WHITHED / honest-FAIL 的判定一个字没改。
+
+**逐项回答「是否 < 3%」**：否。CI 算例（loong64）-31.8 %、release 尺度 -43.5 %，均远超 3%；
+不改判、不粉饰。
+
+**证据落盘**：本轮实测原始量（三个估计器、拟合 r²、max|v|/c₀、线程确定性、平台钉子）由脚本
+程序化写入 `benchmarks/oscillating_droplet/ci_pin_evidence.json`（无手抄），并由
+`test_pin_table_matches_the_evidence_json` 守住「钉子表 = 证据文件」的一致性；
+画图见 `docs/figures/m4795_oscillating_droplet_ci_pin.png`、`docs/figures/m4795_platform_spread.png`。

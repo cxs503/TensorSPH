@@ -52,6 +52,8 @@
 
 图 (a) 同一算例两种判据的误差（红虚线为 15% 门）；(b) 声速阶梯——均值误差与 c0 无关，否定「EOS 分辨率地板吞掉均值」的归因；(c) δ-SPH 密度扩散——检验自由面欠密假设；(d) 时间平均径向压强剖面（阴影=时间标准差的 1σ），水平虚线为解析 `sigma/R_eff`。
 
+> 图件 `benchmarks/laplace_pressure_jump/laplace_pressure_jump.png` 是**入库工件**（`tests/test_laplace_pressure_jump.py::test_figure_exists` 会拦下缺失，m4795 前它未入库、导致 main CI 红）。重绘不需要重跑算例：读已提交的 `validation_report.json` 调 `run.py::make_figure(report)` 即可（matplotlib Agg，纯确定性后处理）。
+
 ## 4. 结果判读
 
 - **判据定义错误是被记为 −75.6% 的主因**：同一时刻同一场，legacy 判据给 -93.7%，corrected 判据给 -37.4%。两者之差完全来自把「液滴内部」当成了「环境」。
