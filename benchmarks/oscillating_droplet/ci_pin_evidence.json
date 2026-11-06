@@ -1,0 +1,57 @@
+{
+ "benchmark": "oscillating_droplet_ci_pin_evidence",
+ "platform": "loongarch64",
+ "case": {
+  "radius_m": 0.01,
+  "dx_m": 0.001,
+  "eps": 0.1,
+  "sigma_N_per_m": 7.2,
+  "rho0": 1000.0,
+  "sound_speed_m_per_s": 20.0,
+  "viscosity_m2_per_s": 5e-05,
+  "periods": 1.8,
+  "steps": 2791,
+  "dt_s": 1.9500000000000003e-05,
+  "n_particles": 357
+ },
+ "analytic": {
+  "omega_2_rad_per_s": 207.84609690826525,
+  "law": "omega^2 = 6 sigma / (rho R^3)  [2-D, m=2]"
+ },
+ "measured": {
+  "omega_damped_fit_rad_per_s": 141.7900390625,
+  "fit_rel_error_pct": -31.781235649048384,
+  "fit_r2": 0.7866569690951994,
+  "fit_lambda_per_s": 18.328125,
+  "omega_zero_crossing_rad_per_s": 131.82975847067277,
+  "zero_crossing_rel_error_pct": -36.5733778831281,
+  "omega_kinetic_energy_halved_rad_per_s": 117.37384796142578,
+  "kinetic_energy_rel_error_pct": -43.528481069707176
+ },
+ "stability": {
+  "max_speed_m_per_s": 32.632495828396024,
+  "max_speed_over_c0": 1.6316247914198012,
+  "mass_relative_drift": 0.0
+ },
+ "thread_determinism": {
+  "threads_tested": [
+   1,
+   4,
+   8,
+   16
+  ],
+  "steps": 200,
+  "max_abs_position_diff_m": 0.0,
+  "note": "bit-for-bit identical; the integrator has no RNG and no atomic reduction"
+ },
+ "recorded_platform_pins_pct": {
+  "loongarch64": -31.78,
+  "x86_64": 8.64
+ },
+ "verdict": {
+  "gate_pct": 15.0,
+  "strict_pct": 3.0,
+  "passes_gate": false,
+  "evidence_level": "WITHHELD (diverging run; pseudo-frequency)"
+ }
+}
