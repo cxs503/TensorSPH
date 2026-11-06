@@ -52,7 +52,7 @@
 
 图 (a) 同一算例两种判据的误差（红虚线为 15% 门）；(b) 声速阶梯——均值误差与 c0 无关，否定「EOS 分辨率地板吞掉均值」的归因；(c) δ-SPH 密度扩散——检验自由面欠密假设；(d) 时间平均径向压强剖面（阴影=时间标准差的 1σ），水平虚线为解析 `sigma/R_eff`。
 
-图由 `benchmarks/laplace_pressure_jump/make_figure.py` 从本文同一份 `validation_report.json` 确定性渲染，无需重跑 SPH：`PYTHONPATH=src python benchmarks/laplace_pressure_jump/make_figure.py`。m4786：该 PNG 此前从未入库（文档已引用、文件缺失，直接判红 main 的 `test_figure_exists`），现已随报告提交；测试在二进制缺失时用同一脚本重建后校验，因此「图像存在」这条断言既覆盖仓库内容，也覆盖绘图路径本身。
+> 图件 `benchmarks/laplace_pressure_jump/laplace_pressure_jump.png` 是**入库工件**（`tests/test_laplace_pressure_jump.py::test_figure_exists` 会拦下缺失，m4795 前它未入库、导致 main CI 红）。重绘不需要重跑算例：读已提交的 `validation_report.json` 调 `run.py::make_figure(report)` 即可（matplotlib Agg，纯确定性后处理）。若某次检出缺少该 blob，`test_figure_exists` 会用同一脚本重绘后校验（>10 kB），因此「图件存在」这条断言既覆盖仓库内容、也覆盖绘图路径本身。
 
 ## 4. 结果判读
 
