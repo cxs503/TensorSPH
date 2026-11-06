@@ -217,9 +217,42 @@ def test_document_exists_and_quotes_the_report(baseline):
     assert f"{baseline['corrected_definition']['rel_error_pct']:+.1f}%" in text
 
 
-def test_figure_exists():
-    fig = ROOT / "benchmarks" / "laplace_pressure_jump" / "laplace_pressure_jump.png"
-    assert fig.exists() and fig.stat().st_size > 10_000
+def test_figure_exists(report, tmp_path):
+    """The figure the document embeds must be *reproducible*, not merely present.
+
+    ``docs/verification_laplace_pressure_jump.md`` embeds
+    ``benchmarks/laplace_pressure_jump/laplace_pressure_jump.png``, but binary
+    artefacts are not tracked in this repository (the same reason the path had
+    never been committed), so the old body of this test -- "does that file
+    exist?" -- could only ever pass on a machine where somebody had run the
+    benchmark by hand.  The property that actually matters is that the figure is
+    a deterministic function of the committed ``validation_report.json``: the
+    test renders it from that JSON into a temporary directory and checks the
+    result is a real PNG of the expected size.  If a committed copy exists it is
+    validated as well, so a stale/corrupt binary is still caught.
+    """
+    png_magic = b"\x89PNG\r\n\x1a\n"
+    committed = ROOT / "benchmarks" / "laplace_pressure_jump" / "laplace_pressure_jump.png"
+    if committed.exists():
+        assert committed.stat().st_size > 10_000
+        assert committed.read_bytes()[:8] == png_magic
+
+    pytest.importorskip("matplotlib")
+    import importlib.util
+
+    path = ROOT / "benchmarks" / "laplace_pressure_jump" / "run.py"
+    spec = importlib.util.spec_from_file_location("lpj_run_fig", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    out = mod.make_figure(report, out_dir=tmp_path)
+    assert out.exists(), f"make_figure did not write {out}"
+    assert out.stat().st_size > 10_000, (
+        f"rendered figure is only {out.stat().st_size} bytes")
+    assert out.read_bytes()[:8] == png_magic
+    # the document must point at the artefact this test can regenerate
+    assert "benchmarks/laplace_pressure_jump/laplace_pressure_jump.png" in \
+        DOC.read_text()
 
 
 # --------------------------------------------------------------------------- #
