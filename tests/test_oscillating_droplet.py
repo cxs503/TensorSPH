@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import importlib.util
 import math
+import platform
 from pathlib import Path
 
 import pytest
@@ -187,25 +188,48 @@ def test_fit_refuses_to_hallucinate_a_frequency_from_a_non_oscillating_trace(ben
 # --------------------------------------------------------------------------- #
 # 4. physics layer (slow)
 # --------------------------------------------------------------------------- #
-#: Mode-2 frequency error of the CI release case, measured while clearing the
-#: m3312 CI reds (repeatable to <0.01 %: the run is deterministic, single
-#: threaded, seed 0).  The reference case R = 2 cm is recorded at -43.5 % in
+#: The m3312 pins measured this cheap case while clearing CI reds.  The run is
+#: reproducible *within* a platform (bit-for-bit identical for 1, 4, 8 and 16
+#: torch threads -- there is no RNG, no wall-clock dependence and no atomic
+#: reduction in the integrator), but not *across* platforms: see below.  The
+#: reference case R = 2 cm is recorded at -43.5 % in
 #: ``docs/verification_oscillating_droplet.md`` section 3.1 / 5, i.e. the model
 #: is a documented FAIL against the 15 % bar -- this cheap case is not better.
-RECORDED_MODE2_ERR_PCT = 31.78
+# The cheap CI case (R = 1 cm, dx = 1 mm, 1.8 periods, eps = 0.10) does not
+# complete a clean oscillation: it diverges acoustically well before the end of
+# the window (``max|v|`` reaches ~1.6 c0 in the run behind the pin below; the
+# R = 2 cm release-scale case reaches 3e5 x the capillary speed, see section 7
+# of ``docs/verification_oscillating_droplet.md``).  The number pinned here is
+# therefore a **pseudo-frequency of a diverging trace**, not a physical
+# measurement of the m = 2 Rayleigh-Lamb mode.
+#
+# A pseudo-frequency is not platform-portable *by construction*: two runs of
+# identical code on identical input diverge at slightly different steps, and
+# the damped-cosine estimator then locks onto a different pseudo-mode of a
+# trace whose fit r2 is only ~0.79.  Measured spread on the same commit:
+# -31.78 % (self-hosted loong64 runner -- this repository's CI) vs +8.64 %
+# (GitHub-hosted x86_64 runner, 2026-11-04).  Neither value is
+# architecture-canonical, so the pin is **per platform**: it stays 2 pp tight
+# on each recorded platform (tight drift detection is the whole point of the
+# pin) and an unrecorded platform is reported as xfail, never as a silent pass.
+# What is *not* platform-specific -- and what the second test below asserts --
+# is the verdict: this quantity is not validated on any platform.
+RECORDED_MODE2_ERR_PCT = {
+    "loongarch64": -31.78,   # self-hosted ci-loong64 runner (used by CI)
+    "x86_64": +8.64,         # GitHub-hosted x86_64 runner, recorded 2026-11-04
+}
 RECORDED_MODE2_TOL_PCT = 2.0
 
-# 2026-11-04: the mode-2 second-moment fit is architecture-fragile — the same
-# code measures +8.64 % on x86_64 GitHub CI and -31.78 % in the loong64
-# reference container. Neither value is architecture-canonical, so the two
-# pinned tests below are strict-xfail until the fit robustness is reviewed
-# (re-baseline item, owner-visible). Strict xfail keeps drift detection in
-# BOTH directions: an XPASS (measurement moving back onto a pin) fails CI.
-XFAIL_MODE2_ARCH_FRAGILE = (
-    "mode-2 fit is architecture-fragile (x86_64 CI +8.64 % vs loong64 "
-    "-31.78 % on identical code); pin re-baseline pending fit-robustness "
-    "review"
-)
+
+def recorded_mode2_err() -> float:
+    """Recorded mode-2 pseudo-frequency error [%] for this platform, else xfail."""
+    arch = platform.machine()
+    if arch not in RECORDED_MODE2_ERR_PCT:
+        pytest.xfail(
+            f"no recorded mode-2 pin for platform {arch!r}: this quantity is a "
+            "pseudo-frequency of a diverging trace (see the comment above), so "
+            "it must be recorded from a real run before it can be asserted")
+    return RECORDED_MODE2_ERR_PCT[arch]
 
 
 @pytest.fixture(scope="module")
@@ -221,40 +245,79 @@ def release_case(bench):
                           periods=1.8)
 
 
-@pytest.mark.xfail(reason=XFAIL_MODE2_ARCH_FRAGILE, strict=True)
-def test_recorded_mode2_frequency_deficiency_is_reproduced(release_case):
-    """Pin the *measured* mode-2 frequency, not a gate the model does not meet.
+def test_pin_table_matches_the_evidence_json():
+    """The per-platform pins and the recorded evidence may not drift apart.
 
-    m3020 shipped the physics-layer test below with the 15 % gate as an
-    assertion, on a formulation whose own benchmark doc records -43.5 % (FAIL);
-    the case it runs measures -31.8 %, so that assertion was red from the start
-    and stayed red for every later commit.  Pinning the number here keeps the
-    measurement in CI (a drift of the model shows up as a failure) without
-    pretending the deficiency is gone: the gate verdict stays FAIL and is
-    asserted as FAIL by ``test_oscillation_frequency_gate_is_not_met``.
+    ``benchmarks/oscillating_droplet/ci_pin_evidence.json`` is written
+    programmatically by the run itself (no hand-copied numbers), so it is the
+    machine-checkable witness of *why* the table above holds these values.
+    Cheap (no simulation): it guards the bookkeeping, the physics tests below
+    guard the measurement.
     """
+    import json
+
+    evidence = json.loads(
+        (BENCH / "ci_pin_evidence.json").read_text())["measured"]
+    arch = platform.machine()
+    if arch not in RECORDED_MODE2_ERR_PCT:
+        pytest.skip(f"no recorded mode-2 pin for platform {arch!r}")
+    recorded = RECORDED_MODE2_ERR_PCT[arch]
+    assert recorded == pytest.approx(evidence["fit_rel_error_pct"], abs=0.01), (
+        f"pin {recorded:+.2f} % vs evidence {evidence['fit_rel_error_pct']:+.2f} %")
+    assert evidence["fit_r2"] < 0.9, (
+        "a fit r2 below 0.9 is what makes this number a pseudo-frequency; if "
+        "the fit improved, re-baseline the pins and the doc instead of the "
+        "threshold")
+
+
+def test_recorded_mode2_frequency_deficiency_is_reproduced(release_case):
+    """Pin the *measured* mode-2 pseudo-frequency on this platform.
+
+    The pin is not a physics claim: the trace diverges, so the recorded FAIL
+    verdict lives in ``docs/verification_oscillating_droplet.md`` and in
+    ``test_oscillation_frequency_gate_verdict_stays_fail`` below.  What this
+    test buys is drift detection: if the model (or the estimator) moves on a
+    recorded platform, the pseudo-frequency moves and CI goes red, which is the
+    only cheap signal a diverging configuration can give.
+    """
+    recorded = recorded_mode2_err()
     err = release_case["frequency"]["fit_second_moment_rel_error_pct"]
-    assert err == pytest.approx(-RECORDED_MODE2_ERR_PCT, abs=RECORDED_MODE2_TOL_PCT), err
-    assert abs(err) > GATE_PCT, (
-        "the deficiency apparently improved into the 15 % gate: update "
-        "docs/verification_oscillating_droplet.md and this pin, do not just "
-        "flip the number")
+    assert err == pytest.approx(recorded, abs=RECORDED_MODE2_TOL_PCT), (
+        f"mode-2 pseudo-frequency drifted on {platform.machine()}: measured "
+        f"{err:+.2f} %, recorded {recorded:+.2f} % +- "
+        f"{RECORDED_MODE2_TOL_PCT} pp.  Re-record the pin for this platform "
+        "(and only for this platform) together with "
+        "docs/verification_oscillating_droplet.md.")
 
 
 @pytest.mark.slow
-@pytest.mark.xfail(reason=XFAIL_MODE2_ARCH_FRAGILE, strict=True)
-def test_oscillation_frequency_gate_is_not_met(release_case):
-    """The 15 % gate is NOT met; the recorded verdict must stay FAIL.
+def test_oscillation_frequency_gate_verdict_stays_fail(release_case):
+    """The recorded platform verdict is FAIL on *every* platform.
 
-    Kept as an explicit inverted assertion so that "green" cannot be mistaken
-    for "physics accepted": the platform verdict for this quantity is FAIL, and
-    the future fix that makes the gate pass has to fail here first, which is
-    exactly the reminder to re-render ``docs/verification_oscillating_droplet.md``.
+    Deliberately phrased as a verdict test rather than as "|err| > gate on this
+    machine": x86_64 records +8.64 % (inside the 15 % gate) while loong64
+    records -31.78 %, i.e. the two platforms disagree by ~40 pp, which is
+    exactly why no single-platform number may be read as "the physics passes".
+    The verdict rests on facts that are platform-independent: (a) the release
+    scale benchmark is -43.5 % and this CI case -31.8 % on the CI platform,
+    (b) both runs diverge (section 7 of the doc), and (c) neither platform is
+    within the 3 % standard.  A real fix (a converging run) has to fail here
+    first -- that failure is the reminder to re-render the document.
     """
+    recorded = recorded_mode2_err()
     err = release_case["frequency"]["fit_second_moment_rel_error_pct"]
-    assert abs(err) >= GATE_PCT, (
-        f"mode-2 frequency error {err:.1f} % now meets the {GATE_PCT:.0f} % gate; "
-        "update the benchmark doc verdict (it currently records FAIL) and this test")
+    report = ROOT / "docs" / "verification_oscillating_droplet.md"
+    text = report.read_text()
+    assert "FAIL" in text and "-43.5" in text, (
+        "the document must keep recording the release-scale deficiency "
+        "(-43.5 %) and the FAIL verdict")
+    assert release_case["frequency"]["within_3pct"] is False, (
+        f"mode-2 pseudo-frequency {err:+.2f} % claims the 3 % standard on "
+        f"{platform.machine()}; that is a diverging-trace artefact -- "
+        "re-render docs/verification_oscillating_droplet.md before relaxing")
+    assert err == pytest.approx(recorded, abs=RECORDED_MODE2_TOL_PCT), (
+        f"measured {err:+.2f} % vs recorded {recorded:+.2f} % on "
+        f"{platform.machine()}")
     assert release_case["diagnostics"]["mass_relative_drift"] < 1e-12
 
 
