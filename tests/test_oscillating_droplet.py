@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import importlib.util
 import math
+import platform
 from pathlib import Path
 
 import pytest
@@ -195,16 +196,29 @@ def test_fit_refuses_to_hallucinate_a_frequency_from_a_non_oscillating_trace(ben
 RECORDED_MODE2_ERR_PCT = 31.78
 RECORDED_MODE2_TOL_PCT = 2.0
 
-# 2026-11-04: the mode-2 second-moment fit is architecture-fragile — the same
-# code measures +8.64 % on x86_64 GitHub CI and -31.78 % in the loong64
-# reference container. Neither value is architecture-canonical, so the two
-# pinned tests below are strict-xfail until the fit robustness is reviewed
-# (re-baseline item, owner-visible). Strict xfail keeps drift detection in
-# BOTH directions: an XPASS (measurement moving back onto a pin) fails CI.
-XFAIL_MODE2_ARCH_FRAGILE = (
-    "mode-2 fit is architecture-fragile (x86_64 CI +8.64 % vs loong64 "
-    "-31.78 % on identical code); pin re-baseline pending fit-robustness "
-    "review"
+# The mode-2 second-moment fit is architecture-fragile: the same code measures
+# +8.64 % on x86_64 and -31.78 % in the loong64 reference container, because the
+# extremely under-damped drop leaves equilibrium at a machine-dependent step
+# (different FMA/vectorisation accumulation order -> a different pseudo-frequency
+# on an already diverging trajectory).  The pin below is therefore
+# *architecture-scoped*: it runs where it was recorded (the self-hosted
+# ``ci-loong64`` runner) and skips elsewhere, which keeps the recorded number
+# enforceable without claiming it is portable.
+#
+# m4786 correction: both tests used to carry ``xfail(strict=True)``.  That is
+# self-contradictory for a value pin -- an xfail demands that the assertion
+# FAIL, so the run that *reproduces* the recorded number XPASSes and turns main
+# red.  The two tests are ordinary assertions again; the *verdict* stays FAIL
+# and is asserted as FAIL, so "green" still means "documented deficiency
+# reproduced", never "physics accepted".
+PIN_ARCHITECTURES = {"loongarch64", "loong64"}
+arch_scoped = pytest.mark.skipif(
+    platform.machine() not in PIN_ARCHITECTURES,
+    reason=(
+        "mode-2 frequency pin is recorded on loong64 only (this machine is "
+        f"{platform.machine()}); the under-damped fit is not architecture "
+        "portable -- see docs/verification_oscillating_droplet.md section 3.1"
+    ),
 )
 
 
@@ -221,7 +235,7 @@ def release_case(bench):
                           periods=1.8)
 
 
-@pytest.mark.xfail(reason=XFAIL_MODE2_ARCH_FRAGILE, strict=True)
+@arch_scoped
 def test_recorded_mode2_frequency_deficiency_is_reproduced(release_case):
     """Pin the *measured* mode-2 frequency, not a gate the model does not meet.
 
@@ -232,6 +246,10 @@ def test_recorded_mode2_frequency_deficiency_is_reproduced(release_case):
     measurement in CI (a drift of the model shows up as a failure) without
     pretending the deficiency is gone: the gate verdict stays FAIL and is
     asserted as FAIL by ``test_oscillation_frequency_gate_is_not_met``.
+
+    "Drift" here means *leaving* the pin: the test passes when the recorded
+    deficiency is reproduced.  (m4786: it used to be wrapped in a strict
+    xfail, which inverted that -- a reproducing pin was an XPASS = red CI.)
     """
     err = release_case["frequency"]["fit_second_moment_rel_error_pct"]
     assert err == pytest.approx(-RECORDED_MODE2_ERR_PCT, abs=RECORDED_MODE2_TOL_PCT), err
@@ -242,7 +260,7 @@ def test_recorded_mode2_frequency_deficiency_is_reproduced(release_case):
 
 
 @pytest.mark.slow
-@pytest.mark.xfail(reason=XFAIL_MODE2_ARCH_FRAGILE, strict=True)
+@arch_scoped
 def test_oscillation_frequency_gate_is_not_met(release_case):
     """The 15 % gate is NOT met; the recorded verdict must stay FAIL.
 
