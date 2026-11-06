@@ -39,3 +39,11 @@ exclude = [".scratch"]
 # Correctness-only gate: pyflakes undefined names/unused imports, pycodestyle
 # errors and warnings. Formatting is deliberately not enforced.
 select = ["E", "F", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+# Benchmark doc generators emit long Chinese markdown/LaTeX lines into docs/;
+# a 100-column limit has no meaning for CJK text and these scripts are not
+# runtime code.  Only E501 is waived -- pyflakes (F) and W stay enforced, so
+# dead locals and unused imports in benchmark *runners* are still caught
+# (that is exactly the F841 this change clears in run.py).
+"benchmarks/**/make_doc.py" = ["E501"]
