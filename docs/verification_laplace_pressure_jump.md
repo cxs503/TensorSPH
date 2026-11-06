@@ -80,3 +80,15 @@
 
 **结论（honest）**：判据定义纠正后，基线的 Laplace 压差误差为 -37.4%，15% 门**未通过**；本工作把账从「−75.6%、归因 EOS 地板」改写为「几何判据错误（把液滴内部当环境）+ 自由面壳层钳位导致的跳变无法建立」，并把可复现的判据、时间平均协议与回归测试固化下来。诚实的部分失败点：压差仍未进 15%，属实现缺陷，不是验证缺陷。
 
+
+## 附录：图的入库方式（m4802，2026-11-06）
+
+本文第 3 节嵌入的 `benchmarks/laplace_pressure_jump/laplace_pressure_jump.png` **不入库**（本仓
+`git ls-files` 中该目录只跟踪 `make_doc.py` / `run.py` / `validation_report.json`，二进制产物的入库
+门禁会把它滤除）。因此 `tests/test_laplace_pressure_jump.py::test_figure_exists` 原先"断言该文件存在"
+只能在本机手工跑过基准后为真，在 CI 上恒红——这是记录口径与实际产物形态不一致，不是数据问题。
+
+改判**可复现性**：该测试现在用已入库的 `validation_report.json` 调
+`run.py::make_figure(report, out_dir=tmp_path)` 现场重绘，并断言产物是合法 PNG 且 > 10 kB；若工作目录里
+确实存在提交副本，则一并校验其魔数与大小（陈旧/损坏的图仍会被抓到）。图是 report 的确定性函数，
+所以"文档里的图与报告一致"这条性质恢复为机器可验证。

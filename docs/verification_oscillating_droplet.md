@@ -156,3 +156,27 @@ m2919 线自己的测量（与其文档一致，同为 honest FAIL）：
 
 `no_sigma` 行是 σ = 0 负控（合并后由 `test_without_surface_tension_the_mode_does_not_oscillate` 守住）：无表面张力时二阶矩仍会因压力噪声给出一个**伪频率**，所以负控的判据只能是「离 ω₂ 足够远」，不能写「拟合失败」。
 
+
+## 附录 B：CI 钉子从 strict-xfail 改为按平台记录（m4802，2026-11-06）
+
+**问题**：本仓 CI 已于 #310 迁到自托管 loongarch64 runner。第 4 节的两条物理层测试此前写成
+`xfail(strict=True)`（理由是「二阶矩拟合跨架构脆弱：x86_64 +8.64% vs loong64 −31.78%」）：
+在 loong64 runner 上运行**恰好复现**录得的 −31.78%，于是测试通过 → XPASS(strict) → main 变红。
+"strict xfail 保证漂移双向可见"的写法在此情形下自相矛盾：它要求"绝不匹配钉子"，而 CI 平台正是钉子取的平台。
+
+**根因不是拟合器，而是算例本身无效**：`radius=0.01, dx=0.001, c0=20, ν=5e-5, 1.8T` 这个 CI 廉价算例
+在 1.8 个解析周期内 `r_eff` 由 10.0 mm 涨到 47.3 mm（面积等效半径涨 4.7 倍），拟合 r²=0.79、
+`peak_decay` r²=0.12 —— 与本文 ⑦ 记录的发散同源。也就是说该"频率"是**发散轨迹的伪频率**，
+轨迹形态取决于浮点归约顺序，因此跨架构不可移植；把它当作可比的物理量本身就是记录错误。
+
+**处置（未放松任何判据）**：
+
+| 量 | 处置 | 理由 |
+|---|---|---|
+| 廉价算例的模态 2 伪频率 | 按平台记录（`RECORDED_MODE2_ERR_PCT = {"loongarch64": −31.78, "x86_64": +8.64}`，容差 2 pp）；未记录平台只按已记录包络 (−60%, +30%) 兜底并 skip | 每平台 2 pp 的钉子仍是紧的漂移检测；不再用一个平台的数去否定另一个平台 |
+| 15% 门判定 | 改判**平台无关**的物证：`benchmarks/oscillating_droplet/validation_report.json::verdict`（基准算例 −43.5%，`within_15pct=false`, `within_3pct=false`）+ 现场 run 的质量守恒 `mass_relative_drift < 1e-12` | 门判定不应依赖 CPU：x86_64 上那个廉价伪频率恰好落进 15%（8.64%），但产生它的 run 仍在发散，这不是物理改进 |
+| 现场一致性 | 仅在**该平台已记录**且记录值本身越门（loongarch64）时，要求现场值也越门 | 真有改进时会先在这里变红，逼着先改记录 |
+
+**判定口径未变**：物理结论仍是 **honest FAIL**（基准算例 −43.5%，15% 门未通过，运行中途发散），
+`within_3pct` 亦为 false；本附录只修正"用什么证据去断言这一判定"，不修正判定本身。
+复现：`PYTHONPATH=src python -m pytest -q tests/test_oscillating_droplet.py`（loong64 ≈ 115 s/算例）。
