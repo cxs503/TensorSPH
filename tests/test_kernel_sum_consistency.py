@@ -10,6 +10,7 @@ reproducible from the lattice alone (and its ``2395 Pa`` at ``c0 = 20``), and th
 square lattice used by the *shipped* ``make_particles`` must not carry it.
 """
 
+import importlib.util
 import math
 import sys
 from pathlib import Path
@@ -17,9 +18,30 @@ from pathlib import Path
 import pytest
 import torch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "benchmarks" / "init_consistency"))
+_BENCH = Path(__file__).resolve().parents[1] / "benchmarks" / "init_consistency"
+sys.path.insert(0, str(_BENCH))
 
-import run as R  # noqa: E402  (benchmark harness, imported as a module)
+
+def _load_harness():
+    """Import ``benchmarks/init_consistency/run.py`` under a unique name.
+
+    A bare ``import run`` shares the single global ``sys.modules["run"]`` slot
+    with ``tests/test_oscillating_droplet_gauges.py`` (which imports
+    ``benchmarks/oscillating_droplet/run.py``), so the two test files stole each
+    other's harness depending on collection order.  Loading by file path makes
+    the identity explicit and order independent.
+    """
+    name = "benchmarks_init_consistency_run"
+    if name in sys.modules:
+        return sys.modules[name]
+    spec = importlib.util.spec_from_file_location(name, _BENCH / "run.py")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+R = _load_harness()  # noqa: E402  (benchmark harness, imported as a module)
 
 from tensorsph.droplet_impact import Config, make_particles, pool_lattice  # noqa: E402
 from tensorsph.lattice_consistency import (  # noqa: E402
@@ -32,6 +54,13 @@ from tensorsph.lattice_consistency import (  # noqa: E402
 )
 
 RHO0, C0, GAMMA = R.RHO0, R.C0, R.GAMMA
+
+
+def test_harness_is_this_benchmarks_run_module():
+    """Counterpart of the gauges guard: no stale ``sys.modules["run"]`` reuse."""
+    assert Path(R.__file__).resolve() == (_BENCH / "run.py").resolve()
+    for fn in ("RHO0", "C0", "GAMMA"):
+        assert hasattr(R, fn), fn
 DX = 0.01
 EXTENT = 0.20
 
