@@ -1,0 +1,31 @@
+=== baseline ===
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+14 passed, 1 warning in 28.31s
+
+=== NEGATIVE CONTROL 1: examples/tutorial/first_steps.py: lattice_kernel_sum(dx, h) -> (h, dx)
+E       AssertionError: measured bias disagrees with dx^2 * S
+examples/tutorial/first_steps.py:114: AssertionError
+E       AssertionError: measured bias disagrees with dx^2 * S
+examples/tutorial/first_steps.py:114: AssertionError
+E       AssertionError: measured bias disagrees with dx^2 * S
+examples/tutorial/first_steps.py:114: AssertionError
+E       AssertionError: measured bias disagrees with dx^2 * S
+examples/tutorial/first_steps.py:114: AssertionError
+
+=== NEGATIVE CONTROL 2: src/tensorsph/droplet_impact.py: kernel normalisation 10/(7 pi h^2) * 1.05
+E       AssertionError: Traceback (most recent call last):
+E         AssertionError: kernel integral 1.049999984375 != 1
+E        +  where 1 = CompletedProcess(args=['/usr/bin/python3', '/root/tp-agent/work/m4707/examples/tutorial/first_steps.py', '--json', '/t...gral {integral} != 1"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: kernel integral 1.049999984375 != 1\n').returncode
+tests/test_tutorial_first_steps.py:197: AssertionError
+FAILED tests/test_tutorial_first_steps.py::test_script_runs_standalone_and_reports_measured_values
+1 failed, 13 passed, 1 warning in 25.88s
+
+=== NEGATIVE CONTROL 3: docs/tutorials/01-first-steps.md: hand-edit one quoted measurement (kernel_integral 0.999999985119 -> 1.0)
+        assert DOCUMENT.exists(), f"missing tutorial document {DOCUMENT}"
+        assert len(quoted) >= 30, f"the tutorial quotes only {len(quoted)} measured values"
+            assert key in fresh, f"the document quotes unknown measurement {key}"
+                assert text == value, f"{key} drifted: doc {text!r} vs run {value!r}"
+>               assert float(text) == pytest.approx(value, rel=1e-9, abs=1e-12), (
+E               AssertionError: step1_kernel_normalisation.kernel_integral drifted: doc 1.0 vs run 0.9999999851190473
+E               assert 1.0 == 0.9999999851190473 ± 1.0e-09
+E                 comparison failed

@@ -1,0 +1,59 @@
+{
+  "step1_kernel_normalisation": {
+    "h": 0.026000000000000002,
+    "kernel_at_2h": 0.0,
+    "kernel_integral": 0.9999999851190473,
+    "kernel_peak": 672.6751609970215
+  },
+  "step2_density_calibration": {
+    "calibrated_error": 3.3306690738754696e-15,
+    "interior_particles": 1156.0,
+    "lattice_bias_hex": 0.0058835223630879785,
+    "lattice_bias_spread": 2.9976021664879227e-15,
+    "lattice_bias_square": -5.32310441265782e-05,
+    "lattice_kernel_sum": 2499.866922389683,
+    "wrong_packing_error": 0.005902028689434791
+  },
+  "step3_equation_of_state": {
+    "bias_pressure_hex": 2395.3576787835705,
+    "bias_pressure_square": 0.0,
+    "bulk_modulus": 57142.857142857145,
+    "compressed_sound_speed": 20.60602000517304,
+    "compressed_sound_speed_expected": 20.60602,
+    "p_at_rho0": 0.0,
+    "recovered_sound_speed": 20.000300002820435,
+    "sound_speed_error": 1.5000141021737079e-05,
+    "tensile_pressure": 0.0
+  },
+  "step4_neighbour_search": {
+    "pair_count_brute_force": 16533.0,
+    "pair_count_cell_linked": 16533.0,
+    "pairs_identical": 1.0,
+    "rho_first_step_max": 3.0260227147208467,
+    "skin_reuse_density_error": 0.0
+  },
+  "step5_time_step_policy": {
+    "acoustic_dt_limit": 0.00039000000000000005,
+    "gravity_dt_limit": 0.012870403982580407,
+    "h": 0.026000000000000002,
+    "moving_dt_limit": 0.00026000000000000003,
+    "moving_to_stable_ratio": 0.6666666666666666,
+    "refused_message": "dt=0.00078 gives acoustic Courant 0.600 > max_courant 0.3; use dt <= 3.900e-04 s",
+    "stable_dt": 0.00039000000000000005,
+    "viscous_dt_limit": 0.008450000000000003
+  },
+  "step6_run_case": {
+    "free_fall_time": 0.09030472819714622,
+    "mass_drift_relative": 0.0,
+    "mass_total": 380.020263671875,
+    "max_speed_end": 0.15695995092391968,
+    "numerical_verification": "pass",
+    "particle_count": 152.0,
+    "peak_courant": 0.12404283046722413,
+    "peak_density_compression": 0.006629577636718675,
+    "peak_mach": 0.007847997546195983,
+    "steps": 40,
+    "time_end": 0.016,
+    "wall_particle_count": 159.0
+  }
+}
