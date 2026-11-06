@@ -21,7 +21,17 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-OUT = HERE / "raw" / "relax_ladder.json"
+RAW = HERE / "raw"
+# The baseline point (dx = 2 mm, c0 = 20 m/s) keeps the historical filename so that
+# existing readers (make_doc.py, figures.py, tests) stay untouched.  Every other
+# (dx, c0) point gets its own file: one record per mesh/sound speed, never merged.
+BASELINE = (0.002, 20.0)
+
+
+def out_path(dx: float, c0: float) -> Path:
+    if (dx, c0) == BASELINE:
+        return RAW / "relax_ladder.json"
+    return RAW / f"relax_ladder_dx{dx * 1e3:.4g}mm_c{c0:g}.json"
 
 CASES = (
     ("closure_off", dict(closure=False)),
@@ -39,6 +49,24 @@ def load_floor():
     return module
 
 
+def resume_cases(out: Path, dx: float, c0: float) -> list[dict]:
+    """Cases already recorded at exactly this (dx, c0) point, else [].
+
+    Earlier versions merged the cases of *any* previous file into the new record,
+    so `--dx 0.0015` produced a record whose header said 1.5 mm while its cases
+    were measured at 2 mm.  A point is resumed only if its header matches.
+    """
+    if not out.exists():
+        return []
+    previous = json.loads(out.read_text())
+    if (previous.get("dx_m"), previous.get("sound_speed")) == (dx, c0):
+        return previous.get("cases", [])
+    print(f"ignoring {out.name}: recorded point "
+          f"(dx={previous.get('dx_m')}, c0={previous.get('sound_speed')}) "
+          f"differs from the requested one", flush=True)
+    return []
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dx", type=float, default=0.002)
@@ -51,9 +79,9 @@ def main():
     record = {"dx_m": args.dx, "sound_speed": args.c0,
               "max_steps": args.max_steps, "analytic_dp_Pa": lpf.DP_ANALYTIC,
               "cases": []}
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    if OUT.exists():
-        record["cases"] = json.loads(OUT.read_text()).get("cases", [])
+    out = out_path(args.dx, args.c0)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    record["cases"] = resume_cases(out, args.dx, args.c0)
 
     for name, kw in CASES:
         if name not in args.cases:
@@ -74,12 +102,12 @@ def main():
             "density_profile": run["density_profile"],
         }
         record["cases"] = [c for c in record["cases"] if c["case"] != name] + [entry]
-        OUT.write_text(json.dumps(record, indent=2))
+        out.write_text(json.dumps(record, indent=2))
         print(f"{name:30s} tail {entry['tail_rel_error_pct']:+7.1f} % "
               f"final {entry['final_abs_rel_error_pct']:+7.1f} % "
               f"vmax/vref {entry['vmax_over_vref']:.3f} "
               f"{entry['wall_clock_s']}s", flush=True)
-    print("wrote", OUT)
+    print("wrote", out)
 
 
 if __name__ == "__main__":
