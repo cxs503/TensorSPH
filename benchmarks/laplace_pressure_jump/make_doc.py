@@ -109,6 +109,13 @@ def main():
       "(c) δ-SPH 密度扩散——检验自由面欠密假设；"
       "(d) 时间平均径向压强剖面（阴影=时间标准差的 1σ），水平虚线为解析 `sigma/R_eff`。")
     a("")
+    a("图由 `benchmarks/laplace_pressure_jump/make_figure.py` 从本文同一份 "
+      "`validation_report.json` 确定性渲染，无需重跑 SPH："
+      "`PYTHONPATH=src python benchmarks/laplace_pressure_jump/make_figure.py`。"
+      "m4786：该 PNG 此前从未入库（文档已引用、文件缺失，直接判红 main 的 "
+      "`test_figure_exists`），现已随报告提交；测试在二进制缺失时用同一脚本重建后校验，"
+      "因此「图像存在」这条断言既覆盖仓库内容，也覆盖绘图路径本身。")
+    a("")
     a("## 4. 结果判读")
     a("")
 
