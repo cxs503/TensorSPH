@@ -79,6 +79,42 @@ Relaxation at `dx = 2.0 mm`, `c0 = 20 m/s`, up to 2000 steps.
 
 The best variant is **closure on, donors = interior, 2 layers** at +8.8 %, against -37.9 % with the closure off; its spurious current is `v_max/v_ref = 0.388` (Adami's criterion is < 0.1).
 
+### 3.3 Is the ranking a one-mesh accident? The `dx`/`c0` ladder
+
+The single-point ladder above cannot separate a closure effect from a resolution
+accident, so every variant was repeated on a `dx` x `c0` grid (4 lattice points,
+`dx` = 2.0 / 1.5 mm, `c0` = 5 / 10 / 20 m/s). Each point is its own evidence file, so a
+mismatched header cannot contaminate the table.
+
+| variant | `dx` [mm] | `c0` [m/s] | `N` | tail `<p_core>` [Pa] | tail error [%] | `v_max/v_ref` | inside +/-15 % |
+|---|---|---|---|---|---|---|---|
+| closure off (Tait clamp) | 2.0 | 5 | 362 | 237.6 | -34.0 | 0.026 | no |
+| closure off (Tait clamp) | 2.0 | 10 | 362 | 226.0 | -37.2 | 0.021 | no |
+| closure off (Tait clamp) | 2.0 | 20 | 362 | 223.6 | -37.9 | 0.030 | no |
+| closure off (Tait clamp) | 1.5 | 20 | 642 | 222.9 | -38.1 | 0.025 | no |
+| closure on, donors = all | 2.0 | 20 | 362 | 287.5 | -20.1 | 0.020 | no |
+| closure on, donors = all | 1.5 | 20 | 642 | 269.1 | -25.3 | 0.019 | no |
+| closure on, donors = interior, 2 layers | 2.0 | 5 | 362 | 377.5 | +4.9 | 0.104 | yes |
+| closure on, donors = interior, 2 layers | 2.0 | 10 | 362 | 345.5 | -4.0 | 0.060 | yes |
+| closure on, donors = interior, 2 layers | 2.0 | 20 | 362 | 391.8 | +8.8 | 0.388 | yes |
+| closure on, donors = interior, 2 layers | 1.5 | 20 | 642 | 347.7 | -3.4 | 0.090 | yes |
+| closure on, donors = interior, 4 layers | 2.0 | 20 | 362 | 391.8 | +8.8 | 0.388 | yes |
+
+* **closure off (Tait clamp)** moves by 0.2 percentage points between 2.0 mm (-37.9 %) and 1.5 mm (-38.1 %).
+* **closure on, donors = interior, 2 layers** moves by 12.2 percentage points between 2.0 mm (+8.8 %) and 1.5 mm (-3.4 %).
+* **closure on, donors = all** moves by 5.1 percentage points between 2.0 mm (-20.1 %) and 1.5 mm (-25.3 %).
+* **closure off (Tait clamp)** at `dx` = 2.0 mm changes by 3.9 points over `c0` = 5 (-34.0 %) / 10 (-37.2 %) / 20 (-37.9 %).
+* **closure on, donors = interior, 2 layers** at `dx` = 2.0 mm changes by 12.9 points over `c0` = 5 (+4.9 %) / 10 (-4.0 %) / 20 (+8.8 %).
+
+Variants inside the +/-15 % gate **at every tested point**: closure on, donors = interior, 2 layers (4 points), closure on, donors = interior, 4 layers (1 point).
+Variants outside it somewhere: closure off (Tait clamp), closure on, donors = all.
+
+![closure ladder](../benchmarks/laplace_pressure_closure/laplace_closure_ladder.png)
+
+*(a)* tail error versus `dx` at `c0 = 20 m/s`, one line per closure variant, shaded band = the
++/-15 % gate; *(b)* tail error versus `c0`, which is flat if the residual is a closure/geometry
+effect and would fall with `c0` if it were an EOS noise floor.
+
 ## 4. Notes, and the trap that nearly produced a wrong conclusion
 
 1. **Estimator error, not physics.** The first version of the force balance estimated the
@@ -91,10 +127,13 @@ The best variant is **closure on, donors = interior, 2 layers** at +8.8 %, again
    shell's clamped zeros (it stayed stable); `interior` is a true one-sided extrapolation and is
    exact on a linear field, but on the drop it over-pressurises the shell and the surface starts
    to breathe. Neither is 'the' Adami closure; the donor set has to be stated with the number.
-3. **Scope of this revision.** The ladder was run at one resolution and one sound speed
-   (`dx = 0.002 m`, `c0 = 20 m/s`) because the machine was shared and heavily loaded; the
-   static force balance covers two resolutions. A `dx`/`c0` ladder for the closure itself is
-   the obvious next step and is one command (`relax_ladder.py --dx 0.0015`) away.
+3. **The `dx`/`c0` ladder, and the tool that silently forbade it.** The first version of this
+   record ran one resolution and one sound speed (`dx = 0.002 m`, `c0 = 20 m/s`) because the
+   machine was shared and heavily loaded. Repeating it turned up a defect in `relax_ladder.py`:
+   the script resumed *any* existing evidence file into the new record, so `--dx 0.0015`
+   produced a 1.5 mm header filled with 2 mm cases -- the 'one command away' claim was false
+   and would have silently poisoned the table. Each `(dx, c0)` point now owns its own file and
+   the resume path checks the header before reusing anything (section 3.3).
 4. The closure is off by default. It is a modelling choice with a measured effect, not a bug
    fix, and turning it on by default would silently move every published impact/dam-break
    number.
@@ -110,10 +149,13 @@ The best variant is **closure on, donors = interior, 2 layers** at +8.8 %, again
 | relaxed `p_core`, closure on, donors = interior, 2 layers | 391.8 Pa | `sigma/R` = 360 Pa | +8.8 % | no |
 | relaxed `p_core`, closure on, donors = interior, 4 layers | 391.8 Pa | `sigma/R` = 360 Pa | +8.8 % | no |
 
-**Young-Laplace capability stays WITHHELD.** The best closure variant is +8.8 % from the analytic jump, i.e. better than the -34 % to -38 % of the previous three rounds but
-not inside the 15 % acceptance band, and its transient still has to be checked on a resolution
-ladder. The one thing that is now settled: the surface-tension force is not where the missing
-20 % lives.
+**Young-Laplace capability stays WITHHELD.** The best closure variant is +8.8 % from the analytic jump at the baseline point, better than the -34 % to -38 % of the previous three rounds. 
+On the `dx`/`c0` ladder the gate is met at every point by closure on, donors = interior, 2 layers, closure on, donors = interior, 4 layers; closure off (Tait clamp), closure on, donors = all fails it somewhere.
+A variant that is inside the band is *not* yet a validated capability: the same run reports
+a spurious current far above Adami's `v_max/v_ref < 0.1`, i.e. the drop is still breathing
+against the imposed pressure rather than settling onto it. Capillary fidelity stays unclaimed
+until the spurious current and the transient are gated too.
+The one thing that is settled: the surface-tension force is not where the missing 20 % lives.
 
 ![force balance and closure ladder](../benchmarks/laplace_pressure_closure/laplace_pressure_closure.png)
 
