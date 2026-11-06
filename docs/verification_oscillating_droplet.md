@@ -152,29 +152,53 @@ m2919 线自己的测量（与其文档一致，同为 honest FAIL）：
 | coarse | 2 | 2.0 | 73.48 | 62.11 | -15.5% | 否 | particle left the box at step 1200 (0.91 T) |
 | no_sigma | 2 | 1.5 | 0.00 | 38.31 | — | — | stable |
 
-**两线对照（同一物理构型：R = 20 mm、dx = 2 mm、ε = 0.10）**：main 线基准算例 -43.5%、m2919 线 `coarse` 算例 -15.5%。两条独立实现都判 FAIL，但量值相差 2.8 倍——这不是「互相印证」，而是提示该量在当前格式下**不可复现**：两线各自的运行都在中途发散（main 线见本文「诚实记录」一节，m2919 线见上表的 `stability` 列），发散时刻不同就给出不同的伪频率。因此合并后的口径是**不把任何一方的频率当作结论**，只把「偏差随分辨率/发散程度剧烈漂移」这一事实连同两线原始数据一起锁进仓库。漂移由 `test_oscillating_droplet.py` 的数值钉子守在 CI 里（m4786 更正：该钉子曾写成 strict-xfail，语义自相矛盾——xfail 要求断言**失败**，于是复现记录值的运行变成 XPASS 把 main 判红；现改为普通断言 + loong64 架构限定，复现记录值即通过，漂移才失败）。
+**两线对照（同一物理构型：R = 20 mm、dx = 2 mm、ε = 0.10）**：main 线基准算例 -43.5%、m2919 线 `coarse` 算例 -15.5%。两条独立实现都判 FAIL，但量值相差 2.8 倍——这不是「互相印证」，而是提示该量在当前格式下**不可复现**：两线各自的运行都在中途发散（main 线见本文「诚实记录」一节，m2919 线见上表的 `stability` 列），发散时刻不同就给出不同的伪频率。因此合并后的口径是**不把任何一方的频率当作结论**，只把「偏差随分辨率/发散程度剧烈漂移」这一事实连同两线原始数据一起锁进仓库。漂移由 `test_oscillating_droplet.py` 的数值钉子守在 CI 里（m4786 更正：该钉子曾写成 strict-xfail，语义自相矛盾——xfail 要求断言**失败**，于是复现记录值的运行变成 XPASS 把 main 判红；现改为普通断言 + **按平台钉**（m4795：每个已记录平台各钉 ±2 pp，loongarch64 = -31.78 %、x86_64 = +8.64 %；未记录平台报 xfail 而不静默通过），复现记录值即通过，漂移才失败）。
 
 `no_sigma` 行是 σ = 0 负控（合并后由 `test_without_surface_tension_the_mode_does_not_oscillate` 守住）：无表面张力时二阶矩仍会因压力噪声给出一个**伪频率**，所以负控的判据只能是「离 ω₂ 足够远」，不能写「拟合失败」。
 
 
-## 附录 B：m4786 —— 数值钉子的语义更正与架构界定
+## 附录 B（m4786 → m4795）：CI 钉子按平台钉 —— main CI 红的根因与处置
 
-main 在 `799310b0` 变红，红的两条是 `test_recorded_mode2_frequency_deficiency_is_reproduced`
-与 `test_oscillation_frequency_gate_is_not_met`，**失败形态是 XPASS(strict) 而不是断言失败**：
+**红的是什么**：`main@799310b` 的 CI 上 `test_recorded_mode2_frequency_deficiency_is_reproduced`
+与 `test_oscillation_frequency_gate_is_not_met` 红（strict-xfail 被判 XPASS）。
 
-| 项 | 事实 |
-|---|---|
-| 钉子记录的 CI 算例误差 | −31.78 %（R = 1 cm、dx = 1 mm、c0 = 20 m/s、ν = 5e-5、ε = 0.10） |
-| m4786 复测（loong64、单线程、seed 0） | −31.78 %，落在 `abs=2.0` pp 容差内 → 断言**通过** |
-| `xfail(strict)` 的语义 | 断言**必须失败**才算 XFAIL；断言通过即 XPASS，strict 下 XPASS = CI 红 |
-| 结论 | 钉子本身是「记录值复现器」，写 strict-xfail 等于要求它**永远不成立**，语义自相矛盾 |
+**根因（不是物理变了，是门禁平台与钉子平台重合了）**：这两个钉子写成
+`pytest.mark.xfail(..., strict=True)`，钉住的 -31.78% 是在 loong64 参考容器里测的；
+CI 迁到 self-hosted `ci-loong64`（#310）后，CI 报出的正是 -31.78%，落在钉子 ±2pp 内 →
+XPASS → strict 判红。**strict-xfail + 跨平台不可移植的量 = 必有一平台常红**，这是测试设计缺陷。
 
-处置：去掉 strict-xfail（改为普通断言），并把钉子**架构限定**在记录它的 loong64
-（`skipif(platform.machine() not in {"loongarch64","loong64"})`）。理由是同代码在 x86_64 上量到
-+8.64 %、在 loong64 上量到 −31.78 %（m3312 记录）：本算例的液滴是极欠阻尼振荡器（ν 低、
-自由面张拉不稳定无耗散），离开平衡态的时刻由机器的浮点累加顺序决定，因此拟合出的频率
-**只在单一架构内可复现**。把钉子限定在记录它的架构上，既保住了漂移检测，也不宣称该数字可移植。
+**为什么这个量跨平台不可移植（实测，不是猜测）**：本附录新增的复核把 CI 算例
+（R = 1 cm, dx = 1 mm, 1.8 T）在 loongarch64 上重跑一遍（用与 `run_case` 逐行等价的
+带检查点复算脚本，dt = 1.95e-05 s、N = 357、2791 步，质量漂移 0）：
 
-**这一节不能读作「物理已被接受」**：平台判据仍是 FAIL（|−31.78 %| ≥ 15 %），
-`test_oscillation_frequency_gate_is_not_met` 用**反向断言**把 FAIL 钉住——CI 绿只表示
-「已记录的缺陷被复现」，一旦哪天真修好了、误差进了 15 %，该测试会先红，提醒重渲染本文档。
+| 量 | 实测（loongarch64） | 说明 |
+|---|---|---|
+| 二阶矩阻尼余弦拟合误差 | **-31.78 %** | 与钉子 -31.78 % 逐位吻合 → 复算脚本可信 |
+| 同一轨迹的另两个估计器 | 过零周期 -36.6 %；动能（ω→ω/2）-43.5 % | 三个估计器相差 5–12 pp |
+| 拟合质量 r² | 0.787 | 单频衰减余弦模型只解释 79% 方差 |
+| 最大速度 max\|v\| | 32.6 m/s = **1.63 c₀** | 声学上已经超 Mach 1，轨迹在窗内发散 |
+| 平台内线程确定性 | 1/4/8/16 线程 200 步后 `max|Δpos| = 0.0`（逐位相同） | 积分器无 RNG、无原子归约 |
+| 跨平台（同 commit 同代码） | loong64 **-31.78 %** vs GitHub x86_64 **+8.64 %** | 相差 ~40 pp |
+
+结论：这个数是**发散轨迹上的伪频率**（正文 ⑦ 已如实记录运行发散），不是可移植的物理测量。
+发散时刻稍有差别 → 拟合落到另一个伪模态 → 40 pp 的差。因此**任何单平台数值都不能作为物理判定**。
+
+**处置**：
+
+1. `tests/test_oscillating_droplet.py` 的两个钉子：m4786 先去掉 strict-xfail（改为普通断言），但仍用 `skipif` 把钉子锁在 loong64（等于在 x86_64 上不检测漂移）；m4795 改为**按平台钉**：
+   `RECORDED_MODE2_ERR_PCT = {"loongarch64": -31.78, "x86_64": +8.64}`，容差 ±2 pp/平台
+   （每平台上仍是紧钉子，漂移照样红），未记录平台走 `pytest.xfail`（报欠账，不静默放过）。
+2. 判定测试改名 `test_oscillation_frequency_gate_verdict_stays_fail`，断言的是**跨平台成立的判定**：
+   文档仍记 FAIL 与 -43.5%（release 尺度的缺陷）、`within_3pct is False`（任何平台都不得声称达 3%）、
+   质量漂移 < 1e-12，外加固有平台钉子。**没有放宽到「跌进 15% 就算通过」**——x86_64 的 +8.64 %
+   恰好落在 15% 门内，这正是「不得用单平台数值翻案」的最好反例。
+3. 发散本身**未修**（属 `tensorsph.droplet_impact` 的自由面/初始化欠账，正文 ⑦ 的三条线索仍开放），
+   本轮只修测试口径：**CI 绿 ≠ 物理通过**，WITHHELD / honest-FAIL 的判定一个字没改。
+
+**逐项回答「是否 < 3%」**：否。CI 算例（loong64）-31.8 %、release 尺度 -43.5 %，均远超 3%；
+不改判、不粉饰。
+
+**证据落盘**：本轮实测原始量（三个估计器、拟合 r²、max|v|/c₀、线程确定性、平台钉子）由脚本
+程序化写入 `benchmarks/oscillating_droplet/ci_pin_evidence.json`（无手抄），并由
+`test_pin_table_matches_the_evidence_json` 守住「钉子表 = 证据文件」的一致性；
+画图见 `docs/figures/m4795_oscillating_droplet_ci_pin.png`、`docs/figures/m4795_platform_spread.png`。
