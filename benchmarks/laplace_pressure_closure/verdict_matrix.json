@@ -1,0 +1,451 @@
+{
+  "benchmark": "laplace_pressure_closure_verdict",
+  "question": "which Young-Laplace read-outs are inside the acceptance band, and is each one admissible and independent evidence?",
+  "reference": {
+    "sigma_N_per_m": 7.2,
+    "radius_m": 0.02,
+    "analytic_dp_Pa": 360.0
+  },
+  "gate": {
+    "band_pct": 15.0,
+    "admissibility": "v_max/v_ref < 0.1 (Adami et al. 2012)",
+    "definitions_note": "all read-outs are absolute pressure (p_core - 0); the deprecated p_core - p(0.80-0.95 R) definition is not used"
+  },
+  "readouts": [
+    {
+      "label": "flux integral -int rho a_r dr, dx = 2.0 mm",
+      "group": "static_force_balance",
+      "source": "report_force_balance.json",
+      "config": {
+        "dx_m": 0.002,
+        "closure": null
+      },
+      "value_Pa": 359.07787281290007,
+      "rel_error_pct": -0.2561464408610936,
+      "within_15pct": true,
+      "within_3pct": true,
+      "admissible": true,
+      "admissibility_basis": "static CSF evaluation, no transient",
+      "spurious_current_over_limit": null,
+      "independent_evidence": true,
+      "duplicate_of": null
+    },
+    {
+      "label": "flux integral -int rho a_r dr, dx = 1.5 mm",
+      "group": "static_force_balance",
+      "source": "report_force_balance.json",
+      "config": {
+        "dx_m": 0.0015,
+        "closure": null
+      },
+      "value_Pa": 333.14521509345195,
+      "rel_error_pct": -7.459662474041129,
+      "within_15pct": true,
+      "within_3pct": false,
+      "admissible": true,
+      "admissibility_basis": "static CSF evaluation, no transient",
+      "spurious_current_over_limit": null,
+      "independent_evidence": true,
+      "duplicate_of": null
+    },
+    {
+      "label": "relaxed <p_core>, closure_off",
+      "group": "relaxation",
+      "source": "raw/relax_ladder.json",
+      "config": {
+        "dx_m": 0.002,
+        "sound_speed": 20.0,
+        "closure": false,
+        "donors": null,
+        "layers": null
+      },
+      "value_Pa": 223.64622876323088,
+      "rel_error_pct": -37.8760475657692,
+      "within_15pct": false,
+      "within_3pct": false,
+      "tail_rel_error_pct": -37.8760475657692,
+      "final_snapshot_rel_error_pct": -42.08308244578387,
+      "vmax_over_vref": 0.0299434340079459,
+      "admissible": true,
+      "admissibility_basis": "v_max/v_ref = 0.030 vs Adami limit 0.1",
+      "spurious_current_over_limit": 0.29943434007945896,
+      "pressure_side_used": "absolute (p_core - 0), time averaged",
+      "independent_evidence": true,
+      "duplicate_of": null
+    },
+    {
+      "label": "relaxed <p_core>, closure_on_all_donors",
+      "group": "relaxation",
+      "source": "raw/relax_ladder.json",
+      "config": {
+        "dx_m": 0.002,
+        "sound_speed": 20.0,
+        "closure": true,
+        "donors": "all",
+        "layers": null
+      },
+      "value_Pa": 287.4728116942682,
+      "rel_error_pct": -20.14644119603661,
+      "within_15pct": false,
+      "within_3pct": false,
+      "tail_rel_error_pct": -20.14644119603661,
+      "final_snapshot_rel_error_pct": -21.343029405987075,
+      "vmax_over_vref": 0.01995765033613898,
+      "admissible": true,
+      "admissibility_basis": "v_max/v_ref = 0.020 vs Adami limit 0.1",
+      "spurious_current_over_limit": 0.1995765033613898,
+      "pressure_side_used": "absolute (p_core - 0), time averaged",
+      "independent_evidence": true,
+      "duplicate_of": null
+    },
+    {
+      "label": "relaxed <p_core>, closure_on_interior_layers2",
+      "group": "relaxation",
+      "source": "raw/relax_ladder.json",
+      "config": {
+        "dx_m": 0.002,
+        "sound_speed": 20.0,
+        "closure": true,
+        "donors": "interior",
+        "layers": 2
+      },
+      "value_Pa": 391.8054404257656,
+      "rel_error_pct": 8.834844562712666,
+      "within_15pct": true,
+      "within_3pct": false,
+      "tail_rel_error_pct": 8.834844562712666,
+      "final_snapshot_rel_error_pct": 142.81074637796232,
+      "vmax_over_vref": 0.3881285469675048,
+      "admissible": false,
+      "admissibility_basis": "v_max/v_ref = 0.388 vs Adami limit 0.1",
+      "spurious_current_over_limit": 3.881285469675048,
+      "pressure_side_used": "absolute (p_core - 0), time averaged",
+      "independent_evidence": true,
+      "duplicate_of": null
+    },
+    {
+      "label": "relaxed <p_core>, closure_on_interior_layers4",
+      "group": "relaxation",
+      "source": "raw/relax_ladder.json",
+      "config": {
+        "dx_m": 0.002,
+        "sound_speed": 20.0,
+        "closure": true,
+        "donors": "interior",
+        "layers": 4
+      },
+      "value_Pa": 391.8054404257656,
+      "rel_error_pct": 8.834844562712666,
+      "within_15pct": true,
+      "within_3pct": false,
+      "tail_rel_error_pct": 8.834844562712666,
+      "final_snapshot_rel_error_pct": 142.81074637796232,
+      "vmax_over_vref": 0.3881285469675048,
+      "admissible": false,
+      "admissibility_basis": "v_max/v_ref = 0.388 vs Adami limit 0.1",
+      "spurious_current_over_limit": 3.881285469675048,
+      "pressure_side_used": "absolute (p_core - 0), time averaged",
+      "independent_evidence": false,
+      "duplicate_of": "relaxed <p_core>, closure_on_interior_layers2"
+    },
+    {
+      "label": "floor <p_core> tail, dx = 2.0 mm, c0 = 20 m/s (closure off)",
+      "group": "floor_reference",
+      "source": "laplace_pressure_floor/report.json",
+      "config": {
+        "dx_m": 0.002,
+        "sound_speed": 20.0,
+        "closure": false
+      },
+      "value_Pa": 223.64622876323088,
+      "rel_error_pct": -37.8760475657692,
+      "within_15pct": false,
+      "within_3pct": false,
+      "admissible": true,
+      "admissibility_basis": "v_max/v_ref = 0.030",
+      "spurious_current_over_limit": 0.29943434007945896,
+      "independent_evidence": true,
+      "duplicate_of": null
+    },
+    {
+      "label": "floor <p_core> tail, dx = 2.0 mm, c0 = 10 m/s (closure off)",
+      "group": "floor_reference",
+      "source": "laplace_pressure_floor/report.json",
+      "config": {
+        "dx_m": 0.002,
+        "sound_speed": 10.0,
+        "closure": false
+      },
+      "value_Pa": 225.97106187211608,
+      "rel_error_pct": -37.23026059107887,
+      "within_15pct": false,
+      "within_3pct": false,
+      "admissible": true,
+      "admissibility_basis": "v_max/v_ref = 0.021",
+      "spurious_current_over_limit": 0.2061604326028476,
+      "independent_evidence": true,
+      "duplicate_of": null
+    },
+    {
+      "label": "floor <p_core> tail, dx = 2.0 mm, c0 = 5 m/s (closure off)",
+      "group": "floor_reference",
+      "source": "laplace_pressure_floor/report.json",
+      "config": {
+        "dx_m": 0.002,
+        "sound_speed": 5.0,
+        "closure": false
+      },
+      "value_Pa": 237.63649946240471,
+      "rel_error_pct": -33.989861260443135,
+      "within_15pct": false,
+      "within_3pct": false,
+      "admissible": true,
+      "admissibility_basis": "v_max/v_ref = 0.026",
+      "spurious_current_over_limit": 0.26470252980296144,
+      "independent_evidence": true,
+      "duplicate_of": null
+    },
+    {
+      "label": "floor <p_core> tail, dx = 1.5 mm, c0 = 20 m/s (closure off)",
+      "group": "floor_reference",
+      "source": "laplace_pressure_floor/report.json",
+      "config": {
+        "dx_m": 0.0015,
+        "sound_speed": 20.0,
+        "closure": false
+      },
+      "value_Pa": 222.85070337711892,
+      "rel_error_pct": -38.09702683968919,
+      "within_15pct": false,
+      "within_3pct": false,
+      "admissible": true,
+      "admissibility_basis": "v_max/v_ref = 0.025",
+      "spurious_current_over_limit": 0.25407391276862523,
+      "independent_evidence": true,
+      "duplicate_of": null
+    },
+    {
+      "label": "floor <p_core> tail, dx = 1.5 mm, c0 = 10 m/s (closure off)",
+      "group": "floor_reference",
+      "source": "laplace_pressure_floor/report.json",
+      "config": {
+        "dx_m": 0.0015,
+        "sound_speed": 10.0,
+        "closure": false
+      },
+      "value_Pa": 229.7096819885495,
+      "rel_error_pct": -36.191755003180695,
+      "within_15pct": false,
+      "within_3pct": false,
+      "admissible": true,
+      "admissibility_basis": "v_max/v_ref = 0.023",
+      "spurious_current_over_limit": 0.2345952405562739,
+      "independent_evidence": true,
+      "duplicate_of": null
+    },
+    {
+      "label": "floor <p_core> tail, dx = 1.5 mm, c0 = 5 m/s (closure off)",
+      "group": "floor_reference",
+      "source": "laplace_pressure_floor/report.json",
+      "config": {
+        "dx_m": 0.0015,
+        "sound_speed": 5.0,
+        "closure": false
+      },
+      "value_Pa": 225.31935036150904,
+      "rel_error_pct": -37.41129156624749,
+      "within_15pct": false,
+      "within_3pct": false,
+      "admissible": true,
+      "admissibility_basis": "v_max/v_ref = 0.031",
+      "spurious_current_over_limit": 0.3065281904541367,
+      "independent_evidence": true,
+      "duplicate_of": null
+    }
+  ],
+  "summary": {
+    "n_readouts": 12,
+    "n_independent": 11,
+    "answers_capability_question": {
+      "n_readouts": 4,
+      "n_independent": 3,
+      "n_within_15pct": 2,
+      "n_within_15pct_admissible": 0,
+      "best_any": {
+        "label": "relaxed <p_core>, closure_on_interior_layers2",
+        "group": "relaxation",
+        "value_Pa": 391.8054404257656,
+        "rel_error_pct": 8.834844562712666,
+        "within_15pct": true,
+        "admissible": false,
+        "config": {
+          "dx_m": 0.002,
+          "sound_speed": 20.0,
+          "closure": true,
+          "donors": "interior",
+          "layers": 2
+        }
+      },
+      "best_admissible": {
+        "label": "relaxed <p_core>, closure_on_all_donors",
+        "group": "relaxation",
+        "value_Pa": 287.4728116942682,
+        "rel_error_pct": -20.14644119603661,
+        "within_15pct": false,
+        "admissible": true,
+        "config": {
+          "dx_m": 0.002,
+          "sound_speed": 20.0,
+          "closure": true,
+          "donors": "all",
+          "layers": null
+        }
+      },
+      "answers_capability_question": true
+    },
+    "by_group": {
+      "static_force_balance": {
+        "n_readouts": 2,
+        "n_independent": 2,
+        "n_within_15pct": 2,
+        "n_within_15pct_admissible": 2,
+        "best_any": {
+          "label": "flux integral -int rho a_r dr, dx = 2.0 mm",
+          "group": "static_force_balance",
+          "value_Pa": 359.07787281290007,
+          "rel_error_pct": -0.2561464408610936,
+          "within_15pct": true,
+          "admissible": true,
+          "config": {
+            "dx_m": 0.002,
+            "closure": null
+          }
+        },
+        "best_admissible": {
+          "label": "flux integral -int rho a_r dr, dx = 2.0 mm",
+          "group": "static_force_balance",
+          "value_Pa": 359.07787281290007,
+          "rel_error_pct": -0.2561464408610936,
+          "within_15pct": true,
+          "admissible": true,
+          "config": {
+            "dx_m": 0.002,
+            "closure": null
+          }
+        },
+        "answers_capability_question": false
+      },
+      "relaxation": {
+        "n_readouts": 4,
+        "n_independent": 3,
+        "n_within_15pct": 2,
+        "n_within_15pct_admissible": 0,
+        "best_any": {
+          "label": "relaxed <p_core>, closure_on_interior_layers2",
+          "group": "relaxation",
+          "value_Pa": 391.8054404257656,
+          "rel_error_pct": 8.834844562712666,
+          "within_15pct": true,
+          "admissible": false,
+          "config": {
+            "dx_m": 0.002,
+            "sound_speed": 20.0,
+            "closure": true,
+            "donors": "interior",
+            "layers": 2
+          }
+        },
+        "best_admissible": {
+          "label": "relaxed <p_core>, closure_on_all_donors",
+          "group": "relaxation",
+          "value_Pa": 287.4728116942682,
+          "rel_error_pct": -20.14644119603661,
+          "within_15pct": false,
+          "admissible": true,
+          "config": {
+            "dx_m": 0.002,
+            "sound_speed": 20.0,
+            "closure": true,
+            "donors": "all",
+            "layers": null
+          }
+        },
+        "answers_capability_question": true
+      },
+      "floor_reference": {
+        "n_readouts": 6,
+        "n_independent": 6,
+        "n_within_15pct": 0,
+        "n_within_15pct_admissible": 0,
+        "best_any": {
+          "label": "floor <p_core> tail, dx = 2.0 mm, c0 = 5 m/s (closure off)",
+          "group": "floor_reference",
+          "value_Pa": 237.63649946240471,
+          "rel_error_pct": -33.989861260443135,
+          "within_15pct": false,
+          "admissible": true,
+          "config": {
+            "dx_m": 0.002,
+            "sound_speed": 5.0,
+            "closure": false
+          }
+        },
+        "best_admissible": {
+          "label": "floor <p_core> tail, dx = 2.0 mm, c0 = 5 m/s (closure off)",
+          "group": "floor_reference",
+          "value_Pa": 237.63649946240471,
+          "rel_error_pct": -33.989861260443135,
+          "within_15pct": false,
+          "admissible": true,
+          "config": {
+            "dx_m": 0.002,
+            "sound_speed": 5.0,
+            "closure": false
+          }
+        },
+        "answers_capability_question": false
+      }
+    }
+  },
+  "defects": [
+    {
+      "id": "in-band-but-inadmissible",
+      "row": "relaxed <p_core>, closure_on_interior_layers2",
+      "why": "tail error +8.8 % is inside the +/-15 % band, but the same run's spurious current is 3.9x the Adami limit and its final snapshot is +142.8 % off: the surface is breathing, so the time average is not a static Laplace measurement.",
+      "consequence": "it may not be quoted as 'the best closure variant' nor as a capability win"
+    },
+    {
+      "id": "in-band-but-inadmissible",
+      "row": "relaxed <p_core>, closure_on_interior_layers4",
+      "why": "tail error +8.8 % is inside the +/-15 % band, but the same run's spurious current is 3.9x the Adami limit and its final snapshot is +142.8 % off: the surface is breathing, so the time average is not a static Laplace measurement.",
+      "consequence": "it may not be quoted as 'the best closure variant' nor as a capability win"
+    },
+    {
+      "id": "duplicate-row-counted-as-variant",
+      "row": "relaxed <p_core>, closure_on_interior_layers4",
+      "why": "bit-identical to 'relaxed <p_core>, closure_on_interior_layers2' (value, tail, final snapshot and spurious current all equal to 1e-12): the surface_pressure_layers knob is inert on a one-particle-thick interface, every receiver is filled in the first pass",
+      "consequence": "the two table rows are one piece of evidence, not two"
+    },
+    {
+      "id": "resolution-not-laddered",
+      "row": "relaxation group",
+      "why": "the whole relaxation group sits at one grid and one sound speed (dx = 2.0 mm, c0 = 20 m/s); the static force balance already moves by 7.2 percentage points between the two grids it covers, so the closure read-out cannot be assumed grid-converged",
+      "consequence": "WITHHELD until rung dx = 1.5 mm (and one c0 change) is recorded"
+    }
+  ],
+  "verdict": {
+    "status": "WITHHELD",
+    "reason": "no admissible read-out is inside the band",
+    "not_capability_evidence": [
+      "flux integral -int rho a_r dr, dx = 2.0 mm",
+      "flux integral -int rho a_r dr, dx = 1.5 mm",
+      "floor <p_core> tail, dx = 2.0 mm, c0 = 20 m/s (closure off)",
+      "floor <p_core> tail, dx = 2.0 mm, c0 = 10 m/s (closure off)",
+      "floor <p_core> tail, dx = 2.0 mm, c0 = 5 m/s (closure off)",
+      "floor <p_core> tail, dx = 1.5 mm, c0 = 20 m/s (closure off)",
+      "floor <p_core> tail, dx = 1.5 mm, c0 = 10 m/s (closure off)",
+      "floor <p_core> tail, dx = 1.5 mm, c0 = 5 m/s (closure off)"
+    ],
+    "settled": "the discrete CSF force holds sigma/R to -0.3 % at dx = 2.0 mm, so the missing jump is not a force-amplitude error"
+  }
+}

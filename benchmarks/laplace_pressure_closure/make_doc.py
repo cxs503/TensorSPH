@@ -10,6 +10,7 @@ Every number in the document comes from ``report_force_balance.json`` or
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 from pathlib import Path
 
@@ -18,6 +19,19 @@ ROOT = HERE.parents[1]
 DOC = ROOT / "docs" / "verification_laplace_pressure_closure.md"
 FORCE = HERE / "report_force_balance.json"
 LADDER = HERE / "raw" / "relax_ladder.json"
+MATRIX = HERE / "verdict_matrix.json"
+
+
+def _verdict_matrix() -> dict | None:
+    """Recompute the verdict matrix, then read it -- never cite a stale verdict."""
+    path = HERE / "verdict_audit.py"
+    if not path.exists():
+        return json.loads(MATRIX.read_text()) if MATRIX.exists() else None
+    spec = importlib.util.spec_from_file_location("verdict_audit", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.main()
+    return json.loads(MATRIX.read_text()) if MATRIX.exists() else None
 
 LABEL = {
     "closure_off": "closure off (Tait clamp)",
@@ -34,6 +48,7 @@ def fmt_pct(value: float) -> str:
 def main() -> None:
     force = json.loads(FORCE.read_text())
     ladder = json.loads(LADDER.read_text()) if LADDER.exists() else None
+    matrix = _verdict_matrix()
     ref = force["reference"]
     dp = ref["analytic_dp_Pa"]
 
@@ -130,13 +145,43 @@ def main() -> None:
                 f"{c['vmax_over_vref']:.3f} | {c['rho_core_over_rho0'] - 1:+.2e} | "
                 f"{c['compression_required']:.2e} |")
         add("")
-        best = min(ladder["cases"], key=lambda c: abs(c["tail_rel_error_pct"]))
         off = next((c for c in ladder["cases"] if c["case"] == "closure_off"), None)
-        add(f"The best variant is **{LABEL.get(best['case'], best['case'])}** at "
-            f"{fmt_pct(best['tail_rel_error_pct'])} %"
-            + (f", against {fmt_pct(off['tail_rel_error_pct'])} % with the closure off" if off else "")
-            + f"; its spurious current is `v_max/v_ref = {best['vmax_over_vref']:.3f}` "
-            f"(Adami's criterion is < 0.1).")
+        stable = [c for c in ladder["cases"] if c["vmax_over_vref"] < 0.1]
+        best = min(stable, key=lambda c: abs(c["tail_rel_error_pct"])) if stable else None
+        if best is not None:
+            add(f"The best **admissible** variant is **{LABEL.get(best['case'], best['case'])}** at "
+                f"{fmt_pct(best['tail_rel_error_pct'])} %"
+                + (f", against {fmt_pct(off['tail_rel_error_pct'])} % with the closure off"
+                   if off else "")
+                + f"; its spurious current is `v_max/v_ref = {best['vmax_over_vref']:.3f}` "
+                f"(Adami's criterion is < 0.1).")
+        # The trap: the largest tail number on the table belongs to a run whose
+        # surface is breathing.  Stating it without its admissibility flags is
+        # how "+8.8 %" was once read as a capability win.
+        trap = [c for c in ladder["cases"] if c["vmax_over_vref"] >= 0.1]
+        if trap:
+            t = min(trap, key=lambda c: abs(c["tail_rel_error_pct"]))
+            add("")
+            add(f"The interior-donor row reads {fmt_pct(t['tail_rel_error_pct'])} % on the time "
+                f"average, which *is* inside the +/-15 % band, but it is **not admissible "
+                f"evidence**: `v_max/v_ref = {t['vmax_over_vref']:.3f}` is "
+                f"{t['vmax_over_vref'] / 0.1:.1f}x Adami's limit and the final snapshot is "
+                f"{fmt_pct(t['final_abs_rel_error_pct'])} % off. The surface breathes, so the "
+                "time average of a breathing drop is not a static Laplace measurement; neither "
+                "row of the two interior-donor rungs may be quoted as a closure success.")
+        rows = [c for c in ladder["cases"]]
+        if len(rows) > 1:
+            same = all(
+                abs(rows[0][k] - r[k]) < 1e-12
+                for r in rows[1:]
+                for k in ("tail_mean_Pa", "tail_rel_error_pct",
+                          "final_abs_rel_error_pct", "vmax_over_vref"))
+            if same:
+                add("")
+                add("`surface_pressure_layers = 2` and `4` return bit-identical runs here: the")
+                add("surface is one particle thick, so every receiver finds a non-free donor in the")
+                add("first pass and the extra passes have nothing left to fill. The knob is inert at")
+                add("this resolution, and the two rows are one piece of evidence, not two.")
         add("")
     else:
         add("*Relaxation ladder not run for this revision.*")
@@ -176,23 +221,64 @@ def main() -> None:
                 f"`sigma/R` = {dp:.0f} Pa | {fmt_pct(c['tail_rel_error_pct'])} % | "
                 f"{'yes' if abs(c['tail_rel_error_pct']) < 3 else 'no'} |")
     add("")
-    add("**Young-Laplace capability stays WITHHELD.** The best closure variant is "
-        + (f"{fmt_pct(best['tail_rel_error_pct'])} %" if ladder and ladder.get("cases") else "n/a")
-        + " from the analytic jump, i.e. better than the -34 % to -38 % of the previous three rounds but")
-    add("not inside the 15 % acceptance band, and its transient still has to be checked on a resolution")
-    add("ladder. The one thing that is now settled: the surface-tension force is not where the missing")
-    add("20 % lives.")
-    add("")
+    if matrix:
+        cap = matrix["summary"]["answers_capability_question"]
+        best_adm = cap["best_admissible"]
+        add(f"**Young-Laplace capability stays {matrix['verdict']['status']}.** "
+            f"`verdict_matrix.json` evaluates every recorded read-out against the same two rules "
+            f"(band: `|error| < {matrix['gate']['band_pct']:g} %`; admissibility: "
+            f"`{matrix['gate']['admissibility']}`). "
+            f"{cap['n_within_15pct']} of the {cap['n_readouts']} capability read-outs are inside "
+            f"the band, but **0 of them are admissible and independent**: the only in-band one is "
+            f"the breathing interior-donor run described in section 3.2.")
+        if best_adm:
+            add("")
+            add(f"The best admissible relaxation read-out is `{best_adm['label']}` at "
+                f"{fmt_pct(best_adm['rel_error_pct'])} %, i.e. outside the band. "
+                "What *is* settled and machine-checked: the surface-tension force is not where "
+                "the missing jump lives (flux integral, section 3.1), so further work belongs on "
+                "the pressure side.")
+        add("")
+        add("Read-outs from the other groups are **consistency checks, not capability evidence**: "
+            "the static flux integral is the identity `dp/dr = rho a_r` integrated over the drop, "
+            "so it stays inside the band by construction and cannot upgrade the grading. That "
+            "distinction is the whole point of `verdict_audit.py`; an earlier revision of this "
+            "document took its headline number from the in-band-but-inadmissible row and then "
+            "called it a failure of the acceptance band, which is arithmetically false "
+            "(the number is inside the band; the run is what is unusable). Both errors are now "
+            "gated by `tests/test_laplace_verdict_matrix.py`.")
+        add("")
+        add("## 6. Verdict matrix (machine-checked)")
+        add("")
+        add("| read-out | source | value [Pa] | error [%] | in +/-15 % band | admissible | independent evidence |")
+        add("|---|---|---|---|---|---|---|")
+        for row in matrix["readouts"]:
+            add(f"| {row['label']} | `{row['source'].split('/')[-1]}` | {row['value_Pa']:.1f} | "
+                f"{fmt_pct(row['rel_error_pct'])} | "
+                f"{'yes' if row['within_15pct'] else 'no'} | "
+                f"{'yes' if row['admissible'] else 'no'} | "
+                f"{'yes' if row['independent_evidence'] else 'no (same run as previous)'} |")
+        add("")
+        add(f"{matrix['summary']['n_independent']} independent read-outs out of "
+            f"{matrix['summary']['n_readouts']}; "
+            f"admissibility = {matrix['gate']['admissibility']}.")
+        add("")
+        for i, defect in enumerate(matrix["defects"], 1):
+            add(f"{i}. **{defect['id']}** -- {defect['row']}: {defect['why'].rstrip('.')}. "
+                f"Consequence: {defect['consequence']}.")
+        add("")
     add("![force balance and closure ladder](../benchmarks/laplace_pressure_closure/laplace_pressure_closure.png)")
     add("")
     add("*(a)* cumulative flux integral `-int_0^r rho a_r`, reaching `sigma/R`; *(b)* relaxation read-out per")
     add("closure variant against the +/-15 % gate; *(c)* relaxed pressure profiles.")
     add("")
-    add("## 6. Reproduction")
+    add("## 7. Reproduction")
     add("")
     add("```bash")
     add("PYTHONPATH=src python benchmarks/laplace_pressure_closure/analysis.py        # seconds")
+    add("PYTHONPATH=src python benchmarks/laplace_pressure_closure/verdict_audit.py  # seconds")
     add("PYTHONPATH=src python benchmarks/laplace_pressure_closure/relax_ladder.py   # ~1-2 min per case")
+    add("PYTHONPATH=src python benchmarks/laplace_pressure_closure/relax_ladder.py --dx 0.0015  # the open rung")
     add("PYTHONPATH=src python benchmarks/laplace_pressure_closure/figures.py")
     add("PYTHONPATH=src python benchmarks/laplace_pressure_closure/make_doc.py")
     add("PYTHONPATH=src python -m pytest tests/test_free_surface_pressure_closure.py tests/test_laplace_pressure_closure.py -q")
