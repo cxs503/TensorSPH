@@ -122,7 +122,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: tensorsph-smoke-python-${{ matrix.python-version }}
+          name: tensorsph-smoke-python-py311
           path: |
             artifacts/ci-droplet/
             artifacts/ci-invalid/
