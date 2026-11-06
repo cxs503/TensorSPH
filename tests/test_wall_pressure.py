@@ -80,6 +80,10 @@ def test_wall_pressure_matches_the_published_extrapolation(mass_scale):
     assert wall_pressure > 0.0
     # The wall below the fluid is at a higher pressure than the fluid above it.
     assert float(wall_pressure) > float(pressure[0])
+    # Measured against the closed form: 5.3e-6 (mass_scale 0.8, body-force term
+    # alone) and 1.4e-5 (3.0, both terms live).  That is the last digit of the
+    # float32 accumulation, not model error, so 2e-4 leaves a ~14x margin for a
+    # different summation order while still failing on a physics regression.
     assert torch.allclose(acceleration[0], expected, rtol=2e-4, atol=2e-4)
 
 
