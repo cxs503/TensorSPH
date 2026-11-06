@@ -2,21 +2,22 @@
   "schema_version": 1,
   "note": "Evidence artifacts deliberately not registered as ledger claims. Every waiver needs a reason; tests/test_verification_ledger.py enforces that.",
   "unregistered_ok": [
-    "benchmarks/dam_break/reference_audit.json",
-    "benchmarks/laplace_law/instant_report.json",
-    "benchmarks/csf_consistent/relax_legacy.json",
-    "benchmarks/static_droplet/laplace_validation.json",
-    "benchmarks/laplace_law/convergence/relax_dx0.0015.json",
-    "benchmarks/laplace_law/convergence/relax_dx0.0020.json",
-    "benchmarks/laplace_law/convergence/relax_dx0.0025.json",
     "benchmarks/conservation/report.json",
     "benchmarks/contact_angle_geometry/results.json",
+    "benchmarks/csf_consistent/relax_legacy.json",
+    "benchmarks/dam_break/reference_audit.json",
     "benchmarks/dam_break/reference_ladder.json",
     "benchmarks/init_consistency/report.json",
     "benchmarks/initial_density_bias/report.json",
+    "benchmarks/laplace_law/convergence/relax_dx0.0015.json",
+    "benchmarks/laplace_law/convergence/relax_dx0.0020.json",
+    "benchmarks/laplace_law/convergence/relax_dx0.0025.json",
+    "benchmarks/laplace_law/instant_report.json",
     "benchmarks/laplace_pressure_closure/raw/relax_ladder.json",
     "benchmarks/laplace_pressure_jump/validation_report.json",
-    "benchmarks/lattice_equilibrium/report.json"
+    "benchmarks/lattice_equilibrium/report.json",
+    "benchmarks/oscillating_droplet/gauge_audit.json",
+    "benchmarks/static_droplet/laplace_validation.json"
   ],
   "reasons": {
     "benchmarks/dam_break/reference_audit.json": "audit of the experimental reference table + Ritter comparison; the solver-side gate is claim dam_break.martin_moyce.mae in resolution_ladder.json",
@@ -33,6 +34,7 @@
     "benchmarks/initial_density_bias/report.json": "supporting artifact; primary claim registered separately or covered by parent report",
     "benchmarks/laplace_pressure_closure/raw/relax_ladder.json": "supporting artifact; primary claim registered separately or covered by parent report",
     "benchmarks/laplace_pressure_jump/validation_report.json": "supporting artifact; primary claim registered separately or covered by parent report",
-    "benchmarks/lattice_equilibrium/report.json": "supporting artifact; primary claim registered separately or covered by parent report"
+    "benchmarks/lattice_equilibrium/report.json": "supporting artifact; primary claim registered separately or covered by parent report",
+    "benchmarks/oscillating_droplet/gauge_audit.json": "gauge audit of the oscillating-drop benchmark (verifier seat m4751): it scores the committed artifact's fit window and containment gauges, it is not a new physical claim; the claim it audits is oscillating_droplet.frequency.lamb, whose readout this audit shows to be a fit-window artifact of a numerical blow-up"
   }
 }
