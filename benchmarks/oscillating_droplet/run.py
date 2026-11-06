@@ -180,6 +180,114 @@ def analytic_omega_3d(radius: float, sigma: float, rho0: float,
 
 
 # --------------------------------------------------------------------------- #
+# falsifiable gauges (verifier seat, 2026-11-06)
+# --------------------------------------------------------------------------- #
+# A free drop has no wall and no box: the only thing that keeps the cloud
+# together is the surface-tension force itself.  "The fit missed the analytic
+# frequency" is therefore a statement about surface tension only as long as the
+# cloud *stayed a drop*.  The gauges below make that precondition falsifiable.
+# The gate that used to carry it, ``diagnostics.mass_relative_drift``, cannot
+# fail by construction: ``mass`` is a per-particle attribute that the
+# integrator never touches, so it is 0.0 for *any* trajectory, including one
+# that has flung 97 % of the mass off the drop (see ``docs/
+# verification_oscillating_droplet_gauge_audit.md``).
+RADIUS_GATE = 1.30        # rms radius / R; a uniform ellipse sits at 0.707-0.714
+ESCAPE_FACTOR = 1.5       # a particle farther than this * R has left the drop
+ESCAPE_GATE = 0.02        # ... and this mass fraction outside is already fatal
+SPEED_GATE_FACTOR = 1.0   # |v| / c0 above which the run is not a capillary flow
+
+
+def containment_diagnostics(pos: torch.Tensor, mass: torch.Tensor,
+                            radius: float,
+                            escape_factor: float = ESCAPE_FACTOR) -> dict:
+    """Is the cloud still a drop of radius ``R``?
+
+    Three dimensionless, wall-free gauges: the mass-weighted rms radius in units
+    of the reference radius, the outermost particle radius, and the mass
+    fraction beyond ``escape_factor * R``.  All three are 0.71 / ~1.1 / 0.0 for
+    a healthy ellipse and grow without bound once the drop disperses, so unlike
+    the tracked mass they can actually fail.
+    """
+    if mass.dim() == 0:
+        mass = mass.expand(pos.shape[0])
+    m_tot = mass.sum()
+    com = (mass[:, None] * pos).sum(dim=0) / m_tot
+    r = torch.linalg.vector_norm(pos - com, dim=1)
+    rms = float(((mass * r.square()).sum() / m_tot).sqrt())
+    escaped = float((mass * (r > escape_factor * radius)).sum() / m_tot)
+    rms_over_r = rms / radius
+    return {
+        "rms_radius_over_radius": rms_over_r,
+        "max_radius_over_radius": float(r.max()) / radius,
+        "escaped_mass_fraction": escaped,
+        "intact": bool(rms_over_r <= RADIUS_GATE and escaped <= ESCAPE_GATE),
+    }
+
+
+def spurious_momentum(vel: torch.Tensor, mass: torch.Tensor,
+                      reference_velocity: float) -> float:
+    """``|sum m v| / (M v_ref)`` -- the momentum residual of a free drop.
+
+    Pressure and viscous interactions are antisymmetric over particle pairs, so
+    the total momentum of an isolated drop must stay at its initial value
+    (zero here).  The CSF surface-tension force is a per-particle continuum
+    force and is not pairwise symmetric, so whatever residual shows up is a
+    genuine, falsifiable conservation error of the scheme -- in contrast with
+    the (structurally conserved) Lagrangian mass.
+    """
+    if mass.dim() == 0:
+        mass = mass.expand(vel.shape[0])
+    m_tot = mass.sum()
+    p = (mass[:, None] * vel).sum(dim=0)
+    return float(torch.linalg.vector_norm(p) / (m_tot * abs(reference_velocity)))
+
+
+def divergence_onset(ts, max_speed, speed_limit: float) -> dict:
+    """First sampled time at which some particle exceeds ``speed_limit``.
+
+    The reference speed here is the sound speed ``c0`` of the *same* run: a
+    capillary flow of this drop moves at ``sqrt(sigma/(rho R)) ~ 0.6 m/s``, i.e.
+    3 % of ``c0 = 20 m/s``, so anything above ``c0`` is no longer the physics
+    the analytic law describes.
+    """
+    for t, v in zip(ts, max_speed):
+        if v > speed_limit:
+            return {"detected": True, "onset_time_s": t, "speed_at_onset": v}
+    return {"detected": False, "onset_time_s": None, "speed_at_onset": None}
+
+
+def windowed_frequency(ts, s, omega_ref: float,
+                       windows=(0.25, 0.5, 0.75, 1.0, 1.5, 2.0, float("inf")),
+                       min_samples: int = 8) -> list:
+    """Fit the damped cosine on ``t <= w * T_ref`` for a sweep of windows ``w``.
+
+    The frequency of a diverging run is a function of the fit window, and the
+    window is not a physical parameter: a stable reading must be flat in ``w``.
+    Reporting the sweep makes the collapse visible instead of hiding it behind
+    one number fitted over the whole (blown-up) trace.
+    """
+    t_ref = 2.0 * math.pi / omega_ref
+    rows = []
+    for w in windows:
+        limit = w * t_ref if math.isfinite(w) else float("inf")
+        idx = [i for i, t in enumerate(ts) if t <= limit]
+        if len(idx) < min_samples:
+            continue
+        fit = damped_cosine_fit([ts[i] for i in idx], [s[i] for i in idx],
+                                omega_ref)
+        rows.append({
+            "window_periods": w if math.isfinite(w) else None,
+            "window_end_s": (limit if math.isfinite(w) else ts[int(idx[-1])]),
+            "n_samples": len(idx),
+            "omega_rad_per_s": fit["omega"],
+            "rel_error_pct": (fit["omega"] - omega_ref) / omega_ref * 100.0,
+            "lambda_per_s": fit["lambda_per_s"],
+            "r2": fit["r2"],
+        })
+    return rows
+
+
+# --------------------------------------------------------------------------- #
 # mode amplitude estimators
 # --------------------------------------------------------------------------- #
 def mode_amplitude(pos: torch.Tensor, mass: torch.Tensor) -> dict:
@@ -377,7 +485,7 @@ def run_case(radius: float = 0.02, dx: float = 0.002, sigma: float = 7.2,
     a0 = mode_amplitude(pos, mass)
 
     ts, s_mom, ke_hist = [], [], []
-    vmax_hist = []
+    vmax_hist, rms_hist, esc_hist, mom_hist = [], [], [], []
     for step in range(steps):
         pairs = cell_linked_pairs(pos, 2.0 * h)
         rho, pressure, acc = rhs(pos, vel, mass, cfg, pairs=pairs, wall=None,
@@ -392,7 +500,14 @@ def run_case(radius: float = 0.02, dx: float = 0.002, sigma: float = 7.2,
             # geometric estimator: KE ~ amplitude^2 * cos^2(omega t), i.e. it
             # oscillates at 2*omega.  It is the cross-check on the frequency.
             ke_hist.append(float(0.5 * (mass * vel.square().sum(dim=1)).sum()))
-            vmax_hist.append(float(torch.linalg.vector_norm(vel, dim=1).max()))
+            v_sampled = float(torch.linalg.vector_norm(vel, dim=1).max())
+            vmax_hist.append(v_sampled)
+            cont = containment_diagnostics(pos, mass, radius)
+            rms_hist.append(cont["rms_radius_over_radius"])
+            esc_hist.append(cont["escaped_mass_fraction"])
+            mom_hist.append(spurious_momentum(
+                vel, mass, math.sqrt(sigma / (rho0 * radius)) if sigma > 0.0
+                else 1.0))
 
     fit_mom = damped_cosine_fit(ts, s_mom, omega_ref)
     fit_ke = damped_cosine_fit(ts, ke_hist, 2.0 * omega_ref)
@@ -467,12 +582,41 @@ def run_case(radius: float = 0.02, dx: float = 0.002, sigma: float = 7.2,
             "peaks": peaks,
         },
         "diagnostics": {
+            # Structurally zero: ``mass`` is never advected, only its (constant)
+            # sum is compared with itself.  Kept for artifact compatibility and
+            # flagged so no reader mistakes it for a conservation measurement.
             "mass_relative_drift": abs(float(mass.sum()) - m0) / m0,
+            "mass_relative_drift_is_structural": True,
             "max_speed_m_per_s": max(vmax_hist),
-            "capillary_velocity_m_per_s": math.sqrt(sigma / (rho0 * radius)),
+            "capillary_velocity_m_per_s": (math.sqrt(sigma / (rho0 * radius))
+                                           if sigma > 0.0 else float("nan")),
             "amplitude_after_sim_periods": abs(final["s_moment"]),
+            "containment": {**containment_diagnostics(pos, mass, radius),
+                            "gate_rms_radius_over_radius": RADIUS_GATE,
+                            "gate_escaped_mass_fraction": ESCAPE_GATE,
+                            "escape_factor": ESCAPE_FACTOR},
+            "liveness": {
+                **divergence_onset(ts, vmax_hist,
+                                   SPEED_GATE_FACTOR * sound_speed),
+                "speed_limit_m_per_s": SPEED_GATE_FACTOR * sound_speed,
+                "kinetic_energy_max_J": max(ke_hist),
+                "kinetic_energy_final_J": ke_hist[-1],
+                "kinetic_energy_over_capillary_scale":
+                    max(ke_hist) / (sigma * radius) if sigma > 0.0
+                    else float("nan"),
+            },
+            "spurious_momentum": {
+                "max_over_mv": max(mom_hist),
+                "final_over_mv": mom_hist[-1],
+            },
+            "windowed_frequency": (windowed_frequency(ts, s_mom, omega_ref)
+                                   if omega_ref > 0.0 else []),
             "trace": {"t": ts, "s_second_moment": s_mom,
-                      "kinetic_energy_J": ke_hist},
+                      "kinetic_energy_J": ke_hist,
+                      "max_speed_m_per_s": vmax_hist,
+                      "rms_radius_over_radius": rms_hist,
+                      "escaped_mass_fraction": esc_hist,
+                      "spurious_momentum_over_mv": mom_hist},
         },
     }
 
