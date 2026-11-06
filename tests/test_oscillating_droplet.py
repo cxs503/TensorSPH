@@ -18,6 +18,7 @@ Run only the cheap layers with ``pytest -m 'not slow'``.
 from __future__ import annotations
 
 import importlib.util
+import json
 import math
 import platform
 from pathlib import Path
@@ -240,9 +241,71 @@ def release_case(bench):
     of an oscillation scales as ``c0 sqrt(rho R / sigma)`` in steps, so a smaller
     drop with the same ``R/dx`` is cheaper.  The reported numbers use R = 2 cm.
     """
-    return bench.run_case(radius=0.01, dx=0.001, sigma=7.2, rho0=1000.0,
-                          sound_speed=20.0, viscosity=5e-5, eps=0.10,
-                          periods=1.8)
+    return bench.run_case(**evidence_module().CI_CASE)
+
+
+EVIDENCE_SCRIPT = BENCH / "ci_pin_evidence.py"
+
+
+def evidence_module():
+    """Import the ledger reproducer (``ci_pin_evidence.py``) as a module."""
+    spec = importlib.util.spec_from_file_location("ci_pin_evidence",
+                                                  EVIDENCE_SCRIPT)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_evidence_ledger_has_a_committed_generator():
+    """The ledger must be produced by a program in this repository.
+
+    m4795 committed ``ci_pin_evidence.json`` described as "written
+    programmatically (no hand-copied numbers)" but without the program, so the
+    only cross-check left was the pin table in this module -- which a hand edit
+    could move together with the ledger.  This test keeps the missing piece
+    from being deleted again.
+    """
+    assert EVIDENCE_SCRIPT.is_file(), (
+        f"{EVIDENCE_SCRIPT} is the generator of ci_pin_evidence.json; if it is "
+        "gone, the ledger is an un-reproducible claim")
+    text = EVIDENCE_SCRIPT.read_text()
+    for fn in ("def measured_blocks", "def run_ci_case", "def build_evidence",
+               "def compare_blocks", "def thread_determinism_probe"):
+        assert fn in text, f"{fn} missing from {EVIDENCE_SCRIPT}"
+    mod = evidence_module()
+    assert mod.LEDGER == BENCH / "ci_pin_evidence.json", (
+        f"the generator writes {mod.LEDGER}, the test reads "
+        f"{BENCH / 'ci_pin_evidence.json'}")
+    assert set(mod.CI_CASE) == {"radius", "dx", "sigma", "rho0", "sound_speed",
+                                "viscosity", "eps", "periods"}
+
+
+@pytest.mark.slow
+def test_evidence_ledger_matches_a_live_run(release_case):
+    """Every number in the ledger is what *this* run measures.
+
+    ``test_pin_table_matches_the_evidence_json`` only proves that the pin table
+    and the ledger agree; two hand-edited files would agree as well.  Here the
+    ledger is compared with a live run of the same configuration through the
+    generator's own mapping (``measured_blocks``), which is the property m4795
+    claimed and never checked.
+
+    Restricted to the platform the ledger was recorded on: the whole point of
+    the recorded pins is that this quantity is *not* portable across platforms
+    (~40 pp), so a cross-platform comparison would fail for no physical reason.
+    """
+    ev = evidence_module()
+    ledger = json.loads((BENCH / "ci_pin_evidence.json").read_text())
+    arch = platform.machine()
+    if ledger.get("platform") != arch:
+        pytest.skip(f"ledger was recorded on {ledger.get('platform')!r}, this "
+                    f"machine is {arch!r}: the pseudo-frequency differs by "
+                    "~40 pp across platforms (see the doc), so comparing them "
+                    "would be meaningless")
+    diffs = ev.compare_blocks(ledger, ev.measured_blocks(release_case))
+    assert not diffs, (
+        "the committed ledger drifted from the live run:\n  "
+        + "\n  ".join(diffs))
 
 
 def test_pin_table_matches_the_evidence_json():
