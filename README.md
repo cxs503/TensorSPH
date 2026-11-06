@@ -64,6 +64,16 @@ cfg = Config(adaptive_dt=True, dt_growth=1.05)   # a gentler ramp
 
 With `adaptive_dt` the run advances to `cfg.steps * cfg.dt` of simulated time however many steps that needs, `dt` is written to every diagnostic row, and `dt_min` / `dt_max` / the true `dt (c0+|v|)/h` appear in the manifest. It is off by default: the dam-break case needs 23 % more steps to move its measured Courant number from 0.359 to at most 0.300.
 
+## Tutorials
+
+| tutorial | what you build | runtime |
+|---|---|---|
+| [Six measured steps from a kernel to a running case](docs/tutorials/01-first-steps.md) -- [`examples/tutorial/first_steps.py`](examples/tutorial/first_steps.py) | kernel normalisation, density summation and the lattice bias, Tait EOS, linked-cell pairs, the binding time-step limit, and a 40-step run read back from its own manifest | a few seconds on one CPU core |
+
+The tutorial is executable: every claim in it is an `assert`, and
+`tests/test_tutorial_first_steps.py` re-runs it and checks that the numbers
+printed in the prose still match a fresh run.
+
 ## Verification status
 
 | Gate | Status | Evidence |
@@ -131,7 +141,9 @@ is the right thing to do when you use the corresponding code.
 
 - `src/tensorsph/`: SPH operators, droplet-impact case (`python -m tensorsph`), dam-break case
 - `examples/droplet_impact_2d/`: case runner
+- `examples/tutorial/`: the runnable walk-through (`python examples/tutorial/first_steps.py`)
 - `benchmarks/`: executable benchmark and comparison scripts (`neighbor_search`, `hydrostatic`, `dam_break`, `free_surface`)
+- `docs/tutorials/`: the tutorial and its figure
 - `docs/benchmarks/`: benchmark definitions, metrics, and measured evidence
 - `docs/changes-0.8.0.md`: the adaptive step and the fluctuation gate
 - `docs/changes-0.7.0.md`: the wall pressure fix, the precision bug it exposed, and the re-measured free-surface comparison
