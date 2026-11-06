@@ -1,0 +1,84 @@
+{
+ "arch": "loongarch64",
+ "control_a_kernel_sum": {
+  "all_inside_gate": true,
+  "all_same_sign": true,
+  "bias_by_variant": {
+   "fp32_as_shipped": -5.3048133850097656e-05,
+   "fp32_permuted": -5.310773849487305e-05,
+   "fp64_cast": -5.3161185402439415e-05,
+   "fp64_cast_permuted": -5.3161185402439415e-05
+  },
+  "dx": 0.01,
+  "gate": 0.0001,
+  "h_over_dx": 1.3,
+  "measured_over_old_pin": 445.78263739577864,
+  "n_interior": 2726,
+  "n_pool": 3500,
+  "old_pin": -1.19e-07,
+  "spread_max_minus_min": 1.1305155234175857e-07,
+  "spread_over_gate": 0.0011305155234175857
+ },
+ "control_b_wall_pressure": {
+  "old_gate": {
+   "abs_tol": 1e-06,
+   "rel_tol": 1e-05
+  },
+  "old_gate_green_on_body_only": true,
+  "old_gate_red_on_two_term": true,
+  "rows": [
+   {
+    "acc_closed_form": -9.14177417755127,
+    "acc_rhs": -9.141725540161133,
+    "head_rho_g_dx_Pa": 490.5,
+    "mass_scale": 0.8,
+    "passes_old_gate": true,
+    "passes_shipped_gate": true,
+    "relerr": 5.320344737474891e-06
+   },
+   {
+    "acc_closed_form": -7.971917152404785,
+    "acc_rhs": -7.971806526184082,
+    "head_rho_g_dx_Pa": 490.5,
+    "mass_scale": 3.0,
+    "passes_old_gate": false,
+    "passes_shipped_gate": true,
+    "relerr": 1.3876990764982276e-05
+   }
+  ],
+  "shipped_gate": {
+   "abs_tol": 0.0002,
+   "rel_tol": 0.0002
+  },
+  "shipped_gate_margin": 14.412346551724138,
+  "worst_relerr": 1.3876990764982276e-05
+ },
+ "control_c_initial_density": {
+  "default_flag_load_bearing_on_hex": true,
+  "density_calibration_default": true,
+  "gamma": 7.0,
+  "gate": 0.0001,
+  "hex_gate_met_without_calibration": false,
+  "hex_same_h": {
+   "abs_p_false_Pa": 2395.35767878357,
+   "bias_raw": 0.0058835223630879785,
+   "clamped_to_zero": false,
+   "p_ratio_raw": 0.005988394196958925
+  },
+  "sound_speed": 20.0,
+  "square": {
+   "bias_calibrated": 1.8292001358055643e-07,
+   "bias_raw": -5.3048133850097656e-05,
+   "clamped_to_zero": true,
+   "p_ratio_calibrated": 1.8292011394471785e-07,
+   "p_ratio_raw": 5.303969228295394e-05
+  },
+  "square_gate_met_without_calibration": true,
+  "square_saved_by_clamp": true
+ },
+ "default_dtype": "torch.float32",
+ "lineage": "closed PR #309 -> m4659/m4793 -> this round-3 control set",
+ "main": "c272a6f0027a12ca9986abfc29aa7cd92e7798dd",
+ "mission": "m4817",
+ "torch": "2.7.1"
+}
