@@ -173,6 +173,10 @@ def test_uncalibrated_drop_fails_that_gate_by_six_orders_of_magnitude():
 
 
 def test_make_particles_calibration_flag_is_off_by_default_and_scales_mass():
+    # The name is historical: ``density_calibration`` defaults to True (the
+    # calibrated lattice mass), so the uncalibrated rho0*dx^2 branch measured
+    # here has to be requested explicitly.
+    assert Config().density_calibration is True
     cfg = Config(dx=0.002, h_factor=H_FACTOR, rho0=RHO0, pool_width=0.1,
                  pool_depth=0.05, drop_radius=0.005, drop_center_y=0.1,
                  gravity=9.81, density_calibration=False)
