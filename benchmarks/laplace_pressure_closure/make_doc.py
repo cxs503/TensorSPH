@@ -18,6 +18,11 @@ ROOT = HERE.parents[1]
 DOC = ROOT / "docs" / "verification_laplace_pressure_closure.md"
 FORCE = HERE / "report_force_balance.json"
 LADDER = HERE / "raw" / "relax_ladder.json"
+LADDER_TABLE = HERE / "raw" / "ladder_table.json"
+
+# Sentinel printed by relax_ladder.py when a case hit a non-finite state; such a
+# point is reported as not evaluated rather than as a number.
+_ = None
 
 LABEL = {
     "closure_off": "closure off (Tait clamp)",
@@ -34,6 +39,7 @@ def fmt_pct(value: float) -> str:
 def main() -> None:
     force = json.loads(FORCE.read_text())
     ladder = json.loads(LADDER.read_text()) if LADDER.exists() else None
+    table = json.loads(LADDER_TABLE.read_text()) if LADDER_TABLE.exists() else None
     ref = force["reference"]
     dp = ref["analytic_dp_Pa"]
 
@@ -108,9 +114,9 @@ def main() -> None:
             f"{fs['naive_shell_mean_estimator_Pa']:.1f} |")
     add("")
     sens = force["bin_sensitivity"]
-    for key, table in sens.items():
+    for key, bin_table in sens.items():
         add(f"Bin sensitivity of the flux estimator ({key}): "
-            + ", ".join(f"{bins} bins -> {val:.2f} Pa" for bins, val in table.items()) + ".")
+            + ", ".join(f"{bins} bins -> {val:.2f} Pa" for bins, val in bin_table.items()) + ".")
     add("")
     add("The discrete CSF force holds essentially all of `sigma/R`, so the residual Laplace deficit")
     add("cannot be blamed on the force amplitude. The last column is the negative control described in")
@@ -141,6 +147,60 @@ def main() -> None:
     else:
         add("*Relaxation ladder not run for this revision.*")
         add("")
+    add("### 3.3 Is the ranking a one-mesh accident? The `dx`/`c0` ladder")
+    add("")
+    if table and table.get("points"):
+        npoints = len(table["points"])
+        dxs = sorted({p_["dx_m"] for p_ in table["points"]}, reverse=True)
+        c0s = sorted({p_["sound_speed"] for p_ in table["points"]})
+        add("The single-point ladder above cannot separate a closure effect from a resolution")
+        add(f"accident, so every variant was repeated on a `dx` x `c0` grid ({npoints} lattice points,")
+        add("`dx` = " + " / ".join(f"{d * 1e3:.1f}" for d in dxs) + " mm, `c0` = "
+            + " / ".join(f"{c:g}" for c in c0s) + " m/s). Each point is its own evidence file, so a")
+        add("mismatched header cannot contaminate the table.")
+        add("")
+        add("| variant | `dx` [mm] | `c0` [m/s] | `N` | tail `<p_core>` [Pa] | tail error [%] | `v_max/v_ref` | inside +/-15 % |")
+        add("|---|---|---|---|---|---|---|---|")
+        for name in LABEL:
+            for r in table["by_variant"].get(name, []):
+                add(f"| {LABEL[name]} | {r['dx_m'] * 1e3:.1f} | {r['sound_speed']:g} | "
+                    f"{r['n_particles']} | {r['tail_mean_Pa']:.1f} | "
+                    f"{fmt_pct(r['tail_rel_error_pct'])} | {r['vmax_over_vref']:.3f} | "
+                    f"{'yes' if r['within_15pct'] else 'no'} |")
+        add("")
+        spread = table["verdicts"]["resolution_spread"]
+        for name, val in spread.items():
+            add(f"* **{LABEL.get(name, name)}** moves by "
+                f"{val['spread_pct_points']:.1f} percentage points between "
+                + " and ".join(f"{float(dx) * 1e3:.1f} mm ({fmt_pct(e)} %)"
+                               for dx, e in val["error_pct_by_dx"].items()) + ".")
+        for key, val in table["verdicts"]["sound_speed_spread"].items():
+            name = key.split("@")[0]
+            add(f"* **{LABEL.get(name, name)}** at `dx` = {float(key.split('@')[1]) * 1e3:.1f} mm "
+                "changes by "
+                f"{val['spread_pct_points']:.1f} points over `c0` = "
+                + " / ".join(f"{c0} ({fmt_pct(e)} %)"
+                             for c0, e in val["error_pct_by_c0"].items()) + ".")
+        add("")
+        inside = table["verdicts"]["variant_inside_gate_everywhere"]
+        winners = [LABEL.get(k, k) for k, v in inside.items() if v]
+        losers = [LABEL.get(k, k) for k, v in inside.items() if not v]
+        counts = {LABEL.get(k, k): len(v) for k, v in table["by_variant"].items()}
+        add("Variants inside the +/-15 % gate **at every tested point**: "
+            + (", ".join(f"{w} ({counts[w]} point{'s' if counts[w] > 1 else ''})"
+                         for w in winners) if winners else "none") + ".")
+        add("Variants outside it somewhere: " + (", ".join(losers) if losers else "none") + ".")
+        add("")
+    else:
+        add("*The `dx`/`c0` ladder has not been run for this revision* "
+            "(`ladder_table.py` needs at least one `raw/relax_ladder*.json`).")
+        add("")
+    add("![closure ladder](../benchmarks/laplace_pressure_closure/laplace_closure_ladder.png)")
+    add("")
+    add("*(a)* tail error versus `dx` at `c0 = 20 m/s`, one line per closure variant, shaded band = the")
+    add("+/-15 % gate; *(b)* tail error versus `c0`, which is flat if the residual is a closure/geometry")
+    add("effect and would fall with `c0` if it were an EOS noise floor.")
+    add("")
     add("## 4. Notes, and the trap that nearly produced a wrong conclusion")
     add("")
     add("1. **Estimator error, not physics.** The first version of the force balance estimated the")
@@ -153,10 +213,13 @@ def main() -> None:
     add("   shell's clamped zeros (it stayed stable); `interior` is a true one-sided extrapolation and is")
     add("   exact on a linear field, but on the drop it over-pressurises the shell and the surface starts")
     add("   to breathe. Neither is 'the' Adami closure; the donor set has to be stated with the number.")
-    add("3. **Scope of this revision.** The ladder was run at one resolution and one sound speed")
-    add("   (`dx = 0.002 m`, `c0 = 20 m/s`) because the machine was shared and heavily loaded; the")
-    add("   static force balance covers two resolutions. A `dx`/`c0` ladder for the closure itself is")
-    add("   the obvious next step and is one command (`relax_ladder.py --dx 0.0015`) away.")
+    add("3. **The `dx`/`c0` ladder, and the tool that silently forbade it.** The first version of this")
+    add("   record ran one resolution and one sound speed (`dx = 0.002 m`, `c0 = 20 m/s`) because the")
+    add("   machine was shared and heavily loaded. Repeating it turned up a defect in `relax_ladder.py`:")
+    add("   the script resumed *any* existing evidence file into the new record, so `--dx 0.0015`")
+    add("   produced a 1.5 mm header filled with 2 mm cases -- the 'one command away' claim was false")
+    add("   and would have silently poisoned the table. Each `(dx, c0)` point now owns its own file and")
+    add("   the resume path checks the header before reusing anything (section 3.3).")
     add("4. The closure is off by default. It is a modelling choice with a measured effect, not a bug")
     add("   fix, and turning it on by default would silently move every published impact/dam-break")
     add("   number.")
@@ -178,10 +241,20 @@ def main() -> None:
     add("")
     add("**Young-Laplace capability stays WITHHELD.** The best closure variant is "
         + (f"{fmt_pct(best['tail_rel_error_pct'])} %" if ladder and ladder.get("cases") else "n/a")
-        + " from the analytic jump, i.e. better than the -34 % to -38 % of the previous three rounds but")
-    add("not inside the 15 % acceptance band, and its transient still has to be checked on a resolution")
-    add("ladder. The one thing that is now settled: the surface-tension force is not where the missing")
-    add("20 % lives.")
+        + " from the analytic jump at the baseline point, better than the -34 % to -38 % of the "
+        + "previous three rounds. ")
+    if table and table.get("points"):
+        inside = table["verdicts"]["variant_inside_gate_everywhere"]
+        ok = [LABEL.get(k, k) for k, v in inside.items() if v]
+        bad = [LABEL.get(k, k) for k, v in inside.items() if not v]
+        add("On the `dx`/`c0` ladder the gate is met at every point by "
+            + (", ".join(ok) if ok else "no variant")
+            + (("; " + ", ".join(bad) + " fails it somewhere") if bad else "") + ".")
+        add("A variant that is inside the band is *not* yet a validated capability: the same run reports")
+        add("a spurious current far above Adami's `v_max/v_ref < 0.1`, i.e. the drop is still breathing")
+        add("against the imposed pressure rather than settling onto it. Capillary fidelity stays unclaimed")
+        add("until the spurious current and the transient are gated too.")
+    add("The one thing that is settled: the surface-tension force is not where the missing 20 % lives.")
     add("")
     add("![force balance and closure ladder](../benchmarks/laplace_pressure_closure/laplace_pressure_closure.png)")
     add("")
