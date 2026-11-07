@@ -1,0 +1,406 @@
+{
+  "generated_by": "benchmarks/claim_validity/validity.py",
+  "purpose": "Decide, before any tolerance is applied, whether a ledger reading was taken from a live simulation, and check the arithmetic of claimed cross-claim couplings.",
+  "criteria": {
+    "containment_rms_radius_over_R": 1.3,
+    "mach_number": 1.0,
+    "estimator_spread_over_reference": 0.25,
+    "fit_r2": 0.7,
+    "null_control_fraction": 0.25,
+    "coupling_residual_pt": 15.0,
+    "criterion_pct": 15.0,
+    "paper_pct": 3.0
+  },
+  "summary": {
+    "n_claims": 21,
+    "n_probed": 1,
+    "by_status": {
+      "UNPROBED": 20,
+      "INVALID": 1
+    },
+    "grades_frozen": [
+      "oscillating_droplet.frequency.lamb"
+    ]
+  },
+  "probes": [
+    {
+      "claim_id": "colour_surface.delta_s_integral",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "csf_force.sigma_eff_over_sigma.dx5mm",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "curvature_operator.delta_s_weighted.dx3mm",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "dam_break.martin_moyce.mae",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "laplace_droplet.merged_csf.8cases",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "laplace_report.laplace_pressure.Rdx10",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "oscillating_droplet.frequency.lamb",
+      "quantity": "fundamental frequency of an inviscid 2-D droplet (Lamb omega_2)",
+      "artifacts": [
+        "benchmarks/oscillating_droplet/validation_report.json",
+        "benchmarks/oscillating_droplet/gauge_audit.json",
+        "benchmarks/oscillating_droplet/validation_report_lamb.json"
+      ],
+      "checks": [
+        {
+          "id": "containment",
+          "kind": "hard",
+          "value": 3531.381734,
+          "limit": 1.3,
+          "relation": "<=",
+          "passed": false,
+          "detail": "rms radius at the end of the recorded run over the droplet radius (r_eff/R = 4994.1); a capillary oscillation at eps = 0.1 must stay inside ~1.15 R"
+        },
+        {
+          "id": "mach_number",
+          "kind": "hard",
+          "value": 9092.270047,
+          "limit": 1.0,
+          "relation": "<=",
+          "passed": false,
+          "detail": "peak particle speed 1.818e+05 m/s over c0 = 20.0 m/s: beyond Mach 1 the Tait EOS has no meaning and the cloud is a spray, not a liquid"
+        },
+        {
+          "id": "estimator_spread",
+          "kind": "soft",
+          "value": 4.354066,
+          "limit": 0.25,
+          "relation": "<=",
+          "passed": false,
+          "detail": "spread of the three independent frequency estimators (second moment / kinetic energy / zero crossing) divided by the reference: 41.50 … 361.46 rad/s vs 73.48 rad/s"
+        },
+        {
+          "id": "fit_quality",
+          "kind": "soft",
+          "value": 0.371244,
+          "limit": 0.7,
+          "relation": ">=",
+          "passed": false,
+          "detail": "coefficient of determination of the damped-cosine fit that produced the quoted frequency"
+        },
+        {
+          "id": "null_control",
+          "kind": "soft",
+          "value": 0.521367,
+          "limit": 0.25,
+          "relation": "<=",
+          "passed": false,
+          "detail": "sigma = 0 control of the sibling ladder reports 38.31 rad/s, i.e. 52.1 % of the reference: with no surface tension the same estimator sees lattice noise at more than half the Lamb frequency"
+        }
+      ],
+      "status": "INVALID",
+      "recorded_reading": {
+        "omega_rad_per_s": 41.497921,
+        "omega_reference_rad_per_s": 73.484692
+      },
+      "verdict_text": "The recorded trajectory is not a droplet: containment and Mach gates fail by three to four orders of magnitude, two of the three frequency estimators disagree with each other by more than the reference itself, and the fit explains 37 % of the variance. This reading may not be graded FAIL (which asserts a measured physics defect); it is WITHHELD."
+    },
+    {
+      "claim_id": "paper_uncertainty.band.dx3mm",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "static_droplet.force_direction.WITHDRAWN",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "surface_tension_ladder.laplace_error_finest",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "threed_hydrostatic.bottom_pressure.adami_best",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "threed_hydrostatic.bottom_pressure.tait_wall_control",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "threed_kernel.integral_of_W",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "threed_shear.decay_rate.finest",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "threed_shear.decay_rate.raw_laplacian",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "two_phase_laplace.smoothed_colour.dx2.5mm",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "young_laplace.absolute_tail.best_of_6",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "young_laplace.csf_consistent.dx2mm",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "young_laplace.csf_curvature_fit.dx2mm",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "young_laplace.laplace_law.vacuum_gauge",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "young_laplace.plateau_definition",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    }
+  ],
+  "coupling": {
+    "law": "omega^2 = n(n^2-1) sigma_eff/(rho R^3)  =>  omega/omega_Lamb = sqrt(sigma_eff/sigma)",
+    "static_sigma_eff_over_sigma": 0.704004,
+    "static_source": "benchmarks/laplace_pressure/validation_report.json -> cases[0].sigma_eff_over_sigma",
+    "predicted_rel_error_pct": -16.095047,
+    "quoted_rel_error_pct": -43.528482,
+    "note_claim": {
+      "text": "the ledger note claimed that a -43 % frequency is consistent with sigma_eff/sigma ~ 0.7",
+      "residual_pt": 27.433436,
+      "criterion_pt": 15.0,
+      "verdict": "unsupported"
+    },
+    "readings": [
+      {
+        "reading": "quoted.ledger_claim.dx2.0mm",
+        "source": "benchmarks/oscillating_droplet/validation_report.json",
+        "omega_rad_per_s": 41.497921,
+        "omega_over_reference": 0.564715,
+        "implied_sigma_eff_over_sigma": 0.318903,
+        "predicted_omega_rad_per_s": 61.657297,
+        "implied_minus_static_pct": -54.701511,
+        "omega_minus_predicted_pct": -32.695848,
+        "run_validity": "INVALID"
+      },
+      {
+        "reading": "lamb.mode2.n2.dx1.5mm",
+        "source": "benchmarks/oscillating_droplet/validation_report_lamb.json",
+        "omega_rad_per_s": 28.153823,
+        "omega_over_reference": 0.383125,
+        "implied_sigma_eff_over_sigma": 0.146785,
+        "predicted_omega_rad_per_s": 61.657297,
+        "implied_minus_static_pct": -79.150013,
+        "omega_minus_predicted_pct": -54.338214,
+        "run_validity": "SUSPECT"
+      },
+      {
+        "reading": "lamb.mode3.n3.dx1.5mm",
+        "source": "benchmarks/oscillating_droplet/validation_report_lamb.json",
+        "omega_rad_per_s": 56.307645,
+        "omega_over_reference": 0.383125,
+        "implied_sigma_eff_over_sigma": 0.146785,
+        "predicted_omega_rad_per_s": 123.314594,
+        "implied_minus_static_pct": -79.150013,
+        "omega_minus_predicted_pct": -54.338214,
+        "run_validity": "SUSPECT"
+      },
+      {
+        "reading": "lamb.coarse.n2.dx2.0mm",
+        "source": "benchmarks/oscillating_droplet/validation_report_lamb.json",
+        "omega_rad_per_s": 62.11064,
+        "omega_over_reference": 0.845219,
+        "implied_sigma_eff_over_sigma": 0.714395,
+        "predicted_omega_rad_per_s": 61.657297,
+        "implied_minus_static_pct": 1.475931,
+        "omega_minus_predicted_pct": 0.735262,
+        "run_validity": "SUSPECT"
+      }
+    ]
+  },
+  "ladder_independence": {
+    "artifact": "benchmarks/oscillating_droplet/validation_report_lamb.json",
+    "rows": [
+      {
+        "case": "mode2",
+        "mode_n": 2,
+        "dx_m": 0.0015,
+        "omega_analytic_rad_per_s": 73.484692,
+        "omega_measured_rad_per_s": 28.153823,
+        "omega_over_reference": 0.383125,
+        "reported_rel_error_pct": -61.6875,
+        "run_validity": "SUSPECT"
+      },
+      {
+        "case": "mode3",
+        "mode_n": 3,
+        "dx_m": 0.0015,
+        "omega_analytic_rad_per_s": 146.969385,
+        "omega_measured_rad_per_s": 56.307645,
+        "omega_over_reference": 0.383125,
+        "reported_rel_error_pct": -61.6875,
+        "run_validity": "SUSPECT"
+      },
+      {
+        "case": "coarse",
+        "mode_n": 2,
+        "dx_m": 0.002,
+        "omega_analytic_rad_per_s": 73.484692,
+        "omega_measured_rad_per_s": 62.11064,
+        "omega_over_reference": 0.84521875,
+        "reported_rel_error_pct": -15.478125,
+        "run_validity": "SUSPECT"
+      }
+    ],
+    "n_rows": 3,
+    "n_independent": 2,
+    "duplicate_groups": [
+      [
+        "mode2",
+        "mode3"
+      ]
+    ],
+    "finding": "rows mode2+mode3 share one omega_measured/omega_analytic ratio to machine precision: the reported errors differ only by the analytic reference, so the ladder contains 2 independent frequency measurement(s), not 3."
+  },
+  "self_test": {
+    "healthy_run": "VALID",
+    "blown_up_run": "INVALID",
+    "escaped_but_bounded": "VALID",
+    "noisy_estimator": "SUSPECT",
+    "expected": {
+      "healthy_run": "VALID",
+      "blown_up_run": "INVALID",
+      "escaped_but_bounded": "VALID",
+      "noisy_estimator": "SUSPECT"
+    }
+  },
+  "unprobed_claims": [
+    {
+      "claim_id": "colour_surface.delta_s_integral",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "csf_force.sigma_eff_over_sigma.dx5mm",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "curvature_operator.delta_s_weighted.dx3mm",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "dam_break.martin_moyce.mae",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "laplace_droplet.merged_csf.8cases",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "laplace_report.laplace_pressure.Rdx10",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "paper_uncertainty.band.dx3mm",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "static_droplet.force_direction.WITHDRAWN",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "surface_tension_ladder.laplace_error_finest",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "threed_hydrostatic.bottom_pressure.adami_best",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "threed_hydrostatic.bottom_pressure.tait_wall_control",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "threed_kernel.integral_of_W",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "threed_shear.decay_rate.finest",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "threed_shear.decay_rate.raw_laplacian",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "two_phase_laplace.smoothed_colour.dx2.5mm",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "young_laplace.absolute_tail.best_of_6",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "young_laplace.csf_consistent.dx2mm",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "young_laplace.csf_curvature_fit.dx2mm",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "young_laplace.laplace_law.vacuum_gauge",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "young_laplace.plateau_definition",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    }
+  ]
+}

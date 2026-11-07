@@ -17,7 +17,8 @@
     "benchmarks/laplace_pressure_jump/validation_report.json",
     "benchmarks/lattice_equilibrium/report.json",
     "benchmarks/oscillating_droplet/gauge_audit.json",
-    "benchmarks/static_droplet/laplace_validation.json"
+    "benchmarks/static_droplet/laplace_validation.json",
+    "benchmarks/claim_validity/audit.json"
   ],
   "reasons": {
     "benchmarks/dam_break/reference_audit.json": "audit of the experimental reference table + Ritter comparison; the solver-side gate is claim dam_break.martin_moyce.mae in resolution_ladder.json",
@@ -35,6 +36,7 @@
     "benchmarks/laplace_pressure_closure/raw/relax_ladder.json": "supporting artifact; primary claim registered separately or covered by parent report",
     "benchmarks/laplace_pressure_jump/validation_report.json": "supporting artifact; primary claim registered separately or covered by parent report",
     "benchmarks/lattice_equilibrium/report.json": "supporting artifact; primary claim registered separately or covered by parent report",
-    "benchmarks/oscillating_droplet/gauge_audit.json": "gauge audit of the oscillating-drop benchmark (verifier seat m4751): it scores the committed artifact's fit window and containment gauges, it is not a new physical claim; the claim it audits is oscillating_droplet.frequency.lamb, whose readout this audit shows to be a fit-window artifact of a numerical blow-up"
+    "benchmarks/oscillating_droplet/gauge_audit.json": "gauge audit of the oscillating-drop benchmark (verifier seat m4751): it scores the committed artifact's fit window and containment gauges, it is not a new physical claim; the claim it audits is oscillating_droplet.frequency.lamb, whose readout this audit shows to be a fit-window artifact of a numerical blow-up",
+    "benchmarks/claim_validity/audit.json": "claim-validity gate output (containment / Mach / estimator / fit / null-control verdicts + omega-vs-sigma coupling arithmetic). Derived audit of readings already registered in this ledger; it makes no new physical claim, the claim it audits is oscillating_droplet.frequency.lamb, whose grade it freezes to WITHHELD"
   }
 }
