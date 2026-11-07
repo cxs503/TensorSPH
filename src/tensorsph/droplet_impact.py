@@ -167,6 +167,16 @@ class Config:
     # takes part, and one pass suffices.
     surface_pressure_donors: str = "interior"
     surface_pressure_layers: int = 2
+    # Shepard (kernel-normalized) summation density:
+    #     rho_i <- rho_i * S_full / sum_j W_ij,
+    # with S_full the discrete kernel sum over a complete lattice
+    # (lattice_kernel_sum). A particle at the free surface loses support: one row
+    # below it the discrete sum is already 2.4 % short and the row at the surface
+    # is 24 % short (measured at h = 1.3 dx), which the Tait law turns into p = 0
+    # over a band two to three rows deep -- a still wave flume is then noisy at
+    # the surface and a hydrostatic column does not hold itself up. Off by
+    # default so every published number stays reproducible.
+    density_renormalization: bool = False
 
 
 # --------------------------------------------------------------------------- #
@@ -658,7 +668,8 @@ def drop_wall_wall_pairs(pairs: torch.Tensor, fluid_count: int) -> torch.Tensor:
     return pairs[usable]
 
 
-def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
+def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None,
+        wall_vel=None, wall_accel=None):
     """Compute WCSPH RHS with pair-based compact-support interactions.
 
     ``wall`` is an optional ``(W, D)`` tensor of static wall particles. When it
@@ -672,6 +683,15 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
     ``dt`` is the step used by the diffusive density term. It defaults to
     ``cfg.dt``; an adaptive run passes the step it is actually taking, so the
     operator is not silently applied for a step that never happened.
+
+    ``wall_vel`` and ``wall_accel`` describe a *moving* wall: a wavemaker paddle,
+    whose particles translate rigidly with a prescribed motion
+    (:mod:`tensorsph.wave_flume`). ``wall_vel`` enters the wall/fluid viscosity
+    term (so ``wall_friction > 0`` means no-slip against the wall's own motion,
+    not against rest) and ``wall_accel`` enters the wall-pressure extrapolation,
+    where Adami et al. (2012, eq. 11) uses ``(g - a_w).(r_w - r_f)``. Both
+    default to ``None``, which is the static-wall case and reproduces the
+    previous numbers bit for bit.
 
     Returns ``(rho, pressure, acceleration)`` for the fluid particles.
     """
@@ -723,6 +743,18 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
     rho_all = rho_all.index_add(0, j, all_mass[i] * wij)
     rho = rho_all[:n].clamp_min(0.1 * cfg.rho0)
 
+    if cfg.density_renormalization:
+        # Shepard normalization of the summation density. Only the *truncation*
+        # of the support is removed: on a complete lattice sum_j W_ij is S_full
+        # and the factor is exactly 1, which is what the calibrated mass already
+        # assumes.
+        kernel_total = torch.zeros(n + nw, dtype=pos.dtype, device=pos.device)
+        kernel_total = kernel_total.index_add(0, i, wij)
+        kernel_total = kernel_total.index_add(0, j, wij)
+        kernel_total[:n] = kernel_total[:n] + cubic_spline_kernel(zero, h)
+        rho = (rho * (lattice_kernel_sum(h, cfg.dx)
+                     / kernel_total[:n].clamp_min(1.0e-12))).clamp_min(0.1 * cfg.rho0)
+
     if cfg.density_diffusion > 0.0:
         # Fluid-fluid pairs only: the wall density is extrapolated from the
         # fluid, so diffusing into it would feed the extrapolation back into
@@ -736,7 +768,13 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
 
     pressure = tait_pressure(rho, cfg)
     if cfg.surface_pressure_closure:
-        pressure = free_surface_pressure(pos, rho, pressure, delta, wij, i, j, cfg)
+        # The closure extrapolates between fluid particles only: the wall
+        # pressure is extrapolated separately below (Adami et al. eq. 11), and a
+        # wall index would be out of range in the fluid-sized arrays here.
+        fluid_only = (i < n) & (j < n)
+        pressure = free_surface_pressure(
+            pos, rho, pressure, delta[fluid_only], wij[fluid_only],
+            i[fluid_only], j[fluid_only], cfg)
 
     if nw:
         bulk = cfg.rho0 * cfg.sound_speed**2 / cfg.gamma
@@ -764,6 +802,16 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
         # face, which biases the bottom row low by half a spacing.
         dy = torch.where(i_fluid, -delta[:, 1], delta[:, 1])
         body = -cfg.gravity * dy
+        if wall_accel is not None:
+            # Accelerating wall: Adami et al. (2012) eq. (11) is written in the
+            # wall's frame, so the body term is (g - a_w).(r_w - r_f).
+            if wall_accel.shape != (nw, pos.shape[1]):
+                raise ValueError("wall_accel must be (wall_count, pos.shape[1])")
+            if wall_accel.device != pos.device or wall_accel.dtype != pos.dtype:
+                raise ValueError("wall_accel must share pos device and dtype")
+            dx_wall = torch.where(i_fluid, -delta[:, 0], delta[:, 0])
+            body = body - (wall_accel[wall_idx, 0] * dx_wall
+                           + wall_accel[wall_idx, 1] * dy)
         source = pressure_ext[fluid_idx]
         if cfg.gravity != 0.0:
             source = source + torch.cat((rho, zeros))[fluid_idx] * body
@@ -778,8 +826,16 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None):
         pressure_all, density_all = pressure, rho
 
     if nw:
-        all_vel = torch.cat((vel, torch.zeros((nw, pos.shape[1]),
-                                             dtype=pos.dtype, device=pos.device)))
+        if wall_vel is None:
+            wall_speed = torch.zeros((nw, pos.shape[1]), dtype=pos.dtype,
+                                     device=pos.device)
+        else:
+            if wall_vel.shape != (nw, pos.shape[1]):
+                raise ValueError("wall_vel must be (wall_count, pos.shape[1])")
+            if wall_vel.device != pos.device or wall_vel.dtype != pos.dtype:
+                raise ValueError("wall_vel must share pos device and dtype")
+            wall_speed = wall_vel
+        all_vel = torch.cat((vel, wall_speed))
     else:
         all_vel = vel
 
