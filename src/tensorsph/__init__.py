@@ -32,6 +32,18 @@ from .droplet_impact import (
     wall_lattice,
 )
 from .dam_break import DamBreakConfig, make_column, run_case
+from .ice_splash import (
+    IceSplashConfig,
+    IceSplashRun,
+    build_dem_exchange,
+    eos_internal_energy,
+    floe_launch_estimate,
+    front_coefficient,
+    ice_bed_lattice,
+    ice_surface,
+    validate_dem_exchange,
+    write_dem_exchange,
+)
 from .initial_density import (
     calibration_factor,
     calibrate_mass,
@@ -67,6 +79,9 @@ __all__ = [
     "acoustic_dt_limit", "next_dt", "stable_dt",
     "resolve_device", "rhs", "rhs_all_pairs", "run", "suggested_dt",
     "tait_pressure", "validate_config", "viscous_dt_limit", "wall_lattice",
+    "IceSplashConfig", "IceSplashRun", "build_dem_exchange", "eos_internal_energy",
+    "floe_launch_estimate", "front_coefficient", "ice_bed_lattice", "ice_surface",
+    "validate_dem_exchange", "write_dem_exchange",
     "PairListCache", "brute_force_pairs", "cell_linked_pairs",
     "cell_linked_pairs_host", "DamBreakConfig", "make_column", "run_case",
     "calibration_factor", "calibrate_mass", "lattice_bias",
