@@ -85,6 +85,21 @@ def _rel(measured: float, reference: float) -> float:
     return (float(measured) - float(reference)) / float(reference) * 100.0
 
 
+def _claim_validity():
+    """Load the claim-validity gate (``benchmarks/claim_validity/validity.py``).
+
+    The gate decides whether a reading was taken from a live simulation before any
+    tolerance is applied; see ``docs/verification_claim_validity.md``.
+    """
+    import importlib.util
+
+    path = REPO / "benchmarks" / "claim_validity" / "validity.py"
+    spec = importlib.util.spec_from_file_location("claim_validity_gate", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def _entry(
     *,
     claim_id: str,
@@ -104,6 +119,7 @@ def _entry(
     claim_type: str = "relative_error",
     gate_result: str | None = None,
     gate_limit: float | None = None,
+    run_validity: str = "UNPROBED",
 ) -> dict:
     ref_v, ref_u, ref_src = reference
     mea_v, mea_u, mea_def = measured
@@ -122,6 +138,7 @@ def _entry(
         "criterion_pct": CRITERION_PCT,
         "paper_criterion_pct": PAPER_PCT,
         "gauge_degenerate": bool(gauge_degenerate),
+        "run_validity": run_validity,
         "artifact_status": artifact_status,
         "gate_result": gate_result,
         "gate_limit": _r(gate_limit) if gate_limit is not None else None,
@@ -713,9 +730,71 @@ def threed_claims() -> list[dict]:
     return out
 
 
+def _oscillation_note(V, omega: float, reference: float) -> str:
+    """Prose that states the coupling arithmetic instead of asserting it."""
+    cp = V.coupling()
+    probe = V.evaluate("oscillating_droplet.frequency.lamb")
+    checks = {c["id"]: c for c in probe["checks"]}
+    return (
+        "The coupling to the force path does NOT hold for this number: with "
+        f"sigma_eff/sigma = {cp['static_sigma_eff_over_sigma']:.4f} the capillary scaling "
+        f"omega ~ sqrt(sigma_eff) predicts {cp['predicted_rel_error_pct']:+.2f} %, while the "
+        f"quoted reading is {cp['quoted_rel_error_pct']:+.2f} % "
+        f"(residual {cp['note_claim']['residual_pt']:.2f} pt > "
+        f"{cp['note_claim']['criterion_pt']:.0f} pt). "
+        "The reason is upstream: the recorded run is dead — rms radius "
+        f"{checks['containment']['value']:.0f} R against its own "
+        f"{checks['containment']['limit']:g} R gate, "
+        f"peak speed Mach {checks['mach_number']['value']:.0f} — so the reading is graded "
+        "WITHHELD (evidence insufficient), not FAIL (measured defect). The one sibling rung that "
+        "stays coherent (dx = 2 mm) does reproduce the prediction, see "
+        "docs/verification_claim_validity.md."
+    )
+
+
+def kernel_claims() -> list[dict]:
+    """3-D kernel normalisation: the only exact (machine-precision) reference in the repo.
+
+    The 3-D cubic-spline kernel must integrate to one over its support and its
+    Laplacian's second moment must be six; both are analytic identities, so a
+    tolerance of 15 % would be meaningless — this entry exists because the file
+    was otherwise an unregistered evidence artifact (``unregistered_artifact``
+    finding) and the ledger's coverage rule is only meaningful if every
+    machine-readable reference measurement is registered.
+    """
+    rel = "benchmarks/threed_kernel/report.json"
+    d = _load(rel)
+    q = d["quadrature"]
+    return [
+        _entry(
+            claim_id="threed_kernel.integral_of_W",
+            quantity_id="threed_kernel_normalisation",
+            quantity="volume integral of the 3-D cubic-spline kernel over its support",
+            artifact=rel,
+            json_path="quadrature.kernel_integral",
+            reference=(1.0, "-", "int W dV = 1 (cubic-spline normalisation)"),
+            measured=(
+                q["kernel_integral"],
+                "-",
+                f"quadrature of W over the support at h = {q['h']}",
+            ),
+            guarding_test="tests/test_threed_kernel.py::test_kernel_integrates_to_one",
+            artifact_status="PASS" if d["verdict"] == "pass" else "FAIL",
+            backlog_ref="docs/verification_threed.md",
+            notes=(
+                f"Second moment of laplacian W = {q['second_moment']:.9f} against the "
+                "analytic 6, and laplacian W(0) matches its analytic limit to 1e-12 "
+                "relative: this is the one quantity in the repo that is verified at "
+                "round-off level rather than on the 3 % ladder."
+            ),
+        )
+    ]
+
+
 def other_physics_claims() -> list[dict]:
     """Non-Laplace validation claims + evidence the repo has withdrawn."""
     out: list[dict] = []
+    V = _claim_validity()
 
     rel = "benchmarks/oscillating_droplet/validation_report.json"
     d = _load(rel)
@@ -741,11 +820,7 @@ def other_physics_claims() -> list[dict]:
             guarding_test="tests/test_oscillating_droplet.py",
             artifact_status="FAIL" if not d["verdict"]["worst_within_15pct"] else "PASS",
             backlog_ref="backlog_update_m2971.md#P0",
-            notes=(
-                "Restoring force comes from the same surface-tension path: a -43 % "
-                "frequency is consistent with sigma_eff/sigma ~ 0.7 (omega ~ sqrt(sigma)), "
-                "which is exactly the force-path finding below."
-            ),
+            notes=_oscillation_note(V, row["omega_measured"], row["omega_reference"]),
         )
     )
 
@@ -830,6 +905,11 @@ def grade(e: dict) -> str:
     """One repo-wide grading rule, applied uniformly to every entry."""
     if e["superseded_by"]:
         return "WITHDRAWN"
+    if e.get("run_validity") == "INVALID":
+        # The trajectory was no longer a simulation when the reading was taken, so
+        # "measured defect" (FAIL) would be a false statement about the model: the
+        # honest grade is evidence insufficient (WITHHELD).
+        return "WITHHELD"
     if e["claim_type"] == "gate":
         if e["gate_result"] != "pass":
             return "FAIL"
@@ -882,6 +962,21 @@ def findings(entries: list[dict]) -> list[dict]:
                 "detail": (
                     f"gate passes at limit {e['gate_limit']:g} but the observed error "
                     f"({e['rel_error_pct']:+.2f} %) is outside the {CRITERION_PCT:.0f} % band"
+                ),
+            })
+
+    # (a3) a reading whose source run was dead when the number was taken
+    for e in entries:
+        if e.get("run_validity") == "INVALID":
+            out.append({
+                "rule": "run_validity",
+                "severity": "high",
+                "claim_id": e["claim_id"],
+                "detail": (
+                    "validity gate says INVALID (containment / Mach / estimator / "
+                    "fit / null-control): the run had stopped being a liquid before "
+                    "the reading was taken, so the reading is graded WITHHELD instead "
+                    "of FAIL — see docs/verification_claim_validity.md"
                 ),
             })
 
@@ -962,9 +1057,12 @@ def build() -> dict:
         + operator_level_claims()
         + model_level_claims()
         + other_physics_claims()
+        + kernel_claims()
         + threed_claims()
     )
+    V = _claim_validity()
     for e in entries:
+        e["run_validity"] = V.evaluate(e["claim_id"])["status"]
         e["grade"] = grade(e)
         # schema-drift guard: every reading must be reachable from its artifact
         if not (REPO / e["artifact"]).is_file():

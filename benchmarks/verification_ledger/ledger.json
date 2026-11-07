@@ -28,6 +28,7 @@
         "value": 1.0
       },
       "rel_error_pct": -24.545501,
+      "run_validity": "UNPROBED",
       "superseded_by": null
     },
     {
@@ -58,6 +59,7 @@
         "value": 1.0
       },
       "rel_error_pct": -29.599588,
+      "run_validity": "UNPROBED",
       "superseded_by": null
     },
     {
@@ -88,6 +90,7 @@
         "value": 50.0
       },
       "rel_error_pct": 28.262925,
+      "run_validity": "UNPROBED",
       "superseded_by": null
     },
     {
@@ -118,6 +121,7 @@
         "value": 0.15
       },
       "rel_error_pct": 281.83808,
+      "run_validity": "UNPROBED",
       "superseded_by": null
     },
     {
@@ -148,6 +152,7 @@
         "value": 1.0
       },
       "rel_error_pct": 219.723278,
+      "run_validity": "UNPROBED",
       "superseded_by": null
     },
     {
@@ -178,6 +183,7 @@
         "value": 1.44
       },
       "rel_error_pct": 26.82408,
+      "run_validity": "UNPROBED",
       "superseded_by": null
     },
     {
@@ -190,7 +196,7 @@
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
-      "grade": "FAIL",
+      "grade": "WITHHELD",
       "guarding_test": "tests/test_oscillating_droplet.py",
       "json_path": "verdict.rows[0]",
       "measured": {
@@ -198,7 +204,7 @@
         "unit": "rad/s",
         "value": 41.497921
       },
-      "notes": "Restoring force comes from the same surface-tension path: a -43 % frequency is consistent with sigma_eff/sigma ~ 0.7 (omega ~ sqrt(sigma)), which is exactly the force-path finding below.",
+      "notes": "The coupling to the force path does NOT hold for this number: with sigma_eff/sigma = 0.7040 the capillary scaling omega ~ sqrt(sigma_eff) predicts -16.10 %, while the quoted reading is -43.53 % (residual 27.43 pt > 15 pt). The reason is upstream: the recorded run is dead — rms radius 3531 R against its own 1.3 R gate, peak speed Mach 9092 — so the reading is graded WITHHELD (evidence insufficient), not FAIL (measured defect). The one sibling rung that stays coherent (dx = 2 mm) does reproduce the prediction, see docs/verification_claim_validity.md.",
       "paper_criterion_pct": 3.0,
       "quantity": "fundamental frequency of an inviscid 2-D droplet (Lamb omega_2)",
       "quantity_id": "oscillating_droplet_omega",
@@ -208,6 +214,7 @@
         "value": 73.484692
       },
       "rel_error_pct": -43.528482,
+      "run_validity": "INVALID",
       "superseded_by": null
     },
     {
@@ -238,6 +245,7 @@
         "value": 360.0
       },
       "rel_error_pct": -30.659352,
+      "run_validity": "UNPROBED",
       "superseded_by": null
     },
     {
@@ -268,6 +276,7 @@
         "value": 1.0
       },
       "rel_error_pct": -82.645105,
+      "run_validity": "UNPROBED",
       "superseded_by": "benchmarks/laplace_pressure/validation_report.json"
     },
     {
@@ -298,6 +307,162 @@
         "value": 0.15
       },
       "rel_error_pct": 251.980877,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "artifact": "benchmarks/threed_hydrostatic/report.json",
+      "artifact_status": "FAIL",
+      "backlog_ref": "docs/verification_threed.md",
+      "claim_id": "threed_hydrostatic.bottom_pressure.adami_best",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria",
+      "json_path": "runs[0].pressure",
+      "measured": {
+        "definition": "mean p of the deepest fluid layer; adami-c0_20-nz16, dx = 0.01 m, 1846 steps",
+        "unit": "Pa",
+        "value": 1478.771957
+      },
+      "notes": "Per-layer relative errors alternate between ~-6 % and up to -43 % toward the free surface: a particle lattice supports an odd-even mode in the pressure field. The bottom layer, which is what holds the load, is quoted here; the odd-even amplitude is recorded in the artifact so the two are never conflated.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "bottom pressure of a 3-D column at rest, p = rho0 g H",
+      "quantity_id": "threed_hydrostatic_bottom_pressure",
+      "reference": {
+        "source": "rho0 g H, H = nz dx",
+        "unit": "Pa",
+        "value": 1520.55
+      },
+      "rel_error_pct": -2.747561,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "artifact": "benchmarks/threed_hydrostatic/report.json",
+      "artifact_status": "WITHHELD",
+      "backlog_ref": "docs/verification_threed.md",
+      "claim_id": "threed_hydrostatic.bottom_pressure.tait_wall_control",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "WITHHELD",
+      "guarding_test": "tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria",
+      "json_path": "runs[3].pressure",
+      "measured": {
+        "definition": "same case with the wall pressure taken from the wall's own summation density instead of the Adami extrapolation (tait-c0_10-nz16)",
+        "unit": "Pa",
+        "value": 1136.927786
+      },
+      "notes": "Control run, expected to fail: without the Adami extrapolation the wall under-pressurises, the column keeps sinking and the settling-window drift reaches tens of percent. Recorded so the wall model is never assumed to be optional decoration.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "bottom pressure of a 3-D column at rest, p = rho0 g H",
+      "quantity_id": "threed_hydrostatic_bottom_pressure",
+      "reference": {
+        "source": "rho0 g H, H = nz dx",
+        "unit": "Pa",
+        "value": 1520.55
+      },
+      "rel_error_pct": -25.229175,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "artifact": "benchmarks/threed_kernel/report.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "docs/verification_threed.md",
+      "claim_id": "threed_kernel.integral_of_W",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_threed_kernel.py::test_kernel_integrates_to_one",
+      "json_path": "quadrature.kernel_integral",
+      "measured": {
+        "definition": "quadrature of W over the support at h = 0.013",
+        "unit": "-",
+        "value": 1.0
+      },
+      "notes": "Second moment of laplacian W = 6.000000000 against the analytic 6, and laplacian W(0) matches its analytic limit to 1e-12 relative: this is the one quantity in the repo that is verified at round-off level rather than on the 3 % ladder.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "volume integral of the 3-D cubic-spline kernel over its support",
+      "quantity_id": "threed_kernel_normalisation",
+      "reference": {
+        "source": "int W dV = 1 (cubic-spline normalisation)",
+        "unit": "-",
+        "value": 1.0
+      },
+      "rel_error_pct": 0.0,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "artifact": "benchmarks/threed_shear/report.json",
+      "artifact_status": "FAIL",
+      "backlog_ref": "docs/verification_threed.md",
+      "claim_id": "threed_shear.decay_rate.finest",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_threed_artifacts.py::test_shear_report_meets_its_criteria",
+      "json_path": "resolution_ladder[3].decay",
+      "measured": {
+        "definition": "least-squares slope of ln a(t), a = 4 <u_x sin(ky) sin(kz)>; n = 24^3 particles, k h = 0.340, second-moment renormalised viscous operator",
+        "unit": "1/s",
+        "value": 3.842137
+      },
+      "notes": "Renormalising the Laplacian by its discrete second moment (K = 2.347 instead of the continuum 2 on a cubic lattice with h = 1.3 dx) is what brings this inside the 3 % band.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "decay exponent of u = A sin(ky) sin(kz) exp(-2 nu k^2 t), periodic 3-D cube, nu = 0.05 m^2/s, k = 2 pi / m",
+      "quantity_id": "threed_shear_decay_rate_2nuk2",
+      "reference": {
+        "source": "2 nu k^2 (exact)",
+        "unit": "1/s",
+        "value": 3.947842
+      },
+      "rel_error_pct": -2.677542,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "artifact": "benchmarks/threed_shear/report.json",
+      "artifact_status": "FAIL",
+      "backlog_ref": "docs/verification_threed.md",
+      "claim_id": "threed_shear.decay_rate.raw_laplacian",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "MARGINAL",
+      "guarding_test": "tests/test_threed_artifacts.py::test_shear_report_meets_its_criteria",
+      "json_path": "raw_vs_renormalised.raw.decay",
+      "measured": {
+        "definition": "same run with the raw second-derivative Laplacian (n = 20^3, k h = 0.408)",
+        "unit": "1/s",
+        "value": 4.400317
+      },
+      "notes": "The raw operator is 17 % too strong for a locally quadratic field on a cubic lattice; the shear wave converts that into a decay-rate bias of the same order. Kept as the A/B partner.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "decay exponent of u = A sin(ky) sin(kz) exp(-2 nu k^2 t), periodic 3-D cube, nu = 0.05 m^2/s, k = 2 pi / m",
+      "quantity_id": "threed_shear_decay_rate_2nuk2",
+      "reference": {
+        "source": "2 nu k^2 (exact)",
+        "unit": "1/s",
+        "value": 3.947842
+      },
+      "rel_error_pct": 11.461343,
+      "run_validity": "UNPROBED",
       "superseded_by": null
     },
     {
@@ -328,6 +493,7 @@
         "value": 0.0
       },
       "rel_error_pct": 4.607904,
+      "run_validity": "UNPROBED",
       "superseded_by": null
     },
     {
@@ -358,6 +524,7 @@
         "value": 360.0
       },
       "rel_error_pct": -33.989861,
+      "run_validity": "UNPROBED",
       "superseded_by": null
     },
     {
@@ -388,6 +555,7 @@
         "value": 360.0
       },
       "rel_error_pct": -78.557996,
+      "run_validity": "UNPROBED",
       "superseded_by": null
     },
     {
@@ -418,6 +586,7 @@
         "value": 360.0
       },
       "rel_error_pct": -87.611181,
+      "run_validity": "UNPROBED",
       "superseded_by": null
     },
     {
@@ -448,6 +617,7 @@
         "value": 360.0
       },
       "rel_error_pct": 5.599316,
+      "run_validity": "UNPROBED",
       "superseded_by": null
     },
     {
@@ -478,6 +648,7 @@
         "value": 360.0
       },
       "rel_error_pct": 47.30913,
+      "run_validity": "UNPROBED",
       "superseded_by": null
     }
   ],
@@ -486,6 +657,18 @@
       "claim_id": "young_laplace.laplace_law.vacuum_gauge",
       "detail": "artifact declares PASS, ledger derives WITHHELD: vacuum-gauge readout (additive |p| offset, not a physical dp)",
       "rule": "declared_vs_derived",
+      "severity": "high"
+    },
+    {
+      "claim_id": "oscillating_droplet.frequency.lamb",
+      "detail": "validity gate says INVALID (containment / Mach / estimator / fit / null-control): the run had stopped being a liquid before the reading was taken, so the reading is graded WITHHELD instead of FAIL — see docs/verification_claim_validity.md",
+      "rule": "run_validity",
+      "severity": "high"
+    },
+    {
+      "claim_id": "threed_hydrostatic_bottom_pressure",
+      "detail": "2 active readings of one quantity span -25.2 % … -2.7 % (spread 22.5 pt): threed_hydrostatic.bottom_pressure.adami_best=-2.7 %, threed_hydrostatic.bottom_pressure.tait_wall_control=-25.2 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
+      "rule": "quantity_spread",
       "severity": "high"
     },
     {
@@ -504,20 +687,21 @@
   "schema_version": 1,
   "summary": {
     "by_grade": {
-      "FAIL": 6,
-      "MARGINAL": 1,
-      "PASS": 0,
+      "FAIL": 5,
+      "MARGINAL": 2,
+      "PASS": 3,
       "WITHDRAWN": 1,
-      "WITHHELD": 8
+      "WITHHELD": 10
     },
     "criterion_pct": 15.0,
     "findings_by_rule": {
       "declared_vs_derived": 1,
-      "quantity_spread": 2
+      "quantity_spread": 3,
+      "run_validity": 1
     },
-    "n_claims": 16,
-    "n_findings": 3,
-    "n_quantities": 10,
+    "n_claims": 21,
+    "n_findings": 5,
+    "n_quantities": 13,
     "paper_criterion_pct": 3.0
   }
 }

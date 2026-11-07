@@ -24,9 +24,9 @@
 
 ## 3. 汇总
 
-- claims **16** ／ 物理量 **10** ／ findings **3**
-- 分级分布：MARGINAL 1，WITHHELD 8，FAIL 6，WITHDRAWN 1
-- findings 分类：declared_vs_derived 1，quantity_spread 2
+- claims **21** ／ 物理量 **13** ／ findings **5**
+- 分级分布：PASS 3，MARGINAL 2，WITHHELD 10，FAIL 5，WITHDRAWN 1
+- findings 分类：declared_vs_derived 1，quantity_spread 3，run_validity 1
 
 ## 4. 断言表
 
@@ -38,10 +38,15 @@
 | `dam_break.martin_moyce.mae` | dam-break front position vs Martin & Moyce (1952), mean abs error in Z/a | limit 0.15 | 0.572757 | — | **FAIL** | `benchmarks/dam_break/resolution_ladder.json` → `gates.experimental_comparison` | `tests/test_dam_break_experimental.py` |
 | `laplace_droplet.merged_csf.8cases` | dp = sigma/R (2-D), sigma=0.072 N/m, R=0.1 m -> 0.72 Pa | 1 - | 3.19723 - | +219.72 % | **FAIL** | `benchmarks/laplace_droplet/results.json` → `verdict` | `tests/test_laplace_droplet.py::test_laplace_jump_current_state` |
 | `laplace_report.laplace_pressure.Rdx10` | pressure balance of a static droplet at R/dx = 10 (code units) | 1.44 - | 1.82627 - | +26.82 % | **FAIL** | `benchmarks/laplace/report.json` → `checks.R/dx=10:laplace_pressure` | `tests/test_laplace_pressure.py` |
-| `oscillating_droplet.frequency.lamb` | fundamental frequency of an inviscid 2-D droplet (Lamb omega_2) | 73.4847 rad/s | 41.4979 rad/s | -43.53 % | **FAIL** | `benchmarks/oscillating_droplet/validation_report.json` → `verdict.rows[0]` | `tests/test_oscillating_droplet.py` |
+| `oscillating_droplet.frequency.lamb` | fundamental frequency of an inviscid 2-D droplet (Lamb omega_2) | 73.4847 rad/s | 41.4979 rad/s | -43.53 % | **WITHHELD** | `benchmarks/oscillating_droplet/validation_report.json` → `verdict.rows[0]` | `tests/test_oscillating_droplet.py` |
 | `paper_uncertainty.band.dx3mm` | Young-Laplace jump (2-D), sigma=7.2 N/m, R=20 mm -> 360 Pa | 360 Pa | 249.626 Pa | -30.66 % | **WITHHELD** | `benchmarks/paper_laplace_uncertainty/out/results.json` → `rows[0].metrics.band` | `tests/test_paper_laplace_uncertainty.py` |
 | `static_droplet.force_direction.WITHDRAWN` | sign/shape of the CSF force on a static droplet (not a physical gate) | 1 - | 0.173549 - | -82.65 % | **WITHDRAWN** | `benchmarks/static_droplet/validation_report.json` → `validation` | `tests/test_laplace_validation.py` |
 | `surface_tension_ladder.laplace_error_finest` | Laplace error of the surface-tension-only ladder, finest level | 0.15 fraction | 2.51981 fraction | +251.98 % | **FAIL** | `benchmarks/surface_tension/laplace_ladder.json` → `gates.laplace_error_finest` | `tests/test_surface_tension_laplace.py` |
+| `threed_hydrostatic.bottom_pressure.adami_best` | bottom pressure of a 3-D column at rest, p = rho0 g H | 1520.55 Pa | 1478.77 Pa | -2.75 % | **PASS** | `benchmarks/threed_hydrostatic/report.json` → `runs[0].pressure` | `tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria` |
+| `threed_hydrostatic.bottom_pressure.tait_wall_control` | bottom pressure of a 3-D column at rest, p = rho0 g H | 1520.55 Pa | 1136.93 Pa | -25.23 % | **WITHHELD** | `benchmarks/threed_hydrostatic/report.json` → `runs[3].pressure` | `tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria` |
+| `threed_kernel.integral_of_W` | volume integral of the 3-D cubic-spline kernel over its support | 1 - | 1 - | +0.00 % | **PASS** | `benchmarks/threed_kernel/report.json` → `quadrature.kernel_integral` | `tests/test_threed_kernel.py::test_kernel_integrates_to_one` |
+| `threed_shear.decay_rate.finest` | decay exponent of u = A sin(ky) sin(kz) exp(-2 nu k^2 t), periodic 3-D cube, nu = 0.05 m^2/s, k = 2 pi / m | 3.94784 1/s | 3.84214 1/s | -2.68 % | **PASS** | `benchmarks/threed_shear/report.json` → `resolution_ladder[3].decay` | `tests/test_threed_artifacts.py::test_shear_report_meets_its_criteria` |
+| `threed_shear.decay_rate.raw_laplacian` | decay exponent of u = A sin(ky) sin(kz) exp(-2 nu k^2 t), periodic 3-D cube, nu = 0.05 m^2/s, k = 2 pi / m | 3.94784 1/s | 4.40032 1/s | +11.46 % | **MARGINAL** | `benchmarks/threed_shear/report.json` → `raw_vs_renormalised.raw.decay` | `tests/test_threed_artifacts.py::test_shear_report_meets_its_criteria` |
 | `two_phase_laplace.smoothed_colour.dx2.5mm` | Laplace error on a closed two-phase interface (periodic, no free surface) | limit 0.15 | 0.046079 | — | **MARGINAL** | `benchmarks/surface_tension_laplace/validation_report.json` → `criteria.two_phase_laplace_error_at_dx_0.0025_lt_15pct` | `tests/test_surface_tension_laplace.py` |
 | `young_laplace.absolute_tail.best_of_6` | dp = sigma/R (2-D), sigma=7.2 N/m, R=0.020 m -> 360 Pa | 360 Pa | 237.636 Pa | -33.99 % | **WITHHELD** | `benchmarks/laplace_pressure_floor/report.json` → `runs[2].absolute_time_average_tail` | `tests/test_laplace_pressure_floor.py::test_laplace_jump_within_15pct` |
 | `young_laplace.csf_consistent.dx2mm` | dp = sigma/R (2-D), sigma=7.2 N/m, R=0.020 m -> 360 Pa | 360 Pa | 77.1912 Pa | -78.56 % | **WITHHELD** | `benchmarks/csf_consistent/validation_report.json` → `relax.laplace` | `tests/test_csf_consistent.py` |
@@ -52,6 +57,8 @@
 ## 5. findings（证据缺陷清单）
 
 - **declared_vs_derived**（`high`）`young_laplace.laplace_law.vacuum_gauge` — artifact declares PASS, ledger derives WITHHELD: vacuum-gauge readout (additive |p| offset, not a physical dp)
+- **run_validity**（`high`）`oscillating_droplet.frequency.lamb` — validity gate says INVALID (containment / Mach / estimator / fit / null-control): the run had stopped being a liquid before the reading was taken, so the reading is graded WITHHELD instead of FAIL — see docs/verification_claim_validity.md
+- **quantity_spread**（`high`）`threed_hydrostatic_bottom_pressure` — 2 active readings of one quantity span -25.2 % … -2.7 % (spread 22.5 pt): threed_hydrostatic.bottom_pressure.adami_best=-2.7 %, threed_hydrostatic.bottom_pressure.tait_wall_control=-25.2 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
 - **quantity_spread**（`high`）`young_laplace_jump_sigma0.072_R0.1` — 2 active readings of one quantity span +219.7 % … +252.0 % (spread 32.3 pt): laplace_droplet.merged_csf.8cases=+219.7 %, surface_tension_ladder.laplace_error_finest=+252.0 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
 - **quantity_spread**（`high`）`young_laplace_jump_sigma7.2_R0.02` — 6 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
 
@@ -135,18 +142,18 @@
 - 欠账指针：`backlog_update_m2971.md#P0`
 - 注：Platform-level verdict at generation time: 9 of 11 criteria failed.
 
-### `oscillating_droplet.frequency.lamb` — FAIL
+### `oscillating_droplet.frequency.lamb` — WITHHELD
 
 - 物理量：fundamental frequency of an inviscid 2-D droplet (Lamb omega_2)
 - 参考：73.4847 rad/s（Lamb (1932) omega^2 = n(n^2-1) sigma/(rho R^3), n = 2）
 - 实测：41.4979 rad/s
   - 口径：FFT peak of the semi-axis oscillation, dx = 2 mm
 - 相对误差：-43.53 %（平台线 ±15%，论文级 ±3%）
-- 工件自述状态：`FAIL`；本账等级：**FAIL**
+- 工件自述状态：`FAIL`；本账等级：**WITHHELD**
 - 溯源：`benchmarks/oscillating_droplet/validation_report.json` → `verdict.rows[0]`
   - 守护测试：`tests/test_oscillating_droplet.py`
 - 欠账指针：`backlog_update_m2971.md#P0`
-- 注：Restoring force comes from the same surface-tension path: a -43 % frequency is consistent with sigma_eff/sigma ~ 0.7 (omega ~ sqrt(sigma)), which is exactly the force-path finding below.
+- 注：The coupling to the force path does NOT hold for this number: with sigma_eff/sigma = 0.7040 the capillary scaling omega ~ sqrt(sigma_eff) predicts -16.10 %, while the quoted reading is -43.53 % (residual 27.43 pt > 15 pt). The reason is upstream: the recorded run is dead — rms radius 3531 R against its own 1.3 R gate, peak speed Mach 9092 — so the reading is graded WITHHELD (evidence insufficient), not FAIL (measured defect). The one sibling rung that stays coherent (dx = 2 mm) does reproduce the prediction, see docs/verification_claim_validity.md.
 
 ### `paper_uncertainty.band.dx3mm` — WITHHELD
 
@@ -186,6 +193,71 @@
   - 守护测试：`tests/test_surface_tension_laplace.py`
 - 欠账指针：`docs/verification_ledger.md`
 - 注：Observed convergence order -1.633 (negative: the error grows under refinement) -> this ladder's operator is not convergent.
+
+### `threed_hydrostatic.bottom_pressure.adami_best` — PASS
+
+- 物理量：bottom pressure of a 3-D column at rest, p = rho0 g H
+- 参考：1520.55 Pa（rho0 g H, H = nz dx）
+- 实测：1478.77 Pa
+  - 口径：mean p of the deepest fluid layer; adami-c0_20-nz16, dx = 0.01 m, 1846 steps
+- 相对误差：-2.75 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`FAIL`；本账等级：**PASS**
+- 溯源：`benchmarks/threed_hydrostatic/report.json` → `runs[0].pressure`
+  - 守护测试：`tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria`
+- 欠账指针：`docs/verification_threed.md`
+- 注：Per-layer relative errors alternate between ~-6 % and up to -43 % toward the free surface: a particle lattice supports an odd-even mode in the pressure field. The bottom layer, which is what holds the load, is quoted here; the odd-even amplitude is recorded in the artifact so the two are never conflated.
+
+### `threed_hydrostatic.bottom_pressure.tait_wall_control` — WITHHELD
+
+- 物理量：bottom pressure of a 3-D column at rest, p = rho0 g H
+- 参考：1520.55 Pa（rho0 g H, H = nz dx）
+- 实测：1136.93 Pa
+  - 口径：same case with the wall pressure taken from the wall's own summation density instead of the Adami extrapolation (tait-c0_10-nz16)
+- 相对误差：-25.23 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`WITHHELD`；本账等级：**WITHHELD**
+- 溯源：`benchmarks/threed_hydrostatic/report.json` → `runs[3].pressure`
+  - 守护测试：`tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria`
+- 欠账指针：`docs/verification_threed.md`
+- 注：Control run, expected to fail: without the Adami extrapolation the wall under-pressurises, the column keeps sinking and the settling-window drift reaches tens of percent. Recorded so the wall model is never assumed to be optional decoration.
+
+### `threed_kernel.integral_of_W` — PASS
+
+- 物理量：volume integral of the 3-D cubic-spline kernel over its support
+- 参考：1 -（int W dV = 1 (cubic-spline normalisation)）
+- 实测：1 -
+  - 口径：quadrature of W over the support at h = 0.013
+- 相对误差：+0.00 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**PASS**
+- 溯源：`benchmarks/threed_kernel/report.json` → `quadrature.kernel_integral`
+  - 守护测试：`tests/test_threed_kernel.py::test_kernel_integrates_to_one`
+- 欠账指针：`docs/verification_threed.md`
+- 注：Second moment of laplacian W = 6.000000000 against the analytic 6, and laplacian W(0) matches its analytic limit to 1e-12 relative: this is the one quantity in the repo that is verified at round-off level rather than on the 3 % ladder.
+
+### `threed_shear.decay_rate.finest` — PASS
+
+- 物理量：decay exponent of u = A sin(ky) sin(kz) exp(-2 nu k^2 t), periodic 3-D cube, nu = 0.05 m^2/s, k = 2 pi / m
+- 参考：3.94784 1/s（2 nu k^2 (exact)）
+- 实测：3.84214 1/s
+  - 口径：least-squares slope of ln a(t), a = 4 <u_x sin(ky) sin(kz)>; n = 24^3 particles, k h = 0.340, second-moment renormalised viscous operator
+- 相对误差：-2.68 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`FAIL`；本账等级：**PASS**
+- 溯源：`benchmarks/threed_shear/report.json` → `resolution_ladder[3].decay`
+  - 守护测试：`tests/test_threed_artifacts.py::test_shear_report_meets_its_criteria`
+- 欠账指针：`docs/verification_threed.md`
+- 注：Renormalising the Laplacian by its discrete second moment (K = 2.347 instead of the continuum 2 on a cubic lattice with h = 1.3 dx) is what brings this inside the 3 % band.
+
+### `threed_shear.decay_rate.raw_laplacian` — MARGINAL
+
+- 物理量：decay exponent of u = A sin(ky) sin(kz) exp(-2 nu k^2 t), periodic 3-D cube, nu = 0.05 m^2/s, k = 2 pi / m
+- 参考：3.94784 1/s（2 nu k^2 (exact)）
+- 实测：4.40032 1/s
+  - 口径：same run with the raw second-derivative Laplacian (n = 20^3, k h = 0.408)
+- 相对误差：+11.46 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`FAIL`；本账等级：**MARGINAL**
+- 溯源：`benchmarks/threed_shear/report.json` → `raw_vs_renormalised.raw.decay`
+  - 守护测试：`tests/test_threed_artifacts.py::test_shear_report_meets_its_criteria`
+- 欠账指针：`docs/verification_threed.md`
+- 注：The raw operator is 17 % too strong for a locally quadratic field on a cubic lattice; the shear wave converts that into a decay-rate bias of the same order. Kept as the A/B partner.
 
 ### `two_phase_laplace.smoothed_colour.dx2.5mm` — MARGINAL
 
