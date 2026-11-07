@@ -498,7 +498,7 @@ def cell_centres(extent: float, dx: float, device: torch.device) -> torch.Tensor
     count keeps the far column at ``(frac + 1) dx`` from the wall, with
     ``frac = extent - floor(extent/dx) dx``, i.e. strictly inside the kernel's
     near-wall shell. A lattice that does not fit is a discretisation defect,
-    not a resolution choice; see docs/benchmarks/resolution-stability.md.
+    not a resolution choice; see docs/benchmarks/dam-break-lattice-clearance.md.
     """
     ratio = float(extent) / float(dx)
     count = int(math.floor(ratio + 1.0e-9))
