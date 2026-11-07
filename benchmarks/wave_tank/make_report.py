@@ -20,7 +20,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, "..", "..")
 RUNS = os.path.join(ROOT, "runs", "wave_tank")
 FIGURES = os.path.join(ROOT, "docs", "figures")
-MISSION = 5511
+MISSION = int(os.environ.get("SPH_WAVE_MISSION", "6232"))
 
 FIGURE_SPECS = (
     ("wave_tank_dispersion.png",
@@ -101,7 +101,7 @@ def main() -> int:
         "`benchmarks/wave_tank/summarise.py` 与 `make_doc.py` 程序化注入。\n\n"
         "---\n\n")
     payload = {
-        "title": "P76-N11 TensorSPH 弱可压波浪水槽与颗粒离散误差定标",
+        "title": ("IN53-N02 TensorSPH 弱可压波浪水槽：造波-色散-消波三锚 + 分辨率/人工声速定标"),
         "summary": ("在 TensorSPH 中建立第一个含波的验证面：2-D WCSPH 数值波浪水槽"
                     "（松弛区/活塞造波 + 海绵层消波 + 柱体积分探针 + 单频锁相分析），"
                     "把造波传递函数、线性色散、传播衰减、反射系数、孤立波相位速度/波形、"
