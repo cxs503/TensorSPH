@@ -816,6 +816,23 @@ class WaveFlumeRun:
     final_positions: torch.Tensor
     speed_history: list = field(default_factory=list)
     compression_history: list = field(default_factory=list)
+    mass_final: float | None = None
+
+    @property
+    def mass_drift(self) -> float:
+        """Relative change of the total particle mass over the run.
+
+        The mass of a SPH particle is a constant of the motion: the solver never
+        creates, destroys or redistributes it, so the total is conserved to the
+        last bit and the drift is exactly zero. The property exists so that the
+        invariant is *asserted* in the tests instead of assumed -- a non-zero
+        value would mean some code path had touched the mass array.
+        """
+        if self.mass_final is None:
+            return 0.0
+        if self.mass == 0.0:
+            return float("inf")
+        return (self.mass_final - self.mass) / self.mass
 
 
 def run_case(cfg: WaveFlumeConfig, snapshot_times=None,
@@ -1006,6 +1023,7 @@ def run_case(cfg: WaveFlumeConfig, snapshot_times=None,
         profiles=profiles, snapshots=snapshots,
         final_positions=positions.detach().clone(),
         speed_history=speed_history, compression_history=compression_history,
+        mass_final=float(mass.sum()),
     )
 
 
