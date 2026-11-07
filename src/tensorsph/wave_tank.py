@@ -724,6 +724,8 @@ class ProbePair:
     phases: tuple
     residuals: tuple
     omega: float
+    alias_risk: bool | None = None
+    branch_tolerance: float | None = None
 
     def as_dict(self) -> dict:
         return {
@@ -736,26 +738,51 @@ class ProbePair:
             "phases": list(self.phases),
             "residuals": list(self.residuals),
             "omega": self.omega,
+            "alias_risk": self.alias_risk,
+            "branch_tolerance": self.branch_tolerance,
         }
 
 
 def two_probe_dispersion(times, eta_a, eta_b, separation: float, omega: float,
-                         depth: float, gravity: float = GRAVITY) -> ProbePair:
+                         depth: float, gravity: float = GRAVITY,
+                         k_prior: float | None = None) -> ProbePair:
     """Wave number and phase speed from the phase lag between two probes.
 
     ``eta(x, t) = A cos(omega t - k x + phi0)`` gives ``phi(x) = k x - phi0``, so
     ``k = (phi_b - phi_a) / separation``: the phase of the downstream probe leads
     for a wave travelling in +x. ``separation`` must stay below ``lambda/2`` for
-    the wrapped difference to be unambiguous. The phase speed is compared with the
-    linear value *at the measured wave number*, which is the self-consistent
-    comparison: a theory evaluated at the imposed ``k`` would hide an error in
-    ``k`` behind the very quantity being tested.
+    the wrapped difference to be unambiguous. At exactly ``lambda/2`` the wrapped
+    difference is ``pi`` and the sign of ``k`` flips: that case is rejected with
+    ``ValueError`` unless ``k_prior`` is supplied, in which case the branch
+    nearest ``k_prior * separation`` is taken and ``alias_risk`` is reported so
+    the reader knows the layout alone could not have resolved it. Past
+    ``lambda/2`` the record cannot distinguish the branches at all -- the alias
+    is a plausible-looking number wrong by 80-170 % (``benchmarks/wave_tank/
+    calibrate_estimators.py``), which is why the sign flip is not silently
+    returned. The phase speed is
+    compared with the linear value *at the measured wave number*, which is the
+    self-consistent comparison: a theory evaluated at the imposed ``k`` would
+    hide an error in ``k`` behind the very quantity being tested.
     """
     fit_a = harmonic_fit(times, eta_a, omega)
     fit_b = harmonic_fit(times, eta_b, omega)
     delta_phase = wrap_angle(fit_b.phase - fit_a.phase)
     if delta_phase == 0.0:
         raise ValueError("degenerate phase difference between the probes")
+    alias_risk, branch_tolerance = None, None
+    expected = None if k_prior is None else k_prior * separation
+    if abs(delta_phase) >= math.pi - 1e-12:
+        if k_prior is None:
+            raise ValueError(
+                "probe separation is not below half a wavelength: the wrapped "
+                f"phase difference is {abs(delta_phase):.6f} rad (>= pi), "
+                f"separation {separation:.6g} m, so the sign of k is ambiguous. "
+                "Keep the probes closer than lambda/2 or pass k_prior.")
+        delta_phase += 2.0 * math.pi * round((expected - delta_phase) / (2.0 * math.pi))
+    if k_prior is not None:
+        alias_risk = abs(expected) >= math.pi
+        branch_tolerance = math.pi / abs(expected) if expected else None
+        delta_phase += 2.0 * math.pi * round((expected - delta_phase) / (2.0 * math.pi))
     k_measured = delta_phase / separation
     c_measured = omega / k_measured
     c_theory = wave_celerity(abs(k_measured), depth, gravity)
@@ -766,7 +793,8 @@ def two_probe_dispersion(times, eta_a, eta_b, separation: float, omega: float,
                      heights=(fit_a.height, fit_b.height),
                      phases=(fit_a.phase, fit_b.phase),
                      residuals=(fit_a.residual, fit_b.residual),
-                     omega=omega)
+                     omega=omega, alias_risk=alias_risk,
+                     branch_tolerance=branch_tolerance)
 
 
 def reflection_coefficient(heights) -> tuple[float, float, float]:
@@ -786,7 +814,8 @@ def reflection_coefficient(heights) -> tuple[float, float, float]:
 
 
 def spatial_wave_number(positions, heights, phases, omega: float,
-                        depth: float, gravity: float = GRAVITY) -> dict:
+                        depth: float, gravity: float = GRAVITY,
+                        k_prior: float | None = None) -> dict:
     """Wave number from the *spatial* phase slope over a probe array.
 
     Each probe contributes a complex amplitude ``A_j = (H_j/2) exp(i phi_j)`` of
@@ -798,8 +827,33 @@ def spatial_wave_number(positions, heights, phases, omega: float,
     array averages part of that wiggle out and returns the decay exponent
     ``alpha`` from the same fit.
 
+    Unwrapping is where this estimator can lie. A wrapped phase difference is
+    only unambiguous while the probe spacing is below half a wavelength; past
+    that the record itself no longer says which branch is right (measured on
+    synthetic trains, see ``benchmarks/wave_tank/calibrate_estimators.py``: the
+    recovered ``k`` is wrong by 87 % at a 1.5-wavelength spacing and by 92 % at
+    the 2.5-wavelength layout of the ``decay10`` case, with nothing in the output
+    to show it). Two mechanisms therefore handle it:
+
+    * ``k_prior`` -- the wave number the case imposes. Each step is placed on the
+      ``2 pi`` branch closest to ``k_prior * dx``, which turns an array wider
+      than ``lambda/2`` into a usable measurement and, more importantly, makes
+      the answer *accountable*: ``alias_risk`` is reported when the layout alone
+      could not have resolved the branch, together with the relative tolerance
+      ``branch_tolerance`` the prior had to supply. Passing the prior is not
+      cheating -- the gate asks whether the solver reproduces the imposed
+      dispersion, and the prior is the imposed value, not the measured one.
+    * without a prior, the exact ``lambda/2`` flip (``|delta phi| = pi``, where
+      the sign of ``k`` inverts) is rejected with ``ValueError`` rather than
+      returned; wider spacings stay undetectable from the records alone, which is
+      why ``alias_risk`` is ``None`` in that mode and why the production case
+      layouts must be documented.
+
+    Amplitude decay never needs the phase: :func:`detrended_reflection` reads it
+    from ``ln H`` alone and is exact on a synthetic decaying train.
+
     Returns ``{"k", "celerity", "celerity_theory", "celerity_error", "alpha",
-    "decay_ratio_per_wavelength", "samples"}``.
+    "decay_ratio_per_wavelength", "samples", "alias_risk", "branch_tolerance"}``.
     """
     values = [(float(x), float(h), float(p))
               for x, h, p in zip(positions, heights, phases)
@@ -811,18 +865,33 @@ def spatial_wave_number(positions, heights, phases, omega: float,
     denominator = sum((x - mean_x) ** 2 for x in xs)
     # Unwrap the phases in x order before the linear fit.
     ordered = sorted(values)
-    unwrapped, previous, offset = [], None, 0.0
-    for _, _, phase in ordered:
-        if previous is not None:
-            step = (phase + offset) - previous
-            while step > math.pi:
-                offset -= 2.0 * math.pi
-                step -= 2.0 * math.pi
-            while step < -math.pi:
-                offset += 2.0 * math.pi
-                step += 2.0 * math.pi
-        unwrapped.append(phase + offset)
-        previous = phase + offset
+    gaps = [ordered[index + 1][0] - ordered[index][0]
+            for index in range(len(ordered) - 1)]
+    steps, alias_risk = [], None
+    for gap, (_, _, lower), (_, _, upper) in zip(
+            gaps, ordered[:-1], ordered[1:]):
+        step = wrap_angle(upper - lower)
+        if k_prior is not None and gap > 0.0:
+            expected = k_prior * gap
+            step += 2.0 * math.pi * round((expected - step) / (2.0 * math.pi))
+            if abs(expected) >= math.pi:
+                alias_risk = True
+            elif alias_risk is None:
+                alias_risk = False
+        elif abs(step) >= math.pi - 1e-12:
+            raise ValueError(
+                "probe spacing is not below half a wavelength: adjacent probes "
+                f"{gap:.6g} m apart carry a wrapped phase step of "
+                f"{abs(step):.6f} rad (>= pi), so the sign of k is ambiguous. "
+                "Keep the array denser than lambda/2, pass k_prior, or read the "
+                "decay from detrended_reflection(), which uses amplitudes only.")
+        steps.append(step)
+    unwrapped = [ordered[0][2]]
+    for step in steps:
+        unwrapped.append(unwrapped[-1] + step)
+    widest = max(gaps) if gaps else 0.0
+    branch_tolerance = (math.pi / (abs(k_prior) * widest)
+                        if k_prior and widest > 0.0 else None)
     phase_by_x = {item[0]: value for item, value in zip(ordered, unwrapped)}
     logs = {item[0]: math.log(item[1]) for item in ordered}
     phases = [phase_by_x[x] for x in xs]
@@ -839,7 +908,8 @@ def spatial_wave_number(positions, heights, phases, omega: float,
             "celerity_error": abs(celerity - theory) / theory if theory else float("nan"),
             "alpha": alpha,
             "decay_ratio_per_wavelength": math.exp(-alpha * wavelength),
-            "samples": len(values)}
+            "samples": len(values), "k_prior": k_prior,
+            "alias_risk": alias_risk, "branch_tolerance": branch_tolerance}
 
 
 def detrended_reflection(positions, heights, wavelength: float) -> tuple[float, float | None]:
