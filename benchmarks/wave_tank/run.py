@@ -88,10 +88,10 @@ CASES: dict[str, dict] = {
     ),
     # (c) ten wavelengths of propagation, seven probes along the tank
     "decay10": dict(
-        kind="regular", maker="relaxation", dx_frac=0.02, kh=3.0, length_waves=11.6,
+        kind="regular", maker="relaxation", dx_frac=0.025, kh=3.0, length_waves=11.6,
         probes=(0.5, 3.0, 6.0, 9.0, 9.4, 9.8, 10.2), height_frac=0.1,
         sponge_wavelengths=0.9, periods=11.0, ramp_periods=0.5, courant=0.5,
-        c0_factor=8.0,
+        c0_factor=6.0,
     ),
     # (e) reflection: sponge on (gate) and off (control)
     "reflection": dict(
@@ -106,24 +106,24 @@ CASES: dict[str, dict] = {
     ),
     # (g) resolution ladder at fixed kh = 3
     "ladder_dp0.020": dict(
-        kind="regular", maker="relaxation", dx_frac=0.020, kh=3.0, length_waves=2.0,
+        kind="regular", maker="relaxation", dx_frac=0.020, kh=3.0, length_waves=1.8,
         probes=(0.4, 0.7, 1.0), height_frac=0.1, sponge_wavelengths=0.8,
-        periods=2.2, ramp_periods=0.5, courant=0.45,
+        periods=2.0, ramp_periods=0.5, courant=0.48,
     ),
     "ladder_dp0.015": dict(
-        kind="regular", maker="relaxation", dx_frac=0.015, kh=3.0, length_waves=2.0,
+        kind="regular", maker="relaxation", dx_frac=0.015, kh=3.0, length_waves=1.8,
         probes=(0.4, 0.7, 1.0), height_frac=0.1, sponge_wavelengths=0.8,
-        periods=2.2, ramp_periods=0.5, courant=0.45,
+        periods=2.0, ramp_periods=0.5, courant=0.48,
     ),
     "ladder_dp0.010": dict(
-        kind="regular", maker="relaxation", dx_frac=0.010, kh=3.0, length_waves=2.0,
+        kind="regular", maker="relaxation", dx_frac=0.010, kh=3.0, length_waves=1.8,
         probes=(0.4, 0.7, 1.0), height_frac=0.1, sponge_wavelengths=0.8,
-        periods=2.2, ramp_periods=0.5, courant=0.45,
+        periods=2.0, ramp_periods=0.5, courant=0.48,
     ),
     "ladder_dp0.0075": dict(
-        kind="regular", maker="relaxation", dx_frac=0.0075, kh=3.0, length_waves=2.0,
+        kind="regular", maker="relaxation", dx_frac=0.0075, kh=3.0, length_waves=1.8,
         probes=(0.4, 0.7, 1.0), height_frac=0.1, sponge_wavelengths=0.8,
-        periods=2.2, ramp_periods=0.5, courant=0.45,
+        periods=2.0, ramp_periods=0.5, courant=0.48,
     ),
     # artificial sound-speed sweep at fixed kh
     "csweep_c5": dict(
