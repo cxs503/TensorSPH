@@ -15,7 +15,19 @@ On a circle of radius ``R`` the measured error was a systematic **+25 %**
 This module replaces ``div n`` by a geometric fit of the interface surface in
 the neighbourhood of every interface particle, which is the standard cure in
 the level-set / front-tracking literature and is second-order accurate for a
-smooth interface:
+smooth interface.  On a hexagonal lattice the error is resolution-dependent
+due to staircase effects:
+
+| R/dx | fit_quadratic κ error | <15 %? |
+|------|----------------------|--------|
+| 5    | +37 %                | no     |
+| 6.7  | +18 %                | no     |
+| 10   | +5 %                 | yes    |
+| 13.3 | +1 %                 | yes    |
+
+The operator needs R/dx ≥ 10 to meet the 15 % platform gate on a hex lattice.
+For exact (non-lattice) circle data the quadratic fit is algebraically accurate
+to within a few percent even at coarse resolution.
 
 ``fit_quadratic`` (default)
     Rotate into the local frame ``(t, n)`` of particle ``i`` and fit the graph
