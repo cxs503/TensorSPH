@@ -1,0 +1,15 @@
+{
+  "case": "lattice-h1",
+  "result": {
+    "h_over_dx": 1.0,
+    "bias_sign": "tension-side (clamped by the Tait law)",
+    "dx": 0.01,
+    "h": 0.01,
+    "C": 0.9999724660910431,
+    "bias": -2.753390895693375e-05,
+    "spurious_pressure_Pa": -11.012653885148335,
+    "spurious_ratio_c0_20": -0.00019272144299009586,
+    "mass_ratio_calibrated": 1.000027534667094,
+    "calibrated_residual": 0.0
+  }
+}

@@ -16,6 +16,23 @@ Two weakly-compressible SPH cases share one set of verified operators:
 |---|---|
 | 2-D droplet impact on a pool | runs end to end; numerically bounded; **not** compared with experiment |
 | 2-D dam break (B2) | front converges at observed order 0.96 and is insensitive to `c0`; **no** experimental gate |
+| 3-D operators (`tensorsph.threed`) | kernel, lattice calibration, periodic neighbour search, pressure/viscous forces and the static-wall model verified against analytic solutions — shear-wave decay within 2.7 %, hydrostatic bottom pressure within 2.7 %; **no** 3-D free surface, surface tension or multiphase (see [`docs/verification_threed.md`](docs/verification_threed.md)) |
+
+The 3-D branch is separate on purpose: the shipped kernel carries the 2-D
+normalisation `10/(7 pi h^2)` and `rhs` rejects anything but a 2-D cloud, so
+`import tensorsph.threed` adds a 3-D kernel, lattice mass calibration, a triply
+periodic minimum-image neighbour search, the symmetric pressure force, the
+second-moment-renormalised viscous Laplacian, the Adami wall model and
+mass/momentum/energy meters **without touching the 2-D solver**. It is verified
+against two exact solutions (unsteady-Stokes shear decay, hydrostatic column) and
+an operator ladder; the numbers, the criteria and the limitations are in
+[`docs/verification_threed.md`](docs/verification_threed.md).
+
+```bash
+PYTHONPATH=src python benchmarks/threed_kernel/run.py --merge      # seconds
+PYTHONPATH=src python benchmarks/threed_shear/run.py --merge       # ~30 min
+PYTHONPATH=src python benchmarks/threed_hydrostatic/run.py --merge # ~10 min
+```
 
 Shared machinery:
 

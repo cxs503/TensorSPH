@@ -573,6 +573,146 @@ def model_level_claims() -> list[dict]:
     return out
 
 
+def threed_claims() -> list[dict]:
+    """3-D operator/decay/hydrostatic claims (benchmarks/threed_*).
+
+    The 3-D branch is new: the shipped kernel is 2-D normalised and ``rhs``
+    rejects any cloud whose second axis is not 2, so nothing here could be
+    measured before.  Three readings are registered -- the decay rate of the exact
+    unsteady-Stokes shear wave, the same rate with the *unrenormalised* viscous
+    operator (kept as the A/B partner), and the hydrostatic bottom pressure -- plus
+    the Tait-only wall control run, which must stay visible as a failure so nobody
+    cites it as a 3-D boundary result.
+    """
+    qid_decay = "threed_shear_decay_rate_2nuk2"
+    qty_decay = (
+        "decay exponent of u = A sin(ky) sin(kz) exp(-2 nu k^2 t), periodic 3-D cube, "
+        "nu = 0.05 m^2/s, k = 2 pi / m")
+    out: list[dict] = []
+
+    rel = "benchmarks/threed_shear/report.json"
+    d = _load(rel)
+    ladder = d["resolution_ladder"]
+    best_i = min(range(len(ladder)), key=lambda i: ladder[i]["kh"])
+    best = ladder[best_i]
+    out.append(
+        _entry(
+            claim_id="threed_shear.decay_rate.finest",
+            quantity_id=qid_decay,
+            quantity=qty_decay,
+            artifact=rel,
+            json_path=f"resolution_ladder[{best_i}].decay",
+            reference=(best["decay"]["analytic_rate"], "1/s", "2 nu k^2 (exact)"),
+            measured=(
+                best["decay"]["fit_rate"], "1/s",
+                f"least-squares slope of ln a(t), a = 4 <u_x sin(ky) sin(kz)>; "
+                f"n = {best['n']}^3 particles, k h = {best['kh']:.3f}, "
+                f"second-moment renormalised viscous operator",
+            ),
+            guarding_test="tests/test_threed_artifacts.py::test_shear_report_meets_its_criteria",
+            artifact_status=d["verdict"].upper(),
+            backlog_ref="docs/verification_threed.md",
+            notes=(
+                "Renormalising the Laplacian by its discrete second moment "
+                "(K = 2.347 instead of the continuum 2 on a cubic lattice with "
+                "h = 1.3 dx) is what brings this inside the 3 % band."
+            ),
+        )
+    )
+
+    raw = d.get("raw_vs_renormalised", {}).get("raw")
+    if raw:
+        out.append(
+            _entry(
+                claim_id="threed_shear.decay_rate.raw_laplacian",
+                quantity_id=qid_decay,
+                quantity=qty_decay,
+                artifact=rel,
+                json_path="raw_vs_renormalised.raw.decay",
+                reference=(raw["decay"]["analytic_rate"], "1/s", "2 nu k^2 (exact)"),
+                measured=(
+                    raw["decay"]["fit_rate"], "1/s",
+                    f"same run with the raw second-derivative Laplacian "
+                    f"(n = {raw['n']}^3, k h = {raw['kh']:.3f})",
+                ),
+                guarding_test="tests/test_threed_artifacts.py::test_shear_report_meets_its_criteria",
+                artifact_status=d["verdict"].upper(),
+                backlog_ref="docs/verification_threed.md",
+                notes=(
+                    "The raw operator is 17 % too strong for a locally quadratic "
+                    "field on a cubic lattice; the shear wave converts that into a "
+                    "decay-rate bias of the same order. Kept as the A/B partner."
+                ),
+            )
+        )
+
+    rel = "benchmarks/threed_hydrostatic/report.json"
+    h = _load(rel)
+    runs = h["runs"]
+    adami = [i for i, r in enumerate(runs) if r["wall_model"] == "adami"]
+    best_i = min(adami, key=lambda i: abs(runs[i]["pressure"]["bottom_rel_error"]))
+    run = runs[best_i]
+    qid_p = "threed_hydrostatic_bottom_pressure"
+    qty_p = "bottom pressure of a 3-D column at rest, p = rho0 g H"
+    out.append(
+        _entry(
+            claim_id="threed_hydrostatic.bottom_pressure.adami_best",
+            quantity_id=qid_p,
+            quantity=qty_p,
+            artifact=rel,
+            json_path=f"runs[{best_i}].pressure",
+            reference=(run["pressure"]["bottom_analytic"], "Pa", "rho0 g H, H = nz dx"),
+            measured=(
+                run["pressure"]["bottom_measured"], "Pa",
+                f"mean p of the deepest fluid layer; {run['case']}, "
+                f"dx = {run['dx']} m, {run['steps']} steps",
+            ),
+            guarding_test="tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria",
+            artifact_status=h["verdict"].upper(),
+            backlog_ref="docs/verification_threed.md",
+            notes=(
+                "Per-layer relative errors alternate between ~-6 % and up to -43 % "
+                "toward the free surface: a particle lattice supports an odd-even "
+                "mode in the pressure field. The bottom layer, which is what holds "
+                "the load, is quoted here; the odd-even amplitude is recorded in the "
+                "artifact so the two are never conflated."
+            ),
+        )
+    )
+
+    controls = [i for i, r in enumerate(runs) if r["wall_model"] == "tait"]
+    if controls:
+        ci = controls[0]
+        control = runs[ci]
+        out.append(
+            _entry(
+                claim_id="threed_hydrostatic.bottom_pressure.tait_wall_control",
+                quantity_id=qid_p,
+                quantity=qty_p,
+                artifact=rel,
+                json_path=f"runs[{ci}].pressure",
+                reference=(control["pressure"]["bottom_analytic"], "Pa",
+                           "rho0 g H, H = nz dx"),
+                measured=(
+                    control["pressure"]["bottom_measured"], "Pa",
+                    f"same case with the wall pressure taken from the wall's own "
+                    f"summation density instead of the Adami extrapolation "
+                    f"({control['case']})",
+                ),
+                guarding_test="tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria",
+                artifact_status="WITHHELD",
+                backlog_ref="docs/verification_threed.md",
+                notes=(
+                    "Control run, expected to fail: without the Adami extrapolation "
+                    "the wall under-pressurises, the column keeps sinking and the "
+                    "settling-window drift reaches tens of percent. Recorded so the "
+                    "wall model is never assumed to be optional decoration."
+                ),
+            )
+        )
+    return out
+
+
 def other_physics_claims() -> list[dict]:
     """Non-Laplace validation claims + evidence the repo has withdrawn."""
     out: list[dict] = []
@@ -822,6 +962,7 @@ def build() -> dict:
         + operator_level_claims()
         + model_level_claims()
         + other_physics_claims()
+        + threed_claims()
     )
     for e in entries:
         e["grade"] = grade(e)
