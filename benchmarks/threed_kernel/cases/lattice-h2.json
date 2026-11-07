@@ -1,0 +1,15 @@
+{
+  "case": "lattice-h2",
+  "result": {
+    "h_over_dx": 2.0,
+    "bias_sign": "compression-side (costs a spurious pressure)",
+    "dx": 0.01,
+    "h": 0.02,
+    "C": 1.0000791817954242,
+    "bias": 7.918179542421022e-05,
+    "spurious_pressure_Pa": 31.68024287073682,
+    "spurious_ratio_c0_20": 0.0005544042502378943,
+    "mass_ratio_calibrated": 0.999920824473836,
+    "calibrated_residual": 0.0
+  }
+}
