@@ -32,6 +32,22 @@ from .droplet_impact import (
     wall_lattice,
 )
 from .dam_break import DamBreakConfig, make_column, run_case
+from .dam_break_3d import (
+    DamBreak3DConfig,
+    DamBreak3DRun,
+    apply_boundary_3d,
+    cubic_spline_gradient_3d,
+    cubic_spline_kernel_3d,
+    front_position_3d,
+    make_column_3d,
+    pair_kernels_3d,
+    ritter_front,
+    ritter_front_over_a,
+    rhs_3d,
+    run_case as run_case_3d,
+    validate_case as validate_case_3d,
+    wall_lattice_3d,
+)
 from .ice_splash import (
     IceSplashConfig,
     IceSplashRun,
@@ -84,6 +100,10 @@ __all__ = [
     "validate_dem_exchange", "write_dem_exchange",
     "PairListCache", "brute_force_pairs", "cell_linked_pairs",
     "cell_linked_pairs_host", "DamBreakConfig", "make_column", "run_case",
+    "DamBreak3DConfig", "DamBreak3DRun", "apply_boundary_3d",
+    "cubic_spline_gradient_3d", "cubic_spline_kernel_3d", "front_position_3d",
+    "make_column_3d", "pair_kernels_3d", "ritter_front", "ritter_front_over_a",
+    "rhs_3d", "run_case_3d", "validate_case_3d", "wall_lattice_3d",
     "calibration_factor", "calibrate_mass", "lattice_bias",
     "lattice_kernel_sum", "lattice_offsets", "measure_complete_support_bias",
     "spurious_pressure", "spurious_pressure_ratio",
