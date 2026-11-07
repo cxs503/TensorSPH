@@ -1,7 +1,7 @@
 """Regression: dam_break.make_column lattice clearance (m3087).
 
 Same defect class as the droplet pool overhang cleared in m3117
-(``docs/benchmarks/resolution-stability.md``): ``arange(dx/2, extent, dx)``
+(``docs/benchmarks/dam-break-lattice-clearance.md``): ``arange(dx/2, extent, dx)``
 emits ``ceil(extent/dx)`` cells, so whenever ``frac(extent/dx) > 1/2`` the
 last column hangs over the boundary and sits ``< 1 dx`` from the static wall
 layer, starting the run over-dense.  ``make_column`` now builds the lattice

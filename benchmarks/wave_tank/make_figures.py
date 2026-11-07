@@ -1,7 +1,7 @@
 """Figures for the wave-tank report.
 
 Reads the case JSON files and the field dumps from ``viz_case.py`` and writes the
-panels of ``docs/benchmarks/wave-tank-2d.md``:
+panels of ``docs/benchmarks/wave-tank-2d.template.md``:
 
     docs/figures/wave_tank_dispersion.png   phase speed and wave number vs kh
     docs/figures/wave_tank_ladder.png       dispersion error against resolution
