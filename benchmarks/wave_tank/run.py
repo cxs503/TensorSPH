@@ -40,6 +40,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 from tensorsph.wave_tank import (           # noqa: E402
     WaveTankConfig,
     crest_time,
+    detrended_reflection,
     harmonic_fit,
     reflection_coefficient,
     run_tank,
@@ -223,7 +224,8 @@ def analyse_regular(run, cfg) -> dict:
     separation = run.probe_x[1] - run.probe_x[0]
     pair = two_probe_dispersion(times, [run.probes[0][i] for i in index],
                                [run.probes[1][i] for i in index],
-                               separation, cfg.omega(), cfg.depth, cfg.gravity)
+                               separation, cfg.omega(), cfg.depth, cfg.gravity,
+                               k_prior=cfg.wave_number_k())
     out["dispersion"] = pair.as_dict()
     out["dispersion"]["separation"] = separation
     out["dispersion"]["k_error"] = abs(pair.k_measured - cfg.wave_number_k()) / cfg.wave_number_k()
@@ -237,20 +239,13 @@ def analyse_regular(run, cfg) -> dict:
     # out and take the envelope of the residual ratio.
     heights = [fit.height for fit in fits]
     reflection, high, low = reflection_coefficient(heights)
-    detrended = None
-    decay_per_wavelength = None
-    if len(heights) >= 3 and all(value > 0.0 for value in heights):
-        positions = [run.probe_x[index] for index in range(len(heights))]
-        logs = [math.log(value) for value in heights]
-        mean_x = sum(positions) / len(positions)
-        mean_y = sum(logs) / len(logs)
-        denominator = sum((xi - mean_x) ** 2 for xi in positions)
-        slope = (sum((xi - mean_x) * (yi - mean_y) for xi, yi in zip(positions, logs))
-                 / denominator) if denominator else 0.0
-        ratios = [value / math.exp(mean_y + slope * (xi - mean_x))
-                  for xi, value in zip(positions, heights)]
-        detrended = (max(ratios) - min(ratios)) / (max(ratios) + min(ratios))
-        decay_per_wavelength = math.exp(slope * cfg.wavelength())
+    # One implementation, in the library: the estimate is the gate value of
+    # criterion (e), and a second inline copy here had no way of being checked
+    # against it (see benchmarks/wave_tank/calibrate_estimators.py).
+    detrended, decay_per_wavelength = detrended_reflection(
+        run.probe_x, heights, cfg.wavelength())
+    if decay_per_wavelength is None:
+        decay_per_wavelength = None
     out["reflection"] = {"R": reflection, "R_detrended": detrended,
                          "height_max": high, "height_min": low,
                          "height_ratio_per_wavelength": decay_per_wavelength,
