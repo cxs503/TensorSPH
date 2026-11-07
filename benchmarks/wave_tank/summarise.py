@@ -60,12 +60,19 @@ def case_row(payload: dict) -> dict:
     if "probe_fits" in analysis:
         fits = analysis["probe_fits"]
         try:
+            # The imposed wave number is the prior for the phase unwrapping: the
+            # 2 pi branch is chosen against it and ``alias_risk`` says whether the
+            # layout alone could have resolved the branch. Criterion (b) asks
+            # whether the solver reproduces the *imposed* dispersion, so the prior
+            # is the imposed value, not the measured one.
             analysis["dispersion_spatial"] = spatial_wave_number(
                 analysis["probe_x"], [fit["height"] for fit in fits],
                 [fit["phase"] for fit in fits], analysis["omega_imposed"],
-                payload["config"]["depth"], 9.81)
-        except ValueError:
+                payload["config"]["depth"], 9.81,
+                k_prior=analysis.get("k_theory"))
+        except ValueError as error:
             analysis["dispersion_spatial"] = None
+            analysis["dispersion_spatial_rejected"] = str(error)
     if "dispersion" in analysis and "reflection" in analysis:
         heights = analysis.get("probe_heights") or []
         positions = analysis.get("probe_x") or []
@@ -83,9 +90,15 @@ def case_row(payload: dict) -> dict:
             "k_error": analysis["dispersion"]["k_error"],
             "celerity_error_spatial":
                 (analysis.get("dispersion_spatial") or {}).get("celerity_error"),
+            "alias_risk":
+                (analysis.get("dispersion_spatial") or {}).get("alias_risk"),
+            # The phase-based decay needs probe spacing < lambda/2; the
+            # amplitude-only fit does not, so it is the fallback when the layout
+            # cannot carry the spatial estimator (decay10 is spaced 2.5 lambda).
             "decay_ratio_per_wavelength":
                 (analysis.get("dispersion_spatial") or {}).get(
-                    "decay_ratio_per_wavelength"),
+                    "decay_ratio_per_wavelength")
+                or analysis["reflection"].get("height_ratio_per_wavelength"),
             "reflection": analysis["reflection"]["R"],
             "reflection_detrended": analysis["reflection"].get("R_detrended"),
             "height_ratio_per_wavelength":
