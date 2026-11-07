@@ -1,0 +1,13 @@
+{
+  "case": "quadrature",
+  "result": {
+    "h": 0.013,
+    "kernel_integral": 1.000000000000004,
+    "kernel_integral_error": 3.9968028886505635e-15,
+    "second_moment": 5.99999999985,
+    "second_moment_error": -1.5000001241105565e-10,
+    "laplacian_at_zero": -7715709630.006805,
+    "laplacian_at_zero_analytic": -7715709630.006805,
+    "note": "The Tait law clamps a negative bias to p = 0, so the tension-side entries of the lattice sweep cost nothing in pressure but shift the density by the same amount."
+  }
+}
