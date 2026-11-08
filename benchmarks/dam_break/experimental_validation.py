@@ -190,7 +190,7 @@ def run_one_exp(dx: float, args, exp_data: list[dict]) -> dict:
     # experiment: with H = 2a, Z = 2 sqrt(g H) t = 2 a tau, so Z/a = 2 tau.
     # (This file used Z/a = tau until the 2026-11 reference audit; that halved
     # the reference and corrupted ``ritter_mean_relative_error``.)
-    ritter_za = [ritter_front_over_a(tau) for tau in sim_tau]
+    ritter_za = ritter_za_curve(sim_tau)
 
     # Experimental comparison
     exp_error = compute_exp_error(sim_tau, sim_za, exp_data)
@@ -224,6 +224,18 @@ def run_one_exp(dx: float, args, exp_data: list[dict]) -> dict:
     }
 
 
+def ritter_za_curve(taus: list[float]) -> list[float]:
+    """Ritter reference in the experiment's frame: ``Z/a = 2 tau`` (H = 2a).
+
+    Single source of truth for **both** the numerical comparison in
+    :func:`run_one_exp` and the reference curve drawn by :func:`generate_plot`.
+    Having two copies is how the figure ended up plotting ``Z/a = tau`` (a
+    factor 2 low) for months after the data path was corrected in the m2502
+    reference audit (``docs/benchmarks/dam-break-reference-audit.md``).
+    """
+    return [ritter_front_over_a(tau) for tau in taus]
+
+
 def generate_plot(results: list[dict], exp_data: list[dict], output_path: str):
     """Generate comparison plot: simulation vs experiment vs Ritter."""
     import matplotlib
@@ -243,9 +255,9 @@ def generate_plot(results: list[dict], exp_data: list[dict], output_path: str):
     # Plot Ritter analytical solution
     tau_max = max(max(exp_taus), max(r["sim_tau"][-1] for r in results))
     tau_ritter = [t * 0.05 for t in range(int(tau_max / 0.05) + 1)]
-    za_ritter = tau_ritter  # Z/a = tau for Ritter
+    za_ritter = ritter_za_curve(tau_ritter)  # Z/a = 2 tau, shared with the data path
     ax.plot(tau_ritter, za_ritter, "r--", linewidth=1.5, alpha=0.7,
-            label="Ritter shallow-water (reference)", zorder=1)
+            label=r"Ritter shallow-water, $Z/a = 2\tau$ (reference)", zorder=1)
 
     # Plot simulation results
     colors = ["#1f77b4", "#ff7f0e", "#2ca02c"]

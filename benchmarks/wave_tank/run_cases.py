@@ -5,7 +5,8 @@ this fill-in driver, which takes the cases that are still missing after the firs
 wave and runs them side by side with a small thread budget each. Cases are
 independent, so a crash costs one case and the driver moves on to the next one.
 
-    python benchmarks/wave_tank/run_cases.py --cases dispersion_kh1,csweep_c5 --threads 4 --attempts 2
+    python benchmarks/wave_tank/run_cases.py --cases dispersion_kh1,csweep_c5 \
+        --threads 4 --attempts 2
 """
 from __future__ import annotations
 

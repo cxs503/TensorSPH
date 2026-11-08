@@ -581,7 +581,10 @@ def paddle_lattice(cfg: WaveFlumeConfig, device) -> torch.Tensor:
     offsets = torch.arange(layers, device=device, dtype=rows.dtype)
     xs = -dx * 0.5 - offsets * dx
     gx, gy = torch.meshgrid(xs, rows, indexing="xy")
-    return torch.stack((gx.reshape(-1), gy.reshape(-1)), dim=-1)# --------------------------------------------------------------------------- #
+    return torch.stack((gx.reshape(-1), gy.reshape(-1)), dim=-1)
+
+
+# --------------------------------------------------------------------------- #
 # Paddle motion and sponge
 # --------------------------------------------------------------------------- #
 

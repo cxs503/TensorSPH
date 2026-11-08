@@ -27,8 +27,6 @@ import torch
 
 from .droplet_impact import (
     Config,
-    apply_boundary,
-    boundary_box,
     cell_centres,
     hydrostatic_density,
     next_dt,

@@ -20,7 +20,7 @@ from pathlib import Path
 import pytest
 import torch
 
-from tensorsph.droplet_impact import Config, apply_boundary, make_particles, rhs, wall_lattice
+from tensorsph.droplet_impact import Config, make_particles, rhs, wall_lattice
 from tensorsph.wave_flume import (
     WaveFlumeConfig,
     apply_flume_boundary,

@@ -123,8 +123,13 @@ would be within the experimental uncertainty band for most points.
 
 ## Comparison with Ritter solution
 
-The Ritter shallow-water solution (Z/a = tau) assumes a semi-infinite reservoir
-on a dry bed. The Martin & Moyce experiment has a finite reservoir (aspect
+In this frame (`H = 2a`, `tau = t sqrt(2 g / a)`) the Ritter shallow-water
+solution is **`Z/a = 2 tau`** — not `Z/a = tau`, which is the factor-2 error the
+m2502 reference audit found and fixed in the numerical data path
+(`docs/benchmarks/dam-break-reference-audit.md`). The reference curve *drawn in
+the figure* kept the old `Z/a = tau` for one release longer; it is fixed here as
+well (see "Figure reference frame" below). Ritter's solution assumes a
+semi-infinite reservoir on a dry bed. The Martin & Moyce experiment has a finite reservoir (aspect
 ratio 2:1), so the Ritter solution overpredicts the front position. Both the
 simulation and the experiment fall below the Ritter curve, as expected.
 
@@ -182,3 +187,21 @@ should bring the error within the experimental uncertainty band.
 The `physical_validation` gate can now be changed from `not_evaluated` to
 `evaluated` (with the caveat that finer resolution is needed for quantitative
 agreement).
+
+## Figure reference frame (fixed)
+
+`generate_plot()` in `benchmarks/dam_break/experimental_validation.py` drew the
+"Ritter shallow-water (reference)" line as `za_ritter = tau_ritter`, i.e.
+`Z/a = tau`, while the numerical comparison in `run_one_exp()` already used
+`ritter_front_over_a(tau) = 2 tau`. The figure therefore showed a reference
+**half as steep as the one the errors were computed against** — every figure
+regenerated from this harness was unusable as evidence.
+
+Fix: the curve now comes from a single helper `ritter_za_curve(taus)` that wraps
+`tensorsph.dam_break.ritter_front_over_a`, used by both the data path and the
+figure. `tests/test_reference_frame_plots.py` pins the identity
+(`Z/a(1) = 2`) and fails on any reintroduced `za_ritter = tau`-style assignment.
+
+Note this changes **no** reported error: the gate numbers (exp MAE 0.57-0.60,
+Ritter relative error ~0.41) were always computed with the correct `2 tau`
+reference; only the picture was wrong.
