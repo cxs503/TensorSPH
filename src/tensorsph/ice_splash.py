@@ -119,6 +119,13 @@ class IceSplashConfig(DamBreakConfig):
     n_floes: int = 5
     floe_radius: float = 0.030
     floe_rho: float = 917.0
+    # Added-mass coefficient of the floating section used by the reduced launch
+    # model. A body accelerated in water must accelerate the displaced water
+    # too, so the impulse is shared with ``C_m rho_w pi r^2`` of "entrained"
+    # inertia. For a 2-D circular section in an unbounded inviscid fluid the
+    # added mass equals the displaced mass, ``C_m = 1`` (Lamb, *Hydrodynamics*,
+    # §71). ``0`` recovers the old dry-mass (upper-bound) estimate.
+    floe_added_mass_coefficient: float = 1.0
     floe_start: float | None = None
     floe_spacing: float | None = None
     jitter: float = 0.25           # floe-placement jitter, in units of dx
@@ -181,6 +188,8 @@ def validate_config(cfg: IceSplashConfig) -> None:
             raise ValueError("floe_radius and floe_rho must be positive")
         if cfg.floe_radius >= 0.5 * cfg.deck_height:
             raise ValueError("floe_radius is too large for the deck height")
+        if not 0.0 <= cfg.floe_added_mass_coefficient <= 2.0:
+            raise ValueError("floe_added_mass_coefficient must lie in [0, 2]")
         if cfg.floe_start is not None:
             extent = (cfg.floe_start + (cfg.n_floes - 1) * (cfg.floe_spacing or 0.0)
                       + cfg.floe_radius + cfg.jitter * cfg.dx)
@@ -330,6 +339,12 @@ def floe_force_plate(positions: torch.Tensor, velocity: torch.Tensor,
 
 def _floe_mass_per_depth(cfg: IceSplashConfig) -> float:
     return cfg.floe_rho * math.pi * cfg.floe_radius ** 2
+
+
+def _floe_induced_mass_per_depth(cfg: IceSplashConfig) -> float:
+    """Water inertia dragged along by the floe, ``C_m rho_w pi r^2``."""
+    return (cfg.floe_added_mass_coefficient * cfg.rho0
+            * math.pi * cfg.floe_radius ** 2)
 
 
 def ballistic_apex(v_up: float, gravity: float) -> float:
@@ -611,17 +626,31 @@ def floe_launch_estimate(run: IceSplashRun, cfg: IceSplashConfig,
                          floes: torch.Tensor) -> dict:
     """Order-of-magnitude launch estimate for the floes (reduced model).
 
-    Central estimate: impulse transfer, ``v = J / (rho_ice pi r^2)``.
-    Upper bound: all the splash kinetic energy above the deck into one floe,
-    ``v <= sqrt(2 KE_deck / m_floe)``. The two bracket the answer; the spread is
-    reported, not hidden.
+    Two impulse-transfer readings are reported, because the divisor is a
+    modelling choice rather than a detail:
+
+    * ``launch_speed_m_s = J / (rho_ice pi r^2)`` -- **dry** mass. This is an
+      *upper bound*: it assumes the water the floe pushes aside costs nothing.
+    * ``launch_speed_with_added_mass_m_s = J / (rho_ice pi r^2 + C_m rho_w pi r^2)``
+      -- the added inertia of the entrained water, ``C_m =
+      ``cfg.floe_added_mass_coefficient`` (default 1, the exact value for a 2-D
+      circular section in an unbounded fluid, Lamb §71).
+
+    Upper bound on the speed: all the splash kinetic energy above the deck into
+    one floe, ``v <= sqrt(2 KE_deck / m_floe)``. ``floe_added_mass.py`` in the
+    benchmark bundle quantifies the dry-mass bias; the spread is reported, not
+    hidden.
     """
     m_floe = _floe_mass_per_depth(cfg)
+    m_added = _floe_induced_mass_per_depth(cfg)
+    m_wet = m_floe + m_added
+    ratio = m_floe / m_wet if m_wet > 0 else 0.0
     rows = []
     v_upper = (math.sqrt(2.0 * run.peak_splash_kinetic_energy / m_floe)
                if run.peak_splash_kinetic_energy > 0.0 else 0.0)
     for k, impulse in enumerate(run.floe_impulse):
         v = impulse / m_floe
+        v_wet = impulse / m_wet if m_wet > 0 else 0.0
         centre = floes[k].tolist() if floes.numel() else None
         rows.append({
             "floe": k,
@@ -632,13 +661,22 @@ def floe_launch_estimate(run: IceSplashRun, cfg: IceSplashConfig,
             "ballistic_apex_m": ballistic_apex(v, cfg.gravity),
             "ballistic_range_m": ballistic_range(v, 45.0, cfg.gravity),
             "mass_kg_per_m": m_floe,
+            "added_mass_kg_per_m": m_added,
+            "speed_ratio_with_added_mass": ratio,
+            "launch_speed_with_added_mass_m_s": v_wet,
+            "ballistic_apex_with_added_mass_m": ballistic_apex(v_wet, cfg.gravity),
+            "ballistic_range_with_added_mass_m": ballistic_range(v_wet, 45.0, cfg.gravity),
         })
     return {
         "model": "impulse transfer on a virtual force plate (reduced model)",
         "floes": rows,
         "upper_bound_speed_m_s": v_upper,
         "upper_bound_apex_m": ballistic_apex(v_upper, cfg.gravity),
-        "level": "order-of-magnitude; rigid-body coupling not resolved",
+        "added_mass_coefficient": cfg.floe_added_mass_coefficient,
+        "dry_mass_speed_ratio": ratio,
+        "level": ("order-of-magnitude; rigid-body coupling not resolved; "
+                  "launch_speed_m_s is a dry-mass upper bound, "
+                  "launch_speed_with_added_mass_m_s is the recommended reading"),
     }
 
 
@@ -885,6 +923,11 @@ def build_dem_exchange(run: IceSplashRun, cfg: IceSplashConfig,
         centre = floes[k].tolist()
         rows.append([float(centre[0]), float(centre[1])])
         speed = _floe_launch_speed(run.floe_impulse[k], cfg)
+        # Hand the DEM solver the added-mass-corrected speed: the dry-mass value
+        # over-predicts the launch by 1 + C_m rho_w/rho_ice (2.09x at C_m = 1).
+        if cfg.floe_added_mass_coefficient > 0.0:
+            speed = (speed * _floe_mass_per_depth(cfg)
+                     / (_floe_mass_per_depth(cfg) + _floe_induced_mass_per_depth(cfg)))
         velocities.append([0.0, float(speed)])
         masses.append(_floe_mass_per_depth(cfg))
         radii.append(float(cfg.floe_radius))
@@ -898,6 +941,7 @@ def build_dem_exchange(run: IceSplashRun, cfg: IceSplashConfig,
             "spacing_m": dx,
             "rho0_kg_m3": cfg.rho0,
             "rho_ice_kg_m3": cfg.floe_rho,
+            "floe_added_mass_coefficient": cfg.floe_added_mass_coefficient,
             "gravity_m_s2": cfg.gravity,
             "seed": int(cfg.seed),
         },

@@ -48,6 +48,11 @@ from .dam_break_3d import (
     validate_case as validate_case_3d,
     wall_lattice_3d,
 )
+from .added_mass import (
+    DISC_ADDED_MASS_COEFFICIENT,
+    cylinder_added_mass,
+    speed_ratio_with_added_mass,
+)
 from .ice_splash import (
     IceSplashConfig,
     IceSplashRun,
@@ -96,7 +101,9 @@ __all__ = [
     "resolve_device", "rhs", "rhs_all_pairs", "run", "suggested_dt",
     "tait_pressure", "validate_config", "viscous_dt_limit", "wall_lattice",
     "IceSplashConfig", "IceSplashRun", "build_dem_exchange", "eos_internal_energy",
-    "floe_launch_estimate", "front_coefficient", "ice_bed_lattice", "ice_surface",
+    "floe_launch_estimate",
+    "DISC_ADDED_MASS_COEFFICIENT", "cylinder_added_mass",
+    "speed_ratio_with_added_mass", "front_coefficient", "ice_bed_lattice", "ice_surface",
     "validate_dem_exchange", "write_dem_exchange",
     "PairListCache", "brute_force_pairs", "cell_linked_pairs",
     "cell_linked_pairs_host", "DamBreakConfig", "make_column", "run_case",
