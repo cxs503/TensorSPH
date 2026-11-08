@@ -116,17 +116,32 @@ quantity below 3 %, else the case is not validated.
 | key quantity | reference | best measured | relative error | < 3 %? |
 |---|---|---|---|---|
 | peak velocity `u_max` | `g_x H^2/(8 nu) = 1.2263` m/s | 1.2448 m/s (H/dx=16) | 1.5% | **yes** |
-| wall shear `tau_w` | `rho g_x H/2 = 490.5` Pa | 246.5 Pa | -49.7% | **no** |
+| wall shear `tau_w`, 1-`dx` secant (see 4.1) | `rho g_x H/2 = 490.5` Pa | 246.5 Pa | -49.7% | **no** |
 | pointwise profile, interior | analytic parabola | 8.51% RMS | 8.51% | **no** |
 | effective bulk viscosity | `nu = 0.01` | 1.149 nu (middle-half fit) | 14.9% | **no** |
 | no-slip at the wall | `u(0) = 0` | 31.4% of `u_max` | — | **no** |
 
 **Answer: it depends which quantity, and the honest summary is 'not validated'.** The peak velocity is inside 3 % at `H/dx = 16` (1.5%), but the wall shear is -50% off at that resolution and stays there across the ladder (42%, 37%, 50% off at `H/dx = 8, 12, 16`).
-A momentum balance that a steady channel must satisfy pointwise is violated by
-half, so the peak agreement cannot be presented as the wall being right. The
-apparent order of the peak error,
+The last row is a *one-spacing secant* and it is not the drag the wall transmits: measured from the momentum budget of the same run the wall removes `D/(M g) = 1.0091` of the injected streamwise momentum at `H/dx = 16` (0.91%), i.e. the missing gradient is a property of the stencil and of the unresolved wall layer, not of the wall model. The audit, its calibration control and the withdrawn sentence are in 4.1 and in `docs/verification_poiseuille_wall_shear_estimator.md`.
+
+A momentum balance that a steady channel must satisfy pointwise is still
+violated by half *as a gradient reading*, so the peak agreement cannot be
+presented as the wall being right. The apparent order of the peak error,
 4.00, is a difference of two first-order defects and is not evidence
 of a converging no-slip condition.
+
+### 4.1 What the -50 % wall-shear reading measures
+
+Three independent readings of the same shear, from the same stored run (`benchmarks/poiseuille/wall_shear_estimators.py`, artifact `out/wall_shear_estimators.json`):
+
+| `H/dx` | 1-`dx` secant | same secant on the *exact* parabola | global parabola slope at the wall | drag from the momentum budget |
+|---|---|---|---|---|
+| 8 | 0.580 | 0.750 | 0.820 | 0.989 |
+| 12 | 0.630 | 0.833 | 0.828 | 1.003 |
+| 16 | 0.503 | 0.875 | 0.812 | 1.009 |
+| analytic | 1 | 1 | 1 | 1 |
+
+The free-slip control calibrates the drift estimator to 0.45% against its exact answer `d<u>/dt = g`, so the budget column is good to about a percent; the worst deviation over the ladder and over two fit windows is 1.05% / 1.49%. Two things follow. (i) The wall transmits the full momentum flux, to within the estimator's resolution -- `a steady channel cannot do otherwise` -- so the secant reading above is a gradient bias, not a drag deficit. (ii) Of the -49.7% secant bias at `H/dx = 16`, -12.5% is the stencil's own geometry (`1 - 2 dx/H`) and the rest is the shape of the smeared wall layer, which puts the first fluid row at 31.4% of `u_max`.
 
 What *is* verified:
 
@@ -189,13 +204,15 @@ What is *not* verified, and why:
 `docs/algorithm-gap-analysis.md` leaves the default `wall_friction` open pending
 a comparison like this one. The measurement says: at the resolutions this solver
 is used at for a 0.1 m channel (`H/dx = 8 .. 16`), the blended no-slip condition
-produces a slip velocity of 49% to 31% of the centre-line speed and carries
-only 58% to 50% of the wall shear the
-momentum balance requires. Concrete consequences:
+produces a slip velocity of 49% to 31% of the centre-line speed, and the
+near-wall gradient a 1-`dx` secant can recover from it is 58% to 50% of
+`rho g H/2` -- the drag itself is transmitted in full (4.1), but the profile
+inside one spacing of the wall is not resolved well enough to read it as a
+stress. Concrete consequences:
 
 * keep `wall_friction = 0` (free slip) as the default, as it is now. A no-slip
-  default would add a boundary layer the solver cannot resolve and quietly
-  misplace 30-50 % of the wall shear.
+  default would add a boundary layer the solver cannot resolve, and any wall
+  shear read from its gradient would be 40-50 % low at `H/dx = 8..16` (4.1).
 * do not attach a no-slip claim to a result obtained with `wall_friction = 1`
   unless the wall layer is resolved much finer than `H/dx = 16`; the peak
   velocity may look right because the errors cancel.
@@ -211,6 +228,7 @@ momentum balance requires. Concrete consequences:
 PYTHONPATH=src python benchmarks/poiseuille/run.py \
     --resolutions 8 12 16 --t-end 1.0 --t-average 0.2 \
     --out benchmarks/poiseuille/out
+python benchmarks/poiseuille/wall_shear_estimators.py
 python benchmarks/poiseuille/make_doc.py
 PYTHONPATH=src python -m pytest tests/test_poiseuille.py -q
 ```
