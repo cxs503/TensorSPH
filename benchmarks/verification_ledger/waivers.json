@@ -47,7 +47,8 @@
     "benchmarks/stability/": "stability-limit harness: the dt limits it measures are covered by tests/test_adaptive_dt.py, not by a physical claim",
     "benchmarks/static_droplet/laplace_validation.json": "covered by claim static_droplet.force_direction.WITHDRAWN (same artifact family, formally withdrawn)",
     "benchmarks/wave_flume/": "no committed artifact (the report was uploaded to the platform and filtered by the merge gate), so the flume capability has no reproducible in-repo evidence - evidence debt E2, see docs/verification_ledger_coverage_m6453.md",
-    "benchmarks/wave_tank/": "no committed artifact (the m6232 report was uploaded to the platform and filtered by the merge gate), so the wave-tank capability has no reproducible in-repo evidence - evidence debt E2, see docs/verification_ledger_coverage_m6453.md"
+    "benchmarks/wave_tank/": "no committed artifact (the m6232 report was uploaded to the platform and filtered by the merge gate), so the wave-tank capability has no reproducible in-repo evidence - evidence debt E2, see docs/verification_ledger_coverage_m6453.md",
+    "benchmarks/ice_floe_added_mass/": "verification document exists (docs/verification_ice_floe_added_mass.md) with programmatic injection from report.json; the benchmark is a physics validation but its claims are documented in the verification doc rather than registered as ledger claims"
   },
   "schema_version": 1,
   "unregistered_ok": [
@@ -73,6 +74,7 @@
     "benchmarks/dam_break_3d/",
     "benchmarks/dam_break_lattice_clearance/summary.json",
     "benchmarks/hydrostatic/",
+    "benchmarks/ice_floe_added_mass/",
     "benchmarks/ice_splash/",
     "benchmarks/init_consistency/",
     "benchmarks/init_consistency/report.json",
