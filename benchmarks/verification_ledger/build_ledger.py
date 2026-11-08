@@ -739,6 +739,127 @@ def threed_claims() -> list[dict]:
                 ),
             )
         )
+
+    # -- the unfiltered readings: what the SAME artifacts say when nothing is
+    #    selected after the fact ------------------------------------------------
+    #  The two claims above are best-of-N selections (finest ladder rung, best of
+    #  six hydrostatic runs).  Selection is legitimate only if the spread it hides
+    #  is registered next to it, otherwise "PASS" describes the choice, not the
+    #  method.  These four rows are the complement: the worst rung of the same
+    #  ladder, the worst admissible hydrostatic run, and the interior pressure
+    #  profile that the bottom-layer reading does not represent.
+    worst_i = max(range(len(ladder)), key=lambda i: abs(ladder[i]["decay"]["rel_error"]))
+    worst = ladder[worst_i]
+    out.append(
+        _entry(
+            claim_id="threed_shear.decay_rate.worst_of_ladder",
+            quantity_id=qid_decay,
+            quantity=qty_decay,
+            artifact="benchmarks/threed_shear/report.json",
+            json_path=f"resolution_ladder[{worst_i}].decay",
+            reference=(worst["decay"]["analytic_rate"], "1/s", "2 nu k^2 (exact)"),
+            measured=(
+                worst["decay"]["fit_rate"], "1/s",
+                f"coarsest rung of the same ladder, n = {worst['n']}^3 particles, "
+                f"k h = {worst['kh']:.3f}, second-moment renormalised viscous operator",
+            ),
+            guarding_test="tests/test_threed_artifacts.py::test_shear_report_meets_its_criteria",
+            artifact_status=d["verdict"].upper(),
+            backlog_ref="docs/verification_threed.md",
+            notes=(
+                "Complement of `threed_shear.decay_rate.finest`: the ladder runs "
+                f"{worst['decay']['rel_error'] * 1e2:+.2f} % (n = {worst['n']}) to "
+                f"{best['decay']['rel_error'] * 1e2:+.2f} % (n = {best['n']}). Quoting only "
+                "the finest rung hides that the coarsest one is outside the paper band, "
+                "and the artifact's own h/dx sweep is incomplete (see missing_cases)."
+            ),
+        )
+    )
+
+    adami_worst_i = max(adami, key=lambda i: abs(runs[i]["pressure"]["bottom_rel_error"]))
+    worst_run = runs[adami_worst_i]
+    out.append(
+        _entry(
+            claim_id="threed_hydrostatic.bottom_pressure.adami_worst",
+            quantity_id=qid_p,
+            quantity=qty_p,
+            artifact=rel,
+            json_path=f"runs[{adami_worst_i}].pressure",
+            reference=(worst_run["pressure"]["bottom_analytic"], "Pa", "rho0 g H, H = nz dx"),
+            measured=(
+                worst_run["pressure"]["bottom_measured"], "Pa",
+                f"worst of the {len(adami)} Adami runs on the bottom layer; "
+                f"{worst_run['case']}, dx = {worst_run['dx']} m",
+            ),
+            guarding_test="tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria",
+            artifact_status=h["verdict"].upper(),
+            backlog_ref="docs/verification_threed.md",
+            notes=(
+                "Complement of `threed_hydrostatic.bottom_pressure.adami_best`: the "
+                f"{len(adami)} Adami runs span "
+                f"{worst_run['pressure']['bottom_rel_error'] * 1e2:+.2f} % to "
+                f"{runs[best_i]['pressure']['bottom_rel_error'] * 1e2:+.2f} % "
+                "on the same collapse quantity, so the single best value is a selection, "
+                "not a property of the wall model alone (it tracks c0 and therefore the "
+                "density error, as Adami et al. 2012 predict)."
+            ),
+        )
+    )
+
+    out.append(
+        _entry(
+            claim_id="threed_hydrostatic.profile.mean_rel_error_core.adami_best",
+            quantity_id="threed_hydrostatic_profile_mean_error",
+            quantity=(
+                "mean relative error of the interior (non-bottom, non-surface) pressure "
+                "profile of a 3-D column at rest"),
+            artifact=rel,
+            json_path=f"runs[{best_i}].pressure",
+            reference=(0.0, "%", "exact profile p = rho0 g (H - z): target error 0 %"),
+            measured=(
+                run["pressure"]["mean_rel_error_core"] * 1e2, "%",
+                f"mean of the per-layer relative errors over the {run['pressure']['core_layers']} "
+                f"core layers; {run['case']}",
+            ),
+            rel_error_pct=run["pressure"]["mean_rel_error_core"] * 1e2,
+            guarding_test="tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria",
+            artifact_status=h["verdict"].upper(),
+            backlog_ref="docs/verification_threed.md",
+            notes=(
+                "The bottom-layer reading above is one point of a profile that is NOT "
+                "within the band everywhere: the interior is systematically low, which is "
+                "why the artifact's own criterion `interior_pressure_within_15pct_best` "
+                "is false. Registered so the PASS on the bottom layer cannot be read as "
+                "'the 3-D hydrostatic profile is verified'."
+            ),
+        )
+    )
+
+    out.append(
+        _entry(
+            claim_id="threed_hydrostatic.profile.max_rel_error_core.adami_best",
+            quantity_id="threed_hydrostatic_profile_max_error",
+            quantity=(
+                "worst per-layer relative error over the interior pressure profile of a "
+                "3-D column at rest"),
+            artifact=rel,
+            json_path=f"runs[{best_i}].pressure",
+            reference=(0.0, "%", "exact profile p = rho0 g (H - z): target error 0 %"),
+            measured=(
+                run["pressure"]["max_rel_error_core"] * 1e2, "%",
+                f"max over the {run['pressure']['core_layers']} core layers; {run['case']}",
+            ),
+            rel_error_pct=run["pressure"]["max_rel_error_core"] * 1e2,
+            guarding_test="tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria",
+            artifact_status="FAIL",
+            backlog_ref="docs/verification_threed.md",
+            notes=(
+                "The odd-even pressure mode of the particle lattice: adjacent layers "
+                "alternate between ~-6 % and up to -43 %, so any single-layer reading of "
+                "this benchmark is a sample of a mode, not a converged profile."
+            ),
+        )
+    )
     return out
 
 
@@ -1499,6 +1620,9 @@ def findings(entries: list[dict], root: Path | None = None) -> list[dict]:
             }
         )
 
+    # (a5) a credit whose own artifact declares a failure (best-of-N / partial ladder)
+    out.extend(credit_findings(entries))
+
     # (b) one physical quantity, several irreconcilable readings
     by_q: dict[str, list[dict]] = {}
     for e in entries:
@@ -1557,6 +1681,106 @@ def _load_waivers() -> set[str]:
 # ---------------------------------------------------------------------------
 # rendering
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# declared verdicts: what the artifact itself says about the run it came from
+# ---------------------------------------------------------------------------
+VERDICT_KEYS = ("verdict", "status", "evidence_grade")
+_FAIL_TOKENS = {"fail", "failed", "false", "withheld", "invalid", "incomplete"}
+_PASS_TOKENS = {"pass", "passed", "ok", "true", "valid"}
+
+
+def normalise_verdict(value) -> str | None:
+    """Map a declared status of any shape onto ``pass`` / ``fail`` / ``None``."""
+    if isinstance(value, bool):
+        return "pass" if value else "fail"
+    if isinstance(value, str):
+        tok = value.strip().lower()
+        if tok in _FAIL_TOKENS:
+            return "fail"
+        if tok in _PASS_TOKENS:
+            return "pass"
+        return None
+    if isinstance(value, dict):
+        for key in VERDICT_KEYS:
+            if key in value:
+                norm = normalise_verdict(value[key])
+                if norm:
+                    return norm
+        if "worst_within_15pct" in value:
+            return "pass" if value["worst_within_15pct"] else "fail"
+    return None
+
+
+def declared_verdict(artifact: str, _cache: dict = {}) -> dict | None:
+    """The artifact's own top-level verdict, with the machine-checkable reasons.
+
+    A ledger entry records *one reading*; the artifact that carries it declares
+    a verdict about the *whole run set*.  Those two are not the same statement:
+    a best-of-N or a finest-rung selection can read inside the band while the
+    artifact's own verdict is ``fail`` (missing ladder case, failing interior
+    criterion).  This helper makes that declaration travel with the reading so
+    it cannot be silently dropped.
+    """
+    if artifact in _cache:
+        return _cache[artifact]
+    try:
+        d = _load(artifact)
+    except FileNotFoundError:
+        _cache[artifact] = None
+        return None
+    found = None
+    if isinstance(d, dict):
+        for key in VERDICT_KEYS:
+            if key not in d:
+                continue
+            norm = normalise_verdict(d[key])
+            if norm:
+                criteria = d.get("criteria") if isinstance(d.get("criteria"), dict) else {}
+                missing = d.get("missing_cases") or []
+                found = {
+                    "value": norm,
+                    "json_path": key,
+                    "failing_criteria": sorted(k for k, v in criteria.items() if v is False),
+                    "missing_cases": [str(m) for m in missing],
+                }
+                break
+    _cache[artifact] = found
+    return found
+
+
+def credit_findings(entries: list[dict]) -> list[dict]:
+    """Readings credited as PASS/MARGINAL whose own artifact declares a failure."""
+    out = []
+    for e in entries:
+        if e["grade"] not in {"PASS", "MARGINAL"}:
+            continue
+        dv = e.get("declared_verdict")
+        if not dv or dv["value"] != "fail":
+            continue
+        why = []
+        if dv["failing_criteria"]:
+            why.append("failing criteria: " + ", ".join(dv["failing_criteria"]))
+        if dv["missing_cases"]:
+            why.append("missing cases: " + ", ".join(dv["missing_cases"]))
+        reason = f" ({'; '.join(why)})" if why else ""
+        out.append(
+            {
+                "rule": "credit_from_failing_artifact",
+                "severity": "high",
+                "claim_id": e["claim_id"],
+                "detail": (
+                    f"{e['rel_error_pct']:+.2f} % is credited {e['grade']}, but the "
+                    f"artifact `{e['artifact']}` declares `{dv['json_path']} = fail`"
+                    f"{reason}: this is a best-of-N / finest-rung selection out of a run "
+                    "set that does not pass, so it may not be quoted as verification of "
+                    "the capability -- see docs/verification_ledger_overcredit_m6510.md"
+                ),
+            }
+        )
+    return out
+
+
 def build() -> dict:
     entries = (
         young_laplace_claims()
@@ -1574,6 +1798,15 @@ def build() -> dict:
     for e in entries:
         e["run_validity"] = V.evaluate(e["claim_id"])["status"]
         e["grade"] = grade(e)
+        e["declared_verdict"] = declared_verdict(e["artifact"])
+        # A credit is *qualified* when the artifact that carries it does not
+        # contradict it.  ``None`` = the artifact declares nothing at all, which is
+        # weaker than a pass but is not the same defect as a declared failure.
+        if e["grade"] in {"PASS", "MARGINAL"}:
+            dv = e["declared_verdict"]
+            e["credit_qualified"] = (dv is None) or dv["value"] == "pass"
+        else:
+            e["credit_qualified"] = None
         # schema-drift guard: every reading must be reachable from its artifact
         if not (REPO / e["artifact"]).is_file():
             raise FileNotFoundError(f"{e['claim_id']}: artifact gone: {e['artifact']}")
@@ -1591,6 +1824,16 @@ def build() -> dict:
         },
         "criterion_pct": CRITERION_PCT,
         "paper_criterion_pct": PAPER_PCT,
+        "n_credits_unqualified": sum(
+            1 for e in entries
+            if e["grade"] in {"PASS", "MARGINAL"} and e["credit_qualified"] is False),
+        "n_credits_without_declared_verdict": sum(
+            1 for e in entries
+            if e["grade"] in {"PASS", "MARGINAL"}
+            and e.get("declared_verdict") is None),
+        "n_artifact_verdicts_fail": sum(
+            1 for e in entries
+            if (e.get("declared_verdict") or {}).get("value") == "fail"),
     }
     return {"schema_version": 1, "summary": summary, "entries": entries, "findings": found}
 
@@ -1642,6 +1885,12 @@ def render_markdown(ledger: dict) -> str:
         f"／ findings **{s['n_findings']}**",
         "- 分级分布：" + "，".join(f"{k} {v}" for k, v in s["by_grade"].items() if v),
         "- findings 分类：" + "，".join(f"{k} {v}" for k, v in s["findings_by_rule"].items()),
+        f"- **credit 资格**：{s['by_grade'].get('PASS', 0)} 条 PASS / "
+        f"{s['by_grade'].get('MARGINAL', 0)} 条 MARGINAL，其中 "
+        f"**{s['n_credits_unqualified']}** 条取自「工件自述 verdict = fail」的运行集"
+        "（best-of-N / 阶梯不全，不可作为能力验证引用）；另有 "
+        f"{s['n_credits_without_declared_verdict']} 条 credit 的工件根本没有声明 verdict"
+        "（等级只能被读成「该读数自身合规」，不是「该能力被验证」）。",
         "",
         "## 4. 断言表",
         "",
@@ -1682,6 +1931,20 @@ def render_markdown(ledger: dict) -> str:
             f"- 相对误差：{_fmt_err(e)}（平台线 ±{e['criterion_pct']:.0f}%，"
             f"论文级 ±{e['paper_criterion_pct']:.0f}%）",
             f"- 工件自述状态：`{e['artifact_status']}`；本账等级：**{e['grade']}**",
+            (
+                "- 工件自身 verdict：**"
+                f"{e['declared_verdict']['value']}**（`{e['declared_verdict']['json_path']}`"
+                + (
+                    "；未通过项：" + "、".join(e["declared_verdict"]["failing_criteria"])
+                    if e["declared_verdict"]["failing_criteria"] else ""
+                )
+                + (
+                    "；缺失用例：" + "、".join(e["declared_verdict"]["missing_cases"])
+                    if e["declared_verdict"]["missing_cases"] else ""
+                )
+                + "）"
+                if e.get("declared_verdict") else "- 工件自身 verdict：未声明"
+            ),
             f"- 溯源：`{e['artifact']}` → `{e['json_path']}`",
             f"  - 守护测试：`{e['guarding_test']}`",
             f"- 欠账指针：`{e['backlog_ref']}`" + sup,
