@@ -51,6 +51,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import sys
 from pathlib import Path
 
@@ -83,6 +84,13 @@ GATE_NULL_FRACTION = 0.25
 # A quoted scaling relation is accepted when its prediction lands within the
 # platform criterion of the reading it is used to explain.
 GATE_COUPLING_PT = CRITERION_PCT
+# A relaxed drop is at rest only if its spurious current stays below the
+# Adami et al. 2012 acceptance level; above it the core pressure is read
+# while the drop is still moving, so it is not a measurement of the jump.
+GATE_SPOURIOUS_CURRENT = 0.1
+# A relaxed drop must stay near rest density; a core far from rho0 means the
+# drop compressed or blew up and the pressure is not the Young-Laplace jump.
+GATE_CLOSURE_CONTAINMENT = 1.02
 
 
 # ---------------------------------------------------------------------------
@@ -260,12 +268,79 @@ def probe_oscillating_droplet() -> dict:
     }
 
 
+def _closure_probe(claim_id: str) -> dict:
+    """Is the recorded relaxation a measurement at all? (Adami 2012 admissibility)
+
+    The free-surface pressure closure (Adami/Ihmsen/Adams 2012 section 3.3) was
+    merged as the P0 fix for the Young-Laplace jump.  Its ledger readings come from
+    relaxation runs; this probe re-derives the admissibility from the raw artifact
+    instead of trusting the ledger note: the drop must be at rest (spurious current
+    below the published limit) and near rest density when the core pressure is read.
+    """
+    ledger = _load("benchmarks/verification_ledger/ledger.json")
+    entry = next(e for e in ledger["entries"] if e["claim_id"] == claim_id)
+    art = _load(entry["artifact"])
+    node = art
+    for key, idx in re.findall(r"(\w+)\[(\d+)\]", entry["json_path"]):
+        node = node[key][int(idx)]
+    vmax = float(node["vmax_over_vref"])
+    rho_core = float(node["rho_core_over_rho0"])
+    checks = [
+        _check(
+            "spurious_current",
+            vmax,
+            GATE_SPOURIOUS_CURRENT,
+            relation="<=",
+            kind="hard",
+            detail=(
+                f"v_max/v_ref = {vmax:.4f}; Adami et al. 2012 require < 0.1 for the "
+                "drop to be at rest when the core pressure is read"
+            ),
+        ),
+        _check(
+            "containment",
+            rho_core,
+            GATE_CLOSURE_CONTAINMENT,
+            relation="<=",
+            kind="hard",
+            detail=(
+                f"rho_core/rho0 = {rho_core:.5f}; a relaxed drop must stay near rest "
+                "density, otherwise the pressure is not the Young-Laplace jump"
+            ),
+        ),
+    ]
+    hard = [c for c in checks if c["kind"] == "hard"]
+    status = "INVALID" if any(not c["passed"] for c in hard) else "VALID"
+    return {
+        "claim_id": claim_id,
+        "quantity": "Young-Laplace pressure jump dp = sigma/R (relaxed <p_core>)",
+        "artifacts": [entry["artifact"]],
+        "checks": checks,
+        "status": status,
+        "recorded_reading": {"vmax_over_vref": _r(vmax), "rho_core_over_rho0": _r(rho_core)},
+        "verdict_text": (
+            "The relaxation run is not admissible: the spurious current exceeds the "
+            "Adami 2012 limit, so the drop was not at rest when the pressure was read; "
+            "the reading is WITHHELD, not a measured defect."
+            if status == "INVALID"
+            else "Validity gates passed; the reading may be graded on the ladder."
+        ),
+    }
+
+
 # ---------------------------------------------------------------------------
 # probe registry
 # ---------------------------------------------------------------------------
 PROBES = {
     "oscillating_droplet.frequency.lamb": probe_oscillating_droplet,
 }
+# The free-surface pressure closure claims are probed from their raw relaxation
+# artifacts; the registry is derived from the committed ledger so it stays current
+# when the closure ladder grows.
+for _cid in (e["claim_id"]
+             for e in _load("benchmarks/verification_ledger/ledger.json")["entries"]
+             if e["claim_id"].startswith("young_laplace.closure.")):
+    PROBES[_cid] = (lambda cid: lambda: _closure_probe(cid))(_cid)
 
 
 def evaluate(claim_id: str) -> dict:
@@ -481,6 +556,8 @@ def build() -> dict:
             "fit_r2": GATE_FIT_R2,
             "null_control_fraction": GATE_NULL_FRACTION,
             "coupling_residual_pt": GATE_COUPLING_PT,
+            "spurious_current_over_reference": GATE_SPOURIOUS_CURRENT,
+            "closure_containment_rho_core_over_rho0": GATE_CLOSURE_CONTAINMENT,
             "criterion_pct": CRITERION_PCT,
             "paper_pct": PAPER_PCT,
         },
@@ -543,6 +620,14 @@ def render_markdown(a: dict) -> str:
     L.append(
         f"| `null_control` | σ=0 负控 ω/ω_ref ≤ {crit['null_control_fraction']:.2f} | "
         "无表面张力时同一估计子不得凭空造出半条 Lamb 频率 | soft |"
+    )
+    L.append(
+        f"| `spurious_current` | v_max/v_ref ≤ {crit['spurious_current_over_reference']} | "
+        "松弛液滴须静止时读压强；超 Adami 2012 限=读数非测量量 | hard |"
+    )
+    L.append(
+        f"| `closure_containment` | rho_core/rho0 ≤ {crit['closure_containment_rho_core_over_rho0']} | "
+        "松弛液滴须贴近静息密度，否则压强非 Young-Laplace 压差 | hard |"
     )
     L.append("")
     L.append("hard 失败 ⇒ `INVALID`（读数不可用）；仅 soft 失败 ⇒ `SUSPECT`；全过 ⇒ `VALID`。")
