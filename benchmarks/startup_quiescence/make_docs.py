@@ -1,3 +1,5 @@
+# ruff: noqa: E501  (long CJK/markdown template lines: table rows and prose paragraphs
+# must stay on one physical line or the rendered markdown changes; see PR notes)
 """Generate the quiescence verification docs and figures from ``report.json``.
 
 Every number in the two markdown files is read out of

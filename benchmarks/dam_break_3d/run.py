@@ -5,7 +5,6 @@ Uses a moderate resolution suitable for demonstration (~200 particles).
 Produces figures and results JSON in artifacts/.
 """
 import json
-import math
 import sys
 import os
 import time

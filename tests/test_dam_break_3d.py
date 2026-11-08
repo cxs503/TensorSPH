@@ -19,7 +19,6 @@ import torch
 
 from tensorsph.dam_break_3d import (
     DamBreak3DConfig,
-    DamBreak3DRun,
     apply_boundary_3d,
     cubic_spline_kernel_3d,
     cubic_spline_gradient_3d,
