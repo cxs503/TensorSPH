@@ -130,6 +130,102 @@
     },
     {
       "admissibility": null,
+      "artifact": "benchmarks/density_diffusion_decay/decay_rate.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "docs/verification_density_diffusion_decay.md",
+      "claim_id": "density_diffusion.decay_rate.worst_of_ladder",
+      "claim_type": "gate",
+      "criterion_pct": 15.0,
+      "gate_limit": 0.03,
+      "gate_result": "pass",
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_density_diffusion_decay.py::test_the_diffusive_term_decays_a_plane_wave_at_the_analytic_rate",
+      "json_path": "max_rate_relative_error",
+      "measured": {
+        "definition": "worst |gamma_measured/gamma_theory - 1| over the resolution / wavenumber / smoothing-length ladders",
+        "unit": "fraction",
+        "value": 0.010208
+      },
+      "notes": "D = delta c0 h is not fitted: delta, c0 and h = h_factor dx are solver inputs, so a sign flip, a factor of two or a dx/h confusion would miss by far more than the gate. Before this registration the term had only conservation and smoothing tests, either of which such a defect would pass.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "decay rate of a plane density wave vs the analytic gamma = D k^2, D = delta c0 h (Antuono, Colagrossi & Marrone 2012)",
+      "quantity_id": "density_diffusion_decay_rate",
+      "reference": {
+        "source": "gates.rate_relative_error on |gamma_measured/gamma_theory - 1|",
+        "unit": "fraction",
+        "value": 0.03
+      },
+      "rel_error_pct": 1.020838,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/density_diffusion_decay/decay_rate.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "docs/verification_density_diffusion_decay.md",
+      "claim_id": "density_diffusion.finite_time.amplitude",
+      "claim_type": "gate",
+      "criterion_pct": 15.0,
+      "gate_limit": 0.035,
+      "gate_result": "pass",
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_density_diffusion_decay.py::test_the_mode_amplitude_follows_the_exponential_over_a_finite_time",
+      "json_path": "finite_time",
+      "measured": {
+        "definition": "|rho(x,t)/rho0 - 1 - A exp(-gamma t)| amplitude error after the run",
+        "unit": "fraction",
+        "value": 0.00482
+      },
+      "notes": "",
+      "paper_criterion_pct": 3.0,
+      "quantity": "mode amplitude after a finite integration time vs rho0 A exp(-gamma t)",
+      "quantity_id": "density_diffusion_finite_time_amplitude",
+      "reference": {
+        "source": "gates.finite_time_relative_error",
+        "unit": "fraction",
+        "value": 0.035
+      },
+      "rel_error_pct": 0.481978,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/effective_sigma/out/report.json",
+      "artifact_status": "FAIL",
+      "backlog_ref": "docs/verification_ledger.md",
+      "claim_id": "effective_sigma.sigma_eff_over_sigma.dx5mm",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "FAIL",
+      "guarding_test": "tests/test_effective_sigma.py::test_current_default_delivers_the_documented_ratio",
+      "json_path": "rows[0].ratio",
+      "measured": {
+        "definition": "|F_half| / (2 sigma) at R/h = 6.15",
+        "unit": "-",
+        "value": 0.710625
+      },
+      "notes": "Independent replication of claim csf_force.sigma_eff_over_sigma.dx5mm at twice the radius with a different curvature estimator: the two agree to ~1 pt, so the ~30 % force deficit is not a radius or operator artefact. Same root cause as colour_surface.delta_s_integral (the colour-surface delta carries ~0.75 of unit mass).",
+      "paper_criterion_pct": 3.0,
+      "quantity": "effective surface tension from the half-droplet force integral, sigma_eff/sigma (R = 40 mm, curvature estimator: quadratic interface fit)",
+      "quantity_id": "csf_force_sigma_eff",
+      "reference": {
+        "source": "sigma_eff = sigma (|F_half| / (2 sigma))",
+        "unit": "-",
+        "value": 1.0
+      },
+      "rel_error_pct": -28.937538,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
       "artifact": "benchmarks/laplace_droplet/results.json",
       "artifact_status": "FAIL",
       "backlog_ref": "docs/verification_ledger.md",
@@ -253,6 +349,70 @@
         "value": 360.0
       },
       "rel_error_pct": -30.659352,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/poiseuille/out/results.json",
+      "artifact_status": null,
+      "backlog_ref": "docs/verification_ledger_coverage_m6453.md",
+      "claim_id": "poiseuille.centre_velocity.finest",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_poiseuille.py::test_steady_channel_flow_develops_the_poiseuille_parabola",
+      "json_path": "results[2].fit.u_centre_measured",
+      "measured": {
+        "definition": "parabola fitted to the time-averaged profile at H/dx = 16",
+        "unit": "m/s",
+        "value": 1.244761
+      },
+      "notes": "",
+      "paper_criterion_pct": 3.0,
+      "quantity": "centre velocity of a body-force-driven plane channel at steady state",
+      "quantity_id": "poiseuille_centre_velocity",
+      "reference": {
+        "source": "u_max = g H^2 / (8 nu), H = 0.1 m, nu = 0.01 m^2/s, g = 9.81 m/s^2",
+        "unit": "m/s",
+        "value": 1.22625
+      },
+      "rel_error_pct": 1.50958,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/poiseuille/out/results.json",
+      "artifact_status": null,
+      "backlog_ref": "docs/verification_ledger_coverage_m6453.md",
+      "claim_id": "poiseuille.wall_shear_ratio.finest",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "WITHHELD",
+      "guarding_test": "tests/test_poiseuille.py::test_steady_channel_flow_develops_the_poiseuille_parabola",
+      "json_path": "results[2].wall_shear_ratio",
+      "measured": {
+        "definition": "measured wall friction divided by the analytic value at H/dx = 16",
+        "unit": "-",
+        "value": 0.502508
+      },
+      "notes": "WITHHELD rather than FAIL: the two readings inside one artifact disagree. The measured centre velocity implies tau = 4 rho nu u_max / H = 498 Pa, while the wall-band readout says 246 Pa, so the wall-band estimator (not necessarily the flow) carries the deficit and the number may not be quoted as a physical gate.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "no-slip wall shear stress of the same channel, relative to rho g H / 2",
+      "quantity_id": "poiseuille_wall_shear_ratio",
+      "reference": {
+        "source": "tau_wall = rho nu du/dy|_wall = rho g H / 2 = 490.5 Pa",
+        "unit": "-",
+        "value": 1.0
+      },
+      "rel_error_pct": -49.749238,
       "run_validity": "UNPROBED",
       "superseded_by": null
     },
@@ -1081,11 +1241,11 @@
   "schema_version": 1,
   "summary": {
     "by_grade": {
-      "FAIL": 8,
+      "FAIL": 9,
       "MARGINAL": 5,
-      "PASS": 4,
+      "PASS": 7,
       "WITHDRAWN": 2,
-      "WITHHELD": 12
+      "WITHHELD": 13
     },
     "criterion_pct": 15.0,
     "findings_by_rule": {
@@ -1094,9 +1254,9 @@
       "quantity_spread": 3,
       "run_validity": 1
     },
-    "n_claims": 31,
+    "n_claims": 36,
     "n_findings": 8,
-    "n_quantities": 14,
+    "n_quantities": 18,
     "paper_criterion_pct": 3.0
   }
 }

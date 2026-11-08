@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import math
 from pathlib import Path
 
 import pytest
@@ -226,3 +227,94 @@ def test_markdown_states_the_criteria(ledger):
     md = (REPO / "docs" / "verification_ledger.md").read_text()
     assert "15%" in md and "3%" in md
     assert "gauge_degenerate" in md
+
+
+# ---------------------------------------------------------------------------
+# coverage: a benchmark may not sit outside the ledger unnoticed (m6453)
+# ---------------------------------------------------------------------------
+def test_no_benchmark_harness_is_uncovered(ledger):
+    """Every ``benchmarks/<dir>/run*.py`` is either claimed or waived, by name."""
+    uncovered = [f["claim_id"] for f in ledger["findings"] if f["rule"] == "uncovered_benchmark"]
+    assert not uncovered, uncovered
+
+
+def test_coverage_rule_is_directory_based(tmp_path):
+    """The rule must catch a harness that commits nothing and an oddly named file.
+
+    Before m6453 the check matched artifact *names*
+    (``report|results|ladder|audit.json``) and skipped ``out/`` entirely, so
+    ``benchmarks/density_diffusion_decay/decay_rate.json`` and the two
+    ``out/``-only benchmarks sat outside the ledger without a finding.
+    """
+    (tmp_path / "benchmarks").mkdir()
+    # alpha: harness + odd-named primary artifact, neither claimed nor waived
+    (tmp_path / "benchmarks" / "alpha").mkdir()
+    (tmp_path / "benchmarks" / "alpha" / "run.py").write_text("")
+    (tmp_path / "benchmarks" / "alpha" / "decay_rate.json").write_text("{}")
+    # beta: harness that commits nothing at all
+    (tmp_path / "benchmarks" / "beta").mkdir()
+    (tmp_path / "benchmarks" / "beta" / "run.py").write_text("")
+    # gamma: covered by a claim under it (ladder fragments are not primary evidence)
+    (tmp_path / "benchmarks" / "gamma").mkdir()
+    (tmp_path / "benchmarks" / "gamma" / "run.py").write_text("")
+    (tmp_path / "benchmarks" / "gamma" / "cases").mkdir()
+    (tmp_path / "benchmarks" / "gamma" / "cases" / "dx1.json").write_text("{}")
+    (tmp_path / "benchmarks" / "gamma" / "report.json").write_text("{}")
+    # delta: waived by directory, out/ fragment
+    (tmp_path / "benchmarks" / "delta").mkdir()
+    (tmp_path / "benchmarks" / "delta" / "run.py").write_text("")
+    (tmp_path / "benchmarks" / "delta" / "out").mkdir()
+    (tmp_path / "benchmarks" / "delta" / "out" / "case01.json").write_text("{}")
+
+    registered = {"benchmarks/gamma/report.json"}
+    waived = {"benchmarks/delta/"}
+    got = B.coverage_findings(registered, waived, root=tmp_path)
+    rules = sorted((f["rule"], f["claim_id"]) for f in got)
+    assert rules == [
+        ("uncovered_benchmark", "benchmarks/alpha"),
+        ("uncovered_benchmark", "benchmarks/beta"),
+        ("unregistered_artifact", "benchmarks/alpha/decay_rate.json"),
+    ], rules
+
+
+def test_orphan_evidence_is_now_graded(by_id):
+    """Three committed analytic comparisons that the old rule could not see."""
+    decay = by_id["density_diffusion.decay_rate.worst_of_ladder"]
+    assert decay["grade"] == "PASS"
+    assert decay["measured"]["value"] < decay["gate_limit"]
+    assert by_id["density_diffusion.finite_time.amplitude"]["grade"] == "PASS"
+    assert by_id["poiseuille.centre_velocity.finest"]["grade"] == "PASS"
+    # the wall-band shear readout contradicts the velocity fit it came with
+    assert by_id["poiseuille.wall_shear_ratio.finest"]["grade"] == "WITHHELD"
+    # independent replication of the ~30 % CSF force deficit at 2x the radius
+    eff = by_id["effective_sigma.sigma_eff_over_sigma.dx5mm"]
+    assert eff["grade"] == "FAIL"
+    sibling = by_id["csf_force.sigma_eff_over_sigma.dx5mm"]
+    assert abs(eff["rel_error_pct"] - sibling["rel_error_pct"]) < 5.0
+
+
+def test_contact_angle_harness_runs_after_the_dead_api_fix():
+    """``benchmarks/contact_angle/run.py`` crashed on two removed torch APIs.
+
+    m6453 replaced ``math.asin(tensor)`` and ``torch.lstsq`` (removed in torch 1.9)
+    so the merged contact-angle capability has a harness that at least executes.
+    This pins the executable path only; the measurement layer's residual defect
+    (NaN angle at the shipped R/dx = 6.7) is recorded in
+    docs/verification_contact_angle_m6453.md and keeps the claim unregistered.
+    """
+    import importlib.util
+
+    path = REPO / "benchmarks" / "contact_angle" / "run.py"
+    spec = importlib.util.spec_from_file_location("contact_angle_bench", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    inst = mod.instrument_check()
+    assert len(inst["rows"]) == 10
+    assert all(isinstance(r["theta_measured_deg"], float) for r in inst["rows"])
+    # Honest current state, deliberately pinned: after the dead-API fix the harness
+    # executes end to end, but the analytic instrument still returns NaN for every
+    # row, so the capability has no usable angle reading at HEAD.  The pin flips
+    # when someone repairs the envelope estimator (see debt E3 in
+    # docs/verification_contact_angle_m6453.md); it does not assert the NaN away.
+    assert math.isnan(inst["rows"][0]["theta_measured_deg"])
+    assert inst["all_within_2deg"] is False

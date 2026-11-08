@@ -107,7 +107,8 @@ def contact_angle_from_envelope(x: torch.Tensor, y: torch.Tensor,
     # least-squares quadratic through the origin offset (y - y_c)
     yc = float(ys.min())
     A = torch.stack((xs, xs ** 2), dim=1)
-    coef, *_ = torch.lstsq(ys - yc, A)
+    # torch.lstsq was removed in torch 1.9; torch.linalg.lstsq takes (A, B)
+    coef = torch.linalg.lstsq(A, (ys - yc)).solution
     b = float(coef[0])
     return math.pi / 2.0 - math.atan(b)
 
@@ -139,7 +140,7 @@ def synthetic_interface(theta_deg: float, kind: str = "line",
         yc = Rc * math.cos(th - math.pi / 2.0)
     xoff = Rc * math.sin(math.pi / 2.0 - th)
     x0 = xc - xoff
-    a = math.asin(torch.linspace(-1.0, 0.0, n))
+    a = torch.asin(torch.linspace(-1.0, 0.0, n))
     xs = x0 + Rc * torch.sin(a)
     ys = yc - Rc * torch.cos(a)
     return xs, ys
