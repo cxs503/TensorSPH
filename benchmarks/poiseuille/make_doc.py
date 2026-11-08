@@ -137,6 +137,8 @@ def figure_field(data):
 
 def main() -> int:
     data = json.loads((OUT / "results.json").read_text())
+    audit_path = OUT / "wall_shear_estimators.json"
+    audit = json.loads(audit_path.read_text()) if audit_path.exists() else None
     results = data["results"]
     control = data["free_slip_control"]
     height = data["height"]
@@ -318,7 +320,8 @@ def main() -> int:
       f"{fmt(fine['u_max_measured'], 4)} m/s (H/dx={fine['resolution_H_over_dx']}) | "
       f"{pct(fine['u_max_ratio'] - 1.0, 1)} | "
       f"{'**yes**' if abs(fine['u_max_ratio'] - 1.0) < 0.03 else 'no'} |")
-    A(f"| wall shear `tau_w` | `rho g_x H/2 = {fmt(fine['wall_shear_analytic'], 1)}` Pa | "
+    A(f"| wall shear `tau_w`, 1-`dx` secant (see 4.1) | "
+      f"`rho g_x H/2 = {fmt(fine['wall_shear_analytic'], 1)}` Pa | "
       f"{fmt(fine['wall_shear_measured'], 1)} Pa | "
       f"{pct(fine['wall_shear_ratio'] - 1.0, 1)} | "
       f"{'yes' if abs(fine['wall_shear_ratio'] - 1.0) < 0.03 else '**no**'} |")
@@ -341,12 +344,59 @@ def main() -> int:
       f"there across the ladder"
       f" ({', '.join(pct(abs(r['wall_shear_ratio'] - 1.0), 0) for r in results)} off "
       f"at `H/dx = {', '.join(str(r['resolution_H_over_dx']) for r in results)}`).")
-    A("A momentum balance that a steady channel must satisfy pointwise is violated by")
-    A("half, so the peak agreement cannot be presented as the wall being right. The")
-    A("apparent order of the peak error,")
+    if audit is not None:
+        sm = audit["summary"]
+        A(f"The last row is a *one-spacing secant* and it is not the drag the wall"
+          f" transmits: measured from the momentum budget of the same run the wall "
+          f"removes `D/(M g) = {fmt(sm['drag_ratio_finest'], 4)}` of the injected "
+          f"streamwise momentum at `H/dx = {fine['resolution_H_over_dx']}` "
+          f"({pct(sm['drag_ratio_finest'] - 1.0, 2)}), i.e. the missing gradient is a "
+          f"property of the stencil and of the unresolved wall layer, not of the wall "
+          f"model. The audit, its calibration control and the withdrawn sentence are "
+          f"in 4.1 and in "
+          f"`docs/verification_poiseuille_wall_shear_estimator.md`.")
+        A("")
+    A("A momentum balance that a steady channel must satisfy pointwise is still")
+    A("violated by half *as a gradient reading*, so the peak agreement cannot be")
+    A("presented as the wall being right. The apparent order of the peak error,")
     A(f"{fmt(arg, 2)}, is a difference of two first-order defects and is not evidence")
     A("of a converging no-slip condition.")
     A("")
+    if audit is not None:
+        A("### 4.1 What the -50 % wall-shear reading measures")
+        A("")
+        A("Three independent readings of the same shear, from the same stored run "
+          "(`benchmarks/poiseuille/wall_shear_estimators.py`, artifact "
+          "`out/wall_shear_estimators.json`):")
+        A("")
+        A("| `H/dx` | 1-`dx` secant | same secant on the *exact* parabola | global "
+          "parabola slope at the wall | drag from the momentum budget |")
+        A("|---|---|---|---|---|")
+        for c in audit["cases"]:
+            r = c["estimator_ratios"]
+            A(f"| {c['resolution_H_over_dx']} | {fmt(r['secant_1dx'], 3)} | "
+              f"{fmt(r['secant_1dx_on_analytic_parabola'], 3)} | "
+              f"{fmt(r['global_parabola_fit_slope'], 3)} | "
+              f"{fmt(c['budget']['drag_over_weight_control_corrected'], 3)} |")
+        A("| analytic | 1 | 1 | 1 | 1 |")
+        A("")
+        A(f"The free-slip control calibrates the drift estimator to "
+          f"{pct(audit['control']['rate_over_g'] - 1.0, 2)} against its exact answer "
+          f"`d<u>/dt = g`, so the budget column is good to about a percent; the worst "
+          f"deviation over the ladder and over two fit windows is "
+          f"{pct(max(audit['summary']['budget_worst_abs_deviation'], 0.0), 2)} / "
+          f"{pct(audit['summary']['budget_worst_abs_deviation_alt_window'], 2)}. Two "
+          f"things follow. (i) The wall transmits the full momentum flux, to within the "
+          f"estimator's resolution -- `a steady channel cannot do otherwise` -- so the "
+          f"secant reading above is a gradient bias, not a drag deficit. (ii) Of the "
+          f"{pct(fine['wall_shear_ratio'] - 1.0, 1)} secant bias at "
+          f"`H/dx = {fine['resolution_H_over_dx']}`, "
+          f"{pct(audit['cases'][-1]['estimator_ratios']['secant_1dx_on_analytic_parabola'] - 1.0, 1)}"
+          f" is the stencil's own geometry (`1 - 2 dx/H`) and the rest is the shape of "
+          f"the smeared wall layer, which puts the first fluid row at "
+          f"{pct(fine['wall_row_slip_over_umax'], 1)} of `u_max`.")
+        A("")
+
     A("What *is* verified:")
     A("")
     A("* the discrete viscous stress holds a shear against a constant load: the")
@@ -414,14 +464,16 @@ def main() -> int:
     A("a comparison like this one. The measurement says: at the resolutions this solver")
     A("is used at for a 0.1 m channel (`H/dx = 8 .. 16`), the blended no-slip condition")
     A(f"produces a slip velocity of {pct(coarse['wall_row_slip_over_umax'], 0)} to "
-      f"{pct(fine['wall_row_slip_over_umax'], 0)} of the centre-line speed and carries")
-    A(f"only {pct(coarse['wall_shear_ratio'], 0)} to {pct(fine['wall_shear_ratio'], 0)} of"
-    f" the wall shear the")
-    A("momentum balance requires. Concrete consequences:")
+      f"{pct(fine['wall_row_slip_over_umax'], 0)} of the centre-line speed, and the")
+    A(f"near-wall gradient a 1-`dx` secant can recover from it is "
+      f"{pct(coarse['wall_shear_ratio'], 0)} to {pct(fine['wall_shear_ratio'], 0)} of")
+    A("`rho g H/2` -- the drag itself is transmitted in full (4.1), but the profile")
+    A("inside one spacing of the wall is not resolved well enough to read it as a")
+    A("stress. Concrete consequences:")
     A("")
     A("* keep `wall_friction = 0` (free slip) as the default, as it is now. A no-slip")
-    A("  default would add a boundary layer the solver cannot resolve and quietly")
-    A("  misplace 30-50 % of the wall shear.")
+    A("  default would add a boundary layer the solver cannot resolve, and any wall")
+    A("  shear read from its gradient would be 40-50 % low at `H/dx = 8..16` (4.1).")
     A("* do not attach a no-slip claim to a result obtained with `wall_friction = 1`")
     A("  unless the wall layer is resolved much finer than `H/dx = 16`; the peak")
     A("  velocity may look right because the errors cancel.")
@@ -437,6 +489,7 @@ def main() -> int:
     A("PYTHONPATH=src python benchmarks/poiseuille/run.py \\")
     A("    --resolutions 8 12 16 --t-end 1.0 --t-average 0.2 \\")
     A("    --out benchmarks/poiseuille/out")
+    A("python benchmarks/poiseuille/wall_shear_estimators.py")
     A("python benchmarks/poiseuille/make_doc.py")
     A("PYTHONPATH=src python -m pytest tests/test_poiseuille.py -q")
     A("```")

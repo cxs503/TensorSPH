@@ -189,10 +189,15 @@ After a surface-tension formulation is implemented:
 
 **Gate:** all key quantities within 3 %. **Status: measured and failing.** The
 peak velocity reaches the analytic value to 1.5 % at `H/dx = 16`, but the wall
-shear is 42-50 % low at every resolution, the fluid slips at the wall by 31-49 %
-of `u_max`, and the effective no-slip plane sits `0.91 dx` outside the boundary
-because `wall_friction` blends viscosity against wall particles placed one
-spacing out. The peak agreement is the cancellation of those two defects. The
+shear *read from a one-spacing near-wall secant* is 42-50 % low at every
+resolution, the fluid slips at the wall by 31-49 % of `u_max`, and the effective
+no-slip plane sits `0.91 dx` outside the boundary because `wall_friction` blends
+viscosity against wall particles placed one spacing out. The transmitted drag
+itself is not low: measured from the momentum budget of the same run (free-slip
+control calibrated to 0.45 %) the wall removes `D/(M g)` = 0.989 / 1.003 / 1.009
+at `H/dx` = 8 / 12 / 16, so what fails is the *gradient* the near-wall stencil
+can resolve, not the momentum flux. See
+[`verification_poiseuille_wall_shear_estimator.md`](verification_poiseuille_wall_shear_estimator.md). The peak agreement is the cancellation of those two defects. The
 free-slip control reproduces `u = g t` to 10 %, so the driving force and the
 harness are sound. See
 [`verification_poiseuille_channel.md`](verification_poiseuille_channel.md).
