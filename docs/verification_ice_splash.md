@@ -232,3 +232,15 @@ PYTHONPATH=src python -m ruff check src/tensorsph/ice_splash.py benchmarks/ice_s
 | 甲板上浪量 / 抛距 / 浮冰发射速度 | **无独立基准** | — | 无法判定：本节点只建立"可复算的量测面"，绝对精度需等实验/高保真对照（后续波）。声明原因：无同工况实验数据，且浮冰为降阶模型。 |
 
 **总判定**：REAL（真实 WCSPH 演化 + 可复算量测），5 项判据中 4 项通过、**能量一项如实 FAIL（1.18% vs <1%）**；碎冰抛掷为明确标注的降阶模型，仅量级可用。
+
+---
+
+## 7. 后续修正：浮冰发射降阶模型的附加质量欠账（本单）
+
+本节由 m6446 追加。§2.5/§3 的浮冰发射估算用的是**干质量** `rho_ice pi r^2` 作除数，
+它隐含"水被推开不要代价"，因此是**上界**。真实惯性为
+`rho_ice pi r^2 + C_m rho_w pi r^2`，二维圆截面 `C_m = 1`（Lamb §71），
+即 `m_eff = 2.09 m_ice`：速度被高估 2.09 倍、抛高被高估 4.37 倍。
+修正后的读数见 `docs/verification_ice_floe_added_mass.md`（`floe_launch_estimate`
+已同时输出 `launch_speed_m_s`（干质量上界）与 `launch_speed_with_added_mass_m_s`（推荐读数），
+DEM 交接面改为交后者，`IceSplashConfig(floe_added_mass_coefficient=0.0)` 可回到旧口径）。
