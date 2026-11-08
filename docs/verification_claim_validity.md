@@ -15,6 +15,8 @@
 | `estimator_spread` | (max−min)/ω_ref ≤ 0.25 | 三个独立估计子必须互相自洽，否则「频率」不是测量量 | soft |
 | `fit_quality` | r² ≥ 0.70 | 拟合必须解释信号本身 | soft |
 | `null_control` | σ=0 负控 ω/ω_ref ≤ 0.25 | 无表面张力时同一估计子不得凭空造出半条 Lamb 频率 | soft |
+| `spurious_current` | v_max/v_ref ≤ 0.1 | 松弛液滴须静止时读压强；超 Adami 2012 限=读数非测量量 | hard |
+| `closure_containment` | rho_core/rho0 ≤ 1.02 | 松弛液滴须贴近静息密度，否则压强非 Young-Laplace 压差 | hard |
 
 hard 失败 ⇒ `INVALID`（读数不可用）；仅 soft 失败 ⇒ `SUSPECT`；全过 ⇒ `VALID`。
 
@@ -35,6 +37,97 @@ hard 失败 ⇒ `INVALID`（读数不可用）；仅 soft 失败 ⇒ `SUSPECT`�
 结论：The recorded trajectory is not a droplet: containment and Mach gates fail by three to four orders of magnitude, two of the three frequency estimators disagree with each other by more than the reference itself, and the fit explains 37 % of the variance. This reading may not be graded FAIL (which asserts a measured physics defect); it is WITHHELD.
 
 工件：`benchmarks/oscillating_droplet/validation_report.json`、`benchmarks/oscillating_droplet/gauge_audit.json`、`benchmarks/oscillating_droplet/validation_report_lamb.json`
+
+### `young_laplace.closure.closure_on_all_donors.dx1.5mm_c20` — **VALID**
+
+物理量：Young-Laplace pressure jump dp = sigma/R (relaxed <p_core>)。
+
+| 闸门 | 实测 | 限制 | 通过 | 说明 |
+|---|---|---|---|---|
+| `spurious_current` (hard) | 0.018802 | <= 0.1 | ✅ | v_max/v_ref = 0.0188; Adami et al. 2012 require < 0.1 for the drop to be at rest when the core pressure is read |
+| `containment` (hard) | 1.00062 | <= 1.02 | ✅ | rho_core/rho0 = 1.00062; a relaxed drop must stay near rest density, otherwise the pressure is not the Young-Laplace jump |
+
+结论：Validity gates passed; the reading may be graded on the ladder.
+
+工件：`benchmarks/laplace_pressure_closure/raw/relax_ladder_dx1.5mm_c20.json`
+
+### `young_laplace.closure.closure_on_all_donors.dx2mm_c20` — **VALID**
+
+物理量：Young-Laplace pressure jump dp = sigma/R (relaxed <p_core>)。
+
+| 闸门 | 实测 | 限制 | 通过 | 说明 |
+|---|---|---|---|---|
+| `spurious_current` (hard) | 0.019958 | <= 0.1 | ✅ | v_max/v_ref = 0.0200; Adami et al. 2012 require < 0.1 for the drop to be at rest when the core pressure is read |
+| `containment` (hard) | 1.00071 | <= 1.02 | ✅ | rho_core/rho0 = 1.00071; a relaxed drop must stay near rest density, otherwise the pressure is not the Young-Laplace jump |
+
+结论：Validity gates passed; the reading may be graded on the ladder.
+
+工件：`benchmarks/laplace_pressure_closure/raw/relax_ladder.json`
+
+### `young_laplace.closure.closure_on_interior_layers2.dx1.5mm_c20` — **VALID**
+
+物理量：Young-Laplace pressure jump dp = sigma/R (relaxed <p_core>)。
+
+| 闸门 | 实测 | 限制 | 通过 | 说明 |
+|---|---|---|---|---|
+| `spurious_current` (hard) | 0.089503 | <= 0.1 | ✅ | v_max/v_ref = 0.0895; Adami et al. 2012 require < 0.1 for the drop to be at rest when the core pressure is read |
+| `containment` (hard) | 1.00095 | <= 1.02 | ✅ | rho_core/rho0 = 1.00095; a relaxed drop must stay near rest density, otherwise the pressure is not the Young-Laplace jump |
+
+结论：Validity gates passed; the reading may be graded on the ladder.
+
+工件：`benchmarks/laplace_pressure_closure/raw/relax_ladder_dx1.5mm_c20.json`
+
+### `young_laplace.closure.closure_on_interior_layers2.dx2mm_c10` — **VALID**
+
+物理量：Young-Laplace pressure jump dp = sigma/R (relaxed <p_core>)。
+
+| 闸门 | 实测 | 限制 | 通过 | 说明 |
+|---|---|---|---|---|
+| `spurious_current` (hard) | 0.059551 | <= 0.1 | ✅ | v_max/v_ref = 0.0596; Adami et al. 2012 require < 0.1 for the drop to be at rest when the core pressure is read |
+| `containment` (hard) | 1.00333 | <= 1.02 | ✅ | rho_core/rho0 = 1.00332; a relaxed drop must stay near rest density, otherwise the pressure is not the Young-Laplace jump |
+
+结论：Validity gates passed; the reading may be graded on the ladder.
+
+工件：`benchmarks/laplace_pressure_closure/raw/relax_ladder_dx2mm_c10.json`
+
+### `young_laplace.closure.closure_on_interior_layers2.dx2mm_c20` — **INVALID**
+
+物理量：Young-Laplace pressure jump dp = sigma/R (relaxed <p_core>)。
+
+| 闸门 | 实测 | 限制 | 通过 | 说明 |
+|---|---|---|---|---|
+| `spurious_current` (hard) | 0.388129 | <= 0.1 | ❌ | v_max/v_ref = 0.3881; Adami et al. 2012 require < 0.1 for the drop to be at rest when the core pressure is read |
+| `containment` (hard) | 1.00217 | <= 1.02 | ✅ | rho_core/rho0 = 1.00217; a relaxed drop must stay near rest density, otherwise the pressure is not the Young-Laplace jump |
+
+结论：The relaxation run is not admissible: the spurious current exceeds the Adami 2012 limit, so the drop was not at rest when the pressure was read; the reading is WITHHELD, not a measured defect.
+
+工件：`benchmarks/laplace_pressure_closure/raw/relax_ladder.json`
+
+### `young_laplace.closure.closure_on_interior_layers2.dx2mm_c5` — **INVALID**
+
+物理量：Young-Laplace pressure jump dp = sigma/R (relaxed <p_core>)。
+
+| 闸门 | 实测 | 限制 | 通过 | 说明 |
+|---|---|---|---|---|
+| `spurious_current` (hard) | 0.103857 | <= 0.1 | ❌ | v_max/v_ref = 0.1039; Adami et al. 2012 require < 0.1 for the drop to be at rest when the core pressure is read |
+| `containment` (hard) | 1.01428 | <= 1.02 | ✅ | rho_core/rho0 = 1.01428; a relaxed drop must stay near rest density, otherwise the pressure is not the Young-Laplace jump |
+
+结论：The relaxation run is not admissible: the spurious current exceeds the Adami 2012 limit, so the drop was not at rest when the pressure was read; the reading is WITHHELD, not a measured defect.
+
+工件：`benchmarks/laplace_pressure_closure/raw/relax_ladder_dx2mm_c5.json`
+
+### `young_laplace.closure.closure_on_interior_layers4.dx2mm_c20` — **INVALID**
+
+物理量：Young-Laplace pressure jump dp = sigma/R (relaxed <p_core>)。
+
+| 闸门 | 实测 | 限制 | 通过 | 说明 |
+|---|---|---|---|---|
+| `spurious_current` (hard) | 0.388129 | <= 0.1 | ❌ | v_max/v_ref = 0.3881; Adami et al. 2012 require < 0.1 for the drop to be at rest when the core pressure is read |
+| `containment` (hard) | 1.00217 | <= 1.02 | ✅ | rho_core/rho0 = 1.00217; a relaxed drop must stay near rest density, otherwise the pressure is not the Young-Laplace jump |
+
+结论：The relaxation run is not admissible: the spurious current exceeds the Adami 2012 limit, so the drop was not at rest when the pressure was read; the reading is WITHHELD, not a measured defect.
+
+工件：`benchmarks/laplace_pressure_closure/raw/relax_ladder.json`
 
 ## ④ 耦合算术：动态 ω 是否复现静态 σ_eff
 
@@ -65,7 +158,7 @@ hard 失败 ⇒ `INVALID`（读数不可用）；仅 soft 失败 ⇒ `SUSPECT`�
 
 ## ⑤ 注意点 / 局限
 
-1. 闸门只能用在**带遥测**的工件上（终态几何、能量、多估计子）。当前账本 21 条读数中只有 1 条可探，其余如实标 `UNPROBED`——不是「合格」，而是「无法从工件断言」，不得据此升级证据等级。
+1. 闸门只能用在**带遥测**的工件上（终态几何、能量、多估计子）。当前账本 31 条读数中只有 8 条可探，其余如实标 `UNPROBED`——不是「合格」，而是「无法从工件断言」，不得据此升级证据等级。
 2. 约束闸门用 rms 半径而非单粒子半径：单体逃逸不足以判死（`escaped_but_bounded` 自检为 VALID），整体膨胀才算。
 3. 耦合算术把 σ_eff 当作**唯一**误差源。粘性阻尼、离散化频散、模态耦合都会让 ω 偏离该预测；因此「落在 3 % 内」只支持「力路径缺陷是该动态读数的主导误差源」，不能反过来说明模型已通过动态验证。
 4. 反解 σ_eff = (ω/ω_Lamb)² 只在谐振子近似下成立（ε=0.05…0.1 的小幅线性模态）。大幅振荡或跑飞轨迹上该式没有意义——这正是先过闸门再谈耦合的原因。
