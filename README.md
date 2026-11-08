@@ -107,6 +107,7 @@ printed in the prose still match a fresh run.
 | Time-step policy | passing | adaptive `dt` applies the acoustic limit to `c0 + \|v\|` every step; the dam-break ladder never exceeds 0.300 measured (0.344–0.359 without it) for 23 % more steps |
 | Free-surface treatment comparison | passing (numerics only) | clamp vs density diffusion on B1, B2 and clumping: pressure fluctuation 9.0 % → 6.8 %, worst pair separation 0.053 → 0.088 `dx`, interior error within the band-choice spread, +30 % cost. Default unchanged |
 | B2 experimental comparison | **not evaluated** — no digitized reference bundled | gate named in the same document |
+| Wedge entry vs Wagner (1932) | **partially passing, 2 of 7 criteria** | wet patch `c(t)` mean error 6.2 %, spray root 10.0 % (both within the 10 / 20 % gates); interior peak pressure is 14–50 % low, the deadrise exponent is −1.21 instead of −2 (SPH resolves the smooth `1/tan beta` field, not the square-root cusp), and the peak-pressure GCI between `L/400` and `L/800` is 15.9 % against a 5 % limit. The wetting coefficient converges to 1.9 % GCI, and at `L/800` the peak pressure lands 1.1 % from Wagner. [`docs/verification_wedge_entry.md`](docs/verification_wedge_entry.md) |
 | Physical validation | **not evaluated** | no published experiment has been reproduced |
 
 Passing a numerical gate is not a claim that a simulation is physically accurate.
