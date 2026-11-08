@@ -8,18 +8,24 @@
     "fit_r2": 0.7,
     "null_control_fraction": 0.25,
     "coupling_residual_pt": 15.0,
+    "spurious_current_over_reference": 0.1,
+    "closure_containment_rho_core_over_rho0": 1.02,
     "criterion_pct": 15.0,
     "paper_pct": 3.0
   },
   "summary": {
-    "n_claims": 21,
-    "n_probed": 1,
+    "n_claims": 31,
+    "n_probed": 8,
     "by_status": {
-      "UNPROBED": 20,
-      "INVALID": 1
+      "UNPROBED": 23,
+      "INVALID": 4,
+      "VALID": 4
     },
     "grades_frozen": [
-      "oscillating_droplet.frequency.lamb"
+      "oscillating_droplet.frequency.lamb",
+      "young_laplace.closure.closure_on_interior_layers2.dx2mm_c20",
+      "young_laplace.closure.closure_on_interior_layers2.dx2mm_c5",
+      "young_laplace.closure.closure_on_interior_layers4.dx2mm_c20"
     ]
   },
   "probes": [
@@ -128,6 +134,12 @@
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
     {
+      "claim_id": "quiescence.flume_resting_noise.v_late_rms",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
       "claim_id": "static_droplet.force_direction.WITHDRAWN",
       "status": "UNPROBED",
       "checks": [],
@@ -182,6 +194,237 @@
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
     {
+      "claim_id": "young_laplace.closure.closure_on_all_donors.dx1.5mm_c20",
+      "quantity": "Young-Laplace pressure jump dp = sigma/R (relaxed <p_core>)",
+      "artifacts": [
+        "benchmarks/laplace_pressure_closure/raw/relax_ladder_dx1.5mm_c20.json"
+      ],
+      "checks": [
+        {
+          "id": "spurious_current",
+          "kind": "hard",
+          "value": 0.018802,
+          "limit": 0.1,
+          "relation": "<=",
+          "passed": true,
+          "detail": "v_max/v_ref = 0.0188; Adami et al. 2012 require < 0.1 for the drop to be at rest when the core pressure is read"
+        },
+        {
+          "id": "containment",
+          "kind": "hard",
+          "value": 1.000624,
+          "limit": 1.02,
+          "relation": "<=",
+          "passed": true,
+          "detail": "rho_core/rho0 = 1.00062; a relaxed drop must stay near rest density, otherwise the pressure is not the Young-Laplace jump"
+        }
+      ],
+      "status": "VALID",
+      "recorded_reading": {
+        "vmax_over_vref": 0.018802,
+        "rho_core_over_rho0": 1.000624
+      },
+      "verdict_text": "Validity gates passed; the reading may be graded on the ladder."
+    },
+    {
+      "claim_id": "young_laplace.closure.closure_on_all_donors.dx2mm_c20",
+      "quantity": "Young-Laplace pressure jump dp = sigma/R (relaxed <p_core>)",
+      "artifacts": [
+        "benchmarks/laplace_pressure_closure/raw/relax_ladder.json"
+      ],
+      "checks": [
+        {
+          "id": "spurious_current",
+          "kind": "hard",
+          "value": 0.019958,
+          "limit": 0.1,
+          "relation": "<=",
+          "passed": true,
+          "detail": "v_max/v_ref = 0.0200; Adami et al. 2012 require < 0.1 for the drop to be at rest when the core pressure is read"
+        },
+        {
+          "id": "containment",
+          "kind": "hard",
+          "value": 1.000706,
+          "limit": 1.02,
+          "relation": "<=",
+          "passed": true,
+          "detail": "rho_core/rho0 = 1.00071; a relaxed drop must stay near rest density, otherwise the pressure is not the Young-Laplace jump"
+        }
+      ],
+      "status": "VALID",
+      "recorded_reading": {
+        "vmax_over_vref": 0.019958,
+        "rho_core_over_rho0": 1.000706
+      },
+      "verdict_text": "Validity gates passed; the reading may be graded on the ladder."
+    },
+    {
+      "claim_id": "young_laplace.closure.closure_on_interior_layers2.dx1.5mm_c20",
+      "quantity": "Young-Laplace pressure jump dp = sigma/R (relaxed <p_core>)",
+      "artifacts": [
+        "benchmarks/laplace_pressure_closure/raw/relax_ladder_dx1.5mm_c20.json"
+      ],
+      "checks": [
+        {
+          "id": "spurious_current",
+          "kind": "hard",
+          "value": 0.089503,
+          "limit": 0.1,
+          "relation": "<=",
+          "passed": true,
+          "detail": "v_max/v_ref = 0.0895; Adami et al. 2012 require < 0.1 for the drop to be at rest when the core pressure is read"
+        },
+        {
+          "id": "containment",
+          "kind": "hard",
+          "value": 1.000954,
+          "limit": 1.02,
+          "relation": "<=",
+          "passed": true,
+          "detail": "rho_core/rho0 = 1.00095; a relaxed drop must stay near rest density, otherwise the pressure is not the Young-Laplace jump"
+        }
+      ],
+      "status": "VALID",
+      "recorded_reading": {
+        "vmax_over_vref": 0.089503,
+        "rho_core_over_rho0": 1.000954
+      },
+      "verdict_text": "Validity gates passed; the reading may be graded on the ladder."
+    },
+    {
+      "claim_id": "young_laplace.closure.closure_on_interior_layers2.dx2mm_c10",
+      "quantity": "Young-Laplace pressure jump dp = sigma/R (relaxed <p_core>)",
+      "artifacts": [
+        "benchmarks/laplace_pressure_closure/raw/relax_ladder_dx2mm_c10.json"
+      ],
+      "checks": [
+        {
+          "id": "spurious_current",
+          "kind": "hard",
+          "value": 0.059551,
+          "limit": 0.1,
+          "relation": "<=",
+          "passed": true,
+          "detail": "v_max/v_ref = 0.0596; Adami et al. 2012 require < 0.1 for the drop to be at rest when the core pressure is read"
+        },
+        {
+          "id": "containment",
+          "kind": "hard",
+          "value": 1.003325,
+          "limit": 1.02,
+          "relation": "<=",
+          "passed": true,
+          "detail": "rho_core/rho0 = 1.00332; a relaxed drop must stay near rest density, otherwise the pressure is not the Young-Laplace jump"
+        }
+      ],
+      "status": "VALID",
+      "recorded_reading": {
+        "vmax_over_vref": 0.059551,
+        "rho_core_over_rho0": 1.003325
+      },
+      "verdict_text": "Validity gates passed; the reading may be graded on the ladder."
+    },
+    {
+      "claim_id": "young_laplace.closure.closure_on_interior_layers2.dx2mm_c20",
+      "quantity": "Young-Laplace pressure jump dp = sigma/R (relaxed <p_core>)",
+      "artifacts": [
+        "benchmarks/laplace_pressure_closure/raw/relax_ladder.json"
+      ],
+      "checks": [
+        {
+          "id": "spurious_current",
+          "kind": "hard",
+          "value": 0.388129,
+          "limit": 0.1,
+          "relation": "<=",
+          "passed": false,
+          "detail": "v_max/v_ref = 0.3881; Adami et al. 2012 require < 0.1 for the drop to be at rest when the core pressure is read"
+        },
+        {
+          "id": "containment",
+          "kind": "hard",
+          "value": 1.002168,
+          "limit": 1.02,
+          "relation": "<=",
+          "passed": true,
+          "detail": "rho_core/rho0 = 1.00217; a relaxed drop must stay near rest density, otherwise the pressure is not the Young-Laplace jump"
+        }
+      ],
+      "status": "INVALID",
+      "recorded_reading": {
+        "vmax_over_vref": 0.388129,
+        "rho_core_over_rho0": 1.002168
+      },
+      "verdict_text": "The relaxation run is not admissible: the spurious current exceeds the Adami 2012 limit, so the drop was not at rest when the pressure was read; the reading is WITHHELD, not a measured defect."
+    },
+    {
+      "claim_id": "young_laplace.closure.closure_on_interior_layers2.dx2mm_c5",
+      "quantity": "Young-Laplace pressure jump dp = sigma/R (relaxed <p_core>)",
+      "artifacts": [
+        "benchmarks/laplace_pressure_closure/raw/relax_ladder_dx2mm_c5.json"
+      ],
+      "checks": [
+        {
+          "id": "spurious_current",
+          "kind": "hard",
+          "value": 0.103857,
+          "limit": 0.1,
+          "relation": "<=",
+          "passed": false,
+          "detail": "v_max/v_ref = 0.1039; Adami et al. 2012 require < 0.1 for the drop to be at rest when the core pressure is read"
+        },
+        {
+          "id": "containment",
+          "kind": "hard",
+          "value": 1.014278,
+          "limit": 1.02,
+          "relation": "<=",
+          "passed": true,
+          "detail": "rho_core/rho0 = 1.01428; a relaxed drop must stay near rest density, otherwise the pressure is not the Young-Laplace jump"
+        }
+      ],
+      "status": "INVALID",
+      "recorded_reading": {
+        "vmax_over_vref": 0.103857,
+        "rho_core_over_rho0": 1.014278
+      },
+      "verdict_text": "The relaxation run is not admissible: the spurious current exceeds the Adami 2012 limit, so the drop was not at rest when the pressure was read; the reading is WITHHELD, not a measured defect."
+    },
+    {
+      "claim_id": "young_laplace.closure.closure_on_interior_layers4.dx2mm_c20",
+      "quantity": "Young-Laplace pressure jump dp = sigma/R (relaxed <p_core>)",
+      "artifacts": [
+        "benchmarks/laplace_pressure_closure/raw/relax_ladder.json"
+      ],
+      "checks": [
+        {
+          "id": "spurious_current",
+          "kind": "hard",
+          "value": 0.388129,
+          "limit": 0.1,
+          "relation": "<=",
+          "passed": false,
+          "detail": "v_max/v_ref = 0.3881; Adami et al. 2012 require < 0.1 for the drop to be at rest when the core pressure is read"
+        },
+        {
+          "id": "containment",
+          "kind": "hard",
+          "value": 1.002168,
+          "limit": 1.02,
+          "relation": "<=",
+          "passed": true,
+          "detail": "rho_core/rho0 = 1.00217; a relaxed drop must stay near rest density, otherwise the pressure is not the Young-Laplace jump"
+        }
+      ],
+      "status": "INVALID",
+      "recorded_reading": {
+        "vmax_over_vref": 0.388129,
+        "rho_core_over_rho0": 1.002168
+      },
+      "verdict_text": "The relaxation run is not admissible: the spurious current exceeds the Adami 2012 limit, so the drop was not at rest when the pressure was read; the reading is WITHHELD, not a measured defect."
+    },
+    {
       "claim_id": "young_laplace.csf_consistent.dx2mm",
       "status": "UNPROBED",
       "checks": [],
@@ -189,6 +432,18 @@
     },
     {
       "claim_id": "young_laplace.csf_curvature_fit.dx2mm",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "young_laplace.force_balance.flux_integral.dx1.5mm",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "young_laplace.force_balance.flux_integral.dx2mm",
       "status": "UNPROBED",
       "checks": [],
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
@@ -351,6 +606,10 @@
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
     {
+      "claim_id": "quiescence.flume_resting_noise.v_late_rms",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
       "claim_id": "static_droplet.force_direction.WITHDRAWN",
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
@@ -392,6 +651,14 @@
     },
     {
       "claim_id": "young_laplace.csf_curvature_fit.dx2mm",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "young_laplace.force_balance.flux_integral.dx1.5mm",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "young_laplace.force_balance.flux_integral.dx2mm",
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
     {
