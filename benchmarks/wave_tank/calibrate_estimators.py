@@ -63,7 +63,6 @@ from tensorsph.wave_tank import (            # noqa: E402
     reflection_coefficient,
     spatial_wave_number,
     two_probe_dispersion,
-    wave_celerity,
 )
 
 DEPTH = 0.5          # m, same as benchmarks/wave_tank/run.py

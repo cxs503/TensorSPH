@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# ruff: noqa: E501  (markdown table rows in the report template)
 """Generate and submit the report for IN16-K6."""
 import os
 import json
@@ -6,7 +7,9 @@ import base64
 import urllib.request
 
 api_base = os.environ.get('TENSOR_API_BASE', 'http://127.0.0.1:8010/api/v1')
-token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlY29fYWRtaW4iLCJ1c2VyX2lkIjoxLCJyb2xlIjoiQURNSU4iLCJleHAiOjE3OTQwMjUyNzIsInR5cGUiOiJhY2Nlc3MiLCJpYXQiOjE3OTQwMjM0NzJ9.N-lKyKIjgg6YotJimKP8htwu1ydFoedMauAh4J1WPqg'
+token = os.environ.get('TENSOR_AGENT_TOKEN', '')
+if not token:
+    raise SystemExit('set TENSOR_AGENT_TOKEN (do not hard-code credentials in the repo)')
 
 # Load results
 with open('artifacts/dam_break_3d_results.json') as f:
@@ -28,7 +31,11 @@ md_lines = [
     "",
     "## 1. Case Introduction",
     "",
-    "The 3-D dam break is a classical free-surface flow benchmark in which a rectangular column of water collapses under gravity in a dry tank. This is the 3-D extension of the 2-D dam break (B2), adding spanwise (z) dimension to capture three-dimensional effects: side-wall friction, spanwise spreading, and the resulting deviation from the 2-D Ritter shallow-water solution.",
+    "The 3-D dam break is a classical free-surface flow benchmark in which a rectangular "
+    "column of water collapses under gravity in a dry tank. This is the 3-D extension of the "
+    "2-D dam break (B2), adding spanwise (z) dimension to capture three-dimensional effects: "
+    "side-wall friction, spanwise spreading, and the resulting deviation from the 2-D Ritter "
+    "shallow-water solution.",
     "",
     "### Geometry and Parameters",
     "",
@@ -50,7 +57,10 @@ md_lines = [
     "",
     "### Physical Background",
     "",
-    "The Ritter (1892) shallow-water solution for a dam break on a dry bed gives the leading edge position as Z(t) = 2*sqrt(g*H)*t. Non-dimensionalised with tau = t*sqrt(2g/a) and Z/a: Z/a = 2*tau. The 3-D front is expected to lag the 2-D Ritter curve due to side-wall friction and spanwise spreading.",
+    "The Ritter (1892) shallow-water solution for a dam break on a dry bed gives the leading "
+    "edge position as Z(t) = 2*sqrt(g*H)*t. Non-dimensionalised with tau = t*sqrt(2g/a) and "
+    "Z/a: Z/a = 2*tau. The 3-D front is expected to lag the 2-D Ritter curve due to side-wall "
+    "friction and spanwise spreading.",
     "",
     "## 2. Method",
     "",
@@ -99,11 +109,16 @@ md_lines = [
     "",
     "### Front Position vs Ritter Reference",
     "",
-    "The 3-D front position is compared against the 2-D Ritter solution on the spanwise mid-plane. The 3-D front lags the Ritter curve due to side-wall friction and spanwise spreading, which is the expected 3-D effect.",
+    "The 3-D front position is compared against the 2-D Ritter solution on the spanwise "
+    "mid-plane. The 3-D front lags the Ritter curve due to side-wall friction and spanwise "
+    "spreading, which is the expected 3-D effect.",
     "",
     "### Energy Evolution",
     "",
-    "The mechanical energy (KE + PE) evolution shows the conversion of potential energy to kinetic energy as the column collapses. Note: in WCSPH with density summation, the pressure work is not explicitly tracked, so the mechanical energy is not strictly conserved.",
+    "The mechanical energy (KE + PE) evolution shows the conversion of potential energy to "
+    "kinetic energy as the column collapses. Note: in WCSPH with density summation, the "
+    "pressure work is not explicitly tracked, so the mechanical energy is not strictly "
+    "conserved.",
     "",
     "## 4. Figures",
     "",
@@ -114,10 +129,15 @@ md_lines = [
     "",
     "## 5. Limitations and Notes",
     "",
-    "1. Energy metric: In WCSPH with density summation, mechanical energy (KE+PE) is not conserved because pressure work is not tracked. The energy drift reported here is a scheme limitation, not a bug.",
-    "2. Resolution: The benchmark uses dx=0.025 m (~128 particles). Higher resolution would reduce numerical dissipation.",
-    "3. Ritter reference: The Ritter solution assumes a semi-infinite reservoir and shallow water, neither of which holds exactly here.",
-    "4. 3-D effects: The side-wall friction and spanwise spreading cause the 3-D front to lag the 2-D Ritter curve. This is physical, not numerical error.",
+    "1. Energy metric: In WCSPH with density summation, mechanical energy (KE+PE) is not "
+    "conserved because pressure work is not tracked. The energy drift reported here is a "
+    "scheme limitation, not a bug.",
+    "2. Resolution: The benchmark uses dx=0.025 m (~128 particles). Higher resolution would "
+    "reduce numerical dissipation.",
+    "3. Ritter reference: The Ritter solution assumes a semi-infinite reservoir and shallow "
+    "water, neither of which holds exactly here.",
+    "4. 3-D effects: The side-wall friction and spanwise spreading cause the 3-D front to lag "
+    "the 2-D Ritter curve. This is physical, not numerical error.",
     "",
     "## 6. Error Assessment",
     "",
@@ -127,7 +147,8 @@ md_lines = [
     "| Reproducibility | Same seed gives same result | Bit-for-bit | YES (tested) |",
     f"| Energy drift | {r['energy_drift']:.2%} | < 1% | SEE NOTE |",
     "",
-    "**Note on energy**: The energy drift exceeds 1% due to the WCSPH density-summation scheme not tracking pressure work. This is a known limitation of the formulation.",
+    "**Note on energy**: The energy drift exceeds 1% due to the WCSPH density-summation "
+    "scheme not tracking pressure work. This is a known limitation of the formulation.",
 ]
 
 markdown = "\n".join(md_lines)
