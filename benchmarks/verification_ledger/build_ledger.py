@@ -120,6 +120,7 @@ def _entry(
     gate_result: str | None = None,
     gate_limit: float | None = None,
     run_validity: str = "UNPROBED",
+    admissibility: dict | None = None,
 ) -> dict:
     ref_v, ref_u, ref_src = reference
     mea_v, mea_u, mea_def = measured
@@ -142,6 +143,7 @@ def _entry(
         "artifact_status": artifact_status,
         "gate_result": gate_result,
         "gate_limit": _r(gate_limit) if gate_limit is not None else None,
+        "admissibility": admissibility,
         "superseded_by": superseded_by,
         "guarding_test": guarding_test,
         "backlog_ref": backlog_ref,
@@ -887,6 +889,232 @@ def other_physics_claims() -> list[dict]:
     return out
 
 
+CLOSURE_BENCH = "benchmarks/laplace_pressure_closure"
+#: Adami, Ihmsen & Adams (2012) spurious-current criterion for a static drop:
+#: the residual velocity of a drop at rest must stay below 10 % of the reference.
+ADMISSIBILITY_LIMIT = 0.1
+
+
+def quiescence_claims() -> list[dict]:
+    """Resting-pool / flume noise floor — the defect register entry ``F1``.
+
+    ``benchmarks/startup_quiescence/report.json`` was added by m6281 and never
+    registered, which left it as an ``unregistered_artifact`` finding the moment the
+    ledger was regenerated.  It carries a real gate (residual velocity of a flume at
+    rest must stay below 0.06 m/s), so it is registered as a gate claim instead of
+    being waived: the shipped configuration misses it, and the ablation that does meet
+    it is recorded next to the failure.
+    """
+    rel = "benchmarks/startup_quiescence/report.json"
+    d = _load(rel)
+    i = next(i for i, f in enumerate(d["findings"]) if f["id"] == "F1_flume_resting_noise")
+    f1 = d["findings"][i]
+    limit = float(f1["limit"])
+    measured = float(f1["measured"])
+    calmest = f1["ablation"]["calmest"]
+    return [
+        _entry(
+            claim_id="quiescence.flume_resting_noise.v_late_rms",
+            quantity_id="quiescence_flume_resting_noise",
+            quantity=(
+                "residual velocity of a flume at rest: RMS over the last quarter of "
+                "max_i |v_i| on interior particles (m/s)"
+            ),
+            claim_type="gate",
+            artifact=rel,
+            json_path=f"findings[{i}]",
+            reference=(limit, "m/s", "gate_parameters.v_floor_m_s (resting-noise ceiling)"),
+            measured=(
+                measured,
+                "m/s",
+                "shipped flume resting column, paddle frozen at rest "
+                f"({f1['ablation']['shipped']:.4f} m/s interior RMS)",
+            ),
+            rel_error_pct=_rel(measured, limit),
+            gate_result=f1["status"].lower(),
+            gate_limit=limit,
+            guarding_test="tests/test_startup_quiescence.py",
+            artifact_status="FAIL" if f1["status"].upper() == "OPEN" else "PASS",
+            backlog_ref="docs/verification_startup_quiescence.md",
+            notes=(
+                f"OPEN defect register entry F1: the shipped resting flume reads "
+                f"{measured:.4f} m/s against a {limit:g} m/s ceiling, i.e. "
+                f"{f1['ratio_to_orbital_velocity'] * 100:.0f} % of the wave orbital velocity "
+                "(signal-to-noise ~"
+                f"{1.0 / f1['ratio_to_orbital_velocity']:.1f}:1). The ablation "
+                f"'{calmest['label']}' reaches {calmest['interior_v_late_rms']:.4f} m/s "
+                f"({calmest['interior_v_late_rms'] / measured:.2f}x calmer), so the noise is "
+                "controlled by density diffusion + viscosity, not by the boundary model — "
+                "see docs/verification_startup_quiescence.md §5."
+            ),
+        )
+    ]
+
+
+def closure_claims() -> list[dict]:
+    """Free-surface pressure closure = the P0 fix of ``backlog_update_m2971.md``.
+
+    ``benchmarks/laplace_pressure_closure`` is where the fix was measured: with the
+    Adami/Ihmsen/Adams shell-pressure extrapolation switched on, the absolute
+    Young-Laplace read-out of the same drop moves from -38 % to -3.4 %.  Until this
+    registry existed those numbers lived only in that benchmark's own document, so
+    the canonical claim surface still described the platform as "-34 %, closure is
+    the open defect" (``young_laplace.absolute_tail.best_of_6``) long after the fix
+    had landed in ``tensorsph.droplet_impact.rhs``.
+
+    Two rules are enforced here instead of in prose:
+
+    * every row is read from ``raw/relax_ladder*.json`` / ``report_force_balance.json``
+      at generation time (no number is typed by hand),
+    * the *admissibility* of the run travels with the reading.  Two of the four
+      closure points keep a residual spurious current above the 10 % limit, so their
+      in-band errors stay WITHHELD: the closure is PROVISIONAL (it works at
+      dx = 1.5 mm / c0 = 20 and dx = 2 mm / c0 = 10, not yet everywhere).
+    """
+    qid = "young_laplace_jump_sigma7.2_R0.02"
+    qty = "Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m"
+    out: list[dict] = []
+
+    # 1) closure on/off relaxation ladder, one row per recorded variant
+    for rel in sorted(
+        str(p.relative_to(REPO)) for p in (REPO / CLOSURE_BENCH / "raw").glob("relax_ladder*.json")
+    ):
+        d = _load(rel)
+        dx_mm = d["dx_m"] * 1e3
+        c0 = d["sound_speed"]
+        ref = d["analytic_dp_Pa"]
+        by_case = {c["case"]: c for c in d["cases"]}
+        off = by_case.get("closure_off")
+        for idx, case in enumerate(d["cases"]):
+            name = case["case"]
+            if name == "closure_off":
+                # the closure-off control *is* young_laplace.absolute_tail.* below;
+                # re-registering it would double-count one run as two claims
+                continue
+            err = case["tail_rel_error_pct"]
+            vratio = case["vmax_over_vref"]
+            adm = {
+                "gate": "v_max/v_ref < 0.1 (Adami, Ihmsen & Adams 2012)",
+                "value": _r(vratio),
+                "limit": ADMISSIBILITY_LIMIT,
+                "pass": bool(vratio < ADMISSIBILITY_LIMIT),
+            }
+            in_band = abs(err) <= CRITERION_PCT
+            status = "WITHHELD" if not adm["pass"] else ("PASS" if in_band else "FAIL")
+            if off is not None:
+                gain = abs(off["tail_rel_error_pct"]) - abs(err)
+                gain_txt = (
+                    f" The closure-off control of the same lattice reads "
+                    f"{off['tail_rel_error_pct']:+.2f} %, i.e. this variant recovers "
+                    f"{gain:+.2f} points of the deficit."
+                )
+            else:
+                gain_txt = ""
+            if not adm["pass"]:
+                adm_txt = (
+                    f" INADMISSIBLE: residual spurious current v_max/v_ref = {vratio:.3f} "
+                    f">= {ADMISSIBILITY_LIMIT:g}, so the drop was not at rest when the "
+                    "reading was taken; the number is recorded but not credited."
+                )
+            elif in_band:
+                adm_txt = (
+                    f" Admissible (v_max/v_ref = {vratio:.3f} < {ADMISSIBILITY_LIMIT:g}) and "
+                    f"inside the {CRITERION_PCT:.0f} % band, but outside the "
+                    f"{PAPER_PCT:.0f} % paper band."
+                )
+            else:
+                adm_txt = f" Out of band at v_max/v_ref = {vratio:.3f}."
+            claim_id = f"young_laplace.closure.{name}.dx{dx_mm:g}mm_c{c0:g}"
+            twin = next(
+                (c["claim_id"] for c in out
+                 if c["artifact"] == rel
+                 and abs(c["measured"]["value"] - case["tail_mean_Pa"]) < 1e-3),
+                None,
+            )
+            out.append(
+                _entry(
+                    claim_id=claim_id,
+                    quantity_id=qid,
+                    quantity=qty,
+                    artifact=rel,
+                    json_path=f"cases[{idx}]",
+                    reference=(ref, "Pa", "Young-Laplace sigma/R"),
+                    measured=(
+                        case["tail_mean_Pa"],
+                        "Pa",
+                        f"absolute <p_core> over the capillary tail average, {name}, "
+                        f"dx = {dx_mm:g} mm, c0 = {c0:g} m/s, {case['n_particles']} particles, "
+                        f"{case['steps']} steps",
+                    ),
+                    rel_error_pct=err,
+                    guarding_test=(
+                        "tests/test_young_laplace_closure_ledger.py"
+                        "::test_closure_claim_tracks_the_raw_ladder"
+                    ),
+                    artifact_status=status,
+                    admissibility=adm,
+                    backlog_ref="backlog_update_m2971.md#P0",
+                    notes=(
+                        "Free-surface pressure closure (Adami/Ihmsen/Adams 2012 §3.3) wired "
+                        "into ``droplet_impact.rhs``." + gain_txt + adm_txt +
+                        " Overall the closure is PROVISIONAL: it is admissible and in band "
+                        "at two of the four tested (dx, c0) points, not at all of them."
+                    ),
+                )
+            )
+            if twin is not None:
+                # e.g. layers=4 repeats layers=2 to 1e-9: beyond the shell that many
+                # layers do not change the donor set, so it is provenance, not a
+                # second piece of evidence.
+                out[-1]["superseded_by"] = twin
+                out[-1]["notes"] += (
+                    f" Bit-identical to `{twin}`: extra donor layers do not change the "
+                    "donor set at this resolution, so this row is kept as provenance only "
+                    "and does not count as independent evidence."
+                )
+
+    # 2) static force balance: the same jump from the surface-tension force, no closure
+    rel = f"{CLOSURE_BENCH}/report_force_balance.json"
+    d = _load(rel)
+    ref = d["reference"]["analytic_dp_Pa"]
+    for idx, case in enumerate(d["cases"]):
+        fs = case["force_side"]
+        dx_mm = case["dx_m"] * 1e3
+        err = fs["deficit_pct"]
+        out.append(
+            _entry(
+                claim_id=f"young_laplace.force_balance.flux_integral.dx{dx_mm:g}mm",
+                quantity_id=qid,
+                quantity=qty,
+                artifact=rel,
+                json_path=f"cases[{idx}].force_side",
+                reference=(ref, "Pa", "Young-Laplace sigma/R"),
+                measured=(
+                    fs["delta_p_force_Pa"],
+                    "Pa",
+                    "radial flux integral -int_0^R rho a_r dr of a single CSF evaluation on "
+                    "the calibrated lattice (no time stepping)",
+                ),
+                rel_error_pct=err,
+                guarding_test=(
+                    "tests/test_young_laplace_closure_ledger.py"
+                    "::test_force_balance_integral_is_registered_and_paper_grade"
+                ),
+                artifact_status="PASS" if abs(err) <= CRITERION_PCT else "FAIL",
+                backlog_ref="backlog_update_m2971.md#P0",
+                notes=(
+                    f"Bypasses the pressure field entirely, so it separates the two halves of "
+                    f"the Young-Laplace deficit: the surface-tension force already delivers "
+                    f"sigma/R to {err:+.2f} %, hence the historical -38 % lived in the free "
+                    "surface pressure assembly (the closure), not in the force model. "
+                    "Bins 400/800 agree to 0.01 % (``bin_sensitivity``), so this is not a "
+                    "quadrature artefact."
+                ),
+            )
+        )
+    return out
+
+
 #: numbers that no longer describe the current code -> explanation that any
 #: document quoting them has to carry next to the number.
 SUPERSEDED_NUMBERS = {
@@ -918,6 +1146,12 @@ def grade(e: dict) -> str:
             return "PASS"
         return "MARGINAL" if err <= CRITERION_PCT else "FAIL"
     if e["gauge_degenerate"]:
+        return "WITHHELD"
+    adm = e.get("admissibility")
+    if adm and not adm.get("pass", False):
+        # A run the admissibility gate rejects cannot be credited however close its
+        # number lands: the reading was taken from a drop that was not quiescent, so
+        # the agreement (or the miss) is a property of the spurious current.
         return "WITHHELD"
     err = abs(e["rel_error_pct"])
     if err <= PAPER_PCT:
@@ -979,6 +1213,26 @@ def findings(entries: list[dict]) -> list[dict]:
                     "of FAIL — see docs/verification_claim_validity.md"
                 ),
             })
+
+    # (a4) a reading inside the band whose run the admissibility gate rejects
+    for e in entries:
+        adm = e.get("admissibility")
+        if not adm or adm.get("pass", True):
+            continue
+        out.append(
+            {
+                "rule": "inadmissible_run",
+                "severity": "high",
+                "claim_id": e["claim_id"],
+                "detail": (
+                    f"{e['rel_error_pct']:+.2f} % is inside the {CRITERION_PCT:.0f} % band, "
+                    f"but the run violates the admissibility gate "
+                    f"({adm['gate']}: {adm['value']:g} >= {adm['limit']:g}): the residual "
+                    "spurious current, not the physics, sets the agreement, so the reading "
+                    "is graded WITHHELD and may not be quoted as a pass"
+                ),
+            }
+        )
 
     # (b) one physical quantity, several irreconcilable readings
     by_q: dict[str, list[dict]] = {}
@@ -1059,6 +1313,8 @@ def build() -> dict:
         + other_physics_claims()
         + kernel_claims()
         + threed_claims()
+        + closure_claims()
+        + quiescence_claims()
     )
     V = _claim_validity()
     for e in entries:

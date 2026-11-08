@@ -24,9 +24,9 @@
 
 ## 3. 汇总
 
-- claims **21** ／ 物理量 **13** ／ findings **5**
-- 分级分布：PASS 3，MARGINAL 2，WITHHELD 10，FAIL 5，WITHDRAWN 1
-- findings 分类：declared_vs_derived 1，quantity_spread 3，run_validity 1
+- claims **31** ／ 物理量 **14** ／ findings **8**
+- 分级分布：PASS 4，MARGINAL 5，WITHHELD 12，FAIL 8，WITHDRAWN 2
+- findings 分类：declared_vs_derived 1，inadmissible_run 3，quantity_spread 3，run_validity 1
 
 ## 4. 断言表
 
@@ -40,6 +40,7 @@
 | `laplace_report.laplace_pressure.Rdx10` | pressure balance of a static droplet at R/dx = 10 (code units) | 1.44 - | 1.82627 - | +26.82 % | **FAIL** | `benchmarks/laplace/report.json` → `checks.R/dx=10:laplace_pressure` | `tests/test_laplace_pressure.py` |
 | `oscillating_droplet.frequency.lamb` | fundamental frequency of an inviscid 2-D droplet (Lamb omega_2) | 73.4847 rad/s | 41.4979 rad/s | -43.53 % | **WITHHELD** | `benchmarks/oscillating_droplet/validation_report.json` → `verdict.rows[0]` | `tests/test_oscillating_droplet.py` |
 | `paper_uncertainty.band.dx3mm` | Young-Laplace jump (2-D), sigma=7.2 N/m, R=20 mm -> 360 Pa | 360 Pa | 249.626 Pa | -30.66 % | **WITHHELD** | `benchmarks/paper_laplace_uncertainty/out/results.json` → `rows[0].metrics.band` | `tests/test_paper_laplace_uncertainty.py` |
+| `quiescence.flume_resting_noise.v_late_rms` | residual velocity of a flume at rest: RMS over the last quarter of max_i |v_i| on interior particles (m/s) | limit 0.06 | 0.079759 | — | **FAIL** | `benchmarks/startup_quiescence/report.json` → `findings[0]` | `tests/test_startup_quiescence.py` |
 | `static_droplet.force_direction.WITHDRAWN` | sign/shape of the CSF force on a static droplet (not a physical gate) | 1 - | 0.173549 - | -82.65 % | **WITHDRAWN** | `benchmarks/static_droplet/validation_report.json` → `validation` | `tests/test_laplace_validation.py` |
 | `surface_tension_ladder.laplace_error_finest` | Laplace error of the surface-tension-only ladder, finest level | 0.15 fraction | 2.51981 fraction | +251.98 % | **FAIL** | `benchmarks/surface_tension/laplace_ladder.json` → `gates.laplace_error_finest` | `tests/test_surface_tension_laplace.py` |
 | `threed_hydrostatic.bottom_pressure.adami_best` | bottom pressure of a 3-D column at rest, p = rho0 g H | 1520.55 Pa | 1478.77 Pa | -2.75 % | **PASS** | `benchmarks/threed_hydrostatic/report.json` → `runs[0].pressure` | `tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria` |
@@ -49,8 +50,17 @@
 | `threed_shear.decay_rate.raw_laplacian` | decay exponent of u = A sin(ky) sin(kz) exp(-2 nu k^2 t), periodic 3-D cube, nu = 0.05 m^2/s, k = 2 pi / m | 3.94784 1/s | 4.40032 1/s | +11.46 % | **MARGINAL** | `benchmarks/threed_shear/report.json` → `raw_vs_renormalised.raw.decay` | `tests/test_threed_artifacts.py::test_shear_report_meets_its_criteria` |
 | `two_phase_laplace.smoothed_colour.dx2.5mm` | Laplace error on a closed two-phase interface (periodic, no free surface) | limit 0.15 | 0.046079 | — | **MARGINAL** | `benchmarks/surface_tension_laplace/validation_report.json` → `criteria.two_phase_laplace_error_at_dx_0.0025_lt_15pct` | `tests/test_surface_tension_laplace.py` |
 | `young_laplace.absolute_tail.best_of_6` | dp = sigma/R (2-D), sigma=7.2 N/m, R=0.020 m -> 360 Pa | 360 Pa | 237.636 Pa | -33.99 % | **WITHHELD** | `benchmarks/laplace_pressure_floor/report.json` → `runs[2].absolute_time_average_tail` | `tests/test_laplace_pressure_floor.py::test_laplace_jump_within_15pct` |
+| `young_laplace.closure.closure_on_all_donors.dx1.5mm_c20` | Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m | 360 Pa | 269.069 Pa | -25.26 % | **FAIL** | `benchmarks/laplace_pressure_closure/raw/relax_ladder_dx1.5mm_c20.json` → `cases[1]` | `tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder` |
+| `young_laplace.closure.closure_on_all_donors.dx2mm_c20` | Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m | 360 Pa | 287.473 Pa | -20.15 % | **FAIL** | `benchmarks/laplace_pressure_closure/raw/relax_ladder.json` → `cases[1]` | `tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder` |
+| `young_laplace.closure.closure_on_interior_layers2.dx1.5mm_c20` | Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m | 360 Pa | 347.73 Pa | -3.41 % | **MARGINAL** | `benchmarks/laplace_pressure_closure/raw/relax_ladder_dx1.5mm_c20.json` → `cases[2]` | `tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder` |
+| `young_laplace.closure.closure_on_interior_layers2.dx2mm_c10` | Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m | 360 Pa | 345.481 Pa | -4.03 % | **MARGINAL** | `benchmarks/laplace_pressure_closure/raw/relax_ladder_dx2mm_c10.json` → `cases[1]` | `tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder` |
+| `young_laplace.closure.closure_on_interior_layers2.dx2mm_c20` | Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m | 360 Pa | 391.805 Pa | +8.83 % | **WITHHELD** | `benchmarks/laplace_pressure_closure/raw/relax_ladder.json` → `cases[2]` | `tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder` |
+| `young_laplace.closure.closure_on_interior_layers2.dx2mm_c5` | Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m | 360 Pa | 377.482 Pa | +4.86 % | **WITHHELD** | `benchmarks/laplace_pressure_closure/raw/relax_ladder_dx2mm_c5.json` → `cases[1]` | `tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder` |
+| `young_laplace.closure.closure_on_interior_layers4.dx2mm_c20` | Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m | 360 Pa | 391.805 Pa | +8.83 % | **WITHDRAWN** | `benchmarks/laplace_pressure_closure/raw/relax_ladder.json` → `cases[3]` | `tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder` |
 | `young_laplace.csf_consistent.dx2mm` | dp = sigma/R (2-D), sigma=7.2 N/m, R=0.020 m -> 360 Pa | 360 Pa | 77.1912 Pa | -78.56 % | **WITHHELD** | `benchmarks/csf_consistent/validation_report.json` → `relax.laplace` | `tests/test_csf_consistent.py` |
 | `young_laplace.csf_curvature_fit.dx2mm` | dp = sigma/R (2-D), sigma=7.2 N/m, R=0.020 m -> 360 Pa | 360 Pa | 44.5997 Pa | -87.61 % | **WITHHELD** | `benchmarks/csf_curvature_fit/validation_report.json` → `relax[0].laplace` | `tests/test_csf_curvature_fit.py` |
+| `young_laplace.force_balance.flux_integral.dx1.5mm` | Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m | 360 Pa | 333.145 Pa | -7.46 % | **MARGINAL** | `benchmarks/laplace_pressure_closure/report_force_balance.json` → `cases[1].force_side` | `tests/test_young_laplace_closure_ledger.py::test_force_balance_integral_is_registered_and_paper_grade` |
+| `young_laplace.force_balance.flux_integral.dx2mm` | Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m | 360 Pa | 359.078 Pa | -0.26 % | **PASS** | `benchmarks/laplace_pressure_closure/report_force_balance.json` → `cases[0].force_side` | `tests/test_young_laplace_closure_ledger.py::test_force_balance_integral_is_registered_and_paper_grade` |
 | `young_laplace.laplace_law.vacuum_gauge` | dp = sigma/R (2-D), sigma=7.2 N/m, R=0.020 m -> 360 Pa | 360 Pa | 380.158 Pa | +5.60 % | **WITHHELD** | `benchmarks/laplace_law/validation_report.json` → `laplace` | `tests/test_laplace_law.py` |
 | `young_laplace.plateau_definition` | dp = sigma/R (2-D), sigma=7.2 N/m, R=0.020 m -> 360 Pa | 360 Pa | 530.313 Pa | +47.31 % | **WITHHELD** | `benchmarks/laplace_plateau/validation_report.json` → `verdict` | `tests/test_laplace_plateau.py` |
 
@@ -58,9 +68,12 @@
 
 - **declared_vs_derived**（`high`）`young_laplace.laplace_law.vacuum_gauge` — artifact declares PASS, ledger derives WITHHELD: vacuum-gauge readout (additive |p| offset, not a physical dp)
 - **run_validity**（`high`）`oscillating_droplet.frequency.lamb` — validity gate says INVALID (containment / Mach / estimator / fit / null-control): the run had stopped being a liquid before the reading was taken, so the reading is graded WITHHELD instead of FAIL — see docs/verification_claim_validity.md
+- **inadmissible_run**（`high`）`young_laplace.closure.closure_on_interior_layers2.dx2mm_c20` — +8.83 % is inside the 15 % band, but the run violates the admissibility gate (v_max/v_ref < 0.1 (Adami, Ihmsen & Adams 2012): 0.388129 >= 0.1): the residual spurious current, not the physics, sets the agreement, so the reading is graded WITHHELD and may not be quoted as a pass
+- **inadmissible_run**（`high`）`young_laplace.closure.closure_on_interior_layers2.dx2mm_c5` — +4.86 % is inside the 15 % band, but the run violates the admissibility gate (v_max/v_ref < 0.1 (Adami, Ihmsen & Adams 2012): 0.103857 >= 0.1): the residual spurious current, not the physics, sets the agreement, so the reading is graded WITHHELD and may not be quoted as a pass
+- **inadmissible_run**（`high`）`young_laplace.closure.closure_on_interior_layers4.dx2mm_c20` — +8.83 % is inside the 15 % band, but the run violates the admissibility gate (v_max/v_ref < 0.1 (Adami, Ihmsen & Adams 2012): 0.388129 >= 0.1): the residual spurious current, not the physics, sets the agreement, so the reading is graded WITHHELD and may not be quoted as a pass
 - **quantity_spread**（`high`）`threed_hydrostatic_bottom_pressure` — 2 active readings of one quantity span -25.2 % … -2.7 % (spread 22.5 pt): threed_hydrostatic.bottom_pressure.adami_best=-2.7 %, threed_hydrostatic.bottom_pressure.tait_wall_control=-25.2 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
 - **quantity_spread**（`high`）`young_laplace_jump_sigma0.072_R0.1` — 2 active readings of one quantity span +219.7 % … +252.0 % (spread 32.3 pt): laplace_droplet.merged_csf.8cases=+219.7 %, surface_tension_ladder.laplace_error_finest=+252.0 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
-- **quantity_spread**（`high`）`young_laplace_jump_sigma7.2_R0.02` — 6 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
+- **quantity_spread**（`high`）`young_laplace_jump_sigma7.2_R0.02` — 14 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.closure.closure_on_all_donors.dx1.5mm_c20=-25.3 %, young_laplace.closure.closure_on_all_donors.dx2mm_c20=-20.1 %, young_laplace.closure.closure_on_interior_layers2.dx1.5mm_c20=-3.4 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c10=-4.0 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c20=+8.8 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c5=+4.9 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.force_balance.flux_integral.dx1.5mm=-7.5 %, young_laplace.force_balance.flux_integral.dx2mm=-0.3 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
 
 ## 6. 读数明细（口径决定数字）
 
@@ -167,6 +180,19 @@
   - 守护测试：`tests/test_paper_laplace_uncertainty.py`
 - 欠账指针：`backlog_update_m2971.md#P0`
 - 注：Largest R/dx = 6.7 of the sweep; 95 % CI +/-9.45 pt.
+
+### `quiescence.flume_resting_noise.v_late_rms` — FAIL
+
+- 物理量：residual velocity of a flume at rest: RMS over the last quarter of max_i |v_i| on interior particles (m/s)
+- 参考：0.06 m/s（gate_parameters.v_floor_m_s (resting-noise ceiling)）
+- 实测：0.079759 m/s
+  - 口径：shipped flume resting column, paddle frozen at rest (0.0798 m/s interior RMS)
+- 相对误差：—（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`FAIL`；本账等级：**FAIL**
+- 溯源：`benchmarks/startup_quiescence/report.json` → `findings[0]`
+  - 守护测试：`tests/test_startup_quiescence.py`
+- 欠账指针：`docs/verification_startup_quiescence.md`
+- 注：OPEN defect register entry F1: the shipped resting flume reads 0.0798 m/s against a 0.06 m/s ceiling, i.e. 60 % of the wave orbital velocity (signal-to-noise ~1.7:1). The ablation 'flume resting column (paddle frozen at rest), overrides density_diffusion=0.0,viscosity=0.01' reaches 0.0072 m/s (0.09x calmer), so the noise is controlled by density diffusion + viscosity, not by the boundary model — see docs/verification_startup_quiescence.md §5.
 
 ### `static_droplet.force_direction.WITHDRAWN` — WITHDRAWN
 
@@ -285,6 +311,97 @@
 - 欠账指针：`backlog_update_m2971.md#P0`
 - 注：Best of 6 runs (c0 20/5 x dx 0.002/0.0015 plus controls). Reproduces backlog P0: the residual is the free-surface pressure closure, not the curvature operator.
 
+### `young_laplace.closure.closure_on_all_donors.dx1.5mm_c20` — FAIL
+
+- 物理量：Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m
+- 参考：360 Pa（Young-Laplace sigma/R）
+- 实测：269.069 Pa
+  - 口径：absolute <p_core> over the capillary tail average, closure_on_all_donors, dx = 1.5 mm, c0 = 20 m/s, 642 particles, 1710 steps
+- 相对误差：-25.26 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`FAIL`；本账等级：**FAIL**
+- 溯源：`benchmarks/laplace_pressure_closure/raw/relax_ladder_dx1.5mm_c20.json` → `cases[1]`
+  - 守护测试：`tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder`
+- 欠账指针：`backlog_update_m2971.md#P0`
+- 注：Free-surface pressure closure (Adami/Ihmsen/Adams 2012 §3.3) wired into ``droplet_impact.rhs``. The closure-off control of the same lattice reads -38.10 %, i.e. this variant recovers +12.84 points of the deficit. Out of band at v_max/v_ref = 0.019. Overall the closure is PROVISIONAL: it is admissible and in band at two of the four tested (dx, c0) points, not at all of them.
+
+### `young_laplace.closure.closure_on_all_donors.dx2mm_c20` — FAIL
+
+- 物理量：Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m
+- 参考：360 Pa（Young-Laplace sigma/R）
+- 实测：287.473 Pa
+  - 口径：absolute <p_core> over the capillary tail average, closure_on_all_donors, dx = 2 mm, c0 = 20 m/s, 362 particles, 1283 steps
+- 相对误差：-20.15 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`FAIL`；本账等级：**FAIL**
+- 溯源：`benchmarks/laplace_pressure_closure/raw/relax_ladder.json` → `cases[1]`
+  - 守护测试：`tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder`
+- 欠账指针：`backlog_update_m2971.md#P0`
+- 注：Free-surface pressure closure (Adami/Ihmsen/Adams 2012 §3.3) wired into ``droplet_impact.rhs``. The closure-off control of the same lattice reads -37.88 %, i.e. this variant recovers +17.73 points of the deficit. Out of band at v_max/v_ref = 0.020. Overall the closure is PROVISIONAL: it is admissible and in band at two of the four tested (dx, c0) points, not at all of them.
+
+### `young_laplace.closure.closure_on_interior_layers2.dx1.5mm_c20` — MARGINAL
+
+- 物理量：Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m
+- 参考：360 Pa（Young-Laplace sigma/R）
+- 实测：347.73 Pa
+  - 口径：absolute <p_core> over the capillary tail average, closure_on_interior_layers2, dx = 1.5 mm, c0 = 20 m/s, 642 particles, 1710 steps
+- 相对误差：-3.41 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**MARGINAL**
+- 溯源：`benchmarks/laplace_pressure_closure/raw/relax_ladder_dx1.5mm_c20.json` → `cases[2]`
+  - 守护测试：`tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder`
+- 欠账指针：`backlog_update_m2971.md#P0`
+- 注：Free-surface pressure closure (Adami/Ihmsen/Adams 2012 §3.3) wired into ``droplet_impact.rhs``. The closure-off control of the same lattice reads -38.10 %, i.e. this variant recovers +34.69 points of the deficit. Admissible (v_max/v_ref = 0.090 < 0.1) and inside the 15 % band, but outside the 3 % paper band. Overall the closure is PROVISIONAL: it is admissible and in band at two of the four tested (dx, c0) points, not at all of them.
+
+### `young_laplace.closure.closure_on_interior_layers2.dx2mm_c10` — MARGINAL
+
+- 物理量：Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m
+- 参考：360 Pa（Young-Laplace sigma/R）
+- 实测：345.481 Pa
+  - 口径：absolute <p_core> over the capillary tail average, closure_on_interior_layers2, dx = 2 mm, c0 = 10 m/s, 362 particles, 642 steps
+- 相对误差：-4.03 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**MARGINAL**
+- 溯源：`benchmarks/laplace_pressure_closure/raw/relax_ladder_dx2mm_c10.json` → `cases[1]`
+  - 守护测试：`tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder`
+- 欠账指针：`backlog_update_m2971.md#P0`
+- 注：Free-surface pressure closure (Adami/Ihmsen/Adams 2012 §3.3) wired into ``droplet_impact.rhs``. The closure-off control of the same lattice reads -37.23 %, i.e. this variant recovers +33.20 points of the deficit. Admissible (v_max/v_ref = 0.060 < 0.1) and inside the 15 % band, but outside the 3 % paper band. Overall the closure is PROVISIONAL: it is admissible and in band at two of the four tested (dx, c0) points, not at all of them.
+
+### `young_laplace.closure.closure_on_interior_layers2.dx2mm_c20` — WITHHELD
+
+- 物理量：Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m
+- 参考：360 Pa（Young-Laplace sigma/R）
+- 实测：391.805 Pa
+  - 口径：absolute <p_core> over the capillary tail average, closure_on_interior_layers2, dx = 2 mm, c0 = 20 m/s, 362 particles, 1283 steps
+- 相对误差：+8.83 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`WITHHELD`；本账等级：**WITHHELD**
+- 溯源：`benchmarks/laplace_pressure_closure/raw/relax_ladder.json` → `cases[2]`
+  - 守护测试：`tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder`
+- 欠账指针：`backlog_update_m2971.md#P0`
+- 注：Free-surface pressure closure (Adami/Ihmsen/Adams 2012 §3.3) wired into ``droplet_impact.rhs``. The closure-off control of the same lattice reads -37.88 %, i.e. this variant recovers +29.04 points of the deficit. INADMISSIBLE: residual spurious current v_max/v_ref = 0.388 >= 0.1, so the drop was not at rest when the reading was taken; the number is recorded but not credited. Overall the closure is PROVISIONAL: it is admissible and in band at two of the four tested (dx, c0) points, not at all of them.
+
+### `young_laplace.closure.closure_on_interior_layers2.dx2mm_c5` — WITHHELD
+
+- 物理量：Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m
+- 参考：360 Pa（Young-Laplace sigma/R）
+- 实测：377.482 Pa
+  - 口径：absolute <p_core> over the capillary tail average, closure_on_interior_layers2, dx = 2 mm, c0 = 5 m/s, 362 particles, 592 steps
+- 相对误差：+4.86 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`WITHHELD`；本账等级：**WITHHELD**
+- 溯源：`benchmarks/laplace_pressure_closure/raw/relax_ladder_dx2mm_c5.json` → `cases[1]`
+  - 守护测试：`tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder`
+- 欠账指针：`backlog_update_m2971.md#P0`
+- 注：Free-surface pressure closure (Adami/Ihmsen/Adams 2012 §3.3) wired into ``droplet_impact.rhs``. The closure-off control of the same lattice reads -33.99 %, i.e. this variant recovers +29.13 points of the deficit. INADMISSIBLE: residual spurious current v_max/v_ref = 0.104 >= 0.1, so the drop was not at rest when the reading was taken; the number is recorded but not credited. Overall the closure is PROVISIONAL: it is admissible and in band at two of the four tested (dx, c0) points, not at all of them.
+
+### `young_laplace.closure.closure_on_interior_layers4.dx2mm_c20` — WITHDRAWN
+
+- 物理量：Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m
+- 参考：360 Pa（Young-Laplace sigma/R）
+- 实测：391.805 Pa
+  - 口径：absolute <p_core> over the capillary tail average, closure_on_interior_layers4, dx = 2 mm, c0 = 20 m/s, 362 particles, 1283 steps
+- 相对误差：+8.83 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`WITHHELD`；本账等级：**WITHDRAWN**
+- 溯源：`benchmarks/laplace_pressure_closure/raw/relax_ladder.json` → `cases[3]`
+  - 守护测试：`tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder`
+- 欠账指针：`backlog_update_m2971.md#P0`；被 `young_laplace.closure.closure_on_interior_layers2.dx2mm_c20` 取代
+- 注：Free-surface pressure closure (Adami/Ihmsen/Adams 2012 §3.3) wired into ``droplet_impact.rhs``. The closure-off control of the same lattice reads -37.88 %, i.e. this variant recovers +29.04 points of the deficit. INADMISSIBLE: residual spurious current v_max/v_ref = 0.388 >= 0.1, so the drop was not at rest when the reading was taken; the number is recorded but not credited. Overall the closure is PROVISIONAL: it is admissible and in band at two of the four tested (dx, c0) points, not at all of them. Bit-identical to `young_laplace.closure.closure_on_interior_layers2.dx2mm_c20`: extra donor layers do not change the donor set at this resolution, so this row is kept as provenance only and does not count as independent evidence.
+
 ### `young_laplace.csf_consistent.dx2mm` — WITHHELD
 
 - 物理量：dp = sigma/R (2-D), sigma=7.2 N/m, R=0.020 m -> 360 Pa
@@ -310,6 +427,32 @@
   - 守护测试：`tests/test_csf_curvature_fit.py`
 - 欠账指针：`backlog_update_m2971.md#P0`
 - 注：Same pressure-closure deficit through a different curvature operator.
+
+### `young_laplace.force_balance.flux_integral.dx1.5mm` — MARGINAL
+
+- 物理量：Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m
+- 参考：360 Pa（Young-Laplace sigma/R）
+- 实测：333.145 Pa
+  - 口径：radial flux integral -int_0^R rho a_r dr of a single CSF evaluation on the calibrated lattice (no time stepping)
+- 相对误差：-7.46 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**MARGINAL**
+- 溯源：`benchmarks/laplace_pressure_closure/report_force_balance.json` → `cases[1].force_side`
+  - 守护测试：`tests/test_young_laplace_closure_ledger.py::test_force_balance_integral_is_registered_and_paper_grade`
+- 欠账指针：`backlog_update_m2971.md#P0`
+- 注：Bypasses the pressure field entirely, so it separates the two halves of the Young-Laplace deficit: the surface-tension force already delivers sigma/R to -7.46 %, hence the historical -38 % lived in the free surface pressure assembly (the closure), not in the force model. Bins 400/800 agree to 0.01 % (``bin_sensitivity``), so this is not a quadrature artefact.
+
+### `young_laplace.force_balance.flux_integral.dx2mm` — PASS
+
+- 物理量：Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m
+- 参考：360 Pa（Young-Laplace sigma/R）
+- 实测：359.078 Pa
+  - 口径：radial flux integral -int_0^R rho a_r dr of a single CSF evaluation on the calibrated lattice (no time stepping)
+- 相对误差：-0.26 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**PASS**
+- 溯源：`benchmarks/laplace_pressure_closure/report_force_balance.json` → `cases[0].force_side`
+  - 守护测试：`tests/test_young_laplace_closure_ledger.py::test_force_balance_integral_is_registered_and_paper_grade`
+- 欠账指针：`backlog_update_m2971.md#P0`
+- 注：Bypasses the pressure field entirely, so it separates the two halves of the Young-Laplace deficit: the surface-tension force already delivers sigma/R to -0.26 %, hence the historical -38 % lived in the free surface pressure assembly (the closure), not in the force model. Bins 400/800 agree to 0.01 % (``bin_sensitivity``), so this is not a quadrature artefact.
 
 ### `young_laplace.laplace_law.vacuum_gauge` — WITHHELD
 
