@@ -7,7 +7,9 @@
       "backlog_ref": "docs/verification_ledger.md",
       "claim_id": "colour_surface.delta_s_integral",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -39,7 +41,9 @@
       "backlog_ref": "docs/verification_ledger.md",
       "claim_id": "csf_force.sigma_eff_over_sigma.dx5mm",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -71,7 +75,9 @@
       "backlog_ref": "backlog_update_m2971.md#P1",
       "claim_id": "curvature_operator.delta_s_weighted.dx3mm",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -103,7 +109,9 @@
       "backlog_ref": "docs/verification_ledger.md",
       "claim_id": "dam_break.martin_moyce.mae",
       "claim_type": "gate",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": 0.15,
       "gate_result": "fail",
       "gauge_degenerate": false,
@@ -135,7 +143,14 @@
       "backlog_ref": "docs/verification_density_diffusion_decay.md",
       "claim_id": "density_diffusion.decay_rate.worst_of_ladder",
       "claim_type": "gate",
+      "credit_qualified": true,
       "criterion_pct": 15.0,
+      "declared_verdict": {
+        "failing_criteria": [],
+        "json_path": "verdict",
+        "missing_cases": [],
+        "value": "pass"
+      },
       "gate_limit": 0.03,
       "gate_result": "pass",
       "gauge_degenerate": false,
@@ -167,7 +182,14 @@
       "backlog_ref": "docs/verification_density_diffusion_decay.md",
       "claim_id": "density_diffusion.finite_time.amplitude",
       "claim_type": "gate",
+      "credit_qualified": true,
       "criterion_pct": 15.0,
+      "declared_verdict": {
+        "failing_criteria": [],
+        "json_path": "verdict",
+        "missing_cases": [],
+        "value": "pass"
+      },
       "gate_limit": 0.035,
       "gate_result": "pass",
       "gauge_degenerate": false,
@@ -199,7 +221,9 @@
       "backlog_ref": "docs/verification_ledger.md",
       "claim_id": "effective_sigma.sigma_eff_over_sigma.dx5mm",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -231,7 +255,14 @@
       "backlog_ref": "docs/verification_ledger.md",
       "claim_id": "laplace_droplet.merged_csf.8cases",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": {
+        "failing_criteria": [],
+        "json_path": "verdict",
+        "missing_cases": [],
+        "value": "fail"
+      },
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -263,7 +294,9 @@
       "backlog_ref": "backlog_update_m2971.md#P0",
       "claim_id": "laplace_report.laplace_pressure.Rdx10",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -295,7 +328,14 @@
       "backlog_ref": "backlog_update_m2971.md#P0",
       "claim_id": "oscillating_droplet.frequency.lamb",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": {
+        "failing_criteria": [],
+        "json_path": "verdict",
+        "missing_cases": [],
+        "value": "fail"
+      },
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -327,7 +367,9 @@
       "backlog_ref": "backlog_update_m2971.md#P0",
       "claim_id": "paper_uncertainty.band.dx3mm",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -359,7 +401,9 @@
       "backlog_ref": "docs/verification_ledger_coverage_m6453.md",
       "claim_id": "poiseuille.centre_velocity.finest",
       "claim_type": "relative_error",
+      "credit_qualified": true,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -391,7 +435,9 @@
       "backlog_ref": "docs/verification_ledger_coverage_m6453.md",
       "claim_id": "poiseuille.wall_shear_ratio.finest",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -423,7 +469,9 @@
       "backlog_ref": "docs/verification_startup_quiescence.md",
       "claim_id": "quiescence.flume_resting_noise.v_late_rms",
       "claim_type": "gate",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": 0.06,
       "gate_result": "open",
       "gauge_degenerate": false,
@@ -455,7 +503,9 @@
       "backlog_ref": "backlog_update_m2971.md#P2",
       "claim_id": "static_droplet.force_direction.WITHDRAWN",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -487,7 +537,14 @@
       "backlog_ref": "docs/verification_ledger.md",
       "claim_id": "surface_tension_ladder.laplace_error_finest",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": {
+        "failing_criteria": [],
+        "json_path": "verdict",
+        "missing_cases": [],
+        "value": "fail"
+      },
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -519,7 +576,20 @@
       "backlog_ref": "docs/verification_threed.md",
       "claim_id": "threed_hydrostatic.bottom_pressure.adami_best",
       "claim_type": "relative_error",
+      "credit_qualified": false,
       "criterion_pct": 15.0,
+      "declared_verdict": {
+        "failing_criteria": [
+          "bottom_pressure_within_15pct_all",
+          "centre_of_mass_drift_below_1pct",
+          "column_settled_window_drift_below_2pct",
+          "compressibility_helps_as_predicted",
+          "interior_pressure_within_15pct_best"
+        ],
+        "json_path": "verdict",
+        "missing_cases": [],
+        "value": "fail"
+      },
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -547,11 +617,69 @@
     {
       "admissibility": null,
       "artifact": "benchmarks/threed_hydrostatic/report.json",
+      "artifact_status": "FAIL",
+      "backlog_ref": "docs/verification_threed.md",
+      "claim_id": "threed_hydrostatic.bottom_pressure.adami_worst",
+      "claim_type": "relative_error",
+      "credit_qualified": false,
+      "criterion_pct": 15.0,
+      "declared_verdict": {
+        "failing_criteria": [
+          "bottom_pressure_within_15pct_all",
+          "centre_of_mass_drift_below_1pct",
+          "column_settled_window_drift_below_2pct",
+          "compressibility_helps_as_predicted",
+          "interior_pressure_within_15pct_best"
+        ],
+        "json_path": "verdict",
+        "missing_cases": [],
+        "value": "fail"
+      },
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "MARGINAL",
+      "guarding_test": "tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria",
+      "json_path": "runs[2].pressure",
+      "measured": {
+        "definition": "worst of the 5 Adami runs on the bottom layer; adami-c0_5-nz16, dx = 0.01 m",
+        "unit": "Pa",
+        "value": 1387.584969
+      },
+      "notes": "Complement of `threed_hydrostatic.bottom_pressure.adami_best`: the 5 Adami runs span -8.74 % to -2.75 % on the same collapse quantity, so the single best value is a selection, not a property of the wall model alone (it tracks c0 and therefore the density error, as Adami et al. 2012 predict).",
+      "paper_criterion_pct": 3.0,
+      "quantity": "bottom pressure of a 3-D column at rest, p = rho0 g H",
+      "quantity_id": "threed_hydrostatic_bottom_pressure",
+      "reference": {
+        "source": "rho0 g H, H = nz dx",
+        "unit": "Pa",
+        "value": 1520.55
+      },
+      "rel_error_pct": -8.744535,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/threed_hydrostatic/report.json",
       "artifact_status": "WITHHELD",
       "backlog_ref": "docs/verification_threed.md",
       "claim_id": "threed_hydrostatic.bottom_pressure.tait_wall_control",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": {
+        "failing_criteria": [
+          "bottom_pressure_within_15pct_all",
+          "centre_of_mass_drift_below_1pct",
+          "column_settled_window_drift_below_2pct",
+          "compressibility_helps_as_predicted",
+          "interior_pressure_within_15pct_best"
+        ],
+        "json_path": "verdict",
+        "missing_cases": [],
+        "value": "fail"
+      },
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -578,12 +706,109 @@
     },
     {
       "admissibility": null,
+      "artifact": "benchmarks/threed_hydrostatic/report.json",
+      "artifact_status": "FAIL",
+      "backlog_ref": "docs/verification_threed.md",
+      "claim_id": "threed_hydrostatic.profile.max_rel_error_core.adami_best",
+      "claim_type": "relative_error",
+      "credit_qualified": null,
+      "criterion_pct": 15.0,
+      "declared_verdict": {
+        "failing_criteria": [
+          "bottom_pressure_within_15pct_all",
+          "centre_of_mass_drift_below_1pct",
+          "column_settled_window_drift_below_2pct",
+          "compressibility_helps_as_predicted",
+          "interior_pressure_within_15pct_best"
+        ],
+        "json_path": "verdict",
+        "missing_cases": [],
+        "value": "fail"
+      },
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "FAIL",
+      "guarding_test": "tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria",
+      "json_path": "runs[0].pressure",
+      "measured": {
+        "definition": "max over the 13 core layers; adami-c0_20-nz16",
+        "unit": "%",
+        "value": 43.174104
+      },
+      "notes": "The odd-even pressure mode of the particle lattice: adjacent layers alternate between ~-6 % and up to -43 %, so any single-layer reading of this benchmark is a sample of a mode, not a converged profile.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "worst per-layer relative error over the interior pressure profile of a 3-D column at rest",
+      "quantity_id": "threed_hydrostatic_profile_max_error",
+      "reference": {
+        "source": "exact profile p = rho0 g (H - z): target error 0 %",
+        "unit": "%",
+        "value": 0.0
+      },
+      "rel_error_pct": 43.174104,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/threed_hydrostatic/report.json",
+      "artifact_status": "FAIL",
+      "backlog_ref": "docs/verification_threed.md",
+      "claim_id": "threed_hydrostatic.profile.mean_rel_error_core.adami_best",
+      "claim_type": "relative_error",
+      "credit_qualified": false,
+      "criterion_pct": 15.0,
+      "declared_verdict": {
+        "failing_criteria": [
+          "bottom_pressure_within_15pct_all",
+          "centre_of_mass_drift_below_1pct",
+          "column_settled_window_drift_below_2pct",
+          "compressibility_helps_as_predicted",
+          "interior_pressure_within_15pct_best"
+        ],
+        "json_path": "verdict",
+        "missing_cases": [],
+        "value": "fail"
+      },
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "MARGINAL",
+      "guarding_test": "tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria",
+      "json_path": "runs[0].pressure",
+      "measured": {
+        "definition": "mean of the per-layer relative errors over the 13 core layers; adami-c0_20-nz16",
+        "unit": "%",
+        "value": -11.922738
+      },
+      "notes": "The bottom-layer reading above is one point of a profile that is NOT within the band everywhere: the interior is systematically low, which is why the artifact's own criterion `interior_pressure_within_15pct_best` is false. Registered so the PASS on the bottom layer cannot be read as 'the 3-D hydrostatic profile is verified'.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "mean relative error of the interior (non-bottom, non-surface) pressure profile of a 3-D column at rest",
+      "quantity_id": "threed_hydrostatic_profile_mean_error",
+      "reference": {
+        "source": "exact profile p = rho0 g (H - z): target error 0 %",
+        "unit": "%",
+        "value": 0.0
+      },
+      "rel_error_pct": -11.922738,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
       "artifact": "benchmarks/threed_kernel/report.json",
       "artifact_status": "PASS",
       "backlog_ref": "docs/verification_threed.md",
       "claim_id": "threed_kernel.integral_of_W",
       "claim_type": "relative_error",
+      "credit_qualified": true,
       "criterion_pct": 15.0,
+      "declared_verdict": {
+        "failing_criteria": [],
+        "json_path": "verdict",
+        "missing_cases": [],
+        "value": "pass"
+      },
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -615,7 +840,16 @@
       "backlog_ref": "docs/verification_threed.md",
       "claim_id": "threed_shear.decay_rate.finest",
       "claim_type": "relative_error",
+      "credit_qualified": false,
       "criterion_pct": 15.0,
+      "declared_verdict": {
+        "failing_criteria": [],
+        "json_path": "verdict",
+        "missing_cases": [
+          "h1.8"
+        ],
+        "value": "fail"
+      },
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -647,7 +881,16 @@
       "backlog_ref": "docs/verification_threed.md",
       "claim_id": "threed_shear.decay_rate.raw_laplacian",
       "claim_type": "relative_error",
+      "credit_qualified": false,
       "criterion_pct": 15.0,
+      "declared_verdict": {
+        "failing_criteria": [],
+        "json_path": "verdict",
+        "missing_cases": [
+          "h1.8"
+        ],
+        "value": "fail"
+      },
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -674,12 +917,55 @@
     },
     {
       "admissibility": null,
+      "artifact": "benchmarks/threed_shear/report.json",
+      "artifact_status": "FAIL",
+      "backlog_ref": "docs/verification_threed.md",
+      "claim_id": "threed_shear.decay_rate.worst_of_ladder",
+      "claim_type": "relative_error",
+      "credit_qualified": false,
+      "criterion_pct": 15.0,
+      "declared_verdict": {
+        "failing_criteria": [],
+        "json_path": "verdict",
+        "missing_cases": [
+          "h1.8"
+        ],
+        "value": "fail"
+      },
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "MARGINAL",
+      "guarding_test": "tests/test_threed_artifacts.py::test_shear_report_meets_its_criteria",
+      "json_path": "resolution_ladder[0].decay",
+      "measured": {
+        "definition": "coarsest rung of the same ladder, n = 12^3 particles, k h = 0.681, second-moment renormalised viscous operator",
+        "unit": "1/s",
+        "value": 3.449615
+      },
+      "notes": "Complement of `threed_shear.decay_rate.finest`: the ladder runs -12.62 % (n = 12) to -2.68 % (n = 24). Quoting only the finest rung hides that the coarsest one is outside the paper band, and the artifact's own h/dx sweep is incomplete (see missing_cases).",
+      "paper_criterion_pct": 3.0,
+      "quantity": "decay exponent of u = A sin(ky) sin(kz) exp(-2 nu k^2 t), periodic 3-D cube, nu = 0.05 m^2/s, k = 2 pi / m",
+      "quantity_id": "threed_shear_decay_rate_2nuk2",
+      "reference": {
+        "source": "2 nu k^2 (exact)",
+        "unit": "1/s",
+        "value": 3.947842
+      },
+      "rel_error_pct": -12.620226,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
       "artifact": "benchmarks/surface_tension_laplace/validation_report.json",
       "artifact_status": "PASS",
       "backlog_ref": "backlog_update_m2971.md#P0",
       "claim_id": "two_phase_laplace.smoothed_colour.dx2.5mm",
       "claim_type": "gate",
+      "credit_qualified": true,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": 0.15,
       "gate_result": "pass",
       "gauge_degenerate": false,
@@ -711,7 +997,9 @@
       "backlog_ref": "backlog_update_m2971.md#P0",
       "claim_id": "young_laplace.absolute_tail.best_of_6",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -748,7 +1036,9 @@
       "backlog_ref": "backlog_update_m2971.md#P0",
       "claim_id": "young_laplace.closure.closure_on_all_donors.dx1.5mm_c20",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -770,7 +1060,7 @@
         "value": 360.0
       },
       "rel_error_pct": -25.25868,
-      "run_validity": "UNPROBED",
+      "run_validity": "VALID",
       "superseded_by": null
     },
     {
@@ -785,7 +1075,9 @@
       "backlog_ref": "backlog_update_m2971.md#P0",
       "claim_id": "young_laplace.closure.closure_on_all_donors.dx2mm_c20",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -807,7 +1099,7 @@
         "value": 360.0
       },
       "rel_error_pct": -20.146441,
-      "run_validity": "UNPROBED",
+      "run_validity": "VALID",
       "superseded_by": null
     },
     {
@@ -822,7 +1114,9 @@
       "backlog_ref": "backlog_update_m2971.md#P0",
       "claim_id": "young_laplace.closure.closure_on_interior_layers2.dx1.5mm_c20",
       "claim_type": "relative_error",
+      "credit_qualified": true,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -844,7 +1138,7 @@
         "value": 360.0
       },
       "rel_error_pct": -3.408283,
-      "run_validity": "UNPROBED",
+      "run_validity": "VALID",
       "superseded_by": null
     },
     {
@@ -859,7 +1153,9 @@
       "backlog_ref": "backlog_update_m2971.md#P0",
       "claim_id": "young_laplace.closure.closure_on_interior_layers2.dx2mm_c10",
       "claim_type": "relative_error",
+      "credit_qualified": true,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -881,7 +1177,7 @@
         "value": 360.0
       },
       "rel_error_pct": -4.032968,
-      "run_validity": "UNPROBED",
+      "run_validity": "VALID",
       "superseded_by": null
     },
     {
@@ -896,7 +1192,9 @@
       "backlog_ref": "backlog_update_m2971.md#P0",
       "claim_id": "young_laplace.closure.closure_on_interior_layers2.dx2mm_c20",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -918,7 +1216,7 @@
         "value": 360.0
       },
       "rel_error_pct": 8.834845,
-      "run_validity": "UNPROBED",
+      "run_validity": "INVALID",
       "superseded_by": null
     },
     {
@@ -933,7 +1231,9 @@
       "backlog_ref": "backlog_update_m2971.md#P0",
       "claim_id": "young_laplace.closure.closure_on_interior_layers2.dx2mm_c5",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -955,7 +1255,7 @@
         "value": 360.0
       },
       "rel_error_pct": 4.856009,
-      "run_validity": "UNPROBED",
+      "run_validity": "INVALID",
       "superseded_by": null
     },
     {
@@ -970,7 +1270,9 @@
       "backlog_ref": "backlog_update_m2971.md#P0",
       "claim_id": "young_laplace.closure.closure_on_interior_layers4.dx2mm_c20",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -992,7 +1294,7 @@
         "value": 360.0
       },
       "rel_error_pct": 8.834845,
-      "run_validity": "UNPROBED",
+      "run_validity": "INVALID",
       "superseded_by": "young_laplace.closure.closure_on_interior_layers2.dx2mm_c20"
     },
     {
@@ -1002,7 +1304,9 @@
       "backlog_ref": "backlog_update_m2971.md#P0",
       "claim_id": "young_laplace.csf_consistent.dx2mm",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -1034,7 +1338,9 @@
       "backlog_ref": "backlog_update_m2971.md#P0",
       "claim_id": "young_laplace.csf_curvature_fit.dx2mm",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -1066,7 +1372,9 @@
       "backlog_ref": "backlog_update_m2971.md#P0",
       "claim_id": "young_laplace.force_balance.flux_integral.dx1.5mm",
       "claim_type": "relative_error",
+      "credit_qualified": true,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -1098,7 +1406,9 @@
       "backlog_ref": "backlog_update_m2971.md#P0",
       "claim_id": "young_laplace.force_balance.flux_integral.dx2mm",
       "claim_type": "relative_error",
+      "credit_qualified": true,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -1130,7 +1440,9 @@
       "backlog_ref": "docs/verification_ledger.md",
       "claim_id": "young_laplace.laplace_law.vacuum_gauge",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": null,
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": true,
@@ -1162,7 +1474,14 @@
       "backlog_ref": "backlog_update_m2971.md#P0",
       "claim_id": "young_laplace.plateau_definition",
       "claim_type": "relative_error",
+      "credit_qualified": null,
       "criterion_pct": 15.0,
+      "declared_verdict": {
+        "failing_criteria": [],
+        "json_path": "verdict",
+        "missing_cases": [],
+        "value": "fail"
+      },
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
@@ -1203,6 +1522,24 @@
     },
     {
       "claim_id": "young_laplace.closure.closure_on_interior_layers2.dx2mm_c20",
+      "detail": "validity gate says INVALID (containment / Mach / estimator / fit / null-control): the run had stopped being a liquid before the reading was taken, so the reading is graded WITHHELD instead of FAIL — see docs/verification_claim_validity.md",
+      "rule": "run_validity",
+      "severity": "high"
+    },
+    {
+      "claim_id": "young_laplace.closure.closure_on_interior_layers2.dx2mm_c5",
+      "detail": "validity gate says INVALID (containment / Mach / estimator / fit / null-control): the run had stopped being a liquid before the reading was taken, so the reading is graded WITHHELD instead of FAIL — see docs/verification_claim_validity.md",
+      "rule": "run_validity",
+      "severity": "high"
+    },
+    {
+      "claim_id": "young_laplace.closure.closure_on_interior_layers4.dx2mm_c20",
+      "detail": "validity gate says INVALID (containment / Mach / estimator / fit / null-control): the run had stopped being a liquid before the reading was taken, so the reading is graded WITHHELD instead of FAIL — see docs/verification_claim_validity.md",
+      "rule": "run_validity",
+      "severity": "high"
+    },
+    {
+      "claim_id": "young_laplace.closure.closure_on_interior_layers2.dx2mm_c20",
       "detail": "+8.83 % is inside the 15 % band, but the run violates the admissibility gate (v_max/v_ref < 0.1 (Adami, Ihmsen & Adams 2012): 0.388129 >= 0.1): the residual spurious current, not the physics, sets the agreement, so the reading is graded WITHHELD and may not be quoted as a pass",
       "rule": "inadmissible_run",
       "severity": "high"
@@ -1220,8 +1557,50 @@
       "severity": "high"
     },
     {
+      "claim_id": "threed_hydrostatic.bottom_pressure.adami_best",
+      "detail": "-2.75 % is credited PASS, but the artifact `benchmarks/threed_hydrostatic/report.json` declares `verdict = fail` (failing criteria: bottom_pressure_within_15pct_all, centre_of_mass_drift_below_1pct, column_settled_window_drift_below_2pct, compressibility_helps_as_predicted, interior_pressure_within_15pct_best): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md",
+      "rule": "credit_from_failing_artifact",
+      "severity": "high"
+    },
+    {
+      "claim_id": "threed_hydrostatic.bottom_pressure.adami_worst",
+      "detail": "-8.74 % is credited MARGINAL, but the artifact `benchmarks/threed_hydrostatic/report.json` declares `verdict = fail` (failing criteria: bottom_pressure_within_15pct_all, centre_of_mass_drift_below_1pct, column_settled_window_drift_below_2pct, compressibility_helps_as_predicted, interior_pressure_within_15pct_best): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md",
+      "rule": "credit_from_failing_artifact",
+      "severity": "high"
+    },
+    {
+      "claim_id": "threed_hydrostatic.profile.mean_rel_error_core.adami_best",
+      "detail": "-11.92 % is credited MARGINAL, but the artifact `benchmarks/threed_hydrostatic/report.json` declares `verdict = fail` (failing criteria: bottom_pressure_within_15pct_all, centre_of_mass_drift_below_1pct, column_settled_window_drift_below_2pct, compressibility_helps_as_predicted, interior_pressure_within_15pct_best): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md",
+      "rule": "credit_from_failing_artifact",
+      "severity": "high"
+    },
+    {
+      "claim_id": "threed_shear.decay_rate.finest",
+      "detail": "-2.68 % is credited PASS, but the artifact `benchmarks/threed_shear/report.json` declares `verdict = fail` (missing cases: h1.8): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md",
+      "rule": "credit_from_failing_artifact",
+      "severity": "high"
+    },
+    {
+      "claim_id": "threed_shear.decay_rate.raw_laplacian",
+      "detail": "+11.46 % is credited MARGINAL, but the artifact `benchmarks/threed_shear/report.json` declares `verdict = fail` (missing cases: h1.8): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md",
+      "rule": "credit_from_failing_artifact",
+      "severity": "high"
+    },
+    {
+      "claim_id": "threed_shear.decay_rate.worst_of_ladder",
+      "detail": "-12.62 % is credited MARGINAL, but the artifact `benchmarks/threed_shear/report.json` declares `verdict = fail` (missing cases: h1.8): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md",
+      "rule": "credit_from_failing_artifact",
+      "severity": "high"
+    },
+    {
       "claim_id": "threed_hydrostatic_bottom_pressure",
-      "detail": "2 active readings of one quantity span -25.2 % … -2.7 % (spread 22.5 pt): threed_hydrostatic.bottom_pressure.adami_best=-2.7 %, threed_hydrostatic.bottom_pressure.tait_wall_control=-25.2 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
+      "detail": "3 active readings of one quantity span -25.2 % … -2.7 % (spread 22.5 pt): threed_hydrostatic.bottom_pressure.adami_best=-2.7 %, threed_hydrostatic.bottom_pressure.adami_worst=-8.7 %, threed_hydrostatic.bottom_pressure.tait_wall_control=-25.2 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
+      "rule": "quantity_spread",
+      "severity": "high"
+    },
+    {
+      "claim_id": "threed_shear_decay_rate_2nuk2",
+      "detail": "3 active readings of one quantity span -12.6 % … +11.5 % (spread 24.1 pt): threed_shear.decay_rate.finest=-2.7 %, threed_shear.decay_rate.raw_laplacian=+11.5 %, threed_shear.decay_rate.worst_of_ladder=-12.6 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
       "rule": "quantity_spread",
       "severity": "high"
     },
@@ -1236,27 +1615,38 @@
       "detail": "14 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.closure.closure_on_all_donors.dx1.5mm_c20=-25.3 %, young_laplace.closure.closure_on_all_donors.dx2mm_c20=-20.1 %, young_laplace.closure.closure_on_interior_layers2.dx1.5mm_c20=-3.4 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c10=-4.0 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c20=+8.8 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c5=+4.9 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.force_balance.flux_integral.dx1.5mm=-7.5 %, young_laplace.force_balance.flux_integral.dx2mm=-0.3 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
       "rule": "quantity_spread",
       "severity": "high"
+    },
+    {
+      "claim_id": "benchmarks/ice_floe_added_mass",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
     }
   ],
   "schema_version": 1,
   "summary": {
     "by_grade": {
-      "FAIL": 9,
-      "MARGINAL": 5,
+      "FAIL": 10,
+      "MARGINAL": 8,
       "PASS": 7,
       "WITHDRAWN": 2,
       "WITHHELD": 13
     },
     "criterion_pct": 15.0,
     "findings_by_rule": {
+      "credit_from_failing_artifact": 6,
       "declared_vs_derived": 1,
       "inadmissible_run": 3,
-      "quantity_spread": 3,
-      "run_validity": 1
+      "quantity_spread": 4,
+      "run_validity": 4,
+      "uncovered_benchmark": 1
     },
-    "n_claims": 36,
-    "n_findings": 8,
-    "n_quantities": 18,
+    "n_artifact_verdicts_fail": 12,
+    "n_claims": 40,
+    "n_credits_unqualified": 6,
+    "n_credits_without_declared_verdict": 6,
+    "n_findings": 19,
+    "n_quantities": 20,
     "paper_criterion_pct": 3.0
   }
 }
