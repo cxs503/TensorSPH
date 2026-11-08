@@ -24,8 +24,8 @@
 
 ## 3. 汇总
 
-- claims **31** ／ 物理量 **14** ／ findings **8**
-- 分级分布：PASS 4，MARGINAL 5，WITHHELD 12，FAIL 8，WITHDRAWN 2
+- claims **36** ／ 物理量 **18** ／ findings **8**
+- 分级分布：PASS 7，MARGINAL 5，WITHHELD 13，FAIL 9，WITHDRAWN 2
 - findings 分类：declared_vs_derived 1，inadmissible_run 3，quantity_spread 3，run_validity 1
 
 ## 4. 断言表
@@ -36,10 +36,15 @@
 | `csf_force.sigma_eff_over_sigma.dx5mm` | effective surface tension from the half-droplet force integral, sigma_eff/sigma | 1 - | 0.704004 - | -29.60 % | **FAIL** | `benchmarks/laplace_pressure/validation_report.json` → `cases[0]` | `tests/test_laplace_pressure.py` |
 | `curvature_operator.delta_s_weighted.dx3mm` | delta_s-weighted curvature kappa vs analytic 1/R (R = 20 mm) | 50 1/m | 64.1315 1/m | +28.26 % | **WITHHELD** | `benchmarks/csf_consistent/curvature_audit.json` → `rows[0].variants[0]` | `tests/test_csf_curvature_audit.py` |
 | `dam_break.martin_moyce.mae` | dam-break front position vs Martin & Moyce (1952), mean abs error in Z/a | limit 0.15 | 0.572757 | — | **FAIL** | `benchmarks/dam_break/resolution_ladder.json` → `gates.experimental_comparison` | `tests/test_dam_break_experimental.py` |
+| `density_diffusion.decay_rate.worst_of_ladder` | decay rate of a plane density wave vs the analytic gamma = D k^2, D = delta c0 h (Antuono, Colagrossi & Marrone 2012) | limit 0.03 | 0.010208 | — | **PASS** | `benchmarks/density_diffusion_decay/decay_rate.json` → `max_rate_relative_error` | `tests/test_density_diffusion_decay.py::test_the_diffusive_term_decays_a_plane_wave_at_the_analytic_rate` |
+| `density_diffusion.finite_time.amplitude` | mode amplitude after a finite integration time vs rho0 A exp(-gamma t) | limit 0.035 | 0.00482 | — | **PASS** | `benchmarks/density_diffusion_decay/decay_rate.json` → `finite_time` | `tests/test_density_diffusion_decay.py::test_the_mode_amplitude_follows_the_exponential_over_a_finite_time` |
+| `effective_sigma.sigma_eff_over_sigma.dx5mm` | effective surface tension from the half-droplet force integral, sigma_eff/sigma (R = 40 mm, curvature estimator: quadratic interface fit) | 1 - | 0.710625 - | -28.94 % | **FAIL** | `benchmarks/effective_sigma/out/report.json` → `rows[0].ratio` | `tests/test_effective_sigma.py::test_current_default_delivers_the_documented_ratio` |
 | `laplace_droplet.merged_csf.8cases` | dp = sigma/R (2-D), sigma=0.072 N/m, R=0.1 m -> 0.72 Pa | 1 - | 3.19723 - | +219.72 % | **FAIL** | `benchmarks/laplace_droplet/results.json` → `verdict` | `tests/test_laplace_droplet.py::test_laplace_jump_current_state` |
 | `laplace_report.laplace_pressure.Rdx10` | pressure balance of a static droplet at R/dx = 10 (code units) | 1.44 - | 1.82627 - | +26.82 % | **FAIL** | `benchmarks/laplace/report.json` → `checks.R/dx=10:laplace_pressure` | `tests/test_laplace_pressure.py` |
 | `oscillating_droplet.frequency.lamb` | fundamental frequency of an inviscid 2-D droplet (Lamb omega_2) | 73.4847 rad/s | 41.4979 rad/s | -43.53 % | **WITHHELD** | `benchmarks/oscillating_droplet/validation_report.json` → `verdict.rows[0]` | `tests/test_oscillating_droplet.py` |
 | `paper_uncertainty.band.dx3mm` | Young-Laplace jump (2-D), sigma=7.2 N/m, R=20 mm -> 360 Pa | 360 Pa | 249.626 Pa | -30.66 % | **WITHHELD** | `benchmarks/paper_laplace_uncertainty/out/results.json` → `rows[0].metrics.band` | `tests/test_paper_laplace_uncertainty.py` |
+| `poiseuille.centre_velocity.finest` | centre velocity of a body-force-driven plane channel at steady state | 1.22625 m/s | 1.24476 m/s | +1.51 % | **PASS** | `benchmarks/poiseuille/out/results.json` → `results[2].fit.u_centre_measured` | `tests/test_poiseuille.py::test_steady_channel_flow_develops_the_poiseuille_parabola` |
+| `poiseuille.wall_shear_ratio.finest` | no-slip wall shear stress of the same channel, relative to rho g H / 2 | 1 - | 0.502508 - | -49.75 % | **WITHHELD** | `benchmarks/poiseuille/out/results.json` → `results[2].wall_shear_ratio` | `tests/test_poiseuille.py::test_steady_channel_flow_develops_the_poiseuille_parabola` |
 | `quiescence.flume_resting_noise.v_late_rms` | residual velocity of a flume at rest: RMS over the last quarter of max_i |v_i| on interior particles (m/s) | limit 0.06 | 0.079759 | — | **FAIL** | `benchmarks/startup_quiescence/report.json` → `findings[0]` | `tests/test_startup_quiescence.py` |
 | `static_droplet.force_direction.WITHDRAWN` | sign/shape of the CSF force on a static droplet (not a physical gate) | 1 - | 0.173549 - | -82.65 % | **WITHDRAWN** | `benchmarks/static_droplet/validation_report.json` → `validation` | `tests/test_laplace_validation.py` |
 | `surface_tension_ladder.laplace_error_finest` | Laplace error of the surface-tension-only ladder, finest level | 0.15 fraction | 2.51981 fraction | +251.98 % | **FAIL** | `benchmarks/surface_tension/laplace_ladder.json` → `gates.laplace_error_finest` | `tests/test_surface_tension_laplace.py` |
@@ -129,6 +134,44 @@
 - 欠账指针：`docs/verification_ledger.md`
 - 注：RMSE 0.699 Z/a, max 1.618 Z/a; fraction inside experimental uncertainty 0.00. Wave breaking is a 3-D/viscous/non-hydrostatic problem: this is not a surface-tension defect.
 
+### `density_diffusion.decay_rate.worst_of_ladder` — PASS
+
+- 物理量：decay rate of a plane density wave vs the analytic gamma = D k^2, D = delta c0 h (Antuono, Colagrossi & Marrone 2012)
+- 参考：0.03 fraction（gates.rate_relative_error on |gamma_measured/gamma_theory - 1|）
+- 实测：0.010208 fraction
+  - 口径：worst |gamma_measured/gamma_theory - 1| over the resolution / wavenumber / smoothing-length ladders
+- 相对误差：—（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**PASS**
+- 溯源：`benchmarks/density_diffusion_decay/decay_rate.json` → `max_rate_relative_error`
+  - 守护测试：`tests/test_density_diffusion_decay.py::test_the_diffusive_term_decays_a_plane_wave_at_the_analytic_rate`
+- 欠账指针：`docs/verification_density_diffusion_decay.md`
+- 注：D = delta c0 h is not fitted: delta, c0 and h = h_factor dx are solver inputs, so a sign flip, a factor of two or a dx/h confusion would miss by far more than the gate. Before this registration the term had only conservation and smoothing tests, either of which such a defect would pass.
+
+### `density_diffusion.finite_time.amplitude` — PASS
+
+- 物理量：mode amplitude after a finite integration time vs rho0 A exp(-gamma t)
+- 参考：0.035 fraction（gates.finite_time_relative_error）
+- 实测：0.00482 fraction
+  - 口径：|rho(x,t)/rho0 - 1 - A exp(-gamma t)| amplitude error after the run
+- 相对误差：—（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**PASS**
+- 溯源：`benchmarks/density_diffusion_decay/decay_rate.json` → `finite_time`
+  - 守护测试：`tests/test_density_diffusion_decay.py::test_the_mode_amplitude_follows_the_exponential_over_a_finite_time`
+- 欠账指针：`docs/verification_density_diffusion_decay.md`
+
+### `effective_sigma.sigma_eff_over_sigma.dx5mm` — FAIL
+
+- 物理量：effective surface tension from the half-droplet force integral, sigma_eff/sigma (R = 40 mm, curvature estimator: quadratic interface fit)
+- 参考：1 -（sigma_eff = sigma (|F_half| / (2 sigma))）
+- 实测：0.710625 -
+  - 口径：|F_half| / (2 sigma) at R/h = 6.15
+- 相对误差：-28.94 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`FAIL`；本账等级：**FAIL**
+- 溯源：`benchmarks/effective_sigma/out/report.json` → `rows[0].ratio`
+  - 守护测试：`tests/test_effective_sigma.py::test_current_default_delivers_the_documented_ratio`
+- 欠账指针：`docs/verification_ledger.md`
+- 注：Independent replication of claim csf_force.sigma_eff_over_sigma.dx5mm at twice the radius with a different curvature estimator: the two agree to ~1 pt, so the ~30 % force deficit is not a radius or operator artefact. Same root cause as colour_surface.delta_s_integral (the colour-surface delta carries ~0.75 of unit mass).
+
 ### `laplace_droplet.merged_csf.8cases` — FAIL
 
 - 物理量：dp = sigma/R (2-D), sigma=0.072 N/m, R=0.1 m -> 0.72 Pa
@@ -180,6 +223,31 @@
   - 守护测试：`tests/test_paper_laplace_uncertainty.py`
 - 欠账指针：`backlog_update_m2971.md#P0`
 - 注：Largest R/dx = 6.7 of the sweep; 95 % CI +/-9.45 pt.
+
+### `poiseuille.centre_velocity.finest` — PASS
+
+- 物理量：centre velocity of a body-force-driven plane channel at steady state
+- 参考：1.22625 m/s（u_max = g H^2 / (8 nu), H = 0.1 m, nu = 0.01 m^2/s, g = 9.81 m/s^2）
+- 实测：1.24476 m/s
+  - 口径：parabola fitted to the time-averaged profile at H/dx = 16
+- 相对误差：+1.51 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`None`；本账等级：**PASS**
+- 溯源：`benchmarks/poiseuille/out/results.json` → `results[2].fit.u_centre_measured`
+  - 守护测试：`tests/test_poiseuille.py::test_steady_channel_flow_develops_the_poiseuille_parabola`
+- 欠账指针：`docs/verification_ledger_coverage_m6453.md`
+
+### `poiseuille.wall_shear_ratio.finest` — WITHHELD
+
+- 物理量：no-slip wall shear stress of the same channel, relative to rho g H / 2
+- 参考：1 -（tau_wall = rho nu du/dy|_wall = rho g H / 2 = 490.5 Pa）
+- 实测：0.502508 -
+  - 口径：measured wall friction divided by the analytic value at H/dx = 16
+- 相对误差：-49.75 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`None`；本账等级：**WITHHELD**
+- 溯源：`benchmarks/poiseuille/out/results.json` → `results[2].wall_shear_ratio`
+  - 守护测试：`tests/test_poiseuille.py::test_steady_channel_flow_develops_the_poiseuille_parabola`
+- 欠账指针：`docs/verification_ledger_coverage_m6453.md`
+- 注：WITHHELD rather than FAIL: the two readings inside one artifact disagree. The measured centre velocity implies tau = 4 rho nu u_max / H = 498 Pa, while the wall-band readout says 246 Pa, so the wall-band estimator (not necessarily the flow) carries the deficit and the number may not be quoted as a physical gate.
 
 ### `quiescence.flume_resting_noise.v_late_rms` — FAIL
 

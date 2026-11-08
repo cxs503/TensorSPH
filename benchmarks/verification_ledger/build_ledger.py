@@ -53,6 +53,16 @@ PAPER_PCT = 3.0
 
 GRADES = ("PASS", "MARGINAL", "WITHHELD", "FAIL", "WITHDRAWN")
 
+#: Sub-directories of a benchmark hold *fragments* (per-case dumps, resolution
+#: ladders, raw traces): the parent report carries the registered claim, so the
+#: fragments inherit its provenance.
+FRAGMENT_DIRS = ("cases", "raw")
+#: A file inside ``out/`` is a fragment too, unless it carries a primary report
+#: name -- some benchmarks commit *only* ``out/results.json``, and that file is
+#: their evidence, not a fragment.
+PRIMARY_NAMES = re.compile(r"(results|report|summary|validation_report)\.json$")
+LEDGER_DIR = "benchmarks/verification_ledger"
+
 
 # ---------------------------------------------------------------------------
 # helpers
@@ -951,6 +961,174 @@ def quiescence_claims() -> list[dict]:
     ]
 
 
+def orphan_evidence_claims() -> list[dict]:
+    """Committed evidence that the pre-m6453 coverage rule could not see.
+
+    ``benchmarks/density_diffusion_decay``, ``benchmarks/poiseuille`` and
+    ``benchmarks/effective_sigma`` all commit a real analytic comparison, and all
+    three sat outside the ledger: the first because its artifact is called
+    ``decay_rate.json`` (the rule matched file *names*), the other two because
+    their only committed evidence lives in ``out/`` (the rule skipped that
+    sub-directory wholesale).  Nothing about the physics changed when they were
+    registered; what changed is that the numbers are now graded, and that an
+    honest FAIL is visible instead of absent.
+    """
+    out: list[dict] = []
+
+    # --- Antuono/Colagrossi/Marrone density diffusion: gamma = D k^2 -----------
+    rel = "benchmarks/density_diffusion_decay/decay_rate.json"
+    d = _load(rel)
+    lim = float(d["gates"]["rate_relative_error"])
+    out.append(
+        _entry(
+            claim_id="density_diffusion.decay_rate.worst_of_ladder",
+            quantity_id="density_diffusion_decay_rate",
+            quantity=(
+                "decay rate of a plane density wave vs the analytic gamma = D k^2, "
+                "D = delta c0 h (Antuono, Colagrossi & Marrone 2012)"
+            ),
+            claim_type="gate",
+            artifact=rel,
+            json_path="max_rate_relative_error",
+            reference=(lim, "fraction", "gates.rate_relative_error on |gamma_measured/gamma_theory - 1|"),
+            measured=(
+                float(d["max_rate_relative_error"]),
+                "fraction",
+                "worst |gamma_measured/gamma_theory - 1| over the resolution / wavenumber / "
+                "smoothing-length ladders",
+            ),
+            rel_error_pct=100.0 * float(d["max_rate_relative_error"]),
+            gate_result="pass" if str(d["verdict"]).lower() == "pass" else "fail",
+            gate_limit=lim,
+            artifact_status="PASS" if str(d["verdict"]).lower() == "pass" else "FAIL",
+            guarding_test=(
+                "tests/test_density_diffusion_decay.py::"
+                "test_the_diffusive_term_decays_a_plane_wave_at_the_analytic_rate"
+            ),
+            backlog_ref="docs/verification_density_diffusion_decay.md",
+            notes=(
+                "D = delta c0 h is not fitted: delta, c0 and h = h_factor dx are solver inputs, "
+                "so a sign flip, a factor of two or a dx/h confusion would miss by far more than "
+                "the gate. Before this registration the term had only conservation and "
+                "smoothing tests, either of which such a defect would pass."
+            ),
+        )
+    )
+    ft = d["finite_time"]
+    lim2 = float(d["gates"]["finite_time_relative_error"])
+    out.append(
+        _entry(
+            claim_id="density_diffusion.finite_time.amplitude",
+            quantity_id="density_diffusion_finite_time_amplitude",
+            quantity="mode amplitude after a finite integration time vs rho0 A exp(-gamma t)",
+            claim_type="gate",
+            artifact=rel,
+            json_path="finite_time",
+            reference=(lim2, "fraction", "gates.finite_time_relative_error"),
+            measured=(
+                float(ft["relative_error"]),
+                "fraction",
+                "|rho(x,t)/rho0 - 1 - A exp(-gamma t)| amplitude error after the run",
+            ),
+            rel_error_pct=100.0 * float(ft["relative_error"]),
+            gate_result="pass" if ft.get("passed") else "fail",
+            gate_limit=lim2,
+            artifact_status="PASS" if ft.get("passed") else "FAIL",
+            guarding_test=(
+                "tests/test_density_diffusion_decay.py::"
+                "test_the_mode_amplitude_follows_the_exponential_over_a_finite_time"
+            ),
+            backlog_ref="docs/verification_density_diffusion_decay.md",
+        )
+    )
+
+    # --- plane Poiseuille channel: u(y) = g (y-a)(b-y) / (2 nu) ----------------
+    rel = "benchmarks/poiseuille/out/results.json"
+    d = _load(rel)
+    rows = d["results"]
+    row = max(rows, key=lambda r: r["resolution_H_over_dx"])
+    i = rows.index(row)
+    u_ref = float(row["fit"]["u_centre_analytic_nominal"])
+    out.append(
+        _entry(
+            claim_id="poiseuille.centre_velocity.finest",
+            quantity_id="poiseuille_centre_velocity",
+            quantity="centre velocity of a body-force-driven plane channel at steady state",
+            artifact=rel,
+            json_path=f"results[{i}].fit.u_centre_measured",
+            reference=(u_ref, "m/s", "u_max = g H^2 / (8 nu), H = 0.1 m, nu = 0.01 m^2/s, g = 9.81 m/s^2"),
+            measured=(
+                float(row["fit"]["u_centre_measured"]),
+                "m/s",
+                f"parabola fitted to the time-averaged profile at H/dx = {row['resolution_H_over_dx']}",
+            ),
+            guarding_test="tests/test_poiseuille.py::test_steady_channel_flow_develops_the_poiseuille_parabola",
+            artifact_status=None,
+            backlog_ref="docs/verification_ledger_coverage_m6453.md",
+        )
+    )
+    out.append(
+        _entry(
+            claim_id="poiseuille.wall_shear_ratio.finest",
+            quantity_id="poiseuille_wall_shear_ratio",
+            quantity="no-slip wall shear stress of the same channel, relative to rho g H / 2",
+            artifact=rel,
+            json_path=f"results[{i}].wall_shear_ratio",
+            reference=(1.0, "-", "tau_wall = rho nu du/dy|_wall = rho g H / 2 = 490.5 Pa"),
+            measured=(
+                float(row["wall_shear_ratio"]),
+                "-",
+                f"measured wall friction divided by the analytic value at H/dx = {row['resolution_H_over_dx']}",
+            ),
+            guarding_test="tests/test_poiseuille.py::test_steady_channel_flow_develops_the_poiseuille_parabola",
+            artifact_status=None,
+            backlog_ref="docs/verification_ledger_coverage_m6453.md",
+            notes=(
+                "WITHHELD rather than FAIL: the two readings inside one artifact disagree. The "
+                f"measured centre velocity implies tau = 4 rho nu u_max / H = "
+                f"{4 * 1000.0 * 0.01 * float(row['fit']['u_centre_measured']) / 0.1:.0f} Pa, while the "
+                f"wall-band readout says {float(row['wall_shear_analytic']) * float(row['wall_shear_ratio']):.0f} Pa, "
+                "so the wall-band estimator (not necessarily the flow) carries the deficit and the "
+                "number may not be quoted as a physical gate."
+            ),
+        )
+    )
+
+    # --- effective sigma from the half-droplet force integral ------------------
+    rel = "benchmarks/effective_sigma/out/report.json"
+    d = _load(rel)
+    row = next(r for r in d["rows"] if r["dx"] == 0.005 and r["curvature"] == "fit_quadratic")
+    i = d["rows"].index(row)
+    out.append(
+        _entry(
+            claim_id="effective_sigma.sigma_eff_over_sigma.dx5mm",
+            quantity_id="csf_force_sigma_eff",
+            quantity=(
+                "effective surface tension from the half-droplet force integral, sigma_eff/sigma "
+                "(R = 40 mm, curvature estimator: quadratic interface fit)"
+            ),
+            artifact=rel,
+            json_path=f"rows[{i}].ratio",
+            reference=(1.0, "-", "sigma_eff = sigma (|F_half| / (2 sigma))"),
+            measured=(
+                float(row["ratio"]),
+                "-",
+                f"|F_half| / (2 sigma) at R/h = {row['R_over_h']:.2f}",
+            ),
+            guarding_test="tests/test_effective_sigma.py::test_current_default_delivers_the_documented_ratio",
+            artifact_status="FAIL",
+            backlog_ref="docs/verification_ledger.md",
+            notes=(
+                "Independent replication of claim csf_force.sigma_eff_over_sigma.dx5mm at twice the "
+                "radius with a different curvature estimator: the two agree to ~1 pt, so the ~30 % "
+                "force deficit is not a radius or operator artefact. Same root cause as "
+                "colour_surface.delta_s_integral (the colour-surface delta carries ~0.75 of unit mass)."
+            ),
+        )
+    )
+    return out
+
+
 def closure_claims() -> list[dict]:
     """Free-surface pressure closure = the P0 fix of ``backlog_update_m2971.md``.
 
@@ -1163,7 +1341,94 @@ def grade(e: dict) -> str:
     return "WITHHELD"
 
 
-def findings(entries: list[dict]) -> list[dict]:
+def _is_fragment(rel: str) -> bool:
+    """True for per-case dumps / ladders that inherit their parent's provenance."""
+    parts = Path(rel).parts
+    if len(parts) <= 3:                      # benchmarks/<dir>/<file>.json
+        return False
+    sub = parts[2]
+    if sub in FRAGMENT_DIRS:
+        return True
+    if sub == "out":
+        return not PRIMARY_NAMES.search(parts[-1])
+    return True
+
+
+def _harness_dirs(root: Path) -> list[Path]:
+    """Benchmark directories that ship a runnable harness (``run*.py``)."""
+    base = root / "benchmarks"
+    if not base.is_dir():
+        return []
+    return [
+        d
+        for d in sorted(base.iterdir())
+        if d.is_dir() and any(p.name.startswith("run") and p.suffix == ".py" for p in d.iterdir())
+    ]
+
+
+def _is_covered(rel: str, registered: set[str], waived: set[str]) -> bool:
+    """A directory is covered by any claim artifact under it, or by a waiver."""
+    rel = rel.rstrip("/")
+    if rel in waived or rel + "/" in waived:
+        return True
+    if any(w.startswith(rel + "/") for w in waived if w.endswith("/")):
+        return True
+    return any(a.startswith(rel + "/") for a in registered)
+
+
+def coverage_findings(
+    registered: set[str], waived: set[str], root: Path | None = None
+) -> list[dict]:
+    """Evidence coverage: no benchmark may sit outside the ledger unnoticed.
+
+    Before m6453 this rule matched artifact *names* (``report|results|ladder|
+    audit.json``) and skipped everything under ``out/``.  Two things therefore
+    escaped it silently: an artifact with any other name (``decay_rate.json``,
+    ``verdict_matrix.json``) and -- worse -- a whole harness that commits no
+    artifact at all, whose printed numbers can never be recomputed from the
+    repository.  Coverage is now decided by *directory*, not by file name.
+    """
+    root = REPO if root is None else root
+    out: list[dict] = []
+
+    # (c1) a harness with no claim and no waiver: nothing it prints is graded
+    for d in _harness_dirs(root):
+        rel = str(d.relative_to(root))
+        if _is_covered(rel, registered, waived):
+            continue
+        runs = sorted(p.name for p in d.iterdir() if p.name.startswith("run") and p.suffix == ".py")
+        out.append(
+            {
+                "rule": "uncovered_benchmark",
+                "severity": "medium",
+                "claim_id": rel,
+                "detail": (
+                    f"benchmark harness ({', '.join(runs)}) has no ledger claim and no "
+                    "waiver: nothing it produces is graded, so a regression there is "
+                    "invisible and its published numbers are not reproducible from the repo"
+                ),
+            }
+        )
+
+    # (c2) a primary evidence file that no claim points at
+    for path in sorted((root / "benchmarks").rglob("*.json")):
+        rel = str(path.relative_to(root))
+        if rel.startswith(LEDGER_DIR) or _is_fragment(rel):
+            continue
+        if rel in registered or rel in waived:
+            continue
+        out.append(
+            {
+                "rule": "unregistered_artifact",
+                "severity": "medium",
+                "claim_id": rel,
+                "detail": "machine-readable evidence file not referenced by any ledger claim",
+            }
+        )
+    return out
+
+
+def findings(entries: list[dict], root: Path | None = None) -> list[dict]:
     """Machine-detectable defects in the evidence base itself."""
     out: list[dict] = []
 
@@ -1260,22 +1525,10 @@ def findings(entries: list[dict]) -> list[dict]:
                 }
             )
 
-    # (c) artifacts present in the repo but absent from the ledger
+    # (c) artifacts / harnesses present in the repo but absent from the ledger
     registered = {e["artifact"] for e in entries}
     waived = _load_waivers()
-    for path in sorted((REPO / "benchmarks").rglob("*.json")):
-        rel = str(path.relative_to(REPO))
-        if "/out/" in rel or rel in registered or rel in waived:
-            continue
-        if re.search(r"(validation_report|report|results|ladder|audit)\.json$", rel):
-            out.append(
-                {
-                    "rule": "unregistered_artifact",
-                    "severity": "medium",
-                    "claim_id": rel,
-                    "detail": "machine-readable evidence file not referenced by any ledger claim",
-                }
-            )
+    out.extend(coverage_findings(registered, waived, root=root))
 
     # (d) stale numbers still quoted in prose without a marker
     for path in sorted((REPO / "docs").rglob("*.md")):
@@ -1315,6 +1568,7 @@ def build() -> dict:
         + threed_claims()
         + closure_claims()
         + quiescence_claims()
+        + orphan_evidence_claims()
     )
     V = _claim_validity()
     for e in entries:
