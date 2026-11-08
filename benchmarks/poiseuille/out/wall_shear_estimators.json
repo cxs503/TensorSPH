@@ -1,0 +1,192 @@
+{
+ "case": "plane_poiseuille_channel",
+ "source": "benchmarks/poiseuille/out/results.json",
+ "generated_by": "benchmarks/poiseuille/wall_shear_estimators.py",
+ "inputs": {
+  "rho0": 1000.0,
+  "viscosity": 0.01,
+  "body_force": 9.81,
+  "height": 0.1,
+  "t_end": 1.0,
+  "t_average": 0.2
+ },
+ "control": {
+  "window_s": 0.6,
+  "n_samples": 9,
+  "rate": 9.854286093149401,
+  "rate_stderr": 3.664193077362567e-05,
+  "residual_rms": 1.9567635489148718e-05,
+  "u_mean_first": 4.09809684753418,
+  "u_mean_last": 9.855668067932129,
+  "resolution_H_over_dx": 8,
+  "rate_over_g": 1.0045143825840368,
+  "bias_pct": 0.45143825840368024,
+  "note": "free-slip control: D = 0, so the analytic answer is d<u>/dt = g; its measured rate calibrates the drift estimator"
+ },
+ "cases": [
+  {
+   "resolution_H_over_dx": 8,
+   "dx": 0.0125,
+   "h": 0.01625,
+   "slip_over_umax": 0.49219705120629337,
+   "max_row_std_over_umax": 0.0863282574244645,
+   "published": {
+    "wall_shear_measured": 284.2691421508789,
+    "wall_shear_ratio": 0.5795497291557165
+   },
+   "budget": {
+    "window_s": 0.6,
+    "n_samples": 9,
+    "rate": 0.059481942773317205,
+    "rate_stderr": 0.015049265916115943,
+    "residual_rms": 0.008036654827091915,
+    "u_mean_first": 1.1453056335449219,
+    "u_mean_last": 1.1843405961990356,
+    "rate_over_g": 0.00606339885558789,
+    "drag_over_weight": 0.9939366011444121,
+    "drag_over_weight_control_corrected": 0.989469756109998,
+    "drag_pa": 487.52590286133415,
+    "drag_pa_control_corrected": 485.334915371954,
+    "drag_pa_stderr": 0.7524632958057971,
+    "alt_window_fraction": 0.6,
+    "alt_rate": 0.03793834168087065,
+    "alt_drag_over_weight_control_corrected": 0.9916559724313837
+   },
+   "estimators": {
+    "tau_analytic": 490.5,
+    "secant_1dx": 284.2691421508789,
+    "secant_1dx_on_analytic_parabola": 367.87500000000006,
+    "three_point_quadratic": 358.34951400756813,
+    "wall_particle_gap": 399.50930277506507,
+    "global_parabola_fit_slope": 402.278578849066
+   },
+   "estimator_ratios": {
+    "secant_1dx": 0.5795497291557165,
+    "secant_1dx_on_analytic_parabola": 0.7500000000000001,
+    "three_point_quadratic": 0.730580048945093,
+    "wall_particle_gap": 0.8144939913864732,
+    "global_parabola_fit_slope": 0.8201398141673109
+   },
+   "interior": {
+    "nu_eff_over_nu": 1.008794084748124,
+    "n_rows": 4,
+    "tau_ratio_median": 0.9916102687720326
+   }
+  },
+  {
+   "resolution_H_over_dx": 12,
+   "dx": 0.008333333333333333,
+   "h": 0.010833333333333334,
+   "slip_over_umax": 0.37771453736747024,
+   "max_row_std_over_umax": 0.08078353915744652,
+   "published": {
+    "wall_shear_measured": 308.91380310058594,
+    "wall_shear_ratio": 0.6297936862397266
+   },
+   "budget": {
+    "window_s": 0.6,
+    "n_samples": 9,
+    "rate": -0.07221075118071518,
+    "rate_stderr": 0.030586943837017325,
+    "residual_rms": 0.016338761156043064,
+    "u_mean_first": 1.0225422382354736,
+    "u_mean_last": 0.9954267144203186,
+    "rate_over_g": -0.007360932842070864,
+    "drag_over_weight": 1.007360932842071,
+    "drag_over_weight_control_corrected": 1.002833757592113,
+    "drag_pa": 494.1105375590358,
+    "drag_pa_control_corrected": 491.8899580989314,
+    "drag_pa_stderr": 1.529347191850866,
+    "alt_window_fraction": 0.6,
+    "alt_rate": -0.19079653542495573,
+    "alt_drag_over_weight_control_corrected": 1.014867687104945
+   },
+   "estimators": {
+    "tau_analytic": 490.5,
+    "secant_1dx": 308.91380310058594,
+    "secant_1dx_on_analytic_parabola": 408.75000000000006,
+    "three_point_quadratic": 385.70430278778014,
+    "wall_particle_gap": 412.1617317199707,
+    "global_parabola_fit_slope": 405.89334638445047
+   },
+   "estimator_ratios": {
+    "secant_1dx": 0.6297936862397266,
+    "secant_1dx_on_analytic_parabola": 0.8333333333333335,
+    "three_point_quadratic": 0.7863492411575538,
+    "wall_particle_gap": 0.8402889535575345,
+    "global_parabola_fit_slope": 0.827509370814374
+   },
+   "interior": {
+    "nu_eff_over_nu": 1.025022235224272,
+    "n_rows": 6,
+    "tau_ratio_median": 0.9755984140098669
+   }
+  },
+  {
+   "resolution_H_over_dx": 16,
+   "dx": 0.00625,
+   "h": 0.008125,
+   "slip_over_umax": 0.3135441313166467,
+   "max_row_std_over_umax": 0.08062500562641702,
+   "published": {
+    "wall_shear_measured": 246.47998809814453,
+    "wall_shear_ratio": 0.5025076209951979
+   },
+   "budget": {
+    "window_s": 0.6,
+    "n_samples": 9,
+    "rate": -0.13395814338321035,
+    "rate_stderr": 0.0291168158259562,
+    "residual_rms": 0.015555670037166446,
+    "u_mean_first": 0.9720190167427063,
+    "u_mean_last": 0.9214303493499756,
+    "rate_over_g": -0.013655264361183521,
+    "drag_over_weight": 1.0136552643611836,
+    "drag_over_weight_control_corrected": 1.0090998017904258,
+    "drag_pa": 497.19790716916054,
+    "drag_pa_control_corrected": 494.9634527782039,
+    "drag_pa_stderr": 1.45584079129781,
+    "alt_window_fraction": 0.6,
+    "alt_rate": -0.08371136591007507,
+    "alt_drag_over_weight_control_corrected": 1.0040008248581378
+   },
+   "estimators": {
+    "tau_analytic": 490.5,
+    "secant_1dx": 246.47998809814453,
+    "secant_1dx_on_analytic_parabola": 429.18750000000006,
+    "three_point_quadratic": 153.3659934997555,
+    "wall_particle_gap": 416.3067499796549,
+    "global_parabola_fit_slope": 398.3174691814669
+   },
+   "estimator_ratios": {
+    "secant_1dx": 0.5025076209951979,
+    "secant_1dx_on_analytic_parabola": 0.8750000000000001,
+    "three_point_quadratic": 0.31267276962233537,
+    "wall_particle_gap": 0.8487395514366053,
+    "global_parabola_fit_slope": 0.8120641573526338
+   },
+   "interior": {
+    "nu_eff_over_nu": 1.1508403736274238,
+    "n_rows": 8,
+    "tau_ratio_median": 0.8690285227853205
+   }
+  }
+ ],
+ "summary": {
+  "tau_analytic_pa": 490.5,
+  "t_average": 0.2,
+  "window_fraction": 0.4,
+  "control_bias_pct": 0.45143825840368024,
+  "budget_worst_abs_deviation": 0.010530243890002011,
+  "budget_worst_abs_deviation_alt_window": 0.014867687104944904,
+  "secant_ratio_finest": 0.5025076209951979,
+  "secant_ratio_on_analytic_parabola_finest": 0.8750000000000001,
+  "analytic_parabola_secant_ratio_finest": 0.8750000000000001,
+  "fit_slope_ratio_finest": 0.8120641573526338,
+  "drag_ratio_finest": 1.0090998017904258,
+  "interior_nu_eff_finest": 1.1508403736274238,
+  "secant_gate_3pct": false,
+  "drag_gate_3pct": true,
+  "budget_gate_2pct": true
+ }
+}
