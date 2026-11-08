@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import importlib.util
 import json
-import math
 from pathlib import Path
 
 import pytest
@@ -293,14 +292,16 @@ def test_orphan_evidence_is_now_graded(by_id):
     assert abs(eff["rel_error_pct"] - sibling["rel_error_pct"]) < 5.0
 
 
-def test_contact_angle_harness_runs_after_the_dead_api_fix():
-    """``benchmarks/contact_angle/run.py`` crashed on two removed torch APIs.
+def test_contact_angle_harness_runs_and_its_instrument_is_repaired():
+    """``benchmarks/contact_angle/run.py`` used to execute but measure nothing.
 
-    m6453 replaced ``math.asin(tensor)`` and ``torch.lstsq`` (removed in torch 1.9)
-    so the merged contact-angle capability has a harness that at least executes.
-    This pins the executable path only; the measurement layer's residual defect
-    (NaN angle at the shipped R/dx = 6.7) is recorded in
-    docs/verification_contact_angle_m6453.md and keeps the claim unregistered.
+    m6453 replaced two removed torch APIs so the harness ran, and pinned the
+    honest state of the day: all ten analytic rows came back NaN.  m6503
+    repaired the instrument (exact line/circular interfaces, wall-normal
+    envelope, circle fit with a line fallback) and separated three layers --
+    analytic (device), resolution (device on a particle lattice) and physics
+    (the run).  This pins the repaired state; the physics layer is still
+    ungradable and remains debt E3, see docs/verification_contact_angle_m6503.md.
     """
     import importlib.util
 
@@ -311,10 +312,6 @@ def test_contact_angle_harness_runs_after_the_dead_api_fix():
     inst = mod.instrument_check()
     assert len(inst["rows"]) == 10
     assert all(isinstance(r["theta_measured_deg"], float) for r in inst["rows"])
-    # Honest current state, deliberately pinned: after the dead-API fix the harness
-    # executes end to end, but the analytic instrument still returns NaN for every
-    # row, so the capability has no usable angle reading at HEAD.  The pin flips
-    # when someone repairs the envelope estimator (see debt E3 in
-    # docs/verification_contact_angle_m6453.md); it does not assert the NaN away.
-    assert math.isnan(inst["rows"][0]["theta_measured_deg"])
-    assert inst["all_within_2deg"] is False
+    assert all(r["theta_measured_deg"] == r["theta_measured_deg"] for r in inst["rows"])
+    assert inst["all_within_gate"] is True
+    assert inst["worst_abs_error_deg"] < 0.05
