@@ -1,6 +1,7 @@
 {
   "entries": [
     {
+      "admissibility": null,
       "artifact": "benchmarks/csf_consistent/curvature_audit.json",
       "artifact_status": "WITHHELD",
       "backlog_ref": "docs/verification_ledger.md",
@@ -32,6 +33,7 @@
       "superseded_by": null
     },
     {
+      "admissibility": null,
       "artifact": "benchmarks/laplace_pressure/validation_report.json",
       "artifact_status": "FAIL",
       "backlog_ref": "docs/verification_ledger.md",
@@ -63,6 +65,7 @@
       "superseded_by": null
     },
     {
+      "admissibility": null,
       "artifact": "benchmarks/csf_consistent/curvature_audit.json",
       "artifact_status": "WITHHELD",
       "backlog_ref": "backlog_update_m2971.md#P1",
@@ -94,6 +97,7 @@
       "superseded_by": null
     },
     {
+      "admissibility": null,
       "artifact": "benchmarks/dam_break/resolution_ladder.json",
       "artifact_status": "FAIL",
       "backlog_ref": "docs/verification_ledger.md",
@@ -125,6 +129,7 @@
       "superseded_by": null
     },
     {
+      "admissibility": null,
       "artifact": "benchmarks/laplace_droplet/results.json",
       "artifact_status": "FAIL",
       "backlog_ref": "docs/verification_ledger.md",
@@ -156,6 +161,7 @@
       "superseded_by": null
     },
     {
+      "admissibility": null,
       "artifact": "benchmarks/laplace/report.json",
       "artifact_status": "FAIL",
       "backlog_ref": "backlog_update_m2971.md#P0",
@@ -187,6 +193,7 @@
       "superseded_by": null
     },
     {
+      "admissibility": null,
       "artifact": "benchmarks/oscillating_droplet/validation_report.json",
       "artifact_status": "FAIL",
       "backlog_ref": "backlog_update_m2971.md#P0",
@@ -218,6 +225,7 @@
       "superseded_by": null
     },
     {
+      "admissibility": null,
       "artifact": "benchmarks/paper_laplace_uncertainty/out/results.json",
       "artifact_status": "WITHHELD",
       "backlog_ref": "backlog_update_m2971.md#P0",
@@ -249,6 +257,39 @@
       "superseded_by": null
     },
     {
+      "admissibility": null,
+      "artifact": "benchmarks/startup_quiescence/report.json",
+      "artifact_status": "FAIL",
+      "backlog_ref": "docs/verification_startup_quiescence.md",
+      "claim_id": "quiescence.flume_resting_noise.v_late_rms",
+      "claim_type": "gate",
+      "criterion_pct": 15.0,
+      "gate_limit": 0.06,
+      "gate_result": "open",
+      "gauge_degenerate": false,
+      "grade": "FAIL",
+      "guarding_test": "tests/test_startup_quiescence.py",
+      "json_path": "findings[0]",
+      "measured": {
+        "definition": "shipped flume resting column, paddle frozen at rest (0.0798 m/s interior RMS)",
+        "unit": "m/s",
+        "value": 0.079759
+      },
+      "notes": "OPEN defect register entry F1: the shipped resting flume reads 0.0798 m/s against a 0.06 m/s ceiling, i.e. 60 % of the wave orbital velocity (signal-to-noise ~1.7:1). The ablation 'flume resting column (paddle frozen at rest), overrides density_diffusion=0.0,viscosity=0.01' reaches 0.0072 m/s (0.09x calmer), so the noise is controlled by density diffusion + viscosity, not by the boundary model — see docs/verification_startup_quiescence.md §5.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "residual velocity of a flume at rest: RMS over the last quarter of max_i |v_i| on interior particles (m/s)",
+      "quantity_id": "quiescence_flume_resting_noise",
+      "reference": {
+        "source": "gate_parameters.v_floor_m_s (resting-noise ceiling)",
+        "unit": "m/s",
+        "value": 0.06
+      },
+      "rel_error_pct": 32.93244,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
       "artifact": "benchmarks/static_droplet/validation_report.json",
       "artifact_status": "WITHDRAWN",
       "backlog_ref": "backlog_update_m2971.md#P2",
@@ -280,6 +321,7 @@
       "superseded_by": "benchmarks/laplace_pressure/validation_report.json"
     },
     {
+      "admissibility": null,
       "artifact": "benchmarks/surface_tension/laplace_ladder.json",
       "artifact_status": "FAIL",
       "backlog_ref": "docs/verification_ledger.md",
@@ -311,6 +353,7 @@
       "superseded_by": null
     },
     {
+      "admissibility": null,
       "artifact": "benchmarks/threed_hydrostatic/report.json",
       "artifact_status": "FAIL",
       "backlog_ref": "docs/verification_threed.md",
@@ -342,6 +385,7 @@
       "superseded_by": null
     },
     {
+      "admissibility": null,
       "artifact": "benchmarks/threed_hydrostatic/report.json",
       "artifact_status": "WITHHELD",
       "backlog_ref": "docs/verification_threed.md",
@@ -373,6 +417,7 @@
       "superseded_by": null
     },
     {
+      "admissibility": null,
       "artifact": "benchmarks/threed_kernel/report.json",
       "artifact_status": "PASS",
       "backlog_ref": "docs/verification_threed.md",
@@ -404,6 +449,7 @@
       "superseded_by": null
     },
     {
+      "admissibility": null,
       "artifact": "benchmarks/threed_shear/report.json",
       "artifact_status": "FAIL",
       "backlog_ref": "docs/verification_threed.md",
@@ -435,6 +481,7 @@
       "superseded_by": null
     },
     {
+      "admissibility": null,
       "artifact": "benchmarks/threed_shear/report.json",
       "artifact_status": "FAIL",
       "backlog_ref": "docs/verification_threed.md",
@@ -466,6 +513,7 @@
       "superseded_by": null
     },
     {
+      "admissibility": null,
       "artifact": "benchmarks/surface_tension_laplace/validation_report.json",
       "artifact_status": "PASS",
       "backlog_ref": "backlog_update_m2971.md#P0",
@@ -497,6 +545,7 @@
       "superseded_by": null
     },
     {
+      "admissibility": null,
       "artifact": "benchmarks/laplace_pressure_floor/report.json",
       "artifact_status": "WITHHELD",
       "backlog_ref": "backlog_update_m2971.md#P0",
@@ -528,6 +577,266 @@
       "superseded_by": null
     },
     {
+      "admissibility": {
+        "gate": "v_max/v_ref < 0.1 (Adami, Ihmsen & Adams 2012)",
+        "limit": 0.1,
+        "pass": true,
+        "value": 0.018802
+      },
+      "artifact": "benchmarks/laplace_pressure_closure/raw/relax_ladder_dx1.5mm_c20.json",
+      "artifact_status": "FAIL",
+      "backlog_ref": "backlog_update_m2971.md#P0",
+      "claim_id": "young_laplace.closure.closure_on_all_donors.dx1.5mm_c20",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "FAIL",
+      "guarding_test": "tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder",
+      "json_path": "cases[1]",
+      "measured": {
+        "definition": "absolute <p_core> over the capillary tail average, closure_on_all_donors, dx = 1.5 mm, c0 = 20 m/s, 642 particles, 1710 steps",
+        "unit": "Pa",
+        "value": 269.06875
+      },
+      "notes": "Free-surface pressure closure (Adami/Ihmsen/Adams 2012 §3.3) wired into ``droplet_impact.rhs``. The closure-off control of the same lattice reads -38.10 %, i.e. this variant recovers +12.84 points of the deficit. Out of band at v_max/v_ref = 0.019. Overall the closure is PROVISIONAL: it is admissible and in band at two of the four tested (dx, c0) points, not at all of them.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m",
+      "quantity_id": "young_laplace_jump_sigma7.2_R0.02",
+      "reference": {
+        "source": "Young-Laplace sigma/R",
+        "unit": "Pa",
+        "value": 360.0
+      },
+      "rel_error_pct": -25.25868,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": {
+        "gate": "v_max/v_ref < 0.1 (Adami, Ihmsen & Adams 2012)",
+        "limit": 0.1,
+        "pass": true,
+        "value": 0.019958
+      },
+      "artifact": "benchmarks/laplace_pressure_closure/raw/relax_ladder.json",
+      "artifact_status": "FAIL",
+      "backlog_ref": "backlog_update_m2971.md#P0",
+      "claim_id": "young_laplace.closure.closure_on_all_donors.dx2mm_c20",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "FAIL",
+      "guarding_test": "tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder",
+      "json_path": "cases[1]",
+      "measured": {
+        "definition": "absolute <p_core> over the capillary tail average, closure_on_all_donors, dx = 2 mm, c0 = 20 m/s, 362 particles, 1283 steps",
+        "unit": "Pa",
+        "value": 287.472812
+      },
+      "notes": "Free-surface pressure closure (Adami/Ihmsen/Adams 2012 §3.3) wired into ``droplet_impact.rhs``. The closure-off control of the same lattice reads -37.88 %, i.e. this variant recovers +17.73 points of the deficit. Out of band at v_max/v_ref = 0.020. Overall the closure is PROVISIONAL: it is admissible and in band at two of the four tested (dx, c0) points, not at all of them.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m",
+      "quantity_id": "young_laplace_jump_sigma7.2_R0.02",
+      "reference": {
+        "source": "Young-Laplace sigma/R",
+        "unit": "Pa",
+        "value": 360.0
+      },
+      "rel_error_pct": -20.146441,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": {
+        "gate": "v_max/v_ref < 0.1 (Adami, Ihmsen & Adams 2012)",
+        "limit": 0.1,
+        "pass": true,
+        "value": 0.089503
+      },
+      "artifact": "benchmarks/laplace_pressure_closure/raw/relax_ladder_dx1.5mm_c20.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "backlog_update_m2971.md#P0",
+      "claim_id": "young_laplace.closure.closure_on_interior_layers2.dx1.5mm_c20",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "MARGINAL",
+      "guarding_test": "tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder",
+      "json_path": "cases[2]",
+      "measured": {
+        "definition": "absolute <p_core> over the capillary tail average, closure_on_interior_layers2, dx = 1.5 mm, c0 = 20 m/s, 642 particles, 1710 steps",
+        "unit": "Pa",
+        "value": 347.730181
+      },
+      "notes": "Free-surface pressure closure (Adami/Ihmsen/Adams 2012 §3.3) wired into ``droplet_impact.rhs``. The closure-off control of the same lattice reads -38.10 %, i.e. this variant recovers +34.69 points of the deficit. Admissible (v_max/v_ref = 0.090 < 0.1) and inside the 15 % band, but outside the 3 % paper band. Overall the closure is PROVISIONAL: it is admissible and in band at two of the four tested (dx, c0) points, not at all of them.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m",
+      "quantity_id": "young_laplace_jump_sigma7.2_R0.02",
+      "reference": {
+        "source": "Young-Laplace sigma/R",
+        "unit": "Pa",
+        "value": 360.0
+      },
+      "rel_error_pct": -3.408283,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": {
+        "gate": "v_max/v_ref < 0.1 (Adami, Ihmsen & Adams 2012)",
+        "limit": 0.1,
+        "pass": true,
+        "value": 0.059551
+      },
+      "artifact": "benchmarks/laplace_pressure_closure/raw/relax_ladder_dx2mm_c10.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "backlog_update_m2971.md#P0",
+      "claim_id": "young_laplace.closure.closure_on_interior_layers2.dx2mm_c10",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "MARGINAL",
+      "guarding_test": "tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder",
+      "json_path": "cases[1]",
+      "measured": {
+        "definition": "absolute <p_core> over the capillary tail average, closure_on_interior_layers2, dx = 2 mm, c0 = 10 m/s, 362 particles, 642 steps",
+        "unit": "Pa",
+        "value": 345.481316
+      },
+      "notes": "Free-surface pressure closure (Adami/Ihmsen/Adams 2012 §3.3) wired into ``droplet_impact.rhs``. The closure-off control of the same lattice reads -37.23 %, i.e. this variant recovers +33.20 points of the deficit. Admissible (v_max/v_ref = 0.060 < 0.1) and inside the 15 % band, but outside the 3 % paper band. Overall the closure is PROVISIONAL: it is admissible and in band at two of the four tested (dx, c0) points, not at all of them.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m",
+      "quantity_id": "young_laplace_jump_sigma7.2_R0.02",
+      "reference": {
+        "source": "Young-Laplace sigma/R",
+        "unit": "Pa",
+        "value": 360.0
+      },
+      "rel_error_pct": -4.032968,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": {
+        "gate": "v_max/v_ref < 0.1 (Adami, Ihmsen & Adams 2012)",
+        "limit": 0.1,
+        "pass": false,
+        "value": 0.388129
+      },
+      "artifact": "benchmarks/laplace_pressure_closure/raw/relax_ladder.json",
+      "artifact_status": "WITHHELD",
+      "backlog_ref": "backlog_update_m2971.md#P0",
+      "claim_id": "young_laplace.closure.closure_on_interior_layers2.dx2mm_c20",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "WITHHELD",
+      "guarding_test": "tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder",
+      "json_path": "cases[2]",
+      "measured": {
+        "definition": "absolute <p_core> over the capillary tail average, closure_on_interior_layers2, dx = 2 mm, c0 = 20 m/s, 362 particles, 1283 steps",
+        "unit": "Pa",
+        "value": 391.80544
+      },
+      "notes": "Free-surface pressure closure (Adami/Ihmsen/Adams 2012 §3.3) wired into ``droplet_impact.rhs``. The closure-off control of the same lattice reads -37.88 %, i.e. this variant recovers +29.04 points of the deficit. INADMISSIBLE: residual spurious current v_max/v_ref = 0.388 >= 0.1, so the drop was not at rest when the reading was taken; the number is recorded but not credited. Overall the closure is PROVISIONAL: it is admissible and in band at two of the four tested (dx, c0) points, not at all of them.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m",
+      "quantity_id": "young_laplace_jump_sigma7.2_R0.02",
+      "reference": {
+        "source": "Young-Laplace sigma/R",
+        "unit": "Pa",
+        "value": 360.0
+      },
+      "rel_error_pct": 8.834845,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": {
+        "gate": "v_max/v_ref < 0.1 (Adami, Ihmsen & Adams 2012)",
+        "limit": 0.1,
+        "pass": false,
+        "value": 0.103857
+      },
+      "artifact": "benchmarks/laplace_pressure_closure/raw/relax_ladder_dx2mm_c5.json",
+      "artifact_status": "WITHHELD",
+      "backlog_ref": "backlog_update_m2971.md#P0",
+      "claim_id": "young_laplace.closure.closure_on_interior_layers2.dx2mm_c5",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "WITHHELD",
+      "guarding_test": "tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder",
+      "json_path": "cases[1]",
+      "measured": {
+        "definition": "absolute <p_core> over the capillary tail average, closure_on_interior_layers2, dx = 2 mm, c0 = 5 m/s, 362 particles, 592 steps",
+        "unit": "Pa",
+        "value": 377.481633
+      },
+      "notes": "Free-surface pressure closure (Adami/Ihmsen/Adams 2012 §3.3) wired into ``droplet_impact.rhs``. The closure-off control of the same lattice reads -33.99 %, i.e. this variant recovers +29.13 points of the deficit. INADMISSIBLE: residual spurious current v_max/v_ref = 0.104 >= 0.1, so the drop was not at rest when the reading was taken; the number is recorded but not credited. Overall the closure is PROVISIONAL: it is admissible and in band at two of the four tested (dx, c0) points, not at all of them.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m",
+      "quantity_id": "young_laplace_jump_sigma7.2_R0.02",
+      "reference": {
+        "source": "Young-Laplace sigma/R",
+        "unit": "Pa",
+        "value": 360.0
+      },
+      "rel_error_pct": 4.856009,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": {
+        "gate": "v_max/v_ref < 0.1 (Adami, Ihmsen & Adams 2012)",
+        "limit": 0.1,
+        "pass": false,
+        "value": 0.388129
+      },
+      "artifact": "benchmarks/laplace_pressure_closure/raw/relax_ladder.json",
+      "artifact_status": "WITHHELD",
+      "backlog_ref": "backlog_update_m2971.md#P0",
+      "claim_id": "young_laplace.closure.closure_on_interior_layers4.dx2mm_c20",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "WITHDRAWN",
+      "guarding_test": "tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder",
+      "json_path": "cases[3]",
+      "measured": {
+        "definition": "absolute <p_core> over the capillary tail average, closure_on_interior_layers4, dx = 2 mm, c0 = 20 m/s, 362 particles, 1283 steps",
+        "unit": "Pa",
+        "value": 391.80544
+      },
+      "notes": "Free-surface pressure closure (Adami/Ihmsen/Adams 2012 §3.3) wired into ``droplet_impact.rhs``. The closure-off control of the same lattice reads -37.88 %, i.e. this variant recovers +29.04 points of the deficit. INADMISSIBLE: residual spurious current v_max/v_ref = 0.388 >= 0.1, so the drop was not at rest when the reading was taken; the number is recorded but not credited. Overall the closure is PROVISIONAL: it is admissible and in band at two of the four tested (dx, c0) points, not at all of them. Bit-identical to `young_laplace.closure.closure_on_interior_layers2.dx2mm_c20`: extra donor layers do not change the donor set at this resolution, so this row is kept as provenance only and does not count as independent evidence.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m",
+      "quantity_id": "young_laplace_jump_sigma7.2_R0.02",
+      "reference": {
+        "source": "Young-Laplace sigma/R",
+        "unit": "Pa",
+        "value": 360.0
+      },
+      "rel_error_pct": 8.834845,
+      "run_validity": "UNPROBED",
+      "superseded_by": "young_laplace.closure.closure_on_interior_layers2.dx2mm_c20"
+    },
+    {
+      "admissibility": null,
       "artifact": "benchmarks/csf_consistent/validation_report.json",
       "artifact_status": "WITHHELD",
       "backlog_ref": "backlog_update_m2971.md#P0",
@@ -559,6 +868,7 @@
       "superseded_by": null
     },
     {
+      "admissibility": null,
       "artifact": "benchmarks/csf_curvature_fit/validation_report.json",
       "artifact_status": "WITHHELD",
       "backlog_ref": "backlog_update_m2971.md#P0",
@@ -590,6 +900,71 @@
       "superseded_by": null
     },
     {
+      "admissibility": null,
+      "artifact": "benchmarks/laplace_pressure_closure/report_force_balance.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "backlog_update_m2971.md#P0",
+      "claim_id": "young_laplace.force_balance.flux_integral.dx1.5mm",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "MARGINAL",
+      "guarding_test": "tests/test_young_laplace_closure_ledger.py::test_force_balance_integral_is_registered_and_paper_grade",
+      "json_path": "cases[1].force_side",
+      "measured": {
+        "definition": "radial flux integral -int_0^R rho a_r dr of a single CSF evaluation on the calibrated lattice (no time stepping)",
+        "unit": "Pa",
+        "value": 333.145215
+      },
+      "notes": "Bypasses the pressure field entirely, so it separates the two halves of the Young-Laplace deficit: the surface-tension force already delivers sigma/R to -7.46 %, hence the historical -38 % lived in the free surface pressure assembly (the closure), not in the force model. Bins 400/800 agree to 0.01 % (``bin_sensitivity``), so this is not a quadrature artefact.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m",
+      "quantity_id": "young_laplace_jump_sigma7.2_R0.02",
+      "reference": {
+        "source": "Young-Laplace sigma/R",
+        "unit": "Pa",
+        "value": 360.0
+      },
+      "rel_error_pct": -7.459662,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/laplace_pressure_closure/report_force_balance.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "backlog_update_m2971.md#P0",
+      "claim_id": "young_laplace.force_balance.flux_integral.dx2mm",
+      "claim_type": "relative_error",
+      "criterion_pct": 15.0,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_young_laplace_closure_ledger.py::test_force_balance_integral_is_registered_and_paper_grade",
+      "json_path": "cases[0].force_side",
+      "measured": {
+        "definition": "radial flux integral -int_0^R rho a_r dr of a single CSF evaluation on the calibrated lattice (no time stepping)",
+        "unit": "Pa",
+        "value": 359.077873
+      },
+      "notes": "Bypasses the pressure field entirely, so it separates the two halves of the Young-Laplace deficit: the surface-tension force already delivers sigma/R to -0.26 %, hence the historical -38 % lived in the free surface pressure assembly (the closure), not in the force model. Bins 400/800 agree to 0.01 % (``bin_sensitivity``), so this is not a quadrature artefact.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m",
+      "quantity_id": "young_laplace_jump_sigma7.2_R0.02",
+      "reference": {
+        "source": "Young-Laplace sigma/R",
+        "unit": "Pa",
+        "value": 360.0
+      },
+      "rel_error_pct": -0.256146,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
       "artifact": "benchmarks/laplace_law/validation_report.json",
       "artifact_status": "PASS",
       "backlog_ref": "docs/verification_ledger.md",
@@ -621,6 +996,7 @@
       "superseded_by": null
     },
     {
+      "admissibility": null,
       "artifact": "benchmarks/laplace_plateau/validation_report.json",
       "artifact_status": "WITHHELD",
       "backlog_ref": "backlog_update_m2971.md#P0",
@@ -666,6 +1042,24 @@
       "severity": "high"
     },
     {
+      "claim_id": "young_laplace.closure.closure_on_interior_layers2.dx2mm_c20",
+      "detail": "+8.83 % is inside the 15 % band, but the run violates the admissibility gate (v_max/v_ref < 0.1 (Adami, Ihmsen & Adams 2012): 0.388129 >= 0.1): the residual spurious current, not the physics, sets the agreement, so the reading is graded WITHHELD and may not be quoted as a pass",
+      "rule": "inadmissible_run",
+      "severity": "high"
+    },
+    {
+      "claim_id": "young_laplace.closure.closure_on_interior_layers2.dx2mm_c5",
+      "detail": "+4.86 % is inside the 15 % band, but the run violates the admissibility gate (v_max/v_ref < 0.1 (Adami, Ihmsen & Adams 2012): 0.103857 >= 0.1): the residual spurious current, not the physics, sets the agreement, so the reading is graded WITHHELD and may not be quoted as a pass",
+      "rule": "inadmissible_run",
+      "severity": "high"
+    },
+    {
+      "claim_id": "young_laplace.closure.closure_on_interior_layers4.dx2mm_c20",
+      "detail": "+8.83 % is inside the 15 % band, but the run violates the admissibility gate (v_max/v_ref < 0.1 (Adami, Ihmsen & Adams 2012): 0.388129 >= 0.1): the residual spurious current, not the physics, sets the agreement, so the reading is graded WITHHELD and may not be quoted as a pass",
+      "rule": "inadmissible_run",
+      "severity": "high"
+    },
+    {
       "claim_id": "threed_hydrostatic_bottom_pressure",
       "detail": "2 active readings of one quantity span -25.2 % … -2.7 % (spread 22.5 pt): threed_hydrostatic.bottom_pressure.adami_best=-2.7 %, threed_hydrostatic.bottom_pressure.tait_wall_control=-25.2 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
       "rule": "quantity_spread",
@@ -679,7 +1073,7 @@
     },
     {
       "claim_id": "young_laplace_jump_sigma7.2_R0.02",
-      "detail": "6 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
+      "detail": "14 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.closure.closure_on_all_donors.dx1.5mm_c20=-25.3 %, young_laplace.closure.closure_on_all_donors.dx2mm_c20=-20.1 %, young_laplace.closure.closure_on_interior_layers2.dx1.5mm_c20=-3.4 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c10=-4.0 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c20=+8.8 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c5=+4.9 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.force_balance.flux_integral.dx1.5mm=-7.5 %, young_laplace.force_balance.flux_integral.dx2mm=-0.3 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
       "rule": "quantity_spread",
       "severity": "high"
     }
@@ -687,21 +1081,22 @@
   "schema_version": 1,
   "summary": {
     "by_grade": {
-      "FAIL": 5,
-      "MARGINAL": 2,
-      "PASS": 3,
-      "WITHDRAWN": 1,
-      "WITHHELD": 10
+      "FAIL": 8,
+      "MARGINAL": 5,
+      "PASS": 4,
+      "WITHDRAWN": 2,
+      "WITHHELD": 12
     },
     "criterion_pct": 15.0,
     "findings_by_rule": {
       "declared_vs_derived": 1,
+      "inadmissible_run": 3,
       "quantity_spread": 3,
       "run_validity": 1
     },
-    "n_claims": 21,
-    "n_findings": 5,
-    "n_quantities": 13,
+    "n_claims": 31,
+    "n_findings": 8,
+    "n_quantities": 14,
     "paper_criterion_pct": 3.0
   }
 }

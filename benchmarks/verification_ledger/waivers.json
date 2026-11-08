@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "note": "Evidence artifacts deliberately not registered as ledger claims. Every waiver needs a reason; tests/test_verification_ledger.py enforces that.",
+  "note": "Evidence artifacts deliberately not registered as ledger claims. Every waiver needs a reason; tests/test_verification_ledger.py enforces that. A waiver is retired when its artifact gets a claim; the closure ladder waiver was retired by m6405 after nine missions of living on the promise that a 'primary claim' existed elsewhere (it did not).",
   "unregistered_ok": [
     "benchmarks/conservation/report.json",
     "benchmarks/contact_angle_geometry/results.json",
@@ -13,7 +13,6 @@
     "benchmarks/laplace_law/convergence/relax_dx0.0020.json",
     "benchmarks/laplace_law/convergence/relax_dx0.0025.json",
     "benchmarks/laplace_law/instant_report.json",
-    "benchmarks/laplace_pressure_closure/raw/relax_ladder.json",
     "benchmarks/laplace_pressure_jump/validation_report.json",
     "benchmarks/lattice_equilibrium/report.json",
     "benchmarks/oscillating_droplet/gauge_audit.json",
@@ -33,7 +32,6 @@
     "benchmarks/dam_break/reference_ladder.json": "supporting artifact; primary claim registered separately or covered by parent report",
     "benchmarks/init_consistency/report.json": "supporting artifact; primary claim registered separately or covered by parent report",
     "benchmarks/initial_density_bias/report.json": "supporting artifact; primary claim registered separately or covered by parent report",
-    "benchmarks/laplace_pressure_closure/raw/relax_ladder.json": "supporting artifact; primary claim registered separately or covered by parent report",
     "benchmarks/laplace_pressure_jump/validation_report.json": "supporting artifact; primary claim registered separately or covered by parent report",
     "benchmarks/lattice_equilibrium/report.json": "supporting artifact; primary claim registered separately or covered by parent report",
     "benchmarks/oscillating_droplet/gauge_audit.json": "gauge audit of the oscillating-drop benchmark (verifier seat m4751): it scores the committed artifact's fit window and containment gauges, it is not a new physical claim; the claim it audits is oscillating_droplet.frequency.lamb, whose readout this audit shows to be a fit-window artifact of a numerical blow-up",
