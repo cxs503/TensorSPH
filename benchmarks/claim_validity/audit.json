@@ -14,10 +14,10 @@
     "paper_pct": 3.0
   },
   "summary": {
-    "n_claims": 31,
+    "n_claims": 36,
     "n_probed": 8,
     "by_status": {
-      "UNPROBED": 23,
+      "UNPROBED": 28,
       "INVALID": 4,
       "VALID": 4
     },
@@ -49,6 +49,24 @@
     },
     {
       "claim_id": "dam_break.martin_moyce.mae",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "density_diffusion.decay_rate.worst_of_ladder",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "density_diffusion.finite_time.amplitude",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "effective_sigma.sigma_eff_over_sigma.dx5mm",
       "status": "UNPROBED",
       "checks": [],
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
@@ -129,6 +147,18 @@
     },
     {
       "claim_id": "paper_uncertainty.band.dx3mm",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "poiseuille.centre_velocity.finest",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "poiseuille.wall_shear_ratio.finest",
       "status": "UNPROBED",
       "checks": [],
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
@@ -594,6 +624,18 @@
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
     {
+      "claim_id": "density_diffusion.decay_rate.worst_of_ladder",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "density_diffusion.finite_time.amplitude",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "effective_sigma.sigma_eff_over_sigma.dx5mm",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
       "claim_id": "laplace_droplet.merged_csf.8cases",
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
@@ -603,6 +645,14 @@
     },
     {
       "claim_id": "paper_uncertainty.band.dx3mm",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "poiseuille.centre_velocity.finest",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "poiseuille.wall_shear_ratio.finest",
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
     {
