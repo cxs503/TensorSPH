@@ -137,6 +137,12 @@ class Config:
     # Contact angle at walls (radians). None disables contact angle BC.
     # theta < pi/2: hydrophilic (wetting), theta > pi/2: hydrophobic.
     contact_angle: float | None = None
+    # Thickness of the contact-angle blend, in units of h
+    # (tensorsph.csf_consistent.apply_contact_angle_boundary). 2.0 = the
+    # Brackbill wall-adhesion stencil (one kernel support). Exposed so the
+    # thickness can be studied without monkey-patching, see
+    # benchmarks/contact_angle/diagnose_bc.py --study reach.
+    contact_angle_reach: float = 2.0
     # CSF surface-tension discretisation. "consistent" = kernel-sum colour with
     # first-order (MLS) consistent operators (tensorsph.csf_consistent), the
     # scheme verified against the Young-Laplace law; "legacy" = the original
