@@ -48,6 +48,7 @@ from .dam_break_3d import (
     validate_case as validate_case_3d,
     wall_lattice_3d,
 )
+from .sloshing import SloshingConfig, SloshingRun, run_case as run_sloshing
 from .added_mass import (
     DISC_ADDED_MASS_COEFFICIENT,
     cylinder_added_mass,
@@ -111,6 +112,7 @@ __all__ = [
     "cubic_spline_gradient_3d", "cubic_spline_kernel_3d", "front_position_3d",
     "make_column_3d", "pair_kernels_3d", "ritter_front", "ritter_front_over_a",
     "rhs_3d", "run_case_3d", "validate_case_3d", "wall_lattice_3d",
+    "SloshingConfig", "SloshingRun", "run_sloshing",
     "calibration_factor", "calibrate_mass", "lattice_bias",
     "lattice_kernel_sum", "lattice_offsets", "measure_complete_support_bias",
     "spurious_pressure", "spurious_pressure_ratio",
