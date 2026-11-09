@@ -1,11 +1,11 @@
-"""Inject the numbers of ``artifacts/ice_floe_added_mass/report.json`` into the doc."""
+"""Inject the numbers of ``benchmarks/ice_floe_added_mass/report.json`` into the doc."""
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
-REPORT = REPO / "artifacts" / "ice_floe_added_mass" / "report.json"
+REPORT = REPO / "benchmarks" / "ice_floe_added_mass" / "report.json"
 DOC = REPO / "docs" / "verification_ice_floe_added_mass.md"
 
 
@@ -51,7 +51,7 @@ def main() -> int:
 
     text = f"""# 浮冰发射降阶模型的附加质量欠账（TensorSPH）
 
-**基准**：`benchmarks/ice_floe_added_mass/run.py` → `artifacts/ice_floe_added_mass/report.json`
+**基准**：`benchmarks/ice_floe_added_mass/run.py` → `benchmarks/ice_floe_added_mass/report.json`
 **模块**：`src/tensorsph/added_mass.py`（新增）、`src/tensorsph/ice_splash.py`（修正）
 **证据等级**：REAL（闭式解锚定 + 独立势流数值解 + 真实 SPH 冲击冲量）
 **生成方式**：本文所有数字由 `benchmarks/ice_floe_added_mass/make_doc.py` 从 `report.json` 注入，无手抄。
