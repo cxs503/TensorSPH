@@ -653,8 +653,17 @@ class SlammingImpact(WedgeImpact):
         shape = (pressure_shape_l2(prof["x"], prof["p"], c, self.beta)
                  if c > 0 and prof["x"].numel() >= 4 else float("nan"))
         mass = float(self.fluid_mass.sum())
+        # The wall profile is kept in the sample (not just its summary
+        # statistics) so that (a) the pressure shape can be re-scored against a
+        # different self-similar anchor after the run, without re-running the
+        # SPH case, and (b) the report figures are drawn from the stored run
+        # rather than from a second, differently configured simulation.
+        prof_x = [float(v) for v in prof["x"].cpu()]
+        prof_p = [float(v) for v in prof["p"].cpu()]
         return {
             "t": self.time,
+            "profile_x": prof_x,
+            "profile_p": prof_p,
             "c": c,
             "force": F,
             "c_s": cs,
