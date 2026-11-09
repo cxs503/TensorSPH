@@ -224,6 +224,7 @@ def compute_surface_tension_force(
         acc, _ = surface_tension_acceleration(
             pos, density, mass, pairs, h, sigma, rho0=cfg.rho0, wall=wall,
             contact_angle=getattr(cfg, "contact_angle", None),
+            contact_angle_reach=getattr(cfg, "contact_angle_reach", 2.0),
             curvature_scheme=getattr(cfg, "csf_curvature", "mls"))
         return acc
 

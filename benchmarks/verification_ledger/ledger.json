@@ -1617,9 +1617,15 @@
       "severity": "high"
     },
     {
-      "claim_id": "benchmarks/ice_floe_added_mass",
+      "claim_id": "benchmarks/wedge_entry",
       "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
       "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/contact_angle/bc_diagnosis.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
       "severity": "medium"
     }
   ],
@@ -1639,13 +1645,14 @@
       "inadmissible_run": 3,
       "quantity_spread": 4,
       "run_validity": 4,
-      "uncovered_benchmark": 1
+      "uncovered_benchmark": 1,
+      "unregistered_artifact": 1
     },
     "n_artifact_verdicts_fail": 12,
     "n_claims": 40,
     "n_credits_unqualified": 6,
     "n_credits_without_declared_verdict": 6,
-    "n_findings": 19,
+    "n_findings": 20,
     "n_quantities": 20,
     "paper_criterion_pct": 3.0
   }

@@ -53,6 +53,16 @@ References
 """
 from __future__ import annotations
 
+#: Default thickness of the contact-angle blend, in units of ``h`` (Brackbill,
+#: Kothe & Zemach 1992 rotate the near-wall normal; ``reach = 2 h`` = the
+#: kernel support).  Exposed as ``Config.contact_angle_reach`` so the thickness
+#: can be varied without monkey-patching; see
+#: ``benchmarks/contact_angle/diagnose_bc.py`` for why it is not a free knob.
+CONTACT_ANGLE_REACH = 2.0
+
+
+
+
 from dataclasses import dataclass
 
 import torch
@@ -225,6 +235,7 @@ def csf_fields(
     rho0: float,
     wall: torch.Tensor | None = None,
     contact_angle: float | None = None,
+    contact_angle_reach: float = CONTACT_ANGLE_REACH,
     normal_smoothing: int = 2,
     curvature_scheme: str = "mls",
     curvature_stencil: float = 4.0,
@@ -262,7 +273,8 @@ def csf_fields(
     color = kernel_sum_color(pos, mass, pairs, h, rho0)
     grad_c = mls_gradient(pos, color, vol, pairs, h)
     if wall is not None and contact_angle is not None:
-        grad_c = apply_contact_angle_boundary(grad_c, pos, wall, h, contact_angle)
+        grad_c = apply_contact_angle_boundary(grad_c, pos, wall, h, contact_angle,
+                                              reach=contact_angle_reach)
 
     mag = torch.linalg.vector_norm(grad_c, dim=1, keepdim=True)
     # c decreases outward, so the outward normal is minus the gradient.
@@ -282,7 +294,8 @@ def csf_fields(
                              passes=curvature_color_smoothing)[:, 0].clamp(0.0, 1.0)
         grad_s = mls_gradient(pos, c_s, vol, pairs, h)
         if wall is not None and contact_angle is not None:
-            grad_s = apply_contact_angle_boundary(grad_s, pos, wall, h, contact_angle)
+            grad_s = apply_contact_angle_boundary(grad_s, pos, wall, h, contact_angle,
+                                                  reach=contact_angle_reach)
         mag_s = torch.linalg.vector_norm(grad_s, dim=1, keepdim=True)
         normal_s = torch.where(mag_s > tiny, -grad_s / mag_s.clamp_min(tiny),
                                torch.zeros_like(grad_s))
@@ -334,6 +347,7 @@ def surface_tension_acceleration(
     rho0: float | None = None,
     wall: torch.Tensor | None = None,
     contact_angle: float | None = None,
+    contact_angle_reach: float = CONTACT_ANGLE_REACH,
     curvature_scheme: str = "mls",
     curvature_stencil: float = 4.0,
 ) -> tuple[torch.Tensor, CSFState | None]:
@@ -350,6 +364,7 @@ def surface_tension_acceleration(
         pairs = cell_linked_pairs(pos, curvature_stencil * h)
     state = csf_fields(pos, mass, pairs, h, rho0, wall=wall,
                        contact_angle=contact_angle,
+                       contact_angle_reach=contact_angle_reach,
                        curvature_scheme=curvature_scheme,
                        curvature_stencil=curvature_stencil)
     # Particles whose colour field is locally flat are not on the interface; the
@@ -406,7 +421,7 @@ def apply_contact_angle_boundary(
     wall_pos: torch.Tensor,
     h: float,
     theta: float,
-    reach: float = 2.0,
+    reach: float = CONTACT_ANGLE_REACH,
 ) -> torch.Tensor:
     """Enforce Young's contact angle on the colour gradient near a wall.
 
