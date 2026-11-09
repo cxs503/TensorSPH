@@ -39,6 +39,7 @@ WAIVERS = {
         "the evidence on disk; the 3-D claims are measured (README quotes them) "
         "but the page needs the generator repaired -- registered as debt instead "
         "of shipping a hand-written page with undocumented numbers",
+    "docs/verification_contact_angle_m6453.md": "debt E3: the m6453 contact-angle doc was never committed; the instrument was repaired and documented in docs/verification_contact_angle_m6503.md instead (referenced by make_overcredit_doc.py and test_contact_angle_instrument_m6503.py)",
 }
 
 

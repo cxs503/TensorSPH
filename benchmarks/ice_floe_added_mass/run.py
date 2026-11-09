@@ -276,6 +276,37 @@ def main() -> int:
         },
     }
     report["wall_clock_s"] = time.time() - started
+
+    # --- ledger registration (benchmarks/verification_ledger) ---------------
+    # The report is committed to benchmarks/ice_floe_added_mass/report.json and
+    # its readings are registered as ledger claims, so it must be
+    # self-declaring: a criteria dict plus a top-level verdict string.
+    ladder = report["anchor_ladder"]
+    fine, coarse = ladder[-1], ladder[-2]
+    ratio = fine["cells_per_radius"] / coarse["cells_per_radius"]
+    richardson = (ratio * fine["coefficient"] - coarse["coefficient"]) / (ratio - 1.0)
+    report["richardson_extrapolation"] = {
+        "cells_per_radius_pair": [coarse["cells_per_radius"], fine["cells_per_radius"]],
+        "coefficient": richardson,
+        "error_vs_lamb_pct": 100.0 * (richardson / DISC_ADDED_MASS_COEFFICIENT - 1.0),
+        "assumption": "first-order in dx (staircase body boundary)",
+    }
+    rows = report["launch_bias"]["rows"]
+    ref_ratio = report["launch_bias"]["ratio_closed_form"]
+    report["launch_bias"]["speed_ratio_mean"] = (
+        sum(r["speed_ratio"] for r in rows) / len(rows))
+    report["launch_bias"]["speed_ratio_max_abs_dev_pct"] = 100.0 * max(
+        abs(r["speed_ratio"] / ref_ratio - 1.0) for r in rows)
+    report["criteria"] = {
+        "anchor_finest_within_15pct": abs(ladder[-1]["error_vs_lamb_pct"]) <= 15.0,
+        "anchor_richardson_within_3pct": abs(
+            report["richardson_extrapolation"]["error_vs_lamb_pct"]) <= 3.0,
+        "speed_ratio_matches_closed_form": (
+            report["launch_bias"]["speed_ratio_max_abs_dev_pct"] <= 3.0),
+        "plane_limits_within_15pct": (
+            report["plane_limits"]["max_ratio_deviation_pct"] <= 15.0),
+    }
+    report["verdict"] = "pass" if all(report["criteria"].values()) else "fail"
     if not args.no_figures:
         report["figures"] = figures(report, out)
     with open(out / "report.json", "w") as handle:

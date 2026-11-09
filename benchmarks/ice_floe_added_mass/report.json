@@ -1,0 +1,272 @@
+{
+  "reference": {
+    "quantity": "added-mass coefficient of a 2-D circular section",
+    "closed_form": 1.0,
+    "source": "Lamb, Hydrodynamics, 6th ed., \u00a771; Landau & Lifshitz, Fluid Mechanics, \u00a711"
+  },
+  "anchor_ladder": [
+    {
+      "cells_per_radius": 8,
+      "grid": [
+        96,
+        96
+      ],
+      "coefficient": 0.8686828046942587,
+      "error_vs_lamb_pct": -13.131719530574127,
+      "iterations": 187,
+      "residual": 9.937858149733358e-06,
+      "tail_fraction": 0.031976893784094684,
+      "wall_clock_s": 0.547666072845459
+    },
+    {
+      "cells_per_radius": 12,
+      "grid": [
+        144,
+        144
+      ],
+      "coefficient": 0.8661573928151296,
+      "error_vs_lamb_pct": -13.38426071848704,
+      "iterations": 406,
+      "residual": 9.90799545563803e-06,
+      "tail_fraction": 0.0320701272172904,
+      "wall_clock_s": 2.713297128677368
+    },
+    {
+      "cells_per_radius": 16,
+      "grid": [
+        192,
+        192
+      ],
+      "coefficient": 0.9275327764975497,
+      "error_vs_lamb_pct": -7.246722350245028,
+      "iterations": 677,
+      "residual": 9.955768943692433e-06,
+      "tail_fraction": 0.02994802823321161,
+      "wall_clock_s": 4.007973909378052
+    },
+    {
+      "cells_per_radius": 24,
+      "grid": [
+        288,
+        288
+      ],
+      "coefficient": 0.9478998212493888,
+      "error_vs_lamb_pct": -5.210017875061124,
+      "iterations": 1353,
+      "residual": 9.970467662823168e-06,
+      "tail_fraction": 0.02930455007488555,
+      "wall_clock_s": 10.994686841964722
+    }
+  ],
+  "box_sensitivity": [
+    {
+      "box_radii": 6.0,
+      "grid": [
+        144,
+        144
+      ],
+      "coefficient": 0.8661573928151296
+    },
+    {
+      "box_radii": 10.0,
+      "grid": [
+        240,
+        240
+      ],
+      "coefficient": 0.8626238448032143
+    }
+  ],
+  "isotropy": {
+    "cells_per_radius": 12,
+    "x": 0.8661573928151296,
+    "y": 0.8661573928151295,
+    "relative_difference_pct": 2.220446049250313e-14
+  },
+  "plane_limits": {
+    "cells_per_radius": 12,
+    "rows": [
+      {
+        "boundary": "rigid_wall",
+        "direction": "x",
+        "gap_radii": 2.0,
+        "coefficient": 0.8451824385258361,
+        "ratio_to_free_field": 0.9757393393678748
+      },
+      {
+        "boundary": "rigid_wall",
+        "direction": "x",
+        "gap_radii": 4.0,
+        "coefficient": 0.8790324166421726,
+        "ratio_to_free_field": 1.0148181864656207
+      },
+      {
+        "boundary": "rigid_wall",
+        "direction": "y",
+        "gap_radii": 2.0,
+        "coefficient": 0.8828375691177928,
+        "ratio_to_free_field": 1.0192111279105844
+      },
+      {
+        "boundary": "rigid_wall",
+        "direction": "y",
+        "gap_radii": 4.0,
+        "coefficient": 0.8937184547290327,
+        "ratio_to_free_field": 1.0317728041287588
+      },
+      {
+        "boundary": "free_surface",
+        "direction": "x",
+        "gap_radii": 2.0,
+        "coefficient": 0.8972288281128342,
+        "ratio_to_free_field": 1.0358254314081654
+      },
+      {
+        "boundary": "free_surface",
+        "direction": "x",
+        "gap_radii": 4.0,
+        "coefficient": 0.8619379238429755,
+        "ratio_to_free_field": 0.995083075618062
+      },
+      {
+        "boundary": "free_surface",
+        "direction": "y",
+        "gap_radii": 2.0,
+        "coefficient": 0.9087382338162536,
+        "ratio_to_free_field": 1.049112716384364
+      },
+      {
+        "boundary": "free_surface",
+        "direction": "y",
+        "gap_radii": 4.0,
+        "coefficient": 0.8652694569514456,
+        "ratio_to_free_field": 0.9989292368326876
+      }
+    ],
+    "max_ratio_deviation_pct": 4.91127163843641
+  },
+  "launch_bias": {
+    "case": {
+      "dx_m": 0.0125,
+      "t_end_s": 0.45995625000000007,
+      "particles": 352,
+      "floe_radius_m": 0.03,
+      "floe_rho_kg_m3": 917.0,
+      "rho_water_kg_m3": 1000.0,
+      "sound_speed_m_s": 20.0,
+      "wall_clock_s": 45.101823568344116
+    },
+    "ratio_closed_form": 0.47835159102764735,
+    "rows": [
+      {
+        "floe": 0,
+        "impulse_Ns_per_m": 2.156557259559631,
+        "peak_force_N_per_m": 74.86978149414062,
+        "dry_mass_kg_per_m": 2.5927564170076565,
+        "added_mass_kg_per_m": 2.8274333882308134,
+        "speed_dry_m_s": 0.8317623843926495,
+        "speed_with_added_mass_m_s": 0.3978748599311735,
+        "speed_ratio": 0.4783515910276474,
+        "apex_dry_m": 0.03526139980074136,
+        "apex_with_added_mass_m": 0.008068522128707999,
+        "range_dry_m": 0.07052279960148272,
+        "range_with_added_mass_m": 0.016137044257415998
+      },
+      {
+        "floe": 1,
+        "impulse_Ns_per_m": 1.3564768074631703,
+        "peak_force_N_per_m": 50.65440368652344,
+        "dry_mass_kg_per_m": 2.5927564170076565,
+        "added_mass_kg_per_m": 2.8274333882308134,
+        "speed_dry_m_s": 0.5231794234757706,
+        "speed_with_added_mass_m_s": 0.25026370961256217,
+        "speed_ratio": 0.4783515910276474,
+        "apex_dry_m": 0.013950902606954113,
+        "apex_with_added_mass_m": 0.0031922489474536615,
+        "range_dry_m": 0.027901805213908226,
+        "range_with_added_mass_m": 0.006384497894907323
+      },
+      {
+        "floe": 2,
+        "impulse_Ns_per_m": 0.968552856016158,
+        "peak_force_N_per_m": 45.1864013671875,
+        "dry_mass_kg_per_m": 2.5927564170076565,
+        "added_mass_kg_per_m": 2.8274333882308134,
+        "speed_dry_m_s": 0.37356106792861826,
+        "speed_with_added_mass_m_s": 0.1786935311896416,
+        "speed_ratio": 0.4783515910276474,
+        "apex_dry_m": 0.00711253167543169,
+        "apex_with_added_mass_m": 0.0016274912379726511,
+        "range_dry_m": 0.01422506335086338,
+        "range_with_added_mass_m": 0.0032549824759453023
+      },
+      {
+        "floe": 3,
+        "impulse_Ns_per_m": 0.6979373681187617,
+        "peak_force_N_per_m": 45.18708801269531,
+        "dry_mass_kg_per_m": 2.5927564170076565,
+        "added_mass_kg_per_m": 2.8274333882308134,
+        "speed_dry_m_s": 0.2691874036220737,
+        "speed_with_added_mass_m_s": 0.12876622280722047,
+        "speed_ratio": 0.4783515910276474,
+        "apex_dry_m": 0.003693264947441041,
+        "apex_with_added_mass_m": 0.0008450937887889269,
+        "range_dry_m": 0.007386529894882082,
+        "range_with_added_mass_m": 0.0016901875775778537
+      },
+      {
+        "floe": 4,
+        "impulse_Ns_per_m": 0.20465906052589428,
+        "peak_force_N_per_m": 19.082429885864258,
+        "dry_mass_kg_per_m": 2.5927564170076565,
+        "added_mass_kg_per_m": 2.8274333882308134,
+        "speed_dry_m_s": 0.07893493549312848,
+        "speed_with_added_mass_m_s": 0.03775865198080272,
+        "speed_ratio": 0.4783515910276474,
+        "apex_dry_m": 0.00031757003268625657,
+        "apex_with_added_mass_m": 7.266645256918334e-05,
+        "range_dry_m": 0.0006351400653725131,
+        "range_with_added_mass_m": 0.00014533290513836668
+      }
+    ],
+    "peak_splash_ke_J_per_m": 4.585216522216797,
+    "upper_bound_speed_m_s": 1.8806763501526955,
+    "speed_ratio_mean": 0.4783515910276474,
+    "speed_ratio_max_abs_dev_pct": 2.220446049250313e-14
+  },
+  "config": {
+    "ladder_cells_per_radius": [
+      8,
+      12,
+      16,
+      24
+    ],
+    "box_radii": 6.0,
+    "gaps_radii": [
+      2.0,
+      4.0
+    ],
+    "tolerance": 1e-05,
+    "initial": "zero (anchor) / dipole (plane cases)"
+  },
+  "wall_clock_s": 114.7220389842987,
+  "richardson_extrapolation": {
+    "cells_per_radius_pair": [
+      16,
+      24
+    ],
+    "coefficient": 0.9886339107530666,
+    "error_vs_lamb_pct": -1.1366089246933386,
+    "assumption": "first-order in dx (staircase body boundary)"
+  },
+  "criteria": {
+    "anchor_finest_within_15pct": true,
+    "anchor_richardson_within_3pct": true,
+    "speed_ratio_matches_closed_form": true,
+    "plane_limits_within_15pct": true
+  },
+  "verdict": "pass",
+  "figures": [
+    "artifacts/ice_floe_added_mass/fig1_added_mass.png",
+    "artifacts/ice_floe_added_mass/fig2_launch.png"
+  ]
+}
