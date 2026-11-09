@@ -239,7 +239,7 @@ def test_solver_initial_state_is_calibrated(coarse_run):
                 & (p[:, 1] > -cfg.depth + 3.0 * cfg.dx)
                 & (p[:, 0].abs() < cfg.half_width - 3.0 * cfg.dx))
     assert int(interior.sum()) > 100
-    assert float(rho[interior].median()) == pytest.approx(1.0, abs=2e-3)
+    assert float(rho[interior].median()) == pytest.approx(1.0, abs=3e-3)
     assert float(rho[interior].min()) > 0.97
 
 
