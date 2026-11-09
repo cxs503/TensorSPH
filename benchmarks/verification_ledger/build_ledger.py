@@ -1428,6 +1428,145 @@ SUPERSEDED_NUMBERS = {
 MARKERS = ("历史", "historical", "superseded", "旧代码", "legacy", "verification_ledger", "作废")
 
 
+def ice_floe_added_mass_claims() -> list[dict]:
+    """Added-mass correction of the reduced floe launch model.
+
+    ``benchmarks/ice_floe_added_mass`` used to sit outside the ledger entirely
+    (``uncovered_benchmark`` finding): its numbers lived only in
+    ``docs/verification_ice_floe_added_mass.md``, injected from an uncommitted
+    ``artifacts/`` report.  The report is now committed and its readings are
+    registered here: the potential-flow anchor against the Lamb closed form
+    (raw finest rung + Richardson extrapolation), the plane-limit recovery
+    gate, and the launch speed ratio against its algebraic identity.
+    """
+    rel = "benchmarks/ice_floe_added_mass/report.json"
+    d = _load(rel)
+    ref_c = d["reference"]["closed_form"]
+    src = d["reference"]["source"]
+    status = "PASS" if d["verdict"] == "pass" else "FAIL"
+    out: list[dict] = []
+
+    ladder = d["anchor_ladder"]
+    finest = ladder[-1]
+    out.append(
+        _entry(
+            claim_id="ice_floe_added_mass.anchor.c_m_unbounded",
+            quantity_id="ice_floe_added_mass_c_m_unbounded",
+            quantity="added-mass coefficient of a 2-D circular section in an unbounded fluid",
+            artifact=rel,
+            json_path=f"anchor_ladder[{len(ladder) - 1}]",
+            reference=(ref_c, "-", src),
+            measured=(
+                finest["coefficient"],
+                "-",
+                f"potential-flow SOR, zero initial, {finest['cells_per_radius']} "
+                f"cells/radius, box {d['config']['box_radii']:g}R, "
+                f"tol {d['config']['tolerance']:g}",
+            ),
+            rel_error_pct=finest["error_vs_lamb_pct"],
+            guarding_test="tests/test_ice_floe_added_mass.py",
+            artifact_status=status,
+            backlog_ref="docs/verification_ice_floe_added_mass.md",
+            notes=(
+                "First-order staircase body boundary: the raw finest rung is a "
+                "systematic lower bound; the Richardson reading is the converged "
+                "estimate. Box sensitivity < 0.5 % and x/y isotropy at machine "
+                "precision are recorded in the same artifact."
+            ),
+        )
+    )
+
+    rich = d["richardson_extrapolation"]
+    out.append(
+        _entry(
+            claim_id="ice_floe_added_mass.anchor.c_m_richardson",
+            quantity_id="ice_floe_added_mass_c_m_unbounded",
+            quantity="added-mass coefficient of a 2-D circular section in an unbounded fluid",
+            artifact=rel,
+            json_path="richardson_extrapolation",
+            reference=(ref_c, "-", src),
+            measured=(
+                rich["coefficient"],
+                "-",
+                f"first-order Richardson over {rich['cells_per_radius_pair'][0]} -> "
+                f"{rich['cells_per_radius_pair'][1]} cells/radius",
+            ),
+            rel_error_pct=rich["error_vs_lamb_pct"],
+            guarding_test="tests/test_ice_floe_added_mass.py",
+            artifact_status=status,
+            backlog_ref="docs/verification_ice_floe_added_mass.md",
+            notes="Extrapolation assumes first-order convergence of the staircase boundary.",
+        )
+    )
+
+    planes = d["plane_limits"]
+    limit = CRITERION_PCT
+    dev = planes["max_ratio_deviation_pct"]
+    out.append(
+        _entry(
+            claim_id="ice_floe_added_mass.plane_limits.max_deviation",
+            quantity_id="ice_floe_added_mass_plane_limit_recovery",
+            quantity=(
+                "plane-limit recovery: C_m(gap)/C_m(infinity) for a rigid wall and a "
+                "linearised free surface, gap >= 2 radii"
+            ),
+            claim_type="gate",
+            artifact=rel,
+            json_path="plane_limits",
+            reference=(limit, "%", "platform acceptance line (CRITERION_PCT) on the max ratio deviation"),
+            measured=(
+                dev,
+                "%",
+                "max |C_m(gap)/C_m(infinity) - 1| over 2 boundaries x 2 axes x 2 gaps",
+            ),
+            rel_error_pct=dev,
+            gate_result="pass" if dev <= limit else "fail",
+            gate_limit=limit,
+            guarding_test="tests/test_ice_floe_added_mass.py",
+            artifact_status=status,
+            backlog_ref="docs/verification_ice_floe_added_mass.md",
+            notes=(
+                "gap < 2 radii (the real floe-on-deck configuration) is unresolved on "
+                "the Cartesian ladder and is deliberately not quoted (doc section 5)."
+            ),
+        )
+    )
+
+    lb = d["launch_bias"]
+    out.append(
+        _entry(
+            claim_id="ice_floe_added_mass.launch.speed_ratio",
+            quantity_id="ice_floe_added_mass_launch_speed_ratio",
+            quantity=(
+                "floe launch speed ratio v_wet/v_dry vs the algebraic identity "
+                "rho_ice/(rho_ice + C_m rho_w)"
+            ),
+            artifact=rel,
+            json_path="launch_bias.speed_ratio_mean",
+            reference=(
+                lb["ratio_closed_form"],
+                "-",
+                "speed_ratio_with_added_mass(rho_ice, rho_w, C_m = 1)",
+            ),
+            measured=(
+                lb["speed_ratio_mean"],
+                "-",
+                "mean over 5 floes of the SPH impulse run (dx = 0.0125 m, t = 0.46 s)",
+            ),
+            rel_error_pct=100.0 * (lb["speed_ratio_mean"] / lb["ratio_closed_form"] - 1.0),
+            guarding_test="tests/test_ice_floe_added_mass.py",
+            artifact_status=status,
+            backlog_ref="docs/verification_ice_floe_added_mass.md",
+            notes=(
+                "The correction is an algebraic identity applied to the SPH impulse; "
+                "the SPH run supplies the impulse only, so agreement is expected at "
+                "machine precision."
+            ),
+        )
+    )
+    return out
+
+
 def grade(e: dict) -> str:
     """One repo-wide grading rule, applied uniformly to every entry."""
     if e["superseded_by"]:
@@ -1793,6 +1932,7 @@ def build() -> dict:
         + closure_claims()
         + quiescence_claims()
         + orphan_evidence_claims()
+        + ice_floe_added_mass_claims()
     )
     V = _claim_validity()
     for e in entries:

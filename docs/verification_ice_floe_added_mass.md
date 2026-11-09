@@ -1,6 +1,6 @@
 # 浮冰发射降阶模型的附加质量欠账（TensorSPH）
 
-**基准**：`benchmarks/ice_floe_added_mass/run.py` → `artifacts/ice_floe_added_mass/report.json`
+**基准**：`benchmarks/ice_floe_added_mass/run.py` → `benchmarks/ice_floe_added_mass/report.json`
 **模块**：`src/tensorsph/added_mass.py`（新增）、`src/tensorsph/ice_splash.py`（修正）
 **证据等级**：REAL（闭式解锚定 + 独立势流数值解 + 真实 SPH 冲击冲量）
 **生成方式**：本文所有数字由 `benchmarks/ice_floe_added_mass/make_doc.py` 从 `report.json` 注入，无手抄。
@@ -50,7 +50,7 @@
    `6, 10`。
 3. **平面影响**：`gap = 2, 4` 倍半径处
    分别放刚性壁与自由面，报告相对无界解的比值（比值抵消同一网格上的离散偏差）。
-4. **落到工程数字**：直接用真实 SPH 冲击算例（一次 `run_case`，17 s）的冲量，
+4. **落到工程数字**：直接用真实 SPH 冲击算例（一次 `run_case`，45 s）的冲量，
    比较干质量与含附加质量两种口径的速度、抛高、抛距。
 
 工具链：纯 CPU torch（float64），`OMP_NUM_THREADS=4`（128 线程机器上默认线程数会把小张量
