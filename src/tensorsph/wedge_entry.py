@@ -232,8 +232,8 @@ class WedgeConfig:
     gamma: float = 7.0
     dx: float = 1.0e-3
     h_factor: float = 1.3
-    sound_speed_factor: float = 20.0
-    alpha_visc: float = 0.1
+    sound_speed_factor: float = 30.0
+    alpha_visc: float = 0.03
     half_width: float = 0.20
     depth: float = 0.12
     headroom: float = 0.08
@@ -653,6 +653,17 @@ class WedgeImpact:
             p_centre = float(p[near_axis].mean())
         else:
             p_centre = 0.0
+        # ---- pressure near the expected Wagner peak location ------------- #
+        # Wagner peak is at |x|/c = sqrt(1 - 1/C^2); measure p in a band around it
+        C = wagner_c_coeff(self.beta)
+        if C > 1.0 and wet.value > 0:
+            tau_peak = math.sqrt(max(0.0, 1.0 - 1.0 / (C * C)))
+            x_peak = tau_peak * wet.value
+            band_half = max(3.0 * self.dx, 0.02 * wet.value)
+            peak_band = foot & ((x.abs() - x_peak).abs() <= band_half)
+            p_near_peak = float(p[peak_band].mean()) if bool(peak_band.any()) else 0.0
+        else:
+            p_near_peak = p_foot
 
         # ---- spray root from the free surface ---------------------------- #
         pos = self.fluid_pos
@@ -671,6 +682,7 @@ class WedgeImpact:
             "p_max_footprint": p_foot,
             "p_max_interior": p_int,
             "p_centre": p_centre,
+            "p_near_peak": p_near_peak,
             "x_jet": x_jet,
             "n_fluid": self.n_fluid,
             "n_wedge_surface": int(surf.sum().item()),
