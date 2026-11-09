@@ -50,6 +50,8 @@ from .kernel3 import (
     lattice_kernel_sum,
     pair_kernels,
     sigma3,
+    wendland_c2_gradient,
+    wendland_c2_kernel,
 )
 from .neighbors3 import (
     box_pairs,
@@ -89,6 +91,7 @@ from .solver import (
 __all__ = [
     "SUPPORT_FACTOR", "calibrated_particle_mass", "cubic_spline_gradient",
     "cubic_spline_kernel", "cubic_spline_laplacian", "kernel_normalisation",
+    "wendland_c2_gradient", "wendland_c2_kernel",
     "lattice_bias", "lattice_kernel_sum", "pair_kernels", "sigma3",
     "box_pairs", "brute_force_pairs_min_image", "minimum_image",
     "periodic_pairs", "accelerations", "analytic_laplacian_of_mode",

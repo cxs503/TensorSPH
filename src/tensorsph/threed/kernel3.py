@@ -32,6 +32,8 @@ __all__ = [
     "cubic_spline_kernel",
     "cubic_spline_gradient",
     "cubic_spline_laplacian",
+    "wendland_c2_kernel",
+    "wendland_c2_gradient",
     "pair_kernels",
     "lattice_kernel_sum",
     "lattice_bias",
@@ -119,6 +121,47 @@ def cubic_spline_laplacian(delta: torch.Tensor, h: float,
     inside = q < 2.0
     return torch.where(inside, sigma3(h) * radial / (h * h),
                        torch.zeros_like(radial))
+
+
+# --------------------------------------------------------------------------- #
+# Wendland C2 kernel (Wendland 1995, piecewise-polynomial radial basis, C2)
+# --------------------------------------------------------------------------- #
+#
+# Profile (all dimensions, support 2 h, q = r / h):
+#     f(q) = (1 - q/2)^4 (2 q + 1),   0 <= q <= 2
+#     f'(q) = -5 q (1 - q/2)^3
+# Normalisation is fixed by int W dV = 1:
+#     2-D:  sigma = 7 / (4 pi h^2)      (2 pi h^2 int_0^2 f q dq = 1,  int = 2/7)
+#     3-D:  sigma = 21 / (16 pi h^3)    (4 pi h^3 int_0^2 f q^2 dq = 1, int = 4/21)
+# Both integrals are exact (closed form) and re-verified by quadrature in
+# tests/test_kernel_analytic.py -- nothing here is asserted on faith.
+
+def wendland_c2_kernel(r: torch.Tensor, h: float) -> torch.Tensor:
+    """3-D Wendland C2 kernel ``W(r, h)`` with ``int W dV = 1`` over the 2h ball.
+
+    ``r`` is a non-negative radius (or array of them).  Support is ``2 h``;
+    outside it the kernel is exactly zero.
+    """
+    q = r / h
+    sigma = 21.0 / (16.0 * math.pi * h * h * h)
+    t = (1.0 - 0.5 * q).clamp_min(0.0)
+    return sigma * t.pow(4) * (2.0 * q + 1.0)
+
+
+def wendland_c2_gradient(delta: torch.Tensor, h: float,
+                          eps: float = 1.0e-12) -> torch.Tensor:
+    """``grad_{x_i} W`` for ``delta = x_i - x_j``, shape ``(..., D)``.
+
+    ``grad W = (dW/dr) (delta / r)`` with ``dW/dr = sigma f'(q) / h``; the
+    factor ``f'(0) = 0`` removes the ``r = 0`` singularity analytically.
+    """
+    r = torch.linalg.vector_norm(delta, dim=-1)
+    q = r / h
+    sigma = 21.0 / (16.0 * math.pi * h * h * h)
+    t = (1.0 - 0.5 * q).clamp_min(0.0)
+    dshape = -5.0 * q * t.pow(3)
+    scale = sigma * dshape / (h * r.clamp_min(eps))
+    return delta * scale.unsqueeze(-1)
 
 
 def pair_kernels(delta: torch.Tensor, h: float, eps: float = 1.0e-12):
