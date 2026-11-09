@@ -10,6 +10,8 @@ from .droplet_impact import (
     boundary_box,
     cubic_spline_gradient,
     cubic_spline_kernel,
+    wendland_c2_gradient,
+    wendland_c2_kernel,
     density_diffusion_rate,
     density_from_neighbor_pairs,
     diffusion_dt_limit,
@@ -94,7 +96,8 @@ from .surface_tension import (
 __all__ = [
     "Config", "SimulationUnstableError", "__version__", "acoustic_courant",
     "apply_boundary", "boundary_box", "cubic_spline_gradient",
-    "cubic_spline_kernel", "density_diffusion_rate", "density_from_neighbor_pairs",
+    "cubic_spline_kernel", "density_diffusion_rate",
+    "wendland_c2_gradient", "wendland_c2_kernel", "density_from_neighbor_pairs",
     "diffusion_dt_limit", "drop_wall_wall_pairs",
     "evaluate_acceptance", "gravity_dt_limit", "hydrostatic_density",
     "make_particles", "pair_kernels",
