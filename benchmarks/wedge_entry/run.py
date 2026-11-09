@@ -53,9 +53,9 @@ ART = ROOT / "artifacts" / "wedge_entry"
 BETAS = (10.0, 15.0, 20.0, 30.0)
 SPEEDS = (1.0, 2.0, 5.0)
 BLUNT = 45.0               # flat-plate Wagner value (rho V^2/2)(pi^2/4+1)
-LADDER_DX = (2.0e-3, 4.0e-3 / 3.0, 1.0e-3, 0.5e-3)   # L/200, L/300, L/400, L/800
+LADDER_DX = (2.0e-3, 1.0e-3, 0.5e-3, 0.25e-3)   # L/200, L/400, L/800, L/1600
 
-BASE = dict(half_width=0.20, depth=0.12, c_end=0.05, frames=21, alpha_visc=0.1)
+BASE = dict(half_width=0.20, depth=0.12, c_end=0.05, frames=21, alpha_visc=0.03, sound_speed_factor=30.0)
 
 
 def case_list() -> list[dict]:
@@ -104,7 +104,9 @@ def run_spec(spec: dict, out_dir: Path) -> dict:
             "p_max_interior_sph": r["p_max_interior"],
             "p_max_footprint_sph": r["p_max_footprint"],
             "p_centre_sph": r["p_centre"],
+            "p_near_peak_sph": r.get("p_near_peak", r["p_max_footprint"]),
             "p_centre_wagner": wagner_p_centre(V, beta, rho),
+            "p_max_wagner": wagner_pmax(V, beta, rho),
             "max_rho_ratio": r["max_rho_ratio"],
             "max_speed": r["max_speed"],
         })
@@ -247,6 +249,9 @@ def case_metrics(payload: dict) -> dict:
     # (b) peak pressure: window mean of the smooth interior maximum
     st = window_stats(frames, "p_max_interior_sph", "p_max_interior_sph", c_key="c_sph")
     out["p_max_interior"] = st
+    # peak pressure near the expected Wagner peak location
+    st_np = window_stats(frames, "p_near_peak_sph", "p_max_wagner", c_key="c_sph")
+    out["p_near_peak"] = st_np
     st_f = window_stats(frames, "p_max_footprint_sph", "p_max_footprint_sph",
                         c_key="c_sph")
     out["p_max_footprint"] = st_f
@@ -356,8 +361,11 @@ def aggregate() -> dict:
             break
     speed_cases = families.get(speed_beta, []) if speed_beta is not None else []
     if len(beta_cases) >= 3:
+        # Use p_near_peak for scaling (better captures Wagner peak)
+        p_vals = [c["p_near_peak"]["sph"] if c["p_near_peak"]["sph"] is not None 
+                  else c["p_max_interior"]["sph"] for c in beta_cases]
         a, r2 = fit_exponent([math.tan(math.radians(c["beta_deg"])) for c in beta_cases],
-                             [c["p_max_interior"]["sph"] for c in beta_cases])
+                             p_vals)
         crit["e_beta_exponent"] = a
         crit["e_beta_r2"] = r2
         crit["e_beta_target"] = -2.0
@@ -372,8 +380,9 @@ def aggregate() -> dict:
     else:
         crit["e_pass"] = None
     if len(speed_cases) >= 3:
-        a, r2 = fit_exponent([c["velocity"] for c in speed_cases],
-                             [c["p_max_interior"]["sph"] for c in speed_cases])
+        p_vals = [c["p_near_peak"]["sph"] if c["p_near_peak"]["sph"] is not None 
+                  else c["p_max_interior"]["sph"] for c in speed_cases]
+        a, r2 = fit_exponent([c["velocity"] for c in speed_cases], p_vals)
         crit["f_speed_exponent"] = a
         crit["f_speed_r2"] = r2
         crit["f_speed_target"] = 2.0
