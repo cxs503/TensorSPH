@@ -1,7 +1,7 @@
 # Free-surface air entrainment, bubble transport and aerated drag
 
 Campaign node **P165W2-N04** (TensorSPH).  Module: `src/tensorsph/aeration`.
-Report generated from `benchmarks/aeration/report.json` (2026-11-10T10:19:19+00:00, torch 2.7.1).
+Report generated from `benchmarks/aeration/report.json` (2026-11-10T14:31:07+00:00, torch 2.7.1).
 
 ## 1. Case introduction
 
@@ -199,5 +199,5 @@ python benchmarks/aeration/make_doc.py  # regenerate this document
 python -m pytest tests/test_aeration.py -q
 ```
 
-Test suite: `31 passed, 1 warning in 17.18s`.
+Test suite: `31 passed, 1 warning in 12.91s`.
 
