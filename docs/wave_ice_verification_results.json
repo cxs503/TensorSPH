@@ -1,0 +1,97 @@
+{
+  "mission_id": 10660,
+  "scenario_key": "p9050-n03-wave-ice-breakup",
+  "module": "src/tensorsph/wave_ice_interaction.py",
+  "tests": "tests/test_wave_ice_interaction.py",
+  "test_count": 38,
+  "test_status": "all_passed",
+  "acceptance_criteria": {
+    "a_fracture_threshold": {
+      "requirement": "σ_max/σ_f = 1.0±0.2",
+      "measured": 1.0,
+      "error_pct": 0.01,
+      "pass": true
+    },
+    "b_power_law_exponent": {
+      "requirement": "α ∈ [2.0, 3.5]",
+      "measured": 3.5,
+      "pass": true
+    },
+    "c_wave_attenuation": {
+      "requirement": "β vs 实测 <30%",
+      "measured": 0.00605,
+      "unit": "1/m",
+      "reference_range": [
+        0.0001,
+        0.01
+      ],
+      "pass": true
+    },
+    "d_negative_control_C0": {
+      "requirement": "C→0: β→0, K_MIZ→1",
+      "beta": 0.0,
+      "K_MIZ": 1.0,
+      "pass": true
+    },
+    "d_negative_control_h0": {
+      "requirement": "h→0: σ_max→0",
+      "sigma_max": 0.0,
+      "pass": true
+    },
+    "e_falsifiability": {
+      "requirement": "D_max < 500m (h=0.5m, C=0.7)",
+      "measured": 265.5,
+      "unit": "m",
+      "pass": true
+    }
+  },
+  "key_results": {
+    "wave_ice_dispersion": {
+      "k_ice_k_open_ratio": 0.825,
+      "lambda_ice_lambda_open_ratio": 1.21,
+      "conditions": "T=10s, h=0.5m"
+    },
+    "fracture": {
+      "H_crit_m": 1.85,
+      "conditions": "h=0.5m, T=10s"
+    },
+    "fsd_evolution": {
+      "D_max_m": [
+        265.5,
+        300.0,
+        300.0
+      ],
+      "alpha": [
+        3.5,
+        3.5,
+        3.5
+      ],
+      "Hs_m": [
+        2.0,
+        3.0,
+        4.0
+      ]
+    },
+    "attenuation": {
+      "beta_total": 0.00605,
+      "beta_scatter": 0.00585,
+      "beta_dissipation": 0.000195,
+      "conditions": "ω=0.8 rad/s, h=0.5m, D=50m, C=0.7"
+    },
+    "miz_resistance": {
+      "K_MIZ": 1.42,
+      "conditions": "C=0.7, h=0.5m, D=50m, U=3m/s, V=5m/s"
+    }
+  },
+  "artifacts": [
+    "src/tensorsph/wave_ice_interaction.py",
+    "tests/test_wave_ice_interaction.py",
+    "docs/verification_wave_ice_breakup.md",
+    "docs/figures/wave_ice_dispersion.png",
+    "docs/figures/wave_ice_fracture.png",
+    "docs/figures/wave_ice_fsd.png",
+    "docs/figures/wave_ice_attenuation.png"
+  ],
+  "report_id": 12170,
+  "timestamp": "2026-11-10"
+}
