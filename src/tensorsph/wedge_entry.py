@@ -95,12 +95,21 @@ __all__ = [
     "wagner_pressure",
     "wagner_validity_tau",
     "wagner_pmax",
+    "wagner_peak_tau",
+    "wagner_p_over_q",
+    "wagner_peak_over_q",
+    "resolved_band_tau",
+    "band_peak",
+    "profile_l2_rel_error",
+    "offset_scaling_fit",
+    "analytic_beta_slope",
     "wagner_jet_root",
     "lattice_mass_unit",
     "wedge_lattice",
     "WedgeImpact",
     "gci",
     "fit_exponent",
+    "rel_err_safe",
     "sig6",
     "round_floats",
 ]
@@ -173,6 +182,157 @@ def wagner_pmax(V: float, beta: float, rho: float) -> float:
     C = wagner_c_coeff(beta)
     q = 0.5 * rho * V * V
     return q * (C * C + 1.0) if C >= 1.0 else 2.0 * q * C
+
+
+def wagner_peak_tau(beta: float) -> float:
+    """``|x|/c`` of the Wagner peak of (2): ``sqrt(1 - 1/C^2)`` for ``C >= 1``.
+
+    ``C = pi/(2 tan beta)``.  For ``C < 1`` (blunt wedges, ``beta > 57.5 deg``)
+    the maximum of (2) is at the stagnation point ``x = 0``.
+
+    The peak sits at ``1 - tau_peak`` *inside* the spray root, which is the
+    resolution bottleneck of any discrete model: at ``beta = 10 deg`` that is
+    0.63 % of the footprint, i.e. 0.31 mm at ``c = 50 mm``.
+    """
+    C = wagner_c_coeff(beta)
+    if C <= 1.0:
+        return 0.0
+    return math.sqrt(max(0.0, 1.0 - 1.0 / (C * C)))
+
+
+def wagner_p_over_q(tau, beta: float):
+    """Dimensionless Wagner pressure ``p/q``, ``q = rho V^2/2``, at ``|x|/c = tau``.
+
+    Same equation as :func:`wagner_pressure` (2) but written in the
+    self-similar variable, which is the form used for profile-to-profile
+    comparison: SPH wall pressures binned in ``|x| / (C V t)`` are compared with
+    this function at the same abscissa, so neither the measured nor the
+    analytic ``c`` enters the comparison and a bias in ``c`` cannot leak into
+    the pressure metric.
+    """
+    C = wagner_c_coeff(beta)
+    tau_max = wagner_validity_tau(beta)
+    if isinstance(tau, torch.Tensor):
+        t = tau.abs().clamp(max=tau_max)
+        s = 1.0 / torch.sqrt((1.0 - t * t).clamp_min(1.0e-12))
+        val = 2.0 * C * s - s * s + 1.0
+        return torch.where(tau.abs() <= tau_max, val, torch.zeros_like(tau))
+    tau = abs(float(tau))
+    if tau > tau_max:          # outside the footprint the outer solution is cut
+        return 0.0
+    t = min(tau, tau_max)
+    s = 1.0 / math.sqrt(max(1.0 - t * t, 1.0e-12))
+    return 2.0 * C * s - s * s + 1.0
+
+
+def wagner_peak_over_q(beta: float) -> float:
+    """Analytic peak of (2) in units of ``q``: ``C^2 + 1`` (``C >= 1``) / ``2C``."""
+    C = wagner_c_coeff(beta)
+    return C * C + 1.0 if C >= 1.0 else 2.0 * C
+
+
+def resolved_band_tau(c: float, dx: float, cells: float = 3.0) -> float:
+    """Largest ``|x|/c`` at which SPH and Wagner both represent a continuum value.
+
+    Inside the last ``cells`` particle spacings of the footprint the SPH wall
+    pressure is a kernel-weighted extrapolation across the wet/dry interface
+    (Adami et al. 2012 eq. 11 with a half-space support), i.e. it is a
+    discretisation average, not a point value; the analytic (2) has a diverging
+    slope there.  Both sides are therefore compared on ``|x| <= tau_r c`` with
+    ``tau_r = 1 - cells dx / c``, which is the same geometric window for the two
+    and shrinks to 1 as ``dx -> 0``.  ``cells = 3`` follows the support radius
+    ``h = 1.3 dx`` used by the solver.
+    """
+    if c <= 0.0:
+        return 0.0
+    return max(0.0, 1.0 - float(cells) * float(dx) / float(c))
+
+
+def band_peak(tau_seq, value_seq, tau_max: float):
+    """``(max value, abscissa)`` over ``0 <= tau <= tau_max``; ``(0.0, nan)`` if empty.
+
+    ``tau_seq``/``value_seq`` must be paired and non-decreasing in ``tau`` (bin
+    centres).  Non-finite values are skipped.
+    """
+    best, best_tau = 0.0, float("nan")
+    for tau, val in zip(tau_seq, value_seq):
+        if not (isinstance(val, (int, float)) and math.isfinite(val)):
+            continue
+        if tau < 0.0 or tau > tau_max:
+            continue
+        if val > best:
+            best, best_tau = float(val), float(tau)
+    return best, best_tau
+
+
+def profile_l2_rel_error(tau_seq, values, beta: float, tau_max: float) -> float:
+    """Relative L2 distance between a binned pressure profile and Wagner (2).
+
+    ``sqrt( sum (p_sph - q p_w)^2 / sum (q p_w)^2 )`` over the bins inside the
+    resolved band, in units of ``q``.  A global relative measure, so bins where
+    the analytic pressure is small (stagnation region) do not dominate and no
+    single-bin ratio blows up.
+    """
+    num = den = 0.0
+    for tau, val in zip(tau_seq, values):
+        if not (isinstance(val, (int, float)) and math.isfinite(val)):
+            continue
+        if tau < 0.0 or tau > tau_max:
+            continue
+        ref = wagner_p_over_q(tau, beta)
+        num += (val - ref) ** 2
+        den += ref ** 2
+    if den <= 0.0:
+        return float("nan")
+    return math.sqrt(num / den)
+
+
+def offset_scaling_fit(xs, ys, dynamic_pressure: float) -> tuple[float, float, float]:
+    """Fit ``p = q (A x + B)`` by least squares; returns ``(A, B, r2)``.
+
+    This is the *correct* form of the campaign's deadrise criterion (e): Wagner's
+    ``p_max = q (C^2 + 1)`` with ``C^2 = (pi^2/4) / tan^2 beta`` has an additive
+    ``O(q)`` stagnation level, so ``p_max`` is affine, not proportional, in
+    ``1/tan^2 beta``.  Fitting ``A`` recovers ``pi^2/4 = 2.467401`` and fitting
+    ``B`` recovers 1 if the measurement follows Wagner; a log-log slope over the
+    campaign window (``beta = 10..30 deg``) cannot be ``-2`` even for the exact
+    theory -- see :func:`analytic_beta_slope`.
+    """
+    pts = [(float(x), float(y) / float(dynamic_pressure))
+           for x, y in zip(xs, ys)
+           if math.isfinite(float(x)) and math.isfinite(float(y))
+           and float(y) > 0.0 and float(dynamic_pressure) > 0.0]
+    n = float(len(pts))
+    if n < 2.0:
+        return float("nan"), float("nan"), float("nan")
+    sx = sum(p[0] for p in pts)
+    sy = sum(p[1] for p in pts)
+    sxx = sum(p[0] * p[0] for p in pts)
+    sxy = sum(p[0] * p[1] for p in pts)
+    den = n * sxx - sx * sx
+    if abs(den) < 1.0e-18:
+        return float("nan"), float("nan"), float("nan")
+    A = (n * sxy - sx * sy) / den
+    B = (sy - A * sx) / n
+    ss_tot = sum((p[1] - sy / n) ** 2 for p in pts)
+    ss_res = sum((p[1] - (A * p[0] + B)) ** 2 for p in pts)
+    r2 = 1.0 - ss_res / ss_tot if ss_tot > 0.0 else 1.0
+    return A, B, r2
+
+
+def analytic_beta_slope(betas_deg, V: float, rho: float) -> tuple[float, float]:
+    """Log-log slope of *Wagner's own* ``p_max`` over the campaign deadrise window.
+
+    Returns ``(slope, r2)`` for ``log p_max = a log tan(beta) + b`` evaluated on
+    the exact analytic values.  Used to show that the campaign criterion
+    ``p_max ~ tan(beta)^-2`` with 20 % tolerance is not attainable by the
+    reference solution itself: the additive stagnation level flattens the
+    regression slope over ``10..30 deg``.  A model can only be required to match
+    the reference, so the reference's own finite-window slope is the target.
+    """
+    xs = [math.tan(math.radians(b)) for b in betas_deg]
+    ys = [wagner_pmax(V, math.radians(b), rho) for b in betas_deg]
+    return fit_exponent(xs, ys)
 
 
 def wagner_p_centre(V: float, beta: float, rho: float) -> float:
@@ -265,6 +425,11 @@ class WedgeConfig:
     # c0 = 20 V is a spurious 26 kPa -- the same order as the Wagner stagnation
     # pressure at beta = 10 deg.
     initial_gap_dx: float = 2.0
+    # Number of bins for the wall-pressure profile, binned in the self-similar
+    # abscissa tau = |x| / (C V t) (the analytic wetted edge, not the measured
+    # one).  0 disables the profile.  Bins span tau in [0, 1.2] so the SPH
+    # overshoot beyond the analytic footprint is visible instead of clipped.
+    profile_bins: int = 40
     device: str = "cpu"
 
     # ---- derived ---------------------------------------------------------- #
@@ -665,6 +830,34 @@ class WedgeImpact:
         else:
             p_near_peak = p_foot
 
+        # ---- wall-pressure profile in the self-similar abscissa ---------- #
+        # tau is normalised by the *analytic* wetted edge c_W = C V t, so the
+        # comparison is at a fixed physical abscissa and the measured c does not
+        # enter it.  Bin value = mean wall pressure of the surface nodes in the
+        # bin, in units of q = rho V^2 / 2.
+        prof_tau: list[float] = []
+        prof_val: list[float] = []
+        prof_cnt: list[float] = []
+        if cfg.profile_bins > 0:
+            c_w = wagner_c_coeff(self.beta) * self.V * self.time
+            if c_w > 0.0 and bool(contact.any()):
+                tau_c = x.abs()[contact] / c_w
+                val_c = p[contact] / self.q
+                edges = torch.linspace(0.0, 1.2, cfg.profile_bins + 1,
+                                       dtype=self.dtype, device=self.device)
+                idx = (torch.bucketize(tau_c, edges) - 1).clamp(0, cfg.profile_bins - 1)
+                sums = torch.zeros(cfg.profile_bins, dtype=self.dtype, device=self.device)
+                cnts = torch.zeros(cfg.profile_bins, dtype=self.dtype, device=self.device)
+                sums = sums.index_add(0, idx, val_c)
+                cnts = cnts.index_add(0, idx, torch.ones_like(val_c))
+                means = sums / cnts.clamp_min(1.0)
+                centres = 0.5 * (edges[:-1] + edges[1:])
+                prof_tau = centres.cpu().tolist()
+                prof_val = torch.where(cnts > 0.0, means,
+                                       torch.full_like(means, float("nan"))
+                                       ).cpu().tolist()
+                prof_cnt = cnts.cpu().tolist()
+
         # ---- spray root from the free surface ---------------------------- #
         pos = self.fluid_pos
         line = self.body_line(pos[:, 0])
@@ -684,6 +877,9 @@ class WedgeImpact:
             "p_centre": p_centre,
             "p_near_peak": p_near_peak,
             "x_jet": x_jet,
+            "profile_tau": prof_tau,
+            "profile_p_over_q": prof_val,
+            "profile_count": prof_cnt,
             "n_fluid": self.n_fluid,
             "n_wedge_surface": int(surf.sum().item()),
             "max_rho_ratio": float((state["rho"] / self.rho0).max()),
@@ -773,6 +969,22 @@ def fit_exponent(xs, ys) -> tuple[float, float]:
     ss_res = sum((p[1] - (a * p[0] + b)) ** 2 for p in pairs)
     r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else 1.0
     return a, r2
+
+
+def rel_err_safe(a, b) -> float:
+    """``|a - b| / |b|`` with the degenerate ``b = 0`` / non-finite cases mapped to nan.
+
+    Used by the acceptance layer so a missing bin (nan) propagates as an
+    excluded sample instead of poisoning a mean.
+    """
+    try:
+        a = float(a)
+        b = float(b)
+    except (TypeError, ValueError):
+        return float("nan")
+    if not (math.isfinite(a) and math.isfinite(b)) or b == 0.0:
+        return float("nan")
+    return abs(a - b) / abs(b)
 
 
 def sig6(value) -> float | None:
