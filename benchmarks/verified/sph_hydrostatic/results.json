@@ -1,0 +1,165 @@
+{
+ "config": {
+  "dx": 0.02,
+  "tank_width": 1.0,
+  "depth": 0.4,
+  "seconds": 2.0,
+  "dt": 0.0003899395593682979,
+  "steps": 5129,
+  "particles": 1000,
+  "bands": 8,
+  "hydrostatic_init": true,
+  "gravity": 9.81,
+  "gravity_reference": 9.81,
+  "sound_speed": 20.0,
+  "samples": 128,
+  "average_from": 0.5,
+  "free_surface_height": 0.4,
+  "n_particles": 1000,
+  "min_particles": 1000
+ },
+ "measured": {
+  "bands": [
+   {
+    "band": 0,
+    "y": 0.027305718511343002,
+    "y_low": 0.0,
+    "y_high": 0.05,
+    "particles": 134,
+    "pressure": 3635.921142578125,
+    "pressure_analytic": 3656.130901403725,
+    "rel_error_pct": -0.5527635462351982,
+    "free_surface": false,
+    "fluctuation_pct": 6.48564338684082
+   },
+   {
+    "band": 1,
+    "y": 0.07581799477338791,
+    "y_low": 0.05,
+    "y_high": 0.1,
+    "particles": 116,
+    "pressure": 3167.772705078125,
+    "pressure_analytic": 3180.2254712730646,
+    "rel_error_pct": -0.3915686578648366,
+    "free_surface": false,
+    "fluctuation_pct": 7.039124488830566
+   },
+   {
+    "band": 2,
+    "y": 0.12789036333560944,
+    "y_low": 0.1,
+    "y_high": 0.15000000000000002,
+    "particles": 138,
+    "pressure": 2642.052490234375,
+    "pressure_analytic": 2669.3955356776714,
+    "rel_error_pct": -1.0243159950574703,
+    "free_surface": false,
+    "fluctuation_pct": 7.635019779205322
+   },
+   {
+    "band": 3,
+    "y": 0.17665331065654755,
+    "y_low": 0.15000000000000002,
+    "y_high": 0.2,
+    "particles": 112,
+    "pressure": 2167.728759765625,
+    "pressure_analytic": 2191.0310224592686,
+    "rel_error_pct": -1.0635295646105696,
+    "free_surface": false,
+    "fluctuation_pct": 8.337227821350098
+   },
+   {
+    "band": 4,
+    "y": 0.22755900025367737,
+    "y_low": 0.2,
+    "y_high": 0.25,
+    "particles": 136,
+    "pressure": 1695.7076416015625,
+    "pressure_analytic": 1691.6462075114252,
+    "rel_error_pct": 0.24008767744125503,
+    "free_surface": false,
+    "fluctuation_pct": 8.97782039642334
+   },
+   {
+    "band": 5,
+    "y": 0.27606359124183655,
+    "y_low": 0.25,
+    "y_high": 0.30000000000000004,
+    "particles": 114,
+    "pressure": 1211.7066650390625,
+    "pressure_analytic": 1215.8161699175837,
+    "rel_error_pct": -0.33800380190697443,
+    "free_surface": false,
+    "fluctuation_pct": 11.527034759521484
+   },
+   {
+    "band": 6,
+    "y": 0.32704809308052063,
+    "y_low": 0.30000000000000004,
+    "y_high": 0.35000000000000003,
+    "particles": 134,
+    "pressure": 674.6690673828125,
+    "pressure_analytic": 715.6582068800928,
+    "rel_error_pct": -5.727474247234896,
+    "free_surface": true,
+    "fluctuation_pct": 24.946666717529297
+   },
+   {
+    "band": 7,
+    "y": 0.3749934434890747,
+    "y_low": 0.35000000000000003,
+    "y_high": 0.4,
+    "particles": 116,
+    "pressure": 236.5690460205078,
+    "pressure_analytic": 245.31431937217735,
+    "rel_error_pct": -3.564925754864596,
+    "free_surface": true,
+    "fluctuation_pct": 222.245361328125
+   }
+  ],
+  "max_band_error_pct": 1.0635295646105696,
+  "mean_band_error_pct": 0.6017115405193839,
+  "surface_band_error_pct": -3.564925754864596,
+  "max_band_error_pct_instantaneous": 17.61368798374725,
+  "gated_bands": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5
+  ],
+  "support_band_width": 0.052000000000000005,
+  "n_particles": 1000,
+  "particle_requirement_met": true,
+  "free_surface_bands": [
+   6,
+   7
+  ],
+  "rung_max_band_error_pct": 5.727474247234896,
+  "shelf_band_error_pct": -5.727474247234896
+ },
+ "gate": {
+  "quantity": "max interior band pressure error vs rho0 g (H - z)",
+  "measured_pct": 1.0635295646105696,
+  "limit_pct": 2.0,
+  "n_particles": 1000,
+  "min_particles": 1000,
+  "particles_ok": true,
+  "pass": true
+ },
+ "control": {
+  "case": "hydrostatic_zero_density_control",
+  "eos_at_zero_density": 0.0,
+  "eos_pointwise_zero": true,
+  "eos_finite": true,
+  "eos_non_negative": true,
+  "empty_domain_ok": true,
+  "single_particle_zero_rho_ok": true,
+  "single_particle_density": 100.0,
+  "single_particle_pressure": 0.0,
+  "pass": true
+ },
+ "run_id": 3,
+ "control_run_id": 4
+}
