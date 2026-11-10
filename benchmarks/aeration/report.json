@@ -1,0 +1,425 @@
+{
+  "campaign_node": "P165W2-N04",
+  "repository": "TensorSPH",
+  "module": "src/tensorsph/aeration",
+  "generated_utc": "2026-11-10T10:19:19+00:00",
+  "torch_version": "2.7.1",
+  "criteria": {
+    "C1": {
+      "description": "inception Froude / criterion constant vs Chanson",
+      "measured": 0.0,
+      "threshold": 0.1,
+      "comparison": "<=",
+      "passed": true
+    },
+    "C2": {
+      "description": "steady void fraction profile vs erf anchor (relative L2)",
+      "measured": 0.09538235539608708,
+      "threshold": 0.15,
+      "comparison": "<=",
+      "passed": true
+    },
+    "C3": {
+      "description": "friction reduction vs Chisholm multiplier (relative)",
+      "measured": 0.13100111427361752,
+      "threshold": 0.2,
+      "comparison": "<=",
+      "passed": true
+    },
+    "C4": {
+      "description": "bubble rise velocity vs Mendelson, R = 0.5-5 mm (relative)",
+      "measured": 0.0,
+      "threshold": 0.1,
+      "comparison": "<=",
+      "passed": true
+    },
+    "C5": {
+      "description": "air volume drift per characteristic time (relative)",
+      "measured": 0.0037086075452300027,
+      "threshold": 0.05,
+      "comparison": "<=",
+      "passed": true
+    },
+    "C6": {
+      "description": "pytest suite for tensorsph.aeration (count, minimum)",
+      "measured": 31.0,
+      "threshold": 15.0,
+      "comparison": ">=",
+      "passed": true
+    }
+  },
+  "all_criteria_passed": true,
+  "inception": {
+    "cavity_fraction": 0.5,
+    "empirical_constant": 1.0,
+    "derived_constant": 1.0,
+    "constant_rel_error": 0.0,
+    "onset_rel_error": 1.5028566806538268e-15,
+    "reference_depth": 0.05,
+    "reference_angle_deg": 15.0,
+    "inception_velocity_at_reference": 2.6594704206336766,
+    "slope_table": [
+      {
+        "slope_deg": 5.0,
+        "inception_velocity": 8.020392284586183,
+        "inception_froude": 11.45186196672367,
+        "parameter_at_onset": 8.028412676869887e-06
+      },
+      {
+        "slope_deg": 10.0,
+        "inception_velocity": 4.0024416140563455,
+        "inception_froude": 5.7148587335474526,
+        "parameter_at_onset": 4.006444055669961e-06
+      },
+      {
+        "slope_deg": 15.0,
+        "inception_velocity": 2.6594704206336766,
+        "inception_froude": 3.797306550729742,
+        "parameter_at_onset": 2.6621298910540174e-06
+      },
+      {
+        "slope_deg": 30.0,
+        "inception_velocity": 1.3035113510150456,
+        "inception_froude": 1.8612097182041996,
+        "parameter_at_onset": 1.304814862365917e-06
+      },
+      {
+        "slope_deg": 45.0,
+        "inception_velocity": 0.8328695890378057,
+        "inception_froude": 1.1892071150027212,
+        "parameter_at_onset": 8.337024586267518e-07
+      }
+    ]
+  },
+  "hydraulic_jump": {
+    "closure": {
+      "diffusivity": 0.05,
+      "bubble_radius": 0.00015,
+      "drift_velocity": 0.029295797553226914,
+      "station_factor": 3.0,
+      "depth": 2.0,
+      "cells": 300,
+      "l2_window_factor": 1.5
+    },
+    "rows": [
+      {
+        "froude": 4.0,
+        "conjugate_depth": 0.5178908345800274,
+        "roller_velocity": 0.7649909015720185,
+        "transit_time": 2.0309686043943294,
+        "y90": 0.9013253806244069,
+        "drift_velocity": 0.029295797553226914,
+        "l2_vs_erf_anchor_drift_free": 3.121154726959761e-05,
+        "l2_vs_erf_anchor_with_drift": 0.06490166550376583,
+        "l2_vs_closed_form_with_drift": 0.0008338025729064524,
+        "max_void_fraction": 1.0
+      },
+      {
+        "froude": 5.0,
+        "conjugate_depth": 0.6588723439378913,
+        "roller_velocity": 0.7516284833215856,
+        "transit_time": 2.62977930676421,
+        "y90": 1.025627477550053,
+        "drift_velocity": 0.029295797553226914,
+        "l2_vs_erf_anchor_drift_free": 2.4174221854667405e-05,
+        "l2_vs_erf_anchor_with_drift": 0.07376900126507056,
+        "l2_vs_closed_form_with_drift": 0.0008357880654975559,
+        "max_void_fraction": 1.0
+      },
+      {
+        "froude": 6.0,
+        "conjugate_depth": 0.8,
+        "roller_velocity": 0.742840830864863,
+        "transit_time": 3.230840175015375,
+        "y90": 1.1368096014751767,
+        "drift_velocity": 0.029295797553226914,
+        "l2_vs_erf_anchor_drift_free": 3.355855646300227e-05,
+        "l2_vs_erf_anchor_with_drift": 0.08164342337675345,
+        "l2_vs_closed_form_with_drift": 0.0008385842638227075,
+        "max_void_fraction": 1.0
+      },
+      {
+        "froude": 8.0,
+        "conjugate_depth": 1.0824751652906126,
+        "roller_velocity": 0.7319923618846206,
+        "transit_time": 4.436419920435876,
+        "y90": 1.3321291109251951,
+        "drift_velocity": 0.029295797553226914,
+        "l2_vs_erf_anchor_drift_free": 0.001464123352881382,
+        "l2_vs_erf_anchor_with_drift": 0.09538235539608708,
+        "l2_vs_closed_form_with_drift": 0.0011990244529348556,
+        "max_void_fraction": 1.0
+      }
+    ],
+    "worst_l2_vs_erf_anchor": 0.09538235539608708,
+    "profile_drift_free": null
+  },
+  "bubble_rise": {
+    "band": {
+      "radius_min_m": 0.0005,
+      "radius_max_m": 0.005,
+      "samples": 12
+    },
+    "rows": [
+      {
+        "radius_mm": 0.5,
+        "model": 0.5491221222909716,
+        "mendelson": 0.5491221222909716,
+        "rigid_sphere": 0.11223341950604566,
+        "rel_error": 0.0
+      },
+      {
+        "radius_mm": 0.9090909090909091,
+        "model": 0.4222382875705389,
+        "mendelson": 0.4222382875705389,
+        "rigid_sphere": 0.19176531426209723,
+        "rel_error": 0.0
+      },
+      {
+        "radius_mm": 1.3181818181818181,
+        "model": 0.3694821748298015,
+        "mendelson": 0.3694821748298015,
+        "rigid_sphere": 0.26237022746189037,
+        "rel_error": 0.0
+      },
+      {
+        "radius_mm": 1.7272727272727275,
+        "model": 0.3439997556466468,
+        "mendelson": 0.3439997556466468,
+        "rigid_sphere": 0.3276979054643774,
+        "rel_error": 0.0
+      },
+      {
+        "radius_mm": 2.1363636363636367,
+        "model": 0.3319511153679464,
+        "mendelson": 0.3319511153679464,
+        "rigid_sphere": 0.3893767212984115,
+        "rel_error": 0.0
+      },
+      {
+        "radius_mm": 2.5454545454545454,
+        "model": 0.3274827687741908,
+        "mendelson": 0.3274827687741908,
+        "rigid_sphere": 0.44830707220979094,
+        "rel_error": 0.0
+      },
+      {
+        "radius_mm": 2.9545454545454546,
+        "model": 0.3276233291041727,
+        "mendelson": 0.3276233291041727,
+        "rigid_sphere": 0.5050533537001564,
+        "rel_error": 0.0
+      },
+      {
+        "radius_mm": 3.3636363636363638,
+        "model": 0.33069485650343255,
+        "mendelson": 0.33069485650343255,
+        "rigid_sphere": 0.5599994468530713,
+        "rel_error": 0.0
+      },
+      {
+        "radius_mm": 3.7727272727272725,
+        "model": 0.33568329185298373,
+        "mendelson": 0.33568329185298373,
+        "rigid_sphere": 0.6134218647730327,
+        "rel_error": 0.0
+      },
+      {
+        "radius_mm": 4.181818181818182,
+        "model": 0.34194655773634774,
+        "mendelson": 0.34194655773634774,
+        "rigid_sphere": 0.6655284255773529,
+        "rel_error": 0.0
+      },
+      {
+        "radius_mm": 4.590909090909091,
+        "model": 0.34906400204385374,
+        "mendelson": 0.34906400204385374,
+        "rigid_sphere": 0.7164805149824508,
+        "rel_error": 0.0
+      },
+      {
+        "radius_mm": 5.0,
+        "model": 0.35675273021931325,
+        "mendelson": 0.35675273021931325,
+        "rigid_sphere": 0.7664067605509378,
+        "rel_error": 0.0
+      }
+    ],
+    "worst_rel_error": 0.0,
+    "stokes_check": {
+      "radius": 1e-05,
+      "stokes_velocity": 0.0002169113053892216,
+      "drag_balance_velocity": 0.00021614310604769826,
+      "rel_error": 0.003541536667002722
+    },
+    "rigid_sphere_gap_at_switch": {
+      "radius": 0.0005,
+      "rigid_sphere_velocity": 0.11223341950604566,
+      "mendelson_velocity": 0.5491221222909716,
+      "ratio": 4.892679245698222
+    }
+  },
+  "drag_reduction": {
+    "closure": {
+      "mixture_flux": 5.0,
+      "diameter": 0.5,
+      "band": [
+        0.12,
+        0.3
+      ]
+    },
+    "rows": [
+      {
+        "alpha": 0.02,
+        "lockhart_martinelli_x": 729.7471795215228,
+        "chisholm_multiplier": 1.027408629863724,
+        "reduction_chisholm": 0.010181236509025915,
+        "reduction_loglaw": 0.01690513208911648,
+        "abs_gap": 0.006723895580090566,
+        "rel_deviation": 0.6604203304902768,
+        "in_band": false
+      },
+      {
+        "alpha": 0.05,
+        "lockhart_martinelli_x": 311.08150683083136,
+        "chisholm_multiplier": 1.0643021656780192,
+        "reduction_chisholm": 0.03178954797338107,
+        "reduction_loglaw": 0.04235510522295427,
+        "abs_gap": 0.010565557249573199,
+        "rel_deviation": 0.3323594679112849,
+        "in_band": false
+      },
+      {
+        "alpha": 0.08,
+        "lockhart_martinelli_x": 197.9812260493986,
+        "chisholm_multiplier": 1.101045191926344,
+        "reduction_chisholm": 0.05592192663467743,
+        "reduction_loglaw": 0.06791957289764239,
+        "abs_gap": 0.011997646262964956,
+        "rel_deviation": 0.21454279179868532,
+        "in_band": false
+      },
+      {
+        "alpha": 0.1,
+        "lockhart_martinelli_x": 158.78673237344907,
+        "chisholm_multiplier": 1.1259947695651262,
+        "reduction_chisholm": 0.07287691859377521,
+        "reduction_loglaw": 0.08502837641565542,
+        "abs_gap": 0.012151457821880207,
+        "rel_deviation": 0.16673945683150942,
+        "in_band": false
+      },
+      {
+        "alpha": 0.12,
+        "lockhart_martinelli_x": 132.058766550725,
+        "chisholm_multiplier": 1.1515050678491352,
+        "reduction_chisholm": 0.09035489535801067,
+        "reduction_loglaw": 0.10219148732998617,
+        "abs_gap": 0.011836591971975507,
+        "rel_deviation": 0.13100111427361752,
+        "in_band": true
+      },
+      {
+        "alpha": 0.16,
+        "lockhart_martinelli_x": 97.75507790344832,
+        "chisholm_multiplier": 1.2046975980867585,
+        "reduction_chisholm": 0.1265427400150445,
+        "reduction_loglaw": 0.1366866768715711,
+        "abs_gap": 0.010143936856526592,
+        "rel_deviation": 0.0801621401221484,
+        "in_band": true
+      },
+      {
+        "alpha": 0.2,
+        "lockhart_martinelli_x": 76.53321284432411,
+        "chisholm_multiplier": 1.2614951793983833,
+        "reduction_chisholm": 0.16401067477297449,
+        "reduction_loglaw": 0.1714180395615701,
+        "abs_gap": 0.007407364788595605,
+        "rel_deviation": 0.04516391874400229,
+        "in_band": true
+      },
+      {
+        "alpha": 0.25,
+        "lockhart_martinelli_x": 59.07518391037536,
+        "chisholm_multiplier": 1.338838176314998,
+        "reduction_chisholm": 0.21221277826631668,
+        "reduction_loglaw": 0.2151863582745981,
+        "abs_gap": 0.002973580008281407,
+        "rel_deviation": 0.014012257096741408,
+        "in_band": true
+      },
+      {
+        "alpha": 0.3,
+        "lockhart_martinelli_x": 47.11672110112072,
+        "chisholm_multiplier": 1.4249282084970478,
+        "reduction_chisholm": 0.2615877908871339,
+        "reduction_loglaw": 0.25937800377355125,
+        "abs_gap": 0.002209787113582662,
+        "rel_deviation": 0.008447592703346421,
+        "in_band": true
+      },
+      {
+        "alpha": 0.35,
+        "lockhart_martinelli_x": 38.36690212133163,
+        "chisholm_multiplier": 1.5219619782862601,
+        "reduction_chisholm": 0.31186939252412826,
+        "reduction_loglaw": 0.3040298426836293,
+        "abs_gap": 0.00783954984049895,
+        "rel_deviation": 0.02513728512134268,
+        "in_band": false
+      }
+    ],
+    "worst_rel_deviation_in_band": 0.13100111427361752,
+    "worst_alpha_in_band": 0.12,
+    "low_alpha_note": {
+      "worst_rel_deviation_outside_band": 0.6604203304902768,
+      "alpha_of_worst": 0.02,
+      "abs_gap_of_worst": 0.006723895580090566
+    }
+  },
+  "conservation": {
+    "characteristic_time": 2.0,
+    "steps_per_characteristic_time": 1500,
+    "bubble_count": 4000,
+    "drift_velocity": 0.029295797553226914,
+    "diffusivity": 0.05,
+    "chunks": [
+      {
+        "time": 2.0,
+        "count": 4000
+      },
+      {
+        "time": 4.0,
+        "count": 4000
+      },
+      {
+        "time": 6.0,
+        "count": 4000
+      },
+      {
+        "time": 8.0,
+        "count": 4000
+      }
+    ],
+    "lagrangian_volume_drift": 0.0,
+    "escape_closure_error": 1.4901161193847656e-08,
+    "escape_fraction": 0.8337500095367432,
+    "sph_prescribed_void_fraction": 0.05,
+    "sph_measured_void_fraction": 0.0501854303772615,
+    "sph_rel_error": 0.0037086075452300027,
+    "max_volume_drift": 0.0037086075452300027
+  },
+  "tests": {
+    "command": "/usr/local/bin/python -m pytest tests/test_aeration.py -q",
+    "summary": "31 passed, 1 warning in 17.18s",
+    "passed": 31,
+    "returncode": 0
+  },
+  "figures": [
+    "aeration_profile_and_rise_velocity.png",
+    "drag_reduction.png",
+    "inception_froude.png"
+  ]
+}
