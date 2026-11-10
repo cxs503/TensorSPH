@@ -1,0 +1,301 @@
+{
+  "case": "Rayleigh-Plateau liquid column (TensorSPH, 3-D periodic)",
+  "environment": {
+    "torch": "2.7.1",
+    "dtype": "float64",
+    "device": "cpu",
+    "threads": 128
+  },
+  "analytic": {
+    "most_unstable_kR": 0.6970188984933522,
+    "most_unstable_kR_literature": 0.697,
+    "most_unstable_kR_error": 2.7114050720644656e-05,
+    "naive_kR_without_bessel": 0.5773502691896258,
+    "most_unstable_lambda_over_R": 9.014368650205991,
+    "most_unstable_lambda_over_R_literature": 9.02,
+    "most_unstable_lambda_over_R_error": -0.0006243181589808966,
+    "omega_at_x_star": 6.268478395799154,
+    "capillary_time": 0.05477225575051661,
+    "omega_times_capillary_time": 0.3433387018612994,
+    "ohnesorge": 0.0015214515486254615,
+    "inviscid_anchor_valid": true,
+    "slender_jet_relative_difference": -5.625085292482179e-05,
+    "planar_strip_omega2": 68.00633607542491,
+    "planar_strip_stable": true,
+    "dispersion_curve": [
+      {
+        "kR": 0.05,
+        "omega": 0.6445891492121899,
+        "omega_naive": 4.077376607575023
+      },
+      {
+        "kR": 0.1,
+        "omega": 1.2837215163741647,
+        "omega_naive": 5.744562646538029
+      },
+      {
+        "kR": 0.15,
+        "omega": 1.9118979945713792,
+        "omega_naive": 6.991065727054781
+      },
+      {
+        "kR": 0.2,
+        "omega": 2.523531627844281,
+        "omega_naive": 8.0
+      },
+      {
+        "kR": 0.25,
+        "omega": 3.112895330289451,
+        "omega_naive": 8.838834764831844
+      },
+      {
+        "kR": 0.3,
+        "omega": 3.674058498665971,
+        "omega_naive": 9.539392014169456
+      },
+      {
+        "kR": 0.35,
+        "omega": 4.20080676473648,
+        "omega_naive": 10.11805317242403
+      },
+      {
+        "kR": 0.4,
+        "omega": 4.686536777665944,
+        "omega_naive": 10.583005244258363
+      },
+      {
+        "kR": 0.45,
+        "omega": 5.1241139648923975,
+        "omega_naive": 10.937321427113678
+      },
+      {
+        "kR": 0.5,
+        "omega": 5.505674488434658,
+        "omega_naive": 11.180339887498949
+      },
+      {
+        "kR": 0.55,
+        "omega": 5.822340716268993,
+        "omega_naive": 11.308182877898641
+      },
+      {
+        "kR": 0.6,
+        "omega": 6.063797517794501,
+        "omega_naive": 11.31370849898476
+      },
+      {
+        "kR": 0.65,
+        "omega": 6.21763356968946,
+        "omega_naive": 11.185928660598545
+      },
+      {
+        "kR": 0.7,
+        "omega": 6.268261118874026,
+        "omega_naive": 10.908712114635714
+      },
+      {
+        "kR": 0.75,
+        "omega": 6.195018654752649,
+        "omega_naive": 10.458250331675945
+      },
+      {
+        "kR": 0.8,
+        "omega": 5.9685193177925076,
+        "omega_naive": 9.797958971132712
+      },
+      {
+        "kR": 0.85,
+        "omega": 5.542657769227959,
+        "omega_naive": 8.8670739254841
+      },
+      {
+        "kR": 0.9,
+        "omega": 4.833292935177011,
+        "omega_naive": 7.549834435270749
+      },
+      {
+        "kR": 0.95,
+        "omega": 3.6368422422952795,
+        "omega_naive": 5.5565276927232174
+      },
+      {
+        "kR": 1.0,
+        "omega": 0.0,
+        "omega_naive": 0.0
+      }
+    ]
+  },
+  "curvature": [
+    {
+      "radius_over_dx": 3,
+      "estimator": "profile",
+      "particles": 992,
+      "relative_error": 2.220446049250313e-16
+    },
+    {
+      "radius_over_dx": 3,
+      "estimator": "mls",
+      "particles": 992,
+      "relative_error": 0.7186587498594592
+    },
+    {
+      "radius_over_dx": 3,
+      "estimator": "axisym",
+      "particles": 992,
+      "relative_error": -1.3040909533686518
+    },
+    {
+      "radius_over_dx": 4,
+      "estimator": "profile",
+      "particles": 2184,
+      "relative_error": 0.0
+    },
+    {
+      "radius_over_dx": 4,
+      "estimator": "mls",
+      "particles": 2184,
+      "relative_error": 0.47210468019386775
+    },
+    {
+      "radius_over_dx": 4,
+      "estimator": "axisym",
+      "particles": 2184,
+      "relative_error": -1.3549938663225085
+    }
+  ],
+  "initial_condition": [
+    {
+      "radius_over_dx": 3,
+      "particles": 864,
+      "epsilon_target": 0.02,
+      "epsilon_measured": 0.01940369601661174,
+      "null_mode": 0.003949116264329344,
+      "shell_radius_over_R": 0.779364109519399,
+      "radius_calibration": 1.2830973197067772,
+      "kR_actual": 0.6981317007977318,
+      "nz": 27,
+      "mass_total_over_target": 1.0000000000000002
+    },
+    {
+      "radius_over_dx": 4,
+      "particles": 1872,
+      "epsilon_target": 0.02,
+      "epsilon_measured": 0.02031003567406116,
+      "null_mode": 0.0040860778582978135,
+      "shell_radius_over_R": 0.7960435684872431,
+      "radius_calibration": 1.2562126491397252,
+      "kR_actual": 0.6981317007977318,
+      "nz": 36,
+      "mass_total_over_target": 0.9999999999999999
+    }
+  ],
+  "column_run": {
+    "kR": 0.6981317007977318,
+    "kR_requested": 0.6971,
+    "radius": 0.003,
+    "dx": 0.001,
+    "radius_over_dx": 3.0,
+    "sigma": 0.072,
+    "wavelength": 0.027,
+    "lambda_over_radius": 9.0,
+    "capillary_time": 0.019364916731037084,
+    "dt": 0.00010833333333333334,
+    "steps": 80,
+    "particles": 864,
+    "curvature": "profile",
+    "omega_measured": NaN,
+    "omega_null": 99.10836463715302,
+    "omega_analytic": 17.729848897445635,
+    "omega_error": NaN,
+    "growth_fit_r2": NaN,
+    "growth_window": [
+      NaN,
+      NaN
+    ],
+    "max_volume_error": 0.00018825186128901272,
+    "final_volume_error": -0.1392385874946741,
+    "max_density_error": 0.42883470124239575,
+    "max_velocity": 0.04028725471326297,
+    "metadata": {
+      "particles": 864,
+      "box": [
+        0.018000000000000002,
+        0.018000000000000002,
+        0.027
+      ],
+      "h": 0.0013000000000000002,
+      "dt": 0.00010833333333333334,
+      "kR": 0.6981317007977318,
+      "kR_requested": 0.6971,
+      "epsilon": 0.02,
+      "diffusion": 0.1,
+      "sound_speed": 3.0,
+      "nu": 1e-06,
+      "curvature": "profile",
+      "profile_modes": 8,
+      "radius_calibration": 1.2830973197067772,
+      "dtype": "torch.float64"
+    },
+    "sample_every": 20,
+    "wall_seconds": 40.909343004226685,
+    "closure": false,
+    "times": [
+      0.0,
+      0.002166666666666667,
+      0.004333333333333334,
+      0.006500000000000001,
+      0.008666666666666668
+    ],
+    "amplitudes": [
+      0.01940369601661174,
+      0.019576785843040383,
+      0.020114670556567703,
+      0.028045997448646307,
+      0.045981440993761225
+    ],
+    "null_amplitudes": [
+      0.003949116264329344,
+      0.003983513983295746,
+      0.004090523756476179,
+      0.010508955516270258,
+      0.007114493516230546
+    ],
+    "harmonic_amplitudes": [
+      1.7314846357203e-05,
+      1.4694616559619525e-05,
+      6.977432048846775e-06,
+      0.006530962480861691,
+      0.0029878913125429445
+    ],
+    "density_error_series": [
+      0.42883470124239575,
+      0.4253563747003051,
+      0.41503468468717664,
+      0.39688583067513794,
+      0.3692717790659451
+    ],
+    "volume_error_series": [
+      0.00018825186128901272,
+      -0.0064237164245103395,
+      -0.026241772116999962,
+      -0.065580526951035,
+      -0.1392385874946741
+    ],
+    "max_velocity_series": [
+      0.0,
+      0.009438545941460852,
+      0.019079428148822453,
+      0.02916643766812615,
+      0.04028725471326297
+    ],
+    "stability": {
+      "max_velocity_over_capillary": 0.2600531109481396,
+      "max_density_error": 0.42883470124239575,
+      "final_volume_error": -0.1392385874946741,
+      "velocity_ok": true,
+      "density_ok": false,
+      "volume_ok": false,
+      "pass": false
+    }
+  }
+}
