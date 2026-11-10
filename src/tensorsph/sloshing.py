@@ -19,7 +19,7 @@ The first-mode natural frequency (n=1) is:
 
     omega_1 = sqrt(pi * g / L * tanh(pi * H / L))
 
-For shallow water (H/L << 1): omega_1 ≈ sqrt(pi * g * H / L^2)
+For shallow water (H/L << 1): omega_1 ≈ (pi / L) * sqrt(g * H)
 For deep water (H/L >> 1): omega_1 ≈ sqrt(pi * g / L)
 
 SPH implementation
