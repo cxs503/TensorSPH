@@ -96,6 +96,7 @@ __all__ = [
     "mls_pressure_acceleration",
     "SlammingImpact",
     "force_order",
+    "compute_energy",
 ]
 
 
@@ -450,6 +451,37 @@ def mls_pressure_acceleration(p_all, rho_all, i, j, delta, gw, mass, *,
 
 
 # --------------------------------------------------------------------------- #
+# Energy computation (campaign criterion: KE+IE+PE change <= 5%)
+# --------------------------------------------------------------------------- #
+
+def compute_energy(fluid_pos, fluid_vel, fluid_rho, fluid_mass, rho0, gamma, B,
+                   g: float = 0.0, y_ref: float = 0.0):
+    """Compute kinetic + internal + potential energy of the fluid.
+
+    KE = 0.5 * sum(m_i * |v_i|^2)
+    IE = sum(m_i * e_i) where e_i = B/(rho0*(gamma-1)) * ((rho/rho0)^(gamma-1) - 1)
+         (specific internal energy for Tait EOS, zero at rho=rho0)
+    PE = sum(m_i * g * (y_i - y_ref))
+
+    Returns (KE, IE, PE) in Joules per unit span [J/m].
+    """
+    v2 = (fluid_vel ** 2).sum(dim=-1)
+    ke = 0.5 * (fluid_mass * v2).sum()
+
+    # Internal energy for Tait EOS: e = integral(p/rho^2 d rho) from rho0 to rho
+    # = B/(rho0*(gamma-1)) * ((rho/rho0)^(gamma-1) - 1)
+    ratio = fluid_rho / rho0
+    if gamma != 1.0:
+        ie_specific = B / (rho0 * (gamma - 1.0)) * (ratio ** (gamma - 1.0) - 1.0)
+    else:
+        ie_specific = B / rho0 * torch.log(ratio)
+    ie = (fluid_mass * ie_specific).sum()
+
+    pe = (fluid_mass * g * (fluid_pos[:, 1] - y_ref)).sum()
+    return float(ke), float(ie), float(pe)
+
+
+# --------------------------------------------------------------------------- #
 # 3. Solver
 # --------------------------------------------------------------------------- #
 
@@ -487,12 +519,33 @@ class SlammingImpact(WedgeImpact):
         self.use_mls = bool(cfg.mls_density)
         self._dt_last = 0.0
         self.mass_initial = float(self.fluid_mass.sum())
+        # Energy tracking
+        self.energy_initial = self._compute_energy()
+
+    def _compute_energy(self) -> dict:
+        """Compute current KE, IE, PE and total energy.
+
+        The internal energy is measured relative to rho0 (ie=0 at rho=rho0),
+        so the initial total energy is ~0 (KE=0, IE=0, PE=0 with g=0).
+        For energy drift tracking we use the characteristic kinetic energy
+        scale E0 = 0.5 * rho0 * V^2 * (2*half_width) * depth as the reference.
+        """
+        rho = self._rho_cached if hasattr(self, '_rho_cached') else self.fluid_mass / self.mass_unit * self.rho0
+        ke, ie, pe = compute_energy(
+            self.fluid_pos, self.fluid_vel, rho,
+            self.fluid_mass, self.rho0, self.cfg.gamma, self.B, g=0.0)
+        # Characteristic energy scale for normalization
+        e0 = 0.5 * self.rho0 * self.V ** 2 * (2.0 * self.cfg.half_width) * self.cfg.depth
+        return {"ke": ke, "ie": ie, "pe": pe, "total": ke + ie + pe, "e0": e0}
 
     # ---- right-hand side -------------------------------------------------- #
     def _evaluate(self, dt: float | None = None):
         """Parent RHS when both switches are off; otherwise the extended one."""
         if self.delta_coef <= 0.0 and not self.use_mls:
-            return super()._evaluate()
+            state = super()._evaluate()
+            # Cache rho for energy computation
+            self._rho_cached = state["rho"]
+            return state
         dt = self._dt_last if dt is None else float(dt)
         cfg = self.cfg
         h = self.h
@@ -540,6 +593,7 @@ class SlammingImpact(WedgeImpact):
             rho = (rho + dt * D).clamp_min(0.1 * self.rho0)
 
         pressure = (self.B * ((rho / self.rho0) ** cfg.gamma - 1.0)).clamp_min(0.0)
+        self._rho_cached = rho  # cache for energy computation
 
         # ---- Adami wall pressure ------------------------------------------ #
         n_wall = self.wall_local.shape[0]
@@ -653,6 +707,11 @@ class SlammingImpact(WedgeImpact):
         shape = (pressure_shape_l2(prof["x"], prof["p"], c, self.beta)
                  if c > 0 and prof["x"].numel() >= 4 else float("nan"))
         mass = float(self.fluid_mass.sum())
+        # Energy tracking
+        energy = self._compute_energy()
+        e0 = self.energy_initial.get("e0", 1.0)
+        # Energy drift: change in total energy relative to characteristic scale
+        energy_drift = abs(energy["total"] - self.energy_initial["total"]) / e0 if e0 > 1e-30 else 0.0
         # The wall profile is kept in the sample (not just its summary
         # statistics) so that (a) the pressure shape can be re-scored against a
         # different self-similar anchor after the run, without re-running the
@@ -676,6 +735,11 @@ class SlammingImpact(WedgeImpact):
             "n_wet": prof["n_wet"],
             "mass": mass,
             "mass_drift": abs(mass - self.mass_initial) / self.mass_initial,
+            "ke": energy["ke"],
+            "ie": energy["ie"],
+            "pe": energy["pe"],
+            "energy_total": energy["total"],
+            "energy_drift": energy_drift,
         }
 
     def run(self, frames: int | None = None, t_end: float | None = None):
@@ -726,4 +790,4 @@ def pressure_noise(x, p, p_max: float, c: float, fraction: float = 0.8) -> float
     smooth = torch.nn.functional.conv1d(
         ps.view(1, 1, -1), kern.view(1, 1, -1)).view(-1)
     resid = ps[1:-1] - smooth
-    return float(torch.sqrt((resid * resid).mean()) / p_max)
+    return float(torch.sqrt((resid ** 2).mean()) / p_max)
