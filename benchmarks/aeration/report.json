@@ -2,7 +2,7 @@
   "campaign_node": "P165W2-N04",
   "repository": "TensorSPH",
   "module": "src/tensorsph/aeration",
-  "generated_utc": "2026-11-10T10:19:19+00:00",
+  "generated_utc": "2026-11-10T14:31:07+00:00",
   "torch_version": "2.7.1",
   "criteria": {
     "C1": {
@@ -413,7 +413,7 @@
   },
   "tests": {
     "command": "/usr/local/bin/python -m pytest tests/test_aeration.py -q",
-    "summary": "31 passed, 1 warning in 17.18s",
+    "summary": "31 passed, 1 warning in 12.91s",
     "passed": 31,
     "returncode": 0
   },
