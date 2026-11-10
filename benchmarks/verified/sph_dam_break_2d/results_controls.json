@@ -1,0 +1,60 @@
+{
+ "gravity_off": {
+  "case": "dam_break_2d_gravity_off",
+  "seconds": 0.2,
+  "dx": 0.02,
+  "front_drift_over_dx": 0.0,
+  "height_drift_rel": 0.0,
+  "max_particle_displacement_over_dx": 0.0,
+  "particles": 200,
+  "steps": 641,
+  "gate": {
+   "front_drift_over_dx": 0.5,
+   "height_drift_rel": 0.01,
+   "max_particle_displacement_over_dx": 2.0
+  }
+ },
+ "gravity_off_pass": true,
+ "mass_closed": {
+  "mass_initial": 80.248046875,
+  "mass_final_inside": 80.248046875,
+  "mass_outflow": 0.0,
+  "mass_final_accounted": 80.248046875,
+  "particles_removed": 0,
+  "particles_inside_end": 200,
+  "relative_loss_accounted": 0.0,
+  "relative_loss_unaccounted": 0.0,
+  "relative_loss_accounted_at_horizon": 0.0,
+  "steps_run": 1442
+ },
+ "mass_closed_gate": {
+  "quantity": "max relative mass loss over the run (accounted)",
+  "measured": 0.0,
+  "limit": 0.001,
+  "steps_run": 1442,
+  "min_steps": 1000,
+  "steps_ok": true,
+  "pass": true
+ },
+ "mass_open": {
+  "mass_initial": 80.248046875,
+  "mass_final_inside": 57.35631561279297,
+  "mass_outflow": 22.89173224568367,
+  "mass_final_accounted": 80.24804785847664,
+  "particles_removed": 57,
+  "particles_inside_end": 143,
+  "relative_loss_accounted": 1.2255458881458856e-08,
+  "relative_loss_unaccounted": 0.28526216093289847,
+  "relative_loss_accounted_at_horizon": null,
+  "steps_run": 962
+ },
+ "mass_open_gate": {
+  "quantity": "accounted loss <= limit AND unaccounted loss >= 1 %",
+  "accounted_loss": 1.2255458881458856e-08,
+  "unaccounted_loss": 0.28526216093289847,
+  "particles_removed": 57,
+  "limit": 0.001,
+  "min_loss": 0.01,
+  "pass": true
+ }
+}

@@ -1,0 +1,14 @@
+{
+ "shipped_default": {
+  "run_id": 7,
+  "front_max_rel_error": 0.9356700689749133,
+  "front_rms_rel_error": 0.43089269113922474,
+  "ritter_ratio_mean": 0.0592940739324736
+ },
+ "density_renormalization": {
+  "run_id": 8,
+  "front_max_rel_error": 0.29509675545515845,
+  "front_rms_rel_error": 0.15028054865895296,
+  "ritter_ratio_mean": 0.362910019613913
+ }
+}
