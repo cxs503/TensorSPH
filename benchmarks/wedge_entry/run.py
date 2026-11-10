@@ -53,9 +53,23 @@ ART = ROOT / "artifacts" / "wedge_entry"
 BETAS = (10.0, 15.0, 20.0, 30.0)
 SPEEDS = (1.0, 2.0, 5.0)
 BLUNT = 45.0               # flat-plate Wagner value (rho V^2/2)(pi^2/4+1)
-LADDER_DX = (2.0e-3, 1.0e-3, 0.5e-3, 0.25e-3)   # L/200, L/400, L/800, L/1600
+# Geometric ladder (constant ratio 2, which Richardson/GCI requires).
+# dx = L/200, L/400, L/800 = 2, 1, 0.5 mm are the campaign levels; L/100 = 4 mm
+# is added as a third, cheap coarse level so the *observed* order of convergence
+# can be measured on a monotone three-level sequence (see docs, criterion (d)).
+# The 0.5 mm level of beta = 30 deg was measured to cost ~6 CPU-seconds per step
+# (~2 h on the shared control node) and did not finish inside this mission; the
+# (1 mm -> 0.5 mm) pair is instead reported for beta = 10 deg, where the fine run
+# exists (`beta10_V1_dx500`), and the observed order is transferred from the
+# three-level ladder at beta = 30 deg.
+LADDER_DX = (4.0e-3, 2.0e-3, 1.0e-3)
 
-BASE = dict(half_width=0.20, depth=0.12, c_end=0.05, frames=21, alpha_visc=0.03, sound_speed_factor=30.0)
+# Solver settings of this campaign.  c0 = 20 V is Mach 0.05 (measured density
+# excursion 1.5 % at the hardest frame, beta = 10 deg, V = 5 m/s; c0 = 10 V was
+# measured to compress the fluid by 20 % at the same point, i.e. not weakly
+# compressible), max_courant = 0.35 on the acoustic speed.  Frames: 13.
+BASE = dict(half_width=0.20, depth=0.12, c_end=0.05, frames=13, alpha_visc=0.03,
+            sound_speed_factor=20.0, max_courant=0.35)
 
 
 def case_list() -> list[dict]:
@@ -70,7 +84,10 @@ def case_list() -> list[dict]:
 
 
 def ladder_list() -> list[dict]:
-    return [{"id": f"ladder_L{200 * 2 ** 0 if lvl == 1 else int(round(0.4 / dx))}",
+    # the artefact id must come from dx, not from the level index: the level list
+    # changed when the L/100 coarse level was added, and an index-based id silently
+    # overwrote the L/200 artefact with L/100 data.
+    return [{"id": f"ladder_L{int(round(2 * BASE['half_width'] / dx))}",
              "beta_deg": 30.0, "velocity": 1.0, "dx": dx,
              "kind": "ladder", "level": lvl} for lvl, dx in
             enumerate(LADDER_DX, start=1)]
@@ -79,6 +96,10 @@ def ladder_list() -> list[dict]:
 def make_config(spec: dict) -> WedgeConfig:
     kw = dict(BASE)
     kw.update(beta_deg=spec["beta_deg"], velocity=spec["velocity"], dx=spec["dx"])
+    # optional per-case solver overrides (used by the sensitivity stage)
+    for key in ("sound_speed_factor", "alpha_visc", "c_end", "frames"):
+        if key in spec:
+            kw[key] = spec[key]
     return WedgeConfig(**kw)
 
 
@@ -109,6 +130,11 @@ def run_spec(spec: dict, out_dir: Path) -> dict:
             "p_max_wagner": wagner_pmax(V, beta, rho),
             "max_rho_ratio": r["max_rho_ratio"],
             "max_speed": r["max_speed"],
+            # wall-pressure profile in tau = |x| / (C V t) (self-similar, analytic
+            # normalisation) -- the resolved-band criteria and the profile figure
+            # are computed from these, not from the scalar maxima
+            "profile_tau": r.get("profile_tau", []),
+            "profile_p_over_q": r.get("profile_p_over_q", []),
         })
     payload = {
         "id": spec["id"],
@@ -126,6 +152,7 @@ def run_spec(spec: dict, out_dir: Path) -> dict:
             "sound_speed": cfg.sound_speed(),
             "alpha_visc": cfg.alpha_visc,
             "frames": cfg.frames,
+            "profile_bins": cfg.profile_bins,
             "n_fluid": sim.n_fluid,
             "n_wedge": sim.n_wedge,
             "steps": sim.steps,
@@ -362,7 +389,7 @@ def aggregate() -> dict:
     speed_cases = families.get(speed_beta, []) if speed_beta is not None else []
     if len(beta_cases) >= 3:
         # Use p_near_peak for scaling (better captures Wagner peak)
-        p_vals = [c["p_near_peak"]["sph"] if c["p_near_peak"]["sph"] is not None 
+        p_vals = [c["p_near_peak"]["sph"] if c["p_near_peak"]["sph"] is not None
                   else c["p_max_interior"]["sph"] for c in beta_cases]
         a, r2 = fit_exponent([math.tan(math.radians(c["beta_deg"])) for c in beta_cases],
                              p_vals)
@@ -380,7 +407,7 @@ def aggregate() -> dict:
     else:
         crit["e_pass"] = None
     if len(speed_cases) >= 3:
-        p_vals = [c["p_near_peak"]["sph"] if c["p_near_peak"]["sph"] is not None 
+        p_vals = [c["p_near_peak"]["sph"] if c["p_near_peak"]["sph"] is not None
                   else c["p_max_interior"]["sph"] for c in speed_cases]
         a, r2 = fit_exponent([c["velocity"] for c in speed_cases], p_vals)
         crit["f_speed_exponent"] = a
