@@ -1,0 +1,25 @@
+{
+  "title": "TensorSPH 入水砰击压力验证面：Wagner 附加质量 + δ-SPH 压力噪声抑制",
+  "summary": "实现了 TensorSPH 入水砰击压力验证面，包含 Wagner 附加质量锚、δ-SPH 密度扩散、MLS 密度重整化、能量追踪。新增 13 项 pytest 测试（总计 55 项），覆盖 5 项机器判据 + 负控测试。",
+  "scenario_key": "p129w2b-n06-tensorsph-slamming",
+  "mission_id": 9508,
+  "tags": ["tensorsph", "slamming", "wagner", "delta-sph", "verification"],
+  "markdown": "# TensorSPH 入水砰击压力验证面报告\n\n## 1. 案例介绍\n\n**物理背景**：刚性楔形体以恒定速度 V 垂直入水，deadrise 角 β=10/20/30°，速度 V=1-5 m/s。这是经典的 Wagner (1932) 砰击问题，用于验证 SPH 方法在强非线性自由表面流动中的压力预测能力。\n\n**几何参数**：\n- 楔形体：对称楔形，deadrise 角 β\n- 计算域：半宽 0.10 m，深度 0.05 m\n- 粒子间距：dx = 2-4 mm（收敛研究）\n\n**理论锚**：\n- 外层 Wagner 理论：湿宽半长 c(t) = πVt/(2tanβ)，附加质量 m_a = (π/2)ρc²\n- 砰击力系数 C_s = π²/tan(β)（与时间无关的自相似解）\n- 内层 Dobrovol'skaya 自相似解：**未实现**（WITHHELD），因其自由表面包裹成无限薄射流，需在 hodograph 平面求解\n\n## 2. 方法\n\n**数值方法**：弱可压缩 SPH (WCSPH)\n- Tait 状态方程：p = B[(ρ/ρ₀)^γ - 1]，B = ρ₀c₀²/γ\n- Monaghan 人工粘性 (α=0.03)\n- Adami 壁面压力外推\n- δ-SPH 密度扩散（Molteni & Colagrossi 2013）\n- MLS (Shepard) 密度重整化\n\n**关键设置**：\n- 声速 c₀ = 30V（马赫数 ~0.03）\n- 核函数：三次样条，h = 1.3dx\n- 时间步：CFL 条件，max_courant = 0.3\n\n## 3. 计算结果\n\n### 3.1 Wagner 理论验证（解析）\n\n| 判据 | 目标 | 结果 | 状态 |\n|------|------|------|------|\n| C_s 时间无关性 | 常数 | 精确成立（机器精度） | ✅ PASS |\n| m_a ~ t² 缩放 | 指数=2 | 精确成立（机器精度） | ✅ PASS |\n| F = d(m_aV)/dt | 解析一致 | 数值微分误差 < 1e-6 | ✅ PASS |\n\n### 3.2 δ-SPH 算子验证\n\n| 判据 | 目标 | 结果 | 状态 |\n|------|------|------|------|\n| δ-SPH 是拉普拉斯算子 | k_eff > 0 且与 dx 无关 | 验证通过 | ✅ PASS |\n| δ-SPH 质量守恒 | ΣV_iD_i = 0 | 误差 < 1e-10 | ✅ PASS |\n| δ-SPH 关闭时为零 | D=0 when δ=0 | 验证通过 | ✅ PASS |\n| δ-SPH 平滑噪声场 | 相关系数 < -0.9 | 验证通过 | ✅ PASS |\n\n### 3.3 砰击力峰值 vs Wagner 上限\n\n| β [deg] | V [m/s] | C_s,max | C_s,Wagner | 相对误差 | 状态 |\n|---------|---------|---------|------------|----------|------|\n| 20 | 2.0 | - | 85.89 | ≤15% | ⏳ 待集群验证 |\n| 30 | 2.0 | - | 48.37 | ≤15% | ⏳ 待集群验证 |\n\n### 3.4 压力分布形状 L2 误差\n\n| 判据 | 目标 | 结果 | 状态 |\n|------|------|------|------|\n| 平均 L2 误差 | ≤20% | - | ⏳ 待集群验证 |\n\n注：参考解为线性化 Wagner 自相似分布；非线性 Dobrovol'skaya 解未实现（WITHHELD）\n\n### 3.5 压力噪声抑制\n\n| 判据 | 目标 | 结果 | 状态 |\n|------|------|------|------|\n| RMS 噪声 | ≤10% p_max | - | ⏳ 待集群验证 |\n| 负控：δ-SPH 关闭 | 噪声 > 10% | - | ⏳ 待集群验证 |\n\n### 3.6 收敛阶\n\n| 判据 | 目标 | 结果 | 状态 |\n|------|------|------|------|\n| 力峰值收敛阶 | ≥0.5 | - | ⏳ 待集群验证 |\n\n### 3.7 能量守恒\n\n| 判据 | 目标 | 结果 | 状态 |\n|------|------|------|------|\n| KE+IE+PE 漂移 | ≤5% | - | ⏳ 待集群验证 |\n\n注：WCSPH + Tait EOS 不严格守恒能量（EOS 非哈密顿推导），此项为有界性检查\n\n## 4. 结果图\n\n### 图 1：Wagner 自相似压力分布\n\n![Wagner pressure shape](artifacts/slamming_campaign/fig1_wagner_shape.png)\n\n不同 deadrise 角下的归一化压力分布 p/p_max vs x/c。β 越小，压力峰越靠近射流根部。\n\n### 图 2：砰击力系数 vs deadrise 角\n\n![Force coefficient](artifacts/slamming_campaign/fig2_force_coefficient.png)\n\nWagner 力系数 C_s = π²/tan(β) 随 deadrise 角的变化。小 β 时 C_s 很大（砰击剧烈）。\n\n### 图 3：附加质量缩放律\n\n![Added mass scaling](artifacts/slamming_campaign/fig3_added_mass_scaling.png)\n\n直楔形附加质量 m_a ~ t²（对数坐标下斜率为 2），与弯曲截面 c ~ √t 不同。\n\n## 5. 注意点\n\n### 踩过的坑\n1. **初始间隙问题**：楔形体默认从自由面上方 2dx 处开始，导致 t_end < 接触时间时模拟在接触前结束。修复：设置 initial_gap_dx=0 或增大 c_end。\n2. **能量漂移**：WCSPH + Tait EOS 不严格守恒能量，因为 EOS 不是从哈密顿量推导的。能量漂移检查应理解为有界性检查而非严格守恒。\n3. **湿润粒子数不足**：粗网格下湿润面粒子数可能 < 3，导致噪声和形状 L2 计算返回 nan。修复：测试中设置 min_wet 阈值并跳过不足样本。\n\n### 局限\n- **Dobrovol'skaya 解未实现**：非线性自相似解需在 hodograph 平面求解，自由表面包裹成无限薄射流。本工作使用线性化 Wagner 分布作为参考（β→0 时趋近非线性解）。\n- **2D 假设**：仅验证二维楔形体入水，三维效应（如横向流动、射流破碎）未考虑。\n- **无空化**：压力钳位到 ≥ 0，未模拟空化效应。\n- **刚性体**：未考虑结构弹性响应。\n\n### 适用域（显式声明）\n- 刚性体\n- 二维流动\n- 弱可压缩（Ma < 0.1）\n- 无空化\n- 无表面张力\n- 无重力（Wagner 理论假设）\n\n## 6. 误差判定\n\n| 关键量 | 基准 | 误差 | 是否 < 阈值 |\n|--------|------|------|-------------|\n| C_s 时间无关性 | 常数 | 机器精度 | ✅ < 15% |\n| m_a 缩放指数 | 2.0 | 机器精度 | ✅ |\n| δ-SPH 质量守恒 | 0 | < 1e-10 | ✅ |\n| 解析 Wagner 噪声 | 0 | < 2% | ✅ < 10% |\n| 解析 Wagner 形状 L2 | 0 | 机器精度 | ✅ < 20% |\n| SPH 砰击力 vs Wagner | Wagner 上限 | - | ⏳ 待集群验证 |\n| SPH 压力形状 L2 | Wagner 形状 | - | ⏳ 待集群验证 |\n| SPH 压力噪声 | 10% p_max | - | ⏳ 待集群验证 |\n| 收敛阶 | ≥ 0.5 | - | ⏳ 待集群验证 |\n| 能量漂移 | ≤ 5% | - | ⏳ 待集群验证 |\n\n## 7. 测试统计\n\n- **总测试数**：55 项（test_slamming.py: 20, test_wedge_entry.py: 22, test_slamming_campaign.py: 13）\n- **解析测试**：全部通过（机器精度）\n- **算子测试**：全部通过\n- **求解器测试**：待集群验证（计算密集型）\n\n## 8. 能力声明\n\n**新增能力**：\n- `compute_energy()`: 动能+内能+势能计算函数\n- `SlammingImpact._compute_energy()`: 求解器内能量追踪\n- `SlammingImpact.slamming_sample()`: 新增 energy_drift 字段\n- `test_slamming_campaign.py`: 13 项新测试覆盖 5 项机器判据 + 负控\n\n**扩展能力**：\n- δ-SPH 密度扩散（已有，本次验证）\n- MLS 密度重整化（已有，本次验证）\n- Wagner 附加质量锚（已有，本次验证）\n",
+  "figures": [
+    {
+      "name": "wagner_pressure_shape",
+      "caption": "Wagner 自相似压力分布：不同 deadrise 角下的归一化压力 p/p_max vs x/c",
+      "png_base64": ""
+    },
+    {
+      "name": "force_coefficient_vs_beta",
+      "caption": "Wagner 砰击力系数 C_s = π²/tan(β) 随 deadrise 角的变化",
+      "png_base64": ""
+    },
+    {
+      "name": "added_mass_scaling",
+      "caption": "直楔形附加质量 m_a ~ t² 缩放律（对数坐标）",
+      "png_base64": ""
+    }
+  ]
+}
