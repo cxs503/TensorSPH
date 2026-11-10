@@ -1,0 +1,535 @@
+{
+ "M1": {
+  "dam_break_2d": {
+   "run_id": 3,
+   "created_utc": "2026-11-10T18:46:32Z",
+   "git_commit": "01dcb4afb03ea5c7ac59b26f5ab618667fc0723d",
+   "config": {
+    "aspect": 2.0,
+    "column_height": 0.4,
+    "column_width": 0.2,
+    "density_renormalization": false,
+    "dt": 0.000312,
+    "dx": 0.02,
+    "experimental_grade": "WITHHELD",
+    "experimental_reference": "/root/tp-agent/work/m10344/benchmarks/dam_break/martin_moyce_1952.json",
+    "seconds": 0.45,
+    "sound_speed": 25.0,
+    "steps": 1442,
+    "surface_pressure_closure": false,
+    "viscosity": 1e-06,
+    "wall_friction": 0.0
+   },
+   "metrics": {
+    "front_layer_max_rel_error": {
+     "value": 0.7571428571428571,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "front_max_rel_error": {
+     "value": 0.7781358154574178,
+     "unit": "1",
+     "gate_limit": 0.1,
+     "verdict": "FAIL"
+    },
+    "front_max_rel_error_including_startup": {
+     "value": 1.118080526828438,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "front_n_points": {
+     "value": 17.0,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "front_rms_rel_error": {
+     "value": 0.40105534931203385,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "gate_front_pass": {
+     "value": 0.0,
+     "unit": "bool",
+     "gate_limit": 1.0,
+     "verdict": "FAIL"
+    },
+    "gate_height_pass": {
+     "value": 1.0,
+     "unit": "bool",
+     "gate_limit": 1.0,
+     "verdict": "PASS"
+    },
+    "height_ballistic_max_rel_error": {
+     "value": 0.025047324897896767,
+     "unit": "1",
+     "gate_limit": 0.1,
+     "verdict": "PASS"
+    },
+    "height_residual_max_rel_error": {
+     "value": 0.041016474366188105,
+     "unit": "1",
+     "gate_limit": 0.1,
+     "verdict": "PASS"
+    },
+    "mass_drift_rel": {
+     "value": 0.0,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "max_density_compression": {
+     "value": 0.0572536621093751,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "max_mach": {
+     "value": 0.1406064510345459,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "particles": {
+     "value": 200.0,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "ritter_ratio_max": {
+     "value": 0.19465240586952287,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "ritter_ratio_mean": {
+     "value": 0.14125354087895442,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "ritter_ratio_min": {
+     "value": 0.08806582483245044,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "simulated_time": {
+     "value": 0.44990399999999053,
+     "unit": "s",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "steps": {
+     "value": 1442.0,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    }
+   },
+   "sql": "SELECT name, value, unit, gate_limit, verdict FROM metrics WHERE run_id=3"
+  },
+  "dam_break_2d_gravity_off": {
+   "run_id": 4,
+   "created_utc": "2026-11-10T18:46:49Z",
+   "git_commit": "01dcb4afb03ea5c7ac59b26f5ab618667fc0723d",
+   "config": {
+    "dx": 0.02,
+    "gravity": 0.0,
+    "seconds": 0.2
+   },
+   "metrics": {
+    "front_drift_over_dx": {
+     "value": 0.0,
+     "unit": "dx",
+     "gate_limit": 0.5,
+     "verdict": "PASS"
+    },
+    "gate_pass": {
+     "value": 1.0,
+     "unit": "bool",
+     "gate_limit": 1.0,
+     "verdict": "PASS"
+    },
+    "height_drift_rel": {
+     "value": 0.0,
+     "unit": "1",
+     "gate_limit": 0.01,
+     "verdict": "PASS"
+    },
+    "max_particle_displacement_over_dx": {
+     "value": 0.0,
+     "unit": "dx",
+     "gate_limit": 2.0,
+     "verdict": "PASS"
+    }
+   },
+   "sql": "SELECT name, value, unit, gate_limit, verdict FROM metrics WHERE run_id=4"
+  },
+  "dam_break_2d_resolution_check": {
+   "run_id": 11,
+   "created_utc": "2026-11-10T19:20:49Z",
+   "git_commit": "01dcb4afb03ea5c7ac59b26f5ab618667fc0723d",
+   "config": {
+    "dx_coarse": 0.01,
+    "dx_fine": 0.02
+   },
+   "metrics": {
+    "max_profile_l2_between_spacings": {
+     "value": 0.5938077636938338,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "mean_profile_l2_between_spacings": {
+     "value": 0.503947117281085,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    }
+   },
+   "sql": "SELECT name, value, unit, gate_limit, verdict FROM metrics WHERE run_id=11"
+  },
+  "dam_break_2d_surface_treatment_ab": {
+   "run_id": 8,
+   "created_utc": "2026-11-10T19:06:48Z",
+   "git_commit": "01dcb4afb03ea5c7ac59b26f5ab618667fc0723d",
+   "config": {
+    "aspect": 2.0,
+    "c0_analytic": 1.9809088823063015,
+    "column_height": 0.4,
+    "column_width": 0.2,
+    "density_diffusion": 0.0,
+    "density_renormalization": true,
+    "device": "cpu",
+    "dx": 0.04,
+    "gravity": 9.81,
+    "h_factor": 1.3,
+    "hydrostatic_init": true,
+    "max_courant": 0.3,
+    "min_neighbours": 3,
+    "sample_interval": 0.02,
+    "seconds": 0.35,
+    "sound_speed": 25.0,
+    "surface_pressure_closure": false,
+    "tank_height": 0.75,
+    "tank_width": 2.0,
+    "variant": "density_renormalization",
+    "viscosity": 1e-06,
+    "wall_friction": 0.0
+   },
+   "metrics": {
+    "front_max_rel_error": {
+     "value": 0.29509675545515845,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "front_rms_rel_error": {
+     "value": 0.15028054865895296,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "height_ballistic_max_rel_error": {
+     "value": 0.06112959975869914,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "height_residual_max_rel_error": {
+     "value": 0.04987849295139318,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "ritter_ratio_mean": {
+     "value": 0.362910019613913,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "variant_density_renormalization": {
+     "value": 1.0,
+     "unit": "bool",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "variant_surface_pressure_closure": {
+     "value": 0.0,
+     "unit": "bool",
+     "gate_limit": null,
+     "verdict": null
+    }
+   },
+   "sql": "SELECT name, value, unit, gate_limit, verdict FROM metrics WHERE run_id=8"
+  },
+  "mass_conservation_dam_break": {
+   "run_id": 5,
+   "created_utc": "2026-11-10T18:47:56Z",
+   "git_commit": "01dcb4afb03ea5c7ac59b26f5ab618667fc0723d",
+   "config": {
+    "column_height": 0.4,
+    "column_width": 0.2,
+    "dx": 0.02,
+    "horizon_steps": 1000,
+    "open_x": null,
+    "sample_every": 10,
+    "seconds": 0.45,
+    "sound_speed": 25.0,
+    "tank_height": 0.6,
+    "tank_width": 1.0,
+    "viscosity": 1e-06
+   },
+   "metrics": {
+    "gate_pass": {
+     "value": 1.0,
+     "unit": "bool",
+     "gate_limit": 1.0,
+     "verdict": "PASS"
+    },
+    "relative_loss_accounted": {
+     "value": 0.0,
+     "unit": "1",
+     "gate_limit": 0.001,
+     "verdict": "PASS"
+    },
+    "relative_loss_at_horizon": {
+     "value": 0.0,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "steps_run": {
+     "value": 1442.0,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    }
+   },
+   "sql": "SELECT name, value, unit, gate_limit, verdict FROM metrics WHERE run_id=5"
+  },
+  "mass_conservation_dam_break_open": {
+   "run_id": 6,
+   "created_utc": "2026-11-10T18:48:34Z",
+   "git_commit": "01dcb4afb03ea5c7ac59b26f5ab618667fc0723d",
+   "config": {
+    "column_height": 0.4,
+    "column_width": 0.2,
+    "dx": 0.02,
+    "horizon_steps": 1000,
+    "open_x": 0.4,
+    "sample_every": 10,
+    "seconds": 0.3,
+    "sound_speed": 25.0,
+    "tank_height": 0.6,
+    "tank_width": 1.0,
+    "viscosity": 1e-06
+   },
+   "metrics": {
+    "gate_pass": {
+     "value": 1.0,
+     "unit": "bool",
+     "gate_limit": 1.0,
+     "verdict": "PASS"
+    },
+    "particles_removed": {
+     "value": 57.0,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "relative_loss_accounted": {
+     "value": 1.2255458881458856e-08,
+     "unit": "1",
+     "gate_limit": 0.001,
+     "verdict": "PASS"
+    },
+    "relative_loss_unaccounted": {
+     "value": 0.28526216093289847,
+     "unit": "1",
+     "gate_limit": 0.01,
+     "verdict": "PASS"
+    }
+   },
+   "sql": "SELECT name, value, unit, gate_limit, verdict FROM metrics WHERE run_id=6"
+  }
+ },
+ "M2": {
+  "hydrostatic_pressure_profile": {
+   "run_id": 3,
+   "created_utc": "2026-11-10T18:55:36Z",
+   "git_commit": "01dcb4afb03ea5c7ac59b26f5ab618667fc0723d",
+   "config": {
+    "depth": 0.4,
+    "dx": 0.02,
+    "min_particles": 1000,
+    "seconds": 2.0,
+    "sound_speed": 20.0,
+    "tank_width": 1.0
+   },
+   "metrics": {
+    "gate_pass": {
+     "value": 1.0,
+     "unit": "bool",
+     "gate_limit": 1.0,
+     "verdict": "PASS"
+    },
+    "max_band_error_pct": {
+     "value": 1.0635295646105696,
+     "unit": "%",
+     "gate_limit": 2.0,
+     "verdict": "PASS"
+    },
+    "max_band_error_pct_instantaneous": {
+     "value": 17.61368798374725,
+     "unit": "%",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "mean_band_error_pct": {
+     "value": 0.6017115405193839,
+     "unit": "%",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "n_particles": {
+     "value": 1000.0,
+     "unit": "1",
+     "gate_limit": 1000.0,
+     "verdict": "PASS"
+    },
+    "steps": {
+     "value": 5129.0,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "surface_band_error_pct": {
+     "value": -3.564925754864596,
+     "unit": "%",
+     "gate_limit": null,
+     "verdict": null
+    }
+   },
+   "sql": "SELECT name, value, unit, gate_limit, verdict FROM metrics WHERE run_id=3"
+  },
+  "hydrostatic_zero_density_control": {
+   "run_id": 4,
+   "created_utc": "2026-11-10T18:55:36Z",
+   "git_commit": "01dcb4afb03ea5c7ac59b26f5ab618667fc0723d",
+   "config": {
+    "control": "rho0 = 0"
+   },
+   "metrics": {
+    "eos_at_zero_density": {
+     "value": 0.0,
+     "unit": "Pa",
+     "gate_limit": 0.0,
+     "verdict": "PASS"
+    },
+    "gate_pass": {
+     "value": 1.0,
+     "unit": "bool",
+     "gate_limit": 1.0,
+     "verdict": "PASS"
+    }
+   },
+   "sql": "SELECT name, value, unit, gate_limit, verdict FROM metrics WHERE run_id=4"
+  }
+ },
+ "M4": {
+  "hydrostatic_truncated_support": {
+   "run_id": 10,
+   "created_utc": "2026-11-10T19:35:41Z",
+   "git_commit": "01dcb4afb03ea5c7ac59b26f5ab618667fc0723d",
+   "config": {
+    "regate_of": 8
+   },
+   "metrics": {
+    "diverged": {
+     "value": 0.0,
+     "unit": "bool",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "gate_pass": {
+     "value": 1.0,
+     "unit": "bool",
+     "gate_limit": 1.0,
+     "verdict": "PASS"
+    },
+    "max_band_error_pct": {
+     "value": 14.861729626096597,
+     "unit": "%",
+     "gate_limit": 5.833009145715831,
+     "verdict": "PASS"
+    }
+   },
+   "sql": "SELECT name, value, unit, gate_limit, verdict FROM metrics WHERE run_id=10"
+  },
+  "kernel_interpolation_convergence": {
+   "run_id": 9,
+   "created_utc": "2026-11-10T19:35:41Z",
+   "git_commit": "01dcb4afb03ea5c7ac59b26f5ab618667fc0723d",
+   "config": {
+    "control_of": 8,
+    "regate_of": 7
+   },
+   "metrics": {
+    "defect_1_5h": {
+     "value": 0.038313727552855725,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "defect_2h": {
+     "value": 5.323104412668922e-05,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "defect_ratio": {
+     "value": 719.7628410532308,
+     "unit": "1",
+     "gate_limit": 10.0,
+     "verdict": "PASS"
+    },
+    "gate_pass": {
+     "value": 1.0,
+     "unit": "bool",
+     "gate_limit": 1.0,
+     "verdict": "PASS"
+    },
+    "hydrostatic_baseline_pct": {
+     "value": 1.1666018291431661,
+     "unit": "%",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "mean_order_normalized": {
+     "value": 1.9677510781683978,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    },
+    "min_order_normalized": {
+     "value": 1.87550774648434,
+     "unit": "1",
+     "gate_limit": 1.0,
+     "verdict": "PASS"
+    },
+    "order_raw_summation": {
+     "value": 1.9624906127315362,
+     "unit": "1",
+     "gate_limit": null,
+     "verdict": null
+    }
+   },
+   "sql": "SELECT name, value, unit, gate_limit, verdict FROM metrics WHERE run_id=9"
+  }
+ }
+}
