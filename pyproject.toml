@@ -47,6 +47,9 @@ select = ["E", "F", "W"]
 # dead locals and unused imports in benchmark *runners* are still caught
 # (that is exactly the F841 this change clears in run.py).
 "benchmarks/**/make_doc.py" = ["E501"]
+# Same reason: the Poiseuille claim-provenance generator emits the generated record
+# (Chinese markdown tables), where a 100-column limit has no meaning.
+"benchmarks/poiseuille/provenance_audit.py" = ["E501"]
 # Same reason for the report generators under docs/reports: they emit CJK
 # markdown/LaTeX tables, and formatting is not what they are tested on.
 "docs/reports/*_make_report.py" = ["E501"]
