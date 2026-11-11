@@ -1,0 +1,243 @@
+{
+ "benchmark": {
+  "path": "benchmark.json",
+  "rows": 32,
+  "summary": {
+   "max_rel_error": 0.7781358154574178,
+   "n_fail": 0,
+   "n_pass": 11,
+   "n_rows": 32,
+   "n_withheld": 21
+  }
+ },
+ "entry": {
+  "argv": [
+   "--tier",
+   "full",
+   "--out",
+   "/root/tp-agent/work/m14534/runs/sph_free_surface_verification/full"
+  ],
+  "module": "tensorsph.verification.cli:run",
+  "package": "python -m tensorsph.verification",
+  "script": "scripts/run_sph_free_surface_verification.py",
+  "tier": {
+   "conv_baseline_seconds": 4.0,
+   "conv_control_seconds": 0.5,
+   "conv_dx": 0.02,
+   "conv_spacings": [
+    0.02,
+    0.01,
+    0.005,
+    0.0025
+   ],
+   "dam_sample_interval": 0.02,
+   "dam_seconds": 0.45,
+   "dam_spacings": [
+    0.02
+   ],
+   "hydrostatic": {
+    "depth": 0.4,
+    "dx": 0.02,
+    "min_particles": 1000,
+    "seconds": 2.0,
+    "tank_width": 1.0
+   },
+   "mass": {
+    "dx": 0.02,
+    "horizon_steps": 1000,
+    "seconds": 0.45
+   },
+   "name": "full"
+  }
+ },
+ "gates": {
+  "J1_control_gravity_off": {
+   "honest_fail": false,
+   "verdict": "PASS"
+  },
+  "J1_front": {
+   "honest_fail": true,
+   "verdict": "FAIL"
+  },
+  "J1_height": {
+   "honest_fail": false,
+   "verdict": "PASS"
+  },
+  "J2_control_zero_density": {
+   "honest_fail": false,
+   "verdict": "PASS"
+  },
+  "J2_pressure": {
+   "honest_fail": false,
+   "verdict": "PASS"
+  },
+  "J3_mass_closed": {
+   "honest_fail": false,
+   "verdict": "PASS"
+  },
+  "J3_mass_open_and_overflow_control": {
+   "honest_fail": false,
+   "verdict": "PASS"
+  },
+  "J4_control_truncated_support": {
+   "honest_fail": false,
+   "verdict": "PASS"
+  },
+  "J4_convergence": {
+   "honest_fail": false,
+   "verdict": "PASS"
+  }
+ },
+ "generated_utc": "2026-11-11T08:42:24Z",
+ "impl_files": [
+  "src/tensorsph/verification/__init__.py",
+  "src/tensorsph/verification/__main__.py",
+  "src/tensorsph/verification/cli.py",
+  "src/tensorsph/verification/bundle.py",
+  "src/tensorsph/verification/evidence.py",
+  "src/tensorsph/verification/dam_break_2d.py",
+  "src/tensorsph/verification/hydrostatic.py",
+  "src/tensorsph/verification/conservation.py",
+  "src/tensorsph/verification/convergence.py",
+  "src/tensorsph/verification/report.py"
+ ],
+ "integration_callers": [
+  {
+   "line": 18,
+   "path": "README_VERIFICATION.md",
+   "text": "PYTHONPATH=src python -m tensorsph.verification --tier full \\"
+  },
+  {
+   "line": 34,
+   "path": "benchmarks/verified/sph_convergence/run.py",
+   "text": "from tensorsph.verification import convergence as m4, hydrostatic as m2, report"
+  },
+  {
+   "line": 28,
+   "path": "benchmarks/verified/sph_dam_break_2d/diagnose_surface_treatment.py",
+   "text": "from tensorsph.verification import dam_break_2d as m1"
+  },
+  {
+   "line": 29,
+   "path": "benchmarks/verified/sph_dam_break_2d/run.py",
+   "text": "from tensorsph.verification import conservation, dam_break_2d as m1, report"
+  },
+  {
+   "line": 26,
+   "path": "benchmarks/verified/sph_hydrostatic/run.py",
+   "text": "from tensorsph.verification import hydrostatic as m2, report"
+  },
+  {
+   "line": 260,
+   "path": "docs/reports/m14534_make_report.py",
+   "text": "1. **\u7edf\u4e00\u5165\u53e3**\uff1a`python -m tensorsph.verification --tier {manifest['entry']['tier']['name']}`"
+  },
+  {
+   "line": 30,
+   "path": "docs/validation/wcsph_validation/REPORT.md",
+   "text": "- `tensorsph.verification.hydrostatic` \u2014 \u9759\u6c34\u538b\u529b\u9a8c\u8bc1\uff08\u22642%\uff09"
+  },
+  {
+   "line": 2,
+   "path": "scripts/run_sph_free_surface_verification.py",
+   "text": "\"\"\"Script wrapper for ``python -m tensorsph.verification`` (campaign P482-N04)."
+  },
+  {
+   "line": 11,
+   "path": "tests/test_verification_bundle.py",
+   "text": ":func:`tensorsph.verification.bundle.assess_level`, and the end-to-end test"
+  },
+  {
+   "line": 21,
+   "path": "tests/test_verification_free_surface.py",
+   "text": "from tensorsph.verification import (conservation, convergence, dam_break_2d as m1,"
+  }
+ ],
+ "maturity_level": {
+  "level": "L4",
+  "missing": {
+   "L1": [],
+   "L2": [],
+   "L3": [],
+   "L4": []
+  }
+ },
+ "repro_cmd": "python -m tensorsph.verification --tier full --out runs/sph_free_surface_verification/full",
+ "run_artifacts": [
+  {
+   "bytes": 100715,
+   "path": "results.json",
+   "sha256": "e9a2b7f12e6dcce96c1aa069411ad77ce295cc748ef5471ae393dfbcfff86017"
+  },
+  {
+   "bytes": 20630,
+   "path": "benchmark.json",
+   "sha256": "6ec6026b08e5334ab2a230fe83c430c8c8e77b64efd46742ffeee40514183c34"
+  },
+  {
+   "bytes": 8248,
+   "path": "metrics.csv",
+   "sha256": "22dab59d3a31a69022c9ee773eda252c44fa395d1e7dd7d5dac5df957655f938"
+  },
+  {
+   "bytes": 138076,
+   "path": "figures/fig1_dam_break_front_profiles.png",
+   "sha256": "4194808021cb425b1e0990d3d4b98c8c2be5fbe619dcce0e4f2c50470047defa"
+  },
+  {
+   "bytes": 47925,
+   "path": "figures/fig2_dam_break_field_speed.png",
+   "sha256": "9d4b87de45fb510c40aee6812182e0c9d1a53d33448e55061cfc4194a8cd3a7a"
+  },
+  {
+   "bytes": 63307,
+   "path": "figures/fig3_hydrostatic_pressure.png",
+   "sha256": "14a4a33d617b3240eb8e93c2529c763977558e5211701b31df1aaf3d4626e23f"
+  },
+  {
+   "bytes": 44654,
+   "path": "figures/fig4_mass_bookkeeping.png",
+   "sha256": "3b5d49d71327636241b9e6ed5ce8473aa96a58195c74413dad4125f1b6a498da"
+  },
+  {
+   "bytes": 61272,
+   "path": "figures/fig5_convergence_support.png",
+   "sha256": "126baa70925367c34b6a6d6573e8be4eef31db89c39569eb3e6586a31dac3f46"
+  }
+ ],
+ "run_dir": "runs/sph_free_surface_verification/full",
+ "solver_callers": [
+  {
+   "caller": "tensorsph.dam_break.run_case",
+   "defined_in": "src/tensorsph/dam_break.py",
+   "line": 218,
+   "module": "tensorsph.dam_break",
+   "resolved": true,
+   "symbol": "run_case"
+  },
+  {
+   "caller": "tensorsph.dam_break.make_column",
+   "defined_in": "src/tensorsph/dam_break.py",
+   "line": 89,
+   "module": "tensorsph.dam_break",
+   "resolved": true,
+   "symbol": "make_column"
+  },
+  {
+   "caller": "tensorsph.vv.hydrostatic.run_hydrostatic",
+   "defined_in": "src/tensorsph/vv/hydrostatic.py",
+   "line": 129,
+   "module": "tensorsph.vv.hydrostatic",
+   "resolved": true,
+   "symbol": "run_hydrostatic"
+  },
+  {
+   "caller": "tensorsph.droplet_impact.pair_kernels",
+   "defined_in": "src/tensorsph/droplet_impact.py",
+   "line": 265,
+   "module": "tensorsph.droplet_impact",
+   "resolved": true,
+   "symbol": "pair_kernels"
+  }
+ ]
+}
