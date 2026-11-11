@@ -68,7 +68,11 @@
 
 ## 4. 结果图
 
-![contact angle equilibrium](contact_angle_equilibrium.png)
+![contact angle equilibrium](figures/contact_angle_equilibrium.png)
+
+图存于 `docs/figures/`（交付管线只放行 `docs/` 下的图：放在 benchmark 目录里的同名图
+在推送过滤里被静默丢弃，main 因此断图两轮）。`make_artifacts.py` 随时可重绘，
+图里每个点都取自上面第 3 节的表。
 
 (a) 设定角 vs 交付角：灰带为 120–180°（近非润湿吸引子区），虚线为理想线；实心=BC on，方块=BC off。
 (b) 角度历史：每个运行都从自己的设定角（60/90/120°）出发，在 0.6 t_σ 内离开设定角、向吸引子走。
