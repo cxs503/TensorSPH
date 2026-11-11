@@ -2,6 +2,108 @@
   "entries": [
     {
       "admissibility": null,
+      "artifact": "benchmarks/aeration/report.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "docs/verification_ledger.md",
+      "claim_id": "aeration.air_volume_drift",
+      "claim_type": "relative_error",
+      "credit_qualified": true,
+      "criterion_pct": 15.0,
+      "declared_verdict": null,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_aeration.py",
+      "json_path": "criteria.C5.measured",
+      "measured": {
+        "definition": "relative air-volume drift per characteristic time",
+        "unit": "-",
+        "value": 0.003709
+      },
+      "notes": "0.37 % drift over the characteristic time; conservation reading only.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "air volume drift per characteristic time of the aerated jump",
+      "quantity_id": "aeration_air_mass_conservation",
+      "reference": {
+        "source": "exact conservation of entrained air volume",
+        "unit": "-",
+        "value": 0.0
+      },
+      "rel_error_pct": 0.370861,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/aeration/report.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "docs/verification_ledger.md",
+      "claim_id": "aeration.inception_constant.self_referential",
+      "claim_type": "relative_error",
+      "credit_qualified": null,
+      "criterion_pct": 15.0,
+      "declared_verdict": null,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": true,
+      "grade": "WITHHELD",
+      "guarding_test": "tests/test_aeration.py",
+      "json_path": "inception.constant_rel_error",
+      "measured": {
+        "definition": "constant the harness derives from its own onset sweep",
+        "unit": "-",
+        "value": 1.0
+      },
+      "notes": "Exactly 0.0 % because the derived constant is the empirical constant rearranged: the criterion is checked against itself, so the reading is WITHHELD regardless of the artifact's all_criteria_passed = true. The same degeneracy hits C4 (bubble rise velocity vs Mendelson), which reports 0.0 % because the module *implements* the Mendelson formula; that reading is deliberately not registered as a claim.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "inception Froude constant of air entrainment vs Chanson",
+      "quantity_id": "aeration_inception_froude",
+      "reference": {
+        "source": "Chanson empirical criterion constant (input to the criterion)",
+        "unit": "-",
+        "value": 1.0
+      },
+      "rel_error_pct": 0.0,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/aeration/report.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "docs/verification_ledger.md",
+      "claim_id": "aeration.void_fraction.erf_anchor_l2",
+      "claim_type": "gate",
+      "credit_qualified": true,
+      "criterion_pct": 15.0,
+      "declared_verdict": null,
+      "gate_limit": 0.15,
+      "gate_result": "pass",
+      "gauge_degenerate": false,
+      "grade": "MARGINAL",
+      "guarding_test": "tests/test_aeration.py",
+      "json_path": "criteria.C2.measured",
+      "measured": {
+        "definition": "relative L2 difference between the measured and the anchor profile",
+        "unit": "-",
+        "value": 0.095382
+      },
+      "notes": "Registered because the harness was invisible to the ledger (uncovered_benchmark). 9.5 % against a 15 % limit is MARGINAL, not a pass: the anchor is an erf fit of the void-fraction profile, not experimental data.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "steady void-fraction profile of the aerated hydraulic jump vs the erf anchor",
+      "quantity_id": "aeration_void_fraction_profile",
+      "reference": {
+        "source": "exact erf anchor profile (zero residual)",
+        "unit": "-",
+        "value": 0.0
+      },
+      "rel_error_pct": 9.538236,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
       "artifact": "benchmarks/csf_consistent/curvature_audit.json",
       "artifact_status": "WITHHELD",
       "backlog_ref": "docs/verification_ledger.md",
@@ -31,6 +133,74 @@
         "value": 1.0
       },
       "rel_error_pct": -24.545501,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/surface_tension_dispersion/validation_report.json",
+      "artifact_status": "FAIL",
+      "backlog_ref": "docs/verification_ledger.md",
+      "claim_id": "csf_dispersion.capillary_wave.omega_error.local_range",
+      "claim_type": "gate",
+      "credit_qualified": null,
+      "criterion_pct": 15.0,
+      "declared_verdict": null,
+      "gate_limit": 0.05,
+      "gate_result": "fail",
+      "gauge_degenerate": false,
+      "grade": "FAIL",
+      "guarding_test": "tests/test_csf_dispersion.py",
+      "json_path": "gates.local_range.C1_max_omega_error_pct",
+      "measured": {
+        "definition": "max relative omega error over the three wavenumbers",
+        "unit": "-",
+        "value": 0.548026
+      },
+      "notes": "Registered because the harness was uncovered: its own criterion fails at 55 % and nothing in the ledger said so.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "capillary-wave frequency error of the local-range CSF operator, k = 1..3",
+      "quantity_id": "capillary_wave_omega",
+      "reference": {
+        "source": "harness criterion C1: within 5 % of omega^2 = sigma k^3 / rho (Lamb 1932)",
+        "unit": "-",
+        "value": 0.05
+      },
+      "rel_error_pct": 996.052224,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/surface_tension_dispersion/validation_report.json",
+      "artifact_status": "FAIL",
+      "backlog_ref": "docs/verification_ledger.md",
+      "claim_id": "csf_dispersion.lamb_mode.omega_error.local_range",
+      "claim_type": "gate",
+      "credit_qualified": null,
+      "criterion_pct": 15.0,
+      "declared_verdict": null,
+      "gate_limit": 0.03,
+      "gate_result": "fail",
+      "gauge_degenerate": false,
+      "grade": "FAIL",
+      "guarding_test": "tests/test_csf_dispersion.py",
+      "json_path": "gates.local_range.C2_max_omega_error_pct",
+      "measured": {
+        "definition": "max relative omega error over the three modes",
+        "unit": "-",
+        "value": 0.096785
+      },
+      "notes": "9.7 % is better than the legacy operator (18.5 %) but still 3.2x its own 3 % gate -- the CSF frequency error is the same defect family as the Young-Laplace deficit, so it is not averaged into a PASS.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "Lamb-mode frequency error of the local-range CSF operator, n = 2..4",
+      "quantity_id": "lamb_mode_omega",
+      "reference": {
+        "source": "harness criterion C2: within 3 % of omega^2 = n(n^2-1) sigma/(rho R^3)",
+        "unit": "-",
+        "value": 0.03
+      },
+      "rel_error_pct": 222.617451,
       "run_validity": "UNPROBED",
       "superseded_by": null
     },
@@ -245,6 +415,40 @@
         "value": 1.0
       },
       "rel_error_pct": -28.937538,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/fluctuating_hydro/report.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "docs/verified/fluctuating_hydrodynamics_verification.md",
+      "claim_id": "fluctuating_hydro.thermostat.mean_temperature.n128",
+      "claim_type": "relative_error",
+      "credit_qualified": true,
+      "criterion_pct": 15.0,
+      "declared_verdict": null,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "MARGINAL",
+      "guarding_test": "tests/test_fluctuating_hydro.py",
+      "json_path": "case.runs[0].mean_temperature",
+      "measured": {
+        "definition": "mean over 800 steps",
+        "unit": "T*",
+        "value": 1.08806
+      },
+      "notes": "Supersedes the legacy reading T = 0.0152 (error -98.5 %) quoted in docs/verified/fluctuating_hydrodynamics_verification.md: the legacy lattice overlapped particles (up to 81 overlapping pairs at N = 256), which is what collapsed the temperature. Registered here so the old number cannot be quoted as current.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "mean temperature of the LJ fluid under the Langevin (BAOAB) thermostat, N = 128",
+      "quantity_id": "fluctuating_hydro_temperature",
+      "reference": {
+        "source": "target temperature T* = 1.0 (reduced LJ units)",
+        "unit": "T*",
+        "value": 1.0
+      },
+      "rel_error_pct": 8.806013,
       "run_validity": "UNPROBED",
       "superseded_by": null
     },
@@ -751,6 +955,142 @@
         "value": 0.06
       },
       "rel_error_pct": 32.93244,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/rayleigh_plateau/report.json",
+      "artifact_status": null,
+      "backlog_ref": "docs/verification_ledger.md",
+      "claim_id": "rayleigh_plateau.analytic.kR_star",
+      "claim_type": "relative_error",
+      "credit_qualified": true,
+      "criterion_pct": 15.0,
+      "declared_verdict": null,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_rayleigh_plateau.py",
+      "json_path": "analytic.most_unstable_kR",
+      "measured": {
+        "definition": "root of the implemented dispersion relation with the Bessel term",
+        "unit": "-",
+        "value": 0.697019
+      },
+      "notes": "This validates the *dispersion solver* (the Bessel term matters: the naive kR = 1/sqrt(3) = 0.5774 is -17.2 % off), not a simulation. The dynamic 3-D column run in the same artifact does not deliver a growth rate (see rayleigh_plateau.dynamic.volume_drift).",
+      "paper_criterion_pct": 3.0,
+      "quantity": "most unstable wavenumber of the Rayleigh-Plateau instability (kR)*",
+      "quantity_id": "rayleigh_plateau_most_unstable_kR",
+      "reference": {
+        "source": "Rayleigh (1879) / literature value (kR)* = 0.697",
+        "unit": "-",
+        "value": 0.697
+      },
+      "rel_error_pct": 0.002711,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/rayleigh_plateau/report.json",
+      "artifact_status": null,
+      "backlog_ref": "docs/verification_ledger.md",
+      "claim_id": "rayleigh_plateau.analytic.lambda_over_R",
+      "claim_type": "relative_error",
+      "credit_qualified": true,
+      "criterion_pct": 15.0,
+      "declared_verdict": null,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_rayleigh_plateau.py",
+      "json_path": "analytic.most_unstable_lambda_over_R",
+      "measured": {
+        "definition": "2 pi / (kR)* from the implemented dispersion relation",
+        "unit": "-",
+        "value": 9.014369
+      },
+      "notes": "Same analytic solver as kR*; -0.06 % is a rounding-level agreement.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "most unstable wavelength of the Rayleigh-Plateau instability, lambda/R",
+      "quantity_id": "rayleigh_plateau_most_unstable_wavelength",
+      "reference": {
+        "source": "literature lambda/R = 9.02",
+        "unit": "-",
+        "value": 9.02
+      },
+      "rel_error_pct": -0.062432,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/rayleigh_plateau/report.json",
+      "artifact_status": null,
+      "backlog_ref": "docs/verification_ledger.md",
+      "claim_id": "rayleigh_plateau.curvature.profile_self_referential",
+      "claim_type": "relative_error",
+      "credit_qualified": null,
+      "criterion_pct": 15.0,
+      "declared_verdict": null,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": true,
+      "grade": "WITHHELD",
+      "guarding_test": "tests/test_rayleigh_plateau.py",
+      "json_path": "curvature[0].relative_error",
+      "measured": {
+        "definition": "'profile' estimator: fits the radius of the surface profile",
+        "unit": "-",
+        "value": 0.0
+      },
+      "notes": "2.2e-16 is machine zero, i.e. the estimator recovers the radius it was built from: self-referential. The independent estimators on the same cloud are mls +71.9 % and axisym -130.4 % -- that spread is the real curvature evidence, and it is not paper grade.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "3-D CSF curvature on a cylindrical column, R/dx = 3",
+      "quantity_id": "csf_curvature_3d_cylinder",
+      "reference": {
+        "source": "exact curvature 1/R of the constructed cylinder",
+        "unit": "-",
+        "value": 0.0
+      },
+      "rel_error_pct": 0.0,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/rayleigh_plateau/report.json",
+      "artifact_status": null,
+      "backlog_ref": "docs/verification_ledger.md",
+      "claim_id": "rayleigh_plateau.dynamic.volume_drift",
+      "claim_type": "relative_error",
+      "credit_qualified": true,
+      "criterion_pct": 15.0,
+      "declared_verdict": null,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "MARGINAL",
+      "guarding_test": "tests/test_rayleigh_plateau.py",
+      "json_path": "column_run.final_volume_error",
+      "measured": {
+        "definition": "final relative volume error of the run",
+        "unit": "-",
+        "value": -0.139239
+      },
+      "notes": "The growth-rate fit of the same run is NaN (omega_measured = NaN, max density error 42.9 %), so the dynamic Rayleigh-Plateau capability is NOT validated: this entry records only the volume bookkeeping of a run that could not be reduced to a growth rate. Closing it needs a longer/steadier run.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "volume drift of the 3-D Rayleigh-Plateau column run (80 steps, 864 particles)",
+      "quantity_id": "rayleigh_plateau_volume_drift",
+      "reference": {
+        "source": "exact volume conservation of the incompressible column",
+        "unit": "-",
+        "value": 0.0
+      },
+      "rel_error_pct": -13.923859,
       "run_validity": "UNPROBED",
       "superseded_by": null
     },
@@ -1767,6 +2107,12 @@
   ],
   "findings": [
     {
+      "claim_id": "aeration.inception_constant.self_referential",
+      "detail": "artifact declares PASS, ledger derives WITHHELD: vacuum-gauge readout (additive |p| offset, not a physical dp)",
+      "rule": "declared_vs_derived",
+      "severity": "high"
+    },
+    {
       "claim_id": "young_laplace.laplace_law.vacuum_gauge",
       "detail": "artifact declares PASS, ledger derives WITHHELD: vacuum-gauge readout (additive |p| offset, not a physical dp)",
       "rule": "declared_vs_derived",
@@ -1873,112 +2219,31 @@
       "detail": "14 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.closure.closure_on_all_donors.dx1.5mm_c20=-25.3 %, young_laplace.closure.closure_on_all_donors.dx2mm_c20=-20.1 %, young_laplace.closure.closure_on_interior_layers2.dx1.5mm_c20=-3.4 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c10=-4.0 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c20=+8.8 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c5=+4.9 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.force_balance.flux_integral.dx1.5mm=-7.5 %, young_laplace.force_balance.flux_integral.dx2mm=-0.3 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
       "rule": "quantity_spread",
       "severity": "high"
-    },
-    {
-      "claim_id": "benchmarks/aeration",
-      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
-      "rule": "uncovered_benchmark",
-      "severity": "medium"
-    },
-    {
-      "claim_id": "benchmarks/rayleigh_plateau",
-      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
-      "rule": "uncovered_benchmark",
-      "severity": "medium"
-    },
-    {
-      "claim_id": "benchmarks/slamming",
-      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
-      "rule": "uncovered_benchmark",
-      "severity": "medium"
-    },
-    {
-      "claim_id": "benchmarks/two_phase_laplace",
-      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
-      "rule": "uncovered_benchmark",
-      "severity": "medium"
-    },
-    {
-      "claim_id": "benchmarks/verification_ladder",
-      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
-      "rule": "uncovered_benchmark",
-      "severity": "medium"
-    },
-    {
-      "claim_id": "benchmarks/wcsph_chain",
-      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
-      "rule": "uncovered_benchmark",
-      "severity": "medium"
-    },
-    {
-      "claim_id": "benchmarks/wedge_entry",
-      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
-      "rule": "uncovered_benchmark",
-      "severity": "medium"
-    },
-    {
-      "claim_id": "benchmarks/aeration/report.json",
-      "detail": "machine-readable evidence file not referenced by any ledger claim",
-      "rule": "unregistered_artifact",
-      "severity": "medium"
-    },
-    {
-      "claim_id": "benchmarks/contact_angle/bc_diagnosis.json",
-      "detail": "machine-readable evidence file not referenced by any ledger claim",
-      "rule": "unregistered_artifact",
-      "severity": "medium"
-    },
-    {
-      "claim_id": "benchmarks/fluctuating_hydro/report.json",
-      "detail": "machine-readable evidence file not referenced by any ledger claim",
-      "rule": "unregistered_artifact",
-      "severity": "medium"
-    },
-    {
-      "claim_id": "benchmarks/rayleigh_plateau/report.json",
-      "detail": "machine-readable evidence file not referenced by any ledger claim",
-      "rule": "unregistered_artifact",
-      "severity": "medium"
-    },
-    {
-      "claim_id": "benchmarks/surface_tension_dispersion/validation_report.json",
-      "detail": "machine-readable evidence file not referenced by any ledger claim",
-      "rule": "unregistered_artifact",
-      "severity": "medium"
-    },
-    {
-      "claim_id": "docs/verified/fluctuating_hydrodynamics_verification.md:149",
-      "detail": "quotes -98.5% without a historical marker (legacy gradient CSF scheme, kept only as a before/after contrast)",
-      "rule": "unmarked_superseded_number",
-      "severity": "medium"
     }
   ],
   "schema_version": 1,
   "summary": {
     "by_grade": {
-      "FAIL": 10,
-      "MARGINAL": 10,
-      "PASS": 12,
+      "FAIL": 12,
+      "MARGINAL": 13,
+      "PASS": 15,
       "WITHDRAWN": 2,
-      "WITHHELD": 13
+      "WITHHELD": 15
     },
     "criterion_pct": 15.0,
     "findings_by_rule": {
       "credit_from_failing_artifact": 6,
-      "declared_vs_derived": 1,
+      "declared_vs_derived": 2,
       "inadmissible_run": 3,
       "quantity_spread": 4,
-      "run_validity": 4,
-      "uncovered_benchmark": 7,
-      "unmarked_superseded_number": 1,
-      "unregistered_artifact": 5
+      "run_validity": 4
     },
     "n_artifact_verdicts_fail": 12,
-    "n_claims": 47,
+    "n_claims": 57,
     "n_credits_unqualified": 6,
-    "n_credits_without_declared_verdict": 9,
-    "n_findings": 31,
-    "n_quantities": 26,
+    "n_credits_without_declared_verdict": 15,
+    "n_findings": 19,
+    "n_quantities": 36,
     "paper_criterion_pct": 3.0
   }
 }
