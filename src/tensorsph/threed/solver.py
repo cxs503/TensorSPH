@@ -357,7 +357,7 @@ def run_hydrostatic(*, nx: int = 10, ny: int = 10, nz: int = 8, dx: float = 0.01
                     viscosity: float = 0.02, t_end: float | None = None,
                     dt: float | None = None, steps: int | None = None,
                     sample_every: int = 5, settle_fraction: float = 0.4,
-                    wall_model: str = "adami",
+                    wall_model: str = "adami", lid: bool = True,
                     dtype=torch.float64) -> HydrostaticResult:
     """Integrate a wall-bounded 3-D column and compare ``p(z)`` with ``rho0 g (H-z)``.
 
@@ -388,6 +388,16 @@ def run_hydrostatic(*, nx: int = 10, ny: int = 10, nz: int = 8, dx: float = 0.01
     # first wall layer and then the wall overlaps the fluid, which makes every
     # pressure reading meaningless.
     wall = wall_shell((nx, ny, nz), wall_layers, dx, dtype=dtype)
+    if not lid:
+        # ``wall_shell`` closes *all six* faces, so the default configuration has
+        # wall particles above the free surface -- a rigid lid one and two cells
+        # above the topmost fluid row, i.e. inside the ``2 h = 2.6 dx`` support.
+        # Those particles are not part of the problem this case poses (a column
+        # with a free surface), and they inject a spurious force into the only
+        # layer whose pressure should go to zero.  ``lid=False`` drops every wall
+        # particle at or above ``z = H``; it is opt-in so the shipped artifact in
+        # ``benchmarks/threed_hydrostatic/report.json`` keeps its meaning.
+        wall = wall[wall[:, 2] <= walls + height + 1e-12]
     mass_wall = torch.full((wall.shape[0],), calibrated_particle_mass(dx, h, rho0),
                            dtype=dtype)
 
