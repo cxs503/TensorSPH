@@ -1,3 +1,27 @@
+> **⚠ 校正声明（m14838 独立复核，2026-11-11）——本文第 1、3、5、6、7 节的读数与结论不成立，请勿引用。**
+>
+> 逐条溯源结果（`benchmarks/poiseuille/provenance_audit.py`，工件 `benchmarks/poiseuille/out/provenance_audit.json`，
+> 记录 `docs/verification_poiseuille_claim_provenance.md`）：本文引用的五条数字没有一条属于它声明引用的无滑移算例。
+>
+> | 本文打印 | 实际出处（同一工件） | 性质 |
+> |---|---|---|
+> | `u_max = 8.87 m/s` | `results.free_slip_control.u_max_measured = 8.8701` | 自由滑移**对照**算例，按设计无壁面阻力 |
+> | 壁面滑移比 `0.999996` | `results.free_slip_control.wall_row_slip_over_umax` | 同上（无滑移算例是 `0.4922/0.3777/0.3135`） |
+> | `Ma = 0.493`、`1e-4 m²/s` | `free_slip_control.max_mach = 0.4929`；工件无 `1e-4` 粘度（是 `0.01`） | 同上；无滑移阶梯 `Ma_max ≤ 0.0784` |
+> | 壁面剪切比 `0.503` | `results.results[2].wall_shear_ratio = 0.5025`（`H/dx = 16`） | 与表头宣称的最粗分辨率 `H/dx = 8`（`0.5795`）不符 |
+> | 解析壁面剪切 `50 Pa` | 应为 `rho0 g H/2 = 490.5 Pa` | 与自己的参数表（`g = 0.1`, `rho = 1000`, `H = 0.1` → `5 Pa`）也差 10 倍 |
+>
+> **被证伪的结论**：「无滑移壁面条件未正确施加（占误差 ~80%）、需按 P0 修壁面边界条件」。同一工件的动量预算给出：
+> 无滑移算例 `d<u>/dt / g = +0.61%/−0.74%/−1.37%`（剖面饱和），自由滑移对照 `+100.45%`（≈ `g`，无阻力）；
+> 壁面拖曳 `D/(M g) = 0.9895/1.0028/1.0091` —— 壁面**全额**吸收注入的流向动量（误差 <1%）。
+> 因此 `-49.7%` 是**近壁梯度估计算子**的偏差（模板几何 `1 - 2 dx/H` + 抹平壁层），不是壁面模型缺陷；
+> 修正方向见 `docs/verification_poiseuille_wall_shear_estimator.md` 与
+> `docs/verification_poiseuille_channel.md` §4.1，**不要**去改壁面边界条件。
+>
+> 本文正文按「不改写他人记录」原则原样保留（含其诚实的自述：分析仅对已有工件做后处理，未重跑 SPH）。
+
+---
+
 # TensorSPH Poiseuille 通道流壁面剪切力审计
 
 **Mission**: m14711（自找活·data 席）  
