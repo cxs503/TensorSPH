@@ -1,0 +1,89 @@
+{
+ "runs": {
+  "probe_dx2mm.log": {
+   "log": "probe_dx2mm.log",
+   "rows": [
+    [
+     20,
+     178,
+     -0.00174,
+     3.2
+    ],
+    [
+     40,
+     178,
+     -0.00148,
+     59.1
+    ]
+   ],
+   "n_steps": 178,
+   "segment_s_per_step": [
+    2.795
+   ]
+  },
+  "probe_dx2mm_t8.log": {
+   "log": "probe_dx2mm_t8.log",
+   "rows": [
+    [
+     20,
+     178,
+     -0.00174,
+     2.1
+    ],
+    [
+     40,
+     178,
+     -0.00148,
+     58.8
+    ]
+   ],
+   "n_steps": 178,
+   "segment_s_per_step": [
+    2.835
+   ]
+  },
+  "probe_dx3mm.log": {
+   "log": "probe_dx3mm.log",
+   "rows": [
+    [
+     20,
+     143,
+     -0.00261,
+     1.4
+    ],
+    [
+     40,
+     143,
+     -0.00222,
+     11.8
+    ],
+    [
+     60,
+     143,
+     -0.00183,
+     45.5
+    ],
+    [
+     80,
+     143,
+     -0.00144,
+     85.1
+    ]
+   ],
+   "n_steps": 143,
+   "segment_s_per_step": [
+    0.52,
+    1.685,
+    1.98
+   ]
+  }
+ },
+ "flat_dx4mm": {
+  "log": "profile_dx4mm.log",
+  "steps": 40,
+  "wall_s": 3.2,
+  "s_per_step": 0.081,
+  "particles": 3000,
+  "dx_mm": 4.0
+ }
+}
