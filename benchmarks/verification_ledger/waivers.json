@@ -1,7 +1,8 @@
 {
- "note": "Evidence artifacts deliberately not registered as ledger claims. Every waiver needs a reason; tests/test_verification_ledger.py enforces that. A waiver is retired when its artifact gets a claim; the closure ladder waiver was retired by m6405 after nine missions of living on the promise that a 'primary claim' existed elsewhere (it did not). m6453 widened the coverage rule from file names to directories: an entry ending in '/' waives a whole benchmark harness (no committed artifact at all), which is how the evidence debt E1-E3 below became visible instead of silent.",
+  "note": "Evidence artifacts deliberately not registered as ledger claims. Every waiver needs a reason; tests/test_verification_ledger.py enforces that. A waiver is retired when its artifact gets a claim; the closure ladder waiver was retired by m6405 after nine missions of living on the promise that a 'primary claim' existed elsewhere (it did not). m6453 widened the coverage rule from file names to directories: an entry ending in '/' waives a whole benchmark harness (no committed artifact at all), which is how the evidence debt E1-E3 below became visible instead of silent. m13812: the capillary_wave directory waiver was converted from 'harness only, no artifact' (E1) into a quantified WITHHELD audit; the waiver stays because an audit that reports an inadmissible run is not a capability claim. m14576 re-cut that work from main and re-ran it at HEAD.",
  "reasons": {
-  "benchmarks/capillary_wave/": "harness only (capillary-wave dispersion check), no committed artifact - evidence debt E1",
+    "benchmarks/capillary_wave/": "E1 retired: the directory now commits an artifact, but it is an *audit*, not a physical reading -- benchmarks/capillary_wave/open_surface_audit.json measures that the linear capillary standing wave is not gradable at HEAD (the harness aborts inside 2 periods and the CSF force on an open free surface exceeds the wave's restoring acceleration by ~2 orders of magnitude). It therefore registers no claim by design; the WITHHELD verdict lives in docs/verification_capillary_wave_open_surface.md and is gated by tests/test_capillary_wave_open_surface.py. Former reason: harness only (capillary-wave dispersion check), no committed artifact - evidence debt E1",
+    "benchmarks/capillary_wave/open_surface_audit.json": "audit artifact, not a physical reading: it measures that the linear capillary standing wave is not gradable at HEAD (harness aborts inside 2 periods; CSF force on an open free surface exceeds the wave's restoring acceleration by ~2 orders of magnitude). The WITHHELD verdict lives in docs/verification_capillary_wave_open_surface.md, gated by tests/test_capillary_wave_open_surface.py. Same role as benchmarks/claim_validity/audit.json.",
   "benchmarks/ci_lint_gate/pytest_after.json": "CI lint/test gate evidence (tooling, not a physical claim); the gate itself is documented in docs/ci_lint_gate_m4685.md and enforced by tests/test_lint_gate.py",
   "benchmarks/ci_lint_gate/pytest_before.json": "CI lint/test gate evidence (the before side of the same comparison); see docs/ci_lint_gate_m4685.md",
   "benchmarks/ci_lint_gate/ruff_after.json": "CI lint gate evidence (ruff, after); see docs/ci_lint_gate_m4685.md",
@@ -56,6 +57,7 @@
  "schema_version": 1,
  "unregistered_ok": [
   "benchmarks/capillary_wave/",
+  "benchmarks/capillary_wave/open_surface_audit.json",
   "benchmarks/ci_lint_gate/pytest_after.json",
   "benchmarks/ci_lint_gate/pytest_before.json",
   "benchmarks/ci_lint_gate/ruff_after.json",
