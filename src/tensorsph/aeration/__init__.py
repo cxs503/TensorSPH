@@ -12,6 +12,21 @@ Three loosely coupled pieces make up the model chain:
     solver for the local void fraction, a Lagrangian bubble-cloud integrator, and
     the SPH summation estimate that maps bubble volumes onto a void fraction.
 
+``mixture_acoustics``
+    Wood / van Wijngaarden mixture sound speed, acoustic impedance and the
+    alpha-resolved impact pressure (with the finite-Mach and wall-mismatch
+    corrections plus an explicit, fail-closed validity domain).
+
+``pbm_moments``
+    Bubble population balance moment closure (constant coagulation kernel +
+    equal-split breakup) that supplies the void fraction and the Sauter size,
+    with kernels derived from the aeration source term.
+
+``impact_law``
+    The decalibrated aeration buffer: ``p_peak(alpha, v)`` replaces the single
+    constant ``k_b``, together with the slamming case set, the design envelope
+    and the ``k_b,eq(alpha)`` equivalence curve.
+
 ``friction``
     Frictional resistance of the aerated mixture: Chisholm two-phase multiplier
     and a log-law (Wood 1991 form) closure, plus the reduction rate each implies
@@ -92,4 +107,114 @@ __all__ = [
     "lockhart_martinelli_x",
     "loglaw_reduction_rate",
     "wood_kappa_effective",
+]
+
+from .mixture_acoustics import (
+    AIR,
+    ALPHA_MIN_RESOLVABLE,
+    ALPHA_VW_MAX,
+    OutOfDomain,
+    STEEL,
+    WATER,
+    acoustic_impedance,
+    alpha_at_min_sound_speed,
+    alpha_for_equivalent_buffer_coefficient,
+    domain_status,
+    equivalent_buffer_coefficient,
+    impact_pressure,
+    low_frequency_ratio,
+    mach_correction,
+    min_sound_speed,
+    mixture_compressibility,
+    mixture_density,
+    mixture_gamma,
+    pressure_reduction,
+    van_wijngaarden_sound_speed,
+    wall_mismatch_factor,
+    water_hammer_pressure,
+    wood_sound_speed,
+)
+from .pbm_moments import (
+    BubbleSpectrum,
+    KernelParameters,
+    breakage_frequency,
+    cascade_spectrum,
+    discrete_moment_rates,
+    hinze_radius,
+    integrate_moments,
+    kernel_parameters_from_aeration,
+    moment_rates,
+    moments_closed_form,
+    saffman_turner_kernel,
+    sauter_mean_diameter,
+)
+from .impact_law import (
+    BAND_HIGH,
+    BAND_LOW,
+    LEGACY_BUFFER,
+    SLAM_CASES,
+    SlamCase,
+    aeration_state,
+    alpha_at_time,
+    case_load,
+    case_set,
+    curve_family,
+    decalibration_table,
+    design_envelope,
+    local_impact,
+    moment_history,
+    percentile,
+)
+
+__all__ += [
+    "AIR",
+    "ALPHA_MIN_RESOLVABLE",
+    "ALPHA_VW_MAX",
+    "OutOfDomain",
+    "STEEL",
+    "WATER",
+    "acoustic_impedance",
+    "alpha_at_min_sound_speed",
+    "alpha_for_equivalent_buffer_coefficient",
+    "domain_status",
+    "equivalent_buffer_coefficient",
+    "impact_pressure",
+    "low_frequency_ratio",
+    "mach_correction",
+    "min_sound_speed",
+    "mixture_compressibility",
+    "mixture_density",
+    "mixture_gamma",
+    "pressure_reduction",
+    "van_wijngaarden_sound_speed",
+    "wall_mismatch_factor",
+    "water_hammer_pressure",
+    "wood_sound_speed",
+    "BubbleSpectrum",
+    "KernelParameters",
+    "breakage_frequency",
+    "cascade_spectrum",
+    "discrete_moment_rates",
+    "hinze_radius",
+    "integrate_moments",
+    "kernel_parameters_from_aeration",
+    "moment_rates",
+    "moments_closed_form",
+    "saffman_turner_kernel",
+    "sauter_mean_diameter",
+    "BAND_HIGH",
+    "BAND_LOW",
+    "LEGACY_BUFFER",
+    "SLAM_CASES",
+    "SlamCase",
+    "aeration_state",
+    "alpha_at_time",
+    "case_load",
+    "case_set",
+    "curve_family",
+    "decalibration_table",
+    "design_envelope",
+    "local_impact",
+    "moment_history",
+    "percentile",
 ]
