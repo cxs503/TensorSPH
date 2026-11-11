@@ -1,0 +1,1210 @@
+{
+ "benchmark": "lake_at_rest",
+ "case_key": "CASE-LAKE-AT-REST-SPH",
+ "question": "does a WCSPH pool stay at the exact hydrostatic equilibrium p = rho0 g (H - y), u = 0, and how far does it drift?",
+ "reference": {
+  "solution": "u = 0, eta = H, p(y) = rho0 g (H - y)",
+  "kind": "analytic exact steady state",
+  "citation": "LeVeque 1998, J. Comput. Phys. 146:346-365, sec. 2.1 (lake at rest); Adami, Hu & Adams 2012, J. Comput. Phys. 231:7057-7075, sec. 3.1 (SPH hydrostatic test)",
+  "acceptance": "pressure drift < 0.5 % of rho0 g H",
+  "drift_definition": "max over interior particles (>= 3h from every wall and from the free surface) and over samples of |p_i(t) - rho0 g (H - y_i)| / (rho0 g H)"
+ },
+ "parameters": {
+  "pool_width_m": 1.0,
+  "pool_depth_m": 0.35,
+  "rho0_kg_m3": 1000.0,
+  "gravity_m_s2": 9.81,
+  "gamma": 7.0,
+  "kinematic_viscosity_m2_s": 0.01,
+  "kernel": "cubic spline, h = 1.3 dx",
+  "dt": "acoustic Courant 0.3 (Config.max_courant)",
+  "steps": 103,
+  "simulated_seconds": 0.05021250000000001
+ },
+ "acceptance_tolerance": 0.005,
+ "cases": [
+  {
+   "mode": "shipped",
+   "viscosity": 0.01,
+   "dx_m": 0.025,
+   "h_over_dx": 1.3,
+   "h_m": 0.0325,
+   "sound_speed_m_s": 20.0,
+   "mach_at_rest": 0.0,
+   "c0_over_sqrt_gH": 10.793479469939543,
+   "dt_s": 0.0004875000000000001,
+   "acoustic_courant": 0.30000000000000004,
+   "steps": 103,
+   "seconds": 0.05021250000000001,
+   "gravity_dt_ratio": 0.002580923319002607,
+   "particles": 560,
+   "wall_particles": 291,
+   "interior_particles": 192,
+   "pressure_drift_max": 0.3200194835662842,
+   "pressure_drift_mean_peak": 0.18001598119735718,
+   "v_max": 0.08667338639497757,
+   "v_max_over_sqrt_gH": 0.04677537083221638,
+   "pass_0p5pct": false,
+   "wall_seconds": 1.465743064880371,
+   "samples": [
+    {
+     "t": 0.0,
+     "pressure_drift_max": 0.00011874613119289279,
+     "pressure_drift_mean": 7.755069964332506e-05,
+     "v_max": 0.0,
+     "acc_max_at_rest": 15.32079029083252,
+     "rho_rel_error_max": 0.005725502967834473
+    },
+    {
+     "t": 0.002925,
+     "pressure_drift_max": 0.026895927265286446,
+     "pressure_drift_mean": 0.008399462327361107,
+     "v_max": 0.031585849821567535,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.005589008331298828
+    },
+    {
+     "t": 0.00585,
+     "pressure_drift_max": 0.17442966997623444,
+     "pressure_drift_mean": 0.05647139623761177,
+     "v_max": 0.04790012165904045,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.004813075065612793
+    },
+    {
+     "t": 0.008775,
+     "pressure_drift_max": 0.2589752972126007,
+     "pressure_drift_mean": 0.12923087179660797,
+     "v_max": 0.0700179934501648,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0042765140533447266
+    },
+    {
+     "t": 0.0117,
+     "pressure_drift_max": 0.27906277775764465,
+     "pressure_drift_mean": 0.14799578487873077,
+     "v_max": 0.08667338639497757,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.005256056785583496
+    },
+    {
+     "t": 0.014625,
+     "pressure_drift_max": 0.23838533461093903,
+     "pressure_drift_mean": 0.09110572189092636,
+     "v_max": 0.07143063098192215,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006484866142272949
+    },
+    {
+     "t": 0.01755,
+     "pressure_drift_max": 0.15260207653045654,
+     "pressure_drift_mean": 0.04315635561943054,
+     "v_max": 0.08065908402204514,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0057604312896728516
+    },
+    {
+     "t": 0.020475,
+     "pressure_drift_max": 0.302378386259079,
+     "pressure_drift_mean": 0.10464558005332947,
+     "v_max": 0.05786906182765961,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006113886833190918
+    },
+    {
+     "t": 0.0234,
+     "pressure_drift_max": 0.28366485238075256,
+     "pressure_drift_mean": 0.10382895916700363,
+     "v_max": 0.04878869280219078,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006338000297546387
+    },
+    {
+     "t": 0.026325,
+     "pressure_drift_max": 0.2086629420518875,
+     "pressure_drift_mean": 0.08337637782096863,
+     "v_max": 0.04724754020571709,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006977081298828125
+    },
+    {
+     "t": 0.02925,
+     "pressure_drift_max": 0.19906970858573914,
+     "pressure_drift_mean": 0.08055154979228973,
+     "v_max": 0.04069734737277031,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006813526153564453
+    },
+    {
+     "t": 0.032175,
+     "pressure_drift_max": 0.1879488229751587,
+     "pressure_drift_mean": 0.07704787701368332,
+     "v_max": 0.04587302356958389,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.007283449172973633
+    },
+    {
+     "t": 0.0351,
+     "pressure_drift_max": 0.24662640690803528,
+     "pressure_drift_mean": 0.09715062379837036,
+     "v_max": 0.026841863989830017,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.007764697074890137
+    },
+    {
+     "t": 0.038025,
+     "pressure_drift_max": 0.18259543180465698,
+     "pressure_drift_mean": 0.08095712214708328,
+     "v_max": 0.03207257390022278,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.007239937782287598
+    },
+    {
+     "t": 0.04095,
+     "pressure_drift_max": 0.18315964937210083,
+     "pressure_drift_mean": 0.08431492000818253,
+     "v_max": 0.05147691071033478,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.007058501243591309
+    },
+    {
+     "t": 0.043875,
+     "pressure_drift_max": 0.2505754232406616,
+     "pressure_drift_mean": 0.1317858248949051,
+     "v_max": 0.05150245502591133,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.007778167724609375
+    },
+    {
+     "t": 0.0468,
+     "pressure_drift_max": 0.3200194835662842,
+     "pressure_drift_mean": 0.17240172624588013,
+     "v_max": 0.05329464375972748,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.008361458778381348
+    },
+    {
+     "t": 0.049725,
+     "pressure_drift_max": 0.28661873936653137,
+     "pressure_drift_mean": 0.18001598119735718,
+     "v_max": 0.0409952811896801,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.007506847381591797
+    },
+    {
+     "t": 0.050213,
+     "pressure_drift_max": 0.28041091561317444,
+     "pressure_drift_mean": 0.17743928730487823,
+     "v_max": 0.04169859364628792,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.00740969181060791
+    }
+   ]
+  },
+  {
+   "mode": "wb",
+   "viscosity": 0.01,
+   "dx_m": 0.025,
+   "h_over_dx": 1.3,
+   "h_m": 0.0325,
+   "sound_speed_m_s": 20.0,
+   "mach_at_rest": 0.0,
+   "c0_over_sqrt_gH": 10.793479469939543,
+   "dt_s": 0.0004875000000000001,
+   "acoustic_courant": 0.30000000000000004,
+   "steps": 103,
+   "seconds": 0.05021250000000001,
+   "gravity_dt_ratio": 0.002580923319002607,
+   "particles": 560,
+   "wall_particles": 291,
+   "interior_particles": 192,
+   "pressure_drift_max": 0.03997392952442169,
+   "pressure_drift_mean_peak": 0.0060888431034982204,
+   "v_max": 0.04828909412026405,
+   "v_max_over_sqrt_gH": 0.026060367300452417,
+   "pass_0p5pct": false,
+   "wall_seconds": 1.63934326171875,
+   "samples": [
+    {
+     "t": 0.0,
+     "pressure_drift_max": 0.00011874613119289279,
+     "pressure_drift_mean": 7.755069964332506e-05,
+     "v_max": 0.0,
+     "acc_max_at_rest": 3.133747100830078,
+     "rho_rel_error_max": 0.005725502967834473
+    },
+    {
+     "t": 0.002925,
+     "pressure_drift_max": 0.0002457404916640371,
+     "pressure_drift_mean": 7.79964029788971e-05,
+     "v_max": 0.008778087794780731,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.005725502967834473
+    },
+    {
+     "t": 0.00585,
+     "pressure_drift_max": 0.0012472965754568577,
+     "pressure_drift_mean": 0.00011711792467394844,
+     "v_max": 0.01617204211652279,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.00572657585144043
+    },
+    {
+     "t": 0.008775,
+     "pressure_drift_max": 0.0022072915453463793,
+     "pressure_drift_mean": 0.0002865761343855411,
+     "v_max": 0.022039080038666725,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.005727291107177734
+    },
+    {
+     "t": 0.0117,
+     "pressure_drift_max": 0.004578303545713425,
+     "pressure_drift_mean": 0.0005624127807095647,
+     "v_max": 0.026793040335178375,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0057260990142822266
+    },
+    {
+     "t": 0.014625,
+     "pressure_drift_max": 0.005921699106693268,
+     "pressure_drift_mean": 0.0007989206351339817,
+     "v_max": 0.03086976334452629,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.005724191665649414
+    },
+    {
+     "t": 0.01755,
+     "pressure_drift_max": 0.004782518371939659,
+     "pressure_drift_mean": 0.0008842512033879757,
+     "v_max": 0.03456052020192146,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.005724310874938965
+    },
+    {
+     "t": 0.020475,
+     "pressure_drift_max": 0.006392559502273798,
+     "pressure_drift_mean": 0.0009727957658469677,
+     "v_max": 0.038149669766426086,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0057299137115478516
+    },
+    {
+     "t": 0.0234,
+     "pressure_drift_max": 0.009335720911622047,
+     "pressure_drift_mean": 0.0011398206697776914,
+     "v_max": 0.04268335551023483,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0057343244552612305
+    },
+    {
+     "t": 0.026325,
+     "pressure_drift_max": 0.013691713102161884,
+     "pressure_drift_mean": 0.001426365808583796,
+     "v_max": 0.04710093140602112,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.005727410316467285
+    },
+    {
+     "t": 0.02925,
+     "pressure_drift_max": 0.016624528914690018,
+     "pressure_drift_mean": 0.0019219968235120177,
+     "v_max": 0.04828909412026405,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.005722641944885254
+    },
+    {
+     "t": 0.032175,
+     "pressure_drift_max": 0.01111147366464138,
+     "pressure_drift_mean": 0.0023931991308927536,
+     "v_max": 0.040003079921007156,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.005717158317565918
+    },
+    {
+     "t": 0.0351,
+     "pressure_drift_max": 0.012231207452714443,
+     "pressure_drift_mean": 0.0024889949709177017,
+     "v_max": 0.032239872962236404,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.005728244781494141
+    },
+    {
+     "t": 0.038025,
+     "pressure_drift_max": 0.013724030926823616,
+     "pressure_drift_mean": 0.0029525046702474356,
+     "v_max": 0.031777769327163696,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0057561397552490234
+    },
+    {
+     "t": 0.04095,
+     "pressure_drift_max": 0.022187786176800728,
+     "pressure_drift_mean": 0.0041093952022492886,
+     "v_max": 0.035871054977178574,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0058242082595825195
+    },
+    {
+     "t": 0.043875,
+     "pressure_drift_max": 0.031499721109867096,
+     "pressure_drift_mean": 0.004446635488420725,
+     "v_max": 0.03894736245274544,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.005853533744812012
+    },
+    {
+     "t": 0.0468,
+     "pressure_drift_max": 0.03612154349684715,
+     "pressure_drift_mean": 0.004530224949121475,
+     "v_max": 0.03909280523657799,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0058155059814453125
+    },
+    {
+     "t": 0.049725,
+     "pressure_drift_max": 0.03955771401524544,
+     "pressure_drift_mean": 0.005951260682195425,
+     "v_max": 0.03839048370718956,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.005780220031738281
+    },
+    {
+     "t": 0.050213,
+     "pressure_drift_max": 0.03997392952442169,
+     "pressure_drift_mean": 0.0060888431034982204,
+     "v_max": 0.03837331756949425,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.005776166915893555
+    }
+   ]
+  },
+  {
+   "mode": "shipped",
+   "viscosity": 0.01,
+   "dx_m": 0.02,
+   "h_over_dx": 1.3,
+   "h_m": 0.026000000000000002,
+   "sound_speed_m_s": 20.0,
+   "mach_at_rest": 0.0,
+   "c0_over_sqrt_gH": 10.793479469939543,
+   "dt_s": 0.00039000000000000005,
+   "acoustic_courant": 0.30000000000000004,
+   "steps": 128,
+   "seconds": 0.049920000000000006,
+   "gravity_dt_ratio": 0.0020647386552020853,
+   "particles": 850,
+   "wall_particles": 351,
+   "interior_particles": 420,
+   "pressure_drift_max": 0.26289981603622437,
+   "pressure_drift_mean_peak": 0.12897872924804688,
+   "v_max": 0.06952556222677231,
+   "v_max_over_sqrt_gH": 0.037521136426533555,
+   "pass_0p5pct": false,
+   "wall_seconds": 2.627258539199829,
+   "samples": [
+    {
+     "t": 0.0,
+     "pressure_drift_max": 0.00011849726433865726,
+     "pressure_drift_mean": 4.784822158399038e-05,
+     "v_max": 0.0,
+     "acc_max_at_rest": 19.040939331054688,
+     "rho_rel_error_max": 0.006258368492126465
+    },
+    {
+     "t": 0.00312,
+     "pressure_drift_max": 0.08728969842195511,
+     "pressure_drift_mean": 0.020307062193751335,
+     "v_max": 0.0318705253303051,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.005942106246948242
+    },
+    {
+     "t": 0.00624,
+     "pressure_drift_max": 0.26289981603622437,
+     "pressure_drift_mean": 0.085237517952919,
+     "v_max": 0.04841287061572075,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.004951596260070801
+    },
+    {
+     "t": 0.00936,
+     "pressure_drift_max": 0.249690979719162,
+     "pressure_drift_mean": 0.12897872924804688,
+     "v_max": 0.06952556222677231,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.005948781967163086
+    },
+    {
+     "t": 0.01248,
+     "pressure_drift_max": 0.259756475687027,
+     "pressure_drift_mean": 0.10485612601041794,
+     "v_max": 0.055448222905397415,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006921052932739258
+    },
+    {
+     "t": 0.0156,
+     "pressure_drift_max": 0.1769237071275711,
+     "pressure_drift_mean": 0.07204268872737885,
+     "v_max": 0.05552639439702034,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0058879852294921875
+    },
+    {
+     "t": 0.01872,
+     "pressure_drift_max": 0.22103269398212433,
+     "pressure_drift_mean": 0.07707402110099792,
+     "v_max": 0.04165767505764961,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006437420845031738
+    },
+    {
+     "t": 0.02184,
+     "pressure_drift_max": 0.1473117172718048,
+     "pressure_drift_mean": 0.05767674371600151,
+     "v_max": 0.042340729385614395,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0069457292556762695
+    },
+    {
+     "t": 0.02496,
+     "pressure_drift_max": 0.18140479922294617,
+     "pressure_drift_mean": 0.056624189019203186,
+     "v_max": 0.029922982677817345,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006626248359680176
+    },
+    {
+     "t": 0.02808,
+     "pressure_drift_max": 0.23699064552783966,
+     "pressure_drift_mean": 0.05915958434343338,
+     "v_max": 0.029158424586057663,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.00616300106048584
+    },
+    {
+     "t": 0.0312,
+     "pressure_drift_max": 0.20188921689987183,
+     "pressure_drift_mean": 0.06903646886348724,
+     "v_max": 0.02958241105079651,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006933927536010742
+    },
+    {
+     "t": 0.03432,
+     "pressure_drift_max": 0.20401808619499207,
+     "pressure_drift_mean": 0.08108924329280853,
+     "v_max": 0.018890531733632088,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.007940888404846191
+    },
+    {
+     "t": 0.03744,
+     "pressure_drift_max": 0.10935718566179276,
+     "pressure_drift_mean": 0.03643336892127991,
+     "v_max": 0.031094472855329514,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006898283958435059
+    },
+    {
+     "t": 0.04056,
+     "pressure_drift_max": 0.16518063843250275,
+     "pressure_drift_mean": 0.06951449811458588,
+     "v_max": 0.030126983299851418,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006002068519592285
+    },
+    {
+     "t": 0.04368,
+     "pressure_drift_max": 0.20778216421604156,
+     "pressure_drift_mean": 0.05099702626466751,
+     "v_max": 0.01996499113738537,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006498575210571289
+    },
+    {
+     "t": 0.0468,
+     "pressure_drift_max": 0.10663692653179169,
+     "pressure_drift_mean": 0.03587924689054489,
+     "v_max": 0.03555452078580856,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006781935691833496
+    },
+    {
+     "t": 0.04992,
+     "pressure_drift_max": 0.25934898853302,
+     "pressure_drift_mean": 0.04865933209657669,
+     "v_max": 0.03100700117647648,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006737709045410156
+    }
+   ]
+  },
+  {
+   "mode": "wb",
+   "viscosity": 0.01,
+   "dx_m": 0.02,
+   "h_over_dx": 1.3,
+   "h_m": 0.026000000000000002,
+   "sound_speed_m_s": 20.0,
+   "mach_at_rest": 0.0,
+   "c0_over_sqrt_gH": 10.793479469939543,
+   "dt_s": 0.00039000000000000005,
+   "acoustic_courant": 0.30000000000000004,
+   "steps": 128,
+   "seconds": 0.049920000000000006,
+   "gravity_dt_ratio": 0.0020647386552020853,
+   "particles": 850,
+   "wall_particles": 351,
+   "interior_particles": 420,
+   "pressure_drift_max": 0.03887222334742546,
+   "pressure_drift_mean_peak": 0.00477994978427887,
+   "v_max": 0.05972903594374657,
+   "v_max_over_sqrt_gH": 0.03223420616090548,
+   "pass_0p5pct": false,
+   "wall_seconds": 2.729048490524292,
+   "samples": [
+    {
+     "t": 0.0,
+     "pressure_drift_max": 0.00011849726433865726,
+     "pressure_drift_mean": 4.784822158399038e-05,
+     "v_max": 0.0,
+     "acc_max_at_rest": 4.649155616760254,
+     "rho_rel_error_max": 0.006258368492126465
+    },
+    {
+     "t": 0.00312,
+     "pressure_drift_max": 0.0007224848959594965,
+     "pressure_drift_mean": 5.4749809351051226e-05,
+     "v_max": 0.013506789691746235,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006258726119995117
+    },
+    {
+     "t": 0.00624,
+     "pressure_drift_max": 0.0022952845320105553,
+     "pressure_drift_mean": 0.00016342930030077696,
+     "v_max": 0.023920448496937752,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006259799003601074
+    },
+    {
+     "t": 0.00936,
+     "pressure_drift_max": 0.005377422086894512,
+     "pressure_drift_mean": 0.0004555090272333473,
+     "v_max": 0.031665779650211334,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006258606910705566
+    },
+    {
+     "t": 0.01248,
+     "pressure_drift_max": 0.014193558134138584,
+     "pressure_drift_mean": 0.0007600030512548983,
+     "v_max": 0.040601059794425964,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006257534027099609
+    },
+    {
+     "t": 0.0156,
+     "pressure_drift_max": 0.013097112067043781,
+     "pressure_drift_mean": 0.0009612028952687979,
+     "v_max": 0.049154505133628845,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006257295608520508
+    },
+    {
+     "t": 0.01872,
+     "pressure_drift_max": 0.014375890605151653,
+     "pressure_drift_mean": 0.001071633887477219,
+     "v_max": 0.05730973556637764,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006257176399230957
+    },
+    {
+     "t": 0.02184,
+     "pressure_drift_max": 0.016283009201288223,
+     "pressure_drift_mean": 0.001212598173879087,
+     "v_max": 0.05961482971906662,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006257295608520508
+    },
+    {
+     "t": 0.02496,
+     "pressure_drift_max": 0.011177850887179375,
+     "pressure_drift_mean": 0.0016428239177912474,
+     "v_max": 0.04760913550853729,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006251931190490723
+    },
+    {
+     "t": 0.02808,
+     "pressure_drift_max": 0.016245199367403984,
+     "pressure_drift_mean": 0.0021837614476680756,
+     "v_max": 0.04383610934019089,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0062514543533325195
+    },
+    {
+     "t": 0.0312,
+     "pressure_drift_max": 0.02862939052283764,
+     "pressure_drift_mean": 0.002822772366926074,
+     "v_max": 0.04973822087049484,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.00626528263092041
+    },
+    {
+     "t": 0.03432,
+     "pressure_drift_max": 0.03682349622249603,
+     "pressure_drift_mean": 0.003716434817761183,
+     "v_max": 0.05314961075782776,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006333351135253906
+    },
+    {
+     "t": 0.03744,
+     "pressure_drift_max": 0.03887222334742546,
+     "pressure_drift_mean": 0.004221003036946058,
+     "v_max": 0.0528910867869854,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006326198577880859
+    },
+    {
+     "t": 0.04056,
+     "pressure_drift_max": 0.03543053939938545,
+     "pressure_drift_mean": 0.004747885745018721,
+     "v_max": 0.054164379835128784,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006295680999755859
+    },
+    {
+     "t": 0.04368,
+     "pressure_drift_max": 0.034826427698135376,
+     "pressure_drift_mean": 0.004572384525090456,
+     "v_max": 0.05688907951116562,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006342053413391113
+    },
+    {
+     "t": 0.0468,
+     "pressure_drift_max": 0.029623817652463913,
+     "pressure_drift_mean": 0.00477994978427887,
+     "v_max": 0.058577656745910645,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006494998931884766
+    },
+    {
+     "t": 0.04992,
+     "pressure_drift_max": 0.023570610210299492,
+     "pressure_drift_mean": 0.00451216334477067,
+     "v_max": 0.05972903594374657,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0064160823822021484
+    }
+   ]
+  },
+  {
+   "mode": "wb",
+   "viscosity": 0.01,
+   "dx_m": 0.02,
+   "h_over_dx": 1.3,
+   "h_m": 0.026000000000000002,
+   "sound_speed_m_s": 40.0,
+   "mach_at_rest": 0.0,
+   "c0_over_sqrt_gH": 21.586958939879086,
+   "dt_s": 0.00019500000000000002,
+   "acoustic_courant": 0.30000000000000004,
+   "steps": 256,
+   "seconds": 0.049920000000000006,
+   "gravity_dt_ratio": 0.0010323693276010426,
+   "particles": 850,
+   "wall_particles": 351,
+   "interior_particles": 420,
+   "pressure_drift_max": 0.09463508427143097,
+   "pressure_drift_mean_peak": 0.0120683079585433,
+   "v_max": 0.06253645569086075,
+   "v_max_over_sqrt_gH": 0.03374929753110447,
+   "pass_0p5pct": false,
+   "wall_seconds": 5.399862289428711,
+   "samples": [
+    {
+     "t": 0.0,
+     "pressure_drift_max": 0.0005509607144631445,
+     "pressure_drift_mean": 0.00016310595674440265,
+     "v_max": 0.0,
+     "acc_max_at_rest": 4.653675079345703,
+     "rho_rel_error_max": 0.001587510108947754
+    },
+    {
+     "t": 0.00312,
+     "pressure_drift_max": 0.003208403242751956,
+     "pressure_drift_mean": 0.0002491456107236445,
+     "v_max": 0.01245473325252533,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.001587510108947754
+    },
+    {
+     "t": 0.00624,
+     "pressure_drift_max": 0.016410110518336296,
+     "pressure_drift_mean": 0.0008331855060532689,
+     "v_max": 0.021217647939920425,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0015873908996582031
+    },
+    {
+     "t": 0.00936,
+     "pressure_drift_max": 0.015243270434439182,
+     "pressure_drift_mean": 0.0012659295462071896,
+     "v_max": 0.03055352158844471,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0015870332717895508
+    },
+    {
+     "t": 0.01248,
+     "pressure_drift_max": 0.016281072050333023,
+     "pressure_drift_mean": 0.0017829732969403267,
+     "v_max": 0.03932306542992592,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0015867948532104492
+    },
+    {
+     "t": 0.0156,
+     "pressure_drift_max": 0.01484641246497631,
+     "pressure_drift_mean": 0.002399873686954379,
+     "v_max": 0.047633588314056396,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0015882253646850586
+    },
+    {
+     "t": 0.01872,
+     "pressure_drift_max": 0.016176635399460793,
+     "pressure_drift_mean": 0.0027305479161441326,
+     "v_max": 0.05538158863782883,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0015881061553955078
+    },
+    {
+     "t": 0.02184,
+     "pressure_drift_max": 0.022621208801865578,
+     "pressure_drift_mean": 0.00298194563947618,
+     "v_max": 0.06253645569086075,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0015878677368164062
+    },
+    {
+     "t": 0.02496,
+     "pressure_drift_max": 0.022443711757659912,
+     "pressure_drift_mean": 0.003007040359079838,
+     "v_max": 0.046111296862363815,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0015916824340820312
+    },
+    {
+     "t": 0.02808,
+     "pressure_drift_max": 0.0496523454785347,
+     "pressure_drift_mean": 0.004912452306598425,
+     "v_max": 0.04740381985902786,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.001598954200744629
+    },
+    {
+     "t": 0.0312,
+     "pressure_drift_max": 0.09271705150604248,
+     "pressure_drift_mean": 0.007737770676612854,
+     "v_max": 0.04901718348264694,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0016356706619262695
+    },
+    {
+     "t": 0.03432,
+     "pressure_drift_max": 0.09463508427143097,
+     "pressure_drift_mean": 0.009936203248798847,
+     "v_max": 0.04850199818611145,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0016219615936279297
+    },
+    {
+     "t": 0.03744,
+     "pressure_drift_max": 0.07595080882310867,
+     "pressure_drift_mean": 0.011846425011754036,
+     "v_max": 0.05198824405670166,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.001681208610534668
+    },
+    {
+     "t": 0.04056,
+     "pressure_drift_max": 0.06300228834152222,
+     "pressure_drift_mean": 0.0120683079585433,
+     "v_max": 0.05289588123559952,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0016307830810546875
+    },
+    {
+     "t": 0.04368,
+     "pressure_drift_max": 0.05239047482609749,
+     "pressure_drift_mean": 0.01174150500446558,
+     "v_max": 0.05482711270451546,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0016889572143554688
+    },
+    {
+     "t": 0.0468,
+     "pressure_drift_max": 0.05487998202443123,
+     "pressure_drift_mean": 0.0119706429541111,
+     "v_max": 0.05790936201810837,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0016034841537475586
+    },
+    {
+     "t": 0.04992,
+     "pressure_drift_max": 0.04180075228214264,
+     "pressure_drift_mean": 0.011378524824976921,
+     "v_max": 0.05806504935026169,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0016633272171020508
+    }
+   ]
+  },
+  {
+   "mode": "shipped",
+   "viscosity": 0.01,
+   "dx_m": 0.02,
+   "h_over_dx": 1.3,
+   "h_m": 0.026000000000000002,
+   "sound_speed_m_s": 40.0,
+   "mach_at_rest": 0.0,
+   "c0_over_sqrt_gH": 21.586958939879086,
+   "dt_s": 0.00019500000000000002,
+   "acoustic_courant": 0.30000000000000004,
+   "steps": 256,
+   "seconds": 0.049920000000000006,
+   "gravity_dt_ratio": 0.0010323693276010426,
+   "particles": 850,
+   "wall_particles": 351,
+   "interior_particles": 420,
+   "pressure_drift_max": 0.45367157459259033,
+   "pressure_drift_mean_peak": 0.2562916576862335,
+   "v_max": 0.07154834270477295,
+   "v_max_over_sqrt_gH": 0.03861277840460828,
+   "pass_0p5pct": false,
+   "wall_seconds": 5.279870510101318,
+   "samples": [
+    {
+     "t": 0.0,
+     "pressure_drift_max": 0.0005509607144631445,
+     "pressure_drift_mean": 0.00016310595674440265,
+     "v_max": 0.0,
+     "acc_max_at_rest": 18.768795013427734,
+     "rho_rel_error_max": 0.001587510108947754
+    },
+    {
+     "t": 0.00312,
+     "pressure_drift_max": 0.2627298831939697,
+     "pressure_drift_mean": 0.0833977460861206,
+     "v_max": 0.02525378204882145,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.001264333724975586
+    },
+    {
+     "t": 0.00624,
+     "pressure_drift_max": 0.272836297750473,
+     "pressure_drift_mean": 0.13082952797412872,
+     "v_max": 0.04843185469508171,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0017944574356079102
+    },
+    {
+     "t": 0.00936,
+     "pressure_drift_max": 0.18817703425884247,
+     "pressure_drift_mean": 0.0691281333565712,
+     "v_max": 0.07154834270477295,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.001580357551574707
+    },
+    {
+     "t": 0.01248,
+     "pressure_drift_max": 0.22629420459270477,
+     "pressure_drift_mean": 0.0828065350651741,
+     "v_max": 0.06553588062524796,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0014848709106445312
+    },
+    {
+     "t": 0.0156,
+     "pressure_drift_max": 0.3346629738807678,
+     "pressure_drift_mean": 0.10420923680067062,
+     "v_max": 0.03692559525370598,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0017504692077636719
+    },
+    {
+     "t": 0.01872,
+     "pressure_drift_max": 0.40673381090164185,
+     "pressure_drift_mean": 0.13349099457263947,
+     "v_max": 0.028574777767062187,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0020753145217895508
+    },
+    {
+     "t": 0.02184,
+     "pressure_drift_max": 0.278379887342453,
+     "pressure_drift_mean": 0.13240911066532135,
+     "v_max": 0.037248313426971436,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0020562410354614258
+    },
+    {
+     "t": 0.02496,
+     "pressure_drift_max": 0.2705751061439514,
+     "pressure_drift_mean": 0.13374118506908417,
+     "v_max": 0.03090672940015793,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0019730329513549805
+    },
+    {
+     "t": 0.02808,
+     "pressure_drift_max": 0.35506612062454224,
+     "pressure_drift_mean": 0.15249858796596527,
+     "v_max": 0.04074675217270851,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0012193918228149414
+    },
+    {
+     "t": 0.0312,
+     "pressure_drift_max": 0.45367157459259033,
+     "pressure_drift_mean": 0.2562916576862335,
+     "v_max": 0.024954818189144135,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0018677711486816406
+    },
+    {
+     "t": 0.03432,
+     "pressure_drift_max": 0.31007370352745056,
+     "pressure_drift_mean": 0.1361725926399231,
+     "v_max": 0.028421100229024887,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.001465439796447754
+    },
+    {
+     "t": 0.03744,
+     "pressure_drift_max": 0.3115454912185669,
+     "pressure_drift_mean": 0.08658439666032791,
+     "v_max": 0.043093204498291016,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.001458883285522461
+    },
+    {
+     "t": 0.04056,
+     "pressure_drift_max": 0.2569335103034973,
+     "pressure_drift_mean": 0.08279005438089371,
+     "v_max": 0.04007624089717865,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0015586614608764648
+    },
+    {
+     "t": 0.04368,
+     "pressure_drift_max": 0.4004158675670624,
+     "pressure_drift_mean": 0.1361403465270996,
+     "v_max": 0.03387555480003357,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0019037723541259766
+    },
+    {
+     "t": 0.0468,
+     "pressure_drift_max": 0.37819772958755493,
+     "pressure_drift_mean": 0.10883885622024536,
+     "v_max": 0.03892580047249794,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.0019752979278564453
+    },
+    {
+     "t": 0.04992,
+     "pressure_drift_max": 0.3929828107357025,
+     "pressure_drift_mean": 0.1782105267047882,
+     "v_max": 0.035018377006053925,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.002230525016784668
+    }
+   ]
+  },
+  {
+   "mode": "wb",
+   "viscosity": 0.0,
+   "dx_m": 0.02,
+   "h_over_dx": 1.3,
+   "h_m": 0.026000000000000002,
+   "sound_speed_m_s": 20.0,
+   "mach_at_rest": 0.0,
+   "c0_over_sqrt_gH": 10.793479469939543,
+   "dt_s": 0.00039000000000000005,
+   "acoustic_courant": 0.30000000000000004,
+   "steps": 128,
+   "seconds": 0.049920000000000006,
+   "gravity_dt_ratio": 0.0020647386552020853,
+   "particles": 850,
+   "wall_particles": 351,
+   "interior_particles": 420,
+   "pressure_drift_max": 0.07757823169231415,
+   "pressure_drift_mean_peak": 0.011519527062773705,
+   "v_max": 0.10170496255159378,
+   "v_max_over_sqrt_gH": 0.054887521264579874,
+   "pass_0p5pct": false,
+   "wall_seconds": 2.8659772872924805,
+   "samples": [
+    {
+     "t": 0.0,
+     "pressure_drift_max": 0.00011849726433865726,
+     "pressure_drift_mean": 4.784822158399038e-05,
+     "v_max": 0.0,
+     "acc_max_at_rest": 4.649155616760254,
+     "rho_rel_error_max": 0.006258368492126465
+    },
+    {
+     "t": 0.00312,
+     "pressure_drift_max": 0.0007086015539243817,
+     "pressure_drift_mean": 5.451364631881006e-05,
+     "v_max": 0.014039765112102032,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006258606910705566
+    },
+    {
+     "t": 0.00624,
+     "pressure_drift_max": 0.0021127567160874605,
+     "pressure_drift_mean": 0.00015991731197573245,
+     "v_max": 0.026050977408885956,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006259799003601074
+    },
+    {
+     "t": 0.00936,
+     "pressure_drift_max": 0.007387431338429451,
+     "pressure_drift_mean": 0.0004862422647420317,
+     "v_max": 0.03627050295472145,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006258249282836914
+    },
+    {
+     "t": 0.01248,
+     "pressure_drift_max": 0.017765896394848824,
+     "pressure_drift_mean": 0.0008504812140017748,
+     "v_max": 0.04571213945746422,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006257295608520508
+    },
+    {
+     "t": 0.0156,
+     "pressure_drift_max": 0.016676027327775955,
+     "pressure_drift_mean": 0.0011791764991357923,
+     "v_max": 0.05587546527385712,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006257534027099609
+    },
+    {
+     "t": 0.01872,
+     "pressure_drift_max": 0.018240472301840782,
+     "pressure_drift_mean": 0.0014355072053149343,
+     "v_max": 0.06669913232326508,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.00625765323638916
+    },
+    {
+     "t": 0.02184,
+     "pressure_drift_max": 0.02262791059911251,
+     "pressure_drift_mean": 0.001778127858415246,
+     "v_max": 0.06974852830171585,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006258606910705566
+    },
+    {
+     "t": 0.02496,
+     "pressure_drift_max": 0.021111853420734406,
+     "pressure_drift_mean": 0.0024010175839066505,
+     "v_max": 0.05846323445439339,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006252288818359375
+    },
+    {
+     "t": 0.02808,
+     "pressure_drift_max": 0.020510852336883545,
+     "pressure_drift_mean": 0.0030425211880356073,
+     "v_max": 0.05859995260834694,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006250619888305664
+    },
+    {
+     "t": 0.0312,
+     "pressure_drift_max": 0.03949841111898422,
+     "pressure_drift_mean": 0.003989737015217543,
+     "v_max": 0.06976534426212311,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006272792816162109
+    },
+    {
+     "t": 0.03432,
+     "pressure_drift_max": 0.06468713283538818,
+     "pressure_drift_mean": 0.005463290959596634,
+     "v_max": 0.07675814628601074,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006351947784423828
+    },
+    {
+     "t": 0.03744,
+     "pressure_drift_max": 0.07279756665229797,
+     "pressure_drift_mean": 0.006993310991674662,
+     "v_max": 0.07866380363702774,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006360888481140137
+    },
+    {
+     "t": 0.04056,
+     "pressure_drift_max": 0.0707714855670929,
+     "pressure_drift_mean": 0.008673172444105148,
+     "v_max": 0.08391046524047852,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006323099136352539
+    },
+    {
+     "t": 0.04368,
+     "pressure_drift_max": 0.07757823169231415,
+     "pressure_drift_mean": 0.00986185111105442,
+     "v_max": 0.09167390316724777,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.00646662712097168
+    },
+    {
+     "t": 0.0468,
+     "pressure_drift_max": 0.06621881574392319,
+     "pressure_drift_mean": 0.011217771098017693,
+     "v_max": 0.09715230017900467,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006767749786376953
+    },
+    {
+     "t": 0.04992,
+     "pressure_drift_max": 0.06463423371315002,
+     "pressure_drift_mean": 0.011519527062773705,
+     "v_max": 0.10170496255159378,
+     "acc_max_at_rest": null,
+     "rho_rel_error_max": 0.006595492362976074
+    }
+   ]
+  }
+ ],
+ "summary": {
+  "shipped_drift_max_over_resolutions": 0.3200194835662842,
+  "wb_drift_max_over_resolutions": 0.07757823169231415,
+  "improvement_factor_at_dx_0p02": 6.763179293515672,
+  "criterion_met": false,
+  "wb_criterion_met": false
+ },
+ "provenance": {
+  "source": {
+   "commit": "ae61a2b2ce7a1c79557a4befefb2b5c2893d0f77",
+   "dirty": true
+  },
+  "python": "3.11.6",
+  "torch": "2.7.1",
+  "repro_cmd": "PYTHONPATH=src python3 benchmarks/lake_at_rest/run.py",
+  "generated_at": "2026-11-11T21:31:46Z"
+ }
+}
