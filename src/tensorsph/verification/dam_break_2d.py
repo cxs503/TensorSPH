@@ -230,8 +230,15 @@ def measure(pos: torch.Tensor, cfg: DamBreak2DConfig) -> dict:
     }
 
 
-def run(cfg: DamBreak2DConfig, label: str = "") -> dict:
-    """Integrate the case and return the raw observable time series."""
+def run(cfg: DamBreak2DConfig, label: str = "",
+        keep_snapshots: bool = False) -> dict:
+    """Integrate the case and return the raw observable time series.
+
+    ``keep_snapshots`` adds the final particle state (positions and
+    velocities) to the result so a downstream artefact bundle can draw a
+    field snapshot without re-integrating the case.  It is off by default
+    because the benchmark runners serialise the whole result dict.
+    """
     solver = cfg.solver_config()
     # Snapshots are only captured on output steps (``dam_break.run_case``), so
     # the requested times are placed exactly on them.
@@ -246,7 +253,7 @@ def run(cfg: DamBreak2DConfig, label: str = "") -> dict:
         row["tau"] = float(t * math.sqrt(2.0 * cfg.gravity / cfg.column_width))
         row["speed_max"] = float(torch.linalg.vector_norm(vel, dim=-1).max())
         rows.append(row)
-    return {
+    out = {
         "label": label or f"dam_break_2d_dx{cfg.dx:g}",
         "config": cfg.as_dict(),
         "rows": rows,
@@ -260,6 +267,17 @@ def run(cfg: DamBreak2DConfig, label: str = "") -> dict:
         "max_mach": float(result.max_speed / cfg.sound_speed),
         "dt": float(solver.dt),
     }
+    if keep_snapshots and result.snapshots:
+        t_snap, pos_snap, vel_snap = result.snapshots[-1]
+        out["final_snapshot"] = {
+            "t": float(t_snap),
+            "tau": float(t_snap * math.sqrt(2.0 * cfg.gravity / cfg.column_width)),
+            "x": [float(v) for v in pos_snap[:, 0]],
+            "y": [float(v) for v in pos_snap[:, 1]],
+            "speed": [float(v) for v in torch.linalg.vector_norm(vel_snap, dim=-1)],
+            "unit": "m, m, m/s",
+        }
+    return out
 
 
 # --------------------------------------------------------------------------- #
