@@ -250,6 +250,264 @@
     },
     {
       "admissibility": null,
+      "artifact": "benchmarks/ice_floe_added_mass/report.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "docs/verification_ice_floe_added_mass.md",
+      "claim_id": "ice_floe_added_mass.anchor.c_m_richardson",
+      "claim_type": "relative_error",
+      "credit_qualified": true,
+      "criterion_pct": 15.0,
+      "declared_verdict": {
+        "failing_criteria": [],
+        "json_path": "verdict",
+        "missing_cases": [],
+        "value": "pass"
+      },
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_ice_floe_added_mass.py",
+      "json_path": "richardson_extrapolation",
+      "measured": {
+        "definition": "first-order Richardson over 16 -> 24 cells/radius",
+        "unit": "-",
+        "value": 0.988634
+      },
+      "notes": "Extrapolation assumes first-order convergence of the staircase boundary.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "added-mass coefficient of a 2-D circular section in an unbounded fluid",
+      "quantity_id": "ice_floe_added_mass_c_m_unbounded",
+      "reference": {
+        "source": "Lamb, Hydrodynamics, 6th ed., §71; Landau & Lifshitz, Fluid Mechanics, §11",
+        "unit": "-",
+        "value": 1.0
+      },
+      "rel_error_pct": -1.136609,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/ice_floe_added_mass/report.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "docs/verification_ice_floe_added_mass.md",
+      "claim_id": "ice_floe_added_mass.anchor.c_m_unbounded",
+      "claim_type": "relative_error",
+      "credit_qualified": true,
+      "criterion_pct": 15.0,
+      "declared_verdict": {
+        "failing_criteria": [],
+        "json_path": "verdict",
+        "missing_cases": [],
+        "value": "pass"
+      },
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "MARGINAL",
+      "guarding_test": "tests/test_ice_floe_added_mass.py",
+      "json_path": "anchor_ladder[3]",
+      "measured": {
+        "definition": "potential-flow SOR, zero initial, 24 cells/radius, box 6R, tol 1e-05",
+        "unit": "-",
+        "value": 0.9479
+      },
+      "notes": "First-order staircase body boundary: the raw finest rung is a systematic lower bound; the Richardson reading is the converged estimate. Box sensitivity < 0.5 % and x/y isotropy at machine precision are recorded in the same artifact.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "added-mass coefficient of a 2-D circular section in an unbounded fluid",
+      "quantity_id": "ice_floe_added_mass_c_m_unbounded",
+      "reference": {
+        "source": "Lamb, Hydrodynamics, 6th ed., §71; Landau & Lifshitz, Fluid Mechanics, §11",
+        "unit": "-",
+        "value": 1.0
+      },
+      "rel_error_pct": -5.210018,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/ice_floe_added_mass/report.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "docs/verification_ice_floe_added_mass.md",
+      "claim_id": "ice_floe_added_mass.launch.speed_ratio",
+      "claim_type": "relative_error",
+      "credit_qualified": true,
+      "criterion_pct": 15.0,
+      "declared_verdict": {
+        "failing_criteria": [],
+        "json_path": "verdict",
+        "missing_cases": [],
+        "value": "pass"
+      },
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_ice_floe_added_mass.py",
+      "json_path": "launch_bias.speed_ratio_mean",
+      "measured": {
+        "definition": "mean over 5 floes of the SPH impulse run (dx = 0.0125 m, t = 0.46 s)",
+        "unit": "-",
+        "value": 0.478352
+      },
+      "notes": "The correction is an algebraic identity applied to the SPH impulse; the SPH run supplies the impulse only, so agreement is expected at machine precision.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "floe launch speed ratio v_wet/v_dry vs the algebraic identity rho_ice/(rho_ice + C_m rho_w)",
+      "quantity_id": "ice_floe_added_mass_launch_speed_ratio",
+      "reference": {
+        "source": "speed_ratio_with_added_mass(rho_ice, rho_w, C_m = 1)",
+        "unit": "-",
+        "value": 0.478352
+      },
+      "rel_error_pct": 0.0,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/ice_floe_added_mass/report.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "docs/verification_ice_floe_added_mass.md",
+      "claim_id": "ice_floe_added_mass.plane_limits.max_deviation",
+      "claim_type": "gate",
+      "credit_qualified": true,
+      "criterion_pct": 15.0,
+      "declared_verdict": {
+        "failing_criteria": [],
+        "json_path": "verdict",
+        "missing_cases": [],
+        "value": "pass"
+      },
+      "gate_limit": 15.0,
+      "gate_result": "pass",
+      "gauge_degenerate": false,
+      "grade": "MARGINAL",
+      "guarding_test": "tests/test_ice_floe_added_mass.py",
+      "json_path": "plane_limits",
+      "measured": {
+        "definition": "max |C_m(gap)/C_m(infinity) - 1| over 2 boundaries x 2 axes x 2 gaps",
+        "unit": "%",
+        "value": 4.911272
+      },
+      "notes": "gap < 2 radii (the real floe-on-deck configuration) is unresolved on the Cartesian ladder and is deliberately not quoted (doc section 5).",
+      "paper_criterion_pct": 3.0,
+      "quantity": "plane-limit recovery: C_m(gap)/C_m(infinity) for a rigid wall and a linearised free surface, gap >= 2 radii",
+      "quantity_id": "ice_floe_added_mass_plane_limit_recovery",
+      "reference": {
+        "source": "platform acceptance line (CRITERION_PCT) on the max ratio deviation",
+        "unit": "%",
+        "value": 15.0
+      },
+      "rel_error_pct": 4.911272,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/ice_thermal_multiphysics/validation_report.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "docs/verification_ice_thermal_multiphysics.md",
+      "claim_id": "ice_thermal.brine_floor.min_margin",
+      "claim_type": "gate",
+      "credit_qualified": true,
+      "criterion_pct": 15.0,
+      "declared_verdict": null,
+      "gate_limit": 1e-06,
+      "gate_result": "pass",
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_ice_thermal_integration.py",
+      "json_path": "desalination.floor_min_margin_psu",
+      "measured": {
+        "definition": "min over the column of S - S_eq after 60 d of gravity drainage",
+        "unit": "psu",
+        "value": 0.0
+      },
+      "notes": "One-sided by construction: drainage is rate limited, so the 60-day column stays above the floor (final bulk 5.398 psu vs the asymptote 3.244 psu). Crossing the floor would be a physics defect, not a tolerance miss.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "drainage must never remove salt below the irreducible-brine floor",
+      "quantity_id": "ice_thermal_brine_floor_margin",
+      "reference": {
+        "source": "one-sided bound: S(z) >= S_eq(T(z)), S_eq from v_b = v_irr",
+        "unit": "psu",
+        "value": 0.0
+      },
+      "rel_error_pct": 0.0,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/ice_thermal_multiphysics/validation_report.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "docs/verification_ice_thermal_multiphysics.md",
+      "claim_id": "ice_thermal.darcy_benard.ra_c",
+      "claim_type": "relative_error",
+      "credit_qualified": true,
+      "criterion_pct": 15.0,
+      "declared_verdict": null,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_ice_thermal_integration.py",
+      "json_path": "darcy",
+      "measured": {
+        "definition": "finite-difference eigenvalue solve, 60 nodes, 25 wavenumbers",
+        "unit": "-",
+        "value": 39.472211
+      },
+      "notes": "",
+      "paper_criterion_pct": 3.0,
+      "quantity": "critical Rayleigh number of Horton-Rogers-Lapwood onset",
+      "quantity_id": "ice_thermal_darcy_ra_c",
+      "reference": {
+        "source": "exact 4 pi^2",
+        "unit": "-",
+        "value": 39.478418
+      },
+      "rel_error_pct": 0.015721,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/ice_thermal_multiphysics/validation_report.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "docs/verification_ice_thermal_multiphysics.md",
+      "claim_id": "ice_thermal.stefan_front.finest",
+      "claim_type": "relative_error",
+      "credit_qualified": true,
+      "criterion_pct": 15.0,
+      "declared_verdict": null,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_ice_thermal_integration.py",
+      "json_path": "stefan[2]",
+      "measured": {
+        "definition": "SPH enthalpy particle front, dx = 0.008 m, t_end = 4e4 s, 4081 steps",
+        "unit": "m",
+        "value": 0.074889
+      },
+      "notes": "Resolution ladder dx = 0.02/0.0125/0.008 m is in the same artifact; the front error is 3.7 % at the first sample of the coarsest grid (start-up transient) and <= 2 % at t_end.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "1-D Stefan freezing front X(t_end) vs the Neumann similarity solution",
+      "quantity_id": "ice_thermal_stefan_front_x",
+      "reference": {
+        "source": "Neumann solution X = 2 lambda sqrt(alpha t), lambda from sqrt(pi) lambda exp(lambda^2) erf(lambda) = Ste",
+        "unit": "m",
+        "value": 0.075037
+      },
+      "rel_error_pct": 0.197187,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
       "artifact": "benchmarks/laplace_droplet/results.json",
       "artifact_status": "FAIL",
       "backlog_ref": "docs/verification_ledger.md",
@@ -1617,9 +1875,51 @@
       "severity": "high"
     },
     {
+      "claim_id": "benchmarks/aeration",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/rayleigh_plateau",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/slamming",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/two_phase_laplace",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/verification_ladder",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/wcsph_chain",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
       "claim_id": "benchmarks/wedge_entry",
       "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
       "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/aeration/report.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
       "severity": "medium"
     },
     {
@@ -1627,14 +1927,38 @@
       "detail": "machine-readable evidence file not referenced by any ledger claim",
       "rule": "unregistered_artifact",
       "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/fluctuating_hydro/report.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/rayleigh_plateau/report.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/surface_tension_dispersion/validation_report.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "docs/verified/fluctuating_hydrodynamics_verification.md:149",
+      "detail": "quotes -98.5% without a historical marker (legacy gradient CSF scheme, kept only as a before/after contrast)",
+      "rule": "unmarked_superseded_number",
+      "severity": "medium"
     }
   ],
   "schema_version": 1,
   "summary": {
     "by_grade": {
       "FAIL": 10,
-      "MARGINAL": 8,
-      "PASS": 7,
+      "MARGINAL": 10,
+      "PASS": 12,
       "WITHDRAWN": 2,
       "WITHHELD": 13
     },
@@ -1645,15 +1969,16 @@
       "inadmissible_run": 3,
       "quantity_spread": 4,
       "run_validity": 4,
-      "uncovered_benchmark": 1,
-      "unregistered_artifact": 1
+      "uncovered_benchmark": 7,
+      "unmarked_superseded_number": 1,
+      "unregistered_artifact": 5
     },
     "n_artifact_verdicts_fail": 12,
-    "n_claims": 40,
+    "n_claims": 47,
     "n_credits_unqualified": 6,
-    "n_credits_without_declared_verdict": 6,
-    "n_findings": 20,
-    "n_quantities": 20,
+    "n_credits_without_declared_verdict": 9,
+    "n_findings": 31,
+    "n_quantities": 26,
     "paper_criterion_pct": 3.0
   }
 }
