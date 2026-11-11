@@ -1,0 +1,198 @@
+{
+  "schema": "tensorsph.poiseuille.claims_register/v1",
+  "purpose": "Every number quoted by the three Poiseuille verification documents is declared here with (a) the exact sentence/table row of the document it lives in, (b) the one number to pull out of that quote, and (c) the artifact JSON path that must supply it. `benchmarks/poiseuille/provenance_audit.py` parses the number out of the *document* (never out of this file), resolves the declared path in the artifacts, and reports verified / misattributed / not_in_artifact. A claim whose quote is no longer found in its document fails loudly, so the record cannot drift.",
+  "tolerance": {
+    "relative_default": 0.0005,
+    "note": "quotes are printed to 3-5 significant figures, so a printed value may differ from the artifact by rounding; 5e-4 admits that and nothing coarser. Analytic identities are checked at 1e-9."
+  },
+  "claims": [
+    {
+      "id": "channel.u_max.best",
+      "doc": "docs/verification_poiseuille_channel.md",
+      "quote": "| peak velocity `u_max` | `g_x H^2/(8 nu) = 1.2263` m/s | 1.2448 m/s (H/dx=16) |",
+      "extract": "\\| (1\\.2448) m/s \\(H/dx=16\\) \\|",
+      "path": "results.results[2].u_max_measured",
+      "tol_rel": 0.0005
+    },
+    {
+      "id": "channel.u_max.analytic",
+      "doc": "docs/verification_poiseuille_channel.md",
+      "quote": "| peak velocity `u_max` | `g_x H^2/(8 nu) = 1.2263` m/s | 1.2448 m/s (H/dx=16) |",
+      "extract": "= (1\\.2263)` m/s",
+      "path": "derived.u_max",
+      "tol_rel": 0.0005
+    },
+    {
+      "id": "channel.tau.analytic",
+      "doc": "docs/verification_poiseuille_channel.md",
+      "quote": "`rho g_x H/2 = 490.5` Pa",
+      "extract": "= (490\\.5)` Pa",
+      "path": "derived.tau_w",
+      "tol_rel": 0.0005
+    },
+    {
+      "id": "channel.wall_row_slip.h16",
+      "doc": "docs/verification_poiseuille_channel.md",
+      "quote": "| 16 | 1.236 | 1.149 | 0.911 | 31.4% | 0.503 |",
+      "extract": "\\| (31\\.4)% \\|",
+      "path": "results.results[2].wall_row_slip_over_umax",
+      "scale": 100.0,
+      "tol_rel": 0.005
+    },
+    {
+      "id": "channel.secant.h16",
+      "doc": "docs/verification_poiseuille_channel.md",
+      "quote": "| 16 | 0.503 | 0.875 | 0.812 | 1.009 |",
+      "extract": "\\| 16 \\| (0\\.503) \\|",
+      "path": "estimators.cases[2].estimator_ratios.secant_1dx",
+      "tol_rel": 0.002
+    },
+    {
+      "id": "channel.budget.h16",
+      "doc": "docs/verification_poiseuille_channel.md",
+      "quote": "| 16 | 0.503 | 0.875 | 0.812 | 1.009 |",
+      "extract": "0\\.812 \\| (1\\.009)",
+      "path": "estimators.cases[2].budget.drag_over_weight_control_corrected",
+      "tol_rel": 0.0005
+    },
+    {
+      "id": "channel.free_slip.mean_velocity",
+      "doc": "docs/verification_poiseuille_channel.md",
+      "quote": "`u = 8.870 m/s` against the analytic",
+      "extract": "`u = (8\\.870) m/s`",
+      "path": "results.free_slip_control.u_max_measured",
+      "tol_rel": 0.0005
+    },
+    {
+      "id": "estimator.control.rate",
+      "doc": "docs/verification_poiseuille_wall_shear_estimator.md",
+      "quote": "| `d<u>/dt`, free slip, `H/dx = 8` | `g = 9.81` m/s^2 | 9.854 m/s^2 | 1.00451 |",
+      "extract": "\\| (9\\.854) m/s\\^2 \\|",
+      "path": "estimators.control.rate",
+      "tol_rel": 0.001
+    },
+    {
+      "id": "estimator.control.rate_over_g",
+      "doc": "docs/verification_poiseuille_wall_shear_estimator.md",
+      "quote": "| `d<u>/dt`, free slip, `H/dx = 8` | `g = 9.81` m/s^2 | 9.854 m/s^2 | 1.00451 |",
+      "extract": "\\| (1\\.00451) \\|",
+      "path": "estimators.control.rate_over_g",
+      "tol_rel": 0.0005
+    },
+    {
+      "id": "estimator.body_force",
+      "doc": "docs/verification_poiseuille_wall_shear_estimator.md",
+      "quote": "driven by a uniform body force `g_x = 9.810 m/s^2`",
+      "extract": "`g_x = (9\\.810) m/s\\^2`",
+      "path": "results.body_force",
+      "tol_rel": 0.0005
+    },
+    {
+      "id": "estimator.drag.budget.h8",
+      "doc": "docs/verification_poiseuille_wall_shear_estimator.md",
+      "quote": "| 8 | 0.059 +- 0.015 | 0.0061 | 0.9939 | 0.9895 | 485.3 |",
+      "extract": "\\| (0\\.9895) \\|",
+      "path": "estimators.cases[0].budget.drag_over_weight_control_corrected",
+      "tol_rel": 0.0005
+    },
+    {
+      "id": "estimator.drag.budget.h16",
+      "doc": "docs/verification_poiseuille_wall_shear_estimator.md",
+      "quote": "| 16 | -0.134 +- 0.029 | -0.0137 | 1.0137 | 1.0091 | 495.0 |",
+      "extract": "\\| (1\\.0091) \\|",
+      "path": "estimators.cases[2].budget.drag_over_weight_control_corrected",
+      "tol_rel": 0.0005
+    },
+    {
+      "id": "estimator.secant.h16",
+      "doc": "docs/verification_poiseuille_wall_shear_estimator.md",
+      "quote": "| 16 | 0.503 | 0.875 | 0.313 | 0.849 | 0.812 |",
+      "extract": "\\| 16 \\| (0\\.503) \\|",
+      "path": "estimators.cases[2].estimator_ratios.secant_1dx",
+      "tol_rel": 0.002
+    },
+    {
+      "id": "estimator.stencil_on_analytic.h16",
+      "doc": "docs/verification_poiseuille_wall_shear_estimator.md",
+      "quote": "| 16 | 0.503 | 0.875 | 0.313 | 0.849 | 0.812 |",
+      "extract": "\\| 16 \\| 0\\.503 \\| (0\\.875) \\|",
+      "path": "estimators.cases[2].estimator_ratios.secant_1dx_on_analytic_parabola",
+      "tol_rel": 0.0005
+    },
+    {
+      "id": "estimator.nu_eff.h16",
+      "doc": "docs/verification_poiseuille_wall_shear_estimator.md",
+      "quote": "| 16 | 1.151 | 0.869 |",
+      "extract": "\\| 16 \\| (1\\.151) \\|",
+      "path": "estimators.cases[2].interior.nu_eff_over_nu",
+      "tol_rel": 0.0005
+    },
+    {
+      "id": "audit.u_max.measured",
+      "doc": "docs/verification_poiseuille_wall_shear_audit.md",
+      "quote": "| u_max | 8.87 m/s | 1.23 m/s | **+623%** |",
+      "extract": "\\| u_max \\| (8\\.87) m/s \\|",
+      "path": "results.results[0].u_max_measured",
+      "claimed_basis": "the audit's section 3.3 labels its table 'the coarsest resolution dx=0.0125', i.e. results[0]; the peer block results[2] is dx=0.00625 and the free-slip control is not a no-slip case at all",
+      "tol_rel": 0.0005
+    },
+    {
+      "id": "audit.u_max.analytic",
+      "doc": "docs/verification_poiseuille_wall_shear_audit.md",
+      "quote": "| u_max | 8.87 m/s | 1.23 m/s | **+623%** |",
+      "extract": "\\| (1\\.23) m/s \\|",
+      "path": "derived.u_max",
+      "tol_rel": 0.005
+    },
+    {
+      "id": "audit.wall_row_slip",
+      "doc": "docs/verification_poiseuille_wall_shear_audit.md",
+      "quote": "| 壁面滑移/ u_max | 0.999996 | 0 | **~100% 滑移** |",
+      "extract": "\\| (0\\.999996) \\|",
+      "path": "results.results[0].wall_row_slip_over_umax",
+      "tol_rel": 0.0005
+    },
+    {
+      "id": "audit.tau_over_tau_w",
+      "doc": "docs/verification_poiseuille_wall_shear_audit.md",
+      "quote": "| 壁面剪切比 τ/τ_w | 0.503 | 1.0 | **-49.7%** |",
+      "extract": "\\| (0\\.503) \\|",
+      "path": "results.results[0].wall_shear_ratio",
+      "claimed_basis": "the audit places this reading in the same 'coarsest resolution' table as the u_max row, i.e. results[0]",
+      "tol_rel": 0.002
+    },
+    {
+      "id": "audit.mach",
+      "doc": "docs/verification_poiseuille_wall_shear_audit.md",
+      "quote": "| 马赫数 | <0.1 | 0.493 | +393% |",
+      "extract": "\\| (0\\.493) \\|",
+      "path": "results.results[0].max_mach",
+      "tol_rel": 0.0005
+    },
+    {
+      "id": "audit.tau_analytic",
+      "doc": "docs/verification_poiseuille_wall_shear_audit.md",
+      "quote": "| 解析壁面剪切 τ_w | ρ g_x H/2 = 50 Pa |",
+      "extract": "= (50) Pa",
+      "path": "derived.tau_w",
+      "claimed_basis": "the audit prints this constant as the analytic wall shear of the case, so it must equal rho0 g H / 2 of the stored run",
+      "tol_rel": 0.005
+    },
+    {
+      "id": "audit.body_force",
+      "doc": "docs/verification_poiseuille_wall_shear_audit.md",
+      "quote": "| 体积力 g_x | 0.1 m/s² |",
+      "extract": "\\| (0\\.1) m/s² \\|",
+      "path": "results.body_force",
+      "tol_rel": 0.005
+    },
+    {
+      "id": "audit.viscosity",
+      "doc": "docs/verification_poiseuille_wall_shear_audit.md",
+      "quote": "| 运动粘度 ν | 1e-4 m²/s |",
+      "extract": "\\| (1e-4) m²/s \\|",
+      "path": "results.viscosity",
+      "tol_rel": 0.005
+    }
+  ]
+}
