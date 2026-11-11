@@ -138,60 +138,70 @@
     },
     {
       "admissibility": null,
-      "artifact": "benchmarks/surface_tension_dispersion/validation_report.json",
+      "artifact": "runs/surface_tension_dispersion/report.json",
       "artifact_status": "FAIL",
       "backlog_ref": "docs/verification_ledger.md",
       "claim_id": "csf_dispersion.capillary_wave.omega_error.local_range",
       "claim_type": "gate",
       "credit_qualified": null,
       "criterion_pct": 15.0,
-      "declared_verdict": null,
+      "declared_verdict": {
+        "failing_criteria": [],
+        "json_path": "status",
+        "missing_cases": [],
+        "value": "fail"
+      },
       "gate_limit": 0.05,
       "gate_result": "fail",
       "gauge_degenerate": false,
       "grade": "FAIL",
       "guarding_test": "tests/test_csf_dispersion.py",
-      "json_path": "gates.local_range.C1_max_omega_error_pct",
+      "json_path": "gates.C1_capillary_wave.max_abs_error_pct",
       "measured": {
-        "definition": "max relative omega error over the three wavenumbers",
+        "definition": "max relative omega error over k = 1..3 at the finest grid (ppw = 48), delta normalisation = local_range, curvature = fit_quadratic",
         "unit": "-",
-        "value": 0.548026
+        "value": 2.459244
       },
-      "notes": "Registered because the harness was uncovered: its own criterion fails at 55 % and nothing in the ledger said so.",
+      "notes": "Registered because the harness was uncovered; the reading is the harness's own failed gate, not an averaged score. It misses the 5 % criterion by 49.2x (|error| = 245.9 %). The option screen over delta normalisation x curvature scheme says no shipped combination passes it (best |omega| error 93.2 % over 4 combinations), and the C3 refinement orders of the same run are -0.87 (required 2.0), so the error does not shrink under refinement: an operator-consistency defect, not a resolution problem.",
       "paper_criterion_pct": 3.0,
       "quantity": "capillary-wave frequency error of the local-range CSF operator, k = 1..3",
       "quantity_id": "capillary_wave_omega",
       "reference": {
-        "source": "harness criterion C1: within 5 % of omega^2 = sigma k^3 / rho (Lamb 1932)",
+        "source": "harness criterion C1: within 5 % of omega^2 = sigma k^3 / rho (Lamb 1932, Art. 267)",
         "unit": "-",
         "value": 0.05
       },
-      "rel_error_pct": 996.052224,
+      "rel_error_pct": 4818.487375,
       "run_validity": "UNPROBED",
       "superseded_by": null
     },
     {
       "admissibility": null,
-      "artifact": "benchmarks/surface_tension_dispersion/validation_report.json",
+      "artifact": "runs/surface_tension_dispersion/report.json",
       "artifact_status": "FAIL",
       "backlog_ref": "docs/verification_ledger.md",
       "claim_id": "csf_dispersion.lamb_mode.omega_error.local_range",
       "claim_type": "gate",
       "credit_qualified": null,
       "criterion_pct": 15.0,
-      "declared_verdict": null,
+      "declared_verdict": {
+        "failing_criteria": [],
+        "json_path": "status",
+        "missing_cases": [],
+        "value": "fail"
+      },
       "gate_limit": 0.03,
       "gate_result": "fail",
       "gauge_degenerate": false,
       "grade": "FAIL",
       "guarding_test": "tests/test_csf_dispersion.py",
-      "json_path": "gates.local_range.C2_max_omega_error_pct",
+      "json_path": "gates.C2_lamb_modes.max_abs_error_pct",
       "measured": {
-        "definition": "max relative omega error over the three modes",
+        "definition": "max relative omega error over n = 2..4 at the finest grid (R/dx = 32)",
         "unit": "-",
-        "value": 0.096785
+        "value": 0.094841
       },
-      "notes": "9.7 % is better than the legacy operator (18.5 %) but still 3.2x its own 3 % gate -- the CSF frequency error is the same defect family as the Young-Laplace deficit, so it is not averaged into a PASS.",
+      "notes": "|error| = 9.48 % against a 3 % gate: better than C1 by two orders of magnitude but still a FAIL, so it is not averaged into a PASS. The best screened combination reaches 4.85 % and still misses the gate (any_pass = False), i.e. the drop family is close to acceptable while the wave family is not.",
       "paper_criterion_pct": 3.0,
       "quantity": "Lamb-mode frequency error of the local-range CSF operator, n = 2..4",
       "quantity_id": "lamb_mode_omega",
@@ -200,7 +210,7 @@
         "unit": "-",
         "value": 0.03
       },
-      "rel_error_pct": 222.617451,
+      "rel_error_pct": 216.135385,
       "run_validity": "UNPROBED",
       "superseded_by": null
     },
@@ -2219,6 +2229,42 @@
       "detail": "14 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.closure.closure_on_all_donors.dx1.5mm_c20=-25.3 %, young_laplace.closure.closure_on_all_donors.dx2mm_c20=-20.1 %, young_laplace.closure.closure_on_interior_layers2.dx1.5mm_c20=-3.4 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c10=-4.0 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c20=+8.8 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c5=+4.9 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.force_balance.flux_integral.dx1.5mm=-7.5 %, young_laplace.force_balance.flux_integral.dx2mm=-0.3 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
       "rule": "quantity_spread",
       "severity": "high"
+    },
+    {
+      "claim_id": "benchmarks/slamming",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/two_phase_laplace",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/verification_ladder",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/wcsph_chain",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/wedge_entry",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/contact_angle/bc_diagnosis.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
     }
   ],
   "schema_version": 1,
@@ -2236,13 +2282,15 @@
       "declared_vs_derived": 2,
       "inadmissible_run": 3,
       "quantity_spread": 4,
-      "run_validity": 4
+      "run_validity": 4,
+      "uncovered_benchmark": 5,
+      "unregistered_artifact": 1
     },
-    "n_artifact_verdicts_fail": 12,
+    "n_artifact_verdicts_fail": 14,
     "n_claims": 57,
     "n_credits_unqualified": 6,
     "n_credits_without_declared_verdict": 15,
-    "n_findings": 19,
+    "n_findings": 25,
     "n_quantities": 36,
     "paper_criterion_pct": 3.0
   }

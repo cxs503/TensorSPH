@@ -324,3 +324,24 @@ def test_contact_angle_harness_runs_and_its_instrument_is_repaired():
     assert all(r["theta_measured_deg"] == r["theta_measured_deg"] for r in inst["rows"])
     assert inst["all_within_gate"] is True
     assert inst["worst_abs_error_deg"] < 0.05
+
+
+def test_every_referenced_artifact_path_exists():
+    """A claim may not point at an artifact the repository does not carry.
+
+    Regression guard for m14849: m14729 registered two CSF-dispersion claims
+    against a path the m13895 relocation had already retired, so the module
+    fixture raised ``FileNotFoundError`` and *all* 20 ledger tests collapsed into
+    setup errors instead of naming the offending file.  This guard scans the
+    builder source for artifact references and fails with the missing paths.
+    """
+    import re
+
+    src = BUILDER.read_text()
+    paths = set(re.findall(r'_load\(\s*"([^"]+)"\s*\)', src))
+    paths |= set(re.findall(r'^\s*rel = "([^"]+\.json)"', src, re.M))
+    assert paths, "no artifact references found -- the scanner stopped matching"
+    missing = sorted(p for p in paths if not (REPO / p).is_file())
+    assert not missing, (
+        f"ledger claims reference artifacts that do not exist in the repo: {missing}"
+    )
