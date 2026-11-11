@@ -6,18 +6,30 @@ drift, so nothing in the document is hand typed.
 
 Usage::
 
-    PYTHONPATH=src python benchmarks/capillary_wave/make_doc.py
+    PYTHONPATH=src python benchmarks/capillary_wave/make_doc.py --figures
     PYTHONPATH=src python benchmarks/capillary_wave/make_doc.py --check
 """
 from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 DOC = REPO / "docs" / "verification_capillary_wave_open_surface.md"
+#: The figure lives under ``docs/`` and not next to the JSON, and that is a
+#: measurement, not a taste: ``git ls-tree -r HEAD`` carries 83 ``*.png`` under
+#: ``docs/`` and **zero** under ``benchmarks/`` -- four separate branches
+#: (9bd7148, 04f6b24, d9bb365, 296dbee) committed
+#: ``benchmarks/capillary_wave/capillary_wave_open_surface.png`` and none of them
+#: reached ``main``, which left the gate in
+#: ``tests/test_capillary_wave_open_surface.py`` red on ``main`` (missing figure)
+#: for a record whose whole point is that it is load-bearing.  Generated binaries
+#: therefore belong under ``docs/figures/``.
+FIGURE_DIR = REPO / "docs" / "figures"
+FIGURE_NAME = "capillary_wave_open_surface.png"
 
 
 def _fmt(value, spec=".2f", dash="-"):  # noqa: ANN001
@@ -30,6 +42,16 @@ def _status(row: dict) -> str:
     if row["status"] == "aborted":
         return f"aborted @ step {row['escape_step']}"
     return "completed"
+
+
+def _figure_sha256(path: Path = None) -> str:
+    """sha256 of the committed figure, or a marker when it has not been drawn."""
+    import hashlib
+
+    path = Path(path) if path is not None else FIGURE_DIR / FIGURE_NAME
+    if not path.is_file():
+        return "not-rendered (run make_doc.py --figures)"
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def render(payload: dict) -> str:
@@ -216,8 +238,13 @@ def render(payload: dict) -> str:
     add("")
     add("## 4. Figures")
     add("")
-    add("![open free-surface audit](../benchmarks/capillary_wave/"
-        "capillary_wave_open_surface.png)")
+    add(f"![open free-surface audit](figures/{FIGURE_NAME})")
+    add("")
+    add(f"*Figure provenance:* `docs/figures/{FIGURE_NAME}`, sha256 "
+        f"`{_figure_sha256()}`, drawn by `make_doc.render_figure` from "
+        "`benchmarks/capillary_wave/open_surface_audit.json` alone -- no "
+        "simulator is re-run to make the picture, so the page and the figure are "
+        "two renderings of one artifact and the gate compares both.")
     add("")
     add("*(a)* the measured mode amplitude in the two runs that complete: it decays "
         "and drifts instead of oscillating at the analytic period; *(b)* maximum "
@@ -278,17 +305,113 @@ def render(payload: dict) -> str:
     add("```bash")
     add("PYTHONPATH=src python benchmarks/capillary_wave/open_surface_audit.py  "
         "# ~3 min")
-    add("PYTHONPATH=src python benchmarks/capillary_wave/make_doc.py")
+    add("PYTHONPATH=src python benchmarks/capillary_wave/make_doc.py --figures")
     add("PYTHONPATH=src python -m pytest tests/test_capillary_wave_open_surface.py -q")
     add("```")
     add("")
     return "\n".join(lines)
 
 
+# --------------------------------------------------------------------------- #
+# figure: a pure function of the committed JSON
+# --------------------------------------------------------------------------- #
+def render_figure(payload: dict, path: Path = None):  # noqa: C901
+    """Draw the four audit panels from ``payload`` alone and write ``path``.
+
+    No simulator is touched: every quantity plotted is a field of the committed
+    ``open_surface_audit.json``, so the figure is a *fresh rendering of the
+    artifact* in exactly the sense the page already is.  That is what lets the
+    test regenerate it instead of trusting a binary blob.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    path = Path(path) if path is not None else FIGURE_DIR / FIGURE_NAME
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    done = [r for r in payload["amplitude_ladder"] if r["status"] == "completed"]
+    sweep = payload["variant_sweep"]
+    omega = payload["initial_acceleration"]["omega_rad_per_s"]
+    period_ms = 2.0 * math.pi / omega * 1e3
+
+    fig, axes = plt.subplots(2, 2, figsize=(13.0, 8.6))
+
+    ax = axes[0][0]
+    for row in done:
+        t = np.asarray(row["t_history"])
+        a = np.asarray(row["amplitude_history_m"])
+        ax.plot(t * 1e3, a * 1e3, ".", ms=3,
+                label=f"{row['variant']} (resid {row['fit_residual_rel']:.2f})")
+    ax.axvline(period_ms, color="k", ls=":", lw=1,
+               label=f"one analytic period ({period_ms:.1f} ms)")
+    ax.set_xlabel("t [ms]")
+    ax.set_ylabel(r"mode amplitude $a(t)$ [mm]")
+    ax.set_title("(a) the measured mode decays, it does not oscillate")
+    ax.legend(fontsize=6)
+    ax.grid(alpha=0.3)
+
+    ax = axes[0][1]
+    for row in sweep:
+        hist = row["v_max_history"]
+        if not hist:
+            continue
+        ax.semilogy(np.arange(len(hist)) * payload["horizon_periods"]
+                    / max(1, len(hist) - 1), hist, "-o", ms=2.5,
+                    label=row["variant"])
+    ax.axhline(payload["admissibility"]["limit"] * 1.0, color="k", ls="--", lw=1,
+               label="physical $u_{ref}=A\\omega$ (limit is 0.1x this)")
+    ax.set_xlabel("t [capillary periods]")
+    ax.set_ylabel(r"$\max_i |v_i|$ [m/s]")
+    ax.set_title("(b) spurious current grows in every variant")
+    ax.legend(fontsize=5.5)
+    ax.grid(alpha=0.3, which="both")
+
+    ax = axes[1][0]
+    cells = payload["curvature"]["cells"]
+    names = [f"{c['lattice']}\nh={c['h_factor']}\n{c['curvature_scheme'][:8]}"
+             for c in cells]
+    ax.bar(range(len(cells)), [c["kappa_rms_1_per_m"] for c in cells],
+           color="#4477aa")
+    ax.axhline(payload["curvature"]["analytic_signal_kappa_1_per_m"], color="k",
+               ls="--", lw=1.2, label=r"perturbation's own $k^2A$")
+    ax.set_xticks(range(len(cells)))
+    ax.set_xticklabels(names, fontsize=5)
+    ax.set_ylabel(r"$\kappa_{rms}$ on the interface [1/m]")
+    ax.set_title("(c) discrete curvature noise of an open free surface")
+    ax.legend(fontsize=7)
+    ax.grid(alpha=0.3, axis="y")
+
+    ax = axes[1][1]
+    keys = ["csf_off", "csf_on_mass_calibrated", "csf_on",
+            "csf_on_density_renormalization"]
+    ax.bar(range(len(keys)),
+           [payload["initial_acceleration"][k]["a_max_m_per_s2"] for k in keys],
+           color="#ee6677")
+    ax.axhline(payload["initial_acceleration"]["a_physical_omega2A_m_per_s2"],
+               color="k", ls="--", lw=1.2, label=r"physical $\omega^2A$")
+    ax.set_yscale("log")
+    ax.set_xticks(range(len(keys)))
+    ax.set_xticklabels([k.replace("_", "\n") for k in keys], fontsize=6)
+    ax.set_ylabel(r"$\max_i |a_i|$ at $t=0$ [m/s$^2$]")
+    ax.set_title("(d) CSF contribution at the very first step")
+    ax.legend(fontsize=7)
+    ax.grid(alpha=0.3, axis="y")
+
+    fig.tight_layout()
+    fig.savefig(path, dpi=140, metadata={"Software": None})
+    plt.close(fig)
+    return path
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true",
                     help="exit 1 when the committed page is stale")
+    ap.add_argument("--figures", action="store_true",
+                    help=f"also re-render {FIGURE_DIR.name}/{FIGURE_NAME} "
+                         "from the committed JSON")
     args = ap.parse_args()
     payload = json.loads((HERE / "open_surface_audit.json").read_text())
     text = render(payload)
@@ -297,10 +420,17 @@ def main() -> int:
         if current != text:
             print(f"{DOC} is stale -- run make_doc.py")
             return 1
+        fig = FIGURE_DIR / FIGURE_NAME
+        if not fig.is_file():
+            print(f"{fig} is missing -- run make_doc.py --figures")
+            return 1
         print(f"{DOC} is up to date")
         return 0
     DOC.write_text(text)
     print(f"wrote {DOC} ({len(text.splitlines())} lines)")
+    if args.figures:
+        path = render_figure(payload, FIGURE_DIR / FIGURE_NAME)
+        print(f"wrote {path} ({path.stat().st_size} bytes)")
     return 0
 
 

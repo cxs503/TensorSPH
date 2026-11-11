@@ -346,84 +346,20 @@ def amplitude_ladder() -> list[dict]:
 # --------------------------------------------------------------------------- #
 # figures
 # --------------------------------------------------------------------------- #
-def make_figures(payload: dict, out_dir: Path = HERE) -> list[str]:
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+def make_figures(payload: dict) -> list[str]:
+    """Delegate to :func:`make_doc.render_figure` (one figure, one code path).
 
-    paths = []
-    done = [r for r in payload["amplitude_ladder"] if r["status"] == "completed"]
-    sweep = payload["variant_sweep"]
+    The drawing lives in ``make_doc`` because the figure must be a pure function
+    of the committed JSON -- that is what lets
+    ``tests/test_capillary_wave_open_surface.py`` regenerate it and compare,
+    instead of trusting a binary that the merge path may not even carry (see the
+    ``FIGURE_DIR`` note in ``make_doc``).  Here we only trigger it once the audit
+    has finished, so a fresh run refreshes the figure it just measured.
+    """
+    import make_doc
 
-    fig, axes = plt.subplots(2, 2, figsize=(13.0, 8.6))
-
-    ax = axes[0][0]
-    for row in done:
-        t = np.asarray(row["t_history"])
-        a = np.asarray(row["amplitude_history_m"])
-        ax.plot(t * 1e3, a * 1e3, ".", ms=3,
-                label=f"{row['variant']} (resid {row['fit_residual_rel']:.2f})")
-    an = V.angular_frequency(CASE["sigma"], 2 * math.pi / CASE["wavelength"],
-                             CASE["rho0"], CASE["depth"])
-    period = 2 * math.pi / an
-    ax.axvline(period * 1e3, color="k", ls=":", lw=1,
-               label=f"one analytic period ({period*1e3:.1f} ms)")
-    ax.set_xlabel("t [ms]")
-    ax.set_ylabel(r"mode amplitude $a(t)$ [mm]")
-    ax.set_title("(a) the measured mode decays, it does not oscillate")
-    ax.legend(fontsize=6)
-    ax.grid(alpha=0.3)
-
-    ax = axes[0][1]
-    v_hist = [r["v_max_history"] for r in sweep if r["v_max_history"]]
-    labels = [r["variant"] for r in sweep if r["v_max_history"]]
-    for hist, lab in zip(v_hist, labels):
-        ax.semilogy(np.arange(len(hist)) * HORIZON_PERIODS / max(1, len(hist) - 1),
-                    hist, "-o", ms=2.5, label=lab)
-    ax.axhline(payload["admissibility"]["limit"] * 1.0, color="k", ls="--", lw=1,
-               label="physical $u_{ref}=A\\omega$ (limit is 0.1x this)")
-    ax.set_xlabel("t [capillary periods]")
-    ax.set_ylabel(r"$\max_i |v_i|$ [m/s]")
-    ax.set_title("(b) spurious current grows in every variant")
-    ax.legend(fontsize=5.5)
-    ax.grid(alpha=0.3, which="both")
-
-    ax = axes[1][0]
-    cells = payload["curvature"]["cells"]
-    names = [f"{c['lattice']}\nh={c['h_factor']}\n{c['curvature_scheme'][:8]}"
-             for c in cells]
-    rms = [c["kappa_rms_1_per_m"] for c in cells]
-    ax.bar(range(len(cells)), rms, color="#4477aa")
-    ax.axhline(payload["curvature"]["analytic_signal_kappa_1_per_m"], color="k",
-               ls="--", lw=1.2,
-               label=r"perturbation's own $k^2A$")
-    ax.set_xticks(range(len(cells)))
-    ax.set_xticklabels(names, fontsize=5)
-    ax.set_ylabel(r"$\kappa_{rms}$ on the interface [1/m]")
-    ax.set_title("(c) discrete curvature noise of an open free surface")
-    ax.legend(fontsize=7)
-    ax.grid(alpha=0.3, axis="y")
-
-    ax = axes[1][1]
-    keys = ["csf_off", "csf_on_mass_calibrated", "csf_on", "csf_on_density_renormalization"]
-    vals = [payload["initial_acceleration"][key]["a_max_m_per_s2"] for key in keys]
-    ax.bar(range(len(keys)), vals, color="#ee6677")
-    ax.axhline(payload["initial_acceleration"]["a_physical_omega2A_m_per_s2"],
-               color="k", ls="--", lw=1.2, label=r"physical $\omega^2A$")
-    ax.set_yscale("log")
-    ax.set_xticks(range(len(keys)))
-    ax.set_xticklabels([k.replace("_", "\n") for k in keys], fontsize=6)
-    ax.set_ylabel(r"$\max_i |a_i|$ at $t=0$ [m/s$^2$]")
-    ax.set_title("(d) CSF contribution at the very first step")
-    ax.legend(fontsize=7)
-    ax.grid(alpha=0.3, axis="y")
-
-    fig.tight_layout()
-    path = out_dir / "capillary_wave_open_surface.png"
-    fig.savefig(path, dpi=140)
-    plt.close(fig)
-    paths.append(path.name)
-    return paths
+    path = make_doc.render_figure(payload)
+    return [path.name]
 
 
 # --------------------------------------------------------------------------- #
@@ -519,7 +455,7 @@ def main() -> int:
         },
     }
     if not args.no_figures:
-        payload["figures"] = make_figures(payload, Path(args.out))
+        payload["figures"] = make_figures(payload)
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
