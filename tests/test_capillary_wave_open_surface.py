@@ -27,7 +27,10 @@ REPO = Path(__file__).resolve().parents[1]
 BENCH = REPO / "benchmarks" / "capillary_wave"
 AUDIT = BENCH / "open_surface_audit.json"
 DOC = REPO / "docs" / "verification_capillary_wave_open_surface.md"
-FIGURE = BENCH / "capillary_wave_open_surface.png"
+#: The figure is a rendering of the artifact, so it is committed where generated
+#: binaries actually survive the merge path (83 ``*.png`` under ``docs/``, zero
+#: under ``benchmarks/`` at HEAD) and regenerated from the JSON by the gate below.
+FIGURE = REPO / "docs" / "figures" / "capillary_wave_open_surface.png"
 
 
 def _load(name: str, path: Path):
@@ -48,7 +51,54 @@ def audit():
 def test_artifact_page_and_figure_exist():
     assert AUDIT.is_file(), "the audit artifact is the evidence debt payment"
     assert DOC.is_file()
-    assert FIGURE.is_file() and FIGURE.stat().st_size > 10_000
+    assert FIGURE.is_file(), (
+        f"{FIGURE.relative_to(REPO)} is missing -- the page embeds it, so a "
+        "missing figure is a broken evidence record.  Regenerate with "
+        "`make_doc.py --figures` (it needs only the committed JSON)."
+    )
+    assert FIGURE.stat().st_size > 10_000
+
+
+def test_every_image_link_in_the_page_resolves():
+    """A record that embeds a path nobody carries is not a record.
+
+    This is the gate for the defect that made this suite red on ``main``: the
+    figure was written next to the JSON under ``benchmarks/``, four branches
+    committed it, and ``main`` never received it, so the page rendered a broken
+    image while every other assertion passed.
+    """
+    import re
+
+    links = re.findall(r"!\[[^\]]*\]\(([^)]+)\)", DOC.read_text())
+    assert links, "the page must embed the audit figure"
+    for link in links:
+        target = (DOC.parent / link).resolve()
+        assert target.is_file(), f"page links {link}, which does not exist"
+    # generated binaries ship under docs/ so that the merge path keeps them
+    assert FIGURE.parent == REPO / "docs" / "figures"
+
+
+def test_figure_is_a_fresh_rendering_of_the_artifact(audit, tmp_path):
+    """The committed figure must be reproducible from the committed JSON."""
+    import hashlib
+
+    make_doc = _load("capillary_make_doc", BENCH / "make_doc.py")
+    fresh = make_doc.render_figure(audit, tmp_path / "fresh.png")
+    committed = FIGURE.read_bytes()
+    if fresh.read_bytes() != committed:
+        # matplotlib/metadata drift between versions: fall back to pixels
+        import matplotlib.image as mpimg
+        import numpy as np
+
+        a = mpimg.imread(fresh)
+        b = mpimg.imread(FIGURE)
+        assert a.shape == b.shape
+        assert np.array_equal(a, b), (
+            "docs figure does not match a fresh rendering of the audit JSON -- "
+            "run `make_doc.py --figures`"
+        )
+    else:
+        assert hashlib.sha256(committed).hexdigest()  # determinism, no exception
 
 
 def test_page_is_a_fresh_rendering_of_the_artifact(audit):
