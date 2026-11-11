@@ -8,6 +8,26 @@
 - **分支**: agent/m7380
 - **日期**: 2026-11-08
 
+## 自由面验证面一键复现（P482-N04 / m14534）
+
+四个可机器裁决的面（溃坝前沿与柱高、静水压力、质量守恒、粒子间距收敛）各配一个负控，
+由单一入口一次跑完并写出纯文本证据包（`results.json` / `benchmark.json` / `metrics.csv` /
+`MANIFEST.json` / `figures/`）：
+
+```bash
+PYTHONPATH=src python -m tensorsph.verification --tier full \
+    --out runs/sph_free_surface_verification/full      # 战役尺寸（慢）
+PYTHONPATH=src python -m tensorsph.verification --tier smoke --out /tmp/sph  # 管线自检
+python docs/reports/m14534_make_report.py --run runs/sph_free_surface_verification/full
+PYTHONPATH=src python -m pytest tests/test_verification_bundle.py -q
+```
+
+产物与裁决：`docs/reports/m14534-free-surface-verification.md`（论文级报告）、
+`docs/reports/m14534-maturity-evidence.json`（成熟度证据：impl_files / entry /
+run_artifacts / integration_callers / benchmark / repro_cmd）。
+每个度量在 `results.json` 里带产生它的函数调用路径；`benchmark.json` 的对照行在出包时
+被反向校验（行里的数必须等于运行记录到的 metric/series 元素，否则拒绝出包）。
+
 ## 验证目标
 
 建立三个解析锚+实验对标，验证 TensorSPH 自由液面大变形能力：
