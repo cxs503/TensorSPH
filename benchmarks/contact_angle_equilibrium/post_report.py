@@ -3,11 +3,12 @@ import json
 import os
 import sys
 import urllib.request
+from pathlib import Path
 
 base = os.environ["TENSOR_API_BASE"].rstrip("/")
 user = os.environ["TENSOR_AGENT_USER"]
 pw = os.environ["TENSOR_AGENT_PASS"]
-root = "/root/tp-agent/work/m13781"
+root = str(Path(__file__).resolve().parents[2])  # repo checkout
 
 
 def post(path, payload, token=None):
@@ -38,7 +39,7 @@ if not token:
 doc = open(root + "/docs/verification_contact_angle_equilibrium.md",
            encoding="utf-8").read()
 png = base64.b64encode(open(
-    root + "/benchmarks/contact_angle_equilibrium/contact_angle_equilibrium.png",
+    root + "/docs/figures/contact_angle_equilibrium.png",
     "rb").read()).decode()
 
 payload = {

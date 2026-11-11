@@ -13,6 +13,12 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
+# The figure is documentation, so it belongs under ``docs/``: the delivery
+# pipeline only ships images from there, and a copy kept next to the
+# benchmark (benchmarks/contact_angle_equilibrium/*.png) is silently dropped
+# on push -- that is how main lost this figure after the #451 merge.
+FIG_DIR = ROOT / "docs" / "figures"
+FIGURE_NAME = "contact_angle_equilibrium.png"
 CASES = [
     ("theta60_bc_on.json", 60.0, "on"),
     ("theta60_bc_off.json", 60.0, "off"),
@@ -108,6 +114,7 @@ def figure(rows: list[dict], path: Path) -> None:
     ax.grid(alpha=0.3, axis="y")
 
     fig.tight_layout()
+    path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, dpi=140)
     plt.close(fig)
 
@@ -202,7 +209,11 @@ def doc(result: dict, probe: dict, path: Path) -> None:
 
 ## 4. 结果图
 
-![contact angle equilibrium](contact_angle_equilibrium.png)
+![contact angle equilibrium](figures/contact_angle_equilibrium.png)
+
+图存于 `docs/figures/`（交付管线只放行 `docs/` 下的图：放在 benchmark 目录里的同名图
+在推送过滤里被静默丢弃，main 因此断图两轮）。`make_artifacts.py` 随时可重绘，
+图里每个点都取自上面第 3 节的表。
 
 (a) 设定角 vs 交付角：灰带为 120–180°（近非润湿吸引子区），虚线为理想线；实心=BC on，方块=BC off。
 (b) 角度历史：每个运行都从自己的设定角（60/90/120°）出发，在 0.6 t_σ 内离开设定角、向吸引子走。
@@ -276,7 +287,7 @@ def main() -> None:
     }
     (HERE / "results.json").write_text(json.dumps(result, indent=1))
     probe = json.loads((HERE / "wall_color_deficit.json").read_text())
-    figure(rows, HERE / "contact_angle_equilibrium.png")
+    figure(rows, FIG_DIR / FIGURE_NAME)
     doc(result, probe, ROOT / "docs" / "verification_contact_angle_equilibrium.md")
     print(json.dumps({k: v for k, v in result["summary"].items()
                       if k in ("n_rows", "n_admissible", "n_within_gate",

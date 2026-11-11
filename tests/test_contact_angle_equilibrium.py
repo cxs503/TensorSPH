@@ -175,14 +175,41 @@ def test_probe_finds_a_wall_contaminated_interface_layer(probe):
     assert far and max(b["kappa_abs_mean"] for b in far) > 5.0 * analytic
 
 
+FIGURE_REL = "figures/contact_angle_equilibrium.png"
+
+
 def test_document_quotes_the_artifacts(result):
     assert DOC.exists()
     text = DOC.read_text()
-    assert "contact_angle_equilibrium.png" in text
+    assert FIGURE_REL in text
     for theta in (60.0, 120.0):
         on = _by(result, theta, "on")
         assert f"{on['theta_final_deg']:.1f}" in text
         assert f"{on['theta_ic_deg']:.2f}" in text
     for section in ("案例", "怎么做的", "计算结果", "结果图", "注意点", "误差判定"):
         assert section in text
-    assert (BENCH / "contact_angle_equilibrium.png").exists()
+    # the link is relative to the document, so it has to resolve from docs/
+    figure = DOC.parent / FIGURE_REL
+    assert figure.exists(), f"documented figure missing: {figure}"
+    assert figure.stat().st_size > 10_000
+
+
+def test_the_figure_is_written_under_docs():
+    """Delivery filter: images outside ``docs/`` are dropped on push.
+
+    The m13781 figure was written next to the benchmark
+    (``benchmarks/contact_angle_equilibrium/*.png``); the #451 delivery kept
+    every text file and lost the image, so the document's link dangled and
+    ``test_document_quotes_the_artifacts`` was red on main for two rounds of
+    "restore the figure" branches. The generator must write into ``docs/`` --
+    pinned here so a later refactor cannot move it back.
+    """
+    import importlib.util
+
+    path = BENCH / "make_artifacts.py"
+    spec = importlib.util.spec_from_file_location("ca_eq_artifacts", path)
+    art = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(art)
+    assert art.FIG_DIR / art.FIGURE_NAME == ROOT / "docs" / "figures" / FIGURE_REL.split("/")[-1]
+    assert not (BENCH / art.FIGURE_NAME).exists(), (
+        "a copy next to the benchmark is invisible to the delivery filter")
