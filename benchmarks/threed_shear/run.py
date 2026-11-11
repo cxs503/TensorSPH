@@ -62,16 +62,23 @@ H_SWEEP = (1.0, 1.2, 1.3, 1.5, 1.8)
 
 
 def case_params(name: str) -> dict:
+    if name.startswith("order4-n"):
+        return {"n": int(name.split("-n")[1]), "h_factor": 1.3,
+                "renormalise": True, "viscous_order": 4}
     if name.startswith("ladder-n"):
-        return {"n": int(name.split("-n")[1]), "h_factor": 1.3, "renormalise": True}
+        return {"n": int(name.split("-n")[1]), "h_factor": 1.3,
+                "renormalise": True, "viscous_order": 2}
     if name.startswith("raw-n"):
-        return {"n": int(name.split("-n")[1]), "h_factor": 1.3, "renormalise": False}
+        return {"n": int(name.split("-n")[1]), "h_factor": 1.3,
+                "renormalise": False, "viscous_order": 2}
     if name.startswith("h"):
-        return {"n": 20, "h_factor": float(name[1:]), "renormalise": True}
+        return {"n": 20, "h_factor": float(name[1:]), "renormalise": True,
+                "viscous_order": 2}
     raise KeyError(name)
 
 
 CASES = ([f"ladder-n{n}" for n in LADDER]
+         + [f"order4-n{n}" for n in LADDER]
          + [f"raw-n{LADDER[2]}"]
          + [f"h{h:g}" for h in H_SWEEP])
 
@@ -82,7 +89,8 @@ def run_case(name: str, *, steps: int | None = None, sample_every: int = 10) -> 
                             nu=NU, amplitude=AMPLITUDE,
                             sound_speed=SOUND_SPEED, steps=steps,
                             sample_every=sample_every,
-                            renormalise=params["renormalise"])
+                            renormalise=params["renormalise"],
+                            viscous_order=params["viscous_order"])
     payload = result.as_dict()
     payload["case"] = name
     payload["analytic_formula"] = "2 nu k^2 on u = A sin(ky) sin(kz) e^{-2 nu k^2 t}"
@@ -103,7 +111,12 @@ def merge(results: list[dict]) -> dict:
     sweep = [by_name[f"h{h:g}"] for h in H_SWEEP if f"h{h:g}" in by_name]
     raw = by_name.get(f"raw-n{LADDER[2]}")
     renorm = by_name.get(f"ladder-n{LADDER[2]}")
+    fourth = [by_name[f"order4-n{n}"] for n in LADDER if f"order4-n{n}" in by_name]
     finest = min(ladder, key=lambda r: r["kh"]) if ladder else None
+    finest4 = min(fourth, key=lambda r: r["kh"]) if fourth else None
+    coarsest4 = max(fourth, key=lambda r: r["kh"]) if fourth else None
+    pairs_4v2 = [(b["decay"]["rel_error"], a["decay"]["rel_error"])
+                 for a, b in zip(ladder, fourth)]
     momentum_ok = all(
         (r["conservation"]["momentum_final_over_scale"] or 0.0) <= 1e-12
         for r in ladder)
@@ -122,6 +135,20 @@ def merge(results: list[dict]) -> dict:
         "renormalisation_removes_most_of_the_bias": bool(
             raw and renorm and abs(renorm["decay"]["rel_error"])
             < 0.5 * abs(raw["decay"]["rel_error"])),
+        # Fourth-order (truncation-cancelled) viscous operator: same case, same
+        # resolutions, one extra SPH pass, kernel-lattice coefficient only.
+        "fourth_order_error_below_15pct_all_cases": bool(
+            fourth and all(abs(r["decay"]["rel_error"]) < 0.15 for r in fourth)),
+        "fourth_order_error_below_3pct_at_n16": bool(
+            fourth and all(abs(r["decay"]["rel_error"]) < 0.03
+                           for r in fourth if r["n"] >= 16)),
+        "fourth_order_improves_on_second_order_every_rung": bool(
+            len(pairs_4v2) == len(LADDER)
+            and all(abs(e4) < abs(e2) for e4, e2 in pairs_4v2)),
+        "fourth_order_momentum_conserved_to_1e-12": bool(
+            fourth and all(
+                (r["conservation"]["momentum_final_over_scale"] or 0.0) <= 1e-12
+                for r in fourth)),
     }
     missing = sorted(set(CASES) - set(by_name))
     return {
@@ -130,8 +157,20 @@ def merge(results: list[dict]) -> dict:
         "reference": "u = A sin(ky) sin(kz) exp(-2 nu k^2 t); decay rate 2 nu k^2",
         "params": {"box": BOX, "nu": NU, "amplitude": AMPLITUDE,
                    "sound_speed": SOUND_SPEED, "periods": 1,
-                   "h_over_dx_default": 1.3},
+                   "h_over_dx_default": 1.3,
+                   "fourth_order_coefficient": (
+                       "beta_i = I4_i/120, I4_i = sum_j V_j r^4 lap_i W_ij "
+                       "(kernel-lattice moment, continuum value 18 h^2)")},
         "resolution_ladder": ladder,
+        "higher_order_ladder": fourth,
+        "order_comparison": [
+            {"n": a["n"], "kh": a["kh"],
+             "second_order_rel_error": a["decay"]["rel_error"],
+             "fourth_order_rel_error": b["decay"]["rel_error"],
+             "error_ratio": (abs(b["decay"]["rel_error"])
+                             / abs(a["decay"]["rel_error"]))
+             if a["decay"]["rel_error"] else None}
+            for a, b in zip(ladder, fourth)],
         "h_over_dx_sweep": sweep,
         "raw_vs_renormalised": {
             "raw": _thin(raw), "renormalised": _thin(renorm),
@@ -183,6 +222,11 @@ def figure(report: dict, path: Path) -> None:
         axes[1].plot([r["kh"] for r in ladder],
                       [r["decay"]["rel_error"] for r in ladder], "o-",
                       label="renormalised")
+        fourth = report.get("higher_order_ladder") or []
+        if fourth:
+            axes[1].plot([r["kh"] for r in fourth],
+                         [r["decay"]["rel_error"] for r in fourth], "^-",
+                         label="4th order (iterated, $I_4/120$)")
         raw = report.get("raw_vs_renormalised")
         if raw and raw["raw"]:
             axes[1].plot([raw["raw"]["kh"]], [raw["raw"]["decay"]["rel_error"]], "s",

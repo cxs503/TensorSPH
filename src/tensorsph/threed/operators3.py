@@ -40,6 +40,8 @@ __all__ = [
     "accelerations",
     "laplacian_of_field",
     "laplacian_second_moment",
+    "laplacian_fourth_moment",
+    "fourth_order_coefficient",
     "gradient_of_field",
 ]
 
@@ -108,7 +110,8 @@ def pressure_acceleration(pos: torch.Tensor, mass: torch.Tensor,
 def viscous_acceleration(pos: torch.Tensor, vel: torch.Tensor, mass: torch.Tensor,
                          rho: torch.Tensor, nu: float, h: float,
                          pairs: torch.Tensor, box=None,
-                         renormalise: bool = True) -> torch.Tensor:
+                         renormalise: bool = True,
+                         order: int = 2) -> torch.Tensor:
     """Viscous acceleration ``sum_j m_j nu (v_j - v_i) laplacian_i W_ij / rho_ij``.
 
     ``renormalise`` divides the pair kernel by the discrete second moment
@@ -124,21 +127,41 @@ def viscous_acceleration(pos: torch.Tensor, vel: torch.Tensor, mass: torch.Tenso
     delta, _, _, lap = pair_geometry(pos, pairs, h, box)
     i, j = pairs[:, 0], pairs[:, 1]
     rho_ij = 0.5 * (rho[i] + rho[j])
-    factor = mass[j] * nu * lap / rho_ij
+    weight = mass[j] * lap / rho_ij
+    r2 = delta.square().sum(dim=1)
+    volume_j = mass[j] / rho_ij
+    volume_i = mass[i] / rho_ij
+    moment = torch.zeros_like(rho)
+    moment = moment.index_add(0, i, r2 * lap * volume_j)
+    moment = moment.index_add(0, j, r2 * lap * volume_i)
+    moment = moment / 3.0
     if renormalise:
-        out = torch.zeros_like(rho)
-        r2 = delta.square().sum(dim=1)
-        volume_j = mass[j] / rho_ij
-        volume_i = mass[i] / rho_ij
-        out = out.index_add(0, i, r2 * lap * volume_j)
-        out = out.index_add(0, j, r2 * lap * volume_i)
-        moment = out / 3.0
-        factor = factor * (2.0 / (0.5 * (moment[i] + moment[j])).clamp_min(1.0e-12))
-    dv = (vel[j] - vel[i]) * factor.unsqueeze(-1)
-    acc = torch.zeros_like(pos)
-    acc = acc.index_add(0, i, dv)
-    acc = acc.index_add(0, j, -dv)
+        weight = weight * (2.0 / (0.5 * (moment[i] + moment[j])).clamp_min(1.0e-12))
+    acc = _pair_laplacian(vel, i, j, weight)
+    if order == 4:
+        fourth = torch.zeros_like(rho)
+        fourth = fourth.index_add(0, i, r2 * r2 * lap * volume_j)
+        fourth = fourth.index_add(0, j, r2 * r2 * lap * volume_i)
+        beta = 0.5 * (fourth[i] + fourth[j]) / 120.0
+        acc = acc - _pair_laplacian(acc, i, j, weight * beta)
+    acc = acc * nu
     return acc
+
+
+def _pair_laplacian(field: torch.Tensor, i: torch.Tensor, j: torch.Tensor,
+                    weight: torch.Tensor) -> torch.Tensor:
+    """``sum_j weight_ij (f_j - f_i)`` written as an antisymmetric pair sum.
+
+    ``weight`` must be symmetric under ``i <-> j``: then every pair contributes
+    ``+m_i w (f_j - f_i)`` to ``i`` and ``-m_j w (f_j - f_i)`` to ``j``, so
+    ``sum_i m_i (out_i) = 0`` exactly -- which is what keeps the shear-wave
+    linear-momentum gate at round-off with the fourth-order term switched on.
+    """
+    dv = (field[j] - field[i]) * weight.unsqueeze(-1)
+    out = torch.zeros_like(field)
+    out = out.index_add(0, i, dv)
+    out = out.index_add(0, j, -dv)
+    return out
 
 
 def wall_pressure_adami(pos: torch.Tensor, mass: torch.Tensor, rho: torch.Tensor,
@@ -184,7 +207,8 @@ def accelerations(pos: torch.Tensor, vel: torch.Tensor, mass: torch.Tensor,
                   h: float, pairs: torch.Tensor, *, rho0: float,
                   sound_speed: float, gamma: float = 7.0, viscosity: float = 0.0,
                   gravity=None, box=None, n_fluid: int | None = None,
-                  renormalise: bool = True, wall_model: str = "adami"):
+                  renormalise: bool = True, wall_model: str = "adami",
+                  viscous_order: int = 2):
     """Full right-hand side for a fluid (+ optional static wall) particle set.
 
     Returns ``(acc, rho, pressure)``; ``acc`` rows for wall particles are the
@@ -205,7 +229,8 @@ def accelerations(pos: torch.Tensor, vel: torch.Tensor, mass: torch.Tensor,
         raise ValueError(f"unknown wall_model {wall_model!r}")
     acc = pressure_acceleration(pos, mass, rho_used, pressure, h, pairs, box)
     acc = acc + viscous_acceleration(pos, vel, mass, rho_used, viscosity, h,
-                                     pairs, box, renormalise=renormalise)
+                                     pairs, box, renormalise=renormalise,
+                                     order=viscous_order)
     if gravity is not None:
         g = torch.as_tensor(gravity, dtype=pos.dtype, device=pos.device).reshape(1, -1)
         acc[:n_fluid] = acc[:n_fluid] + g
@@ -214,7 +239,8 @@ def accelerations(pos: torch.Tensor, vel: torch.Tensor, mass: torch.Tensor,
 
 def laplacian_of_field(pos: torch.Tensor, field: torch.Tensor, volume: torch.Tensor,
                        h: float, pairs: torch.Tensor, box=None,
-                       renormalise: bool = True) -> torch.Tensor:
+                       renormalise: bool = True,
+                       order: int = 2) -> torch.Tensor:
     """SPH Laplacian of a scalar field: ``sum_j V_j (f_j - f_i) laplacian W_ij``.
 
     This is the operator whose convergence order the benchmark measures; it is
@@ -232,6 +258,12 @@ def laplacian_of_field(pos: torch.Tensor, field: torch.Tensor, volume: torch.Ten
     if renormalise:
         moment = laplacian_second_moment(pos, volume, h, pairs, box)
         out = out * (2.0 / moment.clamp_min(1.0e-12))
+    if order == 4:
+        # Iterated operator with the kernel-lattice fourth moment as coefficient:
+        # L4 f = L2 f - beta * L2(L2 f).  ``beta`` carries no field information.
+        beta = fourth_order_coefficient(pos, volume, h, pairs, box)
+        out = out - beta * laplacian_of_field(pos, out, volume, h, pairs, box,
+                                              renormalise=renormalise, order=2)
     return out
 
 
@@ -266,6 +298,37 @@ def laplacian_second_moment(pos: torch.Tensor, volume: torch.Tensor, h: float,
     out = out.index_add(0, i, r2 * lap * volume[j])
     out = out.index_add(0, j, r2 * lap * volume[i])
     return out / 3.0
+
+
+def laplacian_fourth_moment(pos: torch.Tensor, volume: torch.Tensor, h: float,
+                            pairs: torch.Tensor, box=None) -> torch.Tensor:
+    """Discrete fourth moment ``I4_i = sum_j V_j r_ij^4 laplacian_i W_ij``.
+
+    Continuum value ``18 h^2`` for the 3-D cubic spline (checked by radial
+    quadrature in ``docs/verification_laplacian_fourth_order.md``).  It is the
+    fourth-moment analogue of :func:`laplacian_second_moment` and is likewise a
+    property of the lattice *and* kernel only -- no field, no reference solution.
+    """
+    delta, _, _, lap = pair_geometry(pos, pairs, h, box)
+    r2 = delta.square().sum(dim=1)
+    i, j = pairs[:, 0], pairs[:, 1]
+    out = torch.zeros_like(volume)
+    out = out.index_add(0, i, r2 * r2 * lap * volume[j])
+    out = out.index_add(0, j, r2 * r2 * lap * volume[i])
+    return out
+
+
+def fourth_order_coefficient(pos: torch.Tensor, volume: torch.Tensor, h: float,
+                             pairs: torch.Tensor, box=None) -> torch.Tensor:
+    """``beta_i = I4_i / 120``, the truncation-cancelling coefficient of ``L4``.
+
+    Taylor expansion of the continuum operator gives
+    ``L2 f = laplacian f + (I4/120) laplacian(laplacian f) + O(h^4)``; the
+    ``I4/120`` comes from ``1/4!`` times the isotropic fifth contraction
+    ``I4/15`` times three equal index patterns, i.e. ``2/(4! * 15) = 1/120``.
+    Subtracting ``beta * L2(L2 f)`` leaves ``O(h^4)``.
+    """
+    return laplacian_fourth_moment(pos, volume, h, pairs, box) / 120.0
 
 
 def analytic_laplacian_of_mode(pos: torch.Tensor, wavenumber: float,
