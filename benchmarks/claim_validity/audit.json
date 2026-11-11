@@ -14,10 +14,10 @@
     "paper_pct": 3.0
   },
   "summary": {
-    "n_claims": 36,
+    "n_claims": 57,
     "n_probed": 8,
     "by_status": {
-      "UNPROBED": 28,
+      "UNPROBED": 49,
       "INVALID": 4,
       "VALID": 4
     },
@@ -30,7 +30,37 @@
   },
   "probes": [
     {
+      "claim_id": "aeration.air_volume_drift",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "aeration.inception_constant.self_referential",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "aeration.void_fraction.erf_anchor_l2",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
       "claim_id": "colour_surface.delta_s_integral",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "csf_dispersion.capillary_wave.omega_error.local_range",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "csf_dispersion.lamb_mode.omega_error.local_range",
       "status": "UNPROBED",
       "checks": [],
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
@@ -67,6 +97,54 @@
     },
     {
       "claim_id": "effective_sigma.sigma_eff_over_sigma.dx5mm",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "fluctuating_hydro.thermostat.mean_temperature.n128",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "ice_floe_added_mass.anchor.c_m_richardson",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "ice_floe_added_mass.anchor.c_m_unbounded",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "ice_floe_added_mass.launch.speed_ratio",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "ice_floe_added_mass.plane_limits.max_deviation",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "ice_thermal.brine_floor.min_margin",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "ice_thermal.darcy_benard.ra_c",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "ice_thermal.stefan_front.finest",
       "status": "UNPROBED",
       "checks": [],
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
@@ -170,6 +248,30 @@
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
     {
+      "claim_id": "rayleigh_plateau.analytic.kR_star",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "rayleigh_plateau.analytic.lambda_over_R",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "rayleigh_plateau.curvature.profile_self_referential",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "rayleigh_plateau.dynamic.volume_drift",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
       "claim_id": "static_droplet.force_direction.WITHDRAWN",
       "status": "UNPROBED",
       "checks": [],
@@ -188,7 +290,25 @@
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
     {
+      "claim_id": "threed_hydrostatic.bottom_pressure.adami_worst",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
       "claim_id": "threed_hydrostatic.bottom_pressure.tait_wall_control",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "threed_hydrostatic.profile.max_rel_error_core.adami_best",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "threed_hydrostatic.profile.mean_rel_error_core.adami_best",
       "status": "UNPROBED",
       "checks": [],
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
@@ -207,6 +327,12 @@
     },
     {
       "claim_id": "threed_shear.decay_rate.raw_laplacian",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "threed_shear.decay_rate.worst_of_ladder",
       "status": "UNPROBED",
       "checks": [],
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
@@ -608,7 +734,27 @@
   },
   "unprobed_claims": [
     {
+      "claim_id": "aeration.air_volume_drift",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "aeration.inception_constant.self_referential",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "aeration.void_fraction.erf_anchor_l2",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
       "claim_id": "colour_surface.delta_s_integral",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "csf_dispersion.capillary_wave.omega_error.local_range",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "csf_dispersion.lamb_mode.omega_error.local_range",
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
     {
@@ -636,6 +782,38 @@
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
     {
+      "claim_id": "fluctuating_hydro.thermostat.mean_temperature.n128",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "ice_floe_added_mass.anchor.c_m_richardson",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "ice_floe_added_mass.anchor.c_m_unbounded",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "ice_floe_added_mass.launch.speed_ratio",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "ice_floe_added_mass.plane_limits.max_deviation",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "ice_thermal.brine_floor.min_margin",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "ice_thermal.darcy_benard.ra_c",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "ice_thermal.stefan_front.finest",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
       "claim_id": "laplace_droplet.merged_csf.8cases",
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
@@ -660,6 +838,22 @@
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
     {
+      "claim_id": "rayleigh_plateau.analytic.kR_star",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "rayleigh_plateau.analytic.lambda_over_R",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "rayleigh_plateau.curvature.profile_self_referential",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "rayleigh_plateau.dynamic.volume_drift",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
       "claim_id": "static_droplet.force_direction.WITHDRAWN",
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
@@ -672,7 +866,19 @@
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
     {
+      "claim_id": "threed_hydrostatic.bottom_pressure.adami_worst",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
       "claim_id": "threed_hydrostatic.bottom_pressure.tait_wall_control",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "threed_hydrostatic.profile.max_rel_error_core.adami_best",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "threed_hydrostatic.profile.mean_rel_error_core.adami_best",
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
     {
@@ -685,6 +891,10 @@
     },
     {
       "claim_id": "threed_shear.decay_rate.raw_laplacian",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "threed_shear.decay_rate.worst_of_ladder",
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
     {
