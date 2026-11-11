@@ -48,7 +48,10 @@
   "benchmarks/static_droplet/laplace_validation.json": "covered by claim static_droplet.force_direction.WITHDRAWN (same artifact family, formally withdrawn)",
   "benchmarks/wave_flume/": "no committed artifact (the report was uploaded to the platform and filtered by the merge gate), so the flume capability has no reproducible in-repo evidence - evidence debt E2, see docs/verification_ledger_coverage_m6453.md",
   "benchmarks/wave_tank/": "no committed artifact (the m6232 report was uploaded to the platform and filtered by the merge gate), so the wave-tank capability has no reproducible in-repo evidence - evidence debt E2, see docs/verification_ledger_coverage_m6453.md",
-  "benchmarks/ice_floe_added_mass/": "verification document exists (docs/verification_ice_floe_added_mass.md) with programmatic injection from report.json; the benchmark is a physics validation but its claims are documented in the verification doc rather than registered as ledger claims"
+  "benchmarks/ice_floe_added_mass/": "verification document exists (docs/verification_ice_floe_added_mass.md) with programmatic injection from report.json; the benchmark is a physics validation but its claims are documented in the verification doc rather than registered as ledger claims",
+  "benchmarks/contact_angle_equilibrium/": "contact-angle equilibrium protocol: the artifacts record why the shipped theta-sweep cannot grade the BC (the initial condition is theta-independent) and that the replacement cap family is still FAIL on every admissible gate - evidence debt, no claim may be registered until the near-wall delta_s/kappa defect is fixed; see docs/verification_contact_angle_equilibrium.md",
+  "benchmarks/contact_angle_equilibrium/results.json": "supporting artifact of benchmarks/contact_angle_equilibrium/, covered by the directory waiver",
+  "benchmarks/contact_angle_equilibrium/wall_color_deficit.json": "supporting artifact of benchmarks/contact_angle_equilibrium/, covered by the directory waiver"
  },
  "schema_version": 1,
  "unregistered_ok": [
@@ -103,6 +106,9 @@
   "benchmarks/contact_angle/bc_ladder.json",
   "benchmarks/contact_angle/bc_reach.json",
   "benchmarks/contact_angle/raw/ladder_raw.log",
-  "benchmarks/contact_angle/raw/reach_raw.log"
+  "benchmarks/contact_angle/raw/reach_raw.log",
+  "benchmarks/contact_angle_equilibrium/",
+  "benchmarks/contact_angle_equilibrium/results.json",
+  "benchmarks/contact_angle_equilibrium/wall_color_deficit.json"
  ]
 }
