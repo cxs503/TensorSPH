@@ -111,7 +111,9 @@ class LJFluidResult:
     mean_temperature: float = 0.0
     std_temperature: float = 0.0
     # Negative control results
-    kinetic_energy_t0: float = 0.0
+    kinetic_energy_t0: float = 0.0   # mean per-particle KE of a T=0 run
+    max_ke_per_particle: float = 0.0  # max per-particle KE over all samples
+    max_temperature: float = 0.0      # max instantaneous T over all samples
     diffusion_no_noise: float = 0.0
     # Metadata
     n_samples_msd: int = 0
@@ -509,11 +511,23 @@ def extract_viscosity_green_kubo(acf_values: list, timestep: float,
 
     η = V/(k_BT) ∫₀^∞ ⟨P_xy(0)·P_xy(t)⟩ dt
 
-    Uses block averaging for error estimation.
+    The ``eta_std`` returned by the block branch is the scatter of partial-window
+    integrals, *not* a proper statistical error bar of the Green-Kubo integral
+    (the blocks reuse the same ACF and are strongly correlated); treat it as a
+    lower bound on the uncertainty only.
+
+    The k_B T normalisation makes eta undefined in the zero-temperature limit,
+    so ``temperature <= 0`` raises ``ValueError`` instead of dividing by zero.
+
     Returns (eta_mean, eta_std).
     """
     if len(acf_values) < 10:
         return 0.0, 0.0
+    if temperature <= 0.0:
+        raise ValueError(
+            "Green-Kubo viscosity is normalised by k_B*T and is undefined at "
+            f"T={temperature}; run the T=0 negative control without the "
+            "viscosity estimator (run_lj_fluid already skips it).")
 
     acf = torch.tensor(acf_values, dtype=torch.float64)
     dt = timestep
@@ -708,7 +722,7 @@ def run_lj_fluid(config: LJFluidConfig) -> LJFluidResult:
     acf_times, acf_values = compute_stress_autocorrelation(state.stress_xy_history)
     result.n_samples_gk = len(acf_values)
     volume = box ** config.dimension
-    if len(acf_values) > 10:
+    if len(acf_values) > 10 and config.temperature > 0.0:
         eta_mean, eta_std = extract_viscosity_green_kubo(
             acf_values, config.timestep * config.sample_every,
             volume, config.temperature
@@ -735,6 +749,12 @@ def run_lj_fluid(config: LJFluidConfig) -> LJFluidResult:
         t_hist = torch.tensor(state.temperature_history, dtype=torch.float64)
         result.mean_temperature = float(t_hist.mean())
         result.std_temperature = float(t_hist.std())
+        result.max_temperature = float(t_hist.max())
+    if state.kinetic_energy_history:
+        ke_hist = torch.tensor(state.kinetic_energy_history, dtype=torch.float64)
+        result.max_ke_per_particle = float(ke_hist.max())
+        if config.zero_temperature or config.temperature <= 0.0:
+            result.kinetic_energy_t0 = float(ke_hist.mean())
 
     return result
 
@@ -790,9 +810,15 @@ def run_verification(n_particles: int = 2000, dimension: int = 3,
         device=device,
     )
     result_t0 = run_lj_fluid(config_t0)
+    # Measured, not asserted: the T=0 residual is the BAOAB half-kick
+    # v = (dt/2) * F/m left after the OU step zeroes the velocities, so it is
+    # deterministic (seed-independent) and vanishes as dt -> 0.
     results["T0_control"] = {
-        "mean_ke": result_t0.equipartition_ratio * 0.5 * dimension * 0.0,
-        "max_ke_per_dof": 0.0,  # should be exactly 0
+        "mean_ke_per_particle": result_t0.kinetic_energy_t0,
+        "max_ke_per_particle": result_t0.max_ke_per_particle,
+        "max_ke_per_dof": result_t0.max_ke_per_particle / dimension,
+        "mean_T": result_t0.mean_temperature,
+        "max_T": result_t0.max_temperature,
     }
 
     # No-fluctuation control
