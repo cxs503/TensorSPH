@@ -128,39 +128,63 @@ def initialize_lattice(n_particles: int, dimension: int, number_density: float,
                        dtype: torch.dtype = torch.float64,
                        device: str = "cpu",
                        zero_temperature: bool = False) -> tuple:
-    """Place particles on a cubic lattice and assign Maxwell-Boltzmann velocities.
+    """Place particles on a close-packed lattice and assign Maxwell-Boltzmann velocities.
+
+    The lattice must not contain overlapping pairs: two particles closer than
+    ``~0.9 sigma`` produce a Lennard-Jones force large enough to destroy a
+    ``dt = 0.005`` trajectory within a few hundred steps (the historical
+    implementation padded non-perfect-cube ``N`` with *uniform random*
+    positions, which regularly created ``r < 0.1 sigma`` pairs and made the
+    whole transport-coefficient verification blow up -- see
+    ``docs/verification_fluctuating_hydro_lattice.md``).
+
+    Construction:
+
+    * 3-D: face-centred cubic lattice, ``4 n^3 >= N`` sites, ``n = ceil((N/4)^(1/3))``,
+      nearest-neighbour distance ``a/sqrt(2)`` with ``a = (4/rho)^(1/3)`` --
+      independent of ``N`` and equal to ``1.21 sigma`` at ``rho = 0.8``
+      (just outside the LJ minimum at ``2^(1/6) sigma = 1.122 sigma``).
+    * 2-D: square lattice, ``n^2 >= N`` sites, ``n = ceil(sqrt(N))``,
+      nearest-neighbour distance ``L/n``.
+    * When the lattice has more sites than particles, the occupied subset is
+      chosen by a seeded random permutation of the sites, so the sample stays
+      spatially uniform instead of filling a slab.
 
     Returns (positions, velocities, box_length).
     """
-    # Determine lattice spacing from number density
-    # ρ = N / L^d  =>  L = (N/ρ)^(1/d)
     box = (n_particles / number_density) ** (1.0 / dimension)
 
-    # Number of cells per axis
-    n_per_axis = max(2, int(round((n_particles) ** (1.0 / dimension))))
-    # Adjust box to fit lattice exactly
-    dx = box / n_per_axis
-    actual_n = n_per_axis ** dimension
+    if dimension == 3:
+        n_cells = max(1, int(math.ceil((n_particles / 4.0) ** (1.0 / 3.0) - 1e-12)))
+        # Fit n_cells FCC cells inside the density-fixed box: a = L / n_cells.
+        cell = box / n_cells
+        basis = torch.tensor([[0.0, 0.0, 0.0], [0.5, 0.5, 0.0],
+                              [0.5, 0.0, 0.5], [0.0, 0.5, 0.5]],
+                             dtype=dtype, device=device)
+        axes = torch.arange(n_cells, dtype=dtype, device=device) * cell
+        gx, gy, gz = torch.meshgrid(axes, axes, axes, indexing="ij")
+        origins = torch.stack((gx.reshape(-1), gy.reshape(-1), gz.reshape(-1)), dim=-1)
+        sites = (origins.unsqueeze(1) + (basis * cell).unsqueeze(0)).reshape(-1, 3)
+    elif dimension == 2:
+        n_side = max(1, int(math.ceil(math.sqrt(n_particles) - 1e-12)))
+        dx = box / n_side
+        axes = torch.arange(n_side, dtype=dtype, device=device) * dx + dx / 2
+        gx, gy = torch.meshgrid(axes, axes, indexing="xy")
+        sites = torch.stack((gx.reshape(-1), gy.reshape(-1)), dim=-1)
+    else:
+        raise ValueError("only 2-D and 3-D lattices are supported")
 
-    # Build lattice
-    axes = [torch.arange(n_per_axis, dtype=dtype, device=device) * dx + dx / 2
-            for _ in range(dimension)]
-    grid = torch.meshgrid(*axes, indexing="ij")
-    positions = torch.stack(grid, dim=-1).reshape(-1, dimension)
+    if sites.shape[0] < n_particles:
+        raise ValueError("internal error: lattice has fewer sites than particles")
 
-    # Trim or pad to exact n_particles
-    if positions.shape[0] > n_particles:
-        positions = positions[:n_particles]
-    elif positions.shape[0] < n_particles:
-        # Add random positions
-        gen = torch.Generator(device=device)
+    # Seeded, spatially uniform subset when the lattice holds extra sites.
+    if sites.shape[0] > n_particles:
+        gen = torch.Generator(device="cpu")
         gen.manual_seed(seed + 1000)
-        extra = torch.rand(n_particles - positions.shape[0], dimension,
-                           dtype=dtype, device=device) * box
-        positions = torch.cat([positions, extra], dim=0)
+        order = torch.randperm(sites.shape[0], generator=gen)[:n_particles]
+        sites = sites[order.to(sites.device)]
 
-    # Wrap into box
-    positions = positions % box
+    positions = sites % box
 
     # Maxwell-Boltzmann velocities
     if zero_temperature or temperature < 1e-15:
@@ -170,7 +194,7 @@ def initialize_lattice(n_particles: int, dimension: int, number_density: float,
         gen.manual_seed(seed)
         velocities = torch.randn(n_particles, dimension, dtype=dtype,
                                  device=device, generator=gen)
-        velocities *= math.sqrt(temperature)  # m=1, k_B=1: σ_v = √(k_BT/m)
+        velocities *= math.sqrt(temperature)  # m=1, k_B=1: sigma_v = sqrt(k_BT/m)
 
         # Remove centre-of-mass drift
         velocities -= velocities.mean(dim=0, keepdim=True)
@@ -663,7 +687,8 @@ def run_lj_fluid(config: LJFluidConfig) -> LJFluidResult:
             ke = 0.5 * state.mass * (state.velocities ** 2).sum(dim=-1)
             mean_ke = ke.mean().item()
             state.kinetic_energy_history.append(mean_ke)
-            inst_T = 2.0 * mean_ke / (config.dimension * config.n_particles)
+            # mean_ke is already a per-particle mean: T = 2 <KE>/d (k_B = 1).
+            inst_T = 2.0 * mean_ke / config.dimension
             state.temperature_history.append(inst_T)
 
     # Post-process
