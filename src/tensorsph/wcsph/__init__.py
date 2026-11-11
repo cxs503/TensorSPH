@@ -2,7 +2,7 @@
 
 Package layout
 --------------
-``kernels``          quintic-spline and Gaussian kernels with analytic gradients
+``kernels``          quintic-spline, Gaussian and Wendland C2 kernels with analytic gradients
 ``solver``           explicit WCSPH: Tait EOS, symmetric momentum form, Monaghan
                      artificial viscosity, dynamic / mirror boundaries, KDK
                      leapfrog with a CFL limit
