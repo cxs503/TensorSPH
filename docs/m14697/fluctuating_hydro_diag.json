@@ -1,0 +1,141 @@
+{
+  "module": "tensorsph.fluctuating_hydro",
+  "experiments": {
+    "A_t0_residual_vs_dt": {
+      "rows": [
+        {
+          "timestep": 0.02,
+          "mean_T": 0.00022081227150379644,
+          "std_T": 0.00010568692510837547,
+          "mean_ke": 0.0,
+          "equipartition_ratio": 0
+        },
+        {
+          "timestep": 0.01,
+          "mean_T": 0.00039617079267229835,
+          "std_T": 0.0001055124960580286,
+          "mean_ke": 0.0,
+          "equipartition_ratio": 0
+        },
+        {
+          "timestep": 0.005,
+          "mean_T": 0.0002650948397557816,
+          "std_T": 5.243294374281762e-05,
+          "mean_ke": 0.0,
+          "equipartition_ratio": 0
+        },
+        {
+          "timestep": 0.0025,
+          "mean_T": 0.00017804431347399983,
+          "std_T": 3.18218129502773e-05,
+          "mean_ke": 0.0,
+          "equipartition_ratio": 0
+        },
+        {
+          "timestep": 0.00125,
+          "mean_T": 8.757635015015195e-05,
+          "std_T": 7.3256866223885314e-06,
+          "mean_ke": 0.0,
+          "equipartition_ratio": 0
+        }
+      ],
+      "log_log_slope_T_vs_dt": 0.3822300406557821
+    },
+    "B_t0_seed_independence": {
+      "max_abs_v_seed1": 0.0023855245151073175,
+      "max_abs_v_seed2": 0.0023855245151073175,
+      "max_abs_v_seed3": 0.0023855245151073175,
+      "positions_seed1_identical_to_seed2": true,
+      "max_dx_seed1_2": 0.0,
+      "positions_seed1_identical_to_seed3": true,
+      "max_dx_seed1_3": 0.0,
+      "positions_seed2_identical_to_seed3": true,
+      "max_dx_seed2_3": 0.0
+    },
+    "C_equipartition_ensemble": {
+      "short_n500": [
+        {
+          "seed": 1,
+          "ratio": 1.0386380201132015,
+          "mean_T": 1.0386380201132015,
+          "n_samples_msd": 15
+        },
+        {
+          "seed": 2,
+          "ratio": 1.2302351118339667,
+          "mean_T": 1.2302351118339667,
+          "n_samples_msd": 15
+        },
+        {
+          "seed": 3,
+          "ratio": 1.1002143672534224,
+          "mean_T": 1.1002143672534221,
+          "n_samples_msd": 15
+        },
+        {
+          "seed": 4,
+          "ratio": 1.1450764508819986,
+          "mean_T": 1.1450764508819984,
+          "n_samples_msd": 15
+        },
+        {
+          "seed": 5,
+          "ratio": 1.15683050329531,
+          "mean_T": 1.1568305032953101,
+          "n_samples_msd": 15
+        },
+        {
+          "seed": 6,
+          "ratio": 1.0462345177233827,
+          "mean_T": 1.046234517723383,
+          "n_samples_msd": 15
+        }
+      ],
+      "short_mean": 1.1195381618502136,
+      "short_std": 0.07292242986323874,
+      "short_se": 0.02977045732813817,
+      "long_n4000": [
+        {
+          "seed": 1,
+          "ratio": 0.9293386710665312,
+          "mean_T": 0.9293386710665312
+        },
+        {
+          "seed": 2,
+          "ratio": 0.9903454665704888,
+          "mean_T": 0.9903454665704887
+        }
+      ],
+      "expected_single_run_rel_std": 0.10206207261596575
+    },
+    "D_dt_sensitivity": {
+      "equal_time_rows": [
+        {
+          "seed": 1,
+          "T_dt005": 1.0386380201132015,
+          "T_dt0025": 1.1626334050086826,
+          "rel_diff_equal_time": 0.11938267470891045
+        },
+        {
+          "seed": 2,
+          "T_dt005": 1.2302351118339667,
+          "T_dt0025": 1.103953393352416,
+          "rel_diff_equal_time": 0.10264844277879287
+        },
+        {
+          "seed": 3,
+          "T_dt005": 1.1002143672534221,
+          "T_dt0025": 1.0265338374193935,
+          "rel_diff_equal_time": 0.06696924892733848
+        }
+      ],
+      "equal_time_mean_rel_diff": 0.0963334554716806,
+      "committed_criterion_rel_diff": 0.21574818620223082,
+      "committed_T_dt005": 1.1295436104971792,
+      "committed_T_dt0025": 1.3732405956982647
+    },
+    "E_green_kubo_t0": {
+      "result": "no error"
+    }
+  }
+}
