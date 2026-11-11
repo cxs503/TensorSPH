@@ -84,6 +84,21 @@ from .neighbor_search import (
     cell_linked_pairs,
     cell_linked_pairs_host,
 )
+from . import ice_thermal
+from .ice_thermal import (
+    EnthalpyModel,
+    StefanConfig,
+    StefanResult,
+    ThreeFieldConfig,
+    ThreeFieldResult,
+    crack_assessment,
+    critical_temperature_drop,
+    flexural_strength,
+    restrained_stress,
+    run_stefan_sph,
+    run_three_field,
+    strength_band,
+)
 from .surface_tension import (
     apply_contact_angle_boundary,
     compute_color_gradient,
@@ -121,4 +136,8 @@ __all__ = [
     "spurious_pressure", "spurious_pressure_ratio",
     "apply_contact_angle_boundary", "compute_color_gradient", "compute_curvature", "compute_normal",
     "compute_surface_tension_force", "capillary_dt_limit",
+    "ice_thermal", "EnthalpyModel", "StefanConfig", "StefanResult",
+    "ThreeFieldConfig", "ThreeFieldResult", "crack_assessment",
+    "critical_temperature_drop", "flexural_strength", "restrained_stress",
+    "run_stefan_sph", "run_three_field", "strength_band",
 ]
