@@ -1,0 +1,40 @@
+{
+  "kind": "sloshing",
+  "label": "l2_artifact",
+  "summary": {
+    "label": "l2_artifact",
+    "tank_length": 0.6,
+    "water_depth": 0.25,
+    "amplitude": 0.02,
+    "dx": 0.041666666666666664,
+    "cells_per_depth": 6.0,
+    "sound_speed": 125.2836781069266,
+    "compressibility": 0.00015625,
+    "dt": 0.00010808803565863688,
+    "steps": 6981,
+    "particles": 84,
+    "simulated_time": 0.7545625769330125,
+    "wall_clock": 67.98958086036146,
+    "omega_analytic": 6.661868594416825,
+    "omega_measured": 50.173210706449154,
+    "frequency_error": 6.53140203763525,
+    "modal_amplitude_initial": 0.02,
+    "modal_amplitude_peak": 0.03171221431599735,
+    "decay_rate": 0.809750540393518,
+    "decay_per_period": 0.7637215633681627,
+    "max_speed": 1.2963156700134277,
+    "max_density_compression": 0.009816223144531344,
+    "escaped": 0,
+    "mass_drift": 0.0
+  },
+  "case": {
+    "tank_length": 0.6,
+    "water_depth": 0.25,
+    "cells_per_depth": 6.0,
+    "dx": 0.041666666666666664,
+    "dt": 0.00010808803565863688
+  },
+  "omega_analytic": 6.661868594416825,
+  "wall_clock": 68.00404930114746,
+  "timestamp": 1794384943.8313866
+}
