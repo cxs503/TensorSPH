@@ -40,6 +40,11 @@ WAIVERS = {
         "but the page needs the generator repaired -- registered as debt instead "
         "of shipping a hand-written page with undocumented numbers",
     "docs/verification_contact_angle_m6453.md": "debt E3: the m6453 contact-angle doc was never committed; the instrument was repaired and documented in docs/verification_contact_angle_m6503.md instead (referenced by make_overcredit_doc.py and test_contact_angle_instrument_m6503.py)",
+    "docs/verification_slamming.md":
+        "slam verification page pending the m14540 cluster runs "
+        "(SLAMMING_STATUS.md); pointer in src/tensorsph/slamming.py "
+        "registered as debt, not a hand-written page with unmeasured "
+        "numbers",
 }
 
 
