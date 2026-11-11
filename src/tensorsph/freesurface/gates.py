@@ -69,6 +69,15 @@ CRITERIA: tuple = (
         source="tensorsph.freesurface.ritter_anchor / sloshing_mode / "
                "solitary_anchor mass_drift (max over the three cases)",
     ),
+    Criterion(
+        "C6",
+        "Breaking wave: differential dissipation (super-critical minus sub-critical energy decay)",
+        0.05,
+        unit="relative amplitude loss difference",
+        kind="max",
+        source="tensorsph.freesurface.breaking_wave (differential_dissipation > 0.05 "
+               "confirms breaking onset is captured)",
+    ),
 )
 
 
