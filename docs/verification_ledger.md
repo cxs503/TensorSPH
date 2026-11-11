@@ -24,9 +24,9 @@
 
 ## 3. 汇总
 
-- claims **57** ／ 物理量 **36** ／ findings **19**
+- claims **57** ／ 物理量 **36** ／ findings **25**
 - 分级分布：PASS 15，MARGINAL 13，WITHHELD 15，FAIL 12，WITHDRAWN 2
-- findings 分类：credit_from_failing_artifact 6，declared_vs_derived 2，inadmissible_run 3，quantity_spread 4，run_validity 4
+- findings 分类：credit_from_failing_artifact 6，declared_vs_derived 2，inadmissible_run 3，quantity_spread 4，run_validity 4，uncovered_benchmark 5，unregistered_artifact 1
 - **credit 资格**：15 条 PASS / 13 条 MARGINAL，其中 **6** 条取自「工件自述 verdict = fail」的运行集（best-of-N / 阶梯不全，不可作为能力验证引用）；另有 15 条 credit 的工件根本没有声明 verdict（等级只能被读成「该读数自身合规」，不是「该能力被验证」）。
 
 ## 4. 断言表
@@ -37,8 +37,8 @@
 | `aeration.inception_constant.self_referential` | inception Froude constant of air entrainment vs Chanson | 1 - | 1 - | +0.00 % | **WITHHELD** | `benchmarks/aeration/report.json` → `inception.constant_rel_error` | `tests/test_aeration.py` |
 | `aeration.void_fraction.erf_anchor_l2` | steady void-fraction profile of the aerated hydraulic jump vs the erf anchor | limit 0.15 | 0.095382 | — | **MARGINAL** | `benchmarks/aeration/report.json` → `criteria.C2.measured` | `tests/test_aeration.py` |
 | `colour_surface.delta_s_integral` | colour-surface normalisation, integral |grad c| dr (exact: 1) | 1 - | 0.754545 - | -24.55 % | **WITHHELD** | `benchmarks/csf_consistent/curvature_audit.json` → `verdicts.delta_s_integral_dn` | `tests/test_csf_consistent.py` |
-| `csf_dispersion.capillary_wave.omega_error.local_range` | capillary-wave frequency error of the local-range CSF operator, k = 1..3 | limit 0.05 | 0.548026 | — | **FAIL** | `benchmarks/surface_tension_dispersion/validation_report.json` → `gates.local_range.C1_max_omega_error_pct` | `tests/test_csf_dispersion.py` |
-| `csf_dispersion.lamb_mode.omega_error.local_range` | Lamb-mode frequency error of the local-range CSF operator, n = 2..4 | limit 0.03 | 0.096785 | — | **FAIL** | `benchmarks/surface_tension_dispersion/validation_report.json` → `gates.local_range.C2_max_omega_error_pct` | `tests/test_csf_dispersion.py` |
+| `csf_dispersion.capillary_wave.omega_error.local_range` | capillary-wave frequency error of the local-range CSF operator, k = 1..3 | limit 0.05 | 2.45924 | — | **FAIL** | `runs/surface_tension_dispersion/report.json` → `gates.C1_capillary_wave.max_abs_error_pct` | `tests/test_csf_dispersion.py` |
+| `csf_dispersion.lamb_mode.omega_error.local_range` | Lamb-mode frequency error of the local-range CSF operator, n = 2..4 | limit 0.03 | 0.094841 | — | **FAIL** | `runs/surface_tension_dispersion/report.json` → `gates.C2_lamb_modes.max_abs_error_pct` | `tests/test_csf_dispersion.py` |
 | `csf_force.sigma_eff_over_sigma.dx5mm` | effective surface tension from the half-droplet force integral, sigma_eff/sigma | 1 - | 0.704004 - | -29.60 % | **FAIL** | `benchmarks/laplace_pressure/validation_report.json` → `cases[0]` | `tests/test_laplace_pressure.py` |
 | `curvature_operator.delta_s_weighted.dx3mm` | delta_s-weighted curvature kappa vs analytic 1/R (R = 20 mm) | 50 1/m | 64.1315 1/m | +28.26 % | **WITHHELD** | `benchmarks/csf_consistent/curvature_audit.json` → `rows[0].variants[0]` | `tests/test_csf_curvature_audit.py` |
 | `dam_break.martin_moyce.mae` | dam-break front position vs Martin & Moyce (1952), mean abs error in Z/a | limit 0.15 | 0.572757 | — | **FAIL** | `benchmarks/dam_break/resolution_ladder.json` → `gates.experimental_comparison` | `tests/test_dam_break_experimental.py` |
@@ -112,6 +112,12 @@
 - **quantity_spread**（`high`）`threed_shear_decay_rate_2nuk2` — 3 active readings of one quantity span -12.6 % … +11.5 % (spread 24.1 pt): threed_shear.decay_rate.finest=-2.7 %, threed_shear.decay_rate.raw_laplacian=+11.5 %, threed_shear.decay_rate.worst_of_ladder=-12.6 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
 - **quantity_spread**（`high`）`young_laplace_jump_sigma0.072_R0.1` — 2 active readings of one quantity span +219.7 % … +252.0 % (spread 32.3 pt): laplace_droplet.merged_csf.8cases=+219.7 %, surface_tension_ladder.laplace_error_finest=+252.0 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
 - **quantity_spread**（`high`）`young_laplace_jump_sigma7.2_R0.02` — 14 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.closure.closure_on_all_donors.dx1.5mm_c20=-25.3 %, young_laplace.closure.closure_on_all_donors.dx2mm_c20=-20.1 %, young_laplace.closure.closure_on_interior_layers2.dx1.5mm_c20=-3.4 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c10=-4.0 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c20=+8.8 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c5=+4.9 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.force_balance.flux_integral.dx1.5mm=-7.5 %, young_laplace.force_balance.flux_integral.dx2mm=-0.3 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
+- **uncovered_benchmark**（`medium`）`benchmarks/slamming` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **uncovered_benchmark**（`medium`）`benchmarks/two_phase_laplace` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **uncovered_benchmark**（`medium`）`benchmarks/verification_ladder` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **uncovered_benchmark**（`medium`）`benchmarks/wcsph_chain` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **uncovered_benchmark**（`medium`）`benchmarks/wedge_entry` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **unregistered_artifact**（`medium`）`benchmarks/contact_angle/bc_diagnosis.json` — machine-readable evidence file not referenced by any ledger claim
 
 ## 6. 读数明细（口径决定数字）
 
@@ -174,30 +180,30 @@
 ### `csf_dispersion.capillary_wave.omega_error.local_range` — FAIL
 
 - 物理量：capillary-wave frequency error of the local-range CSF operator, k = 1..3
-- 参考：0.05 -（harness criterion C1: within 5 % of omega^2 = sigma k^3 / rho (Lamb 1932)）
-- 实测：0.548026 -
-  - 口径：max relative omega error over the three wavenumbers
+- 参考：0.05 -（harness criterion C1: within 5 % of omega^2 = sigma k^3 / rho (Lamb 1932, Art. 267)）
+- 实测：2.45924 -
+  - 口径：max relative omega error over k = 1..3 at the finest grid (ppw = 48), delta normalisation = local_range, curvature = fit_quadratic
 - 相对误差：—（平台线 ±15%，论文级 ±3%）
 - 工件自述状态：`FAIL`；本账等级：**FAIL**
-- 工件自身 verdict：未声明
-- 溯源：`benchmarks/surface_tension_dispersion/validation_report.json` → `gates.local_range.C1_max_omega_error_pct`
+- 工件自身 verdict：**fail**（`status`）
+- 溯源：`runs/surface_tension_dispersion/report.json` → `gates.C1_capillary_wave.max_abs_error_pct`
   - 守护测试：`tests/test_csf_dispersion.py`
 - 欠账指针：`docs/verification_ledger.md`
-- 注：Registered because the harness was uncovered: its own criterion fails at 55 % and nothing in the ledger said so.
+- 注：Registered because the harness was uncovered; the reading is the harness's own failed gate, not an averaged score. It misses the 5 % criterion by 49.2x (|error| = 245.9 %). The option screen over delta normalisation x curvature scheme says no shipped combination passes it (best |omega| error 93.2 % over 4 combinations), and the C3 refinement orders of the same run are -0.87 (required 2.0), so the error does not shrink under refinement: an operator-consistency defect, not a resolution problem.
 
 ### `csf_dispersion.lamb_mode.omega_error.local_range` — FAIL
 
 - 物理量：Lamb-mode frequency error of the local-range CSF operator, n = 2..4
 - 参考：0.03 -（harness criterion C2: within 3 % of omega^2 = n(n^2-1) sigma/(rho R^3)）
-- 实测：0.096785 -
-  - 口径：max relative omega error over the three modes
+- 实测：0.094841 -
+  - 口径：max relative omega error over n = 2..4 at the finest grid (R/dx = 32)
 - 相对误差：—（平台线 ±15%，论文级 ±3%）
 - 工件自述状态：`FAIL`；本账等级：**FAIL**
-- 工件自身 verdict：未声明
-- 溯源：`benchmarks/surface_tension_dispersion/validation_report.json` → `gates.local_range.C2_max_omega_error_pct`
+- 工件自身 verdict：**fail**（`status`）
+- 溯源：`runs/surface_tension_dispersion/report.json` → `gates.C2_lamb_modes.max_abs_error_pct`
   - 守护测试：`tests/test_csf_dispersion.py`
 - 欠账指针：`docs/verification_ledger.md`
-- 注：9.7 % is better than the legacy operator (18.5 %) but still 3.2x its own 3 % gate -- the CSF frequency error is the same defect family as the Young-Laplace deficit, so it is not averaged into a PASS.
+- 注：|error| = 9.48 % against a 3 % gate: better than C1 by two orders of magnitude but still a FAIL, so it is not averaged into a PASS. The best screened combination reaches 4.85 % and still misses the gate (any_pass = False), i.e. the drop family is close to acceptable while the wave family is not.
 
 ### `csf_force.sigma_eff_over_sigma.dx5mm` — FAIL
 
