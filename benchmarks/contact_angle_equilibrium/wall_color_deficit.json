@@ -1,0 +1,70 @@
+{
+ "theta_set_deg": 90.0,
+ "dx_m": 0.0015,
+ "h_m": 0.0019500000000000001,
+ "R_over_dx": 13.333333333333334,
+ "n_particles": 557,
+ "n_bulk": 385,
+ "n_interface": 247,
+ "n_interface_but_bulk": 75,
+ "interface_bulk_fraction": 0.30364372469635625,
+ "bulk_color_min": 0.990380048751831,
+ "bulk_color_fraction_below_0p99": 0.0,
+ "rows": [
+  {
+   "d_over_dx": [
+    1.5,
+    2.0
+   ],
+   "n": 2,
+   "color_mean": 0.9903801083564758,
+   "grad_c_mean": 69.69007873535156,
+   "delta_s_over_max_mean": 0.3607005476951599,
+   "kappa_abs_mean": 3.653306007385254
+  },
+  {
+   "d_over_dx": [
+    2.0,
+    2.5
+   ],
+   "n": 31,
+   "color_mean": 0.9903815388679504,
+   "grad_c_mean": 69.67423248291016,
+   "delta_s_over_max_mean": 0.360618531703949,
+   "kappa_abs_mean": 35.09291076660156
+  },
+  {
+   "d_over_dx": [
+    2.5,
+    3.0
+   ],
+   "n": 2,
+   "color_mean": 0.9999452829360962,
+   "grad_c_mean": 11.059074401855469,
+   "delta_s_over_max_mean": 0.057239338755607605,
+   "kappa_abs_mean": 261.32763671875
+  },
+  {
+   "d_over_dx": [
+    3.0,
+    4.0
+   ],
+   "n": 32,
+   "color_mean": 0.9999467134475708,
+   "grad_c_mean": 10.513172149658203,
+   "delta_s_over_max_mean": 0.05441386625170708,
+   "kappa_abs_mean": 269.5147705078125
+  },
+  {
+   "d_over_dx": [
+    4.0,
+    6.0
+   ],
+   "n": 92,
+   "color_mean": 0.9999467730522156,
+   "grad_c_mean": 0.4328210949897766,
+   "delta_s_over_max_mean": 0.0022401867900043726,
+   "kappa_abs_mean": 248.54550170898438
+  }
+ ]
+}
