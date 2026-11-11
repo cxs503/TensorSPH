@@ -24,22 +24,28 @@
 
 ## 3. 汇总
 
-- claims **47** ／ 物理量 **26** ／ findings **31**
-- 分级分布：PASS 12，MARGINAL 10，WITHHELD 13，FAIL 10，WITHDRAWN 2
-- findings 分类：credit_from_failing_artifact 6，declared_vs_derived 1，inadmissible_run 3，quantity_spread 4，run_validity 4，uncovered_benchmark 7，unmarked_superseded_number 1，unregistered_artifact 5
-- **credit 资格**：12 条 PASS / 10 条 MARGINAL，其中 **6** 条取自「工件自述 verdict = fail」的运行集（best-of-N / 阶梯不全，不可作为能力验证引用）；另有 9 条 credit 的工件根本没有声明 verdict（等级只能被读成「该读数自身合规」，不是「该能力被验证」）。
+- claims **57** ／ 物理量 **36** ／ findings **19**
+- 分级分布：PASS 15，MARGINAL 13，WITHHELD 15，FAIL 12，WITHDRAWN 2
+- findings 分类：credit_from_failing_artifact 6，declared_vs_derived 2，inadmissible_run 3，quantity_spread 4，run_validity 4
+- **credit 资格**：15 条 PASS / 13 条 MARGINAL，其中 **6** 条取自「工件自述 verdict = fail」的运行集（best-of-N / 阶梯不全，不可作为能力验证引用）；另有 15 条 credit 的工件根本没有声明 verdict（等级只能被读成「该读数自身合规」，不是「该能力被验证」）。
 
 ## 4. 断言表
 
 | claim | 物理量 / 口径 | 参考 | 实测 | rel err | 等级 | 工件 → JSON 路径 | 守护测试 |
 |---|---|---|---|---|---|---|---|
+| `aeration.air_volume_drift` | air volume drift per characteristic time of the aerated jump | 0 - | 0.003709 - | +0.37 % | **PASS** | `benchmarks/aeration/report.json` → `criteria.C5.measured` | `tests/test_aeration.py` |
+| `aeration.inception_constant.self_referential` | inception Froude constant of air entrainment vs Chanson | 1 - | 1 - | +0.00 % | **WITHHELD** | `benchmarks/aeration/report.json` → `inception.constant_rel_error` | `tests/test_aeration.py` |
+| `aeration.void_fraction.erf_anchor_l2` | steady void-fraction profile of the aerated hydraulic jump vs the erf anchor | limit 0.15 | 0.095382 | — | **MARGINAL** | `benchmarks/aeration/report.json` → `criteria.C2.measured` | `tests/test_aeration.py` |
 | `colour_surface.delta_s_integral` | colour-surface normalisation, integral |grad c| dr (exact: 1) | 1 - | 0.754545 - | -24.55 % | **WITHHELD** | `benchmarks/csf_consistent/curvature_audit.json` → `verdicts.delta_s_integral_dn` | `tests/test_csf_consistent.py` |
+| `csf_dispersion.capillary_wave.omega_error.local_range` | capillary-wave frequency error of the local-range CSF operator, k = 1..3 | limit 0.05 | 0.548026 | — | **FAIL** | `benchmarks/surface_tension_dispersion/validation_report.json` → `gates.local_range.C1_max_omega_error_pct` | `tests/test_csf_dispersion.py` |
+| `csf_dispersion.lamb_mode.omega_error.local_range` | Lamb-mode frequency error of the local-range CSF operator, n = 2..4 | limit 0.03 | 0.096785 | — | **FAIL** | `benchmarks/surface_tension_dispersion/validation_report.json` → `gates.local_range.C2_max_omega_error_pct` | `tests/test_csf_dispersion.py` |
 | `csf_force.sigma_eff_over_sigma.dx5mm` | effective surface tension from the half-droplet force integral, sigma_eff/sigma | 1 - | 0.704004 - | -29.60 % | **FAIL** | `benchmarks/laplace_pressure/validation_report.json` → `cases[0]` | `tests/test_laplace_pressure.py` |
 | `curvature_operator.delta_s_weighted.dx3mm` | delta_s-weighted curvature kappa vs analytic 1/R (R = 20 mm) | 50 1/m | 64.1315 1/m | +28.26 % | **WITHHELD** | `benchmarks/csf_consistent/curvature_audit.json` → `rows[0].variants[0]` | `tests/test_csf_curvature_audit.py` |
 | `dam_break.martin_moyce.mae` | dam-break front position vs Martin & Moyce (1952), mean abs error in Z/a | limit 0.15 | 0.572757 | — | **FAIL** | `benchmarks/dam_break/resolution_ladder.json` → `gates.experimental_comparison` | `tests/test_dam_break_experimental.py` |
 | `density_diffusion.decay_rate.worst_of_ladder` | decay rate of a plane density wave vs the analytic gamma = D k^2, D = delta c0 h (Antuono, Colagrossi & Marrone 2012) | limit 0.03 | 0.010208 | — | **PASS** | `benchmarks/density_diffusion_decay/decay_rate.json` → `max_rate_relative_error` | `tests/test_density_diffusion_decay.py::test_the_diffusive_term_decays_a_plane_wave_at_the_analytic_rate` |
 | `density_diffusion.finite_time.amplitude` | mode amplitude after a finite integration time vs rho0 A exp(-gamma t) | limit 0.035 | 0.00482 | — | **PASS** | `benchmarks/density_diffusion_decay/decay_rate.json` → `finite_time` | `tests/test_density_diffusion_decay.py::test_the_mode_amplitude_follows_the_exponential_over_a_finite_time` |
 | `effective_sigma.sigma_eff_over_sigma.dx5mm` | effective surface tension from the half-droplet force integral, sigma_eff/sigma (R = 40 mm, curvature estimator: quadratic interface fit) | 1 - | 0.710625 - | -28.94 % | **FAIL** | `benchmarks/effective_sigma/out/report.json` → `rows[0].ratio` | `tests/test_effective_sigma.py::test_current_default_delivers_the_documented_ratio` |
+| `fluctuating_hydro.thermostat.mean_temperature.n128` | mean temperature of the LJ fluid under the Langevin (BAOAB) thermostat, N = 128 | 1 T* | 1.08806 T* | +8.81 % | **MARGINAL** | `benchmarks/fluctuating_hydro/report.json` → `case.runs[0].mean_temperature` | `tests/test_fluctuating_hydro.py` |
 | `ice_floe_added_mass.anchor.c_m_richardson` | added-mass coefficient of a 2-D circular section in an unbounded fluid | 1 - | 0.988634 - | -1.14 % | **PASS** | `benchmarks/ice_floe_added_mass/report.json` → `richardson_extrapolation` | `tests/test_ice_floe_added_mass.py` |
 | `ice_floe_added_mass.anchor.c_m_unbounded` | added-mass coefficient of a 2-D circular section in an unbounded fluid | 1 - | 0.9479 - | -5.21 % | **MARGINAL** | `benchmarks/ice_floe_added_mass/report.json` → `anchor_ladder[3]` | `tests/test_ice_floe_added_mass.py` |
 | `ice_floe_added_mass.launch.speed_ratio` | floe launch speed ratio v_wet/v_dry vs the algebraic identity rho_ice/(rho_ice + C_m rho_w) | 0.478352 - | 0.478352 - | +0.00 % | **PASS** | `benchmarks/ice_floe_added_mass/report.json` → `launch_bias.speed_ratio_mean` | `tests/test_ice_floe_added_mass.py` |
@@ -54,6 +60,10 @@
 | `poiseuille.centre_velocity.finest` | centre velocity of a body-force-driven plane channel at steady state | 1.22625 m/s | 1.24476 m/s | +1.51 % | **PASS** | `benchmarks/poiseuille/out/results.json` → `results[2].fit.u_centre_measured` | `tests/test_poiseuille.py::test_steady_channel_flow_develops_the_poiseuille_parabola` |
 | `poiseuille.wall_shear_ratio.finest` | no-slip wall shear stress of the same channel, relative to rho g H / 2 | 1 - | 0.502508 - | -49.75 % | **WITHHELD** | `benchmarks/poiseuille/out/results.json` → `results[2].wall_shear_ratio` | `tests/test_poiseuille.py::test_steady_channel_flow_develops_the_poiseuille_parabola` |
 | `quiescence.flume_resting_noise.v_late_rms` | residual velocity of a flume at rest: RMS over the last quarter of max_i |v_i| on interior particles (m/s) | limit 0.06 | 0.079759 | — | **FAIL** | `benchmarks/startup_quiescence/report.json` → `findings[0]` | `tests/test_startup_quiescence.py` |
+| `rayleigh_plateau.analytic.kR_star` | most unstable wavenumber of the Rayleigh-Plateau instability (kR)* | 0.697 - | 0.697019 - | +0.00 % | **PASS** | `benchmarks/rayleigh_plateau/report.json` → `analytic.most_unstable_kR` | `tests/test_rayleigh_plateau.py` |
+| `rayleigh_plateau.analytic.lambda_over_R` | most unstable wavelength of the Rayleigh-Plateau instability, lambda/R | 9.02 - | 9.01437 - | -0.06 % | **PASS** | `benchmarks/rayleigh_plateau/report.json` → `analytic.most_unstable_lambda_over_R` | `tests/test_rayleigh_plateau.py` |
+| `rayleigh_plateau.curvature.profile_self_referential` | 3-D CSF curvature on a cylindrical column, R/dx = 3 | 0 - | 0 - | +0.00 % | **WITHHELD** | `benchmarks/rayleigh_plateau/report.json` → `curvature[0].relative_error` | `tests/test_rayleigh_plateau.py` |
+| `rayleigh_plateau.dynamic.volume_drift` | volume drift of the 3-D Rayleigh-Plateau column run (80 steps, 864 particles) | 0 - | -0.139239 - | -13.92 % | **MARGINAL** | `benchmarks/rayleigh_plateau/report.json` → `column_run.final_volume_error` | `tests/test_rayleigh_plateau.py` |
 | `static_droplet.force_direction.WITHDRAWN` | sign/shape of the CSF force on a static droplet (not a physical gate) | 1 - | 0.173549 - | -82.65 % | **WITHDRAWN** | `benchmarks/static_droplet/validation_report.json` → `validation` | `tests/test_laplace_validation.py` |
 | `surface_tension_ladder.laplace_error_finest` | Laplace error of the surface-tension-only ladder, finest level | 0.15 fraction | 2.51981 fraction | +251.98 % | **FAIL** | `benchmarks/surface_tension/laplace_ladder.json` → `gates.laplace_error_finest` | `tests/test_surface_tension_laplace.py` |
 | `threed_hydrostatic.bottom_pressure.adami_best` | bottom pressure of a 3-D column at rest, p = rho0 g H | 1520.55 Pa | 1478.77 Pa | -2.75 % | **PASS** | `benchmarks/threed_hydrostatic/report.json` → `runs[0].pressure` | `tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria` |
@@ -83,6 +93,7 @@
 
 ## 5. findings（证据缺陷清单）
 
+- **declared_vs_derived**（`high`）`aeration.inception_constant.self_referential` — artifact declares PASS, ledger derives WITHHELD: vacuum-gauge readout (additive |p| offset, not a physical dp)
 - **declared_vs_derived**（`high`）`young_laplace.laplace_law.vacuum_gauge` — artifact declares PASS, ledger derives WITHHELD: vacuum-gauge readout (additive |p| offset, not a physical dp)
 - **run_validity**（`high`）`oscillating_droplet.frequency.lamb` — validity gate says INVALID (containment / Mach / estimator / fit / null-control): the run had stopped being a liquid before the reading was taken, so the reading is graded WITHHELD instead of FAIL — see docs/verification_claim_validity.md
 - **run_validity**（`high`）`young_laplace.closure.closure_on_interior_layers2.dx2mm_c20` — validity gate says INVALID (containment / Mach / estimator / fit / null-control): the run had stopped being a liquid before the reading was taken, so the reading is graded WITHHELD instead of FAIL — see docs/verification_claim_validity.md
@@ -101,21 +112,50 @@
 - **quantity_spread**（`high`）`threed_shear_decay_rate_2nuk2` — 3 active readings of one quantity span -12.6 % … +11.5 % (spread 24.1 pt): threed_shear.decay_rate.finest=-2.7 %, threed_shear.decay_rate.raw_laplacian=+11.5 %, threed_shear.decay_rate.worst_of_ladder=-12.6 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
 - **quantity_spread**（`high`）`young_laplace_jump_sigma0.072_R0.1` — 2 active readings of one quantity span +219.7 % … +252.0 % (spread 32.3 pt): laplace_droplet.merged_csf.8cases=+219.7 %, surface_tension_ladder.laplace_error_finest=+252.0 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
 - **quantity_spread**（`high`）`young_laplace_jump_sigma7.2_R0.02` — 14 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.closure.closure_on_all_donors.dx1.5mm_c20=-25.3 %, young_laplace.closure.closure_on_all_donors.dx2mm_c20=-20.1 %, young_laplace.closure.closure_on_interior_layers2.dx1.5mm_c20=-3.4 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c10=-4.0 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c20=+8.8 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c5=+4.9 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.force_balance.flux_integral.dx1.5mm=-7.5 %, young_laplace.force_balance.flux_integral.dx2mm=-0.3 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
-- **uncovered_benchmark**（`medium`）`benchmarks/aeration` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
-- **uncovered_benchmark**（`medium`）`benchmarks/rayleigh_plateau` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
-- **uncovered_benchmark**（`medium`）`benchmarks/slamming` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
-- **uncovered_benchmark**（`medium`）`benchmarks/two_phase_laplace` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
-- **uncovered_benchmark**（`medium`）`benchmarks/verification_ladder` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
-- **uncovered_benchmark**（`medium`）`benchmarks/wcsph_chain` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
-- **uncovered_benchmark**（`medium`）`benchmarks/wedge_entry` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
-- **unregistered_artifact**（`medium`）`benchmarks/aeration/report.json` — machine-readable evidence file not referenced by any ledger claim
-- **unregistered_artifact**（`medium`）`benchmarks/contact_angle/bc_diagnosis.json` — machine-readable evidence file not referenced by any ledger claim
-- **unregistered_artifact**（`medium`）`benchmarks/fluctuating_hydro/report.json` — machine-readable evidence file not referenced by any ledger claim
-- **unregistered_artifact**（`medium`）`benchmarks/rayleigh_plateau/report.json` — machine-readable evidence file not referenced by any ledger claim
-- **unregistered_artifact**（`medium`）`benchmarks/surface_tension_dispersion/validation_report.json` — machine-readable evidence file not referenced by any ledger claim
-- **unmarked_superseded_number**（`medium`）`docs/verified/fluctuating_hydrodynamics_verification.md:149` — quotes -98.5% without a historical marker (legacy gradient CSF scheme, kept only as a before/after contrast)
 
 ## 6. 读数明细（口径决定数字）
+
+### `aeration.air_volume_drift` — PASS
+
+- 物理量：air volume drift per characteristic time of the aerated jump
+- 参考：0 -（exact conservation of entrained air volume）
+- 实测：0.003709 -
+  - 口径：relative air-volume drift per characteristic time
+- 相对误差：+0.37 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**PASS**
+- 工件自身 verdict：未声明
+- 溯源：`benchmarks/aeration/report.json` → `criteria.C5.measured`
+  - 守护测试：`tests/test_aeration.py`
+- 欠账指针：`docs/verification_ledger.md`
+- 注：0.37 % drift over the characteristic time; conservation reading only.
+
+### `aeration.inception_constant.self_referential` — WITHHELD
+
+- 物理量：inception Froude constant of air entrainment vs Chanson
+- 参考：1 -（Chanson empirical criterion constant (input to the criterion)）
+- 实测：1 -
+  - 口径：constant the harness derives from its own onset sweep
+- 相对误差：+0.00 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**WITHHELD**
+- 工件自身 verdict：未声明
+- 溯源：`benchmarks/aeration/report.json` → `inception.constant_rel_error`
+  - 守护测试：`tests/test_aeration.py`
+- 欠账指针：`docs/verification_ledger.md`
+- 注：Exactly 0.0 % because the derived constant is the empirical constant rearranged: the criterion is checked against itself, so the reading is WITHHELD regardless of the artifact's all_criteria_passed = true. The same degeneracy hits C4 (bubble rise velocity vs Mendelson), which reports 0.0 % because the module *implements* the Mendelson formula; that reading is deliberately not registered as a claim.
+
+### `aeration.void_fraction.erf_anchor_l2` — MARGINAL
+
+- 物理量：steady void-fraction profile of the aerated hydraulic jump vs the erf anchor
+- 参考：0 -（exact erf anchor profile (zero residual)）
+- 实测：0.095382 -
+  - 口径：relative L2 difference between the measured and the anchor profile
+- 相对误差：—（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**MARGINAL**
+- 工件自身 verdict：未声明
+- 溯源：`benchmarks/aeration/report.json` → `criteria.C2.measured`
+  - 守护测试：`tests/test_aeration.py`
+- 欠账指针：`docs/verification_ledger.md`
+- 注：Registered because the harness was invisible to the ledger (uncovered_benchmark). 9.5 % against a 15 % limit is MARGINAL, not a pass: the anchor is an erf fit of the void-fraction profile, not experimental data.
 
 ### `colour_surface.delta_s_integral` — WITHHELD
 
@@ -130,6 +170,34 @@
   - 守护测试：`tests/test_csf_consistent.py`
 - 欠账指针：`docs/verification_ledger.md`
 - 注：Root cause of the force-path deficit: the delta function carries only 0.755 of unit mass, and the section that does exist is ~28 % overweight, so the cut force comes out ~0.70 sigma. This is the quantity to fix, not the pressure assembly.
+
+### `csf_dispersion.capillary_wave.omega_error.local_range` — FAIL
+
+- 物理量：capillary-wave frequency error of the local-range CSF operator, k = 1..3
+- 参考：0.05 -（harness criterion C1: within 5 % of omega^2 = sigma k^3 / rho (Lamb 1932)）
+- 实测：0.548026 -
+  - 口径：max relative omega error over the three wavenumbers
+- 相对误差：—（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`FAIL`；本账等级：**FAIL**
+- 工件自身 verdict：未声明
+- 溯源：`benchmarks/surface_tension_dispersion/validation_report.json` → `gates.local_range.C1_max_omega_error_pct`
+  - 守护测试：`tests/test_csf_dispersion.py`
+- 欠账指针：`docs/verification_ledger.md`
+- 注：Registered because the harness was uncovered: its own criterion fails at 55 % and nothing in the ledger said so.
+
+### `csf_dispersion.lamb_mode.omega_error.local_range` — FAIL
+
+- 物理量：Lamb-mode frequency error of the local-range CSF operator, n = 2..4
+- 参考：0.03 -（harness criterion C2: within 3 % of omega^2 = n(n^2-1) sigma/(rho R^3)）
+- 实测：0.096785 -
+  - 口径：max relative omega error over the three modes
+- 相对误差：—（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`FAIL`；本账等级：**FAIL**
+- 工件自身 verdict：未声明
+- 溯源：`benchmarks/surface_tension_dispersion/validation_report.json` → `gates.local_range.C2_max_omega_error_pct`
+  - 守护测试：`tests/test_csf_dispersion.py`
+- 欠账指针：`docs/verification_ledger.md`
+- 注：9.7 % is better than the legacy operator (18.5 %) but still 3.2x its own 3 % gate -- the CSF frequency error is the same defect family as the Young-Laplace deficit, so it is not averaged into a PASS.
 
 ### `csf_force.sigma_eff_over_sigma.dx5mm` — FAIL
 
@@ -213,6 +281,20 @@
   - 守护测试：`tests/test_effective_sigma.py::test_current_default_delivers_the_documented_ratio`
 - 欠账指针：`docs/verification_ledger.md`
 - 注：Independent replication of claim csf_force.sigma_eff_over_sigma.dx5mm at twice the radius with a different curvature estimator: the two agree to ~1 pt, so the ~30 % force deficit is not a radius or operator artefact. Same root cause as colour_surface.delta_s_integral (the colour-surface delta carries ~0.75 of unit mass).
+
+### `fluctuating_hydro.thermostat.mean_temperature.n128` — MARGINAL
+
+- 物理量：mean temperature of the LJ fluid under the Langevin (BAOAB) thermostat, N = 128
+- 参考：1 T*（target temperature T* = 1.0 (reduced LJ units)）
+- 实测：1.08806 T*
+  - 口径：mean over 800 steps
+- 相对误差：+8.81 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**MARGINAL**
+- 工件自身 verdict：未声明
+- 溯源：`benchmarks/fluctuating_hydro/report.json` → `case.runs[0].mean_temperature`
+  - 守护测试：`tests/test_fluctuating_hydro.py`
+- 欠账指针：`docs/verified/fluctuating_hydrodynamics_verification.md`
+- 注：Supersedes the legacy reading T = 0.0152 (error -98.5 %) quoted in docs/verified/fluctuating_hydrodynamics_verification.md: the legacy lattice overlapped particles (up to 81 overlapping pairs at N = 256), which is what collapsed the temperature. Registered here so the old number cannot be quoted as current.
 
 ### `ice_floe_added_mass.anchor.c_m_richardson` — PASS
 
@@ -407,6 +489,62 @@
   - 守护测试：`tests/test_startup_quiescence.py`
 - 欠账指针：`docs/verification_startup_quiescence.md`
 - 注：OPEN defect register entry F1: the shipped resting flume reads 0.0798 m/s against a 0.06 m/s ceiling, i.e. 60 % of the wave orbital velocity (signal-to-noise ~1.7:1). The ablation 'flume resting column (paddle frozen at rest), overrides density_diffusion=0.0,viscosity=0.01' reaches 0.0072 m/s (0.09x calmer), so the noise is controlled by density diffusion + viscosity, not by the boundary model — see docs/verification_startup_quiescence.md §5.
+
+### `rayleigh_plateau.analytic.kR_star` — PASS
+
+- 物理量：most unstable wavenumber of the Rayleigh-Plateau instability (kR)*
+- 参考：0.697 -（Rayleigh (1879) / literature value (kR)* = 0.697）
+- 实测：0.697019 -
+  - 口径：root of the implemented dispersion relation with the Bessel term
+- 相对误差：+0.00 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`None`；本账等级：**PASS**
+- 工件自身 verdict：未声明
+- 溯源：`benchmarks/rayleigh_plateau/report.json` → `analytic.most_unstable_kR`
+  - 守护测试：`tests/test_rayleigh_plateau.py`
+- 欠账指针：`docs/verification_ledger.md`
+- 注：This validates the *dispersion solver* (the Bessel term matters: the naive kR = 1/sqrt(3) = 0.5774 is -17.2 % off), not a simulation. The dynamic 3-D column run in the same artifact does not deliver a growth rate (see rayleigh_plateau.dynamic.volume_drift).
+
+### `rayleigh_plateau.analytic.lambda_over_R` — PASS
+
+- 物理量：most unstable wavelength of the Rayleigh-Plateau instability, lambda/R
+- 参考：9.02 -（literature lambda/R = 9.02）
+- 实测：9.01437 -
+  - 口径：2 pi / (kR)* from the implemented dispersion relation
+- 相对误差：-0.06 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`None`；本账等级：**PASS**
+- 工件自身 verdict：未声明
+- 溯源：`benchmarks/rayleigh_plateau/report.json` → `analytic.most_unstable_lambda_over_R`
+  - 守护测试：`tests/test_rayleigh_plateau.py`
+- 欠账指针：`docs/verification_ledger.md`
+- 注：Same analytic solver as kR*; -0.06 % is a rounding-level agreement.
+
+### `rayleigh_plateau.curvature.profile_self_referential` — WITHHELD
+
+- 物理量：3-D CSF curvature on a cylindrical column, R/dx = 3
+- 参考：0 -（exact curvature 1/R of the constructed cylinder）
+- 实测：0 -
+  - 口径：'profile' estimator: fits the radius of the surface profile
+- 相对误差：+0.00 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`None`；本账等级：**WITHHELD**
+- 工件自身 verdict：未声明
+- 溯源：`benchmarks/rayleigh_plateau/report.json` → `curvature[0].relative_error`
+  - 守护测试：`tests/test_rayleigh_plateau.py`
+- 欠账指针：`docs/verification_ledger.md`
+- 注：2.2e-16 is machine zero, i.e. the estimator recovers the radius it was built from: self-referential. The independent estimators on the same cloud are mls +71.9 % and axisym -130.4 % -- that spread is the real curvature evidence, and it is not paper grade.
+
+### `rayleigh_plateau.dynamic.volume_drift` — MARGINAL
+
+- 物理量：volume drift of the 3-D Rayleigh-Plateau column run (80 steps, 864 particles)
+- 参考：0 -（exact volume conservation of the incompressible column）
+- 实测：-0.139239 -
+  - 口径：final relative volume error of the run
+- 相对误差：-13.92 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`None`；本账等级：**MARGINAL**
+- 工件自身 verdict：未声明
+- 溯源：`benchmarks/rayleigh_plateau/report.json` → `column_run.final_volume_error`
+  - 守护测试：`tests/test_rayleigh_plateau.py`
+- 欠账指针：`docs/verification_ledger.md`
+- 注：The growth-rate fit of the same run is NaN (omega_measured = NaN, max density error 42.9 %), so the dynamic Rayleigh-Plateau capability is NOT validated: this entry records only the volume bookkeeping of a run that could not be reduced to a growth rate. Closing it needs a longer/steadier run.
 
 ### `static_droplet.force_direction.WITHDRAWN` — WITHDRAWN
 

@@ -45,21 +45,21 @@
 | `threed_shear.decay_rate.raw_laplacian` | **MARGINAL** | +11.46 % | `benchmarks/threed_shear/report.json` → `verdict = fail`（缺失用例 `h1.8`） |
 | `threed_shear.decay_rate.worst_of_ladder` | **MARGINAL** | -12.62 % | `benchmarks/threed_shear/report.json` → `verdict = fail`（缺失用例 `h1.8`） |
 
-合计 **6** 条；另有 **6** 条 credit 的工件根本没有声明 verdict（等级只能读成「该读数合规」，不能读成「该能力被验证」）。工件自述 `fail` 的条目共 **12** 条。
+合计 **6** 条；另有 **15** 条 credit 的工件根本没有声明 verdict（等级只能读成「该读数合规」，不能读成「该能力被验证」）。工件自述 `fail` 的条目共 **12** 条。
 
 ### 3.2 账本规模与分级分布（前 → 后）
 
 | 指标 | 基线（HEAD 提交的 ledger.json） | 本次重生成 |
 |---|---|---|
-| claims | 36 | 40 |
-| 物理量 | 18 | 20 |
-| findings | 8 | 19 |
-| PASS | 7 | 7 |
-| MARGINAL | 5 | 8 |
-| FAIL | 9 | 10 |
-| WITHHELD | 13 | 13 |
+| claims | 47 | 57 |
+| 物理量 | 26 | 36 |
+| findings | 31 | 19 |
+| PASS | 12 | 15 |
+| MARGINAL | 10 | 13 |
+| FAIL | 10 | 12 |
+| WITHHELD | 13 | 15 |
 | WITHDRAWN | 2 | 2 |
-| findings 分类 | declared_vs_derived 1，inadmissible_run 3，quantity_spread 3，run_validity 1 | credit_from_failing_artifact 6，declared_vs_derived 1，inadmissible_run 3，quantity_spread 4，run_validity 4，uncovered_benchmark 1 |
+| findings 分类 | credit_from_failing_artifact 6，declared_vs_derived 1，inadmissible_run 3，quantity_spread 4，run_validity 4，uncovered_benchmark 7，unmarked_superseded_number 1，unregistered_artifact 5 | credit_from_failing_artifact 6，declared_vs_derived 2，inadmissible_run 3，quantity_spread 4，run_validity 4 |
 
 ### 3.3 误差判定（逐项回答是否 < 3%）
 

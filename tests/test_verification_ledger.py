@@ -82,7 +82,11 @@ def test_grades_never_contradict_the_tolerance_ladder(ledger):
         elif e["grade"] == "MARGINAL":
             assert err is not None and err <= e["criterion_pct"], e["claim_id"]
         elif e["grade"] in {"WITHHELD", "FAIL"}:
-            assert err is not None and err > e["paper_criterion_pct"], e["claim_id"]
+            # A degenerate gauge (self-referential reference) is withheld whatever
+            # its numerical value: the number cannot be read as an error at all.
+            assert e["gauge_degenerate"] or (
+                err is not None and err > e["paper_criterion_pct"]
+            ), e["claim_id"]
         else:
             assert e["grade"] == "WITHDRAWN" and e["superseded_by"], e["claim_id"]
 
@@ -121,8 +125,13 @@ def test_vacuum_gauge_claim_is_withheld(by_id, ledger):
 
 
 def test_non_degenerate_claims_are_not_flagged_as_gauge_defects(ledger):
+    """Every `declared_vs_derived` finding must land on a degenerate-gauge claim."""
+    by_id = {e["claim_id"]: e for e in ledger["entries"]}
     offenders = [f["claim_id"] for f in ledger["findings"] if f["rule"] == "declared_vs_derived"]
-    assert offenders == ["young_laplace.laplace_law.vacuum_gauge"]
+    assert "young_laplace.laplace_law.vacuum_gauge" in offenders
+    for cid in offenders:
+        assert by_id[cid]["gauge_degenerate"] is True, cid
+        assert by_id[cid]["artifact_status"].upper() == "PASS", cid
 
 
 # ---------------------------------------------------------------------------
