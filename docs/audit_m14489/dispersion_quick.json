@@ -1,0 +1,356 @@
+{
+ "benchmark": "csf_dispersion",
+ "reference": {
+  "capillary_wave": "omega^2 = sigma k^3 / rho (Lamb 1932, Art. 267)",
+  "drop": "omega^2 = n(n^2-1) sigma / (rho R^3) (Rayleigh 1879; Lamb Art. 275)",
+  "measurement": "omega ratio = sqrt(modal normal-stress ratio of the discretised CSF operator): the inertia is the exact potential-flow value, so the score isolates the surface-force operator (linear-response / discrete dispersion analysis, not a time integration)"
+ },
+ "setup": {
+  "amplitude_fraction": 0.02,
+  "drop_eps": 0.1,
+  "h_factor": 1.3,
+  "rho0": 1000.0,
+  "sigma": 0.072,
+  "curvature_scheme": "fit_quadratic",
+  "shifts": 2
+ },
+ "rows": {
+  "legacy": [
+   {
+    "case": "capillary_wave_k1",
+    "k": 1,
+    "wavelength": 6.283185307179586,
+    "dx": 0.2617993877991494,
+    "particles_per_wavelength": 24,
+    "n_particles": null,
+    "dp_mode": -0.001860145299662616,
+    "dp_exact": 0.009012346886250926,
+    "stiffness_ratio": -0.20639965628713428,
+    "stiffness_ratio_std": 0.40976592898368835,
+    "omega_ratio": 0.4543122893859842,
+    "omega_error_pct": -54.56877106140158,
+    "surface_measure_ratio": 1.8392629690411242,
+    "kappa_mode_ratio": -0.11221867659018767
+   },
+   {
+    "case": "capillary_wave_k1",
+    "k": 1,
+    "wavelength": 6.283185307179586,
+    "dx": 0.19634954084936207,
+    "particles_per_wavelength": 32,
+    "n_particles": null,
+    "dp_mode": -0.002685176932530929,
+    "dp_exact": 0.009012346886250926,
+    "stiffness_ratio": -0.2979442498631945,
+    "stiffness_ratio_std": 0.09042447060346603,
+    "omega_ratio": 0.5458426969953839,
+    "omega_error_pct": -45.41573030046161,
+    "surface_measure_ratio": 1.858214142733416,
+    "kappa_mode_ratio": -0.160339028216049
+   },
+   {
+    "case": "capillary_wave_k2",
+    "k": 2,
+    "wavelength": 3.141592653589793,
+    "dx": 0.1308996938995747,
+    "particles_per_wavelength": 24,
+    "n_particles": null,
+    "dp_mode": -0.003720290599325232,
+    "dp_exact": 0.018024693772501852,
+    "stiffness_ratio": -0.20639965628713428,
+    "stiffness_ratio_std": 0.40976592898368835,
+    "omega_ratio": 0.4543122893859842,
+    "omega_error_pct": -54.56877106140158,
+    "surface_measure_ratio": 1.8392629690411242,
+    "kappa_mode_ratio": -0.11221867659018767
+   },
+   {
+    "case": "capillary_wave_k2",
+    "k": 2,
+    "wavelength": 3.141592653589793,
+    "dx": 0.09817477042468103,
+    "particles_per_wavelength": 32,
+    "n_particles": null,
+    "dp_mode": -0.005370353865061858,
+    "dp_exact": 0.018024693772501852,
+    "stiffness_ratio": -0.2979442498631945,
+    "stiffness_ratio_std": 0.09042447060346603,
+    "omega_ratio": 0.5458426969953839,
+    "omega_error_pct": -45.41573030046161,
+    "surface_measure_ratio": 1.858214142733416,
+    "kappa_mode_ratio": -0.160339028216049
+   },
+   {
+    "case": "lamb_mode2",
+    "mode": 2,
+    "radius": 0.02,
+    "dx": 0.0016666666666666668,
+    "radius_over_dx": 12,
+    "eps": 0.1,
+    "dp_mode": 1.0246508529621081,
+    "dp_exact": 1.0799999999999998,
+    "stiffness_ratio": 0.9487507897797298,
+    "stiffness_ratio_std": 0.020729729905724525,
+    "omega_ratio": 0.9740383923540847,
+    "omega_error_pct": -2.5961607645915263,
+    "surface_measure_ratio": 0.6910489314912087,
+    "kappa_mode_ratio": 1.3729140536147395
+   },
+   {
+    "case": "lamb_mode2",
+    "mode": 2,
+    "radius": 0.02,
+    "dx": 0.00125,
+    "radius_over_dx": 16,
+    "eps": 0.1,
+    "dp_mode": 1.0640021093234466,
+    "dp_exact": 1.0799999999999998,
+    "stiffness_ratio": 0.9851871382624507,
+    "stiffness_ratio_std": 0.0652233213186264,
+    "omega_ratio": 0.9925659364810233,
+    "omega_error_pct": -0.7434063518976686,
+    "surface_measure_ratio": 0.7017308517141203,
+    "kappa_mode_ratio": 1.4039387549456188
+   },
+   {
+    "case": "lamb_mode3",
+    "mode": 3,
+    "radius": 0.02,
+    "dx": 0.0016666666666666668,
+    "radius_over_dx": 12,
+    "eps": 0.1,
+    "dp_mode": 2.310827754752558,
+    "dp_exact": 2.88,
+    "stiffness_ratio": 0.8023707481779715,
+    "stiffness_ratio_std": 0.03238297253847122,
+    "omega_ratio": 0.8957514991212526,
+    "omega_error_pct": -10.424850087874738,
+    "surface_measure_ratio": 0.699523169363977,
+    "kappa_mode_ratio": 1.1470252642346443
+   },
+   {
+    "case": "lamb_mode3",
+    "mode": 3,
+    "radius": 0.02,
+    "dx": 0.00125,
+    "radius_over_dx": 16,
+    "eps": 0.1,
+    "dp_mode": 2.26115969120964,
+    "dp_exact": 2.88,
+    "stiffness_ratio": 0.785124892781125,
+    "stiffness_ratio_std": 0.005191860720515251,
+    "omega_ratio": 0.8860727356042082,
+    "omega_error_pct": -11.392726439579182,
+    "surface_measure_ratio": 0.7121418860598603,
+    "kappa_mode_ratio": 1.1024838001385724
+   }
+  ],
+  "local_range": [
+   {
+    "case": "capillary_wave_k1",
+    "k": 1,
+    "wavelength": 6.283185307179586,
+    "dx": 0.2617993877991494,
+    "particles_per_wavelength": 24,
+    "n_particles": null,
+    "dp_mode": -0.0022393030184084863,
+    "dp_exact": 0.009012346886250926,
+    "stiffness_ratio": -0.24847057560830538,
+    "stiffness_ratio_std": 0.46822503209114075,
+    "omega_ratio": 0.4984682292867875,
+    "omega_error_pct": -50.15317707132125,
+    "surface_measure_ratio": 2.753070850747721,
+    "kappa_mode_ratio": -0.09025215444085719
+   },
+   {
+    "case": "capillary_wave_k1",
+    "k": 1,
+    "wavelength": 6.283185307179586,
+    "dx": 0.19634954084936207,
+    "particles_per_wavelength": 32,
+    "n_particles": null,
+    "dp_mode": -0.0028826301419200033,
+    "dp_exact": 0.009012346886250926,
+    "stiffness_ratio": -0.3198534386551068,
+    "stiffness_ratio_std": 0.12036218494176865,
+    "omega_ratio": 0.5655558669619711,
+    "omega_error_pct": -43.44441330380289,
+    "surface_measure_ratio": 2.796615277263588,
+    "kappa_mode_ratio": -0.11437162675020307
+   },
+   {
+    "case": "capillary_wave_k2",
+    "k": 2,
+    "wavelength": 3.141592653589793,
+    "dx": 0.1308996938995747,
+    "particles_per_wavelength": 24,
+    "n_particles": null,
+    "dp_mode": -0.004478606036816973,
+    "dp_exact": 0.018024693772501852,
+    "stiffness_ratio": -0.24847057560830538,
+    "stiffness_ratio_std": 0.46822503209114075,
+    "omega_ratio": 0.4984682292867875,
+    "omega_error_pct": -50.15317707132125,
+    "surface_measure_ratio": 2.753070850747721,
+    "kappa_mode_ratio": -0.09025215444085719
+   },
+   {
+    "case": "capillary_wave_k2",
+    "k": 2,
+    "wavelength": 3.141592653589793,
+    "dx": 0.09817477042468103,
+    "particles_per_wavelength": 32,
+    "n_particles": null,
+    "dp_mode": -0.0057652602838400065,
+    "dp_exact": 0.018024693772501852,
+    "stiffness_ratio": -0.3198534386551068,
+    "stiffness_ratio_std": 0.12036218494176865,
+    "omega_ratio": 0.5655558669619711,
+    "omega_error_pct": -43.44441330380289,
+    "surface_measure_ratio": 2.796615277263588,
+    "kappa_mode_ratio": -0.11437162675020307
+   },
+   {
+    "case": "lamb_mode2",
+    "mode": 2,
+    "radius": 0.02,
+    "dx": 0.0016666666666666668,
+    "radius_over_dx": 12,
+    "eps": 0.1,
+    "dp_mode": 1.262853537198711,
+    "dp_exact": 1.0799999999999998,
+    "stiffness_ratio": 1.1693088307395474,
+    "stiffness_ratio_std": 0.06242406740784645,
+    "omega_ratio": 1.0813458423370146,
+    "omega_error_pct": 8.134584233701458,
+    "surface_measure_ratio": 0.8877995411413429,
+    "kappa_mode_ratio": 1.317086545501364
+   },
+   {
+    "case": "lamb_mode2",
+    "mode": 2,
+    "radius": 0.02,
+    "dx": 0.00125,
+    "radius_over_dx": 16,
+    "eps": 0.1,
+    "dp_mode": 1.393054592395528,
+    "dp_exact": 1.0799999999999998,
+    "stiffness_ratio": 1.2898653633291928,
+    "stiffness_ratio_std": 0.1301286816596985,
+    "omega_ratio": 1.1357223971240475,
+    "omega_error_pct": 13.572239712404755,
+    "surface_measure_ratio": 0.9111341956606289,
+    "kappa_mode_ratio": 1.4156700181732946
+   },
+   {
+    "case": "lamb_mode3",
+    "mode": 3,
+    "radius": 0.02,
+    "dx": 0.0016666666666666668,
+    "radius_over_dx": 12,
+    "eps": 0.1,
+    "dp_mode": 2.9536387307085503,
+    "dp_exact": 2.88,
+    "stiffness_ratio": 1.0255690037182468,
+    "stiffness_ratio_std": 0.047309014946222305,
+    "omega_ratio": 1.0127038084841227,
+    "omega_error_pct": 1.270380848412267,
+    "surface_measure_ratio": 0.9013327113076239,
+    "kappa_mode_ratio": 1.137836218359794
+   },
+   {
+    "case": "lamb_mode3",
+    "mode": 3,
+    "radius": 0.02,
+    "dx": 0.00125,
+    "radius_over_dx": 16,
+    "eps": 0.1,
+    "dp_mode": 2.892008836425698,
+    "dp_exact": 2.88,
+    "stiffness_ratio": 1.004169734870034,
+    "stiffness_ratio_std": 0.03712248429656029,
+    "omega_ratio": 1.0020826986182498,
+    "omega_error_pct": 0.20826986182498342,
+    "surface_measure_ratio": 0.9243027086938032,
+    "kappa_mode_ratio": 1.0864078677093747
+   }
+  ]
+ },
+ "convergence": {
+  "legacy": {
+   "capillary_wave_k1": 0.6382157621009753,
+   "capillary_wave_k2": 0.6382157621009747,
+   "lamb_mode2": 4.3469729998929445,
+   "lamb_mode3": -0.3086140609237482
+  },
+  "local_range": {
+   "capillary_wave_k1": 0.499160746073531,
+   "capillary_wave_k2": 0.49916074607353056,
+   "lamb_mode2": -1.7794013844803778,
+   "lamb_mode3": 6.28554066062337
+  }
+ },
+ "sigma_sensitivity": {
+  "legacy": {
+   "sigma_x0.5": 0.9851871382624507,
+   "sigma_x1.0": 0.9851871382624507,
+   "sigma_x2.0": 0.9851871382624507,
+   "max_rel_spread": 0.0
+  },
+  "local_range": {
+   "sigma_x0.5": 1.2898653633291928,
+   "sigma_x1.0": 1.2898653633291928,
+   "sigma_x2.0": 1.2898653633291928,
+   "max_rel_spread": 0.0
+  }
+ },
+ "gates": {
+  "legacy": {
+   "C1_capillary_wave_max_error_pct": 45.41573030046161,
+   "C1_within_5pct": false,
+   "C2_lamb_modes_max_error_pct": 11.392726439579182,
+   "C2_within_3pct": false,
+   "C3_orders": {
+    "capillary_wave_k1": 0.6382157621009753,
+    "capillary_wave_k2": 0.6382157621009747,
+    "lamb_mode2": 4.3469729998929445,
+    "lamb_mode3": -0.3086140609237482
+   },
+   "C3_order_ge_2": false,
+   "C4_max_sigma_spread": 0.0,
+   "C4_within_5pct": true
+  },
+  "local_range": {
+   "C1_capillary_wave_max_error_pct": 43.44441330380289,
+   "C1_within_5pct": false,
+   "C2_lamb_modes_max_error_pct": 13.572239712404755,
+   "C2_within_3pct": false,
+   "C3_orders": {
+    "capillary_wave_k1": 0.499160746073531,
+    "capillary_wave_k2": 0.49916074607353056,
+    "lamb_mode2": -1.7794013844803778,
+    "lamb_mode3": 6.28554066062337
+   },
+   "C3_order_ge_2": false,
+   "C4_max_sigma_spread": 0.0,
+   "C4_within_5pct": true
+  }
+ },
+ "surface_measure": {
+  "legacy": {
+   "capillary_wave_ppw32": 1.858214142733416,
+   "drop_R_over_dx16": 0.7017308517141203,
+   "drop_R_over_dx32": 0.7133621165081885,
+   "geometry_spread": 2.648043959011279,
+   "target": 1.0
+  },
+  "local_range": {
+   "capillary_wave_ppw32": 2.796615277263588,
+   "drop_R_over_dx16": 0.9111341956606289,
+   "drop_R_over_dx32": 0.9319263886617666,
+   "geometry_spread": 3.0693780242062676,
+   "target": 1.0
+  }
+ },
+ "wall_clock_s": 41.58068609237671
+}
