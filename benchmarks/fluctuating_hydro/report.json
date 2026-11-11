@@ -1,0 +1,81 @@
+{
+  "case": {
+    "model": "Lennard-Jones fluid, Langevin (BAOAB), rho*=0.8, T*=1.0",
+    "units": "LJ reduced (epsilon = sigma = m = k_B = 1)",
+    "lattice": [
+      {
+        "n_particles": 64,
+        "box": 4.308869380063767,
+        "number_density": 0.8000000000000004,
+        "legacy_min_pair_distance": 1.0772173450159412,
+        "fixed_min_pair_distance": 1.0156102526300546,
+        "legacy_overlapping_pairs": 0
+      },
+      {
+        "n_particles": 128,
+        "box": 5.428835233189813,
+        "number_density": 0.8000000000000003,
+        "legacy_min_pair_distance": 0.42925391643065514,
+        "fixed_min_pair_distance": 0.9596915518332413,
+        "legacy_overlapping_pairs": 4
+      },
+      {
+        "n_particles": 216,
+        "box": 6.46330407009565,
+        "number_density": 0.8000000000000004,
+        "legacy_min_pair_distance": 1.0772173450159412,
+        "fixed_min_pair_distance": 1.142561534208811,
+        "legacy_overlapping_pairs": 0
+      },
+      {
+        "n_particles": 256,
+        "box": 6.839903786706787,
+        "number_density": 0.8000000000000003,
+        "legacy_min_pair_distance": 0.19493804032336268,
+        "fixed_min_pair_distance": 1.2091355875609782,
+        "legacy_overlapping_pairs": 81
+      },
+      {
+        "n_particles": 300,
+        "box": 7.211247851537041,
+        "number_density": 0.8000000000000003,
+        "legacy_min_pair_distance": 1.0301782645052908,
+        "fixed_min_pair_distance": 1.019824451327752,
+        "legacy_overlapping_pairs": 0
+      },
+      {
+        "n_particles": 500,
+        "box": 8.549879733383484,
+        "number_density": 0.8000000000000002,
+        "legacy_min_pair_distance": 1.0687349666729347,
+        "fixed_min_pair_distance": 1.2091355875609782,
+        "legacy_overlapping_pairs": 0
+      }
+    ],
+    "runs": [
+      {
+        "n_particles": 128,
+        "n_steps": 800,
+        "equipartition_ratio": 1.0880601294532628,
+        "mean_temperature": 1.0880601294532628,
+        "diffusion_coefficient": 0.0006182415886332753,
+        "blow_up": false
+      },
+      {
+        "n_particles": 256,
+        "n_steps": 800,
+        "equipartition_ratio": 0.9321553036613687,
+        "mean_temperature": 0.9321553036613688,
+        "diffusion_coefficient": 0.0005594508427175399,
+        "blow_up": false
+      }
+    ]
+  },
+  "verdicts": {
+    "L1_no_overlapping_pairs": true,
+    "L2_density_exact": true,
+    "L3_no_blow_up_on_previously_padded_sizes": true,
+    "L4_thermostat_holds_target_temperature": true,
+    "L5_equipartition_within_10pct": true
+  }
+}
