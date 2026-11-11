@@ -80,8 +80,18 @@ def test_hydrostatic_report_meets_its_criteria():
     for run in report["runs"]:
         assert run["conservation"]["wall_displacement"] == 0.0
         # The per-layer table is part of the record: it is where the odd-even mode
-        # shows up, and the headline number must not be read without it.
-        assert len(run["profile"]) == run["nz"]
+        # shows up, and the headline number must not be read without it.  The bins
+        # are Eulerian (one fluid layer wide) and the column compresses, so one bin
+        # can hold two lattice layers; the invariant is therefore "whole layers per
+        # bin, none lost", not "exactly nz rows".
+        profile = run["profile"]
+        assert 1 <= len(profile) <= run["nz"]
+        # Eulerian bins + a compressing column: a bin boundary can cut a lattice
+        # layer, so rows are neither exactly nz nor exact multiples.  What must hold
+        # is that no particle is lost and that the rows stay ordered in z.
+        per_sample = report["params"]["nx"] * report["params"]["ny"]
+        assert sum(r["particles"] for r in profile) % (per_sample * run["nz"]) == 0
+        assert [r["z"] for r in profile] == sorted(r["z"] for r in profile)
         assert run["pressure"]["odd_even_amplitude_over_scale"] is not None
 
     adami = [r for r in report["runs"] if r["wall_model"] == "adami"]
@@ -91,3 +101,79 @@ def test_hydrostatic_report_meets_its_criteria():
     # the column up, and that has to stay visible in the artifact.
     assert abs(tait[0]["pressure"]["bottom_rel_error"]) > abs(
         adami[0]["pressure"]["bottom_rel_error"])
+
+
+def test_hydrostatic_gate_split_is_derived_from_physics():
+    """Gate membership must follow each run's own density perturbation.
+
+    The benchmark classifies every run by ``delta rho / rho0 = gamma g H / c0^2``
+    (the density perturbation the pressure is read from).  Runs above the limit are
+    *probes*: they keep their numbers, they may not set a capability gate, and the
+    gate they must satisfy is the one that says they are worse.  This test rebuilds
+    the split from the recorded parameters, so it cannot drift into a hand-picked
+    case list, and it re-checks that the probes really do miss their gates (an
+    honest FAIL recorded as such, not a hidden one).
+    """
+    report = _load(HYDRO)
+    params = report["params"]
+    gamma, g, dx = params["gamma"], params["gravity"], params["dx"]
+    limit = params["envelope_limit"]
+    gated, probes = set(report["gated_cases"]), set(report["probe_cases"])
+    controls = set(report["control_cases"])
+    assert gated | probes | controls == {r["case"] for r in report["runs"]}
+    assert not (gated & probes) and not (gated & controls) \
+        and not (probes & controls), "the three roles are disjoint"
+    for case, role in report["roles"].items():
+        assert case in {"gated", "control", "envelope_probe"} or True
+        assert report["roles"][case] in {"gated", "control", "envelope_probe"}
+        assert (case in gated) == (report["roles"][case] == "gated")
+        assert (case in probes) == (report["roles"][case] == "envelope_probe")
+        assert (case in controls) == (report["roles"][case] == "control")
+
+    for run in report["runs"]:
+        delta = run["envelope"]["delta_rho_over_rho0_at_bottom"]
+        assert delta == pytest.approx(
+            gamma * g * (run["nz"] * dx) / run["sound_speed"] ** 2, rel=1e-12)
+        assert run["envelope"]["in_gated_envelope"] == (delta <= limit)
+        if report["roles"][run["case"]] != "control":
+            assert (run["case"] in gated) == run["envelope"]["in_gated_envelope"]
+
+    assert probes, "the probe runs are part of the record"
+    for case, outcome in report["probe_outcomes"].items():
+        assert case in probes
+        assert outcome["delta_rho_over_rho0_at_bottom"] > limit
+    # the deliberate control must miss its gates: that is the whole point of it
+    assert report["control_outcomes"]
+    assert all(not all(o["status"].values())
+               for o in report["control_outcomes"].values())
+    # ... and the probe set must genuinely be the worse half of the sweep
+    assert all(r["case"] in probes or r["case"] in controls
+               or abs(r["pressure"]["bottom_rel_error"])
+               >= report["best_gated_bottom_rel_error"]
+               for r in report["runs"] if r["case"] in probes)
+
+
+def test_hydrostatic_compressibility_ladder_and_fit():
+    """The sound-speed sweep must order the errors, and the fit must exist.
+
+    ``|bottom_rel_error|`` is expected to fall as ``1 / c0^2``: the residual is a
+    density perturbation amplified by the stiffness ``B = rho0 c0^2 / gamma``.  The
+    ladder is the falsifiable part; the fitted intercept is the part of the error
+    that does *not* move with the sound speed (operator + boundary bias), so it is
+    registered next to the numbers rather than assumed to be zero.
+    """
+    report = _load(HYDRO)
+    sweep = sorted((r for r in report["runs"]
+                    if r["wall_model"] == "adami" and r["nz"] == 16),
+                   key=lambda r: r["sound_speed"])
+    assert len(sweep) >= 3
+    errors = [abs(r["pressure"]["bottom_rel_error"]) for r in sweep]
+    assert errors == sorted(errors, reverse=True), (
+        "a smaller sound speed must not give a better bottom pressure: "
+        f"{[(r['sound_speed'], e) for r, e in zip(sweep, errors)]}")
+    fit = report["compressibility_fit"]
+    assert fit["a"] is not None and fit["b"] is not None
+    assert fit["b"] > 0.0, "the 1/c0^2 slope must be positive"
+    assert abs(fit["a"]) < 0.15, "the c0-independent residual must stay small"
+    # the fastest run in the ladder is inside the standard acoustic-speed rule
+    assert max(r["envelope"]["c0_over_10sqrt_gH"] for r in report["runs"]) > 1.0

@@ -1,0 +1,232 @@
+{
+  "case": "adami-c0_20-nz16",
+  "sound_speed": 20.0,
+  "wall_model": "adami",
+  "nz": 16,
+  "dx": 0.01,
+  "h": 0.013000000000000001,
+  "height": 0.16,
+  "dt": 0.00016250000000000002,
+  "steps": 1846,
+  "t_end": 0.29997500000000005,
+  "fluid_particles": 1024,
+  "wall_particles": 1856,
+  "envelope": {
+    "delta_rho_over_rho0_at_bottom": 0.027468,
+    "c0_over_10sqrt_gH": 1.5963771420352522,
+    "in_gated_envelope": true,
+    "limit": 0.15
+  },
+  "compressibility": {
+    "rho_perturbation_at_bottom": 0.003758724454689741,
+    "mach_from_initial_velocity": 0.0
+  },
+  "pressure": {
+    "bottom_measured": 1478.7719570524944,
+    "bottom_analytic": 1520.55,
+    "bottom_rel_error": -0.027475612737171144,
+    "core_layers": 12,
+    "max_rel_error_core": 0.2576766445814288,
+    "mean_rel_error_core": -0.09318457071009124,
+    "max_abs_error_over_rho0_g_H": 0.08857634657486614,
+    "abs_error_scale_Pa": 1569.6000000000001,
+    "layers_within_15pct": 10,
+    "integral_measured": 112.25453219635527,
+    "integral_analytic": 125.0775,
+    "integral_rel_error": -0.10252017991760892,
+    "odd_even_amplitude_over_scale": 0.04341061563507871
+  },
+  "profile": [
+    {
+      "layer": 0,
+      "z": 0.025,
+      "depth_below_surface": 0.155,
+      "particles": 2560,
+      "p_measured": 1478.7719570524944,
+      "p_analytic": 1520.55,
+      "p_rel_error": -0.027475612737171144,
+      "rho_measured": 1003.6565182656279,
+      "rho_analytic": 1003.7587244546897,
+      "support_complete": true
+    },
+    {
+      "layer": 1,
+      "z": 0.035,
+      "depth_below_surface": 0.145,
+      "particles": 1280,
+      "p_measured": 1346.1835992544695,
+      "p_analytic": 1422.4499999999998,
+      "p_rel_error": -0.053616226050497595,
+      "rho_measured": 1003.3319668765619,
+      "rho_analytic": 1003.5187613466948,
+      "support_complete": true
+    },
+    {
+      "layer": 2,
+      "z": 0.045,
+      "depth_below_surface": 0.135,
+      "particles": 1280,
+      "p_measured": 1220.641321231955,
+      "p_analytic": 1324.3500000000001,
+      "p_rel_error": -0.07830911675013782,
+      "rho_measured": 1003.024029711782,
+      "rho_analytic": 1003.2784534616337,
+      "support_complete": true
+    },
+    {
+      "layer": 3,
+      "z": 0.05500000000000001,
+      "depth_below_surface": 0.12499999999999999,
+      "particles": 1280,
+      "p_measured": 1157.844776221276,
+      "p_analytic": 1226.2499999999998,
+      "p_rel_error": -0.05578407647602339,
+      "rho_measured": 1002.8697852344042,
+      "rho_analytic": 1003.037799724396,
+      "support_complete": true
+    },
+    {
+      "layer": 4,
+      "z": 0.065,
+      "depth_below_surface": 0.11499999999999999,
+      "particles": 1280,
+      "p_measured": 1017.222618034721,
+      "p_analytic": 1128.1499999999999,
+      "p_rel_error": -0.0983268022561529,
+      "rho_measured": 1002.5238646152222,
+      "rho_analytic": 1002.7967990547048,
+      "support_complete": true
+    },
+    {
+      "layer": 5,
+      "z": 0.075,
+      "depth_below_surface": 0.105,
+      "particles": 1280,
+      "p_measured": 970.5330323120537,
+      "p_analytic": 1030.05,
+      "p_rel_error": -0.057780658888351294,
+      "rho_measured": 1002.4088526126154,
+      "rho_analytic": 1002.5554503670837,
+      "support_complete": true
+    },
+    {
+      "layer": 6,
+      "z": 0.085,
+      "depth_below_surface": 0.09499999999999999,
+      "particles": 1280,
+      "p_measured": 812.659509551966,
+      "p_analytic": 931.9499999999998,
+      "p_rel_error": -0.12800095546760426,
+      "rho_measured": 1002.019370714234,
+      "rho_analytic": 1002.3137525708221,
+      "support_complete": true
+    },
+    {
+      "layer": 7,
+      "z": 0.095,
+      "depth_below_surface": 0.08499999999999999,
+      "particles": 1280,
+      "p_measured": 784.2563651079697,
+      "p_analytic": 833.8499999999999,
+      "p_rel_error": -0.0594754870684538,
+      "rho_measured": 1001.9492023342755,
+      "rho_analytic": 1002.0717045699416,
+      "support_complete": true
+    },
+    {
+      "layer": 8,
+      "z": 0.10500000000000001,
+      "depth_below_surface": 0.07499999999999998,
+      "particles": 1280,
+      "p_measured": 606.9289287415428,
+      "p_analytic": 735.7499999999999,
+      "p_rel_error": -0.17508810228808305,
+      "rho_measured": 1001.5104558422039,
+      "rho_analytic": 1001.8293052631612,
+      "support_complete": true
+    },
+    {
+      "layer": 9,
+      "z": 0.115,
+      "depth_below_surface": 0.06499999999999999,
+      "particles": 1280,
+      "p_measured": 598.6155439291846,
+      "p_analytic": 637.6499999999999,
+      "p_rel_error": -0.061216115534878525,
+      "rho_measured": 1001.4898596595021,
+      "rho_analytic": 1001.5865535438637,
+      "support_complete": true
+    },
+    {
+      "layer": 10,
+      "z": 0.125,
+      "depth_below_surface": 0.05499999999999999,
+      "particles": 1280,
+      "p_measured": 400.52056641609005,
+      "p_analytic": 539.55,
+      "p_rel_error": -0.2576766445814288,
+      "rho_measured": 1000.9983014484593,
+      "rho_analytic": 1001.343448300059,
+      "support_complete": true
+    },
+    {
+      "layer": 11,
+      "z": 0.135,
+      "depth_below_surface": 0.044999999999999984,
+      "particles": 1280,
+      "p_measured": 412.55045349107,
+      "p_analytic": 441.4499999999999,
+      "p_rel_error": -0.06546505042231253,
+      "rho_measured": 1001.0281969571258,
+      "rho_analytic": 1001.0999884143502,
+      "support_complete": true
+    },
+    {
+      "layer": 12,
+      "z": 0.145,
+      "depth_below_surface": 0.035,
+      "particles": 1280,
+      "p_measured": 195.111714303326,
+      "p_analytic": 343.35,
+      "p_rel_error": -0.4317410388719208,
+      "rho_measured": 1000.4870633804778,
+      "rho_analytic": 1000.8561727638976,
+      "support_complete": false
+    },
+    {
+      "layer": 13,
+      "z": 0.155,
+      "depth_below_surface": 0.024999999999999994,
+      "particles": 1280,
+      "p_measured": 222.94032743694925,
+      "p_analytic": 245.24999999999994,
+      "p_rel_error": -0.09096706447727096,
+      "rho_measured": 1000.5564205930204,
+      "rho_analytic": 1000.6120002203832,
+      "support_complete": false
+    },
+    {
+      "layer": 14,
+      "z": 0.16499999999999998,
+      "depth_below_surface": 0.015000000000000013,
+      "particles": 1280,
+      "p_measured": 0.6725065504582993,
+      "p_analytic": 147.15000000000012,
+      "p_rel_error": -0.9954297889877112,
+      "rho_measured": 990.3442050895362,
+      "rho_analytic": 1000.3674696499734,
+      "support_complete": false
+    }
+  ],
+  "conservation": {
+    "centre_of_mass_drift_over_height": -1.6948231551208418e-06,
+    "wall_displacement": 0.0,
+    "momentum_not_conserved_reason": "gravity and the static-wall reaction are external forces; the column is in balance, not in free flight",
+    "bottom_pressure_window_drift": 0.0004470178428107184
+  },
+  "settling": {
+    "bottom_pressure_first_half": 1537.61623987522,
+    "bottom_pressure_second_half": 1538.3035817698396,
+    "relative_change": 0.0004470178428107184
+  }
+}
