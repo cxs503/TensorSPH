@@ -109,7 +109,9 @@ A larger amplitude raises the physical signal, but the fit residual stays high a
 
 ## 4. Figures
 
-![open free-surface audit](../benchmarks/capillary_wave/capillary_wave_open_surface.png)
+![open free-surface audit](figures/capillary_wave_open_surface.png)
+
+*Figure provenance:* `docs/figures/capillary_wave_open_surface.png`, sha256 `9bcb5e16532c749e05f3d5bdaf0cacb623d606eaa77cd7c9fb5cb42c47c7a91a`, drawn by `make_doc.render_figure` from `benchmarks/capillary_wave/open_surface_audit.json` alone -- no simulator is re-run to make the picture, so the page and the figure are two renderings of one artifact and the gate compares both.
 
 *(a)* the measured mode amplitude in the two runs that complete: it decays and drifts instead of oscillating at the analytic period; *(b)* maximum speed per variant against the physical velocity scale; *(c)* discrete curvature noise of the open free surface against the perturbation's own `k^2 A`; *(d)* acceleration at `t = 0` with surface tension off and on.
 
@@ -134,6 +136,6 @@ A larger amplitude raises the physical signal, but the fit residual stays high a
 
 ```bash
 PYTHONPATH=src python benchmarks/capillary_wave/open_surface_audit.py  # ~3 min
-PYTHONPATH=src python benchmarks/capillary_wave/make_doc.py
+PYTHONPATH=src python benchmarks/capillary_wave/make_doc.py --figures
 PYTHONPATH=src python -m pytest tests/test_capillary_wave_open_surface.py -q
 ```
