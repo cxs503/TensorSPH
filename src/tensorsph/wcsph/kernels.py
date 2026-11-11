@@ -1,6 +1,6 @@
 """Smoothing kernels for the weakly-compressible SPH verification chain.
 
-Two kernels are provided, both in ``d`` dimensions with the dimensionless
+Three kernels are provided, all in ``d`` dimensions with the dimensionless
 argument ``q = r / h``:
 
 ``quintic``
@@ -21,10 +21,35 @@ argument ``q = r / h``:
     costs ``exp(-9) ~ 1.2e-4`` of the unit mass in one dimension, so the kernel
     integrates to ``1 - 1.2e-4`` (reported, not hidden, by the test).
 
-Why a second kernel at all: the compact quintic is what the production cases
-use, and the Gaussian is kept as an independent quadrature-friendly kernel so
-that the *kernel-independent* part of the verification chain (particle-pair
-conservation, EOS response) can be re-run without touching the pair logic.
+``wendland``
+    Wendland C2 (Wendland 1995; Monaghan 2005), the default kernel of
+    production SPH codes such as DualSPHysics: compact support ``r < 2 h``,
+    ``f(q) = (1 - q/2)^4 (2 q + 1)``, and a positive Fourier transform, which
+    is what removes the pairing/clumping instability of the spline family at
+    high neighbour counts.  It is also ``C2``: ``f``, ``f'`` and ``f''`` all
+    vanish at the support edge.  Exact normalisations, re-derived by quadrature
+    in ``tests/test_wcsph_wendland_kernel.py``:
+
+    ========  =====================  ==============================
+    d         ``alpha_d``            ``alpha_d / h**d``
+    ========  =====================  ==============================
+    1         ``3 / 4``              ``3 / (4 h)``
+    2         ``7 / (4 pi)``         ``7 / (4 pi h**2)``
+    3         ``21 / (16 pi)``       ``21 / (16 pi h**3)``
+    ========  =====================  ==============================
+
+    ``alpha_d`` follows from ``S_d alpha_d int_0^2 f(q) q**(d-1) dq = 1``
+    (``S_1 = 2``, ``S_2 = 2 pi``, ``S_3 = 4 pi``) with the closed-form integrals
+    ``int f dq = 2/3``, ``int f q dq = 2/7`` and ``int f q^2 dq = 4/21``; the
+    3-D constant agrees with the independent implementation in
+    :mod:`tensorsph.threed.kernel3`.
+
+Why more than one kernel: the compact quintic is what the production cases
+use, the Gaussian is kept as an independent quadrature-friendly kernel so that
+the *kernel-independent* part of the verification chain (particle-pair
+conservation, EOS response) can be re-run without touching the pair logic, and
+the Wendland C2 is the kernel the field's production codes default to, so the
+chain can be certified on it as well.
 
 The gradient returned is ``grad_i W(x_i - x_j)``; for the central kernels here
 ``grad_i W = (dW/dr) * (x_i - x_j) / r``, which is antisymmetric under
@@ -37,7 +62,7 @@ import math
 import torch
 
 #: Support radius in units of ``h`` for each kernel.
-SUPPORT_FACTOR = {"quintic": 3.0, "gaussian": 3.0}
+SUPPORT_FACTOR = {"quintic": 3.0, "gaussian": 3.0, "wendland": 2.0}
 
 
 def normalisation(dim: int, kind: str = "quintic") -> float:
@@ -54,6 +79,16 @@ def normalisation(dim: int, kind: str = "quintic") -> float:
         if dim not in (1, 2, 3):
             raise ValueError(f"gaussian kernel not tabulated in dim={dim}")
         return math.pi ** (-0.5 * dim)
+    if kind == "wendland":
+        # Wendland C2, support 2 h: S_d alpha_d int_0^2 f q**(d-1) dq = 1 with
+        # int f dq = 2/3, int f q dq = 2/7, int f q^2 dq = 4/21.
+        if dim == 1:
+            return 3.0 / 4.0
+        if dim == 2:
+            return 7.0 / (4.0 * math.pi)
+        if dim == 3:
+            return 21.0 / (16.0 * math.pi)
+        raise ValueError(f"wendland kernel not tabulated in dim={dim}")
     raise ValueError(f"unknown kernel {kind!r}")
 
 
@@ -89,12 +124,30 @@ def _gaussian_shape(q: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     return f, df
 
 
+def _wendland_shape(q: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    """Dimensionless Wendland C2 profile ``f(q)`` and ``f'(q)`` (support 2h).
+
+    ``f(0) = 1``, ``f'(0) = 0``: the kernel is ``C2`` at the origin, so the
+    ``r = 0`` singularity of ``grad W = (dW/dr) (delta / r)`` is removable.
+    """
+    q = q.clamp_min(0.0)
+    t = (1.0 - 0.5 * q).clamp_min(0.0)
+    f = t.pow(4) * (2.0 * q + 1.0)
+    df = -5.0 * q * t.pow(3)
+    outside = q >= 2.0
+    f = torch.where(outside, torch.zeros_like(f), f)
+    df = torch.where(outside, torch.zeros_like(df), df)
+    return f, df
+
+
 def shape(q: torch.Tensor, kind: str = "quintic") -> tuple[torch.Tensor, torch.Tensor]:
     """``(f(q), f'(q))`` for the requested kernel; zero outside the support."""
     if kind == "quintic":
         return _quintic_shape(q)
     if kind == "gaussian":
         return _gaussian_shape(q)
+    if kind == "wendland":
+        return _wendland_shape(q)
     raise ValueError(f"unknown kernel {kind!r}")
 
 
