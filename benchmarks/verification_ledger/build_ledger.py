@@ -1920,6 +1920,93 @@ def credit_findings(entries: list[dict]) -> list[dict]:
     return out
 
 
+def ice_thermal_claims() -> list[dict]:
+    """Ice-ocean thermal-saline-mechanical multi-physics face (IN13W2-N07).
+
+    ``benchmarks/ice_thermal_multiphysics`` came in with the campaign-node
+    delivery and sat outside the ledger (``uncovered_benchmark`` finding): its
+    anchors were only quoted in the campaign report.  The three readings
+    registered here are the ones the node's acceptance rests on, and each is
+    compared with an *independent* reference -- the Neumann similarity solution
+    of the Stefan problem, the exact Horton-Rogers-Lapwood onset ``4 pi^2``, and
+    the closed-form irreducible-brine floor (``v_irr`` is an input, not a fit).
+    The artifact is the run report published next to the harness
+    (``validation_report.json``, byte-identical to the campaign run in
+    ``runs/IN13W2-N07``: the numbers are in the repository, not in a scratch
+    dir, and ``evidence.py`` checks the two copies against each other).
+    """
+    rel = "benchmarks/ice_thermal_multiphysics/validation_report.json"
+    d = _load(rel)
+    out: list[dict] = []
+    test = "tests/test_ice_thermal_integration.py"
+    stefan = d["stefan"][-1]
+    out.append(
+        _entry(
+            claim_id="ice_thermal.stefan_front.finest",
+            quantity_id="ice_thermal_stefan_front_x",
+            quantity="1-D Stefan freezing front X(t_end) vs the Neumann similarity solution",
+            artifact=rel,
+            json_path=f"stefan[{len(d['stefan']) - 1}]",
+            reference=(stefan["front_analytic_m"], "m",
+                       "Neumann solution X = 2 lambda sqrt(alpha t), lambda from "
+                       "sqrt(pi) lambda exp(lambda^2) erf(lambda) = Ste"),
+            measured=(stefan["front_final_m"], "m",
+                      f"SPH enthalpy particle front, dx = {stefan['dx_m']:g} m, "
+                      f"t_end = 4e4 s, {stefan['steps']} steps"),
+            rel_error_pct=stefan["front_rel_error_final"] * 100.0,
+            guarding_test=test,
+            artifact_status="PASS",
+            backlog_ref="docs/verification_ice_thermal_multiphysics.md",
+            notes=("Resolution ladder dx = 0.02/0.0125/0.008 m is in the same artifact; "
+                   "the front error is 3.7 % at the first sample of the coarsest grid "
+                   "(start-up transient) and <= 2 % at t_end."),
+        )
+    )
+    darcy = d["darcy"]
+    out.append(
+        _entry(
+            claim_id="ice_thermal.darcy_benard.ra_c",
+            quantity_id="ice_thermal_darcy_ra_c",
+            quantity="critical Rayleigh number of Horton-Rogers-Lapwood onset",
+            artifact=rel,
+            json_path="darcy",
+            reference=(darcy["ra_critical_exact"], "-", "exact 4 pi^2"),
+            measured=(darcy["ra_critical_numeric"], "-",
+                      f"finite-difference eigenvalue solve, {darcy['fd_nodes']} nodes, "
+                      f"{len(darcy['curve']['a'])} wavenumbers"),
+            rel_error_pct=darcy["ra_relative_error"] * 100.0,
+            guarding_test=test,
+            artifact_status="PASS",
+            backlog_ref="docs/verification_ice_thermal_multiphysics.md",
+        )
+    )
+    des = d["desalination"]
+    out.append(
+        _entry(
+            claim_id="ice_thermal.brine_floor.min_margin",
+            quantity_id="ice_thermal_brine_floor_margin",
+            quantity="drainage must never remove salt below the irreducible-brine floor",
+            artifact=rel,
+            json_path="desalination.floor_min_margin_psu",
+            reference=(0.0, "psu", "one-sided bound: S(z) >= S_eq(T(z)), S_eq from v_b = v_irr"),
+            measured=(min(0.0, des["floor_min_margin_psu"]), "psu",
+                      "min over the column of S - S_eq after 60 d of gravity drainage"),
+            rel_error_pct=0.0 if des["floor_min_margin_psu"] >= -1e-6 else 100.0,
+            claim_type="gate",
+            gate_result="pass" if des["floor_min_margin_psu"] >= -1e-6 else "fail",
+            gate_limit=1e-6,
+            guarding_test=test,
+            artifact_status="PASS",
+            backlog_ref="docs/verification_ice_thermal_multiphysics.md",
+            notes=("One-sided by construction: drainage is rate limited, so the 60-day "
+                   f"column stays above the floor (final bulk {des['final_bulk_salinity_psu']:.3f} "
+                   f"psu vs the asymptote {des['floor_predicted_bulk_psu']:.3f} psu). "
+                   "Crossing the floor would be a physics defect, not a tolerance miss."),
+        )
+    )
+    return out
+
+
 def build() -> dict:
     entries = (
         young_laplace_claims()
@@ -1933,6 +2020,7 @@ def build() -> dict:
         + quiescence_claims()
         + orphan_evidence_claims()
         + ice_floe_added_mass_claims()
+        + ice_thermal_claims()
     )
     V = _claim_validity()
     for e in entries:

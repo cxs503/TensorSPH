@@ -56,6 +56,13 @@ ALPHA_TH = 5.0e-5          # 1/K, linear thermal expansion coefficient
 SIGMA_TENSILE = 0.7e6      # Pa, tensile strength (range 0.3-1.5 MPa)
 K_IC = 0.1e6               # Pa m^0.5, fracture toughness (~0.05-0.15 MPa m^0.5)
 
+#: strength of sea ice as a function of brine volume (Timco & Frederking 1990):
+#: ``sigma(v_b) = SIGMA_F_MAX (1 - sqrt(v_b / V_B_CLOSURE))``.  ``v_b = 0.27``
+#: is the pore-closure volume fraction at which the skeleton carries no load;
+#: ``SIGMA_F_MAX = 1.76 MPa`` is the measured columnar first-year value.
+SIGMA_F_MAX = 1.76e6       # Pa, strength at v_b -> 0 (Timco & Frederking 1990)
+V_B_CLOSURE = 0.27         # -, brine volume fraction at zero strength
+
 # brine / seawater transport
 MU_BRINE = 2.5e-3          # Pa s, dynamic viscosity of cold brine
 #: permeability at the percolation threshold.  Golden's measured envelope is
@@ -196,6 +203,53 @@ def density_anomaly(salinity, temperature_c=0.0):
     d_s = float(salinity) - 32.0
     d_t = float(temperature_c)
     return RHO_SEAWATER_REF * (BETA_SALINITY / RHO_SEAWATER_REF * d_s - 5.2e-5 * d_t)
+
+
+def flexural_strength(temperature, salinity, sigma_max=SIGMA_F_MAX,
+                      v_closure=V_B_CLOSURE):
+    """Flexural strength of sea ice (Pa) from its thermal-saline state.
+
+    Timco & Frederking (1990) measured the strength of columnar sea ice against
+    its brine volume fraction and found a single collapse curve
+
+    ``sigma(v_b) = sigma_max * (1 - sqrt(v_b / v_closure))``,
+
+    where ``v_b`` is :func:`brine_volume_fraction` (a function of ``T`` and the
+    bulk salinity ``S``), ``v_closure = 0.27`` is the pore-closure volume
+    fraction at which the ice skeleton loses all load capacity, and
+    ``sigma_max = 1.76 MPa`` at ``v_b -> 0``.  The same brine-volume collapse
+    holds for the flexural and the compressive strength; the absolute level
+    differs (flexural ~1.5x lower for the same ``v_b``), which is the dominant
+    uncertainty of the relation and is why the value is returned with
+    :func:`strength_band` instead of being treated as exact.
+
+    Inversion check: the platform default flexural strength of 0.7 MPa
+    corresponds to ``v_b = 0.098``, i.e. first-year ice near -5 C with a bulk
+    salinity of ~10 psu.
+
+    Parameters
+    ----------
+    temperature : float
+        Bulk ice temperature [K].
+    salinity : float
+        Bulk ice salinity [psu].
+    """
+    v_b = brine_volume_fraction(temperature, salinity)
+    if v_b >= v_closure:
+        return 0.0
+    return float(sigma_max) * (1.0 - math.sqrt(v_b / float(v_closure)))
+
+
+def strength_band(temperature, salinity, factor=(0.6, 1.0, 1.4)):
+    """Flexural strength (Pa) with the observed flexural/compressive spread.
+
+    Returns ``(sigma, low, high)`` where ``low``/``high`` bracket the value
+    using the multiplicative band of the flexural-to-brine-volume relation
+    (Timco & Frederking 1990 report a factor-of-~2 total scatter for a given
+    ``v_b``; the band used here is deliberately narrower and symmetric).
+    """
+    sigma = flexural_strength(temperature, salinity)
+    return sigma, sigma * factor[0], sigma * factor[2]
 
 
 def thermal_diffusivity(phase="ice"):

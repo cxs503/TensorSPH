@@ -36,6 +36,9 @@ coupled column   salt conservation                                  0.1 %
 from __future__ import annotations
 
 from . import brine, coupled, darcy, enthalpy, properties, sph_thermal, thermal_stress
+from .properties import (SIGMA_F_MAX, V_B_CLOSURE, brine_volume_fraction,
+                         flexural_strength, liquid_fraction, permeability,
+                         strength_band)
 from .brine import (V_IRR, band_check, drainage_advance, drainage_step,
                     drainage_step_implicit, drainage_velocity, residual_salinity,
                     run_desalination)
@@ -55,6 +58,8 @@ __all__ = [
     "ThreeFieldConfig", "ThreeFieldResult", "coupling_strength", "run_three_field",
     "RA_CRITICAL_EXACT", "critical_rayleigh", "mushy_rayleigh",
     "FRESH", "SEA_ICE", "EnthalpyModel", "neumann_lambda", "stefan_front",
+    "SIGMA_F_MAX", "V_B_CLOSURE", "brine_volume_fraction", "flexural_strength",
+    "liquid_fraction", "permeability", "strength_band",
     "StefanConfig", "StefanResult", "run_stefan_sph",
     "crack_assessment", "critical_temperature_drop", "free_plate_stress",
     "restrained_stress",
