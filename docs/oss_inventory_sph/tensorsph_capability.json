@@ -1,0 +1,4575 @@
+{
+ "generated_from": "src/, tests/, benchmarks/, docs/ of this worktree",
+ "scan_counts": {
+  "src": 80,
+  "tests": 111,
+  "benchmarks": 284,
+  "docs": 180
+ },
+ "features": {
+  "wc_sph": {
+   "description": "weakly compressible SPH core (Tait EOS / density summation)",
+   "patterns": [
+    "\\bwcsph\\b",
+    "tait",
+    "rho0\\s*\\*\\*\\s*7|\\(rho\\s*/\\s*rho0\\)\\s*\\*\\*\\s*7"
+   ],
+   "path_hints": [
+    "src/tensorsph/wcsph"
+   ],
+   "src_hits": [
+    {
+     "file": "src/tensorsph/__init__.py",
+     "line": 31,
+     "pattern": "tait",
+     "snippet": "tait_pressure,"
+    },
+    {
+     "file": "src/tensorsph/dam_break_3d.py",
+     "line": 34,
+     "pattern": "tait",
+     "snippet": "tait_pressure,"
+    },
+    {
+     "file": "src/tensorsph/droplet_impact.py",
+     "line": 1,
+     "pattern": "\\bwcsph\\b",
+     "snippet": "\"\"\"Small, transparent 2-D WCSPH droplet-impact prototype (PyTorch)."
+    },
+    {
+     "file": "src/tensorsph/freesurface/breaking_wave.py",
+     "line": 9,
+     "pattern": "\\bwcsph\\b",
+     "snippet": "numerical viscosity and the WCSPH pressure-dilatation work)."
+    },
+    {
+     "file": "src/tensorsph/freesurface/ritter_anchor.py",
+     "line": 1,
+     "pattern": "\\bwcsph\\b",
+     "snippet": "\"\"\"Ritter dry-bed dam break: WCSPH versus the exact shallow-water solution."
+    },
+    {
+     "file": "src/tensorsph/freesurface/sloshing_mode.py",
+     "line": 116,
+     "pattern": "tait",
+     "snippet": "\"\"\"``g H / c_s^2``: the relative frequency bias to expect from Tait.\"\"\""
+    },
+    {
+     "file": "src/tensorsph/freesurface/solitary_anchor.py",
+     "line": 35,
+     "pattern": "\\bwcsph\\b",
+     "snippet": "budget of this repository, and far outside what any WCSPH run in the literature"
+    },
+    {
+     "file": "src/tensorsph/ice_splash.py",
+     "line": 12,
+     "pattern": "\\bwcsph\\b",
+     "snippet": "compressible SPH (WCSPH) model with a rigid bed is the right minimal tool."
+    },
+    {
+     "file": "src/tensorsph/initial_density.py",
+     "line": 24,
+     "pattern": "\\bwcsph\\b",
+     "snippet": "and it is not confined to drops: every wcSPH case started this way carries the"
+    },
+    {
+     "file": "src/tensorsph/lattice_consistency.py",
+     "line": 3,
+     "pattern": "\\bwcsph\\b",
+     "snippet": "A WCSPH summation density is ``rho_i = sum_j m_j W_ij``.  On a *uniform*"
+    },
+    {
+     "file": "src/tensorsph/slamming.py",
+     "line": 43,
+     "pattern": "tait",
+     "snippet": "deficit that the Tait law turns into spurious pressure.  The *first-order*"
+    },
+    {
+     "file": "src/tensorsph/sloshing.py",
+     "line": 28,
+     "pattern": "tait",
+     "snippet": "- Tait equation of state"
+    },
+    {
+     "file": "src/tensorsph/threed/__init__.py",
+     "line": 76,
+     "pattern": "tait",
+     "snippet": "tait_density,"
+    },
+    {
+     "file": "src/tensorsph/threed/conservation.py",
+     "line": 1,
+     "pattern": "\\bwcsph\\b",
+     "snippet": "\"\"\"Conservation diagnostics for the 3-D WCSPH runs."
+    },
+    {
+     "file": "src/tensorsph/threed/kernel3.py",
+     "line": 210,
+     "pattern": "tait",
+     "snippet": "Left uncorrected, the bias ``b = C - 1`` is *uniform* and the Tait law turns"
+    },
+    {
+     "file": "src/tensorsph/threed/liquid_column.py",
+     "line": 20,
+     "pattern": "\\bwcsph\\b",
+     "snippet": "* WCSPH with the Tait EOS from ``tensorsph.threed.operators3`` (density by"
+    },
+    {
+     "file": "src/tensorsph/threed/operators3.py",
+     "line": 1,
+     "pattern": "\\bwcsph\\b",
+     "snippet": "\"\"\"3-D WCSPH operators: summation density, Tait EOS, pressure and viscous forces."
+    },
+    {
+     "file": "src/tensorsph/threed/solver.py",
+     "line": 24,
+     "pattern": "tait",
+     "snippet": "extrapolation and the Tait-consistent wall density.  Momentum is not"
+    },
+    {
+     "file": "src/tensorsph/verification/cli.py",
+     "line": 531,
+     "pattern": "tait",
+     "snippet": "notes=\"negative control for J2: the Tait EOS must return exactly zero at \""
+    },
+    {
+     "file": "src/tensorsph/verification/hydrostatic.py",
+     "line": 5,
+     "pattern": "tait",
+     "snippet": "and the clamped Tait law gives them zero pressure; the *interior* must still"
+    },
+    {
+     "file": "src/tensorsph/vv/hydrostatic.py",
+     "line": 95,
+     "pattern": "tait",
+     "snippet": "from ..droplet_impact import tait_pressure"
+    },
+    {
+     "file": "src/tensorsph/vv/tgv.py",
+     "line": 175,
+     "pattern": "\\bwcsph\\b",
+     "snippet": "\"\"\"Periodic WCSPH right-hand side (no gravity, no walls, no surface tension)."
+    },
+    {
+     "file": "src/tensorsph/wave_flume.py",
+     "line": 1,
+     "pattern": "\\bwcsph\\b",
+     "snippet": "\"\"\"2-D numerical wave flume on the WCSPH core: piston wavemaker, sponge"
+    },
+    {
+     "file": "src/tensorsph/wave_tank.py",
+     "line": 1,
+     "pattern": "\\bwcsph\\b",
+     "snippet": "\"\"\"2-D WCSPH numerical wave tank: makers, sponge layer, probes."
+    },
+    {
+     "file": "src/tensorsph/wcsph/__init__.py",
+     "line": 6,
+     "pattern": "\\bwcsph\\b",
+     "snippet": "``solver``           explicit WCSPH: Tait EOS, symmetric momentum form, Monaghan"
+    },
+    {
+     "file": "src/tensorsph/wcsph/cases.py",
+     "line": 1,
+     "pattern": "\\bwcsph\\b",
+     "snippet": "\"\"\"Benchmark cases for the WCSPH verification chain."
+    },
+    {
+     "file": "src/tensorsph/wcsph/chain.py",
+     "line": 1,
+     "pattern": "\\bwcsph\\b",
+     "snippet": "\"\"\"Acceptance criteria of the WCSPH dam-break / sloshing chain."
+    },
+    {
+     "file": "src/tensorsph/wcsph/linear_sloshing.py",
+     "line": 39,
+     "pattern": "\\bwcsph\\b",
+     "snippet": "that caveat -- see ``docs/benchmarks/wcsph-chain.md``."
+    },
+    {
+     "file": "src/tensorsph/wcsph/sod_shock.py",
+     "line": 1,
+     "pattern": "\\bwcsph\\b",
+     "snippet": "\"\"\"Sod shock tube validation for WCSPH — full implementation."
+    },
+    {
+     "file": "src/tensorsph/wcsph/solver.py",
+     "line": 1,
+     "pattern": "\\bwcsph\\b",
+     "snippet": "\"\"\"A small, explicit WCSPH solver used by the verification chain."
+    },
+    {
+     "file": "src/tensorsph/wedge_entry.py",
+     "line": 1,
+     "pattern": "\\bwcsph\\b",
+     "snippet": "\"\"\"Two-dimensional wedge water entry: Wagner (1932) reference + WCSPH impact model."
+    }
+   ],
+   "absent_marker_hits": [],
+   "test_hits": [
+    {
+     "file": "tests/test_dam_break_3d.py"
+    },
+    {
+     "file": "tests/test_droplet_impact.py"
+    },
+    {
+     "file": "tests/test_free_surface_pressure_closure.py"
+    },
+    {
+     "file": "tests/test_ice_splash.py"
+    },
+    {
+     "file": "tests/test_initial_density_calibration.py"
+    },
+    {
+     "file": "tests/test_kernel_sum_consistency.py"
+    },
+    {
+     "file": "tests/test_laplace_closure_ladder.py"
+    },
+    {
+     "file": "tests/test_laplace_pressure_floor.py"
+    },
+    {
+     "file": "tests/test_laplace_pressure_jump.py"
+    },
+    {
+     "file": "tests/test_lattice_equilibrium.py"
+    },
+    {
+     "file": "tests/test_rayleigh_plateau.py"
+    },
+    {
+     "file": "tests/test_slamming_campaign.py"
+    },
+    {
+     "file": "tests/test_threed_artifacts.py"
+    },
+    {
+     "file": "tests/test_threed_kernel.py"
+    },
+    {
+     "file": "tests/test_wall_pressure.py"
+    },
+    {
+     "file": "tests/test_wave_flume.py"
+    },
+    {
+     "file": "tests/test_wave_tank.py"
+    },
+    {
+     "file": "tests/test_wcsph_cases.py"
+    },
+    {
+     "file": "tests/test_wcsph_chain.py"
+    },
+    {
+     "file": "tests/test_wcsph_kernels.py"
+    },
+    {
+     "file": "tests/test_wcsph_solver.py"
+    },
+    {
+     "file": "tests/test_wcsph_validation.py"
+    },
+    {
+     "file": "tests/test_wcsph_wendland_kernel.py"
+    },
+    {
+     "file": "tests/test_wedge_entry_resolved.py"
+    }
+   ],
+   "benchmark_hits": [
+    {
+     "file": "benchmarks/ci_red_clearance/make_doc.py"
+    },
+    {
+     "file": "benchmarks/claim_validity/audit.json"
+    },
+    {
+     "file": "benchmarks/claim_validity/validity.py"
+    },
+    {
+     "file": "benchmarks/contact_angle/run.py"
+    },
+    {
+     "file": "benchmarks/csf_consistent/make_curvature_doc.py"
+    },
+    {
+     "file": "benchmarks/csf_consistent/run.py"
+    },
+    {
+     "file": "benchmarks/csf_curvature_fit/run.py"
+    },
+    {
+     "file": "benchmarks/dam_break_3d/submit_report.py"
+    },
+    {
+     "file": "benchmarks/free_surface/compare.py"
+    },
+    {
+     "file": "benchmarks/ice_splash/run.py"
+    },
+    {
+     "file": "benchmarks/init_consistency/make_doc.py"
+    },
+    {
+     "file": "benchmarks/init_consistency/report.json"
+    },
+    {
+     "file": "benchmarks/init_consistency/run.py"
+    },
+    {
+     "file": "benchmarks/initial_density_bias/make_doc.py"
+    },
+    {
+     "file": "benchmarks/initial_density_bias/run.py"
+    },
+    {
+     "file": "benchmarks/laplace/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_droplet/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_law/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_law/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_plateau/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_plateau/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/analysis.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/figures.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/ladder_table.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/report_force_balance.json"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_floor/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_floor/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_jump/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_jump/run.py"
+    },
+    {
+     "file": "benchmarks/lattice_equilibrium/report.json"
+    },
+    {
+     "file": "benchmarks/lattice_equilibrium/run.py"
+    },
+    {
+     "file": "benchmarks/neighbor_search/compare_rhs.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/gauge_audit.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/make_doc.py"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/make_doc.py"
+    },
+    {
+     "file": "benchmarks/rayleigh_plateau/run.py"
+    },
+    {
+     "file": "benchmarks/startup_quiescence/make_docs.py"
+    },
+    {
+     "file": "benchmarks/threed_hydrostatic/report.json"
+    },
+    {
+     "file": "benchmarks/threed_hydrostatic/run.py"
+    },
+    {
+     "file": "benchmarks/threed_kernel/cases/lattice-h1.3.json"
+    },
+    {
+     "file": "benchmarks/threed_kernel/cases/lattice-h1.json"
+    },
+    {
+     "file": "benchmarks/threed_kernel/cases/quadrature.json"
+    },
+    {
+     "file": "benchmarks/threed_kernel/report.json"
+    },
+    {
+     "file": "benchmarks/threed_kernel/run.py"
+    },
+    {
+     "file": "benchmarks/threed_shear/fourth_order.py"
+    },
+    {
+     "file": "benchmarks/threed_summary/make_doc.py"
+    },
+    {
+     "file": "benchmarks/verification_ladder/build_report.py"
+    },
+    {
+     "file": "benchmarks/verification_ledger/build_ledger.py"
+    },
+    {
+     "file": "benchmarks/verification_ledger/ledger.json"
+    },
+    {
+     "file": "benchmarks/wave_tank/make_doc.py"
+    },
+    {
+     "file": "benchmarks/wave_tank/make_report.py"
+    },
+    {
+     "file": "benchmarks/wave_tank/run.py"
+    },
+    {
+     "file": "benchmarks/wcsph_chain/coverage_run.py"
+    },
+    {
+     "file": "benchmarks/wcsph_chain/make_doc.py"
+    },
+    {
+     "file": "benchmarks/wcsph_chain/pipeline.sh"
+    },
+    {
+     "file": "benchmarks/wcsph_chain/run.py"
+    },
+    {
+     "file": "benchmarks/wedge_entry/make_doc.py"
+    },
+    {
+     "file": "benchmarks/wedge_entry/make_doc_v2.py"
+    },
+    {
+     "file": "benchmarks/wedge_entry/wagner_resolved.py"
+    }
+   ],
+   "doc_hits": [
+    {
+     "file": "docs/algorithm-gap-analysis.md"
+    },
+    {
+     "file": "docs/analysis-2026-10-23.md"
+    },
+    {
+     "file": "docs/audit/m1633/upstream_diff_m1633.json"
+    },
+    {
+     "file": "docs/audit/m1633/upstream_diff_tables.md"
+    },
+    {
+     "file": "docs/benchmarks/dam-break-experimental-validation.md"
+    },
+    {
+     "file": "docs/benchmarks/dam-break-validation.md"
+    },
+    {
+     "file": "docs/benchmarks/droplet-impact-2d.md"
+    },
+    {
+     "file": "docs/benchmarks/free-surface-treatment.md"
+    }
+   ],
+   "in_source": true,
+   "guarded_by_test": true,
+   "in_benchmarks": true
+  },
+  "isph": {
+   "description": "incompressible / projection (ISPH, DFSPH, PCISPH)",
+   "patterns": [
+    "\\bisph\\b",
+    "\\bdfsph\\b",
+    "\\bpcisph\\b",
+    "pressure[-_ ]projection"
+   ],
+   "path_hints": [],
+   "src_hits": [],
+   "absent_marker_hits": [],
+   "test_hits": [],
+   "benchmark_hits": [],
+   "doc_hits": [
+    {
+     "file": "docs/oss_inventory_sph/registry.json"
+    },
+    {
+     "file": "docs/oss_inventory_sph/search_seed.json"
+    },
+    {
+     "file": "docs/oss_inventory_sph/tensorsph_capability.json"
+    }
+   ],
+   "in_source": false,
+   "guarded_by_test": false,
+   "in_benchmarks": false
+  },
+  "density_diffusion": {
+   "description": "delta-SPH style density diffusion",
+   "patterns": [
+    "density_diffusion",
+    "delta_sph",
+    "diffus(ive|ion)_?_?term"
+   ],
+   "path_hints": [],
+   "src_hits": [
+    {
+     "file": "src/tensorsph/__init__.py",
+     "line": 15,
+     "pattern": "density_diffusion",
+     "snippet": "density_diffusion_rate,"
+    },
+    {
+     "file": "src/tensorsph/dam_break_3d.py",
+     "line": 35,
+     "pattern": "density_diffusion",
+     "snippet": "density_diffusion_rate,"
+    },
+    {
+     "file": "src/tensorsph/droplet_impact.py",
+     "line": 79,
+     "pattern": "density_diffusion",
+     "snippet": "``density_diffusion`` is the coefficient ``delta`` of the diffusive term of"
+    },
+    {
+     "file": "src/tensorsph/freesurface/ritter_anchor.py",
+     "line": 87,
+     "pattern": "density_diffusion",
+     "snippet": "density_diffusion: float = 0.0"
+    },
+    {
+     "file": "src/tensorsph/freesurface/runner.py",
+     "line": 119,
+     "pattern": "density_diffusion",
+     "snippet": "density_diffusion: float | None = None) -> dict:"
+    },
+    {
+     "file": "src/tensorsph/freesurface/sloshing_mode.py",
+     "line": 90,
+     "pattern": "density_diffusion",
+     "snippet": "density_diffusion: float = 0.0"
+    },
+    {
+     "file": "src/tensorsph/freesurface/solitary_anchor.py",
+     "line": 71,
+     "pattern": "density_diffusion",
+     "snippet": "density_diffusion: float = 0.10"
+    },
+    {
+     "file": "src/tensorsph/slamming.py",
+     "line": 33,
+     "pattern": "delta_sph",
+     "snippet": "* ``delta_sph_density_rate`` -- Molteni & Colagrossi / Antuono et al. density"
+    },
+    {
+     "file": "src/tensorsph/threed/liquid_column.py",
+     "line": 617,
+     "pattern": "density_diffusion",
+     "snippet": "# ``droplet_impact.density_diffusion_rate`` exactly: with"
+    },
+    {
+     "file": "src/tensorsph/verification/dam_break_2d.py",
+     "line": 92,
+     "pattern": "density_diffusion",
+     "snippet": "density_diffusion: float = 0.0"
+    },
+    {
+     "file": "src/tensorsph/wave_flume.py",
+     "line": 387,
+     "pattern": "density_diffusion",
+     "snippet": "density_diffusion: float = 0.1"
+    }
+   ],
+   "absent_marker_hits": [],
+   "test_hits": [
+    {
+     "file": "tests/test_adaptive_dt.py"
+    },
+    {
+     "file": "tests/test_capillary_wave.py"
+    },
+    {
+     "file": "tests/test_density_diffusion_decay.py"
+    },
+    {
+     "file": "tests/test_free_surface.py"
+    },
+    {
+     "file": "tests/test_laplace_pressure_jump.py"
+    },
+    {
+     "file": "tests/test_slamming.py"
+    },
+    {
+     "file": "tests/test_slamming_campaign.py"
+    },
+    {
+     "file": "tests/test_verification_ledger.py"
+    },
+    {
+     "file": "tests/test_wave_flume.py"
+    }
+   ],
+   "benchmark_hits": [
+    {
+     "file": "benchmarks/capillary_wave/run.py"
+    },
+    {
+     "file": "benchmarks/capillary_wave/validation.py"
+    },
+    {
+     "file": "benchmarks/claim_validity/audit.json"
+    },
+    {
+     "file": "benchmarks/dam_break/experimental_validation.py"
+    },
+    {
+     "file": "benchmarks/dam_break/make_audit_doc.py"
+    },
+    {
+     "file": "benchmarks/dam_break/make_ladder_doc.py"
+    },
+    {
+     "file": "benchmarks/dam_break/reference_audit.json"
+    },
+    {
+     "file": "benchmarks/dam_break/reference_audit.py"
+    },
+    {
+     "file": "benchmarks/dam_break/reference_ladder.json"
+    },
+    {
+     "file": "benchmarks/dam_break/reference_ladder.py"
+    },
+    {
+     "file": "benchmarks/dam_break/resolution_ladder.json"
+    },
+    {
+     "file": "benchmarks/dam_break/run.py"
+    },
+    {
+     "file": "benchmarks/dam_break/validate.py"
+    },
+    {
+     "file": "benchmarks/density_diffusion_decay/make_doc.py"
+    },
+    {
+     "file": "benchmarks/density_diffusion_decay/negctl_shift_reference.py"
+    },
+    {
+     "file": "benchmarks/density_diffusion_decay/run.py"
+    },
+    {
+     "file": "benchmarks/free_surface/compare.py"
+    },
+    {
+     "file": "benchmarks/hydrostatic/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_jump/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_jump/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_jump/validation_report.json"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/ci_pin_evidence.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/gauge_audit.json"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/make_doc.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/run.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/run_lamb.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/validation_report.json"
+    },
+    {
+     "file": "benchmarks/slamming/run.py"
+    },
+    {
+     "file": "benchmarks/stability/run.py"
+    },
+    {
+     "file": "benchmarks/startup_quiescence/make_docs.py"
+    },
+    {
+     "file": "benchmarks/startup_quiescence/report.json"
+    },
+    {
+     "file": "benchmarks/startup_quiescence/run.py"
+    },
+    {
+     "file": "benchmarks/verification_ledger/build_ledger.py"
+    },
+    {
+     "file": "benchmarks/verification_ledger/ledger.json"
+    },
+    {
+     "file": "benchmarks/verified/sph_dam_break_2d/results_dx0.01.json"
+    },
+    {
+     "file": "benchmarks/verified/sph_dam_break_2d/results_dx0.02.json"
+    },
+    {
+     "file": "benchmarks/wave_flume/run.py"
+    }
+   ],
+   "doc_hits": [
+    {
+     "file": "docs/algorithm-gap-analysis.md"
+    },
+    {
+     "file": "docs/benchmarks/free-surface/part_ritter_base.json"
+    },
+    {
+     "file": "docs/benchmarks/free-surface/part_sloshing_base.json"
+    },
+    {
+     "file": "docs/benchmarks/free-surface/part_solitary_base.json"
+    },
+    {
+     "file": "docs/benchmarks/free-surface/part_solitary_fine.json"
+    },
+    {
+     "file": "docs/benchmarks/free-surface/part_solitary_ideal.json"
+    },
+    {
+     "file": "docs/benchmarks/free-surface/part_solitary_nodd.json"
+    },
+    {
+     "file": "docs/benchmarks/free-surface-treatment.md"
+    }
+   ],
+   "in_source": true,
+   "guarded_by_test": true,
+   "in_benchmarks": true
+  },
+  "riemann": {
+   "description": "Riemann-solver / Godunov flux inside the SPH solver",
+   "patterns": [
+    "riemann[_ ](solver|flux)",
+    "godunov\\w*[_ ]sph",
+    "riemann[_ ]based"
+   ],
+   "path_hints": [],
+   "src_hits": [
+    {
+     "file": "src/tensorsph/wcsph/sod_shock.py",
+     "line": 11,
+     "pattern": "riemann[_ ](solver|flux)",
+     "snippet": "- Exact Riemann solver for Sod shock tube"
+    }
+   ],
+   "absent_marker_hits": [],
+   "test_hits": [
+    {
+     "file": "tests/test_wcsph_validation.py"
+    }
+   ],
+   "benchmark_hits": [],
+   "doc_hits": [
+    {
+     "file": "docs/oss_inventory_sph/registry.json"
+    },
+    {
+     "file": "docs/oss_inventory_sph/search_seed.json"
+    }
+   ],
+   "in_source": true,
+   "guarded_by_test": true,
+   "in_benchmarks": false
+  },
+  "gpu": {
+   "description": "GPU backend reachable from the solver",
+   "patterns": [
+    "cuda",
+    "torch\\.device",
+    "device\\s*=\\s*\\\"?cuda"
+   ],
+   "path_hints": [],
+   "src_hits": [
+    {
+     "file": "src/tensorsph/added_mass.py",
+     "line": 116,
+     "pattern": "torch\\.device",
+     "snippet": "device: str | torch.device = \"cpu\") -> AddedMassResult:"
+    },
+    {
+     "file": "src/tensorsph/dam_break.py",
+     "line": 89,
+     "pattern": "torch\\.device",
+     "snippet": "def make_column(cfg: DamBreakConfig, device: torch.device):"
+    },
+    {
+     "file": "src/tensorsph/dam_break_3d.py",
+     "line": 159,
+     "pattern": "torch\\.device",
+     "snippet": "def make_column_3d(cfg: DamBreak3DConfig, device: torch.device,"
+    },
+    {
+     "file": "src/tensorsph/droplet_impact.py",
+     "line": 1519,
+     "pattern": "cuda",
+     "snippet": "return torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\")"
+    },
+    {
+     "file": "src/tensorsph/freesurface/sloshing_mode.py",
+     "line": 163,
+     "pattern": "torch\\.device",
+     "snippet": "device = torch.device(cfg.device)"
+    },
+    {
+     "file": "src/tensorsph/ice_splash.py",
+     "line": 213,
+     "pattern": "torch\\.device",
+     "snippet": "def _surface_points(cfg: IceSplashConfig, device: torch.device):"
+    },
+    {
+     "file": "src/tensorsph/initial_density.py",
+     "line": 87,
+     "pattern": "torch\\.device",
+     "snippet": "device: torch.device | str = \"cpu\") -> torch.Tensor:"
+    },
+    {
+     "file": "src/tensorsph/neighbor_search.py",
+     "line": 49,
+     "pattern": "cuda",
+     "snippet": "input device: there is no host round-trip, so the search is usable on CUDA."
+    },
+    {
+     "file": "src/tensorsph/sloshing.py",
+     "line": 132,
+     "pattern": "torch\\.device",
+     "snippet": "def make_water_block(cfg: SloshingConfig, device: torch.device):"
+    },
+    {
+     "file": "src/tensorsph/threed/kernel3.py",
+     "line": 219,
+     "pattern": "torch\\.device",
+     "snippet": "device: torch.device | None = None):"
+    },
+    {
+     "file": "src/tensorsph/verification/convergence.py",
+     "line": 118,
+     "pattern": "torch\\.device",
+     "snippet": "device = torch.device(\"cpu\")"
+    },
+    {
+     "file": "src/tensorsph/wedge_entry.py",
+     "line": 592,
+     "pattern": "torch\\.device",
+     "snippet": "self.device = torch.device(cfg.device)"
+    }
+   ],
+   "absent_marker_hits": [],
+   "test_hits": [
+    {
+     "file": "tests/test_boundary.py"
+    },
+    {
+     "file": "tests/test_capillary_wave.py"
+    },
+    {
+     "file": "tests/test_contact_angle.py"
+    },
+    {
+     "file": "tests/test_contact_angle_equilibrium.py"
+    },
+    {
+     "file": "tests/test_convergence.py"
+    },
+    {
+     "file": "tests/test_dam_break.py"
+    },
+    {
+     "file": "tests/test_dam_break_3d.py"
+    },
+    {
+     "file": "tests/test_dam_break_lattice_clearance.py"
+    },
+    {
+     "file": "tests/test_droplet_impact.py"
+    },
+    {
+     "file": "tests/test_free_surface.py"
+    },
+    {
+     "file": "tests/test_ice_floe_added_mass.py"
+    },
+    {
+     "file": "tests/test_ice_splash.py"
+    },
+    {
+     "file": "tests/test_initial_density_calibration.py"
+    },
+    {
+     "file": "tests/test_kernel_sum_consistency.py"
+    },
+    {
+     "file": "tests/test_lattice_wall_clearance.py"
+    },
+    {
+     "file": "tests/test_neighbor_search.py"
+    },
+    {
+     "file": "tests/test_pair_based_rhs.py"
+    },
+    {
+     "file": "tests/test_poiseuille.py"
+    },
+    {
+     "file": "tests/test_pr309_relaxation_controls.py"
+    },
+    {
+     "file": "tests/test_startup_quiescence.py"
+    },
+    {
+     "file": "tests/test_wave_flume.py"
+    }
+   ],
+   "benchmark_hits": [
+    {
+     "file": "benchmarks/audit/upstream_diff.py"
+    },
+    {
+     "file": "benchmarks/capillary_wave/run.py"
+    },
+    {
+     "file": "benchmarks/contact_angle/diagnose_bc.py"
+    },
+    {
+     "file": "benchmarks/contact_angle/run.py"
+    },
+    {
+     "file": "benchmarks/contact_angle_equilibrium/probe_wall_color_deficit.py"
+    },
+    {
+     "file": "benchmarks/contact_angle_equilibrium/run.py"
+    },
+    {
+     "file": "benchmarks/convergence/run.py"
+    },
+    {
+     "file": "benchmarks/free_surface/compare.py"
+    },
+    {
+     "file": "benchmarks/hydrostatic/run.py"
+    },
+    {
+     "file": "benchmarks/ice_floe_added_mass/run.py"
+    },
+    {
+     "file": "benchmarks/ice_splash/run.py"
+    },
+    {
+     "file": "benchmarks/initial_density_bias/run.py"
+    },
+    {
+     "file": "benchmarks/lattice_equilibrium/run.py"
+    },
+    {
+     "file": "benchmarks/main_red_clearance/repro.py"
+    },
+    {
+     "file": "benchmarks/neighbor_search/compare.py"
+    },
+    {
+     "file": "benchmarks/neighbor_search/compare_rhs.py"
+    },
+    {
+     "file": "benchmarks/scaling/README.md"
+    },
+    {
+     "file": "benchmarks/scaling/run.py"
+    },
+    {
+     "file": "benchmarks/stability/run.py"
+    },
+    {
+     "file": "benchmarks/startup_quiescence/run.py"
+    }
+   ],
+   "doc_hits": [
+    {
+     "file": "docs/algorithm-gap-analysis.md"
+    },
+    {
+     "file": "docs/analysis-2026-10-23.md"
+    },
+    {
+     "file": "docs/audit/m1633/upstream_diff_m1633.json"
+    },
+    {
+     "file": "docs/benchmarks/gpu-scaling.md"
+    },
+    {
+     "file": "docs/benchmarks/neighbor-search.md"
+    },
+    {
+     "file": "docs/benchmarks/test-baseline-m1833.md"
+    },
+    {
+     "file": "docs/changes-0.5.0.md"
+    },
+    {
+     "file": "docs/oss_inventory_sph/registry.json"
+    }
+   ],
+   "in_source": true,
+   "guarded_by_test": true,
+   "in_benchmarks": true
+  },
+  "mpi": {
+   "description": "MPI / multi-node distributed execution",
+   "patterns": [
+    "\\bmpi4py\\b",
+    "\\bmpi\\b"
+   ],
+   "path_hints": [],
+   "src_hits": [],
+   "absent_marker_hits": [],
+   "test_hits": [],
+   "benchmark_hits": [],
+   "doc_hits": [
+    {
+     "file": "docs/oss_inventory_sph/registry.json"
+    },
+    {
+     "file": "docs/oss_inventory_sph/search_seed.json"
+    },
+    {
+     "file": "docs/oss_inventory_sph/tensorsph_capability.json"
+    }
+   ],
+   "in_source": false,
+   "guarded_by_test": false,
+   "in_benchmarks": false
+  },
+  "boundary_particles": {
+   "description": "wall / boundary particle treatment",
+   "patterns": [
+    "wall_lattice",
+    "boundary_particle",
+    "ghost_particle"
+   ],
+   "path_hints": [],
+   "src_hits": [
+    {
+     "file": "src/tensorsph/__init__.py",
+     "line": 34,
+     "pattern": "wall_lattice",
+     "snippet": "wall_lattice,"
+    },
+    {
+     "file": "src/tensorsph/dam_break.py",
+     "line": 35,
+     "pattern": "wall_lattice",
+     "snippet": "wall_lattice,"
+    },
+    {
+     "file": "src/tensorsph/dam_break_3d.py",
+     "line": 194,
+     "pattern": "wall_lattice",
+     "snippet": "def wall_lattice_3d(cfg: DamBreak3DConfig, device: torch.device,"
+    },
+    {
+     "file": "src/tensorsph/droplet_impact.py",
+     "line": 620,
+     "pattern": "wall_lattice",
+     "snippet": "def wall_lattice(cfg: Config, device: torch.device,"
+    },
+    {
+     "file": "src/tensorsph/freesurface/sloshing_mode.py",
+     "line": 258,
+     "pattern": "wall_lattice",
+     "snippet": "wall = droplet_impact.wall_lattice(cfg, device, top=top)"
+    },
+    {
+     "file": "src/tensorsph/ice_splash.py",
+     "line": 216,
+     "pattern": "wall_lattice",
+     "snippet": "Particle placement follows ``wall_lattice``: ``(k + 1/2) dx`` behind the"
+    },
+    {
+     "file": "src/tensorsph/sloshing.py",
+     "line": 54,
+     "pattern": "wall_lattice",
+     "snippet": "wall_lattice,"
+    },
+    {
+     "file": "src/tensorsph/verification/conservation.py",
+     "line": 33,
+     "pattern": "wall_lattice",
+     "snippet": "from ..droplet_impact import (PairListCache, resolve_device, rhs, wall_lattice)"
+    },
+    {
+     "file": "src/tensorsph/vv/hydrostatic.py",
+     "line": 38,
+     "pattern": "wall_lattice",
+     "snippet": "wall_lattice)"
+    },
+    {
+     "file": "src/tensorsph/wave_flume.py",
+     "line": 100,
+     "pattern": "wall_lattice",
+     "snippet": "\"static_wall_lattice\","
+    },
+    {
+     "file": "src/tensorsph/wcsph/cases.py",
+     "line": 62,
+     "pattern": "wall_lattice",
+     "snippet": "``tensorsph.droplet_impact.wall_lattice``."
+    }
+   ],
+   "absent_marker_hits": [],
+   "test_hits": [
+    {
+     "file": "tests/test_boundary.py"
+    },
+    {
+     "file": "tests/test_contact_angle.py"
+    },
+    {
+     "file": "tests/test_convergence.py"
+    },
+    {
+     "file": "tests/test_dam_break.py"
+    },
+    {
+     "file": "tests/test_dam_break_3d.py"
+    },
+    {
+     "file": "tests/test_dam_break_lattice_clearance.py"
+    },
+    {
+     "file": "tests/test_free_surface.py"
+    },
+    {
+     "file": "tests/test_lattice_wall_clearance.py"
+    },
+    {
+     "file": "tests/test_pair_based_rhs.py"
+    },
+    {
+     "file": "tests/test_startup_quiescence.py"
+    },
+    {
+     "file": "tests/test_wave_flume.py"
+    }
+   ],
+   "benchmark_hits": [
+    {
+     "file": "benchmarks/contact_angle/run.py"
+    },
+    {
+     "file": "benchmarks/contact_angle_equilibrium/run.py"
+    },
+    {
+     "file": "benchmarks/contact_angle_geometry/make_doc.py"
+    },
+    {
+     "file": "benchmarks/contact_angle_geometry/run.py"
+    },
+    {
+     "file": "benchmarks/convergence/run.py"
+    },
+    {
+     "file": "benchmarks/free_surface/compare.py"
+    },
+    {
+     "file": "benchmarks/hydrostatic/run.py"
+    },
+    {
+     "file": "benchmarks/lattice_equilibrium/run.py"
+    },
+    {
+     "file": "benchmarks/main_red_clearance/repro.py"
+    },
+    {
+     "file": "benchmarks/startup_quiescence/run.py"
+    }
+   ],
+   "doc_hits": [
+    {
+     "file": "docs/analysis-2026-10-23.md"
+    },
+    {
+     "file": "docs/audit/m1633/upstream_diff_m1633.json"
+    },
+    {
+     "file": "docs/changes-0.7.0.md"
+    },
+    {
+     "file": "docs/oss_inventory_sph/registry.json"
+    },
+    {
+     "file": "docs/oss_inventory_sph/tensorsph_capability.json"
+    },
+    {
+     "file": "docs/review-2026-10.md"
+    },
+    {
+     "file": "docs/verification_contact_angle_geometry.md"
+    },
+    {
+     "file": "docs/verification_ice_splash.md"
+    }
+   ],
+   "in_source": true,
+   "guarded_by_test": true,
+   "in_benchmarks": true
+  },
+  "boundary_akinci": {
+   "description": "Akinci volume-weighted boundary",
+   "patterns": [
+    "akinci"
+   ],
+   "path_hints": [],
+   "src_hits": [],
+   "absent_marker_hits": [],
+   "test_hits": [],
+   "benchmark_hits": [],
+   "doc_hits": [
+    {
+     "file": "docs/benchmarks/laplace-droplet.md"
+    },
+    {
+     "file": "docs/benchmarks/surface-tension-verification.md"
+    },
+    {
+     "file": "docs/oss_inventory_sph/registry.json"
+    },
+    {
+     "file": "docs/oss_inventory_sph/tensorsph_capability.json"
+    },
+    {
+     "file": "docs/review-2026-10.md"
+    }
+   ],
+   "in_source": false,
+   "guarded_by_test": false,
+   "in_benchmarks": false
+  },
+  "boundary_adami": {
+   "description": "Adami pressure extrapolation at walls",
+   "patterns": [
+    "adami"
+   ],
+   "path_hints": [],
+   "src_hits": [
+    {
+     "file": "src/tensorsph/csf_consistent.py",
+     "line": 52,
+     "pattern": "adami",
+     "snippet": "Adami, Ihmsen & Adams (2012), J. Comput. Phys. 231:7057 (spurious currents)."
+    },
+    {
+     "file": "src/tensorsph/droplet_impact.py",
+     "line": 166,
+     "pattern": "adami",
+     "snippet": "# (Adami, Ihmsen & Adams 2012, J. Comput. Phys. 231:7057, section 3.3). Off"
+    },
+    {
+     "file": "src/tensorsph/slamming.py",
+     "line": 52,
+     "pattern": "adami",
+     "snippet": "Adami wall pressure, acoustic CFL, body-frame wedge) and adds the force"
+    },
+    {
+     "file": "src/tensorsph/sloshing.py",
+     "line": 30,
+     "pattern": "adami",
+     "snippet": "- Wall boundary particles (Adami et al. 2012)"
+    },
+    {
+     "file": "src/tensorsph/threed/__init__.py",
+     "line": 24,
+     "pattern": "adami",
+     "snippet": "wall-model effect (Adami on/off)       ``benchmarks/threed_hydrostatic/report.json``"
+    },
+    {
+     "file": "src/tensorsph/threed/liquid_column.py",
+     "line": 53,
+     "pattern": "adami",
+     "snippet": "Adami, Ihmsen & Adams (2012), J. Comput. Phys. 231:7057."
+    },
+    {
+     "file": "src/tensorsph/threed/operators3.py",
+     "line": 39,
+     "pattern": "adami",
+     "snippet": "\"wall_pressure_adami\","
+    },
+    {
+     "file": "src/tensorsph/threed/solver.py",
+     "line": 23,
+     "pattern": "adami",
+     "snippet": "side of the 3-D machinery: static wall particles, the Adami pressure"
+    },
+    {
+     "file": "src/tensorsph/wave_flume.py",
+     "line": 17,
+     "pattern": "adami",
+     "snippet": "kinematic wall particles with the Adami, Hu & Adams (2012, eq. 11) pressure"
+    },
+    {
+     "file": "src/tensorsph/wcsph/solver.py",
+     "line": 324,
+     "pattern": "adami",
+     "snippet": "Wall pressure follows eq. (11) of Adami, Hu & Adams (2012): the wall"
+    },
+    {
+     "file": "src/tensorsph/wedge_entry.py",
+     "line": 52,
+     "pattern": "adami",
+     "snippet": "* Adami, Hu & Adams (2012) static/moving wall particles for the wedge and the"
+    }
+   ],
+   "absent_marker_hits": [],
+   "test_hits": [
+    {
+     "file": "tests/test_free_surface_pressure_closure.py"
+    },
+    {
+     "file": "tests/test_laplace_closure_ladder.py"
+    },
+    {
+     "file": "tests/test_laplace_law.py"
+    },
+    {
+     "file": "tests/test_laplace_pressure_closure.py"
+    },
+    {
+     "file": "tests/test_laplace_pressure_jump.py"
+    },
+    {
+     "file": "tests/test_laplace_verdict_matrix.py"
+    },
+    {
+     "file": "tests/test_threed_artifacts.py"
+    },
+    {
+     "file": "tests/test_threed_operators.py"
+    },
+    {
+     "file": "tests/test_verification_ledger_overcredit.py"
+    },
+    {
+     "file": "tests/test_wall_pressure.py"
+    },
+    {
+     "file": "tests/test_wedge_entry.py"
+    },
+    {
+     "file": "tests/test_young_laplace_closure_ledger.py"
+    }
+   ],
+   "benchmark_hits": [
+    {
+     "file": "benchmarks/audit/upstream_diff.py"
+    },
+    {
+     "file": "benchmarks/ci_red_clearance/before_convergence.json"
+    },
+    {
+     "file": "benchmarks/claim_validity/audit.json"
+    },
+    {
+     "file": "benchmarks/claim_validity/validity.py"
+    },
+    {
+     "file": "benchmarks/contact_angle/diagnose_bc.py"
+    },
+    {
+     "file": "benchmarks/contact_angle/run.py"
+    },
+    {
+     "file": "benchmarks/contact_angle_equilibrium/make_artifacts.py"
+    },
+    {
+     "file": "benchmarks/contact_angle_equilibrium/run.py"
+    },
+    {
+     "file": "benchmarks/csf_consistent/make_curvature_doc.py"
+    },
+    {
+     "file": "benchmarks/csf_consistent/relax_legacy.json"
+    },
+    {
+     "file": "benchmarks/csf_consistent/run.py"
+    },
+    {
+     "file": "benchmarks/csf_consistent/validation_report.json"
+    },
+    {
+     "file": "benchmarks/csf_curvature_fit/run.py"
+    },
+    {
+     "file": "benchmarks/csf_curvature_fit/validation_report.json"
+    },
+    {
+     "file": "benchmarks/dam_break/ritter_limit.py"
+    },
+    {
+     "file": "benchmarks/dam_break_3d/submit_report.py"
+    },
+    {
+     "file": "benchmarks/laplace/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace/publish_report.py"
+    },
+    {
+     "file": "benchmarks/laplace_law/convergence/relax_dx0.0015.json"
+    },
+    {
+     "file": "benchmarks/laplace_law/convergence/relax_dx0.0020.json"
+    },
+    {
+     "file": "benchmarks/laplace_law/convergence/relax_dx0.0025.json"
+    },
+    {
+     "file": "benchmarks/laplace_law/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_law/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_law/validation_report.json"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/closure_ledger_figure.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/verdict_audit.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/verdict_matrix.json"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_floor/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_floor/report.json"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_floor/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_jump/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_jump/validation_report.json"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/make_doc.py"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/make_doc.py"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/run.py"
+    },
+    {
+     "file": "benchmarks/poiseuille/make_doc.py"
+    },
+    {
+     "file": "benchmarks/poiseuille/wall_shear_estimators.py"
+    },
+    {
+     "file": "benchmarks/threed_hydrostatic/report.json"
+    },
+    {
+     "file": "benchmarks/threed_hydrostatic/run.py"
+    },
+    {
+     "file": "benchmarks/threed_summary/make_doc.py"
+    },
+    {
+     "file": "benchmarks/verification_ladder/build_report.py"
+    },
+    {
+     "file": "benchmarks/verification_ledger/build_ledger.py"
+    },
+    {
+     "file": "benchmarks/verification_ledger/ledger.json"
+    },
+    {
+     "file": "benchmarks/verification_ledger/make_overcredit_doc.py"
+    },
+    {
+     "file": "benchmarks/wedge_entry/make_doc.py"
+    },
+    {
+     "file": "benchmarks/wedge_entry/make_doc_v2.py"
+    }
+   ],
+   "doc_hits": [
+    {
+     "file": "docs/algorithm-gap-analysis.md"
+    },
+    {
+     "file": "docs/analysis-2026-10-23.md"
+    },
+    {
+     "file": "docs/benchmarks/dam-break-2d.md"
+    },
+    {
+     "file": "docs/benchmarks/dam-break-validation.md"
+    },
+    {
+     "file": "docs/benchmarks/free-surface-treatment.md"
+    },
+    {
+     "file": "docs/benchmarks/hydrostatic.md"
+    },
+    {
+     "file": "docs/benchmarks/laplace.md"
+    },
+    {
+     "file": "docs/benchmarks/ritter-shallow-limit.md"
+    }
+   ],
+   "in_source": true,
+   "guarded_by_test": true,
+   "in_benchmarks": true
+  },
+  "surface_tension": {
+   "description": "surface tension (CSF / continuum surface force)",
+   "patterns": [
+    "surface_tension",
+    "\\bcsf\\b"
+   ],
+   "path_hints": [],
+   "src_hits": [
+    {
+     "file": "src/tensorsph/__init__.py",
+     "line": 102,
+     "pattern": "surface_tension",
+     "snippet": "from .surface_tension import ("
+    },
+    {
+     "file": "src/tensorsph/csf_consistent.py",
+     "line": 5,
+     "pattern": "surface_tension",
+     "snippet": "``surface_tension.py`` (m277) implements Brackbill's CSF force"
+    },
+    {
+     "file": "src/tensorsph/csf_curvature.py",
+     "line": 11,
+     "pattern": "surface_tension",
+     "snippet": "(``docs/verification_surface_tension_consistent.md``), i.e. outside the platform"
+    },
+    {
+     "file": "src/tensorsph/droplet_impact.py",
+     "line": 136,
+     "pattern": "surface_tension",
+     "snippet": "surface_tension_coefficient: float = 0.0"
+    },
+    {
+     "file": "src/tensorsph/rayleigh_plateau.py",
+     "line": 48,
+     "pattern": "\\bcsf\\b",
+     "snippet": "2-D SPH code cannot reproduce ``lambda = 9.02 R`` no matter how good its CSF"
+    },
+    {
+     "file": "src/tensorsph/surface_tension.py",
+     "line": 35,
+     "pattern": "surface_tension",
+     "snippet": "surface_tension_acceleration,"
+    },
+    {
+     "file": "src/tensorsph/threed/csf3.py",
+     "line": 36,
+     "pattern": "surface_tension",
+     "snippet": "``docs/verification_surface_tension_consistent.md``.  Degenerate stencils (an"
+    },
+    {
+     "file": "src/tensorsph/threed/liquid_column.py",
+     "line": 63,
+     "pattern": "surface_tension",
+     "snippet": "from .csf3 import CSFState3, csf_fields3, surface_tension_acceleration3"
+    },
+    {
+     "file": "src/tensorsph/vv/dambreak.py",
+     "line": 78,
+     "pattern": "surface_tension",
+     "snippet": "sound_speed: float = 25.0, surface_tension: float = 0.0,"
+    },
+    {
+     "file": "src/tensorsph/vv/figures.py",
+     "line": 145,
+     "pattern": "surface_tension",
+     "snippet": "if \"C4c_surface_tension\" in controls:"
+    },
+    {
+     "file": "src/tensorsph/vv/ladder.py",
+     "line": 58,
+     "pattern": "surface_tension",
+     "snippet": "dam_surface_tension: float = 0.0"
+    }
+   ],
+   "absent_marker_hits": [],
+   "test_hits": [
+    {
+     "file": "tests/test_capillary_wave.py"
+    },
+    {
+     "file": "tests/test_contact_angle.py"
+    },
+    {
+     "file": "tests/test_contact_angle_bc_diagnosis.py"
+    },
+    {
+     "file": "tests/test_contact_angle_geometry.py"
+    },
+    {
+     "file": "tests/test_csf_consistent.py"
+    },
+    {
+     "file": "tests/test_csf_curvature_audit.py"
+    },
+    {
+     "file": "tests/test_csf_curvature_fit.py"
+    },
+    {
+     "file": "tests/test_csf_dispersion.py"
+    },
+    {
+     "file": "tests/test_effective_sigma.py"
+    },
+    {
+     "file": "tests/test_free_surface_pressure_closure.py"
+    },
+    {
+     "file": "tests/test_init.py"
+    },
+    {
+     "file": "tests/test_laplace_droplet.py"
+    },
+    {
+     "file": "tests/test_laplace_law.py"
+    },
+    {
+     "file": "tests/test_laplace_pressure.py"
+    },
+    {
+     "file": "tests/test_laplace_pressure_closure.py"
+    },
+    {
+     "file": "tests/test_laplace_pressure_jump.py"
+    },
+    {
+     "file": "tests/test_laplace_validation.py"
+    },
+    {
+     "file": "tests/test_laplace_verification.py"
+    },
+    {
+     "file": "tests/test_oscillating_droplet.py"
+    },
+    {
+     "file": "tests/test_oscillating_droplet_lamb.py"
+    },
+    {
+     "file": "tests/test_rayleigh_plateau.py"
+    },
+    {
+     "file": "tests/test_surface_tension.py"
+    },
+    {
+     "file": "tests/test_surface_tension_laplace.py"
+    },
+    {
+     "file": "tests/test_two_phase_laplace.py"
+    },
+    {
+     "file": "tests/test_verification_ledger.py"
+    },
+    {
+     "file": "tests/test_young_laplace.py"
+    }
+   ],
+   "benchmark_hits": [
+    {
+     "file": "benchmarks/audit/upstream_diff.py"
+    },
+    {
+     "file": "benchmarks/capillary_wave/run.py"
+    },
+    {
+     "file": "benchmarks/capillary_wave/validation.py"
+    },
+    {
+     "file": "benchmarks/ci_lint_gate/make_doc.py"
+    },
+    {
+     "file": "benchmarks/ci_lint_gate/pytest_after.json"
+    },
+    {
+     "file": "benchmarks/ci_lint_gate/pytest_before.json"
+    },
+    {
+     "file": "benchmarks/ci_red_clearance/make_doc.py"
+    },
+    {
+     "file": "benchmarks/claim_validity/audit.json"
+    },
+    {
+     "file": "benchmarks/conservation/make_doc.py"
+    },
+    {
+     "file": "benchmarks/conservation/report.json"
+    },
+    {
+     "file": "benchmarks/conservation/run.py"
+    },
+    {
+     "file": "benchmarks/contact_angle/diagnose_bc.py"
+    },
+    {
+     "file": "benchmarks/contact_angle/run.py"
+    },
+    {
+     "file": "benchmarks/contact_angle_equilibrium/post_report.py"
+    },
+    {
+     "file": "benchmarks/contact_angle_geometry/make_doc.py"
+    },
+    {
+     "file": "benchmarks/contact_angle_geometry/run.py"
+    },
+    {
+     "file": "benchmarks/csf_consistent/curvature_audit.py"
+    },
+    {
+     "file": "benchmarks/csf_consistent/make_curvature_doc.py"
+    },
+    {
+     "file": "benchmarks/csf_consistent/run.py"
+    },
+    {
+     "file": "benchmarks/csf_curvature_fit/field_figure.py"
+    },
+    {
+     "file": "benchmarks/csf_curvature_fit/run.py"
+    },
+    {
+     "file": "benchmarks/effective_sigma/make_doc.py"
+    },
+    {
+     "file": "benchmarks/effective_sigma/run.py"
+    },
+    {
+     "file": "benchmarks/initial_density_bias/make_doc.py"
+    },
+    {
+     "file": "benchmarks/initial_density_bias/run.py"
+    },
+    {
+     "file": "benchmarks/laplace/halo_experiment.py"
+    },
+    {
+     "file": "benchmarks/laplace/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace/publish_report.py"
+    },
+    {
+     "file": "benchmarks/laplace/report.json"
+    },
+    {
+     "file": "benchmarks/laplace/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_droplet/make_tables.py"
+    },
+    {
+     "file": "benchmarks/laplace_droplet/results.json"
+    },
+    {
+     "file": "benchmarks/laplace_droplet/results_tables.md"
+    },
+    {
+     "file": "benchmarks/laplace_droplet/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_law/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_law/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_plateau/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_plateau/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure/validation_report.json"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/analysis.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/closure_ledger_figure.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/figures.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/report_force_balance.json"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/verdict_audit.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/verdict_matrix.json"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_floor/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_floor/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_jump/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_jump/run.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/ci_pin_evidence.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/gauge_audit.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/make_doc.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/run.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/run_lamb.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/validation_report_lamb.json"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/validation_report_m2919.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/make_doc.py"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/tables.md"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/run.py"
+    },
+    {
+     "file": "benchmarks/rayleigh_plateau/figures.py"
+    },
+    {
+     "file": "benchmarks/static_droplet/laplace_validation.py"
+    },
+    {
+     "file": "benchmarks/static_droplet/run.py"
+    },
+    {
+     "file": "benchmarks/static_droplet/validation_report.json"
+    },
+    {
+     "file": "benchmarks/surface_tension/laplace.py"
+    },
+    {
+     "file": "benchmarks/surface_tension/laplace_ladder.json"
+    },
+    {
+     "file": "benchmarks/surface_tension_dispersion/dispersion.py"
+    },
+    {
+     "file": "benchmarks/surface_tension_dispersion/validation_report.json"
+    },
+    {
+     "file": "benchmarks/surface_tension_laplace/run.py"
+    },
+    {
+     "file": "benchmarks/surface_tension_laplace/validation_report.json"
+    },
+    {
+     "file": "benchmarks/threed_summary/make_doc.py"
+    },
+    {
+     "file": "benchmarks/two_phase_laplace/run.py"
+    },
+    {
+     "file": "benchmarks/verification_ladder/build_report.py"
+    },
+    {
+     "file": "benchmarks/verification_ladder/make_doc.py"
+    },
+    {
+     "file": "benchmarks/verification_ledger/build_ledger.py"
+    },
+    {
+     "file": "benchmarks/verification_ledger/ledger.json"
+    }
+   ],
+   "doc_hits": [
+    {
+     "file": "docs/algorithm-gap-analysis.md"
+    },
+    {
+     "file": "docs/audit/m1633/upstream_diff_m1633.json"
+    },
+    {
+     "file": "docs/audit_m14489/dispersion_quick.json"
+    },
+    {
+     "file": "docs/audit_two_phase_laplace_test.md"
+    },
+    {
+     "file": "docs/benchmarks/capillary-wave.md"
+    },
+    {
+     "file": "docs/benchmarks/laplace-droplet.md"
+    },
+    {
+     "file": "docs/benchmarks/laplace-verification.md"
+    },
+    {
+     "file": "docs/benchmarks/laplace.md"
+    }
+   ],
+   "in_source": true,
+   "guarded_by_test": true,
+   "in_benchmarks": true
+  },
+  "viscosity": {
+   "description": "physical viscosity models",
+   "patterns": [
+    "viscosity"
+   ],
+   "path_hints": [],
+   "src_hits": [
+    {
+     "file": "src/tensorsph/dam_break_3d.py",
+     "line": 351,
+     "pattern": "viscosity",
+     "snippet": "# Viscosity"
+    },
+    {
+     "file": "src/tensorsph/droplet_impact.py",
+     "line": 4,
+     "pattern": "viscosity",
+     "snippet": "of state, a symmetric pressure-force form, regularized laminar viscosity,"
+    },
+    {
+     "file": "src/tensorsph/fluctuating_hydro.py",
+     "line": 8,
+     "pattern": "viscosity",
+     "snippet": "2. **Green-Kubo viscosity**: η = V/(k_BT) ∫₀^∞ ⟨P_xy(0)P_xy(t)⟩ dt."
+    },
+    {
+     "file": "src/tensorsph/freesurface/breaking_wave.py",
+     "line": 9,
+     "pattern": "viscosity",
+     "snippet": "numerical viscosity and the WCSPH pressure-dilatation work)."
+    },
+    {
+     "file": "src/tensorsph/freesurface/ritter_anchor.py",
+     "line": 86,
+     "pattern": "viscosity",
+     "snippet": "viscosity: float = 5.0e-3           # numerical (Monaghan) viscosity, m^2/s"
+    },
+    {
+     "file": "src/tensorsph/freesurface/runner.py",
+     "line": 43,
+     "pattern": "viscosity",
+     "snippet": "viscosity: float = 1.0e-4, label: str = \"base\","
+    },
+    {
+     "file": "src/tensorsph/freesurface/sloshing_mode.py",
+     "line": 44,
+     "pattern": "viscosity",
+     "snippet": "kernel, the viscosity setting and the resolution, and it is reported as such."
+    },
+    {
+     "file": "src/tensorsph/freesurface/solitary_anchor.py",
+     "line": 70,
+     "pattern": "viscosity",
+     "snippet": "viscosity: float = 1.0e-4"
+    },
+    {
+     "file": "src/tensorsph/ice_splash.py",
+     "line": 11,
+     "pattern": "viscosity",
+     "snippet": "gravity, not by viscosity or surface tension, which is why a weakly"
+    },
+    {
+     "file": "src/tensorsph/ice_thermal/darcy.py",
+     "line": 104,
+     "pattern": "viscosity",
+     "snippet": "def porous_rayleigh(permeability_m2, delta_rho, height, diffusivity, viscosity=props.MU_BRINE):"
+    },
+    {
+     "file": "src/tensorsph/ice_thermal/properties.py",
+     "line": 67,
+     "pattern": "viscosity",
+     "snippet": "MU_BRINE = 2.5e-3          # Pa s, dynamic viscosity of cold brine"
+    },
+    {
+     "file": "src/tensorsph/rayleigh_plateau.py",
+     "line": 31,
+     "pattern": "viscosity",
+     "snippet": "Viscosity damps the growth, ``omega_visc = -sigma / (2 rho nu R) * ...``; the"
+    },
+    {
+     "file": "src/tensorsph/slamming.py",
+     "line": 630,
+     "pattern": "viscosity",
+     "snippet": "# Monaghan viscosity is kept as its own antisymmetric term in both cases."
+    },
+    {
+     "file": "src/tensorsph/sloshing.py",
+     "line": 29,
+     "pattern": "viscosity",
+     "snippet": "- Monaghan artificial viscosity"
+    },
+    {
+     "file": "src/tensorsph/threed/liquid_column.py",
+     "line": 109,
+     "pattern": "viscosity",
+     "snippet": "nu: float = 1.0e-6          # kinematic viscosity (water at 20 C)"
+    },
+    {
+     "file": "src/tensorsph/threed/operators3.py",
+     "line": 208,
+     "pattern": "viscosity",
+     "snippet": "sound_speed: float, gamma: float = 7.0, viscosity: float = 0.0,"
+    },
+    {
+     "file": "src/tensorsph/threed/solver.py",
+     "line": 249,
+     "pattern": "viscosity",
+     "snippet": "viscosity=nu, box=box,"
+    },
+    {
+     "file": "src/tensorsph/verification/conservation.py",
+     "line": 46,
+     "pattern": "viscosity",
+     "snippet": "viscosity: float = 1.0e-6"
+    },
+    {
+     "file": "src/tensorsph/verification/dam_break_2d.py",
+     "line": 83,
+     "pattern": "viscosity",
+     "snippet": "viscosity: float = 1.0e-6      # water at 20 C; Config's default is 1e-2"
+    },
+    {
+     "file": "src/tensorsph/vv/figures.py",
+     "line": 142,
+     "pattern": "viscosity",
+     "snippet": "if \"C4b_viscosity_off\" in controls:"
+    },
+    {
+     "file": "src/tensorsph/vv/ladder.py",
+     "line": 52,
+     "pattern": "viscosity",
+     "snippet": "tgv_viscosity: float = 1.0 / (10.0 * 2.0 * math.pi)"
+    },
+    {
+     "file": "src/tensorsph/vv/tgv.py",
+     "line": 20,
+     "pattern": "viscosity",
+     "snippet": "* ``lap u = -2 k^2 u`` for this field, so viscosity only rescales the amplitude."
+    },
+    {
+     "file": "src/tensorsph/wave_flume.py",
+     "line": 16,
+     "pattern": "viscosity",
+     "snippet": "Tait equation of state, symmetric pressure gradient, Morris-type viscosity, and"
+    },
+    {
+     "file": "src/tensorsph/wave_ice_interaction.py",
+     "line": 567,
+     "pattern": "viscosity",
+     "snippet": "viscosity_ice: float = 1e3,"
+    },
+    {
+     "file": "src/tensorsph/wave_tank.py",
+     "line": 12,
+     "pattern": "viscosity",
+     "snippet": "symmetrised pressure force, regularised laminar viscosity) and the static-wall"
+    },
+    {
+     "file": "src/tensorsph/wcsph/__init__.py",
+     "line": 7,
+     "pattern": "viscosity",
+     "snippet": "artificial viscosity, dynamic / mirror boundaries, KDK"
+    },
+    {
+     "file": "src/tensorsph/wcsph/sod_shock.py",
+     "line": 387,
+     "pattern": "viscosity",
+     "snippet": "# Artificial viscosity"
+    },
+    {
+     "file": "src/tensorsph/wcsph/solver.py",
+     "line": 6,
+     "pattern": "viscosity",
+     "snippet": "artificial viscosity with an explicit ``alpha``, an adaptive smoothing length"
+    },
+    {
+     "file": "src/tensorsph/wedge_entry.py",
+     "line": 51,
+     "pattern": "viscosity",
+     "snippet": "* Monaghan artificial viscosity (``alpha``),"
+    }
+   ],
+   "absent_marker_hits": [],
+   "test_hits": [
+    {
+     "file": "tests/test_adaptive_dt.py"
+    },
+    {
+     "file": "tests/test_boundary.py"
+    },
+    {
+     "file": "tests/test_capillary_wave.py"
+    },
+    {
+     "file": "tests/test_conservation.py"
+    },
+    {
+     "file": "tests/test_csf_consistent.py"
+    },
+    {
+     "file": "tests/test_density_diffusion_decay.py"
+    },
+    {
+     "file": "tests/test_droplet_impact.py"
+    },
+    {
+     "file": "tests/test_fluctuating_hydro.py"
+    },
+    {
+     "file": "tests/test_free_surface.py"
+    },
+    {
+     "file": "tests/test_freesurface_anchors.py"
+    },
+    {
+     "file": "tests/test_ice_floe_added_mass.py"
+    },
+    {
+     "file": "tests/test_ice_splash.py"
+    },
+    {
+     "file": "tests/test_laplace_law.py"
+    },
+    {
+     "file": "tests/test_oscillating_droplet.py"
+    },
+    {
+     "file": "tests/test_p154w3n07_verification.py"
+    },
+    {
+     "file": "tests/test_pair_based_rhs.py"
+    },
+    {
+     "file": "tests/test_poiseuille.py"
+    },
+    {
+     "file": "tests/test_poiseuille_wall_shear_estimator.py"
+    },
+    {
+     "file": "tests/test_ritter.py"
+    },
+    {
+     "file": "tests/test_threed_conservation.py"
+    },
+    {
+     "file": "tests/test_vv_ladder.py"
+    },
+    {
+     "file": "tests/test_wcsph_cases.py"
+    },
+    {
+     "file": "tests/test_wcsph_solver.py"
+    }
+   ],
+   "benchmark_hits": [
+    {
+     "file": "benchmarks/capillary_wave/run.py"
+    },
+    {
+     "file": "benchmarks/capillary_wave/validation.py"
+    },
+    {
+     "file": "benchmarks/ci_red_clearance/before_convergence.json"
+    },
+    {
+     "file": "benchmarks/conservation/make_doc.py"
+    },
+    {
+     "file": "benchmarks/conservation/report.json"
+    },
+    {
+     "file": "benchmarks/conservation/run.py"
+    },
+    {
+     "file": "benchmarks/contact_angle/run.py"
+    },
+    {
+     "file": "benchmarks/csf_consistent/run.py"
+    },
+    {
+     "file": "benchmarks/csf_curvature_fit/run.py"
+    },
+    {
+     "file": "benchmarks/dam_break/make_audit_doc.py"
+    },
+    {
+     "file": "benchmarks/dam_break/reference_audit.json"
+    },
+    {
+     "file": "benchmarks/dam_break/reference_audit.py"
+    },
+    {
+     "file": "benchmarks/dam_break/ritter_limit.py"
+    },
+    {
+     "file": "benchmarks/dam_break_3d/run.py"
+    },
+    {
+     "file": "benchmarks/dam_break_3d/submit_report.py"
+    },
+    {
+     "file": "benchmarks/density_diffusion_decay/run.py"
+    },
+    {
+     "file": "benchmarks/ice_floe_added_mass/run.py"
+    },
+    {
+     "file": "benchmarks/ice_splash/run.py"
+    },
+    {
+     "file": "benchmarks/initial_density_bias/report.json"
+    },
+    {
+     "file": "benchmarks/initial_density_bias/run.py"
+    },
+    {
+     "file": "benchmarks/laplace/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace/publish_report.py"
+    },
+    {
+     "file": "benchmarks/laplace_law/convergence/relax_dx0.0015.json"
+    },
+    {
+     "file": "benchmarks/laplace_law/convergence/relax_dx0.0020.json"
+    },
+    {
+     "file": "benchmarks/laplace_law/convergence/relax_dx0.0025.json"
+    },
+    {
+     "file": "benchmarks/laplace_law/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_law/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_law/validation_report.json"
+    },
+    {
+     "file": "benchmarks/laplace_plateau/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_plateau/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_plateau/validation_report.json"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/analysis.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_floor/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_jump/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_jump/validation_report.json"
+    },
+    {
+     "file": "benchmarks/main_red_clearance/repro.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/ci_pin_evidence.json"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/ci_pin_evidence.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/gauge_audit.json"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/make_doc.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/run.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/run_lamb.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/validation_report.json"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/validation_report_lamb.json"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/validation_report_m2919.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/make_doc.py"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx1.00_shift0p00_0p00.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx1.00_shift0p00_0p50.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx1.00_shift0p50_0p00.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx1.50_shift0p00_0p00.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx1.50_shift0p00_0p50.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx1.50_shift0p25_0p75.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx1.50_shift0p50_0p00.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx1.50_shift0p50_0p50.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx2.00_shift0p00_0p00.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx2.00_shift0p00_0p50.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx2.00_shift0p25_0p75.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx2.00_shift0p50_0p00.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx2.00_shift0p50_0p50.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx2.50_shift0p00_0p00.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx2.50_shift0p00_0p50.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx2.50_shift0p25_0p75.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx2.50_shift0p50_0p00.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx2.50_shift0p50_0p50.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx3.00_shift0p00_0p00.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx3.00_shift0p00_0p50.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx3.00_shift0p25_0p75.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx3.00_shift0p50_0p00.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/runs/run_dx3.00_shift0p50_0p50.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/run.py"
+    },
+    {
+     "file": "benchmarks/poiseuille/make_doc.py"
+    },
+    {
+     "file": "benchmarks/poiseuille/out/results.json"
+    },
+    {
+     "file": "benchmarks/poiseuille/out/wall_shear_estimators.json"
+    },
+    {
+     "file": "benchmarks/poiseuille/run.py"
+    },
+    {
+     "file": "benchmarks/poiseuille/wall_shear_estimators.py"
+    },
+    {
+     "file": "benchmarks/startup_quiescence/make_docs.py"
+    },
+    {
+     "file": "benchmarks/startup_quiescence/report.json"
+    },
+    {
+     "file": "benchmarks/startup_quiescence/run.py"
+    },
+    {
+     "file": "benchmarks/threed_hydrostatic/report.json"
+    },
+    {
+     "file": "benchmarks/threed_hydrostatic/run.py"
+    },
+    {
+     "file": "benchmarks/threed_summary/make_doc.py"
+    },
+    {
+     "file": "benchmarks/verification_ladder/build_report.py"
+    },
+    {
+     "file": "benchmarks/verification_ladder/make_doc.py"
+    },
+    {
+     "file": "benchmarks/verification_ladder/tgv_regime.py"
+    },
+    {
+     "file": "benchmarks/verification_ledger/build_ledger.py"
+    },
+    {
+     "file": "benchmarks/verification_ledger/ledger.json"
+    },
+    {
+     "file": "benchmarks/verified/sph_dam_break_2d/results_dx0.01.json"
+    },
+    {
+     "file": "benchmarks/verified/sph_dam_break_2d/results_dx0.02.json"
+    },
+    {
+     "file": "benchmarks/verified/sph_dam_break_2d/run.py"
+    },
+    {
+     "file": "benchmarks/wave_flume/run.py"
+    },
+    {
+     "file": "benchmarks/wave_tank/run.py"
+    },
+    {
+     "file": "benchmarks/wave_tank/viz_case.py"
+    },
+    {
+     "file": "benchmarks/wedge_entry/make_doc.py"
+    },
+    {
+     "file": "benchmarks/wedge_entry/make_doc_v2.py"
+    },
+    {
+     "file": "benchmarks/wedge_entry/wagner_resolved.py"
+    }
+   ],
+   "doc_hits": [
+    {
+     "file": "docs/PROJECT_CHARTER.md"
+    },
+    {
+     "file": "docs/algorithm-gap-analysis.md"
+    },
+    {
+     "file": "docs/analysis-2026-10-23.md"
+    },
+    {
+     "file": "docs/audit_m14500/AUDIT_REPORT.md"
+    },
+    {
+     "file": "docs/benchmarks/dam-break-reference-audit.md"
+    },
+    {
+     "file": "docs/benchmarks/droplet-impact-2d.md"
+    },
+    {
+     "file": "docs/benchmarks/free-surface/part_ladder.json"
+    },
+    {
+     "file": "docs/benchmarks/free-surface/part_ritter_base.json"
+    }
+   ],
+   "in_source": true,
+   "guarded_by_test": true,
+   "in_benchmarks": true
+  },
+  "turbulence": {
+   "description": "turbulence closure (LES / SPS / Smagorinsky)",
+   "patterns": [
+    "sps[_ ]?(stress|model|tensor)",
+    "les[_ ]?(model|coefficient|viscosit)",
+    "smagorinsky",
+    "sub[- ]particle[- ]scale"
+   ],
+   "path_hints": [],
+   "src_hits": [],
+   "absent_marker_hits": [],
+   "test_hits": [],
+   "benchmark_hits": [],
+   "doc_hits": [],
+   "in_source": false,
+   "guarded_by_test": false,
+   "in_benchmarks": false
+  },
+  "multiphase": {
+   "description": "multiphase / two-phase",
+   "patterns": [
+    "two_phase",
+    "multiphase",
+    "multi_phase"
+   ],
+   "path_hints": [],
+   "src_hits": [],
+   "absent_marker_hits": [
+    {
+     "file": "src/tensorsph/threed/__init__.py",
+     "line": 27,
+     "pattern": "multiphase",
+     "reason": "line documents the model's absence",
+     "snippet": "Nothing here is a surface-tension, free-surface or multiphase model: those are"
+    }
+   ],
+   "test_hits": [
+    {
+     "file": "tests/test_two_phase_laplace.py"
+    },
+    {
+     "file": "tests/test_verification_ledger.py"
+    }
+   ],
+   "benchmark_hits": [
+    {
+     "file": "benchmarks/claim_validity/audit.json"
+    },
+    {
+     "file": "benchmarks/surface_tension_laplace/run.py"
+    },
+    {
+     "file": "benchmarks/surface_tension_laplace/validation_report.json"
+    },
+    {
+     "file": "benchmarks/two_phase_laplace/run.py"
+    },
+    {
+     "file": "benchmarks/verification_ledger/build_ledger.py"
+    },
+    {
+     "file": "benchmarks/verification_ledger/ledger.json"
+    }
+   ],
+   "doc_hits": [
+    {
+     "file": "docs/audit_two_phase_laplace_test.md"
+    },
+    {
+     "file": "docs/oss_inventory_sph/registry.json"
+    },
+    {
+     "file": "docs/oss_inventory_sph/search_seed.json"
+    },
+    {
+     "file": "docs/oss_inventory_sph/tensorsph_capability.json"
+    },
+    {
+     "file": "docs/verification_csf_laplace_consistent.md"
+    },
+    {
+     "file": "docs/verification_ledger.md"
+    },
+    {
+     "file": "docs/verification_status_report_m6472.md"
+    },
+    {
+     "file": "docs/verification_two_phase_laplace.md"
+    }
+   ],
+   "in_source": false,
+   "guarded_by_test": true,
+   "in_benchmarks": true
+  },
+  "fsi": {
+   "description": "fluid-structure interaction coupling",
+   "patterns": [
+    "\\bfsi\\b",
+    "fluid_structure",
+    "added_mass",
+    "ice_floe",
+    "wave_ice"
+   ],
+   "path_hints": [],
+   "src_hits": [
+    {
+     "file": "src/tensorsph/__init__.py",
+     "line": 54,
+     "pattern": "added_mass",
+     "snippet": "from .added_mass import ("
+    },
+    {
+     "file": "src/tensorsph/added_mass.py",
+     "line": 17,
+     "pattern": "added_mass",
+     "snippet": "Mechanics*, §11). The number is not quoted from memory: :func:`cylinder_added_mass`"
+    },
+    {
+     "file": "src/tensorsph/ice_splash.py",
+     "line": 128,
+     "pattern": "added_mass",
+     "snippet": "floe_added_mass_coefficient: float = 1.0"
+    },
+    {
+     "file": "src/tensorsph/slamming.py",
+     "line": 21,
+     "pattern": "added_mass",
+     "snippet": "exposed here (``added_mass_law``, ``curved_section_width``) and pinned by"
+    },
+    {
+     "file": "src/tensorsph/wave_ice_interaction.py",
+     "line": 42,
+     "pattern": "wave_ice",
+     "snippet": "``docs/verification_wave_ice_breakup.md``."
+    }
+   ],
+   "absent_marker_hits": [],
+   "test_hits": [
+    {
+     "file": "tests/test_ice_floe_added_mass.py"
+    },
+    {
+     "file": "tests/test_ice_floe_added_mass_ledger.py"
+    },
+    {
+     "file": "tests/test_ice_thermal_integration.py"
+    },
+    {
+     "file": "tests/test_slamming.py"
+    },
+    {
+     "file": "tests/test_slamming_campaign.py"
+    },
+    {
+     "file": "tests/test_wave_ice_interaction.py"
+    }
+   ],
+   "benchmark_hits": [
+    {
+     "file": "benchmarks/ice_floe_added_mass/make_doc.py"
+    },
+    {
+     "file": "benchmarks/ice_floe_added_mass/report.json"
+    },
+    {
+     "file": "benchmarks/ice_floe_added_mass/run.py"
+    },
+    {
+     "file": "benchmarks/ice_thermal_multiphysics/evidence.py"
+    },
+    {
+     "file": "benchmarks/ice_thermal_multiphysics/make_report.py"
+    },
+    {
+     "file": "benchmarks/verification_ledger/build_ledger.py"
+    },
+    {
+     "file": "benchmarks/verification_ledger/ledger.json"
+    },
+    {
+     "file": "benchmarks/verification_ledger/make_overcredit_doc.py"
+    },
+    {
+     "file": "benchmarks/verification_ledger/waivers.json"
+    }
+   ],
+   "doc_hits": [
+    {
+     "file": "docs/dev_report_m6529_ledger_maintenance.md"
+    },
+    {
+     "file": "docs/maturity_remediation_IN13W2-N07.md"
+    },
+    {
+     "file": "docs/oss_inventory_sph/registry.json"
+    },
+    {
+     "file": "docs/oss_inventory_sph/search_seed.json"
+    },
+    {
+     "file": "docs/oss_inventory_sph/tensorsph_capability.json"
+    },
+    {
+     "file": "docs/slamming_campaign_report.json"
+    },
+    {
+     "file": "docs/verification_contact_angle_m6503.md"
+    },
+    {
+     "file": "docs/verification_ice_floe_added_mass.md"
+    }
+   ],
+   "in_source": true,
+   "guarded_by_test": true,
+   "in_benchmarks": true
+  },
+  "adaptive_h": {
+   "description": "variable / adaptive smoothing length h(t)",
+   "patterns": [
+    "adaptive_h\\b",
+    "variable_smoothing",
+    "h_adapt"
+   ],
+   "path_hints": [],
+   "src_hits": [
+    {
+     "file": "src/tensorsph/wcsph/cases.py",
+     "line": 219,
+     "pattern": "h_adapt",
+     "snippet": "h_adaptive: bool = False"
+    },
+    {
+     "file": "src/tensorsph/wcsph/kernels.py",
+     "line": 205,
+     "pattern": "adaptive_h\\b",
+     "snippet": "def adaptive_h(rho: torch.Tensor, rho0: float, h0: float,"
+    },
+    {
+     "file": "src/tensorsph/wcsph/solver.py",
+     "line": 472,
+     "pattern": "adaptive_h\\b",
+     "snippet": "st.h = kernels.adaptive_h(st.rho, cfg.rho0, cfg.h0, cfg.dim)"
+    }
+   ],
+   "absent_marker_hits": [],
+   "test_hits": [
+    {
+     "file": "tests/test_wcsph_kernels.py"
+    },
+    {
+     "file": "tests/test_wcsph_solver.py"
+    }
+   ],
+   "benchmark_hits": [
+    {
+     "file": "benchmarks/wcsph_chain/run.py"
+    }
+   ],
+   "doc_hits": [
+    {
+     "file": "docs/oss_inventory_sph/registry.json"
+    },
+    {
+     "file": "docs/oss_inventory_sph/tensorsph_capability.json"
+    },
+    {
+     "file": "docs/wendland_wcsph_kernel_m14479.md"
+    }
+   ],
+   "in_source": true,
+   "guarded_by_test": true,
+   "in_benchmarks": true
+  },
+  "coupling_tool": {
+   "description": "external coupling interface (preCICE/Chrono/MoorDyn)",
+   "patterns": [
+    "precice",
+    "chrono",
+    "moordyn"
+   ],
+   "path_hints": [],
+   "src_hits": [],
+   "absent_marker_hits": [],
+   "test_hits": [],
+   "benchmark_hits": [],
+   "doc_hits": [
+    {
+     "file": "docs/oss_inventory_sph/registry.json"
+    },
+    {
+     "file": "docs/oss_inventory_sph/tensorsph_capability.json"
+    }
+   ],
+   "in_source": false,
+   "guarded_by_test": false,
+   "in_benchmarks": false
+  },
+  "validation": {
+   "description": "verification / validation assets",
+   "patterns": [
+    "verification",
+    "benchmark"
+   ],
+   "path_hints": [
+    "benchmarks"
+   ],
+   "src_hits": [
+    {
+     "file": "src/tensorsph/aeration/bubble_transport.py",
+     "line": 24,
+     "pattern": "benchmark",
+     "snippet": "hydraulic-jump benchmark: ``C = erfc(y / (2 sqrt(D t)))`` with the aeration"
+    },
+    {
+     "file": "src/tensorsph/aeration/entrainment.py",
+     "line": 14,
+     "pattern": "benchmark",
+     "snippet": "Two derived quantities are worth stating because they are what the benchmarks"
+    },
+    {
+     "file": "src/tensorsph/aeration/friction.py",
+     "line": 3,
+     "pattern": "benchmark",
+     "snippet": "Two standard closures are implemented and cross-checked in the benchmark:"
+    },
+    {
+     "file": "src/tensorsph/csf_consistent.py",
+     "line": 12,
+     "pattern": "verification",
+     "snippet": "instead of O(1) and ``|grad c|`` comes out 3-10x too small: the verification"
+    },
+    {
+     "file": "src/tensorsph/csf_curvature.py",
+     "line": 11,
+     "pattern": "verification",
+     "snippet": "(``docs/verification_surface_tension_consistent.md``), i.e. outside the platform"
+    },
+    {
+     "file": "src/tensorsph/dam_break.py",
+     "line": 198,
+     "pattern": "verification",
+     "snippet": "# Used by the shallow-water (Ritter) verification, which needs the depth"
+    },
+    {
+     "file": "src/tensorsph/dam_break_3d.py",
+     "line": 1,
+     "pattern": "benchmark",
+     "snippet": "\"\"\"3-D dam-break benchmark case."
+    },
+    {
+     "file": "src/tensorsph/droplet_impact.py",
+     "line": 76,
+     "pattern": "verification",
+     "snippet": "particles use it. See docs/verification_lattice_mass_calibration.md for the"
+    },
+    {
+     "file": "src/tensorsph/fluctuating_hydro.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"Fluctuating hydrodynamics verification for TensorSPH."
+    },
+    {
+     "file": "src/tensorsph/freesurface/__init__.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"Free-surface verification surface: Ritter / solitary wave / sloshing / breaking."
+    },
+    {
+     "file": "src/tensorsph/freesurface/breaking_wave.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"Breaking-wave verification: energy dissipation above the breaking threshold."
+    },
+    {
+     "file": "src/tensorsph/freesurface/gates.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"Acceptance gates of the free-surface verification surface."
+    },
+    {
+     "file": "src/tensorsph/freesurface/profiles.py",
+     "line": 1,
+     "pattern": "benchmark",
+     "snippet": "\"\"\"Free-surface measurement operators shared by the three benchmarks."
+    },
+    {
+     "file": "src/tensorsph/freesurface/runner.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"Driver for the free-surface verification surface."
+    },
+    {
+     "file": "src/tensorsph/ice_splash.py",
+     "line": 23,
+     "pattern": "benchmark",
+     "snippet": "recovers the flat-bed dam break, which is what the Ritter benchmark anchor"
+    },
+    {
+     "file": "src/tensorsph/ice_thermal/__init__.py",
+     "line": 19,
+     "pattern": "benchmark",
+     "snippet": "Every anchor is analytic or a documented literature band, and the benchmark"
+    },
+    {
+     "file": "src/tensorsph/ice_thermal/__main__.py",
+     "line": 7,
+     "pattern": "benchmark",
+     "snippet": "benchmark, ~8 min, writes figures)"
+    },
+    {
+     "file": "src/tensorsph/ice_thermal/coupled.py",
+     "line": 48,
+     "pattern": "verification",
+     "snippet": "dataset; the verification targets here are the conservation laws, the"
+    },
+    {
+     "file": "src/tensorsph/ice_thermal/enthalpy.py",
+     "line": 16,
+     "pattern": "benchmark",
+     "snippet": "``benchmarks/ice_thermal_multiphysics``."
+    },
+    {
+     "file": "src/tensorsph/ice_thermal/properties.py",
+     "line": 72,
+     "pattern": "benchmark",
+     "snippet": "#: (columnar first-year ice) and the benchmark runs a k_ref x {0.1, 1, 10}"
+    },
+    {
+     "file": "src/tensorsph/ice_thermal/sph_thermal.py",
+     "line": 28,
+     "pattern": "benchmark",
+     "snippet": "``O(k^2 dx^2)`` trend are all reported in the benchmark JSON; the calibrated"
+    },
+    {
+     "file": "src/tensorsph/initial_density.py",
+     "line": 25,
+     "pattern": "benchmark",
+     "snippet": "same offset, including the hydrostatic pool benchmarks."
+    },
+    {
+     "file": "src/tensorsph/lattice_consistency.py",
+     "line": 23,
+     "pattern": "verification",
+     "snippet": "verification is trying to measure.  Rescaling the particle mass by ``1 / C``"
+    },
+    {
+     "file": "src/tensorsph/rayleigh_plateau.py",
+     "line": 25,
+     "pattern": "benchmark",
+     "snippet": "``lambda = 10.88 R``); a benchmark that only quotes ``9.02 R`` cannot tell the"
+    },
+    {
+     "file": "src/tensorsph/ritter.py",
+     "line": 36,
+     "pattern": "benchmark",
+     "snippet": "threshold; ``docs/benchmarks/ritter-shallow-limit.md`` measures how the error"
+    },
+    {
+     "file": "src/tensorsph/slamming.py",
+     "line": 3,
+     "pattern": "verification",
+     "snippet": "This module is the slamming load verification surface requested by campaign node"
+    },
+    {
+     "file": "src/tensorsph/sloshing.py",
+     "line": 1,
+     "pattern": "benchmark",
+     "snippet": "\"\"\"Rectangular tank sloshing benchmark for TensorSPH."
+    },
+    {
+     "file": "src/tensorsph/surface_tension.py",
+     "line": 184,
+     "pattern": "verification",
+     "snippet": "reproduces the Young-Laplace jump (docs/verification_surface_tension_laplace.md)."
+    },
+    {
+     "file": "src/tensorsph/threed/__init__.py",
+     "line": 8,
+     "pattern": "benchmark",
+     "snippet": "benchmark drivers -- **without touching the 2-D code**, so every number already"
+    },
+    {
+     "file": "src/tensorsph/threed/csf3.py",
+     "line": 36,
+     "pattern": "verification",
+     "snippet": "``docs/verification_surface_tension_consistent.md``.  Degenerate stencils (an"
+    },
+    {
+     "file": "src/tensorsph/threed/kernel3.py",
+     "line": 213,
+     "pattern": "benchmark",
+     "snippet": "``benchmarks/threed_kernel/report.json``)."
+    },
+    {
+     "file": "src/tensorsph/threed/liquid_column.py",
+     "line": 34,
+     "pattern": "verification",
+     "snippet": "(both are measured in ``docs/verification_rayleigh_plateau.md``):"
+    },
+    {
+     "file": "src/tensorsph/threed/neighbors3.py",
+     "line": 50,
+     "pattern": "benchmark",
+     "snippet": "``2 h < L / 2`` -- the condition the shear-wave benchmark is configured for."
+    },
+    {
+     "file": "src/tensorsph/threed/operators3.py",
+     "line": 308,
+     "pattern": "verification",
+     "snippet": "quadrature in ``docs/verification_laplacian_fourth_order.md``).  It is the"
+    },
+    {
+     "file": "src/tensorsph/threed/solver.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"Time integration for the two 3-D verification scenarios."
+    },
+    {
+     "file": "src/tensorsph/verification/__init__.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"Machine-checkable verification face for free-surface SPH (campaign P482-N04)."
+    },
+    {
+     "file": "src/tensorsph/verification/__main__.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"``python -m tensorsph.verification`` -- the canonical entry point.\"\"\""
+    },
+    {
+     "file": "src/tensorsph/verification/bundle.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"Text artefact bundle for the free-surface verification face (campaign P482-N04)."
+    },
+    {
+     "file": "src/tensorsph/verification/cli.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"Canonical entry point for the free-surface SPH verification face (P482-N04)."
+    },
+    {
+     "file": "src/tensorsph/verification/convergence.py",
+     "line": 44,
+     "pattern": "verification",
+     "snippet": "The static test is deliberately separated from :mod:`tensorsph.verification."
+    },
+    {
+     "file": "src/tensorsph/verification/dam_break_2d.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"M1 -- 2-D dam-break free-surface verification against measured data."
+    },
+    {
+     "file": "src/tensorsph/verification/evidence.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"SQLite evidence store for the free-surface verification face."
+    },
+    {
+     "file": "src/tensorsph/verification/hydrostatic.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"M2 -- hydrostatic pressure verification (``p(z) = rho g (H - z)``)."
+    },
+    {
+     "file": "src/tensorsph/vv/__init__.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"Verification-and-validation ladder for TensorSPH (zero-to-one anchors)."
+    },
+    {
+     "file": "src/tensorsph/vv/dambreak.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"Rung 3 of the verification ladder: dam-break free surface."
+    },
+    {
+     "file": "src/tensorsph/vv/figures.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"Figures for the verification ladder (matplotlib, Agg backend)."
+    },
+    {
+     "file": "src/tensorsph/vv/hydrostatic.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"Rung 1 of the verification ladder: hydrostatic pressure balance."
+    },
+    {
+     "file": "src/tensorsph/vv/ladder.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"Verification-and-validation ladder: run the three rungs and emit one JSON."
+    },
+    {
+     "file": "src/tensorsph/vv/references/README.md",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "# Reference data for the verification ladder"
+    },
+    {
+     "file": "src/tensorsph/vv/references/martin_moyce_1952.json",
+     "line": 124,
+     "pattern": "benchmark",
+     "snippet": "\"The non-dimensional time tau = t*sqrt(2g/a) and position Z/a are standard for this benchmark.\","
+    },
+    {
+     "file": "src/tensorsph/vv/schema.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"JSON schema for the verification-ladder document."
+    },
+    {
+     "file": "src/tensorsph/vv/tgv.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"Rung 2 of the verification ladder: Taylor-Green vortex viscous decay (periodic)."
+    },
+    {
+     "file": "src/tensorsph/wave_flume.py",
+     "line": 48,
+     "pattern": "verification",
+     "snippet": "``docs/verification_wave_flume.md`` and ``benchmarks/wave_flume/`` for the"
+    },
+    {
+     "file": "src/tensorsph/wave_ice_interaction.py",
+     "line": 42,
+     "pattern": "verification",
+     "snippet": "``docs/verification_wave_ice_breakup.md``."
+    },
+    {
+     "file": "src/tensorsph/wave_tank.py",
+     "line": 187,
+     "pattern": "verification",
+     "snippet": "zero, the standard initial condition for this verification."
+    },
+    {
+     "file": "src/tensorsph/wcsph/__init__.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"Weakly-compressible SPH verification chain (dam break + tank sloshing)."
+    },
+    {
+     "file": "src/tensorsph/wcsph/cases.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"Benchmark cases for the WCSPH verification chain."
+    },
+    {
+     "file": "src/tensorsph/wcsph/chain.py",
+     "line": 3,
+     "pattern": "benchmark",
+     "snippet": "Everything here is a pure function of measured numbers: the benchmark script"
+    },
+    {
+     "file": "src/tensorsph/wcsph/kernels.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"Smoothing kernels for the weakly-compressible SPH verification chain."
+    },
+    {
+     "file": "src/tensorsph/wcsph/linear_sloshing.py",
+     "line": 39,
+     "pattern": "benchmark",
+     "snippet": "that caveat -- see ``docs/benchmarks/wcsph-chain.md``."
+    },
+    {
+     "file": "src/tensorsph/wcsph/sod_shock.py",
+     "line": 673,
+     "pattern": "verification",
+     "snippet": "from ..verification.dam_break_2d import ("
+    },
+    {
+     "file": "src/tensorsph/wcsph/solver.py",
+     "line": 1,
+     "pattern": "verification",
+     "snippet": "\"\"\"A small, explicit WCSPH solver used by the verification chain."
+    },
+    {
+     "file": "src/tensorsph/wedge_entry.py",
+     "line": 44,
+     "pattern": "verification",
+     "snippet": "(``tan beta -> inf`` gives ``c -> 0``); see docs/verification_wedge_entry.md."
+    }
+   ],
+   "absent_marker_hits": [
+    {
+     "file": "src/tensorsph/threed/conservation.py",
+     "line": 3,
+     "pattern": "benchmark",
+     "reason": "line documents the model's absence",
+     "snippet": "Nothing here is a solver: these are the meters the benchmarks read.  Every one of"
+    }
+   ],
+   "test_hits": [
+    {
+     "file": "tests/test_capillary_wave.py"
+    },
+    {
+     "file": "tests/test_claim_validity.py"
+    },
+    {
+     "file": "tests/test_conservation.py"
+    },
+    {
+     "file": "tests/test_contact_angle_bc_diagnosis.py"
+    },
+    {
+     "file": "tests/test_contact_angle_equilibrium.py"
+    },
+    {
+     "file": "tests/test_contact_angle_geometry.py"
+    },
+    {
+     "file": "tests/test_contact_angle_instrument_m6503.py"
+    },
+    {
+     "file": "tests/test_csf_consistent.py"
+    },
+    {
+     "file": "tests/test_csf_curvature_audit.py"
+    },
+    {
+     "file": "tests/test_csf_curvature_fit.py"
+    },
+    {
+     "file": "tests/test_csf_dispersion.py"
+    },
+    {
+     "file": "tests/test_dam_break_3d.py"
+    },
+    {
+     "file": "tests/test_dam_break_experimental.py"
+    },
+    {
+     "file": "tests/test_dam_break_lattice_clearance.py"
+    },
+    {
+     "file": "tests/test_dam_break_reference_audit.py"
+    },
+    {
+     "file": "tests/test_dam_break_resolution_ladder.py"
+    },
+    {
+     "file": "tests/test_dam_break_validation.py"
+    },
+    {
+     "file": "tests/test_density_diffusion_decay.py"
+    },
+    {
+     "file": "tests/test_doc_pointers.py"
+    },
+    {
+     "file": "tests/test_droplet_impact.py"
+    },
+    {
+     "file": "tests/test_effective_sigma.py"
+    },
+    {
+     "file": "tests/test_fluctuating_hydro.py"
+    },
+    {
+     "file": "tests/test_fluctuating_hydro_lattice.py"
+    },
+    {
+     "file": "tests/test_free_surface.py"
+    },
+    {
+     "file": "tests/test_free_surface_pressure_closure.py"
+    },
+    {
+     "file": "tests/test_free_surface_verification.py"
+    },
+    {
+     "file": "tests/test_freesurface_anchors.py"
+    },
+    {
+     "file": "tests/test_freesurface_regression.py"
+    },
+    {
+     "file": "tests/test_ice_floe_added_mass.py"
+    },
+    {
+     "file": "tests/test_ice_floe_added_mass_ledger.py"
+    },
+    {
+     "file": "tests/test_ice_splash.py"
+    },
+    {
+     "file": "tests/test_ice_thermal_integration.py"
+    },
+    {
+     "file": "tests/test_ice_thermal_multiphysics.py"
+    },
+    {
+     "file": "tests/test_initial_density_calibration.py"
+    },
+    {
+     "file": "tests/test_kernel_analytic.py"
+    },
+    {
+     "file": "tests/test_kernel_sum_consistency.py"
+    },
+    {
+     "file": "tests/test_laplace_closure_ladder.py"
+    },
+    {
+     "file": "tests/test_laplace_droplet.py"
+    },
+    {
+     "file": "tests/test_laplace_law.py"
+    },
+    {
+     "file": "tests/test_laplace_plateau.py"
+    },
+    {
+     "file": "tests/test_laplace_pressure.py"
+    },
+    {
+     "file": "tests/test_laplace_pressure_closure.py"
+    },
+    {
+     "file": "tests/test_laplace_pressure_floor.py"
+    },
+    {
+     "file": "tests/test_laplace_pressure_jump.py"
+    },
+    {
+     "file": "tests/test_laplace_validation.py"
+    },
+    {
+     "file": "tests/test_laplace_verdict_matrix.py"
+    },
+    {
+     "file": "tests/test_laplace_verification.py"
+    },
+    {
+     "file": "tests/test_lattice_equilibrium.py"
+    },
+    {
+     "file": "tests/test_lattice_wall_clearance.py"
+    },
+    {
+     "file": "tests/test_lint_gate.py"
+    },
+    {
+     "file": "tests/test_oscillating_droplet.py"
+    },
+    {
+     "file": "tests/test_oscillating_droplet_gauges.py"
+    },
+    {
+     "file": "tests/test_oscillating_droplet_lamb.py"
+    },
+    {
+     "file": "tests/test_p154w3n07_verification.py"
+    },
+    {
+     "file": "tests/test_paper_laplace_uncertainty.py"
+    },
+    {
+     "file": "tests/test_poiseuille.py"
+    },
+    {
+     "file": "tests/test_poiseuille_wall_shear_estimator.py"
+    },
+    {
+     "file": "tests/test_rayleigh_plateau.py"
+    },
+    {
+     "file": "tests/test_reference_frame_plots.py"
+    },
+    {
+     "file": "tests/test_report_m4802.py"
+    },
+    {
+     "file": "tests/test_ritter.py"
+    },
+    {
+     "file": "tests/test_ritter_reference.py"
+    },
+    {
+     "file": "tests/test_slamming.py"
+    },
+    {
+     "file": "tests/test_slamming_campaign.py"
+    },
+    {
+     "file": "tests/test_startup_quiescence.py"
+    },
+    {
+     "file": "tests/test_surface_tension_laplace.py"
+    },
+    {
+     "file": "tests/test_threed_artifacts.py"
+    },
+    {
+     "file": "tests/test_threed_conservation.py"
+    },
+    {
+     "file": "tests/test_threed_laplacian_fourth_order.py"
+    },
+    {
+     "file": "tests/test_tutorial_first_steps.py"
+    },
+    {
+     "file": "tests/test_two_phase_laplace.py"
+    },
+    {
+     "file": "tests/test_verification_bundle.py"
+    },
+    {
+     "file": "tests/test_verification_free_surface.py"
+    },
+    {
+     "file": "tests/test_verification_ledger.py"
+    },
+    {
+     "file": "tests/test_verification_ledger_overcredit.py"
+    },
+    {
+     "file": "tests/test_vv_ladder.py"
+    },
+    {
+     "file": "tests/test_wave_flume.py"
+    },
+    {
+     "file": "tests/test_wave_ice_interaction.py"
+    },
+    {
+     "file": "tests/test_wave_tank_estimators.py"
+    },
+    {
+     "file": "tests/test_wcsph_kernels.py"
+    },
+    {
+     "file": "tests/test_wcsph_wendland_kernel.py"
+    },
+    {
+     "file": "tests/test_wedge_entry.py"
+    },
+    {
+     "file": "tests/test_wedge_entry_resolved.py"
+    },
+    {
+     "file": "tests/test_young_laplace_closure_ledger.py"
+    }
+   ],
+   "benchmark_hits": [
+    {
+     "file": "benchmarks/aeration/bubble_rise_velocity.py"
+    },
+    {
+     "file": "benchmarks/aeration/drag_reduction_aerated.py"
+    },
+    {
+     "file": "benchmarks/aeration/hydraulic_jump_aeration.py"
+    },
+    {
+     "file": "benchmarks/aeration/make_doc.py"
+    },
+    {
+     "file": "benchmarks/aeration/run.py"
+    },
+    {
+     "file": "benchmarks/audit/upstream_diff.py"
+    },
+    {
+     "file": "benchmarks/capillary_wave/run.py"
+    },
+    {
+     "file": "benchmarks/capillary_wave/validation.py"
+    },
+    {
+     "file": "benchmarks/ci_lint_gate/collect_evidence.py"
+    },
+    {
+     "file": "benchmarks/ci_lint_gate/make_doc.py"
+    },
+    {
+     "file": "benchmarks/ci_lint_gate/ruff_before.json"
+    },
+    {
+     "file": "benchmarks/ci_red_clearance/make_doc.py"
+    },
+    {
+     "file": "benchmarks/claim_validity/audit.json"
+    },
+    {
+     "file": "benchmarks/claim_validity/validity.py"
+    },
+    {
+     "file": "benchmarks/conservation/make_doc.py"
+    },
+    {
+     "file": "benchmarks/conservation/run.py"
+    },
+    {
+     "file": "benchmarks/contact_angle/bc_diagnosis.json"
+    },
+    {
+     "file": "benchmarks/contact_angle/diagnose_bc.py"
+    },
+    {
+     "file": "benchmarks/contact_angle/run.py"
+    },
+    {
+     "file": "benchmarks/contact_angle_equilibrium/make_artifacts.py"
+    },
+    {
+     "file": "benchmarks/contact_angle_equilibrium/post_report.py"
+    },
+    {
+     "file": "benchmarks/contact_angle_equilibrium/probe_wall_color_deficit.py"
+    },
+    {
+     "file": "benchmarks/contact_angle_equilibrium/run.py"
+    },
+    {
+     "file": "benchmarks/contact_angle_geometry/make_doc.py"
+    },
+    {
+     "file": "benchmarks/contact_angle_geometry/results.json"
+    },
+    {
+     "file": "benchmarks/contact_angle_geometry/run.py"
+    },
+    {
+     "file": "benchmarks/convergence/run.py"
+    },
+    {
+     "file": "benchmarks/csf_consistent/curvature_audit.json"
+    },
+    {
+     "file": "benchmarks/csf_consistent/curvature_audit.py"
+    },
+    {
+     "file": "benchmarks/csf_consistent/make_curvature_doc.py"
+    },
+    {
+     "file": "benchmarks/csf_consistent/run.py"
+    },
+    {
+     "file": "benchmarks/csf_consistent/validation_report.json"
+    },
+    {
+     "file": "benchmarks/csf_curvature_fit/field_figure.py"
+    },
+    {
+     "file": "benchmarks/csf_curvature_fit/run.py"
+    },
+    {
+     "file": "benchmarks/csf_curvature_fit/validation_report.json"
+    },
+    {
+     "file": "benchmarks/dam_break/experimental_validation.py"
+    },
+    {
+     "file": "benchmarks/dam_break/make_audit_doc.py"
+    },
+    {
+     "file": "benchmarks/dam_break/make_ladder_doc.py"
+    },
+    {
+     "file": "benchmarks/dam_break/make_reference_audit_doc.py"
+    },
+    {
+     "file": "benchmarks/dam_break/martin_moyce_1952.json"
+    },
+    {
+     "file": "benchmarks/dam_break/martin_moyce_1952_crosscheck.json"
+    },
+    {
+     "file": "benchmarks/dam_break/reference_audit.json"
+    },
+    {
+     "file": "benchmarks/dam_break/reference_audit.py"
+    },
+    {
+     "file": "benchmarks/dam_break/reference_ladder.json"
+    },
+    {
+     "file": "benchmarks/dam_break/reference_ladder.py"
+    },
+    {
+     "file": "benchmarks/dam_break/resolution_ladder.json"
+    },
+    {
+     "file": "benchmarks/dam_break/ritter_limit.py"
+    },
+    {
+     "file": "benchmarks/dam_break/run.py"
+    },
+    {
+     "file": "benchmarks/dam_break/validate.py"
+    },
+    {
+     "file": "benchmarks/dam_break_3d/run.py"
+    },
+    {
+     "file": "benchmarks/dam_break_3d/submit_report.py"
+    },
+    {
+     "file": "benchmarks/dam_break_lattice_clearance/summary.json"
+    },
+    {
+     "file": "benchmarks/density_diffusion_decay/make_doc.py"
+    },
+    {
+     "file": "benchmarks/density_diffusion_decay/negctl_shift_reference.py"
+    },
+    {
+     "file": "benchmarks/density_diffusion_decay/run.py"
+    },
+    {
+     "file": "benchmarks/effective_sigma/make_doc.py"
+    },
+    {
+     "file": "benchmarks/effective_sigma/run.py"
+    },
+    {
+     "file": "benchmarks/fluctuating_hydro/init_audit.py"
+    },
+    {
+     "file": "benchmarks/free_surface/compare.py"
+    },
+    {
+     "file": "benchmarks/hydrostatic/run.py"
+    },
+    {
+     "file": "benchmarks/ice_floe_added_mass/make_doc.py"
+    },
+    {
+     "file": "benchmarks/ice_floe_added_mass/run.py"
+    },
+    {
+     "file": "benchmarks/ice_splash/run.py"
+    },
+    {
+     "file": "benchmarks/ice_thermal_multiphysics/evidence.py"
+    },
+    {
+     "file": "benchmarks/ice_thermal_multiphysics/make_doc.py"
+    },
+    {
+     "file": "benchmarks/ice_thermal_multiphysics/make_report.py"
+    },
+    {
+     "file": "benchmarks/ice_thermal_multiphysics/run.py"
+    },
+    {
+     "file": "benchmarks/ice_thermal_multiphysics/run_campaign.sh"
+    },
+    {
+     "file": "benchmarks/ice_thermal_multiphysics/validation_report.json"
+    },
+    {
+     "file": "benchmarks/init_consistency/make_doc.py"
+    },
+    {
+     "file": "benchmarks/init_consistency/run.py"
+    },
+    {
+     "file": "benchmarks/initial_density_bias/make_doc.py"
+    },
+    {
+     "file": "benchmarks/initial_density_bias/run.py"
+    },
+    {
+     "file": "benchmarks/laplace/halo_experiment.py"
+    },
+    {
+     "file": "benchmarks/laplace/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace/publish_report.py"
+    },
+    {
+     "file": "benchmarks/laplace/report.json"
+    },
+    {
+     "file": "benchmarks/laplace/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_droplet/make_tables.py"
+    },
+    {
+     "file": "benchmarks/laplace_droplet/results.json"
+    },
+    {
+     "file": "benchmarks/laplace_droplet/results_tables.md"
+    },
+    {
+     "file": "benchmarks/laplace_droplet/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_law/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_law/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_plateau/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_plateau/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure/validation_report.json"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/analysis.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/closure_ledger_figure.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/figures.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/ladder_table.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/relax_ladder.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/report_force_balance.json"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/verdict_audit.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/verdict_matrix.json"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_floor/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_floor/report.json"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_floor/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_jump/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_jump/make_figure.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_jump/run.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_jump/validation_report.json"
+    },
+    {
+     "file": "benchmarks/lattice_equilibrium/report.json"
+    },
+    {
+     "file": "benchmarks/lattice_equilibrium/run.py"
+    },
+    {
+     "file": "benchmarks/main_red_clearance/repro.py"
+    },
+    {
+     "file": "benchmarks/neighbor_search/compare.py"
+    },
+    {
+     "file": "benchmarks/neighbor_search/compare_rhs.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/ci_pin_evidence.json"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/ci_pin_evidence.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/gauge_audit.json"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/gauge_audit.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/make_doc.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/run.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/run_lamb.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/validation_report_lamb.json"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/validation_report_m2919.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/README.md"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/make_doc.py"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/results.json"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/out/tables.md"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/run.py"
+    },
+    {
+     "file": "benchmarks/poiseuille/make_doc.py"
+    },
+    {
+     "file": "benchmarks/poiseuille/out/wall_shear_estimators.json"
+    },
+    {
+     "file": "benchmarks/poiseuille/run.py"
+    },
+    {
+     "file": "benchmarks/poiseuille/wall_shear_estimators.py"
+    },
+    {
+     "file": "benchmarks/rayleigh_plateau/figures.py"
+    },
+    {
+     "file": "benchmarks/rayleigh_plateau/run.py"
+    },
+    {
+     "file": "benchmarks/scaling/README.md"
+    },
+    {
+     "file": "benchmarks/scaling/run.py"
+    },
+    {
+     "file": "benchmarks/slamming/run.py"
+    },
+    {
+     "file": "benchmarks/stability/run.py"
+    },
+    {
+     "file": "benchmarks/startup_quiescence/make_docs.py"
+    },
+    {
+     "file": "benchmarks/startup_quiescence/report.json"
+    },
+    {
+     "file": "benchmarks/startup_quiescence/run.py"
+    },
+    {
+     "file": "benchmarks/static_droplet/laplace_validation.json"
+    },
+    {
+     "file": "benchmarks/static_droplet/laplace_validation.py"
+    },
+    {
+     "file": "benchmarks/static_droplet/run.py"
+    },
+    {
+     "file": "benchmarks/static_droplet/validation_report.json"
+    },
+    {
+     "file": "benchmarks/surface_tension/laplace.py"
+    },
+    {
+     "file": "benchmarks/surface_tension/laplace_ladder.json"
+    },
+    {
+     "file": "benchmarks/surface_tension_dispersion/dispersion.py"
+    },
+    {
+     "file": "benchmarks/surface_tension_dispersion/validation_report.json"
+    },
+    {
+     "file": "benchmarks/surface_tension_laplace/run.py"
+    },
+    {
+     "file": "benchmarks/surface_tension_laplace/validation_report.json"
+    },
+    {
+     "file": "benchmarks/threed_hydrostatic/report.json"
+    },
+    {
+     "file": "benchmarks/threed_hydrostatic/run.py"
+    },
+    {
+     "file": "benchmarks/threed_kernel/report.json"
+    },
+    {
+     "file": "benchmarks/threed_kernel/run.py"
+    },
+    {
+     "file": "benchmarks/threed_shear/fourth_order.py"
+    },
+    {
+     "file": "benchmarks/threed_shear/report.json"
+    },
+    {
+     "file": "benchmarks/threed_shear/run.py"
+    },
+    {
+     "file": "benchmarks/threed_summary/make_doc.py"
+    },
+    {
+     "file": "benchmarks/two_phase_laplace/run.py"
+    },
+    {
+     "file": "benchmarks/verification_ladder/build_report.py"
+    },
+    {
+     "file": "benchmarks/verification_ladder/make_doc.py"
+    },
+    {
+     "file": "benchmarks/verification_ladder/run.py"
+    },
+    {
+     "file": "benchmarks/verification_ladder/tgv_regime.py"
+    },
+    {
+     "file": "benchmarks/verification_ledger/build_ledger.py"
+    },
+    {
+     "file": "benchmarks/verification_ledger/ledger.json"
+    },
+    {
+     "file": "benchmarks/verification_ledger/make_overcredit_doc.py"
+    },
+    {
+     "file": "benchmarks/verification_ledger/waivers.json"
+    },
+    {
+     "file": "benchmarks/verified/sph_convergence/run.py"
+    },
+    {
+     "file": "benchmarks/verified/sph_dam_break_2d/diagnose_surface_treatment.py"
+    },
+    {
+     "file": "benchmarks/verified/sph_dam_break_2d/run.py"
+    },
+    {
+     "file": "benchmarks/verified/sph_hydrostatic/run.py"
+    },
+    {
+     "file": "benchmarks/wave_flume/run.py"
+    },
+    {
+     "file": "benchmarks/wave_tank/calibrate_estimators.py"
+    },
+    {
+     "file": "benchmarks/wave_tank/cross_solver.py"
+    },
+    {
+     "file": "benchmarks/wave_tank/make_doc.py"
+    },
+    {
+     "file": "benchmarks/wave_tank/make_figures.py"
+    },
+    {
+     "file": "benchmarks/wave_tank/make_report.py"
+    },
+    {
+     "file": "benchmarks/wave_tank/run.py"
+    },
+    {
+     "file": "benchmarks/wave_tank/run_cases.py"
+    },
+    {
+     "file": "benchmarks/wave_tank/run_group.py"
+    },
+    {
+     "file": "benchmarks/wave_tank/run_node.py"
+    },
+    {
+     "file": "benchmarks/wave_tank/summarise.py"
+    },
+    {
+     "file": "benchmarks/wave_tank/viz_case.py"
+    },
+    {
+     "file": "benchmarks/wcsph_chain/make_doc.py"
+    },
+    {
+     "file": "benchmarks/wcsph_chain/pipeline.sh"
+    },
+    {
+     "file": "benchmarks/wcsph_chain/run.py"
+    },
+    {
+     "file": "benchmarks/wedge_entry/make_doc.py"
+    },
+    {
+     "file": "benchmarks/wedge_entry/make_doc_v2.py"
+    },
+    {
+     "file": "benchmarks/wedge_entry/run.py"
+    },
+    {
+     "file": "benchmarks/wedge_entry/wagner_resolved.py"
+    }
+   ],
+   "doc_hits": [
+    {
+     "file": "docs/PROJECT_CHARTER.md"
+    },
+    {
+     "file": "docs/algorithm-gap-analysis.md"
+    },
+    {
+     "file": "docs/analysis-2026-10-23.md"
+    },
+    {
+     "file": "docs/audit/m1633/upstream_diff_m1633.json"
+    },
+    {
+     "file": "docs/audit_m14489/dispersion_quick.json"
+    },
+    {
+     "file": "docs/audit_m14500/AUDIT_REPORT.md"
+    },
+    {
+     "file": "docs/audit_m14500/SUMMARY.md"
+    },
+    {
+     "file": "docs/audit_m14500/audit_findings.json"
+    }
+   ],
+   "in_source": true,
+   "guarded_by_test": true,
+   "in_benchmarks": true
+  },
+  "ci": {
+   "description": "automated test suite executed in CI",
+   "patterns": [
+    "pytest"
+   ],
+   "path_hints": [
+    "tests",
+    ".github/workflows"
+   ],
+   "src_hits": [
+    {
+     "file": "src/tensorsph/wcsph/chain.py",
+     "line": 22,
+     "pattern": "pytest",
+     "snippet": "``f-tests``        pytest >= 20 cases, coverage >= 85 %"
+    }
+   ],
+   "absent_marker_hits": [],
+   "test_hits": [
+    {
+     "file": "tests/conftest.py"
+    },
+    {
+     "file": "tests/test_adaptive_dt.py"
+    },
+    {
+     "file": "tests/test_aeration.py"
+    },
+    {
+     "file": "tests/test_aeration_impact_law_p457w2n04.py"
+    },
+    {
+     "file": "tests/test_boundary.py"
+    },
+    {
+     "file": "tests/test_capillary_wave.py"
+    },
+    {
+     "file": "tests/test_claim_validity.py"
+    },
+    {
+     "file": "tests/test_conservation.py"
+    },
+    {
+     "file": "tests/test_contact_angle.py"
+    },
+    {
+     "file": "tests/test_contact_angle_bc_diagnosis.py"
+    },
+    {
+     "file": "tests/test_contact_angle_equilibrium.py"
+    },
+    {
+     "file": "tests/test_contact_angle_geometry.py"
+    },
+    {
+     "file": "tests/test_contact_angle_instrument_m6503.py"
+    },
+    {
+     "file": "tests/test_convergence.py"
+    },
+    {
+     "file": "tests/test_csf_consistent.py"
+    },
+    {
+     "file": "tests/test_csf_curvature_audit.py"
+    },
+    {
+     "file": "tests/test_csf_curvature_fit.py"
+    },
+    {
+     "file": "tests/test_csf_dispersion.py"
+    },
+    {
+     "file": "tests/test_dam_break.py"
+    },
+    {
+     "file": "tests/test_dam_break_3d.py"
+    },
+    {
+     "file": "tests/test_dam_break_experimental.py"
+    },
+    {
+     "file": "tests/test_dam_break_reference_audit.py"
+    },
+    {
+     "file": "tests/test_dam_break_resolution_ladder.py"
+    },
+    {
+     "file": "tests/test_dam_break_validation.py"
+    },
+    {
+     "file": "tests/test_density_diffusion_decay.py"
+    },
+    {
+     "file": "tests/test_droplet_impact.py"
+    },
+    {
+     "file": "tests/test_droplet_impact_utils.py"
+    },
+    {
+     "file": "tests/test_fluctuating_hydro.py"
+    },
+    {
+     "file": "tests/test_fluctuating_hydro_lattice.py"
+    },
+    {
+     "file": "tests/test_free_surface.py"
+    },
+    {
+     "file": "tests/test_free_surface_pressure_closure.py"
+    },
+    {
+     "file": "tests/test_free_surface_verification.py"
+    },
+    {
+     "file": "tests/test_freesurface_anchors.py"
+    },
+    {
+     "file": "tests/test_freesurface_gates.py"
+    },
+    {
+     "file": "tests/test_freesurface_profiles.py"
+    },
+    {
+     "file": "tests/test_freesurface_regression.py"
+    },
+    {
+     "file": "tests/test_ice_floe_added_mass.py"
+    },
+    {
+     "file": "tests/test_ice_floe_added_mass_ledger.py"
+    },
+    {
+     "file": "tests/test_ice_splash.py"
+    },
+    {
+     "file": "tests/test_ice_thermal_integration.py"
+    },
+    {
+     "file": "tests/test_ice_thermal_multiphysics.py"
+    },
+    {
+     "file": "tests/test_initial_density_calibration.py"
+    },
+    {
+     "file": "tests/test_kernel_analytic.py"
+    },
+    {
+     "file": "tests/test_kernel_sum_consistency.py"
+    },
+    {
+     "file": "tests/test_laplace_closure_ladder.py"
+    },
+    {
+     "file": "tests/test_laplace_droplet.py"
+    },
+    {
+     "file": "tests/test_laplace_law.py"
+    },
+    {
+     "file": "tests/test_laplace_plateau.py"
+    },
+    {
+     "file": "tests/test_laplace_pressure.py"
+    },
+    {
+     "file": "tests/test_laplace_pressure_closure.py"
+    },
+    {
+     "file": "tests/test_laplace_pressure_floor.py"
+    },
+    {
+     "file": "tests/test_laplace_pressure_jump.py"
+    },
+    {
+     "file": "tests/test_laplace_validation.py"
+    },
+    {
+     "file": "tests/test_laplace_verdict_matrix.py"
+    },
+    {
+     "file": "tests/test_laplace_verification.py"
+    },
+    {
+     "file": "tests/test_lattice_equilibrium.py"
+    },
+    {
+     "file": "tests/test_lattice_wall_clearance.py"
+    },
+    {
+     "file": "tests/test_lint_gate.py"
+    },
+    {
+     "file": "tests/test_neighbor_search.py"
+    },
+    {
+     "file": "tests/test_oscillating_droplet.py"
+    },
+    {
+     "file": "tests/test_oscillating_droplet_gauges.py"
+    },
+    {
+     "file": "tests/test_oscillating_droplet_lamb.py"
+    },
+    {
+     "file": "tests/test_p154w3n07_verification.py"
+    },
+    {
+     "file": "tests/test_pair_based_rhs.py"
+    },
+    {
+     "file": "tests/test_paper_laplace_uncertainty.py"
+    },
+    {
+     "file": "tests/test_poiseuille.py"
+    },
+    {
+     "file": "tests/test_poiseuille_wall_shear_estimator.py"
+    },
+    {
+     "file": "tests/test_pr309_relaxation_controls.py"
+    },
+    {
+     "file": "tests/test_rayleigh_plateau.py"
+    },
+    {
+     "file": "tests/test_reference_frame_plots.py"
+    },
+    {
+     "file": "tests/test_report_m4802.py"
+    },
+    {
+     "file": "tests/test_ritter.py"
+    },
+    {
+     "file": "tests/test_ritter_reference.py"
+    },
+    {
+     "file": "tests/test_slamming.py"
+    },
+    {
+     "file": "tests/test_slamming_campaign.py"
+    },
+    {
+     "file": "tests/test_smoke_m4616.py"
+    },
+    {
+     "file": "tests/test_startup_quiescence.py"
+    },
+    {
+     "file": "tests/test_surface_tension.py"
+    },
+    {
+     "file": "tests/test_surface_tension_laplace.py"
+    },
+    {
+     "file": "tests/test_threed_artifacts.py"
+    },
+    {
+     "file": "tests/test_threed_conservation.py"
+    },
+    {
+     "file": "tests/test_threed_laplacian_fourth_order.py"
+    },
+    {
+     "file": "tests/test_tutorial_first_steps.py"
+    },
+    {
+     "file": "tests/test_two_phase_laplace.py"
+    },
+    {
+     "file": "tests/test_verification_bundle.py"
+    },
+    {
+     "file": "tests/test_verification_free_surface.py"
+    },
+    {
+     "file": "tests/test_verification_ledger.py"
+    },
+    {
+     "file": "tests/test_verification_ledger_overcredit.py"
+    },
+    {
+     "file": "tests/test_vv_ladder.py"
+    },
+    {
+     "file": "tests/test_wall_pressure.py"
+    },
+    {
+     "file": "tests/test_wave_flume.py"
+    },
+    {
+     "file": "tests/test_wave_tank.py"
+    },
+    {
+     "file": "tests/test_wave_tank_estimators.py"
+    },
+    {
+     "file": "tests/test_wcsph_cases.py"
+    },
+    {
+     "file": "tests/test_wcsph_chain.py"
+    },
+    {
+     "file": "tests/test_wcsph_kernels.py"
+    },
+    {
+     "file": "tests/test_wcsph_solver.py"
+    },
+    {
+     "file": "tests/test_wcsph_validation.py"
+    },
+    {
+     "file": "tests/test_wcsph_wendland_kernel.py"
+    },
+    {
+     "file": "tests/test_wedge_entry.py"
+    },
+    {
+     "file": "tests/test_wedge_entry_resolved.py"
+    },
+    {
+     "file": "tests/test_young_laplace.py"
+    },
+    {
+     "file": "tests/test_young_laplace_closure_ledger.py"
+    }
+   ],
+   "benchmark_hits": [
+    {
+     "file": "benchmarks/aeration/make_doc.py"
+    },
+    {
+     "file": "benchmarks/aeration/report.json"
+    },
+    {
+     "file": "benchmarks/aeration/run.py"
+    },
+    {
+     "file": "benchmarks/audit/upstream_diff.py"
+    },
+    {
+     "file": "benchmarks/ci_lint_evidence.py"
+    },
+    {
+     "file": "benchmarks/ci_lint_gate/collect_evidence.py"
+    },
+    {
+     "file": "benchmarks/ci_lint_gate/make_doc.py"
+    },
+    {
+     "file": "benchmarks/ci_red_clearance/make_doc.py"
+    },
+    {
+     "file": "benchmarks/contact_angle/diagnose_bc.py"
+    },
+    {
+     "file": "benchmarks/contact_angle_equilibrium/make_artifacts.py"
+    },
+    {
+     "file": "benchmarks/csf_consistent/make_curvature_doc.py"
+    },
+    {
+     "file": "benchmarks/dam_break/make_audit_doc.py"
+    },
+    {
+     "file": "benchmarks/density_diffusion_decay/make_doc.py"
+    },
+    {
+     "file": "benchmarks/density_diffusion_decay/negctl_shift_reference.py"
+    },
+    {
+     "file": "benchmarks/fluctuating_hydro/init_audit.py"
+    },
+    {
+     "file": "benchmarks/ice_floe_added_mass/make_doc.py"
+    },
+    {
+     "file": "benchmarks/ice_thermal_multiphysics/evidence.py"
+    },
+    {
+     "file": "benchmarks/laplace/publish_report.py"
+    },
+    {
+     "file": "benchmarks/laplace_law/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_closure/make_doc.py"
+    },
+    {
+     "file": "benchmarks/laplace_pressure_floor/make_doc.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/ci_pin_evidence.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/gauge_audit.py"
+    },
+    {
+     "file": "benchmarks/oscillating_droplet/make_doc.py"
+    },
+    {
+     "file": "benchmarks/paper_laplace_uncertainty/README.md"
+    },
+    {
+     "file": "benchmarks/poiseuille/make_doc.py"
+    },
+    {
+     "file": "benchmarks/poiseuille/wall_shear_estimators.py"
+    },
+    {
+     "file": "benchmarks/slamming/run.py"
+    },
+    {
+     "file": "benchmarks/surface_tension_dispersion/validation_report.json"
+    },
+    {
+     "file": "benchmarks/threed_summary/make_doc.py"
+    },
+    {
+     "file": "benchmarks/verification_ladder/build_report.py"
+    },
+    {
+     "file": "benchmarks/verification_ladder/make_doc.py"
+    },
+    {
+     "file": "benchmarks/verification_ledger/make_overcredit_doc.py"
+    },
+    {
+     "file": "benchmarks/verification_ledger/waivers.json"
+    },
+    {
+     "file": "benchmarks/wave_tank/make_doc.py"
+    },
+    {
+     "file": "benchmarks/wave_tank/summarise.py"
+    },
+    {
+     "file": "benchmarks/wcsph_chain/coverage_run.py"
+    },
+    {
+     "file": "benchmarks/wcsph_chain/run.py"
+    },
+    {
+     "file": "benchmarks/wedge_entry/make_doc.py"
+    },
+    {
+     "file": "benchmarks/wedge_entry/make_doc_v2.py"
+    }
+   ],
+   "doc_hits": [
+    {
+     "file": "docs/analysis-2026-10-23.md"
+    },
+    {
+     "file": "docs/audit_m14500/AUDIT_REPORT.md"
+    },
+    {
+     "file": "docs/audit_m14500/SUMMARY.md"
+    },
+    {
+     "file": "docs/audit_m14500/audit_findings.json"
+    },
+    {
+     "file": "docs/audit_two_phase_laplace_test.md"
+    },
+    {
+     "file": "docs/benchmarks/aeration.md"
+    },
+    {
+     "file": "docs/benchmarks/dam-break-reference-audit.md"
+    },
+    {
+     "file": "docs/benchmarks/free-surface-verification.md"
+    }
+   ],
+   "in_source": true,
+   "guarded_by_test": true,
+   "in_benchmarks": true
+  }
+ }
+}
