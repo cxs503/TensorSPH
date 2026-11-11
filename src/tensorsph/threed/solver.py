@@ -37,6 +37,7 @@ from dataclasses import dataclass, field
 
 import torch
 
+from ..surface_tension_dispersion import capillary_dt_limit
 from .conservation import diagnostics
 from .kernel3 import calibrated_particle_mass
 from .neighbors3 import box_pairs, minimum_image, periodic_pairs
@@ -61,9 +62,23 @@ __all__ = [
 COURANT = 0.25
 
 
-def acoustic_dt(dx: float, h: float, sound_speed: float, courant: float = COURANT) -> float:
-    """``dt = courant * h / c0`` -- the acoustic limit at rest."""
-    return courant * h / sound_speed
+def acoustic_dt(dx: float, h: float, sound_speed: float, courant: float = COURANT,
+                sigma: float = 0.0, rho0: float = 1000.0) -> float:
+    """Stable step: acoustic limit at rest, capped by the capillary limit.
+
+    ``dt = courant * h / c0`` is the acoustic bound.  When a surface-tension
+    coefficient is supplied the explicit capillary bound of
+    :func:`tensorsph.surface_tension_dispersion.capillary_dt_limit` is applied as
+    a second limiter,
+
+        ``dt_sigma = courant * sqrt(rho0 h^3 / (sigma pi^3))``,
+
+    because a capillary force stiffer than the acoustic one is still a hard
+    stability constraint on an explicit integrator.  ``sigma = 0`` (default)
+    reproduces the historical behaviour exactly.
+    """
+    dt = courant * h / sound_speed
+    return min(dt, capillary_dt_limit(h, sigma, rho0, cfl=courant))
 
 
 def cubic_lattice(shape, dx: float, origin=(0.0, 0.0, 0.0),

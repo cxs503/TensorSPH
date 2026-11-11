@@ -25,6 +25,13 @@ from __future__ import annotations
 import torch
 
 from .droplet_impact import Config, cubic_spline_gradient
+from .surface_tension_dispersion import (  # noqa: F401  (re-exported: public API)
+    capillary_dt_limit as _capillary_dt_limit,
+    capillary_wave_case,
+    curvature_audit,
+    delta_measure_audit,
+    lamb_case,
+)
 from .csf_consistent import (  # noqa: F401  (re-exported: public API of this module)
     CSFState,
     apply_contact_angle_boundary,
@@ -283,26 +290,27 @@ def compute_surface_tension_force(
 
 
 def capillary_dt_limit(cfg: Config, safety: float = 0.25) -> float:
-    """Time step limit from capillary waves.
+    """Time step limit from capillary waves (config-level wrapper).
 
-    The capillary time step is:
-        dt_cap = sqrt(rho * h^3 / sigma)
+    Thin wrapper over
+    :func:`tensorsph.surface_tension_dispersion.capillary_dt_limit`, which owns
+    the formula ``dt = safety / sqrt(sigma k^3 / rho0)``.  This wrapper keeps the
+    historical convention ``k = 1/h`` (``dt = safety sqrt(rho h^3 / sigma)``), so
+    existing configurations are bit-for-bit unchanged; the grid-scale bound
+    ``k = pi/h`` used by the 3-D solver is ``pi^{3/2} = 5.6``x tighter.
 
-    This is analogous to the Courant limit but for surface tension waves.
-    See Brackbill et al. (1992) or Lapinskas et al. (2022).
+    See Brackbill et al. (1992); Lapinskas et al. (2022).
 
     Args:
         cfg: simulation configuration
         safety: safety factor (default 0.25)
 
     Returns:
-        dt_cap: maximum stable time step from capillary limit
+        dt_cap: maximum stable time step from capillary limit (``inf`` when
+        ``sigma = 0``)
     """
     if cfg.surface_tension_coefficient <= 0.0:
         return float("inf")
     h = cfg.h_factor * cfg.dx
-    rho = cfg.rho0
-    sigma = cfg.surface_tension_coefficient
-    # Capillary time scale: sqrt(rho * h^3 / sigma)
-    dt_cap = safety * (rho * h**3 / sigma) ** 0.5
-    return dt_cap
+    return _capillary_dt_limit(h, cfg.surface_tension_coefficient, cfg.rho0,
+                               cfl=safety, k_max=1.0 / h)
