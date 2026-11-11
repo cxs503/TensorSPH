@@ -1,0 +1,166 @@
+{
+ "anchor": "FEAT-OSS-INVENTORY-SPH",
+ "gap_rule": "oss_repos_exposing >= 3 and oss_coverage >= 0.15 and tensorsph src hits == 0",
+ "proposals": [
+  {
+   "feature": "mpi",
+   "feature_label": "MPI / distributed",
+   "oss_ratio": 0.4737,
+   "oss_repos_exposing": 9,
+   "oss_surveyed": 19,
+   "tensorsph_in_source": false,
+   "tensorsph_tests": 0,
+   "status": "PROPOSED",
+   "slug": "GAP-SPH-MPI-DOMAIN",
+   "goal": "Domain-decomposed multi-rank execution with halo particle exchange.",
+   "acceptance_quantified": "Same dam-break case (tank 2.0 m, column 0.2x0.4 m, dx = 0.04 m, 0.5 s) on 2 and 4 ranks reproduces the 1-rank front trajectory to <= 1e-10 in the dimensionless front Z/a, and wall-clock speed-up >= 1.5x at 4 ranks.",
+   "anchor_artifact": "benchmarks/dam_break/run.py",
+   "anchor_exists": true,
+   "rationale": "MPI is claimed by DualSPHysics, GPUSPH, SWIFT, ChaNGa, SPHERAL and OpenFOAM-dev; this repository has no distributed path (probe: 0 source hits), so every resolution ladder is bounded by one node."
+  },
+  {
+   "feature": "isph",
+   "feature_label": "ISPH/DFSPH projection",
+   "oss_ratio": 0.3684,
+   "oss_repos_exposing": 7,
+   "oss_surveyed": 19,
+   "tensorsph_in_source": false,
+   "tensorsph_tests": 0,
+   "status": "PROPOSED",
+   "slug": "GAP-SPH-ISPH-PROJECTION",
+   "goal": "Density-invariant incompressible SPH (DFSPH or ISPH projection) alongside the WCSPH path.",
+   "acceptance_quantified": "On the existing Poiseuille channel benchmark (H/dx in {8,12,16}, same body force and nu): density fluctuation max|rho/rho0 - 1| <= 1e-3 (WCSPH today reports ~2.3e-2 in the same run), centre velocity within 3% of gH^2/(8 nu), and wall-shear budget closure D/(M g) within 3%.",
+   "anchor_artifact": "benchmarks/poiseuille/run.py",
+   "anchor_exists": true,
+   "rationale": "Half the surveyed codes (SPlisHSPlasH, salva, ISPH CUDA, JAX-SPH) solve pressure with a projection step; the WCSPH acoustic floor documented in docs/verification_startup_quiescence.md (§5, 0.0208 m/s resting noise) is exactly what the projection removes, so this is the single largest accuracy lever."
+  },
+  {
+   "feature": "boundary_akinci",
+   "feature_label": "Akinci boundary",
+   "oss_ratio": 0.2632,
+   "oss_repos_exposing": 5,
+   "oss_surveyed": 19,
+   "tensorsph_in_source": false,
+   "tensorsph_tests": 0,
+   "status": "PROPOSED",
+   "slug": "GAP-SPH-AKINCI-BOUNDARY",
+   "goal": "Akinci volume-weighted boundary particles as an alternative to the Adami extrapolation.",
+   "acceptance_quantified": "Hydrostatic column, H/dx in {8,12,16}: bottom pressure within 3% of rho0 g H and worst interior-layer error within 5%, versus the current Adami baseline recorded in benchmarks/verification_ledger/ledger.json (threed_hydrostatic.bottom_pressure.adami_best = -2.75%, worst layer 43.2%).",
+   "anchor_artifact": "benchmarks/threed_hydrostatic/",
+   "anchor_exists": true,
+   "rationale": "Akinci boundary treatment is claimed by DualSPHysics, GPUSPH and SPlisHSPlasH; the ledger's worst interior-layer error (43%) is a boundary-layer artefact that the volume-weighted formulation is designed to remove."
+  },
+  {
+   "feature": "multiphase",
+   "feature_label": "multiphase",
+   "oss_ratio": 0.1579,
+   "oss_repos_exposing": 3,
+   "oss_surveyed": 19,
+   "tensorsph_in_source": false,
+   "tensorsph_tests": 2,
+   "status": "PROPOSED",
+   "slug": "GAP-SPH-MULTIPHASE-SHARP",
+   "goal": "A genuine two-phase (density-discontinuous) SPH formulation, not a colour-smoothed single phase.",
+   "acceptance_quantified": "On the existing two-phase Laplace benchmark: dp = sigma/R within 5% at dx = 2.5 mm with the interface density jump resolved (rho_1/rho_2 = 1000/1), and total mass of each phase conserved to <= 1e-12 relative over 0.1 s; the current single-phase smoothed-colour entry is 4.61% (two_phase_laplace.smoothed_colour.dx2.5mm in the verification ledger) but carries no second phase at all.",
+   "anchor_artifact": "benchmarks/two_phase_laplace/",
+   "anchor_exists": true,
+   "rationale": "Multiphase appears in three surveyed codes (SPlisHSPlasH, DualSPHysics, SPHinXsys). This repository's probe finds no multiphase source: the two-phase Laplace benchmark smooths a colour field inside one phase, which cannot represent an air-water density jump."
+  },
+  {
+   "feature": "turbulence",
+   "feature_label": "LES / SPS closure",
+   "oss_ratio": 0.1579,
+   "oss_repos_exposing": 3,
+   "oss_surveyed": 19,
+   "tensorsph_in_source": false,
+   "tensorsph_tests": 0,
+   "status": "PROPOSED",
+   "slug": "GAP-SPH-SPS-LES",
+   "goal": "Sub-particle-scale (SPS) turbulence closure, gated by a resolvable analytic case.",
+   "acceptance_quantified": "On the existing 3-D Taylor-Green shear benchmark: with the SPS term on, the measured decay exponent stays inside the current MARGINAL band of the ledger entry threed_shear.decay_rate.worst_of_ladder (-12.6% vs analytic) and the SPS stress vanishes (< 1e-12) for a uniform-strain field.",
+   "anchor_artifact": "benchmarks/threed_shear/",
+   "anchor_exists": true,
+   "rationale": "LES/SPS is claimed by DualSPHysics, GPUSPH and others; this repository states in src/tensorsph/freesurface/breaking_wave.py that its only turbulence model is artificial viscosity, which cannot be calibrated against data."
+  }
+ ],
+ "channel_agreement": {
+  "features": 20,
+  "exact_agreement": 5,
+  "agreement_ratio": 0.25,
+  "disagreeing": {
+   "isph": {
+    "readme": 5,
+    "tree": 7
+   },
+   "density_diffusion": {
+    "readme": 1,
+    "tree": 3
+   },
+   "riemann": {
+    "readme": 2,
+    "tree": 1
+   },
+   "gpu": {
+    "readme": 11,
+    "tree": 8
+   },
+   "mpi": {
+    "readme": 4,
+    "tree": 7
+   },
+   "boundary_particles": {
+    "readme": 0,
+    "tree": 8
+   },
+   "boundary_akinci": {
+    "readme": 4,
+    "tree": 3
+   },
+   "boundary_adami": {
+    "readme": 2,
+    "tree": 0
+   },
+   "surface_tension": {
+    "readme": 4,
+    "tree": 5
+   },
+   "viscosity": {
+    "readme": 4,
+    "tree": 6
+   },
+   "turbulence": {
+    "readme": 1,
+    "tree": 3
+   },
+   "threed": {
+    "readme": 7,
+    "tree": 0
+   },
+   "ci": {
+    "readme": 6,
+    "tree": 0
+   },
+   "python_api": {
+    "readme": 5,
+    "tree": 6
+   },
+   "adaptive_h": {
+    "readme": 0,
+    "tree": 6
+   }
+  }
+ },
+ "tier_sensitivity": {
+  "perturbation": "star threshold 80 <-> 120 (nominal 100)",
+  "repos_moved": [
+   {
+    "repo": "tumaer/jax-sph",
+    "tier": "B",
+    "at_star_80": "A",
+    "at_star_120": "B",
+    "stars": 84
+   }
+  ],
+  "n_moved": 1
+ }
+}
