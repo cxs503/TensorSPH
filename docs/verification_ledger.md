@@ -24,10 +24,10 @@
 
 ## 3. 汇总
 
-- claims **40** ／ 物理量 **20** ／ findings **20**
-- 分级分布：PASS 7，MARGINAL 8，WITHHELD 13，FAIL 10，WITHDRAWN 2
-- findings 分类：credit_from_failing_artifact 6，declared_vs_derived 1，inadmissible_run 3，quantity_spread 4，run_validity 4，uncovered_benchmark 1，unregistered_artifact 1
-- **credit 资格**：7 条 PASS / 8 条 MARGINAL，其中 **6** 条取自「工件自述 verdict = fail」的运行集（best-of-N / 阶梯不全，不可作为能力验证引用）；另有 6 条 credit 的工件根本没有声明 verdict（等级只能被读成「该读数自身合规」，不是「该能力被验证」）。
+- claims **47** ／ 物理量 **26** ／ findings **31**
+- 分级分布：PASS 12，MARGINAL 10，WITHHELD 13，FAIL 10，WITHDRAWN 2
+- findings 分类：credit_from_failing_artifact 6，declared_vs_derived 1，inadmissible_run 3，quantity_spread 4，run_validity 4，uncovered_benchmark 7，unmarked_superseded_number 1，unregistered_artifact 5
+- **credit 资格**：12 条 PASS / 10 条 MARGINAL，其中 **6** 条取自「工件自述 verdict = fail」的运行集（best-of-N / 阶梯不全，不可作为能力验证引用）；另有 9 条 credit 的工件根本没有声明 verdict（等级只能被读成「该读数自身合规」，不是「该能力被验证」）。
 
 ## 4. 断言表
 
@@ -40,6 +40,13 @@
 | `density_diffusion.decay_rate.worst_of_ladder` | decay rate of a plane density wave vs the analytic gamma = D k^2, D = delta c0 h (Antuono, Colagrossi & Marrone 2012) | limit 0.03 | 0.010208 | — | **PASS** | `benchmarks/density_diffusion_decay/decay_rate.json` → `max_rate_relative_error` | `tests/test_density_diffusion_decay.py::test_the_diffusive_term_decays_a_plane_wave_at_the_analytic_rate` |
 | `density_diffusion.finite_time.amplitude` | mode amplitude after a finite integration time vs rho0 A exp(-gamma t) | limit 0.035 | 0.00482 | — | **PASS** | `benchmarks/density_diffusion_decay/decay_rate.json` → `finite_time` | `tests/test_density_diffusion_decay.py::test_the_mode_amplitude_follows_the_exponential_over_a_finite_time` |
 | `effective_sigma.sigma_eff_over_sigma.dx5mm` | effective surface tension from the half-droplet force integral, sigma_eff/sigma (R = 40 mm, curvature estimator: quadratic interface fit) | 1 - | 0.710625 - | -28.94 % | **FAIL** | `benchmarks/effective_sigma/out/report.json` → `rows[0].ratio` | `tests/test_effective_sigma.py::test_current_default_delivers_the_documented_ratio` |
+| `ice_floe_added_mass.anchor.c_m_richardson` | added-mass coefficient of a 2-D circular section in an unbounded fluid | 1 - | 0.988634 - | -1.14 % | **PASS** | `benchmarks/ice_floe_added_mass/report.json` → `richardson_extrapolation` | `tests/test_ice_floe_added_mass.py` |
+| `ice_floe_added_mass.anchor.c_m_unbounded` | added-mass coefficient of a 2-D circular section in an unbounded fluid | 1 - | 0.9479 - | -5.21 % | **MARGINAL** | `benchmarks/ice_floe_added_mass/report.json` → `anchor_ladder[3]` | `tests/test_ice_floe_added_mass.py` |
+| `ice_floe_added_mass.launch.speed_ratio` | floe launch speed ratio v_wet/v_dry vs the algebraic identity rho_ice/(rho_ice + C_m rho_w) | 0.478352 - | 0.478352 - | +0.00 % | **PASS** | `benchmarks/ice_floe_added_mass/report.json` → `launch_bias.speed_ratio_mean` | `tests/test_ice_floe_added_mass.py` |
+| `ice_floe_added_mass.plane_limits.max_deviation` | plane-limit recovery: C_m(gap)/C_m(infinity) for a rigid wall and a linearised free surface, gap >= 2 radii | limit 15 | 4.91127 | — | **MARGINAL** | `benchmarks/ice_floe_added_mass/report.json` → `plane_limits` | `tests/test_ice_floe_added_mass.py` |
+| `ice_thermal.brine_floor.min_margin` | drainage must never remove salt below the irreducible-brine floor | limit 1e-06 | 0 | — | **PASS** | `benchmarks/ice_thermal_multiphysics/validation_report.json` → `desalination.floor_min_margin_psu` | `tests/test_ice_thermal_integration.py` |
+| `ice_thermal.darcy_benard.ra_c` | critical Rayleigh number of Horton-Rogers-Lapwood onset | 39.4784 - | 39.4722 - | +0.02 % | **PASS** | `benchmarks/ice_thermal_multiphysics/validation_report.json` → `darcy` | `tests/test_ice_thermal_integration.py` |
+| `ice_thermal.stefan_front.finest` | 1-D Stefan freezing front X(t_end) vs the Neumann similarity solution | 0.075037 m | 0.074889 m | +0.20 % | **PASS** | `benchmarks/ice_thermal_multiphysics/validation_report.json` → `stefan[2]` | `tests/test_ice_thermal_integration.py` |
 | `laplace_droplet.merged_csf.8cases` | dp = sigma/R (2-D), sigma=0.072 N/m, R=0.1 m -> 0.72 Pa | 1 - | 3.19723 - | +219.72 % | **FAIL** | `benchmarks/laplace_droplet/results.json` → `verdict` | `tests/test_laplace_droplet.py::test_laplace_jump_current_state` |
 | `laplace_report.laplace_pressure.Rdx10` | pressure balance of a static droplet at R/dx = 10 (code units) | 1.44 - | 1.82627 - | +26.82 % | **FAIL** | `benchmarks/laplace/report.json` → `checks.R/dx=10:laplace_pressure` | `tests/test_laplace_pressure.py` |
 | `oscillating_droplet.frequency.lamb` | fundamental frequency of an inviscid 2-D droplet (Lamb omega_2) | 73.4847 rad/s | 41.4979 rad/s | -43.53 % | **WITHHELD** | `benchmarks/oscillating_droplet/validation_report.json` → `verdict.rows[0]` | `tests/test_oscillating_droplet.py` |
@@ -94,8 +101,19 @@
 - **quantity_spread**（`high`）`threed_shear_decay_rate_2nuk2` — 3 active readings of one quantity span -12.6 % … +11.5 % (spread 24.1 pt): threed_shear.decay_rate.finest=-2.7 %, threed_shear.decay_rate.raw_laplacian=+11.5 %, threed_shear.decay_rate.worst_of_ladder=-12.6 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
 - **quantity_spread**（`high`）`young_laplace_jump_sigma0.072_R0.1` — 2 active readings of one quantity span +219.7 % … +252.0 % (spread 32.3 pt): laplace_droplet.merged_csf.8cases=+219.7 %, surface_tension_ladder.laplace_error_finest=+252.0 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
 - **quantity_spread**（`high`）`young_laplace_jump_sigma7.2_R0.02` — 14 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.closure.closure_on_all_donors.dx1.5mm_c20=-25.3 %, young_laplace.closure.closure_on_all_donors.dx2mm_c20=-20.1 %, young_laplace.closure.closure_on_interior_layers2.dx1.5mm_c20=-3.4 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c10=-4.0 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c20=+8.8 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c5=+4.9 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.force_balance.flux_integral.dx1.5mm=-7.5 %, young_laplace.force_balance.flux_integral.dx2mm=-0.3 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
+- **uncovered_benchmark**（`medium`）`benchmarks/aeration` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **uncovered_benchmark**（`medium`）`benchmarks/rayleigh_plateau` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **uncovered_benchmark**（`medium`）`benchmarks/slamming` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **uncovered_benchmark**（`medium`）`benchmarks/two_phase_laplace` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **uncovered_benchmark**（`medium`）`benchmarks/verification_ladder` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **uncovered_benchmark**（`medium`）`benchmarks/wcsph_chain` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
 - **uncovered_benchmark**（`medium`）`benchmarks/wedge_entry` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **unregistered_artifact**（`medium`）`benchmarks/aeration/report.json` — machine-readable evidence file not referenced by any ledger claim
 - **unregistered_artifact**（`medium`）`benchmarks/contact_angle/bc_diagnosis.json` — machine-readable evidence file not referenced by any ledger claim
+- **unregistered_artifact**（`medium`）`benchmarks/fluctuating_hydro/report.json` — machine-readable evidence file not referenced by any ledger claim
+- **unregistered_artifact**（`medium`）`benchmarks/rayleigh_plateau/report.json` — machine-readable evidence file not referenced by any ledger claim
+- **unregistered_artifact**（`medium`）`benchmarks/surface_tension_dispersion/validation_report.json` — machine-readable evidence file not referenced by any ledger claim
+- **unmarked_superseded_number**（`medium`）`docs/verified/fluctuating_hydrodynamics_verification.md:149` — quotes -98.5% without a historical marker (legacy gradient CSF scheme, kept only as a before/after contrast)
 
 ## 6. 读数明细（口径决定数字）
 
@@ -195,6 +213,103 @@
   - 守护测试：`tests/test_effective_sigma.py::test_current_default_delivers_the_documented_ratio`
 - 欠账指针：`docs/verification_ledger.md`
 - 注：Independent replication of claim csf_force.sigma_eff_over_sigma.dx5mm at twice the radius with a different curvature estimator: the two agree to ~1 pt, so the ~30 % force deficit is not a radius or operator artefact. Same root cause as colour_surface.delta_s_integral (the colour-surface delta carries ~0.75 of unit mass).
+
+### `ice_floe_added_mass.anchor.c_m_richardson` — PASS
+
+- 物理量：added-mass coefficient of a 2-D circular section in an unbounded fluid
+- 参考：1 -（Lamb, Hydrodynamics, 6th ed., §71; Landau & Lifshitz, Fluid Mechanics, §11）
+- 实测：0.988634 -
+  - 口径：first-order Richardson over 16 -> 24 cells/radius
+- 相对误差：-1.14 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**PASS**
+- 工件自身 verdict：**pass**（`verdict`）
+- 溯源：`benchmarks/ice_floe_added_mass/report.json` → `richardson_extrapolation`
+  - 守护测试：`tests/test_ice_floe_added_mass.py`
+- 欠账指针：`docs/verification_ice_floe_added_mass.md`
+- 注：Extrapolation assumes first-order convergence of the staircase boundary.
+
+### `ice_floe_added_mass.anchor.c_m_unbounded` — MARGINAL
+
+- 物理量：added-mass coefficient of a 2-D circular section in an unbounded fluid
+- 参考：1 -（Lamb, Hydrodynamics, 6th ed., §71; Landau & Lifshitz, Fluid Mechanics, §11）
+- 实测：0.9479 -
+  - 口径：potential-flow SOR, zero initial, 24 cells/radius, box 6R, tol 1e-05
+- 相对误差：-5.21 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**MARGINAL**
+- 工件自身 verdict：**pass**（`verdict`）
+- 溯源：`benchmarks/ice_floe_added_mass/report.json` → `anchor_ladder[3]`
+  - 守护测试：`tests/test_ice_floe_added_mass.py`
+- 欠账指针：`docs/verification_ice_floe_added_mass.md`
+- 注：First-order staircase body boundary: the raw finest rung is a systematic lower bound; the Richardson reading is the converged estimate. Box sensitivity < 0.5 % and x/y isotropy at machine precision are recorded in the same artifact.
+
+### `ice_floe_added_mass.launch.speed_ratio` — PASS
+
+- 物理量：floe launch speed ratio v_wet/v_dry vs the algebraic identity rho_ice/(rho_ice + C_m rho_w)
+- 参考：0.478352 -（speed_ratio_with_added_mass(rho_ice, rho_w, C_m = 1)）
+- 实测：0.478352 -
+  - 口径：mean over 5 floes of the SPH impulse run (dx = 0.0125 m, t = 0.46 s)
+- 相对误差：+0.00 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**PASS**
+- 工件自身 verdict：**pass**（`verdict`）
+- 溯源：`benchmarks/ice_floe_added_mass/report.json` → `launch_bias.speed_ratio_mean`
+  - 守护测试：`tests/test_ice_floe_added_mass.py`
+- 欠账指针：`docs/verification_ice_floe_added_mass.md`
+- 注：The correction is an algebraic identity applied to the SPH impulse; the SPH run supplies the impulse only, so agreement is expected at machine precision.
+
+### `ice_floe_added_mass.plane_limits.max_deviation` — MARGINAL
+
+- 物理量：plane-limit recovery: C_m(gap)/C_m(infinity) for a rigid wall and a linearised free surface, gap >= 2 radii
+- 参考：15 %（platform acceptance line (CRITERION_PCT) on the max ratio deviation）
+- 实测：4.91127 %
+  - 口径：max |C_m(gap)/C_m(infinity) - 1| over 2 boundaries x 2 axes x 2 gaps
+- 相对误差：—（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**MARGINAL**
+- 工件自身 verdict：**pass**（`verdict`）
+- 溯源：`benchmarks/ice_floe_added_mass/report.json` → `plane_limits`
+  - 守护测试：`tests/test_ice_floe_added_mass.py`
+- 欠账指针：`docs/verification_ice_floe_added_mass.md`
+- 注：gap < 2 radii (the real floe-on-deck configuration) is unresolved on the Cartesian ladder and is deliberately not quoted (doc section 5).
+
+### `ice_thermal.brine_floor.min_margin` — PASS
+
+- 物理量：drainage must never remove salt below the irreducible-brine floor
+- 参考：0 psu（one-sided bound: S(z) >= S_eq(T(z)), S_eq from v_b = v_irr）
+- 实测：0 psu
+  - 口径：min over the column of S - S_eq after 60 d of gravity drainage
+- 相对误差：—（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**PASS**
+- 工件自身 verdict：未声明
+- 溯源：`benchmarks/ice_thermal_multiphysics/validation_report.json` → `desalination.floor_min_margin_psu`
+  - 守护测试：`tests/test_ice_thermal_integration.py`
+- 欠账指针：`docs/verification_ice_thermal_multiphysics.md`
+- 注：One-sided by construction: drainage is rate limited, so the 60-day column stays above the floor (final bulk 5.398 psu vs the asymptote 3.244 psu). Crossing the floor would be a physics defect, not a tolerance miss.
+
+### `ice_thermal.darcy_benard.ra_c` — PASS
+
+- 物理量：critical Rayleigh number of Horton-Rogers-Lapwood onset
+- 参考：39.4784 -（exact 4 pi^2）
+- 实测：39.4722 -
+  - 口径：finite-difference eigenvalue solve, 60 nodes, 25 wavenumbers
+- 相对误差：+0.02 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**PASS**
+- 工件自身 verdict：未声明
+- 溯源：`benchmarks/ice_thermal_multiphysics/validation_report.json` → `darcy`
+  - 守护测试：`tests/test_ice_thermal_integration.py`
+- 欠账指针：`docs/verification_ice_thermal_multiphysics.md`
+
+### `ice_thermal.stefan_front.finest` — PASS
+
+- 物理量：1-D Stefan freezing front X(t_end) vs the Neumann similarity solution
+- 参考：0.075037 m（Neumann solution X = 2 lambda sqrt(alpha t), lambda from sqrt(pi) lambda exp(lambda^2) erf(lambda) = Ste）
+- 实测：0.074889 m
+  - 口径：SPH enthalpy particle front, dx = 0.008 m, t_end = 4e4 s, 4081 steps
+- 相对误差：+0.20 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**PASS**
+- 工件自身 verdict：未声明
+- 溯源：`benchmarks/ice_thermal_multiphysics/validation_report.json` → `stefan[2]`
+  - 守护测试：`tests/test_ice_thermal_integration.py`
+- 欠账指针：`docs/verification_ice_thermal_multiphysics.md`
+- 注：Resolution ladder dx = 0.02/0.0125/0.008 m is in the same artifact; the front error is 3.7 % at the first sample of the coarsest grid (start-up transient) and <= 2 % at t_end.
 
 ### `laplace_droplet.merged_csf.8cases` — FAIL
 

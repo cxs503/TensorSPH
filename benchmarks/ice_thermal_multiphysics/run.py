@@ -40,7 +40,7 @@ from tensorsph.ice_thermal import darcy
 from tensorsph.ice_thermal import properties as props
 from tensorsph.ice_thermal import thermal_stress as stress_mod
 from tensorsph.ice_thermal.brine import (SEA_ICE_FIRST_YEAR_BAND, band_check,
-                                         run_desalination)
+                                         residual_salinity, run_desalination)
 from tensorsph.ice_thermal.coupled import ThreeFieldConfig, run_three_field
 from tensorsph.ice_thermal.enthalpy import FRESH, SEA_ICE, neumann_lambda
 from tensorsph.ice_thermal.sph_thermal import (StefanConfig, lattice_diffusion_factor,
@@ -105,6 +105,16 @@ def desalination_anchor(days=60.0, n=25):
         "profile_t": res.profile_t[-1],
         "k_ref_scan": [],
     }
+    # analytic drainage floor: at equilibrium every level sits at v_b = v_irr,
+    # i.e. S -> S_eq(T) = v_irr rho_b S_b / rho_i.  Comparing the simulated
+    # final profile with that closed form is the desalination anchor that does
+    # not depend on any tuning constant (v_irr is an input, not a fit).
+    floor = residual_salinity(torch.tensor(out["profile_t"], dtype=torch.float64))
+    floor = [float(x) for x in floor]
+    out["floor_predicted_psu"] = floor
+    out["floor_predicted_bulk_psu"] = sum(floor) / len(floor)
+    out["floor_min_margin_psu"] = min(
+        s_i - f_i for s_i, f_i in zip(out["profile_s"], floor))
     original = props.K_REF
     try:
         for factor in (0.1, 1.0, 10.0):
@@ -235,6 +245,87 @@ def coupled_anchor(n_z, days, warm=None):
         "bulk_salinity_shift_psu": (two["bulk_salinity_final_psu"]
                                     - one["bulk_salinity_final_psu"]),
     }
+    return rows
+
+
+def anchor_table(res):
+    """Benchmark table: one row per anchor with reference, computed value, error.
+
+    This is the machine-readable ``anchors`` block of ``results.json`` (and the
+    source of the report's criteria table).  Every row carries the independent
+    reference it is compared against, the computed value, the relative error and
+    the tolerance, so a reviewer can re-check the verdict arithmetically instead
+    of trusting a "PASS" string.
+    """
+    rows = []
+
+    def add(name, ref, got, tol, unit="", note=""):
+        err = abs(got - ref) / abs(ref) if ref != 0 else abs(got)
+        rows.append({"anchor": name, "reference": ref, "got": got, "unit": unit,
+                     "reference_source": note, "rel_error": err,
+                     "tolerance": tol, "pass": bool(err <= tol)})
+
+    for row in res["stefan"]:
+        add(f"Stefan front X(t_end), dx={row['dx_m']:g} m", row["front_analytic_m"],
+            row["front_final_m"], TOL_FRONT, "m",
+            "1-D Neumann similarity solution X = 2 lambda sqrt(alpha t)")
+    # the profile error is normalised by the driving temperature difference
+    # dT = Ste L / c (exact for the Stefan config: 10 K here), which is the only
+    # scale-free way to state a temperature-profile error
+    finest = res["stefan"][-1]
+    driving_dt = finest["stefan_number"] * props.L_FUSION / props.C_ICE
+    add("Stefan profile RMS / driving dT, finest grid", 0.0,
+        finest["profile_rms_k"] / driving_dt, TOL_FRONT, "-",
+        "Neumann profile; normalised by dT = Ste L / c")
+    rows[-1]["rel_error"] = abs(finest["profile_rms_k"] / driving_dt)
+    rows[-1]["note"] = (f"RMS = {finest['profile_rms_k']:.4f} K on dT = "
+                        f"{driving_dt:.3f} K")
+
+    add("SPH lattice diffusion factor", 1.0, res["lattice"]["diffusion_factor"], 0.05, "-",
+        "discrete M4 kernel second moment must reproduce alpha")
+    d = res["darcy"]
+    add("Darcy-Benard onset Ra_c", d["ra_critical_exact"], d["ra_critical_numeric"],
+        TOL_RA, "-", "exact Horton-Rogers-Lapwood 4 pi^2")
+    st = res["stress"]
+    add("restrained plate stress (Timoshenko)", st["timoshenko_analytic_pa"],
+        st["restrained_max_pa"], TOL_STRESS, "Pa", "E alpha dT / (2 (1 - nu))")
+    add("free plate net force (self-equilibrium)", 0.0, st["free_nonlinear_net_force_pa"],
+        1e-6, "Pa", "zero by equilibrium of a free plate")
+    rows[-1]["rel_error"] = abs(st["free_nonlinear_net_force_pa"])
+    add("free plate net moment (self-equilibrium)", 0.0, st["free_nonlinear_net_moment"],
+        1e-6, "Pa m", "zero by equilibrium of a free plate")
+    rows[-1]["rel_error"] = abs(st["free_nonlinear_net_moment"])
+
+    des = res["desalination"]
+    # one-sided anchor: drainage can only stop *at* the irreducible-brine floor,
+    # never remove salt below it.  The floor is the closed form
+    # S_eq(T) = v_irr rho_b S_b(T) / rho_i with v_irr an input (not a fit), so the
+    # margin S(z) - S_eq(z) >= 0 is a genuine analytic check.  The 60-day column
+    # stays *above* the floor (drainage is rate limited by k_ref), which is
+    # reported as a diagnostic instead of being dressed up as an identity.
+    floor_margin = min(s_i - f_i for s_i, f_i in
+                       zip(des["profile_s"], des["floor_predicted_psu"]))
+    add("drainage never crosses the equilibrium floor (min S - S_eq)", 0.0,
+        min(0.0, floor_margin), 1e-6, "psu",
+        "closed form S_eq = v_irr rho_b S_b(T)/rho_i, v_irr = 0.03 (input)")
+    rows[-1]["rel_error"] = abs(min(0.0, floor_margin))
+    rows[-1]["note"] = (f"min margin = {floor_margin:.3f} psu; floor (asymptote) "
+                        f"= {des['floor_predicted_bulk_psu']:.3f} psu vs final bulk "
+                        f"{des['final_bulk_salinity_psu']:.3f} psu after 60 d")
+    band = des["band"]
+    rows.append({"anchor": "first-year bulk salinity in observed band",
+                 "reference": "3-8 psu (Cox & Weeks 1983)",
+                 "got": des["final_bulk_salinity_psu"], "unit": "psu",
+                 "reference_source": "Cox & Weeks (1983) first-year ice band",
+                 "rel_error": 0.0 if band["inside_band"] else 1.0,
+                 "tolerance": 0.0, "pass": bool(band["inside_band"])})
+    if "coupled" in res:
+        for name in ("spring_two_way", "spring_one_way", "winter"):
+            summary = res["coupled"][name]["summary"]
+            add(f"salt conservation ({name})", 0.0,
+                summary["salt_conservation_rel_error"], 1e-3, "-",
+                "discrete salt budget of the column")
+            rows[-1]["rel_error"] = abs(summary["salt_conservation_rel_error"])
     return rows
 
 
@@ -399,7 +490,7 @@ def make_figures(res, out_dir):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--out", default=str(REPO / "artifacts" / "ice_thermal_multiphysics"))
+    ap.add_argument("--out", default=str(REPO / "runs" / "IN13W2-N07"))
     ap.add_argument("--n-z", type=int, default=16)
     ap.add_argument("--days", type=float, default=45.0)
     ap.add_argument("--quick", action="store_true", help="skip the coupled runs")
@@ -421,7 +512,6 @@ def main(argv=None):
         "properties": props.format_property_table(),
         "lattice": {"diffusion_factor": factor, "mode_scatter": scatter,
                     "h_over_dx": 1.3},
-        "anchors": {},
         "tolerances": {"stefan_front": TOL_FRONT, "stress": TOL_STRESS, "darcy": TOL_RA},
         "stefan": stefan_ladder([0.02, 0.0125, 0.008]),
         "desalination": desalination_anchor(),
@@ -434,6 +524,11 @@ def main(argv=None):
         "profile_rms_k": row["profile_rms_k"]} for row in res["stefan"]}
     if not args.quick:
         res["coupled"] = coupled_anchor(args.n_z, args.days)
+    res["anchors"] = anchor_table(res)
+    res["benchmark"] = {"rows": res["anchors"],
+                        "all_pass": all(row["pass"] for row in res["anchors"]),
+                        "repro_cmd": "python benchmarks/ice_thermal_multiphysics/run.py "
+                                     "--out runs/IN13W2-N07"}
     res["criteria_table"] = format_criteria(res) if "coupled" in res else "coupled skipped"
     res["verification"] = {
         "neumann_lambda_ste": neumann_lambda(res["stefan"][0]["stefan_number"]),

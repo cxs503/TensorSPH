@@ -6,6 +6,11 @@ Physical model for wave-ice interaction in the Marginal Ice Zone (MIZ):
   3. Floe size distribution evolution (power-law with exponential cutoff)
   4. Wave attenuation (scattering + dissipation)
   5. MIZ resistance correction factor
+  6. Thermal-saline coupling of the strength: the flexural strength that the
+     fracture criterion uses (and hence the breakup/floe-size chain) is derived
+     from the ice temperature and bulk salinity through
+     :mod:`tensorsph.ice_thermal` (brine volume -> strength), so a cold, fresh
+     floe is strong and a warm, saline one is weak
 
 References
 ----------
@@ -40,7 +45,10 @@ observations, and field wave-attenuation measurements as documented in
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+
+from .ice_thermal import properties as ice_props
+from .ice_thermal.properties import brine_volume_fraction, flexural_strength
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -689,6 +697,49 @@ def miz_resistance_factor(
 # 6. Integrated simulation driver
 # ─────────────────────────────────────────────────────────────────────────────
 
+def strength_from_ice_state(temperature_c: float, salinity_psu: float) -> dict:
+    """Flexural strength and brine volume from the thermal-saline state.
+
+    The fracture criterion of this module needs one number, ``sigma_f``, and it
+    is the single most uncertain mechanical input of the whole breakup chain
+    (observed first-year range 0.5-1.5 MPa).  Instead of a hard-coded constant
+    it is computed here from the two state variables that a ship in ice
+    actually has an estimate for -- the ice temperature and the bulk salinity:
+
+    ``T, S -> v_b`` (Cox & Weeks 1983 brine volume)
+    ``-> sigma_f = 1.76 MPa (1 - sqrt(v_b / 0.27))`` (Timco & Frederking 1990).
+
+    Both legs live in :mod:`tensorsph.ice_thermal`, i.e. the mechanical branch of
+    this solver is coupled to the thermal-saline branch of the multi-physics
+    module rather than duplicating property relations.
+
+    Parameters
+    ----------
+    temperature_c : float
+        Bulk ice temperature [degC] (below the freezing point of the bulk
+        salinity; warmer ice is returned unchanged by the brine volume model).
+    salinity_psu : float
+        Bulk ice salinity [psu].
+
+    Returns
+    -------
+    dict with ``temperature_k``, ``salinity_psu``, ``brine_fraction``,
+    ``sigma_f_pa``, ``sigma_f_mpa`` and the ``strength_band_pa`` tuple.
+    """
+    temperature_k = 273.15 + float(temperature_c)
+    v_b = brine_volume_fraction(temperature_k, salinity_psu)
+    sigma_f = flexural_strength(temperature_k, salinity_psu)
+    band = ice_props.strength_band(temperature_k, salinity_psu)
+    return {
+        "temperature_k": temperature_k,
+        "salinity_psu": float(salinity_psu),
+        "brine_fraction": v_b,
+        "sigma_f_pa": sigma_f,
+        "sigma_f_mpa": sigma_f / 1e6,
+        "strength_band_pa": band,
+    }
+
+
 @dataclass
 class WaveIceScenario:
     """Complete scenario specification for wave-ice interaction."""
@@ -705,11 +756,26 @@ class WaveIceScenario:
     N_init: float = 1e-5
     ship_speed: float = 3.0
     open_water_speed: float = 5.0
+    #: optional thermal-saline state of the ice; when both are given the
+    #: flexural strength is derived from them (see
+    #: :func:`strength_from_ice_state`) and overrides ``sigma_f``.
+    temperature_c: float | None = None
+    salinity_psu: float | None = None
 
 
 def run_wave_ice_scenario(scenario: WaveIceScenario) -> dict:
-    """Run the complete wave-ice interaction model."""
+    """Run the complete wave-ice interaction model.
+
+    If ``scenario.temperature_c`` and ``scenario.salinity_psu`` are both set the
+    flexural strength is taken from the thermal-saline state
+    (:func:`strength_from_ice_state`) instead of the ``sigma_f`` constant; the
+    derived value and its band are echoed in ``fracture.thermal_state``.
+    """
     s = scenario
+    thermal_state = None
+    if s.temperature_c is not None and s.salinity_psu is not None:
+        thermal_state = strength_from_ice_state(s.temperature_c, s.salinity_psu)
+        s = replace(s, sigma_f=thermal_state["sigma_f_pa"])
     omega_p = 2.0 * math.pi / s.Tp
     A_wave = s.Hs / 2.0
 
@@ -719,7 +785,13 @@ def run_wave_ice_scenario(scenario: WaveIceScenario) -> dict:
 
     # 2. Fracture criterion
     sigma_max = max_bending_stress(A_ice, resp["k_ice"], s.h_ice, s.E_ice)
-    ratio = sigma_max / s.sigma_f
+    if s.sigma_f > 0.0:
+        ratio = sigma_max / s.sigma_f
+    else:
+        # brine volume above the pore-closure fraction: the ice skeleton carries
+        # no load at all (Timco & Frederking collapse), so any bending stress
+        # breaks it.  Return an infinite ratio rather than dividing by zero.
+        ratio = math.inf
     breaks = ratio >= 0.8
 
     fracture_result = {
@@ -729,6 +801,7 @@ def run_wave_ice_scenario(scenario: WaveIceScenario) -> dict:
         "breaks": breaks,
         "k_ice_rad_m": resp["k_ice"],
         "A_ice_m": A_ice,
+        "thermal_state": thermal_state,
     }
 
     # 3. Initial FSD
