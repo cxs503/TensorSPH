@@ -227,6 +227,38 @@ def shepard_smooth(
     return out
 
 
+
+def colour_range(
+    color: torch.Tensor,
+    pairs: torch.Tensor,
+) -> torch.Tensor:
+    """Local colour range ``Delta c_i = max_j c_j - min_j c_i`` in the kernel support.
+
+    This is the *measured* ``c_bulk - c_void`` that the surface delta function has
+    to divide by.  The legacy scheme hard-coded it as ``1/2`` (a two-phase
+    continuum argument: the void half of the 0 -> 1 indicator carries no
+    particles), which is only right for the idealised two-phase case.  On a
+    single-phase free surface the measured range is what it is: ~1 on a planar
+    half space (the kernel support sees the whole 0 -> 1 transition) and ~0.4 on
+    a convex drop, because the outer half of the shell has no particles at all.
+    Dividing by the local range makes the surface measure
+    ``sum_i delta_s,i V_i`` equal to the interface area on both geometries
+    instead of differing by a factor 2.8
+    (``benchmarks/surface_tension_dispersion``).
+    """
+    if pairs.numel() == 0:
+        return torch.ones_like(color)
+    i, j = pairs.unbind(dim=1)
+    n = color.shape[0]
+    hi = color.scatter_reduce(0, i, color[j], reduce="amax", include_self=True)
+    lo = color.scatter_reduce(0, i, color[j], reduce="amin", include_self=True)
+    hi = hi.scatter_reduce(0, j, color[i], reduce="amax", include_self=True)
+    lo = lo.scatter_reduce(0, j, color[i], reduce="amin", include_self=True)
+    # Clipped from below: an isolated particle reports a tiny range and would
+    # otherwise amplify the delta function without bound.
+    return (hi - lo).clamp(0.2, 1.0)
+
+
 def csf_fields(
     pos: torch.Tensor,
     mass: torch.Tensor,
@@ -240,6 +272,7 @@ def csf_fields(
     curvature_scheme: str = "mls",
     curvature_stencil: float = 4.0,
     curvature_color_smoothing: int = 0,
+    delta_normalization: str = "legacy",
 ) -> CSFState:
     """Colour, its gradient, the outward normal, curvature and delta_s.
 
@@ -328,7 +361,17 @@ def csf_fields(
     # did, letting the colour jump be O(0.3) instead of O(1)) makes the CSF
     # force -- and therefore the Laplace pressure jump -- too weak by exactly
     # the missing factor.
-    delta_s = 2.0 * torch.linalg.vector_norm(grad_c, dim=1)
+    mag_c = torch.linalg.vector_norm(grad_c, dim=1)
+    if delta_normalization == "legacy":
+        delta_s = 2.0 * mag_c
+    elif delta_normalization == "local_range":
+        # |grad c| / (measured c_bulk - c_void) : the factor of 2 above is the
+        # hard-coded special case Delta c = 1/2 of this rule.
+        delta_s = mag_c / colour_range(color, pairs)
+    else:
+        raise ValueError(
+            f"unknown delta_normalization {delta_normalization!r}; "
+            "expected ('legacy', 'local_range')")
     if curvature_scheme != "mls":
         kappa = fit_curvature(pos, normal, delta_s, pairs, h, fallback=kappa,
                               method=curvature_scheme, stencil=curvature_stencil)
@@ -350,6 +393,7 @@ def surface_tension_acceleration(
     contact_angle_reach: float = CONTACT_ANGLE_REACH,
     curvature_scheme: str = "mls",
     curvature_stencil: float = 4.0,
+    delta_normalization: str = "legacy",
 ) -> tuple[torch.Tensor, CSFState | None]:
     """CSF acceleration ``a = -sigma kappa delta_s n / rho`` and its fields."""
     if sigma <= 0.0:
@@ -366,13 +410,15 @@ def surface_tension_acceleration(
                        contact_angle=contact_angle,
                        contact_angle_reach=contact_angle_reach,
                        curvature_scheme=curvature_scheme,
-                       curvature_stencil=curvature_stencil)
+                       curvature_stencil=curvature_stencil,
+                       delta_normalization=delta_normalization)
     # Particles whose colour field is locally flat are not on the interface; the
     # clamped kernel sum makes their |grad c| numerically ~1e-12 rather than
     # exactly zero, so they are masked out. Bulk traction stays a bit-exact
     # no-op (tests/test_laplace_pressure.py::test_bulk_traction_is_exactly_zero).
     d_s = state.delta_s.clone()
-    flat = d_s <= 1.0e-3 * d_s.max()
+    mag = torch.linalg.vector_norm(state.grad_c, dim=1)
+    flat = mag <= 1.0e-3 * mag.max()
     d_s[flat] = 0.0
     state.delta_s = d_s
     force = (-sigma * state.kappa * state.delta_s)[:, None] * state.normal
