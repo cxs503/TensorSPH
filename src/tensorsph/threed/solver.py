@@ -124,6 +124,7 @@ class ShearWaveResult:
     dt: float
     steps: int
     renormalise: bool
+    viscous_order: int = 2
     times: list = field(default_factory=list)
     amplitudes: list = field(default_factory=list)
     fit_rate: float = float("nan")
@@ -156,6 +157,7 @@ class ShearWaveResult:
             "dt": self.dt,
             "steps": self.steps,
             "renormalise_viscous_operator": self.renormalise,
+            "viscous_operator_order": self.viscous_order,
             "decay": {
                 "fit_rate": self.fit_rate,
                 "analytic_rate": self.analytic_rate,
@@ -197,7 +199,8 @@ def run_shear_wave(*, n: int = 16, box: float = 1.0, h_factor: float = 1.3,
                    gamma: float = 7.0, t_end: float | None = None,
                    dt: float | None = None, steps: int | None = None,
                    sample_every: int = 10, skin_factor: float = 0.25,
-                   renormalise: bool = True, dtype=torch.float64) -> ShearWaveResult:
+                   renormalise: bool = True, viscous_order: int = 2,
+                   dtype=torch.float64) -> ShearWaveResult:
     """Integrate the 3-D double-shear field and fit its decay exponent.
 
     ``t_end`` defaults to two decay times, which leaves the amplitude at
@@ -237,13 +240,15 @@ def run_shear_wave(*, n: int = 16, box: float = 1.0, h_factor: float = 1.3,
     result = ShearWaveResult(
         n=n, dx=dx, h=h, nu=nu, wavenumber=wavenumber, sound_speed=sound_speed,
         amplitude0=amplitude, dt=dt, steps=steps, renormalise=renormalise,
+        viscous_order=viscous_order,
         pairs_last=int(pairs.shape[0]), pair_rebuilds=rebuilds)
 
     def rhs(p, v):
         acc, rho, _ = accelerations(p, v, mass, h, pairs, rho0=rho0,
                                     sound_speed=sound_speed, gamma=gamma,
                                     viscosity=nu, box=box,
-                                    renormalise=renormalise)
+                                    renormalise=renormalise,
+                                    viscous_order=viscous_order)
         return acc, rho
 
     # Scale of the momentum the flow could carry.  Comparing the drift with the
