@@ -1,0 +1,40 @@
+{
+  "kind": "ritter",
+  "label": "l2_artifact",
+  "summary": {
+    "label": "l2_artifact",
+    "depth0": 0.1,
+    "column_width": 0.5,
+    "shallow_ratio": 0.2,
+    "validity_window": 0.5048187773461522,
+    "dx": 0.025,
+    "cells_per_depth": 4.0,
+    "sound_speed": 19.809088823063014,
+    "dt": 0.0004101652565937487,
+    "steps": 370,
+    "particles": 80,
+    "wall_clock": 17.203218119218946,
+    "max_density_compression": 0.009692932128906318,
+    "max_acoustic_courant": 0.26644283145490544,
+    "escaped": 0,
+    "mass_drift": 0.0,
+    "mass_drift_relative": 0.0,
+    "particles_escaped": 0,
+    "front_error_max": 0.07823031260912812,
+    "front_error_mean": 0.04012418952226941,
+    "depth_l2": 0.13270465852000993,
+    "depth_l2_resolved": NaN,
+    "front_error_zero_depth": 0.7406781570040476,
+    "velocity_l2": 0.1695198004026404,
+    "released_volume_error": 0.21206378384487018
+  },
+  "case": {
+    "depth0": 0.1,
+    "column_width": 0.5,
+    "cells_per_depth": 4.0,
+    "dx": 0.025,
+    "dt": 0.0004101652565937487
+  },
+  "wall_clock": 17.226887226104736,
+  "timestamp": 1794384854.065385
+}
