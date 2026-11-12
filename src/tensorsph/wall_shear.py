@@ -58,10 +58,25 @@ from dataclasses import dataclass
 
 import numpy as np
 
-#: Fraction of the run used for the drift fit, counted back from ``t_end``.
-#: The flow has to be through the initial transient; 40 % is the window used by
-#: ``benchmarks/poiseuille/wall_shear_estimators.py`` and reproduced here.
+#: **Window length** fraction of the run used for the drift fit, counted back
+#: from ``t_end``: the window is ``[(1 - fraction) * t_end, t_end]``.  The flow
+#: has to be through the initial transient, so 40 % of the run is used.
+#:
+#: Beware a naming collision with the legacy script
+#: ``benchmarks/poiseuille/wall_shear_estimators.py``: its ``fraction`` is a
+#: **start** fraction (``t_lo = fraction * t_end``), so *the same number selects
+#: a different window* -- its ``0.4`` is the last 60 % of the run, i.e. exactly
+#: this module's ``0.6``.  ``tests/test_wall_shear_window_audit.py`` pins both
+#: conventions on one trace so the collision cannot be silently re-introduced,
+#: and the sensitivity of the reading to the window is reported by
+#: :func:`window_sensitivity` (see ``docs/audit_verdict_m16581.md``).
 DEFAULT_WINDOW_FRACTION = 0.4
+
+#: Post-transient windows (as **window length** fractions, see above) used to
+#: report how much the momentum-budget reading moves with the fitting window.
+#: All of them lie after the initial spin-up, so the spread is the estimator's
+#: own uncertainty -- not a statement about the physics.
+DEFAULT_SENSITIVITY_FRACTIONS = (0.2, 0.3, 0.4, 0.5)
 
 
 @dataclass
@@ -158,7 +173,9 @@ def momentum_budget_wall_shear(trace, height: float, body_force: float,
                                rho0: float = 1000.0,
                                t_end: float | None = None,
                                fraction: float = DEFAULT_WINDOW_FRACTION,
-                               drift_gain: float = 1.0) -> dict:
+                               drift_gain: float = 1.0,
+                               sensitivity_fractions=DEFAULT_SENSITIVITY_FRACTIONS
+                               ) -> dict:
     """Wall shear implied by the x-momentum budget of the whole channel.
 
     ``tau_w = (1/2) rho0 H (g - d<u>/dt)``.
@@ -173,6 +190,13 @@ def momentum_budget_wall_shear(trace, height: float, body_force: float,
     ``rho0 g H / 2``, the closure ``D/(M g)`` and the relative error in percent.
     ``available`` is ``False`` (all values ``nan``) when the trace carries no
     usable drift, so callers cannot mistake a missing measurement for a pass.
+
+    ``fraction`` is a **window length** fraction (``t_lo = (1 - fraction)
+    t_end``).  ``sensitivity_fractions`` additionally reports the same reading
+    over other post-transient windows and the resulting band
+    (``window_sensitivity``), because a single window cannot show how much of
+    the quoted number is the estimator's own bias; pass an empty sequence to
+    skip the extra fits.
     """
     required = 0.5 * rho0 * body_force * height
     try:
@@ -190,6 +214,8 @@ def momentum_budget_wall_shear(trace, height: float, body_force: float,
             "drift": float("nan"),
             "drift_stderr": float("nan"),
             "n_samples": 0,
+            "window_length_fraction": fraction,
+            "window_sensitivity": _empty_sensitivity(sensitivity_fractions),
         }
     if not (drift_gain > 0.0):
         raise ValueError(f"drift_gain must be positive, got {drift_gain!r}")
@@ -208,7 +234,83 @@ def momentum_budget_wall_shear(trace, height: float, body_force: float,
         "drift_r_squared": drift.r_squared,
         "n_samples": drift.n_samples,
         "window": [drift.t_lo, drift.t_hi],
+        "window_length_fraction": fraction,
         "drift_gain": drift_gain,
+        "window_sensitivity": window_sensitivity(
+            trace, height, body_force, rho0, t_end=t_end,
+            fractions=sensitivity_fractions, drift_gain=drift_gain),
+    }
+
+
+def _empty_sensitivity(fractions) -> dict:
+    nan = float("nan")
+    return {
+        "fractions": [float(f) for f in fractions],
+        "definitions": "fraction = window length / run length, window = [(1-f) t_end, t_end]",
+        "per_fraction": {},
+        "rel_error_pct_band": [nan, nan],
+        "worst_abs_rel_error_pct": nan,
+        "spread_pct_points": nan,
+    }
+
+
+def window_sensitivity(trace, height: float, body_force: float,
+                       rho0: float = 1000.0, t_end: float | None = None,
+                       fractions=DEFAULT_SENSITIVITY_FRACTIONS,
+                       drift_gain: float = 1.0) -> dict:
+    """Spread of the momentum-budget wall shear over alternative drift windows.
+
+    The estimator returns ``tau_w = (1/2) rho H (g - d<u>/dt)``; on a run whose
+    mean velocity is *almost* steady, ``tau_w`` is dominated by the residual
+    transient inside the fitting window, so the quoted number is only as
+    trustworthy as the window is short.  This function re-fits the same trace
+    over every window length in ``fractions`` and reports
+
+    * ``rel_error_pct_band`` -- ``[min, max]`` of the per-window errors,
+    * ``worst_abs_rel_error_pct`` -- the conservative single number a gate
+      should compare against its limit,
+    * ``spread_pct_points`` -- ``max - min``, the estimator's own uncertainty.
+
+    All windows must be post-transient: a window that reaches back into the
+    spin-up is not a steady-state reading at all (on the committed ISPH ladder
+    a full-run window reads ``-3.6 %``, entirely from the start-up ramp).
+    Windows with fewer than two usable samples are skipped and reported as
+    ``None`` instead of being silently dropped.
+    """
+    per: dict[str, dict] = {}
+    errors: list[float] = []
+    for f in fractions:
+        try:
+            est = momentum_budget_wall_shear(
+                trace, height, body_force, rho0, t_end=t_end, fraction=f,
+                drift_gain=drift_gain, sensitivity_fractions=())
+        except (ValueError, KeyError) as exc:  # pragma: no cover - defensive
+            per[f"{f:g}"] = {"available": False, "reason": str(exc)}
+            continue
+        entry = {
+            "available": bool(est["available"]),
+            "n_samples": est["n_samples"],
+            "drift": est["drift"],
+            "rel_error_pct": est["rel_error_pct"],
+        }
+        per[f"{f:g}"] = entry
+        if est["available"] and math.isfinite(est["rel_error_pct"]):
+            errors.append(float(est["rel_error_pct"]))
+    if errors:
+        band = [min(errors), max(errors)]
+        spread = band[1] - band[0]
+        worst = max(abs(v) for v in errors)
+    else:
+        band = [float("nan"), float("nan")]
+        spread = float("nan")
+        worst = float("nan")
+    return {
+        "fractions": [float(f) for f in fractions],
+        "definitions": "fraction = window length / run length, window = [(1-f) t_end, t_end]",
+        "per_fraction": per,
+        "rel_error_pct_band": band,
+        "worst_abs_rel_error_pct": worst,
+        "spread_pct_points": spread,
     }
 
 
@@ -270,10 +372,12 @@ def effective_viscosity(body_force: float, curvature: float) -> float:
 
 
 __all__ = [
+    "DEFAULT_SENSITIVITY_FRACTIONS",
     "DEFAULT_WINDOW_FRACTION",
     "DriftRate",
     "effective_viscosity",
     "drift_rate",
     "momentum_budget_wall_shear",
     "profile_wall_shear",
+    "window_sensitivity",
 ]
