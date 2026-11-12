@@ -43,6 +43,7 @@ import math
 import torch
 
 from .droplet_impact import (
+    lattice_mass_unit,
     Config,
     apply_boundary,
     boundary_box,
@@ -138,11 +139,16 @@ def make_water_block(cfg: SloshingConfig, device: torch.device):
         raise ValueError("water block discretization produced no particles")
     gx, gy = torch.meshgrid(xs, ys, indexing="xy")
     positions = torch.stack((gx.reshape(-1), gy.reshape(-1)), dim=-1)
+    # Calibrated lattice mass unit (see dam_break.make_column): the block used
+    # to carry the raw ``rho0 dx^2``, so a tank run at h/dx = 1.5 started
+    # 0.34 % over-dense = 1.4 kPa of spurious pressure that rings the free
+    # surface of a tank that should be at rest.
+    mass_unit = lattice_mass_unit(cfg)
     if cfg.hydrostatic_init:
         mass = hydrostatic_density(positions[:, 1], cfg, surface=cfg.water_depth
-                                   ) * dx * dx
+                                   ) * (mass_unit / cfg.rho0)
     else:
-        mass = torch.full((positions.shape[0],), cfg.rho0 * dx * dx, device=device)
+        mass = torch.full((positions.shape[0],), mass_unit, device=device)
     return positions, mass
 
 

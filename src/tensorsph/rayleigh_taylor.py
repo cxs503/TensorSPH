@@ -655,7 +655,13 @@ def spurious_interface_pressure(cfg: RTConfig) -> dict:
     is_heavy = pos[:, 1] >= y_int
     rho0 = torch.where(is_heavy, torch.full_like(pos[:, 1], cfg.rho_heavy),
                        torch.full_like(pos[:, 1], cfg.rho_light))
-    mass = rho0 * dx * dx
+    # Same lattice-mass correction the rest of the case layer applies: the raw
+    # rho0 dx^2 carries the kernel-sum bias b(h/dx) as a spurious pressure in
+    # *both* phases, which biases the very growth rate this case measures.
+    from .initial_density import calibration_factor
+    factor = (calibration_factor(dx, h) if getattr(cfg, "density_calibration", True)
+              else 1.0)
+    mass = rho0 * dx * dx * factor
     zero = torch.zeros_like(pos[:, 0])
     big = torch.cat([pos, pos + torch.stack([torch.full_like(zero, cfg.wavelength),
                                              zero], dim=1)], dim=0)
