@@ -1,0 +1,12 @@
+{
+ "p_light_at_interface": 1551251.2536201219,
+ "p_heavy_at_interface": 206376.87824310616,
+ "p_hydrostatic_light_row": 11085.3,
+ "p_hydrostatic_heavy_row": 10889.1,
+ "error_ratio_light": 139.93768807520968,
+ "error_ratio_heavy": 18.952611165578986,
+ "rho_mass_summation_light": 573.4481427687616,
+ "rho_mass_summation_heavy": 1530.1122792883589,
+ "rho0_light": 500.0,
+ "rho0_heavy": 1500.0
+}
