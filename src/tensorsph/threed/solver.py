@@ -358,6 +358,8 @@ def run_hydrostatic(*, nx: int = 10, ny: int = 10, nz: int = 8, dx: float = 0.01
                     dt: float | None = None, steps: int | None = None,
                     sample_every: int = 5, settle_fraction: float = 0.4,
                     wall_model: str = "adami", lid: bool = True,
+                    density_diffusion: float = 0.0,
+                    density_diffusion_form: str = "antuono",
                     dtype=torch.float64) -> HydrostaticResult:
     """Integrate a wall-bounded 3-D column and compare ``p(z)`` with ``rho0 g (H-z)``.
 
@@ -426,13 +428,16 @@ def run_hydrostatic(*, nx: int = 10, ny: int = 10, nz: int = 8, dx: float = 0.01
         dt=dt, steps=steps, fluid_particles=n_fluid,
         wall_particles=int(wall.shape[0]))
     result.profile["wall_model"] = wall_model
+    result.density_diffusion = density_diffusion
+    result.density_diffusion_form = density_diffusion_form
     result.profile["rho0"] = rho0
 
     def rhs(p, v):
         acc, rho, pressure = accelerations(
             p, v, mass, h, pairs, rho0=rho0, sound_speed=sound_speed,
             gamma=gamma, viscosity=viscosity, gravity=g, n_fluid=n_fluid,
-            wall_model=wall_model)
+            wall_model=wall_model, density_diffusion=density_diffusion, dt=dt,
+            density_diffusion_form=density_diffusion_form)
         return acc, rho, pressure
 
     acc, rho, pressure = rhs(pos, vel)
