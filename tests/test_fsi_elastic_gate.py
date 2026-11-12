@@ -99,17 +99,52 @@ def test_elastica_reference_is_self_consistent():
     assert 0.0 < ref["tip_y"] < 0.36
 
 
-def test_elastica_large_deflection_rod_gap_is_known():
-    """A2 is a *known open gap*, not a pass: the 25-node rod over-predicts the
-    large-deflection tip by O(50-90 %) because the discrete curvature is first
-    order at the clamp and the elastica reaches 80 deg of tip rotation.
+def test_elastica_reference_reproduces_the_small_deflection_limit():
+    """The large-deflection reference must fall back on ``P H^3/(3 EI)``.
 
-    The bound below only guards against a catastrophic regression (the pin base
-    produced +5000 %).
+    A shooting solution can satisfy its own free-end condition while being
+    wrong in a frame/sign sense, so it is checked against linear beam theory as
+    ``P -> 0``: the transverse tip deflection is ``tip_y`` because the elastica
+    is integrated along its own ``+x`` axis with a transverse load along ``+y``.
+    """
+    case = fg.ElasticGateCase(dx=0.0125, n_gate_nodes=25)
+    EI, H = case.gate_stiffness_bending(), case.gate_height
+    for eps in (1.0e-2, 1.0e-1):
+        P = eps * EI / H ** 2
+        ref = fg.elastica_tip(P, H, EI)
+        eb = fg.eb_tip_point_load(P, H, EI)
+        assert abs(ref["tip_y"] / eb - 1.0) < 2.0e-3, (eps, ref["tip_y"], eb)
+
+
+def test_large_deflection_rod_matches_the_elastica_in_the_same_frame():
+    """A2 (fixed, m16454): rod vs elastica at ``P H^2 / EI = 10``.
+
+    The delivered A2 compared the rod's *transverse* tip deflection (the gate
+    x offset) with the elastica's *axial* coordinate (the span of a horizontal
+    cantilever) and reported the mismatch as a +86.8 % rod-accuracy gap.  In one
+    frame the 25-node rod is inside 3 % on the deflection and 3.7 % on the
+    shortening of a 82 deg bent cantilever, so the rod was never the blocker.
     """
     case = fg.ElasticGateCase(dx=0.0125, n_gate_nodes=25)
     a2 = fg.verify_cantilever(case)["A2_elastica"]
-    assert 0.2 < a2["rel_error"] < 1.2, a2
+    assert a2["P_L2_over_EI"] == pytest.approx(10.0, rel=1e-12)
+    assert abs(a2["rel_error"]) < 0.05, a2           # transverse: +2.55 %
+    assert abs(a2["axial_rel_error"]) < 0.06, a2     # shortening: +3.67 %
+    assert abs(a2["slope_rel_error"]) < 0.02, a2     # tip slope: +0.59 %
+    # the historical comparison is a *frame* artefact and must stay far outside
+    # the rod-accuracy band, so a regression back to it is visible
+    assert a2["frame_mismatch_rel_error"] > 0.5, a2
+
+
+def test_large_deflection_error_decreases_with_rod_refinement():
+    """Discretisation evidence: the A2 error halves from 13 to 25 nodes."""
+    errors = {}
+    for n in (13, 25):
+        case = fg.ElasticGateCase(dx=0.0125, n_gate_nodes=n)
+        errors[n] = abs(fg.verify_cantilever(case)["A2_elastica"]["rel_error"])
+    assert errors[13] < 0.07, errors
+    assert errors[25] < 0.05, errors
+    assert errors[25] < errors[13], errors
 
 
 @pytest.mark.slow
