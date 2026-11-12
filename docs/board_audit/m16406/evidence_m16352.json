@@ -1,0 +1,118 @@
+{
+ "anchor_slug": "CASE-SPH-FSI-ELASTIC-GATE",
+ "reviewed_mission": 16352,
+ "audit_mission": 16406,
+ "reviewed_src": "/root/tp-agent/work/m16352",
+ "registry": {
+  "anchor_slug": "CASE-SPH-FSI-ELASTIC-GATE",
+  "rows": [],
+  "n_rows": 0,
+  "table_total": 32,
+  "elastic_rows_any_anchor": [
+   [
+    "CASE-DEM-SHEAR-CAMPBELL-ELASTIC-LIMIT",
+    "R1_bagnold_exponent_inertial_limit",
+    "15 % rel."
+   ],
+   [
+    "CASE-DEM-SHEAR-CAMPBELL-ELASTIC-LIMIT",
+    "R2_regime_boundary_kappa_c",
+    "factor 3 (order of magnitude)"
+   ],
+   [
+    "CASE-DEM-SHEAR-CAMPBELL-ELASTIC-LIMIT",
+    "R3_elastic_quasistatic_exponent",
+    "absolute 0.3"
+   ],
+   [
+    "CASE-DEM-SHEAR-CAMPBELL-ELASTIC-LIMIT",
+    "R4_bagnold_coefficient_plateau",
+    "WITHHELD"
+   ]
+  ],
+  "mission": [
+   16352,
+   "succeeded",
+   "TensorSPH",
+   "TensorSPH \u5f39\u6027\u95f8\u95e8 FSI\uff08Antoci 2007\uff09\u7b2c 2 \u8f6e\uff1a\u5148\u8c03\u7814\uff08SPHinXsys \u6e90\u7801 + \u65b9\u6cd5\u8c31\u7cfb\uff09\uff0c\u518d\u843d\u5730\u4e24\u5904\u771f\u5b9e\u7f3a\u9677\u4fee\u590d\u2014\u2014\u2460 \u6d41\u2192\u56fa\u8f7d\u8377\u4ece Adami \u6210\u5bf9\u548c\uff08\u58c1\u9762\u534a\u7a7a\u95f4\u4e8f\u7f3a \u221228.4%/\u221220.4%/\u22128.3%\uff0c\u4ea4\u4ed8\u7248\u9760 load_scale=1.2558 \u4e8b\u540e\u6807\u5b9a\uff09\u6539\u4e3a\u58c1\u9762\u538b\u529b\u9762\u5143\u6cd5\uff08\u4e00\u9636\u52a0\u6743\u6700\u5c0f\u4e8c\u4e58\u5916\u63a8\uff09\uff0cV1 \u53d8\u6210 +0",
+   null
+  ],
+  "tensorbench_results_rows": 0,
+  "reports": [
+   [
+    "15473",
+    "FSI \u5f39\u6027\u95f8\u95e8\u7b2c2\u8f6e\uff08m16352\uff09\uff1a\u8c03\u7814\u9009\u578b + \u6d41\u56fa\u8f7d\u8377\u4e0e\u56fa\u7aef\u7f3a\u9677\u4fee\u590d\uff08honest \u90e8\u5206\u5206\uff09",
+    "3309",
+    "2026-11-12 13:47:07.561564+00:00"
+   ]
+  ],
+  "prior_verdicts": [
+   [
+    "463",
+    "16257",
+    "2",
+    "reopened",
+    "m16214 CASE-SPH-FSI-ELASTIC-GATE",
+    "board-audit"
+   ]
+  ]
+ },
+ "referee": {
+  "status": "CLAIMED_NOT_PROVEN",
+  "l4_benchmark_pass": false,
+  "rows": 0,
+  "claimed_level": null,
+  "failed_checks": [
+   "execution_success",
+   "source_cluster_job",
+   "cluster_job_bound",
+   "ref_got_error_present",
+   "within_tolerance"
+  ],
+  "reason": "no tensorbench_results row for this mission: the L4 benchmark claim is self-declared, not measured",
+  "rule": "L4 requires >=1 platform-recomputed benchmark row (ref/got/error)"
+ },
+ "artifacts": [
+  {
+   "file": "docs/board_audit/m16406/artifacts/runs.json",
+   "origin": "/root/tp-agent/work/m16352/artifacts/fsi_elastic_gate/runs.json",
+   "sha256": "cf1a6f513816261e1abb478f3790db8b7c8fc7c9a208feba7411a83045c7efda",
+   "bytes": 45862
+  },
+  {
+   "file": "docs/board_audit/m16406/artifacts/summary.json",
+   "origin": "/root/tp-agent/work/m16352/artifacts/fsi_elastic_gate/summary.json",
+   "sha256": "26a1c09daae0640a22108521e725ac0ff45e786bed1943715fcf80d5ec62ca95",
+   "bytes": 552
+  },
+  {
+   "file": "docs/board_audit/m16406/artifacts/rod_verification.json",
+   "origin": "/root/tp-agent/work/m16352/artifacts/fsi_elastic_gate/rod_verification.json",
+   "sha256": "7d8d3085462c5145079bdb2c2391650cf516102fd1002035de19b89961fccc4a",
+   "bytes": 1351
+  },
+  {
+   "file": "docs/board_audit/m16406/artifacts/v4_gate_load_path.json",
+   "origin": "/root/tp-agent/work/m16352/artifacts/fsi_elastic_gate/v4_gate_load_path.json",
+   "sha256": "f2bf1c2226eb0457ec959196befcc6d0f6833d59891623a92449720c88a5cbfe",
+   "bytes": 185
+  },
+  {
+   "file": "docs/board_audit/m16406/artifacts/provenance.json",
+   "origin": "/root/tp-agent/work/m16352/artifacts/fsi_elastic_gate/provenance.json",
+   "sha256": "6e19c5aed6e81d9f2ecae68578e507b246cba8c2d9e17b7a1e42a6ebe6e718a8",
+   "bytes": 1903
+  },
+  {
+   "file": "docs/board_audit/m16406/artifacts/fig1_tip_and_load.png",
+   "origin": "/root/tp-agent/work/m16352/artifacts/fsi_elastic_gate/fig1_tip_and_load.png",
+   "sha256": "531f97d520b2adeaa24f801ac93346f7e6f9dcf2291500842910a6711457a7cf",
+   "bytes": 110514
+  }
+ ],
+ "impl_sha256": {
+  "src/tensorsph/fsi_elastic_gate.py": "a77a0905e3243e12a7fe37f067b04d438ef865e0255f61a7eb0cea85a5c60467",
+  "tests/test_fsi_elastic_gate.py": "ad2e850dfc90ab5827fbfbae290967d0f05f2c92c9f5b1280a516da65b58a132",
+  "benchmarks/fsi_elastic_gate/run_antoci.py": "de36100b77054b64c7fcdce81966dfd1670af96574553f9ad6ad17cdc1b74ec8"
+ }
+}
