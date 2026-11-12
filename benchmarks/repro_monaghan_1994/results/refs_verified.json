@@ -1,0 +1,163 @@
+{
+ "benchmark": "REPRO-SPH-MONAGHAN1994",
+ "anchor_citation_claim": {
+  "title": "Simulating Free Surface Flows with SPH",
+  "author_family": "Monaghan",
+  "journal": "J. Comput. Phys.",
+  "volume": "110",
+  "pages": "399-406",
+  "year": "1994"
+ },
+ "retrieved_utc": "2026-11-12T21:18:54+00:00",
+ "crossref_search": {
+  "status": 200,
+  "url": "https://api.crossref.org/works?query.bibliographic=Simulating+Free+Surface+Flows+with+SPH&query.author=Monaghan&filter=from-pub-date%3A1994-01-01%2Cuntil-pub-date%3A1994-12-31&rows=8&select=DOI%2Ctitle%2Ccontainer-title%2Cvolume%2Cpage%2Cauthor%2Cpublished-print%2Cabstract",
+  "error": null,
+  "n_candidates": 4,
+  "candidates": [
+   {
+    "doi": "10.1006/jcph.1994.1034",
+    "title": "Simulating Free Surface Flows with SPH",
+    "container": "Journal of Computational Physics",
+    "volume": "110",
+    "page": "399-406",
+    "authors": [
+     "J.J. Monaghan"
+    ],
+    "published": [
+     1994,
+     2
+    ],
+    "has_abstract": false,
+    "abstract": null,
+    "match_score": 40,
+    "match_fields": {
+     "title_tokens": 5,
+     "author": true,
+     "volume": true,
+     "pages": true,
+     "year": true
+    }
+   },
+   {
+    "doi": "10.2307/4088609",
+    "title": "Measuring the Daily Energy Expenditure of Free-Living Arctic Terns (Sterna paradisaea)",
+    "container": "The Auk",
+    "volume": "111",
+    "page": "453-459",
+    "authors": [
+     "J. Uttley",
+     "P. Monaghan"
+    ],
+    "published": [
+     1994,
+     4
+    ],
+    "has_abstract": false,
+    "abstract": null,
+    "match_score": 16,
+    "match_fields": {
+     "title_tokens": 1,
+     "author": true,
+     "volume": false,
+     "pages": false,
+     "year": true
+    }
+   },
+   {
+    "doi": "10.1007/s002580050026",
+    "title": "Immunolocalisation of cell surface peptidases in the developing human breast",
+    "container": "Differentiation",
+    "volume": "56",
+    "page": "0101",
+    "authors": [
+     "Amanda\u2009J. Atherton",
+     "Ramaswamy Anbazhagan",
+     "Paul Monaghan",
+     "Jiri Bartek",
+     "Barry\u2009A. Gusterson"
+    ],
+    "published": [
+     1994
+    ],
+    "has_abstract": false,
+    "abstract": null,
+    "match_score": 16,
+    "match_fields": {
+     "title_tokens": 1,
+     "author": true,
+     "volume": false,
+     "pages": false,
+     "year": true
+    }
+   },
+   {
+    "doi": "10.1046/j.1432-0436.1994.56120101.x",
+    "title": "Immunolocalisation of cell surface peptidases in the developing human breast",
+    "container": "Differentiation",
+    "volume": "56",
+    "page": "101-106",
+    "authors": [
+     "Amanda J. Atherton",
+     "Ramaswamy Anbazhagan",
+     "Paul Monaghan",
+     "Jiri Bartek",
+     "Barry A. Gusterson"
+    ],
+    "published": [
+     1994,
+     3
+    ],
+    "has_abstract": false,
+    "abstract": null,
+    "match_score": 16,
+    "match_fields": {
+     "title_tokens": 1,
+     "author": true,
+     "volume": false,
+     "pages": false,
+     "year": true
+    }
+   }
+  ],
+  "selected": {
+   "doi": "10.1006/jcph.1994.1034",
+   "title": "Simulating Free Surface Flows with SPH",
+   "container": "Journal of Computational Physics",
+   "volume": "110",
+   "page": "399-406",
+   "authors": [
+    "J.J. Monaghan"
+   ],
+   "published": [
+    1994,
+    2
+   ],
+   "has_abstract": false,
+   "abstract": null,
+   "match_score": 40,
+   "match_fields": {
+    "title_tokens": 5,
+    "author": true,
+    "volume": true,
+    "pages": true,
+    "year": true
+   }
+  },
+  "resolved": true,
+  "rule": "highest score; score = 10*(author) + 10*(volume) + 10*(pages) + 5*(year) + (title token matches); resolved iff score >= 40"
+ },
+ "openalex": {
+  "status": 200,
+  "url": "https://api.openalex.org/works/doi:10.1006/jcph.1994.1034",
+  "fields": {
+   "title": "Simulating Free Surface Flows with SPH",
+   "publication_year": 1994,
+   "open_access": false,
+   "oa_status": "closed",
+   "has_abstract": false,
+   "abstract": null
+  },
+  "error": null
+ }
+}
