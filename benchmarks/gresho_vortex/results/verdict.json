@@ -1,0 +1,50 @@
+{
+  "case": "gresho_chan_vortex_2d_periodic",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "name": "spurious_acceleration_pct (finest dx)",
+      "measured": 3.6719332175990718,
+      "limit": 5.0,
+      "direction": "<=",
+      "pass": true
+    },
+    {
+      "name": "velocity_error_pct_end (finest dx)",
+      "measured": 37.491834899571444,
+      "limit": 10.0,
+      "direction": "<=",
+      "pass": false
+    },
+    {
+      "name": "angular_momentum_drift_rel (drift must be round-off)",
+      "measured": 0.041494766089692,
+      "limit": 1e-06,
+      "direction": "<=",
+      "pass": false
+    },
+    {
+      "name": "observed_order_acceleration (best pair)",
+      "measured": 1.8608500919120405,
+      "limit": 0.8,
+      "direction": ">=",
+      "pass": true
+    },
+    {
+      "name": "negative control (uniform density is worse by >5x)",
+      "measured": 8.249065452166796,
+      "limit": 5.0,
+      "direction": ">=",
+      "pass": true
+    },
+    {
+      "name": "sensitivity control (half pressure is worse)",
+      "measured": 53.581802524445294,
+      "limit": 12.122585349802366,
+      "direction": ">",
+      "pass": true
+    }
+  ],
+  "finest_dx": 0.02,
+  "note": "A FAIL here is an honest measurement of the scheme, not an error of the harness: the reference is a closed form."
+}

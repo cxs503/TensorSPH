@@ -1,0 +1,52 @@
+{
+  "forward": {
+    "a_pct": 12.122585349802366,
+    "a_residual_rms": 0.19963510896334338,
+    "a_exact_rms": 1.6468030803891023,
+    "a_residual_max_pct": 43.8158736806885,
+    "a_ref": 2.5,
+    "p_range_pa": [
+      0.024279091778315175,
+      772.6684781439326
+    ],
+    "init_mode": "analytic",
+    "pressure_scale": 1.0,
+    "init_density_rel_error_max": 8.425974390657842e-06,
+    "particles": 625,
+    "dx": 0.04
+  },
+  "reverse": {
+    "a_pct": 99.99999999999802,
+    "a_residual_rms": 1.6473079948293816,
+    "a_exact_rms": 1.647307994829414,
+    "a_residual_max_pct": 200.00000000007788,
+    "a_ref": 2.5,
+    "p_range_pa": [
+      0.0,
+      4.440892098500626e-10
+    ],
+    "init_mode": "uniform",
+    "pressure_scale": 1.0,
+    "init_density_rel_error_max": 5.323104412813251e-05,
+    "particles": 625,
+    "dx": 0.04
+  },
+  "half_pressure": {
+    "a_pct": 53.581802524445294,
+    "a_residual_rms": 0.8825213418660732,
+    "a_exact_rms": 1.6470542241714357,
+    "a_residual_max_pct": 121.87505408296673,
+    "a_ref": 2.5,
+    "p_range_pa": [
+      0.012202057814952079,
+      386.3342318297848
+    ],
+    "init_mode": "analytic",
+    "pressure_scale": 0.5,
+    "init_density_rel_error_max": 4.233508355655502e-06,
+    "particles": 625,
+    "dx": 0.04,
+    "note": "pressure field scaled by 0.5: the balance error must grow, which shows the metric responds to the pressure field and not to lattice noise"
+  },
+  "dx": 0.04
+}
