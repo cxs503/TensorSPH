@@ -87,14 +87,22 @@ def pair_geometry(pos, volume, h, eta_factor=0.01):
     return f_ij * v[None, :]
 
 
-def conduction_rhs(temperature, conductivity, volume, rho, pos, h, eta_factor=0.01):
-    """``dH/dt`` (J/(kg s)) from the SPH conduction operator; shapes (N,)."""
+def conduction_rhs(temperature, conductivity, volume, rho, pos, h, eta_factor=0.01,
+                   fv=None):
+    """``dH/dt`` (J/(kg s)) from the SPH conduction operator; shapes (N,).
+
+    ``fv`` optionally carries the frozen pair matrix ``V_j F_ij`` (from
+    :func:`pair_geometry`) when the geometry does not change between calls --
+    a time loop that reuses it avoids rebuilding the ``O(N^2)`` kernel every
+    step.  It must have been built from the *same* positions/volumes.
+    """
     t = torch.as_tensor(temperature, dtype=DTYPE)
     k = torch.as_tensor(conductivity, dtype=DTYPE)
     v = torch.as_tensor(volume, dtype=DTYPE)
     rho_t = torch.as_tensor(rho, dtype=DTYPE)
     k, v, t = torch.broadcast_tensors(k, v, t)
-    fv = pair_geometry(pos, v, h, eta_factor)
+    if fv is None:
+        fv = pair_geometry(pos, v, h, eta_factor)
     k_ij = 2.0 * k[:, None] * k[None, :] / (k[:, None] + k[None, :])
     kernel = k_ij * fv
     return 2.0 / rho_t * (t * kernel.sum(dim=1) - kernel @ t)
