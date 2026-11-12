@@ -704,7 +704,15 @@ def verify_cantilever(case: ElasticGateCase, stiff_E: float = 1.0e7
         ``int q(a) a^2 (3H-a)/(6EI) da``;
     A2  **large** deflection (``P L^2 / EI = 10``), the Kirchhoff elastica solved
         as an ODE -- this is the regime the real gate lives in, and the regime
-        the shipped verification never tested.
+        the shipped verification never tested.  The rod stands along ``+y`` and
+        is loaded along ``+x`` while :func:`elastica_tip` runs along its own
+        ``+x`` with a transverse load along ``+y``; the two configurations are
+        congruent, so the *transverse* tip deflection must be compared with
+        ``tip_y_elastica`` and the *axial* shortening with ``H - tip_x``.  The
+        delivered A2 (m16214-m16352) paired the transverse deflection with the
+        elastica's axial coordinate and reported the mismatch as an +86.8 %
+        "rod accuracy gap"; m16454 fixed the frame and the rod is inside 2.6 %
+        transverse / 3.7 % axial / 0.6 % slope at ``n = 25``.
 
     All three run with ``gravity = 0`` and by energy minimisation, so the check
     compares constitutive/geometry code against beam theory only.
@@ -736,19 +744,41 @@ def verify_cantilever(case: ElasticGateCase, stiff_E: float = 1.0e7
     out["A1_distributed"] = {"load_scale": scale, "tip_rod": got,
                              "tip_exact": exact, "rel_error": (got - exact) / exact}
 
-    # A2: large deflection against the elastica
+    # A2: large deflection against the elastica, *in the same frame*
     P = 10.0 * EI / H ** 2          # P H^2 / EI = 10
     load = torch.zeros((case.n_gate_nodes, 2), dtype=torch.float64)
     load[-1, 0] = P
-    tip_x, tip_y = _run(load)
+    nodes = rod_static_equilibrium(case, load, gravity=False)
+    tip_x = float(nodes[-1, 0]) - case.water_width       # transverse deflection
+    tip_y = float(nodes[-1, 1]) - H                      # -(axial shortening)
+    seg = nodes[-1] - nodes[-2]
+    slope_rod = float(math.atan2(float(seg[0]), float(seg[1])))   # from +y axis
     ref = elastica_tip(P, H, EI)
-    out["A2_elastica"] = {"P": P, "P_L2_over_EI": P * H ** 2 / EI,
-                          "tip_x_rod": tip_x, "tip_x_elastica": ref["tip_x"],
-                          "rel_error": (tip_x - ref["tip_x"]) / ref["tip_x"],
-                          "tip_y_rod": tip_y, "tip_y_elastica": ref["tip_y"],
-                          "rod_angle": float(math.atan2(tip_y, tip_x))
-                          if tip_x else 0.0,
-                          "elastica_angle": ref["tip_angle"]}
+    trans_ref = float(ref["tip_y"])
+    axial_ref = H - float(ref["tip_x"])
+    slope_ref = float(ref["tip_angle"])
+    out["A2_elastica"] = {
+        "P": P, "P_L2_over_EI": P * H ** 2 / EI,
+        "frame": ("rod stands along +y and is loaded along +x; elastica_tip "
+                  "runs along its own +x with a transverse load along +y, so "
+                  "the rod's transverse tip deflection maps to tip_y_elastica "
+                  "and its axial shortening (-dy) to H - tip_x_elastica"),
+        "tip_transverse_rod": tip_x, "tip_transverse_elastica": trans_ref,
+        "tip_axial_shortening_rod": -tip_y,
+        "tip_axial_shortening_elastica": axial_ref,
+        "tip_slope_rod": slope_rod, "tip_slope_elastica": slope_ref,
+        # the primary case metric: the gate-tip deflection
+        "rel_error": (tip_x - trans_ref) / trans_ref,
+        "axial_rel_error": (-tip_y - axial_ref) / axial_ref,
+        "slope_rel_error": (slope_rod - slope_ref) / slope_ref,
+        # historical diagnostic (m16214..m16352): the delivered A2 compared the
+        # rod's *transverse* deflection with the elastica's *axial* coordinate
+        # (x_tip_rod - x_tip_elastica) and read that mismatch as an +86.8 %
+        # rod-accuracy gap.  Kept so the before/after stays auditable; it is
+        # never a pass/fail gate here.
+        "frame_mismatch_rel_error": (tip_x - float(ref["tip_x"]))
+                                    / float(ref["tip_x"]),
+    }
     return out
 
 
