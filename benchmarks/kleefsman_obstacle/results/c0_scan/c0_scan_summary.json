@@ -1,0 +1,203 @@
+{
+  "case": "Kleefsman (2005) dam break with obstacle, probe upstream of the box",
+  "reference": "J. Comput. Phys. 206:363-393, DOI 10.1016/j.jcp.2004.12.007",
+  "experimental_status": "WITHHELD",
+  "t_end": 1.2,
+  "matrix": {
+    "dx": [
+      0.04,
+      0.02
+    ],
+    "sound_speed": [
+      20.0,
+      40.0,
+      80.0
+    ]
+  },
+  "completed": 6,
+  "expected": 6,
+  "rows": [
+    {
+      "tag": "dx0.02_c020",
+      "dx": 0.02,
+      "sound_speed": 20.0,
+      "mach_max": 0.3320624589920044,
+      "t_end": 1.2,
+      "dt_nominal": 0.0002,
+      "dt_acoustic_limit": 0.00039000000000000005,
+      "dt_min": 0.0002,
+      "dt_max": 0.0002,
+      "steps": 6001,
+      "simulated_time_s": 1.2001999999999005,
+      "particles_fluid": 1647,
+      "peak_height_m": 0.5174656510353088,
+      "peak_time_s": 0.7159999999999538,
+      "arrival_time_s": 0.4540686776727774,
+      "max_density_compression": 0.12032958984374997,
+      "max_speed": 6.641249179840088,
+      "compressibility_ratio": 1.0912716606838533,
+      "mass_error_rel": 0.0,
+      "boundary_escapes": 0,
+      "wall_clock_s": 73.6,
+      "chunks": 1,
+      "host": "36cb7828dbd5"
+    },
+    {
+      "tag": "dx0.02_c040",
+      "dx": 0.02,
+      "sound_speed": 40.0,
+      "mach_max": 0.18370143175125123,
+      "t_end": 1.2,
+      "dt_nominal": 0.00019500000000000002,
+      "dt_acoustic_limit": 0.00019500000000000002,
+      "dt_min": 0.00014826373888925096,
+      "dt_max": 0.00019500000000000002,
+      "steps": 7435,
+      "simulated_time_s": 1.200128435866244,
+      "particles_fluid": 1647,
+      "peak_height_m": 0.48058047890663147,
+      "peak_time_s": 1.200128435866244,
+      "arrival_time_s": 0.4533958448304394,
+      "max_density_compression": 0.05892822265624997,
+      "max_speed": 7.348057270050049,
+      "compressibility_ratio": 1.746217193901074,
+      "mass_error_rel": 0.0,
+      "boundary_escapes": 0,
+      "wall_clock_s": 83.9,
+      "chunks": 1,
+      "host": "36cb7828dbd5"
+    },
+    {
+      "tag": "dx0.02_c080",
+      "dx": 0.02,
+      "sound_speed": 80.0,
+      "mach_max": 0.0901116669178009,
+      "t_end": 1.2,
+      "dt_nominal": 9.750000000000001e-05,
+      "dt_acoustic_limit": 9.750000000000001e-05,
+      "dt_min": 8.049634057041675e-05,
+      "dt_max": 9.750000000000001e-05,
+      "steps": 14261,
+      "simulated_time_s": 1.2000516904884686,
+      "particles_fluid": 1647,
+      "peak_height_m": 0.45548737049102783,
+      "peak_time_s": 0.706342054590357,
+      "arrival_time_s": 0.4529993494929768,
+      "max_density_compression": 0.034054565429687544,
+      "max_speed": 7.208933353424072,
+      "compressibility_ratio": 4.193853886632509,
+      "mass_error_rel": 0.0,
+      "boundary_escapes": 0,
+      "wall_clock_s": 170.9,
+      "chunks": 2,
+      "host": "36cb7828dbd5"
+    },
+    {
+      "tag": "dx0.04_c020",
+      "dx": 0.04,
+      "sound_speed": 20.0,
+      "mach_max": 0.29887542724609373,
+      "t_end": 1.2,
+      "dt_nominal": 0.0002,
+      "dt_acoustic_limit": 0.0007800000000000001,
+      "dt_min": 0.0002,
+      "dt_max": 0.0002,
+      "steps": 6001,
+      "simulated_time_s": 1.2001999999999005,
+      "particles_fluid": 390,
+      "peak_height_m": 0.4254579544067383,
+      "peak_time_s": 0.9199999999999313,
+      "arrival_time_s": 0.48414603344528545,
+      "max_density_compression": 0.14149401855468757,
+      "max_speed": 5.977508544921875,
+      "compressibility_ratio": 1.5840090597104517,
+      "mass_error_rel": 0.0,
+      "boundary_escapes": 0,
+      "wall_clock_s": 38.4,
+      "chunks": 1,
+      "host": "36cb7828dbd5"
+    },
+    {
+      "tag": "dx0.04_c040",
+      "dx": 0.04,
+      "sound_speed": 40.0,
+      "mach_max": 0.16907447576522827,
+      "t_end": 1.2,
+      "dt_nominal": 0.0002,
+      "dt_acoustic_limit": 0.00039000000000000005,
+      "dt_min": 0.0002,
+      "dt_max": 0.0002,
+      "steps": 6001,
+      "simulated_time_s": 1.2001999999999005,
+      "particles_fluid": 390,
+      "peak_height_m": 0.4475060999393463,
+      "peak_time_s": 0.9799999999999247,
+      "arrival_time_s": 0.4830132983470167,
+      "max_density_compression": 0.0484450683593749,
+      "max_speed": 6.762979030609131,
+      "compressibility_ratio": 1.6947025152249988,
+      "mass_error_rel": 0.0,
+      "boundary_escapes": 0,
+      "wall_clock_s": 37.1,
+      "chunks": 1,
+      "host": "36cb7828dbd5"
+    },
+    {
+      "tag": "dx0.04_c080",
+      "dx": 0.04,
+      "sound_speed": 80.0,
+      "mach_max": 0.07886013388633728,
+      "t_end": 1.2,
+      "dt_nominal": 0.00019500000000000002,
+      "dt_acoustic_limit": 0.00019500000000000002,
+      "dt_min": 0.0001626716888386662,
+      "dt_max": 0.00019500000000000002,
+      "steps": 7113,
+      "simulated_time_s": 1.2000969210273087,
+      "particles_fluid": 390,
+      "peak_height_m": 0.513088047504425,
+      "peak_time_s": 0.8809979887204215,
+      "arrival_time_s": 0.48344570110401175,
+      "max_density_compression": 0.03363037109375,
+      "max_speed": 6.308810710906982,
+      "compressibility_ratio": 5.407750416264022,
+      "mass_error_rel": 0.0,
+      "boundary_escapes": 0,
+      "wall_clock_s": 44.5,
+      "chunks": 1,
+      "host": "36cb7828dbd5"
+    }
+  ],
+  "per_grid": {
+    "dx0.04": {
+      "monotone_decreasing": true,
+      "compression_decay_exponent": -1.0364522315700453,
+      "compression_below_5pct_at_max_c0": true,
+      "compressibility_ratio_range": [
+        1.5840090597104517,
+        5.407750416264022
+      ],
+      "peak_height_spread_m": [
+        0.4254579544067383,
+        0.513088047504425
+      ]
+    },
+    "dx0.02": {
+      "monotone_decreasing": true,
+      "compression_decay_exponent": -0.9105356636196901,
+      "compression_below_5pct_at_max_c0": true,
+      "compressibility_ratio_range": [
+        1.0912716606838533,
+        4.193853886632509
+      ],
+      "peak_height_spread_m": [
+        0.45548737049102783,
+        0.5174656510353088
+      ]
+    }
+  },
+  "thresholds": {
+    "density_compression_controllable": 0.05,
+    "peak_monotone_in_dx_required_for_order": true
+  }
+}
