@@ -179,9 +179,22 @@ def test_front_estimator_probe_reproduces_the_committed_trajectory():
         # what makes the estimator comparison a property of the case and not noise.
         assert worst == 0.0, f"{case['case']}: re-run differs from the committed run by {worst}"
         assert case["tau"][:n] == pytest.approx(traj["tau"][:n], rel=0, abs=0)
-        # No ejecta: max is the cloud's own leading edge at the probed resolutions.
-        worst_ahead = max(q["n_ahead_of_p995_by_2dx"] for q in case["probe"])
-        assert worst_ahead == 0, "a stray particle ahead of the cloud would invalidate max-x"
+        # No ejecta inside the *graded window*: max is then the cloud's own
+        # leading edge there.  The window matters: probing dx = 1 cm (a level the
+        # first probe never ran) finds one particle > 2 dx ahead of the 99.5 %
+        # quantile at tau = 3.26/3.36/3.37, i.e. only after the window has
+        # closed, so it cannot reach the graded metric - but the check has to say
+        # which regime it is asserting, otherwise it is red (or green) for the
+        # wrong reason.
+        in_window = [q for t, q in zip(case["tau"], case["probe"]) if WINDOW[0] <= t <= WINDOW[1]]
+        assert in_window, case["case"]
+        worst_ahead = max(q["n_ahead_of_p995_by_2dx"] for q in in_window)
+        assert worst_ahead == 0, (
+            f"{case['case']}: a stray particle inside the graded window would invalidate max-x")
+        tail = [t for t, q in zip(case["tau"], case["probe"])
+                if q["n_ahead_of_p995_by_2dx"] > 0]
+        # recorded, not asserted away: the finest level does eject one particle late
+        assert all(t > WINDOW[1] for t in tail), tail
 
 
 def test_probe_quantile_ladder_brackets_the_shipped_estimator():
