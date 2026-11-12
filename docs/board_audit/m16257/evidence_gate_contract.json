@@ -1,0 +1,110 @@
+{
+  "rework_directive": "REWORK (5 items, in order): 1) V1's -20.37% moving-wall load-transfer bias must be fixed at source in gate_load()/interpolation (missing interior half of the kernel support), then the production run must use load_scale=1.0; the delivered result is silently multiplied by 1.255762 derived from that failed check. 2) V2 must be rebuilt as a real pytest unit test: gravity OFF (rod_forces currently adds full gravity to a 1e-5-scaled load, and the 4 mm gate carries 348x its own Euler load), static equilibrium by energy minimisation, assert the Green's-function tip inside 10%. 3) The Antoci 2007 gate-tip curve (DOI 10.1016/j.compstruc.2007.01.002, closed access) must be obtained/digitised and registered in tensor_benchmark_cases for anchor CASE-SPH-FSI-ELASTIC-GATE with the 10% tolerance; then report ref-vs-got peak AND phase. 4) branch agent/m16214 @9fd55b0 is NOT on GitHub and NOT in main - the whole module exists only in the local worktree; merge it and keep run artifacts outside .gitignore'd artifacts/. 5) the mandated metric is geometrically saturated (peak 354-365 mm on a 360 mm gate; +25.6% load moves it -2.9% and the phase not at all) - pick a discriminating metric (pre-floor tip displacement or gate load history) before claiming any tolerance.",
+  "impl_files": [
+    "src/tensorsph/fsi_elastic_gate.py"
+  ],
+  "impl_files_note": "repo-relative pointer is the honest one: the file is present ONLY in worktree m16214 as local commit 9fd55b0 on agent/m16214 (git ls-remote origin refs/heads/agent/m16214 -> empty; git cat-file main:src/tensorsph/fsi_elastic_gate.py -> missing). Byte-identical audit copy: docs/board_audit/m16257/probe/probe/src/tensorsph/fsi_elastic_gate.py sha256=e92f63dc0aec76ac9e4b008293e6e7a8e68f80a73d5e7a609c53c000afd5b188 (518 lines, stretch+bending rod via autograd, Adami wall load transfer, WCSPH reuse; not a placeholder, not a stub)",
+  "entry": "benchmarks/fsi_elastic_gate/run_antoci.py",
+  "entry_note": "same branch-only status as impl_files; runs end-to-end (audited: 253 particles/1642 steps 111 s at dx=12.5 mm; 406/2052 steps at dx=10 mm) and is deterministic (this audit's re-run reproduces peak_tip_x=0.3543333617266935 bit-for-bit); no CLI/API/registry hook, only sys.path + direct import",
+  "run_artifacts": [
+    "/root/tp-agent/work/m16214/artifacts/fsi_elastic_gate/antoci_elastic_gate.json",
+    "/root/tp-agent/work/m16214/artifacts/fsi_elastic_gate/antoci_elastic_gate.png",
+    "docs/board_audit/m16257/probe/antoci_elastic_gate.json",
+    "docs/board_audit/m16257/probe/probe_verify_results.json",
+    "docs/board_audit/m16257/probe/probe_load_scale.json",
+    "docs/board_audit/m16257/fsi_elastic_gate.png",
+    "docs/board_audit/m16257/report.md"
+  ],
+  "run_artifacts_note": "the delivered json/png live in a .gitignore'd artifacts/ dir (never enters git) and their mtime 11:26 is 6 min AFTER the mission's finished_at 11:20:15Z; the audit copies are byte-identical (sha256 in docs/board_audit/m16257/probe/artifact_sha256.txt)",
+  "tests": [],
+  "tests_note": "ZERO tests: worktree m16214 tests/ has no test_*fsi* file, no test imports fsi_elastic_gate, the shipped script asserts nothing (V1/V2 print FAIL and execution continues) - the L1 rung of the ladder is not just failing, it is unguarded",
+  "integration_callers": [],
+  "integration_callers_note": "single call site = its own harness benchmarks/fsi_elastic_gate/run_antoci.py; no other TensorSPH module, CLI entry or platform tool imports fsi_elastic_gate; nothing is in main, so integration is structurally impossible to demonstrate at L3",
+  "benchmark": {
+    "ref": null,
+    "ref_status": "WITHHELD",
+    "got_peak_tip_m": 0.3543333617266935,
+    "got_peak_time_s": 0.25374374999999355,
+    "got_peak_tip_m_fine": 0.349557916579874,
+    "got_peak_time_s_fine": 0.24979500000000088,
+    "error_vs_ref_pct": null,
+    "tolerance_pct": 10.0,
+    "pass": false,
+    "registered_in_tensor_benchmark_cases": false,
+    "registry_rows_for_anchor": 0,
+    "registry_note": "SELECT case_name,metric,tolerance FROM tensor_benchmark_cases WHERE anchor_slug='CASE-SPH-FSI-ELASTIC-GATE' returns 0 rows; the goal's judge '<10% | gate-tip peak+phase vs Antoci2007' has no registered tolerance and no registered value. Auditor did NOT back-fill (independence, same precedent as verdict m16252).",
+    "ref_note": "delivered artifact self-declares case.reference.reference_values = 'WITHHELD - experimental gate-tip curve not read' (paper closed access); PARAMETER_PROVENANCE says the geometry was NOT read from the article. The mandated ref-vs-got comparison therefore does not exist.",
+    "self_convergence_pct": {
+      "peak": 1.3661384624165136,
+      "phase": 1.580796252924462,
+      "verdict": "CONVERGED",
+      "note": "lattice self-consistency only, not a reference comparison; both runs used the same calibrated load_scale=1.2557623897962622"
+    },
+    "delivered_internal_verification": {
+      "V1_load_rel_error_pct": -20.3671006453504,
+      "V1_verdict": "FAIL",
+      "V2_tip_rel_error_pct": -92.45544296641823,
+      "V2_verdict": "FAIL",
+      "load_calibration_factor": 1.2557623897962622
+    },
+    "audit_reproduction": {
+      "V1_rel_error_pct": -20.3671006453504,
+      "V1_load_sph": 333.040647974696,
+      "V1_load_exact": 418.21991999999995,
+      "V2_rel_error_pct": -92.45544296641823,
+      "V2_tip_rod_m": 0.00012678139673735767,
+      "V2_tip_exact_m": 0.001680435261779291,
+      "V2_overdamped_rel_error_pct": -153.87730752446518,
+      "V2_overdamped_tip_m": -0.0009053732737383802,
+      "V2_undamped_long_rel_error_pct": -5756.6612475963775,
+      "V2_undamped_long_tip_m": -0.09505653024401389,
+      "V2_verdict_stability": "sign flip and 62x amplitude swing under a change of damping/horizon only -> V2 measures no converged quantity; the rod is WITHHELD, not merely FAILED",
+      "repro_determinism": "audit re-run of the calibrated coarse lattice reproduces m16214's peak_tip_x bit-for-bit (rel diff 0.0e+00)"
+    },
+    "load_scale_sensitivity": {
+      "raw_peak_tip_x_m": 0.3647783330621117,
+      "calibrated_peak_tip_x_m": 0.3543333617266935,
+      "peak_change_pct_for_plus_25_58pct_load": -2.8633749290256576,
+      "phase_raw_s": 0.25374374999999355,
+      "phase_calibrated_s": 0.25374374999999355,
+      "note": "the delivered result is multiplied by load_scale=1.255762, a factor obtained by dividing out the module's OWN failed V1 (-20.37%); the peak moves -2.86% in the WRONG direction for a 25.6% load increase and the peak time does not move at all -> the mandated metric cannot resolve a 25% load-transfer error at this configuration (tip_x peak 354.3 mm >= gate length 360 mm, geometrically saturated)"
+    },
+    "physics_diagnostics": {
+      "EI_Nm2_per_m": 0.005333333333333333,
+      "EA_N_per_m": 4000.0,
+      "area_density_kg_m2": 10.0,
+      "cantilever_euler_load_N_per_m": 0.10153913992890286,
+      "gate_self_weight_N_per_m": 35.316,
+      "self_weight_over_euler_load": 347.80676717104427,
+      "hydrostatic_load_N_per_m": 418.21991999999995,
+      "axial_strain_at_hydrostatic_load": 0.10455497999999999,
+      "strain_from_sigma_over_E": 0.10455497999999998,
+      "mach_at_c0": 0.7559289460184545,
+      "note": "the vertical 4 mm gate carries 347.8x its own Euler buckling load, so both V2 (which adds full gravity to a 1e-5-scaled load) and the FSI run are large-deflection/self-weight dominated: the small-deflection cantilever Green's function used as V2's reference is not valid for V2's own setup, which explains the -92% without needing a rod-stiffness bug; and the axial strain at the hydrostatic load is 10.5% (=sigma/E 10.5%), i.e. finite strain, outside the linear rod's validity. Mach 0.76 makes the WCSPH weakly-compressible assumption marginal."
+    }
+  },
+  "external_anchor": null,
+  "external_anchor_note": "Antoci, Gallati & Sibilla (2007) Comput. Struct. 85:879-890, DOI 10.1016/j.compstruc.2007.01.002 is CLOSED access; its experimental gate-tip curve was never read, and no digitised table/figure was obtained -> no external anchor exists in the delivery (L5 is not claimable, L4 fails on this key alone)",
+  "repro_cmd": "cd <TensorSPH checkout at branch agent/m16214 @9fd55b0> && python benchmarks/fsi_elastic_gate/run_antoci.py --dx 0.0125 0.01 --t-end 0.4   # executed by this audit at 253/406 particles, 1642/2052 steps, 111 s / 108-441 s wall; entry works, output is deterministic; but it is NOT on main and needs the un-merged branch, so the command is reproducible only from the local worktree",
+  "delivery_state": {
+    "mission_status": "succeeded",
+    "head_commit": "NULL",
+    "accepted": "true",
+    "commit_on_branch": "9fd55b0 m16214: matured mission deliverables",
+    "branch_on_github": "32a6ba891005e226a17ffa9f129ab444beba395f\trefs/heads/agent/m16214",
+    "branches_containing_commit": "* agent/m16214",
+    "in_main": "NOT_IN_MAIN",
+    "artifact_in_git": "no (artifacts/ is .gitignore'd)"
+  },
+  "findings": {
+    "F1_blocking_no_reference": "the mission's own judge ('<10% gate-tip peak+phase vs Antoci2007') was never evaluated: reference WITHHELD, 0 registry rows. The delivered peak 354.3 mm @ 253.7 ms has no ref/got pair, so 'succeeded' is unsupported on the stated criterion.",
+    "F2_blocking_calibration_of_a_failed_check": "the delivered result is scaled by load_scale=1.255762 derived by dividing out its own failed V1 (-20.37%); a failed verification was converted into a fudge factor instead of a fix. Audit probe: raw transfer peak 364.8 mm vs calibrated 354.3 mm (-2.86%), phase identical -> the metric is saturated and cannot see the 25% error either way.",
+    "F3_blocking_v2_invalid": "V2's verdict is not converged: audit re-runs give -92.5% (as shipped), -153.9% (heavier damping) and -5756.7% (long horizon, undamped) for the same rod. Root cause quantified: V2 adds full gravity on a 10.0 kg/m2 rod (35.3 N/m self weight, 348x the 0.1015 N/m Euler load) while scaling only the horizontal load by 1e-5, so its Euler-Bernoulli small-deflection reference does not describe its own setup. Rod correctness = WITHHELD.",
+    "F4_blocking_not_delivered": "impl/entry exist only as a local commit 9fd55b0 on agent/m16214: not on GitHub (ls-remote empty), not in main; the run artifact is in .gitignore'd artifacts/ whose mtime is 6 min AFTER finished_at; mission result still records git_status '?? ...'. Deliverable is one worktree-recycle away from total loss.",
+    "F5_high_zero_tests": "no test file, no invariant, no regression guard for the new module; the shipped script asserts nothing (V1/V2 print 'FAIL' and execution continues).",
+    "F6_medium_prose_vs_artifact": "mission checks say 'dx=10 mm 因预算截止未跑完' while the artifact contains a finished dx=0.01 run (440.8 s wall, 2052 steps); the artifact was regenerated after the mission was closed, so prose and artifact describe different runs.",
+    "F7_medium_self_convergence_weak": "CONVERGED at 1.37%/1.58% reads strong but is a two-lattice comparison of a geometrically saturated response (peak tip_x 354.3 / 349.6 mm vs 360 mm gate length); it tests the lattice, not the physics.",
+    "not_run": "no independent re-derivation of the WCSPH fluid path itself (out of scope: the reused engine is audited elsewhere); the closed-access Antoci curve was not obtained (no licensed access from this runner); no full 0.4 s / dx=5 mm refinement was attempted."
+  },
+  "verdict_note": "request changes. Functional substance is L2 (real 518-line WCSPH+rod module that runs end-to-end and reproduces bit-identically), but the L1 rung FAILED (V1 -20.4%, V2 not converged), there is no external reference (WITHHELD), no registry row, no tests and no merged code, so L3/L4/L5 are denied. The machine gate will (correctly) compute <=L1 because the tests/registry keys are empty and the impl files are not in main -> reopen."
+}
