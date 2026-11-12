@@ -187,3 +187,78 @@ def test_page_states_the_3pct_answer_explicitly():
     assert "not** within 3 % of Lamb" in text or "not within 3 %" in text.lower()
     assert "WITHHELD" in text
     assert "no admissibility" not in text
+
+
+# ---------------------------------------------------------------------------
+# the record must stay a measurement of *this* tree
+# ---------------------------------------------------------------------------
+# Everything above reads the committed JSON.  That is enough to catch a stale
+# page or a doctored number, but not enough to catch the *solver* moving: if
+# ``csf_consistent`` / ``droplet_impact`` / ``neighbor_search`` change, the JSON
+# stays green while the page silently understates the defect (worse solver) or
+# claims a defect that no longer exists (fixed solver).  The gates below
+# re-measure instead of re-reading, so the verdict has to be rewritten when the
+# capability changes -- in either direction.
+REPRO = BENCH / "reproducibility.py"
+ATTESTATION = BENCH / "reproducibility.json"
+REPRO_DOC = REPO / "docs" / "dev_report_m14576_open_surface_reproducibility.md"
+#: Predeclared band (see ``reproducibility.py``).  It is three orders of
+#: magnitude above the measured run-to-run noise (0.0) and far below the
+#: smallest effect the page quotes (3.7x), so it can fail only on real drift.
+RTOL = 1e-6
+
+
+def test_committed_numbers_reproduce_at_head(audit):
+    """Re-measure the load-bearing subset (~10 s) against the committed JSON."""
+    repro = _load("capillary_reproducibility", REPRO)
+    fresh = repro.measure()
+    report = repro.compare({key: audit[key] for key in repro.SUBSET_KEYS}, fresh)
+    assert report["rtol"] == RTOL
+    assert report["n_float"] >= 90, (
+        f"only {report['n_float']} float fields compared -- the subset shrank, "
+        "so this gate no longer covers the verdict"
+    )
+    assert report["failures"] == [], (
+        "the committed audit no longer matches a fresh run:\n"
+        + "\n".join(f"  {f['path']}: committed={f['committed']!r} "
+                    f"fresh={f['fresh']!r}" for f in report["failures"][:5])
+        + "\nif the solver really changed, re-run "
+        "`benchmarks/capillary_wave/open_surface_audit.py`, refresh the page with "
+        "`make_doc.py` and rewrite the verdict; do not widen rtol"
+    )
+    # the abort is the headline reading: it must not move at all
+    assert fresh["harness_at_head"]["status"] == "aborted"
+    assert fresh["harness_at_head"]["escape_step"] == audit["harness_at_head"]["escape_step"]
+
+
+def test_attestation_is_in_step_with_the_artifact():
+    """A refreshed audit artifact must carry a fresh attestation."""
+    import hashlib
+
+    att = json.loads(ATTESTATION.read_text())
+    digest = hashlib.sha256(AUDIT.read_bytes()).hexdigest()
+    assert att["audited_artifact_sha256"] == digest, (
+        "open_surface_audit.json changed after the reproducibility attestation "
+        "was written -- re-run `reproducibility.py --full --report ...`"
+    )
+    assert att["audited_verdict"] == "WITHHELD"
+    assert att["subset"]["rtol"] == RTOL
+    assert att["subset"]["failures"] == []
+    assert att["subset"]["n_float"] >= 90
+    assert att["full_rerun"] is not None and att["full_rerun"]["failures"] == [], (
+        "the full re-run is not clean; the record is drifting"
+    )
+    assert att["environment"]["git_head"], "the attestation must name the tree it measured"
+
+
+def test_reproducibility_report_is_a_fresh_rendering(monkeypatch):
+    """The report is generated from the attestation, not hand-typed."""
+    repro = _load("capillary_reproducibility", REPRO)
+    assert REPRO_DOC.is_file(), (
+        f"{REPRO_DOC.relative_to(REPO)} is missing -- regenerate with "
+        "`reproducibility.py --full --report ...`"
+    )
+    attestation = json.loads(ATTESTATION.read_text())
+    assert REPRO_DOC.read_text() == repro.render_report(attestation), (
+        "the reproducibility report is stale -- regenerate it from the attestation"
+    )
