@@ -30,7 +30,7 @@ from pathlib import Path
 from .dambreak import run_dambreak
 from .hydrostatic import HydrostaticConfig, run_hydrostatic
 from .schema import LADDER_SCHEMA_VERSION, validate_ladder_json
-from .tgv import TGVConfig, run_tgv, viscous_operator_error
+from .tgv import TGVConfig, run_tgv
 
 NODE_ID = "p83w1-n01-tensorsph-verification"
 
@@ -131,11 +131,16 @@ def _hydrostatic_anchor(cfg: LadderConfig) -> dict:
 
 
 def _tgv_anchor(cfg: LadderConfig) -> dict:
-    tgv_cfg = TGVConfig(dx=cfg.tgv_dx, t_end=cfg.tgv_t_end, U0=cfg.tgv_u0,
-                        sound_speed=cfg.tgv_sound_speed,
-                        viscosity=cfg.tgv_viscosity)
-    run = run_tgv(tgv_cfg)
-    run["measured"]["viscous_operator_l2_error_pct"] = viscous_operator_error(tgv_cfg)
+    # The rung is the *case* layer of tensorsph.taylor_green (CASE-TAYLOR-GREEN-SPH),
+    # so the ladder, the benchmark driver and the CLI all gate the same numbers.
+    from ..taylor_green import CaseSpec, run_case
+
+    spec = CaseSpec()
+    spec.U0 = cfg.tgv_u0
+    spec.sound_speed = cfg.tgv_sound_speed
+    spec.viscosity = cfg.tgv_viscosity
+    spec.t_end = cfg.tgv_t_end
+    run = run_case(spec, cfg.tgv_dx)
     return {
         "id": "C2_tgv",
         "title": "Taylor-Green vortex viscous decay",

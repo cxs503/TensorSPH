@@ -1,218 +1,152 @@
-# Taylor-Green Vortex Benchmark (TensorSPH)
+# CASE-TAYLOR-GREEN-SPH — Taylor-Green vortex decay (TensorSPH)
 
-**Case ID:** `CASE-TAYLOR-GREEN-SPH`
-**Repository:** TensorSPH
-**Branch:** `agent/m15433`
-**Date:** 2026-11-12
+Generated 2026-11-12T03:19:24Z from `/root/tp-agent/work/m15860/runs/taylor_green/m15860/results.json` by
+`benchmarks/taylor_green/make_doc.py`; artefacts sha256-pinned in
+`/root/tp-agent/work/m15860/runs/taylor_green/m15860/evidence.json`.  No number below is typed by hand.
 
-## 1. Problem and reference source
+## ① Case: physics, geometry, parameters
 
-The **two-dimensional Taylor-Green vortex** is a periodic, decaying vortex flow
-that serves as a canonical benchmark for viscous incompressible solvers.  The
-initial velocity field
+Two counter-rotating vortices in a fully periodic square box; the field is an
+exact unsteady solution of the incompressible Navier-Stokes equations, so the
+kinetic energy decays with the exact exponent `4 nu k^2`.  Reference: Taylor &
+Green (1937) *Proc. R. Soc. Lond. A* **158**, 499-521; see
+`docs/references/taylor-green-reference.md`.
 
-```
-u(x,y,0) = U0 sin(kx) cos(ky)
-v(x,y,0) = -U0 cos(kx) sin(ky)
-```
-
-is divergence-free, and the **exact, unsteady** solution of the incompressible
-Navier-Stokes equations at any Reynolds number is
-
-```
-u(x,y,t) = U0 exp(-2 nu k^2 t) sin(kx) cos(ky)
-v(x,y,t) = -U0 exp(-2 nu k^2 t) cos(kx) sin(ky)
-p(x,y,t) = (rho U0^2 / 4) exp(-4 nu k^2 t) (cos 2kx + cos 2ky)
-```
-
-Two identities make this exact:
-
-* the convective term is a pure gradient, `(u.grad)u = -grad[ ... ]`, so the
-  pressure field absorbs it at every instant (nothing is projected away);
-* `lap u = -2 k^2 u` for this field, so viscosity only rescales the amplitude.
-
-Because the *shape* is an exact invariant, the **kinetic energy** must decay as
-
-```
-E(t) = E(0) exp(-4 nu k^2 t)
-```
-
-so the measured decay rate `s = -d ln E / dt` can be compared with the analytic
-exponent `4 nu k^2` directly.  **That is the quantity gated here.**
-
-**Reference source:** the 2-D periodic Taylor-Green vortex is the standard
-exact benchmark of the incompressible Navier-Stokes equations.  The original
-Taylor-Green vortex concept is from Taylor & Green (1937), *Proc. R. Soc. Lond.
-A* **158**, 499-521 ("Mechanism of the production of small eddies from large
-ones"); the 2-D periodic form with the exact `exp(-4 nu k^2 t)` energy decay is
-the canonical test case used throughout the SPH/CFD literature (e.g. Monaghan
-2005, *Rep. Prog. Phys.* **68**, 1703-1759).
-
-**Reference values** (with `L = 1.0`, `k = 2 pi`, `nu = 1/(10*2*pi)`,
-`U0 = 0.2`, `t_end = 0.6`):
-
-| quantity | analytic value |
-|---|---|
-| energy decay rate `4 nu k^2` | **2.5133 1/s** |
-| energy ratio `E(t_end)/E(0) = exp(-4 nu k^2 t_end)` | **0.22136** |
-
-## 2. Method and implementation
-
-The benchmark **reuses** the existing TensorSPH 2-D periodic Taylor-Green
-implementation (`tensorsph.vv.tgv.run_tgv`), which is the same solver that
-passes the verification-ladder rung C2 (decay-rate error 1.179 % at
-`dx = 0.025`).  No new solver code was written; the benchmark is a **driver**
-that sweeps resolution and parameters and aggregates the results.
-
-The solver chain:
-
-1. **Lattice**: `n x n` cell-centred particles on a periodic square of side
-   `L = 1.0`, with calibrated particle mass so the summation density is `rho0`
-   to machine precision at `t = 0` (no spurious startup pressure).
-2. **Kernel**: 2-D cubic-spline kernel, normalised `10/(7 pi h^2)`, with
-   `h = 1.3 dx`.
-3. **Density**: summation density `rho_i = sum_j m_j W_ij` (self term included).
-4. **EOS**: Tait equation of state, `p = (rho0 c0^2 / gamma) [(rho/rho0)^gamma - 1]`,
-   clamped at `p = 0`.
-5. **Pressure force**: symmetric `-sum_j m_j (p_i/rho_i^2 + p_j/rho_j^2) grad_i W`.
-6. **Viscous force**: Morris et al. (1997) discrete Laplacian with the library's
-   `VISCOUS_LAPLACIAN_FACTOR = 2` — the same operator the production `rhs`
-   applies, so the benchmark measures the library's viscosity.
-7. **Periodicity**: minimum-image convention on the periodic box; neighbour
-   list rebuilt every `rebuild_every` steps with a Verlet skin.
-8. **Time integration**: explicit kick-drift-kick; `dt` from the acoustic
-   Courant limit `dt * c0 / h <= 0.3`.
-
-The measured quantity is the **energy decay rate**, fitted by least squares on
-`ln E(t)` over `[0.1 t_end, 0.85 t_end]` (skipping the acoustic settling
-transient and the noise floor).
-
-## 3. Parameter table (dimensionless numbers complete)
-
-| symbol | value | meaning |
+| parameter | symbol | value |
 |---|---|---|
-| `L` | 1.0 m | periodic box side |
-| `k` | `2 pi` = 6.2832 1/m | wavenumber (one wavelength per side) |
-| `U0` | 0.2 m/s | peak initial velocity |
-| `nu` | 0.015915 m²/s | kinematic viscosity |
-| `c0` | 10.0 m/s | acoustic (sound) speed |
-| `rho0` | 1000 kg/m³ | reference density |
-| `gamma` | 7.0 | Tait EOS exponent |
-| `t_end` | 0.6 s | simulated time |
-| `dx` | 0.05 / 0.025 / 0.0125 m | particle spacing (convergence ladder) |
-| `h/dx` | 1.3 | smoothing-length ratio |
-| `Re = U0/(nu k)` | **2.0** | Reynolds number |
-| `M = U0/c0` | **0.02** | Mach number |
-| `kh` | 0.204 | wavenumber × smoothing length |
-| `max_courant` | 0.3 | acoustic Courant limit |
+| box side (periodic) | $L$ | 1 m |
+| wavenumber | $k$ | 6.28319 1/m |
+| peak initial speed | $U_0$ | 0.2 m/s |
+| artificial sound speed | $c_0$ | 10 m/s |
+| **Mach number** | $M = U_0/c_0$ | 0.02 |
+| kinematic viscosity | $\nu$ | 0.0159155 m²/s |
+| **Reynolds number** | $Re = U_0/(\nu k)$ | 2 |
+| density / Tait exponent | $\rho_0$, $\gamma$ | 1000, 7 |
+| smoothing length | $h/\Delta x$ | 1.3 |
+| acoustic Courant number | $C$ | 0.3 |
+| simulated time | $t_{end}$ | 0.6 s |
+| exact energy-decay rate | $4\nu k^2$ | 2.5132741 1/s |
+| exact $E(t_{end})/E(0)$ | $e^{-4\nu k^2 t}$ | 0.22136 |
+| main resolution | $\Delta x$ | 0.025 m → 1600 particles, 628 steps, dt 0.0009559 s |
 
-## 4. Comparison table (ref vs got + error)
+## ② Method and implementation
 
-**Main case** (`dx = 0.025`, 1600 particles, 628 steps):
+* **Solver** `tensorsph.vv.tgv`: PyTorch SPH, Morris (1997) viscous Laplacian (the
+  operator the production `droplet_impact.rhs` uses), symmetric `p/rho^2` pressure
+  term, Tait EOS, minimum-image periodicity, neighbour lists rebuilt every 20
+  steps with a 0.4 h skin.
+* **Case layer** `tensorsph.taylor_green`: parameter table, reference checks,
+  ref-vs-got rows, sensitivity studies, figures, `results.json`, `run.log`,
+  `environment.json`.
+* **Entries**: `python -m tensorsph --case taylor_green --output <dir>` (package
+  CLI), `python -m tensorsph.taylor_green --out <dir>` (module CLI),
+  `python benchmarks/taylor_green/run.py --out <dir>` (driver).
+* **Downstream caller**: verification-ladder rung C2 (`tensorsph.vv.ladder`) calls
+  `taylor_green.run_case` — ladder, CLI and benchmark gate one code path.
+* **Measured quantity**: least-squares slope of `ln E(t)` over
+  `[0.06, 0.51] s` (10 %–85 % of
+  `t_end`), compared with `4 nu k^2`.
+* **Reproduction** (one command, 239 s wall on 4 threads):
+  `PYTHONPATH=src python -m tensorsph --case taylor_green --output runs/taylor_green/m15860`
+* **Toolchain**: Python 3.11.6, torch
+  2.7.1, loongarch64,
+  4 threads.
 
-| quantity | reference (analytic) | measured (SPH) | error | verdict |
+## ③ Results
+
+### Reference vs got (main case, dx = 0.025 m)
+
+| quantity | unit | ref (exact) | got (SPH) | error [%] | tol [%] | verdict |
+|---|---|---|---|---|---|---|
+| energy_decay_rate | 1/s | 2.5132741 | 2.4836508 | 1.179 | 8 | ✅ |
+| energy_ratio_at_t_end | - | 0.2213601 | 0.21486398 | 2.935 | 8 | ✅ |
+| amplitude_ratio_at_t_end | - | 0.47048922 | 0.4657502 | 1.007 | 8 | ✅ |
+
+
+Worst row 2.935 %; all rows pass the 8 % criterion:
+**PASS**.
+
+### Convergence in resolution
+
+| dx [m] | particles | steps | rate [1/s] | ref [1/s] | error [%] | discrete-Laplacian error [%] | verdict |
+|---|---|---|---|---|---|---|---|
+| 0.05 | 400 | 314 | 2.438 | 2.513 | 3.00 | 2.65 | ✅ |
+| 0.025 | 1600 | 628 | 2.484 | 2.513 | 1.18 | 0.68 | ✅ |
+| 0.0125 | 6400 | 1256 | 2.494 | 2.513 | 0.75 | 0.18 | ✅ |
+
+
+### Mach-number sensitivity (dx = 0.05 m)
+
+| M | U0 [m/s] | rate [1/s] | error [%] | verdict |
 |---|---|---|---|---|
-| energy decay rate `4 nu k^2` | 2.5133 1/s | 2.4837 1/s | **1.18 %** | ✅ (< 8 %) |
-| energy ratio `E(t_end)/E(0)` | 0.22136 | 0.21486 | **2.94 %** | ✅ (< 8 %) |
-| decay-rate fit `R²` | — | 0.999987 | — | ✅ |
-| viscous-operator L2 error | — | 0.68 % | — | ✅ |
+| 0.002 | 0.02 | 2.452 | 2.45 | ✅ |
+| 0.005 | 0.05 | 2.46 | 2.11 | ✅ |
+| 0.01 | 0.1 | 2.458 | 2.18 | ✅ |
+| 0.02 | 0.2 | 2.438 | 3.00 | ✅ |
+| 0.05 | 0.5 | 6.876 | 173.58 | ❌ |
 
-**Convergence ladder** (decay-rate error vs `dx`):
 
-| `dx` [m] | particles | decay-rate error | viscous-op error | verdict |
-|---|---|---|---|---|
-| 0.05 | 400 | 3.00 % | 2.65 % | ✅ (< 8 %) |
-| 0.025 | 1600 | 1.18 % | 0.68 % | ✅ (< 8 %) |
-| 0.0125 | 6400 | 0.75 % | — | ✅ (< 8 %) |
+### Reynolds-number sensitivity (dx = 0.05 m)
 
-The error **halves** when `dx` halves (3.00 → 1.18 → 0.75 %), consistent with
-**second-order** convergence of the viscous operator.
+| Re | nu [m²/s] | rate [1/s] | ref [1/s] | error [%] | verdict |
+|---|---|---|---|---|---|
+| 2 | 0.0159155 | 2.438 | 2.513 | 3.00 | ✅ |
+| 5 | 0.0063662 | 1.02 | 1.005 | 1.44 | ✅ |
+| 10 | 0.0031831 | 0.5663 | 0.5027 | 12.65 | ❌ |
+| 20 | 0.00159155 | 0.3458 | 0.2513 | 37.59 | ❌ |
 
-## 5. Convergence / parameter sensitivity
 
-### 5.1 Resolution convergence
+### Negative control (nu = 0)
 
-The decay-rate error decreases monotonically with resolution:
-
-| `dx` [m] | error [%] | order |
-|---|---|---|
-| 0.05 | 3.00 | — |
-| 0.025 | 1.18 | ~1.35 |
-| 0.0125 | 0.75 | ~0.65 |
-
-The error is dominated by the **viscous-operator discretisation** (the
-viscous-operator L2 error is 2.65 % at `dx = 0.05` and 0.68 % at `dx = 0.025`,
-matching the decay-rate error in magnitude), so the benchmark measures the
-discretisation of viscosity rather than an aggregate of everything.
-
-### 5.2 Mach-number sensitivity (validity window)
-
-The decay-rate error is **flat** (2-3 %) for `M <= 0.02` and **breaks down
-sharply** above `M ~ 0.05`:
-
-| `M = U0/c0` | error [%] |
+| quantity | value |
 |---|---|
-| 0.002 | 2.45 |
-| 0.005 | 2.11 |
-| 0.010 | 2.18 |
-| 0.020 | 3.00 |
-| 0.050 | **173.6** |
+| measured decay rate | 0.13053 1/s |
+| `E(t_end)/E(0)` | 0.576 |
+| equivalent spurious viscosity | 0.00082656 m²/s |
+| fit quality $R^2$ | 0.4507 |
 
-The plateau (2-3 %) is the viscous-operator error at this spacing; the collapse
-above `M ~ 0.05` is the acoustic density fluctuation falling below the
-summation-density noise of the lattice — the pressure field can no longer
-represent the `O(rho U0^2)` field that balances the exact convective term.
-**Any TGV verification in this solver must be run at `M <= 0.02`.**
+## ④ Figures
 
-### 5.3 Reynolds-number sensitivity
-
-| `Re` | `nu` [m²/s] | error [%] |
-|---|---|---|
-| 2 | 0.0159 | 3.00 |
-| 5 | 0.00637 | 1.44 |
-| 10 | 0.00318 | **12.65** |
-
-At `Re = 10` the error rises to 12.65 % — the viscous decay is so slow that the
-energy has barely moved by `t_end = 0.6` (the fit window is too short to
-resolve the slope reliably).  The benchmark is most accurate at `Re = 2-5`
-where the decay is fast enough to be well-resolved.
-
-## 6. Failure modes and artifacts
-
-### Failure modes
-
-1. **Mach-number collapse** (`M > 0.05`): the decay-rate error jumps to
-   ~174 % — the acoustic density fluctuation can no longer carry the pressure
-   field.  This is a **physical** limitation of the weakly-compressible SPH
-   scheme, not a solver defect; the benchmark reports it honestly.
-2. **High-Reynolds under-resolution** (`Re = 10`): the error rises to 12.65 %
-   because the energy decay is too slow to resolve in the fit window.  The
-   benchmark is most accurate at `Re = 2-5`.
-3. **Periodic-lattice closure**: `dx` must divide `L` exactly for the periodic
-   lattice to close; the solver raises `ValueError` otherwise.
-
-### Artifacts
-
-| artifact | path |
+| figure | what it shows |
 |---|---|
-| benchmark report (JSON) | `artifacts/taylor_green/report.json` |
-| velocity-field figure | `artifacts/taylor_green/fig1_tgv_velocity_field.png` |
-| energy-decay figure | `artifacts/taylor_green/fig2_tgv_energy_decay.png` |
-| convergence figure | `artifacts/taylor_green/fig3_tgv_convergence.png` |
-| Mach-window figure | `artifacts/taylor_green/fig4_tgv_mach_window.png` |
-| benchmark driver | `benchmarks/taylor_green/run.py` |
+| `/root/tp-agent/work/m15860/runs/taylor_green/m15860/fig1_tgv_velocity_field.png` | exact velocity field and speed at `t = 0` on the particle lattice |
+| `/root/tp-agent/work/m15860/runs/taylor_green/m15860/fig2_tgv_energy_decay.png` | SPH `E(t)/E(0)` vs the exact exponential, fit window shaded |
+| `/root/tp-agent/work/m15860/runs/taylor_green/m15860/fig3_tgv_convergence.png` | decay-rate and discrete-Laplacian error vs `dx`, with the 8 % line |
+| `/root/tp-agent/work/m15860/runs/taylor_green/m15860/fig4_tgv_sensitivity.png` | Mach window and Reynolds window |
 
-**Reproduce:** `PYTHONPATH=src python benchmarks/taylor_green/run.py --out artifacts/taylor_green`
+## ⑤ Notes, limitations, validity window
 
-## Ecosystem friction (honest)
+1. **The validity window is bounded by spurious dissipation.**  The `nu = 0`
+   control loses 42 % of `E(0)` by
+   `t_end` (equivalent to 0.00082656 m²/s).
+   Once the physical rate approaches that floor the fit is contaminated: inside
+   8 % for `Re <= 5`, and **failing** at `Re = 10`
+   (12.65 %) and `Re = 20`
+   (37.59 %).  This case is therefore declared at
+   **Re = 2** and is **not** a high-Reynolds anchor.
+2. **The loss is a late-time particle-disorder collapse.**  In the `nu = 0` control
+   the energy is flat to ~0.1 % until `t ≈ 0.45 s` and then drops; the fit window
+   ends at `0.85 t_end` to stay clear of it.  Refining `dx` does not remove it
+   (relative disorder is scale invariant), which is why errors in the low-viscosity
+   sweeps are not monotone in `dx`.
+3. **Mach window**: flat (~2-3 %) for `M <= 0.02`; at `M = 0.05` the weakly
+   compressible assumption collapses (174 %).
+4. **Integral quantities only**: decay rate, `E(t_end)/E(0)` and peak-speed ratio
+   are gated; pointwise `u(x,t)` errors are not, because the SPH field is not
+   remeshed onto the Eulerian reference.
+5. **Cost**: 239 s for 3 resolutions + 5 Mach + 4 Reynolds +
+   control + figures — below the 10 min local limit, so no cluster job was used.
 
-* The existing `run_tgv` does not expose the **final velocity field** for
-  visualization — the field plot had to be generated from the analytic
-  `t = 0` field instead of the SPH field.  Minor, but worth noting.
-* The `periodic_pairs` function in `tgv.py` is `O(n²)` per rebuild, which
-  becomes the bottleneck at `dx = 0.0125` (6400 particles).  A cell-linked
-  neighbour search would be ~10x faster; the existing `tensorsph.threed`
-  module already has one (`cell_linked_pairs`), but it is not wired into the
-  2-D TGV driver.
-* No other friction: the existing TGV implementation ran end-to-end without
-  modification.
+## ⑥ Error verdict (explicit)
+
+| key quantity | reference | got | relative error | < 3 %? | < 8 % (case tolerance)? |
+|---|---|---|---|---|---|
+| energy_decay_rate | 2.51327 | 2.48365 | 1.179 % | YES | YES |
+| energy_ratio_at_t_end | 0.22136 | 0.214864 | 2.935 % | YES | YES |
+| amplitude_ratio_at_t_end | 0.470489 | 0.46575 | 1.007 % | YES | YES |
+
+
+The main-case decay rate is inside **3 %** (1.18 %)
+and inside the case criterion of **8 %**; the energy-ratio and amplitude rows are
+also inside 3 %.  The Reynolds sweep beyond `Re = 5` is reported as a **measured
+failure**, not hidden behind the passing design point.
