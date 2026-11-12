@@ -1,0 +1,41 @@
+{
+  "impl_files": [
+    "src/tensorsph/rayleigh_taylor.py"
+  ],
+  "entry": [
+    "benchmarks/rayleigh_taylor/run.py"
+  ],
+  "run_artifacts": [
+    "benchmarks/rayleigh_taylor/runs/dx0.0125_nu0.001_a0.01.json",
+    "benchmarks/rayleigh_taylor/runs/dx0.02_nu0.001_a0.01.json",
+    "benchmarks/rayleigh_taylor/runs/dx0.025_nu0.001_a0.01.json",
+    "benchmarks/rayleigh_taylor/runs/dx0.04_nu0.001_a0.01.json",
+    "benchmarks/rayleigh_taylor/runs/reference.json",
+    "benchmarks/rayleigh_taylor/runs/table.json",
+    "benchmarks/rayleigh_taylor/runs/damping.json"
+  ],
+  "tests": [
+    "tests/test_rayleigh_taylor.py"
+  ],
+  "integration_callers": [
+    "rayleigh_taylor:benchmarks/rayleigh_taylor/run.py,tests/test_rayleigh_taylor.py (module tensorsph.rayleigh_taylor; NOT re-exported from src/tensorsph/__init__.py)"
+  ],
+  "benchmark": "REF sqrt(A*g*k)=5.5514884429 1/s (A=0.5, g=9.81, k=2*pi) vs BEST GOT 4.1923 1/s @dx=0.0125 => err=-24.48% against the <10% bar => FAIL; all 4 completed grids FAIL (-24.48%..-61.72%); velocity gauge best -4.88% @dx=0.02 but scatters -41%..+16% across grids (not converged, metric-shopping risk); auditor refit raw series independently and reproduced every stored sigma to <1e-4; 3/3 RK2/delta-SPH rows of docs/benchmarks/rayleigh-taylor-v2.md are unfilled ('cluster running') because cj1287 was still queued; tensor_benchmark_cases rows for anchor_slug=CASE-SPH-RAYLEIGH-TAYLOR-MP = 0; tensorbench_results rows for mission 16244 = 0; machine referee GET /api/v1/tensor/bench/l4-verdict/16244 => status=CLAIMED_NOT_PROVEN, l4_benchmark_pass=false",
+  "repro_cmd": "PYTHONPATH=src python benchmarks/rayleigh_taylor/run.py --grid 0.02 --time-integrator rk2 --density-diffusion 0.05   (CLI parses, RK2+delta-SPH branch measured running t=0.175/0.45 in 99 s before the 120 s shell cap; full rerun submitted as cluster cj1301, still queued = not_run)",
+  "external_anchor": "Taylor 1950 Proc. R. Soc. A 201:192-196 doi:10.1098/rspa.1950.0052 sigma=sqrt(A*g*k); recomputed 5.5514884429 1/s, rel diff 0.0 vs runs/reference.json; finite-depth 0.99992 and viscous 0.99283 corrections reproduced",
+  "impl_refs": [
+    "src/tensorsph/rayleigh_taylor.py:131-134 RTConfig(time_integrator, density_diffusion)",
+    "src/tensorsph/rayleigh_taylor.py:468-493 delta-SPH density diffusion rate (Antuono 2012)",
+    "src/tensorsph/rayleigh_taylor.py:742-753 RK2 midpoint integrator branch",
+    "src/tensorsph/rayleigh_taylor.py:706-800 run_case: two-phase RHS, centroid+velocity gauges, log-linear growth fit",
+    "benchmarks/rayleigh_taylor/run.py:59-70 argparse (--grid/--viscosity/--amplitude/--time-integrator/--density-diffusion)"
+  ],
+  "defects": [
+    "runs/summary.json holds 1 of 8 runs: run.py rewrites the aggregate per invocation (reproducibility defect)",
+    "dx=0.05 run stored sigma=NaN in table.json/summary.json with no status field",
+    "no test exercises time_integrator='rk2' or density_diffusion!=0",
+    "no figures (fields snapshots stored but no png), tensor_reports(mission 16244)=0",
+    "tensor_benchmark_cases has 0 rows for the anchor => no machine-adjudicable spec"
+  ],
+  "level_rationale": "L2/L3 real (impl in package + benchmark entry + 10 invariant tests pass 60.97 s, artifacts real and independently refit); L4 DENIED: best error -24.48% vs <10% bar, 3/3 improved rows undelivered (cj1287 queued), machine referee CLAIMED_NOT_PROVEN (tensorbench_results=0). Disposition: request changes (see audit_verdict_m16318.md section 6 rework list)."
+}
