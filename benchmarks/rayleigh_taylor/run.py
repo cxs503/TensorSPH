@@ -22,6 +22,7 @@ import argparse
 import dataclasses
 import json
 import math
+import sys
 import time
 from pathlib import Path
 
@@ -31,6 +32,9 @@ from tensorsph import rayleigh_taylor as rt
 
 HERE = Path(__file__).resolve().parent
 RUNS = HERE / "runs"
+
+sys.path.insert(0, str(HERE))
+import summary_io  # noqa: E402  (campaign summary assembly, see its docstring)
 
 
 def run_one(cfg: rt.RTConfig, tag: str, tag_suffix: str = "") -> dict:
@@ -47,10 +51,17 @@ def run_one(cfg: rt.RTConfig, tag: str, tag_suffix: str = "") -> dict:
     RUNS.mkdir(parents=True, exist_ok=True)
     out = RUNS / f"{result['tag']}.json"
     out.write_text(json.dumps(result))
-    print(f"  [{tag}] sigma={result['fit']['sigma']:.3f} 1/s "
-          f"({100 * (result['sigma_over_ideal'] - 1):+.1f}% vs sqrt(Agk)) "
-          f"r2={result['fit']['r2']:.4f} in {result['wall_seconds']:.0f}s",
-          flush=True)
+    fit = result.get("fit") or {}
+    sigma = fit.get("sigma")
+    if isinstance(sigma, (int, float)) and math.isfinite(sigma):
+        print(f"  [{tag}] sigma={sigma:.3f} 1/s "
+              f"({100 * (result['sigma_over_ideal'] - 1):+.1f}% vs sqrt(Agk)) "
+              f"r2={fit['r2']:.4f} in {result['wall_seconds']:.0f}s",
+              flush=True)
+    else:
+        print(f"  [{tag}] no usable fit window (n_fit={fit.get('n_fit')}); "
+              f"row stored with status=no_fit in {result['wall_seconds']:.0f}s",
+              flush=True)
     return result
 
 
@@ -67,7 +78,15 @@ def main() -> None:
                     choices=["euler", "rk2"], help="Time integrator")
     ap.add_argument("--density-diffusion", type=float, default=0.0,
                     help="δ-SPH density diffusion coefficient")
+    ap.add_argument("--aggregate-only", action="store_true",
+                    help="rebuild runs/summary.json from the case files on disk "
+                         "(merge by tag) and exit without running any case")
     args = ap.parse_args()
+    if args.aggregate_only:
+        rows = summary_io.write_summary(RUNS)
+        print(f"wrote {RUNS / 'summary.json'} with {len(rows)} case row(s)")
+        return
+
     torch.set_num_threads(args.threads)
     torch.manual_seed(0)
 
@@ -88,14 +107,14 @@ def main() -> None:
                 if amp != 0.01:
                     tag += "_amp"
                 summary.append(run_one(cfg, tag))
-    RUNS.mkdir(parents=True, exist_ok=True)
-    slim = [{k: r[k] for k in ("tag", "fit", "fit_velocity_gauge", "reference",
-                               "sigma_over_ideal", "sigma_over_finite_depth",
-                               "sigma_over_viscous", "sigma_velocity_over_ideal",
-                               "max_amplitude", "derived", "wall_seconds")}
-            for r in summary]
-    (RUNS / "summary.json").write_text(json.dumps(slim, indent=1))
-    print("wrote", RUNS / "summary.json")
+    # Merge by tag: earlier invocations (other ``--grid``/shards) keep their
+    # rows.  Previously this line rewrote the file from ``summary`` alone, so a
+    # sharded campaign left only its last shard in the summary (audit m16318
+    # finding 5); non-finite numbers are nulled so the file stays strict JSON
+    # (finding 6).  See benchmarks/rayleigh_taylor/summary_io.py.
+    rows = summary_io.write_summary(RUNS, new_rows=summary)
+    print(f"wrote {RUNS / 'summary.json'} with {len(rows)} case row(s) "
+          f"({sum(1 for r in rows if r.get('status') == 'no_fit')} no_fit)")
 
 
 if __name__ == "__main__":
