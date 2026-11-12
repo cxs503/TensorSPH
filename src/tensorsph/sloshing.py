@@ -90,6 +90,29 @@ class SloshingConfig(Config):
     device: str = "cpu"
     hydrostatic_init: bool = True
     probe_locations: list[float] | None = None  # x-coordinates for surface probes
+    #: Number of the standing mode the tank is *released* from at t = 0.
+    #: ``0`` keeps the flat surface (the only state a no-excitation run has);
+    #: ``n >= 1`` tilts the free surface to
+    #: ``eta(x) = amplitude * cos(n pi x / L)`` and starts the fluid at rest,
+    #: which is exactly the linear normal mode of the tank at its extreme
+    #: displacement (the linear velocity potential carries ``sin(omega t)``, so
+    #: u = 0 there).  A free-decay release is the only way this module can
+    #: *measure* a natural frequency: the tank is not forced (see ``run_case``),
+    #: so a flat initial surface never moves.
+    initial_mode: int = 0
+    #: Crest amplitude (m) of the released mode; ignored while
+    #: ``initial_mode == 0``.  Keep ``|amplitude| / water_depth <= 0.1`` to stay
+    #: in the linear regime the reference frequency belongs to.
+    initial_amplitude: float = 0.0
+    #: Record the whole free-surface profile (one height per fluid column) at
+    #: every output step.  A two-spacing probe window holds a handful of
+    #: particles, so its height is quantised to ``dx``; at a 2 cm release that
+    #: quantisation is the same order as the signal.  The profile lets the
+    #: caller project onto the released mode and average the noise out
+    #: (``benchmarks/sloshing_first_mode``).  Costs ``columns * samples`` floats.
+    record_profiles: bool = True
+    #: Number of surface columns; 0 means ``floor(tank_length / dx)``.
+    profile_columns: int = 0
     
     def tank_top(self) -> float:
         return float(self.tank_height)
@@ -112,6 +135,18 @@ class SloshingConfig(Config):
         """Natural period T_n = 2 pi / omega_n."""
         return 2.0 * math.pi / self.natural_frequency(mode)
 
+    def mode_surface(self, x):
+        """Free-surface elevation ``eta(x)`` of the released mode.
+
+        ``eta(x) = amplitude * cos(initial_mode * pi * x / L)``.  The cosine
+        puts the antinodes on the two end walls, which is where a closed tank
+        holds its standing waves (``d eta/dx = 0`` at x = 0 and x = L).
+        """
+        if self.initial_mode < 1 or self.initial_amplitude == 0.0:
+            return x * 0.0 + self.water_depth
+        k = self.initial_mode * math.pi / self.tank_length
+        return self.water_depth + self.initial_amplitude * torch.cos(k * x)
+
 
 def validate_case(cfg: SloshingConfig) -> None:
     """Validate sloshing configuration."""
@@ -121,6 +156,26 @@ def validate_case(cfg: SloshingConfig) -> None:
         raise ValueError("water depth must be positive and fit in tank")
     if cfg.dx <= 0 or cfg.h_factor <= 0:
         raise ValueError("dx and h_factor must be positive")
+    # ``droplet_impact.wall_lattice`` and ``boundary_box`` span ``pool_width``;
+    # only the water block and the analytic frequency use ``tank_length``.  A
+    # tank whose two lengths disagree would solve a different geometry than the
+    # one whose frequency it reports, silently.
+    if abs(cfg.pool_width - cfg.tank_length) > 1.0e-12:
+        raise ValueError(
+            f"pool_width={cfg.pool_width:g} != tank_length={cfg.tank_length:g}: "
+            "the wall lattice and the clamp box span pool_width, so the end "
+            "walls would sit at pool_width. Set pool_width = tank_length.")
+    if cfg.initial_mode < 0:
+        raise ValueError("initial_mode must be >= 0")
+    if cfg.initial_mode > 0 and cfg.initial_amplitude != 0.0:
+        if abs(cfg.initial_amplitude) >= 0.5 * cfg.water_depth:
+            raise ValueError(
+                "linear-theory release needs |initial_amplitude| < "
+                "water_depth / 2")
+        if cfg.water_depth + abs(cfg.initial_amplitude) >= cfg.tank_height:
+            raise ValueError(
+                "crest water_depth + |initial_amplitude| must stay below "
+                "tank_height (freeboard required)")
     if cfg.sound_speed <= 0 or cfg.rho0 <= 0 or cfg.gamma <= 0:
         raise ValueError("rho0, sound_speed, and gamma must be positive")
     courant = cfg.dt * cfg.sound_speed / (cfg.h_factor * cfg.dx)
@@ -131,10 +186,27 @@ def validate_case(cfg: SloshingConfig) -> None:
 
 
 def make_water_block(cfg: SloshingConfig, device: torch.device):
-    """Create initial water block in the tank."""
+    """Create initial water block in the tank.
+
+    With ``initial_mode == 0`` this is the flat lattice up to ``water_depth``.
+    With ``initial_mode >= 1`` the lattice is laid over the crest height
+    ``water_depth + |amplitude|`` and each column keeps the particles below its
+    own free surface ``eta(x)``, so the release state is the standing mode
+    shape.  The last row of a column is a staircase of at most ``dx``; the
+    resolution ladder in ``benchmarks/sloshing_first_mode`` shows it is not the
+    dominant error.
+    """
     dx = cfg.dx
     xs = cell_centres(cfg.tank_length, dx, device)
-    ys = cell_centres(cfg.water_depth, dx, device)
+    crest = cfg.water_depth + (abs(cfg.initial_amplitude)
+                               if cfg.initial_mode > 0 else 0.0)
+    # ``cell_centres`` floors the cell count, so ``cell_centres(crest)`` can stop
+    # a whole spacing *below* the crest when ``crest`` is not a multiple of
+    # ``dx``: at ``H = 0.4``, ``a = 0.02``, ``dx = 0.025`` the lattice topped out
+    # at 0.3875 and every column was clipped to the same height -- the released
+    # "mode" was a flat surface one spacing too shallow.  Ask for one extra
+    # spacing; the per-column ``keep`` below is what sets the surface.
+    ys = cell_centres(crest + dx, dx, device)
     if xs.numel() == 0 or ys.numel() == 0:
         raise ValueError("water block discretization produced no particles")
     gx, gy = torch.meshgrid(xs, ys, indexing="xy")
@@ -143,10 +215,26 @@ def make_water_block(cfg: SloshingConfig, device: torch.device):
     # to carry the raw ``rho0 dx^2``, so a tank run at h/dx = 1.5 started
     # 0.34 % over-dense = 1.4 kPa of spurious pressure that rings the free
     # surface of a tank that should be at rest.
+    if cfg.initial_mode > 0 and cfg.initial_amplitude != 0.0:
+        surface = cfg.mode_surface(positions[:, 0])
+        # Keep every particle centre strictly below the local free surface.
+        # Subtracting half a spacing here (as a first cut did) drops the top
+        # lattice row of every column, which costs a full ``dx`` of water depth
+        # and a full ``dx`` of crest height: at ``H/dx = 16`` that is a 1.6 %
+        # mass error and a 5 % crest error on a 2 cm release.
+        keep = positions[:, 1] < surface
+        positions = positions[keep]
+        surface = surface[keep]
+        if positions.shape[0] == 0:
+            raise ValueError("mode release kept no particles; increase the depth")
+    else:
+        surface = None
     mass_unit = lattice_mass_unit(cfg)
     if cfg.hydrostatic_init:
-        mass = hydrostatic_density(positions[:, 1], cfg, surface=cfg.water_depth
-                                   ) * (mass_unit / cfg.rho0)
+        mass = hydrostatic_density(
+            positions[:, 1], cfg,
+            surface=(cfg.water_depth if surface is None else surface)
+        ) * (mass_unit / cfg.rho0)
     else:
         mass = torch.full((positions.shape[0],), mass_unit, device=device)
     return positions, mass
@@ -195,6 +283,16 @@ def extract_frequency(signal: list[float], dt: float) -> float | None:
     return float(freqs[peak_idx])
 
 
+def _column_profile(pos: torch.Tensor, dx: float, n_columns: int) -> list[float]:
+    """Highest particle in each ``dx``-wide column (``-1.0`` if empty)."""
+    if pos.numel() == 0 or n_columns <= 0:
+        return []
+    idx = torch.clamp((pos[:, 0] / dx).long(), 0, n_columns - 1)
+    prof = torch.full((n_columns,), -1.0, dtype=pos.dtype, device=pos.device)
+    prof.scatter_reduce_(0, idx, pos[:, 1], reduce="amax", include_self=True)
+    return [float(v) for v in prof]
+
+
 @dataclass
 class SloshingRun:
     """Results from a sloshing simulation."""
@@ -210,6 +308,10 @@ class SloshingRun:
     initial_mass: float
     final_mass: float
     final_positions: torch.Tensor
+    #: x centres of the surface columns and the per-step column heights, when
+    #: ``record_profiles`` is on.  An empty column is -1.0.
+    profile_x: list[float] | None = None
+    surface_profiles: list[list[float]] | None = None
     steps_taken: int = 0
     simulated_time: float = 0.0
     dt_min: float = 0.0
@@ -252,6 +354,11 @@ def run_case(cfg: SloshingConfig, pair_skin_factor: float | None = None):
     
     times: list[float] = []
     surface_elevations: dict[float, list[float]] = {x: [] for x in probes}
+    n_columns = (cfg.profile_columns if cfg.profile_columns > 0
+                 else int(math.floor(cfg.tank_length / cfg.dx)))
+    profile_x: list[float] = [] if not cfg.record_profiles else [
+        (i + 0.5) * cfg.dx for i in range(n_columns)]
+    surface_profiles: list[list[float]] = []
     kinetic: list[float] = []
     potential: list[float] = []
     escaped = 0
@@ -260,6 +367,19 @@ def run_case(cfg: SloshingConfig, pair_skin_factor: float | None = None):
     speed_peak = torch.zeros((), dtype=positions.dtype, device=device)
     courant_peak = torch.zeros((), dtype=torch.float64, device=device)
     
+    if cfg.excitation_frequency > 0.0:
+        # This branch used to be a ``pass``: a run configured with a forcing
+        # frequency silently integrated an *unforced* tank, so the docstring's
+        # "resonance response curve" could never exist.  Moving walls need a
+        # time-dependent wall velocity in ``rhs``; until then, fail loudly
+        # instead of returning an at-rest tank.
+        raise NotImplementedError(
+            "forced sloshing (excitation_frequency > 0) is not implemented: "
+            "the tank walls are static wall particles and no wall motion is "
+            "applied. Use initial_mode/initial_amplitude for a free-decay "
+            "release, or drive the case through tensorsph.wave_flume, which "
+            "supports a moving paddle.")
+
     dt = cfg.dt
     elapsed = 0.0
     dt_min = dt_max = dt
@@ -277,14 +397,6 @@ def run_case(cfg: SloshingConfig, pair_skin_factor: float | None = None):
         
         step_dt = dt if not cfg.adaptive_dt else min(dt, target_time - elapsed)
         
-        # Apply excitation to wall particles
-        if cfg.excitation_frequency > 0 and wall is not None:
-            excitation_disp = cfg.excitation_amplitude * math.sin(
-                cfg.excitation_frequency * elapsed)
-            # Shift wall particles (simplified: just offset positions)
-            # In a full implementation, this would modify the wall boundary condition
-            pass
-        
         density, _, acc = rhs(positions, velocity, mass, cfg, pairs=pairs, wall=wall,
                               dt=step_dt)
         if not torch.isfinite(acc).all():
@@ -296,6 +408,12 @@ def run_case(cfg: SloshingConfig, pair_skin_factor: float | None = None):
         velocity = velocity + acc * step_dt
         speed = velocity.norm(dim=1)
         speed_peak = torch.maximum(speed_peak, speed.max())
+        # Acoustic Courant of the step just taken, (c0 + |u|) dt / h, with the
+        # post-update speed so it bounds both ends of the step.  ``courant_peak``
+        # used to stay at its zero initialisation, so the reported
+        # ``max_acoustic_courant`` was a dead 0.0 whatever the run did.
+        courant_peak = torch.maximum(
+            courant_peak, (cfg.sound_speed + speed_peak.double()) * step_dt / h)
         positions = positions + velocity * step_dt
         
         # Boundary conditions
@@ -309,6 +427,9 @@ def run_case(cfg: SloshingConfig, pair_skin_factor: float | None = None):
                 eta = surface_elevation(positions, x_probe, cfg)
                 surface_elevations[x_probe].append(eta)
             
+            if cfg.record_profiles:
+                surface_profiles.append(_column_profile(positions, cfg.dx,
+                                                        n_columns))
             ke = 0.5 * float((mass * speed * speed).sum())
             pe = float(cfg.gravity * (mass * positions[:, 1]).sum())
             kinetic.append(ke)
@@ -338,6 +459,8 @@ def run_case(cfg: SloshingConfig, pair_skin_factor: float | None = None):
         initial_mass=initial_mass,
         final_mass=final_mass,
         final_positions=positions.detach().cpu(),
+        profile_x=profile_x or None,
+        surface_profiles=surface_profiles or None,
         steps_taken=step + 1,
         simulated_time=elapsed,
         dt_min=dt_min,

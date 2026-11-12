@@ -1,0 +1,175 @@
+{
+  "reference_crosscheck": {
+    "rows": [
+      {
+        "H_over_L": 0.05,
+        "omega_closed": 2.1912585595612137,
+        "omega_variational": 2.191258559877477,
+        "error_pct": 1.4432965933508513e-08
+      },
+      {
+        "H_over_L": 0.1,
+        "omega_closed": 3.061967689083618,
+        "omega_variational": 3.0619676899088186,
+        "error_pct": 2.6950019993421392e-08
+      },
+      {
+        "H_over_L": 0.4,
+        "omega_closed": 5.118623845734646,
+        "omega_variational": 5.118623892176715,
+        "error_pct": 9.073155338157335e-07
+      },
+      {
+        "H_over_L": 1.0,
+        "omega_closed": 5.541131018081738,
+        "omega_variational": 5.541131435243377,
+        "error_pct": 7.528456524852345e-06
+      },
+      {
+        "H_over_L": 2.0,
+        "omega_closed": 5.5514690829986995,
+        "omega_variational": 5.551471056957156,
+        "error_pct": 3.5557406996566954e-05
+      },
+      {
+        "H_over_L": 4.0,
+        "omega_closed": 5.551488442838214,
+        "omega_variational": 5.551497157179012,
+        "error_pct": 0.00015697305124628969
+      }
+    ],
+    "max_abs_error_pct": 0.00015697305124628969
+  },
+  "rungs": [
+    {
+      "dx": 0.025,
+      "h_over_dx": 1.3,
+      "cells_x": 40,
+      "cells_y": 16,
+      "particles": 640,
+      "dt": 0.0004875,
+      "acoustic_dt_limit": 0.0004875,
+      "courant_limit": 0.3,
+      "sound_speed": 20.0,
+      "viscosity": 0.01,
+      "steps": 6295,
+      "simulated_time": 3.068812500000338,
+      "periods_requested": 2.5,
+      "output_every": 23,
+      "samples": 274,
+      "wall_seconds": 44.83718538284302,
+      "ms_per_step": 7.122666462723275,
+      "period_theory": 1.22751456183196,
+      "period_measured": 1.200418628032905,
+      "period_error_pct": -2.2073818626327957,
+      "modal_reading": {
+        "period_zero_crossing": 1.1888469346623372,
+        "period_fft": 1.200418628032905,
+        "period_fit": 1.2032850183937063,
+        "damping_rate_fit": 0.6769022245865653,
+        "period": 1.200418628032905,
+        "method_spread_pct": 1.202754055477166,
+        "amplitude_t0": 0.022961627366925186,
+        "amplitude_t0_error_pct": 14.808136834625941
+      },
+      "probe_readings": {
+        "0.25": {
+          "period_zero_crossing": 1.2657039735371165,
+          "period_fft": 1.1924496230824932,
+          "period_fit": 1.1679428343079914,
+          "damping_rate_fit": 0.829622411549037,
+          "period": 1.1924496230824932,
+          "method_spread_pct": 8.198345434200538
+        },
+        "0.75": {
+          "period_zero_crossing": 1.1928358523038693,
+          "period_fft": 1.2011758480697883,
+          "period_fit": 1.2233902668645749,
+          "damping_rate_fit": 0.49219146808195413,
+          "period": 1.2011758480697883,
+          "method_spread_pct": 2.543708700920392
+        }
+      },
+      "probe_vs_modal_pct": -0.3003862463108353,
+      "profile_columns": 40,
+      "amplitude_envelope_m": [
+        0.022961627366925186,
+        0.012126956456479546
+      ],
+      "amplitude_ratio_first_last": 0.5281401123139766,
+      "release_amplitude_ideal": 0.02,
+      "release_amplitude_modal_measured": 0.022961627366925186,
+      "release_amplitude_modal_quantised_reference": 0.02296165951726111,
+      "release_amplitude_quantisation_loss_pct": 20.84103660171146,
+      "release_amplitude_ratio_measured_vs_quantised": 0.9999985998252477,
+      "max_acoustic_courant": 0.30307241097092624,
+      "max_density_compression": 0.012582031250000014,
+      "escaped": 0,
+      "max_speed": 0.20291078090667725,
+      "provenance": {
+        "torch": "2.7.1",
+        "torch_threads": 8,
+        "python": "3.11.6",
+        "platform": "Linux-6.6.52-1.7.lns23.loongarch64-loongarch64-with-glibc2.38",
+        "command": "benchmarks/sloshing_first_mode/run.py",
+        "cfg": {
+          "dx": 0.025,
+          "h_factor": 1.3,
+          "rho0": 1000.0,
+          "sound_speed": 20.0,
+          "gamma": 7.0,
+          "gravity": 9.81,
+          "viscosity": 0.01,
+          "dt": 0.0004875,
+          "steps": 6295,
+          "output_every": 23,
+          "pool_width": 1.0,
+          "pool_depth": 0.35,
+          "drop_radius": 0.1,
+          "drop_center_y": 0.49,
+          "device": "cpu",
+          "boundary": "wall",
+          "wall_layers": 3,
+          "max_courant": 0.3,
+          "max_density_error": 0.05,
+          "max_mach": 0.1,
+          "fail_fast": true,
+          "pair_skin_factor": 0.25,
+          "hydrostatic_init": true,
+          "calibrate_initial_mass": false,
+          "wall_friction": 0.0,
+          "density_diffusion": 0.0,
+          "density_diffusion_form": "molteni",
+          "density_diffusion_eigenvalue_floor": 0.1,
+          "density_calibration": true,
+          "adaptive_dt": false,
+          "dt_growth": 1.1,
+          "dt_safety": 0.9,
+          "surface_tension_coefficient": 0.0,
+          "contact_angle": null,
+          "contact_angle_reach": 2.0,
+          "csf_scheme": "consistent",
+          "csf_delta_normalization": "legacy",
+          "csf_curvature": "fit_quadratic",
+          "surface_pressure_closure": false,
+          "surface_pressure_threshold": 0.99,
+          "surface_pressure_donors": "interior",
+          "surface_pressure_layers": 2,
+          "density_renormalization": false,
+          "tank_length": 1.0,
+          "tank_height": 0.6,
+          "water_depth": 0.4,
+          "excitation_amplitude": 0.01,
+          "excitation_frequency": 0.0,
+          "excitation_duration": 10.0,
+          "initial_mode": 1,
+          "initial_amplitude": 0.02,
+          "record_profiles": true,
+          "profile_columns": 0
+        }
+      }
+    }
+  ],
+  "amplitude_ablation": [],
+  "git_commit": "ffdc820155851e547db2790ace490b079705edef"
+}
