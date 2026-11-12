@@ -1,0 +1,32 @@
+{
+  "V1_rel_error": -0.20367100645350403,
+  "load_scale_from_V1": 1.2557623897962622,
+  "runs": [
+    {
+      "tag": "raw_transfer",
+      "load_scale": 1.0,
+      "dx": 0.0125,
+      "n_fluid": 253,
+      "n_steps": 1642,
+      "wall_seconds": 111.10301399230957,
+      "peak_tip_x": 0.3647783330621117,
+      "peak_time": 0.25374374999999355,
+      "final_tip_x": 0.02579773776870617,
+      "min_tip_x": -0.00845913902485998
+    },
+    {
+      "tag": "calibrated",
+      "load_scale": 1.2557623897962622,
+      "dx": 0.0125,
+      "n_fluid": 253,
+      "n_steps": 1642,
+      "wall_seconds": 108.07979607582092,
+      "peak_tip_x": 0.3543333617266935,
+      "peak_time": 0.25374374999999355,
+      "final_tip_x": 0.10006582227818442,
+      "min_tip_x": -0.009174481767655146
+    }
+  ],
+  "peak_inflation_from_calibration": -0.028633749290256576,
+  "peak_rel_diff_vs_m16214": 0.0
+}
