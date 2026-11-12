@@ -1,0 +1,88 @@
+{
+ "benchmark": "REPRO-SPH-MONAGHAN1994",
+ "anchor": "REPRO-SPH-MONAGHAN1994",
+ "paper": {
+  "citation_claim": {
+   "title": "Simulating Free Surface Flows with SPH",
+   "author_family": "Monaghan",
+   "journal": "J. Comput. Phys.",
+   "volume": "110",
+   "pages": "399-406",
+   "year": "1994"
+  },
+  "resolved_doi": "10.1006/jcph.1994.1034",
+  "resolved_title": "Simulating Free Surface Flows with SPH",
+  "resolved_container": "Journal of Computational Physics",
+  "resolved_volume": "110",
+  "resolved_pages": "399-406",
+  "resolution_rule": "highest score; score = 10*(author) + 10*(volume) + 10*(pages) + 5*(year) + (title token matches); resolved iff score >= 40",
+  "resolution_artifact": "results/refs_verified.json",
+  "retrieved_utc": "2026-11-12T21:18:54+00:00",
+  "open_access": {
+   "title": "Simulating Free Surface Flows with SPH",
+   "publication_year": 1994,
+   "open_access": false,
+   "oa_status": "closed",
+   "has_abstract": false,
+   "abstract": null
+  },
+  "text_available_in_workspace": false
+ },
+ "targets": {
+  "T1_trajectory_vs_independent_transcription": {
+   "status": "evaluated",
+   "reference": "benchmarks/dam_break/martin_moyce_1952_crosscheck.json",
+   "metric": "mae(Z/a) / amplitude over the pre-registered window",
+   "tolerance": 0.15,
+   "window_tau": [
+    0.5,
+    3.0
+   ]
+  },
+  "T2_trajectory_vs_bundled_transcription": {
+   "status": "withheld",
+   "reference": "benchmarks/dam_break/martin_moyce_1952.json",
+   "reason": "The reference cannot separate a solver error from a digitisation error of the same size (0.5-0.9 in Z/a), so no pass/fail verdict on physical validation of the B2 case can be issued against it. The earlier 'physical validation fails' statement over-attributes to the solver what the reference does not support.",
+   "reported_not_graded": true
+  },
+  "T3_reference_pair_self_consistency": {
+   "status": "evaluated",
+   "metric": "max |bundled - crosscheck| / claimed uncertainty",
+   "limit": 2.0
+  },
+  "T4_paper_tables_and_figures": {
+   "status": "WITHHELD",
+   "reason": "no accessible copy: Crossref resolves the DOI by rule and OpenAlex reports the work as closed access with no deposited abstract, so the paper's own tabulated or figured numbers are not in this workspace",
+   "closure_condition": "deliver JCP 110:399-406 as a text-extractable file with page/figure coordinates for the quantitative target; then transcribe the value with coordinates into refs.json and re-run --stage accept (no solver change needed)"
+  }
+ },
+ "protocol": {
+  "window_tau": [
+   0.5,
+   3.0
+  ],
+  "tolerance_relative_to_amplitude": 0.15,
+  "n_samples": 161,
+  "compression_limit": 0.1,
+  "geometry": {
+   "column_width_m": 0.2,
+   "height_over_width": 2.0,
+   "tank_width_m": 2.0,
+   "tank_height_m": 0.75,
+   "gravity": 9.81,
+   "rho0": 1000.0,
+   "tait_gamma": 7.0,
+   "h_over_dx": 1.3,
+   "max_courant": 0.3,
+   "wall_friction": 0.0,
+   "density_diffusion": 0.0
+  },
+  "caveat": "pre-registered: the window, the tolerance and the metric are fixed in this file, not chosen after seeing the numbers"
+ },
+ "reference_audit_artifact": "benchmarks/dam_break/reference_audit.json",
+ "reproduction_commands": [
+  "python benchmarks/repro_monaghan_1994/verify_refs.py",
+  "python benchmarks/repro_monaghan_1994/run.py --stage run --dx 0.04,0.02,0.01 --seconds 0.34",
+  "python benchmarks/repro_monaghan_1994/make_artifacts.py"
+ ]
+}
