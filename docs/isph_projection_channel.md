@@ -8,6 +8,11 @@ surveyed codes expose a projection/DFSPH route; recorded in
 `tests/test_isph_channel.py`.
 **Artifacts:** `runs/isph_channel/m16024/results.json` + four figures.
 
+> **Same-estimator recheck (resolves item (a) of §5.5).** The WCSPH density figure is now measured with this
+> document's own estimator in `docs/verification_density_order_likeforlike.md`; that report also records that the
+> WCSPH channel is round-off sensitive at `H/dx = 8`, so the `2.3e-2` of the gap rule must not be quoted against the
+> ISPH number without that caveat.
+
 ## 1. Case
 
 Physics: incompressible flow of kinematic viscosity `nu` in a 2-D channel of

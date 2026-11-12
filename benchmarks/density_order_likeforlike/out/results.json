@@ -1,0 +1,140 @@
+{
+ "anchor": "GAP-SPH-ISPH-PROJECTION (open item (a) of docs/isph_projection_channel.md \u00a75.5)",
+ "case": "density_order_likeforlike_plane_poiseuille",
+ "estimator": {
+  "functions": [
+   "tensorsph.isph_channel.pair_geometry",
+   "tensorsph.isph_channel.summation_density"
+  ],
+  "mass": "rho0 / lattice_kernel_sum(h, dx)",
+  "name": "wall-completed summation density, minimum image in x",
+  "quantities": [
+   "max|rho/rho0-1| over fluid particles",
+   "rms of the same over the averaging window"
+  ]
+ },
+ "gates": {
+  "estimator_identity": true,
+  "like_for_like_pairs": [
+   {
+    "h_over_dx": 1.9,
+    "isph_max": 0.00013595819473266602,
+    "like_for_like": true,
+    "ratio_wcsph_over_isph": 6260.225387401007,
+    "resolution_H_over_dx": 8,
+    "wcsph_max": 0.8511289422906456
+   },
+   {
+    "h_over_dx": 1.9,
+    "isph_max": 0.0003046989440917969,
+    "like_for_like": true,
+    "ratio_wcsph_over_isph": 2377.2179459033136,
+    "resolution_H_over_dx": 12,
+    "wcsph_max": 0.72433579799281
+   }
+  ],
+  "n_like_for_like_pairs": 2,
+  "reference_tol": 1e-06,
+  "reference_zero": false,
+  "verdict": "FAIL"
+ },
+ "parameters": {
+  "body_force": 9.81,
+  "columns": 12,
+  "h_factors": [
+   1.9
+  ],
+  "height": 0.1,
+  "isph_h_factor": 1.9,
+  "resolutions": [
+   8,
+   12
+  ],
+  "rho0": 1000.0,
+  "sound_speed": 20.0,
+  "t_average": 0.1,
+  "t_end": 1.0,
+  "viscosity": 0.01,
+  "wall_layers": 5
+ },
+ "results": [
+  {
+   "density_order_error_max": 0.8511289422906456,
+   "density_order_error_rms_mean": 0.29270178055985924,
+   "dt": 0.00035624999999999996,
+   "dx": 0.0125,
+   "h": 0.02375,
+   "h_over_dx": 1.9,
+   "length": 0.15000000000000002,
+   "mass_model": "rho0*dx^2 in the run; lattice-calibrated in the diagnostic",
+   "n_diag_samples": 70,
+   "n_fluid": 96,
+   "n_wall": 180,
+   "order_reference_error": 0.11650494712993154,
+   "resolution_H_over_dx": 8,
+   "scheme": "WCSPH",
+   "steps": 2807,
+   "tait_density_error_max": 0.874036431312561,
+   "u_max_analytic": 1.2262500000000003,
+   "u_max_measured": 2.422858953475952,
+   "wall_clock_s": 24.293899536132812
+  },
+  {
+   "density_order_error_max": 0.00013595819473266602,
+   "density_order_error_rms_mean": null,
+   "dt_note": "adaptive: min(cfl*h/|u|, 0.125*h^2/nu)",
+   "dx": 0.0125,
+   "h": 0.02375,
+   "h_over_dx": 1.9,
+   "mass_model": "lattice-calibrated",
+   "n_fluid": 96,
+   "n_wall": 120,
+   "order_reference_error": null,
+   "resolution_H_over_dx": 8,
+   "scheme": "ISPH",
+   "steps": 197,
+   "u_max_analytic": 1.2262500000000003,
+   "u_max_measured": 1.2607282400131226,
+   "wall_clock_s": 2.4733943939208984
+  },
+  {
+   "density_order_error_max": 0.72433579799281,
+   "density_order_error_rms_mean": 0.2142720637923736,
+   "dt": 0.00023749999999999995,
+   "dx": 0.008333333333333333,
+   "h": 0.01583333333333333,
+   "h_over_dx": 1.9,
+   "length": 0.1,
+   "mass_model": "rho0*dx^2 in the run; lattice-calibrated in the diagnostic",
+   "n_diag_samples": 105,
+   "n_fluid": 144,
+   "n_wall": 180,
+   "order_reference_error": 1.1102230246251565e-15,
+   "resolution_H_over_dx": 12,
+   "scheme": "WCSPH",
+   "steps": 4211,
+   "tait_density_error_max": 0.874036431312561,
+   "u_max_analytic": 1.2262500000000003,
+   "u_max_measured": 2.274899482727051,
+   "wall_clock_s": 44.99353909492493
+  },
+  {
+   "density_order_error_max": 0.0003046989440917969,
+   "density_order_error_rms_mean": null,
+   "dt_note": "adaptive: min(cfl*h/|u|, 0.125*h^2/nu)",
+   "dx": 0.008333333333333333,
+   "h": 0.01583333333333333,
+   "h_over_dx": 1.9,
+   "mass_model": "lattice-calibrated",
+   "n_fluid": 144,
+   "n_wall": 120,
+   "order_reference_error": null,
+   "resolution_H_over_dx": 12,
+   "scheme": "ISPH",
+   "steps": 320,
+   "u_max_analytic": 1.2262500000000003,
+   "u_max_measured": 1.2430765628814697,
+   "wall_clock_s": 4.999861001968384
+  }
+ ]
+}
