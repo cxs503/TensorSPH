@@ -76,6 +76,14 @@ class LJFluidConfig:
     seed: int = 42
     device: str = "cpu"
     dtype: str = "float64"
+    # Fraction of ``n_steps`` integrated before observables are collected.  The
+    # stored verification artifact used the historical 0.4 (i.e. 320 steps at
+    # ``n_steps = 800``, 1.6 Langevin relaxation times at ``friction = 1``),
+    # which is short enough that the lattice-melting transient leaks into the
+    # quoted mean temperature.  ``run_lj_fluid`` records both windows, so a
+    # caller can audit the transient instead of guessing (see
+    # ``docs/verification_fluctuating_hydro_thermostat.md``).
+    equilibration_fraction: float = 0.4
     # Negative control flags
     zero_temperature: bool = False  # T=0 negative control
     no_fluctuation: bool = False    # disable Langevin noise
@@ -97,6 +105,7 @@ class LJFluidState:
     # Kinetic energy history for equipartition
     kinetic_energy_history: list = field(default_factory=list)
     temperature_history: list = field(default_factory=list)
+    potential_energy_history: list = field(default_factory=list)
     step: int = 0
 
 
@@ -115,6 +124,14 @@ class LJFluidResult:
     max_ke_per_particle: float = 0.0  # max per-particle KE over all samples
     max_temperature: float = 0.0      # max instantaneous T over all samples
     diffusion_no_noise: float = 0.0
+    # Temperature statistics with an uncertainty (see ``block_average_se``)
+    mean_temperature_se: float = 0.0   # block-averaged standard error of the above
+    n_samples_temperature: int = 0
+    temperature_samples: list = field(default_factory=list)      # production window
+    equilibration_temperature: list = field(default_factory=list)  # discarded window
+    potential_energy_history: list = field(default_factory=list)   # production window
+    equilibration_steps: int = 0
+    production_steps: int = 0
     # Metadata
     n_samples_msd: int = 0
     n_samples_gk: int = 0
@@ -250,6 +267,27 @@ def compute_lj_forces(positions: torch.Tensor, box: float, cutoff: float,
     forces = forces.index_add(0, pairs[:, 1], -f_vec)
 
     return forces
+
+
+def compute_lj_potential(positions: torch.Tensor, box: float, cutoff: float,
+                         pairs: torch.Tensor) -> float:
+    """Truncated Lennard-Jones potential energy of the configuration.
+
+    Uses the same minimum-image pair list and cutoff as :func:`compute_lj_forces`,
+    so the reported energy is the one the forces are the gradient of.  Needed to
+    turn "the lattice melts and heats the sample" into a number: the excess
+    potential energy per particle becomes kinetic energy, i.e. a temperature
+    offset of ``2 dPE/(d N)`` in reduced units.
+    """
+    if pairs.numel() == 0:
+        return 0.0
+    delta = positions[pairs[:, 0]] - positions[pairs[:, 1]]
+    delta = delta - box * torch.round(delta / box)
+    r2 = (delta ** 2).sum(dim=1)
+    r2 = r2.clamp_min(1.0e-12)
+    inv6 = (1.0 / r2) ** 3
+    energy = 4.0 * (inv6 * inv6 - inv6)
+    return float(energy.sum())
 
 
 def compute_stress_tensor(positions: torch.Tensor, velocities: torch.Tensor,
@@ -586,6 +624,44 @@ def extract_viscosity_green_kubo(acf_values: list, timestep: float,
     return eta_mean, eta_std
 
 
+def block_average_se(samples, n_blocks: int | None = None) -> tuple:
+    """Mean and block-averaged standard error of a correlated time series.
+
+    The instantaneous temperature of a Langevin trajectory is autocorrelated, so
+    ``std(x)/sqrt(N)`` understates the error of the mean by ``sqrt(2 tau / dt)``.
+    Here the series is cut into ``n_blocks`` contiguous blocks whose means are
+    treated as approximately independent: ``SE = std(block means)/sqrt(n_blocks)``.
+
+    Parameters
+    ----------
+    samples : sequence of float or 1-D tensor
+    n_blocks : number of blocks, defaults to ``max(2, floor(sqrt(N)))`` -- small
+        enough that each block spans many correlation times, large enough that
+        the block-mean spread is measurable.
+
+    Returns
+    -------
+    (mean, se, n_blocks) with ``se = 0.0`` when every block mean is identical
+    (a deterministic series) and ``nan`` when fewer than two blocks are usable.
+    """
+    import math as _math
+
+    vals = torch.as_tensor(list(samples) if not torch.is_tensor(samples) else samples,
+                           dtype=torch.float64).reshape(-1)
+    n = int(vals.numel())
+    mean = float(vals.mean()) if n else float("nan")
+    if n < 4:
+        return mean, float("nan"), 0
+    blocks = max(2, int(_math.sqrt(n))) if n_blocks is None else int(n_blocks)
+    blocks = min(blocks, n)
+    size = n // blocks
+    if blocks < 2 or size < 1:
+        return mean, float("nan"), 0
+    usable = vals[: blocks * size].reshape(blocks, size).mean(dim=1)
+    se = float(usable.std(unbiased=True) / _math.sqrt(blocks))
+    return mean, se, blocks
+
+
 def check_equipartition(velocities: torch.Tensor, temperature: float,
                         dimension: int, mass: float = 1.0) -> float:
     """Check equipartition: ⟨½mv²⟩ / (d/2 · k_BT) should be 1.
@@ -646,10 +722,17 @@ def run_lj_fluid(config: LJFluidConfig) -> LJFluidResult:
 
     state.forces = compute_lj_forces(state.positions, box, config.lj_cutoff, pairs)
 
-    # Equilibration phase (first 40% of steps for better equilibration)
-    n_eq = int(config.n_steps * 0.4)
+    # Equilibration phase: the discarded window, ``equilibration_fraction`` of
+    # the run (0.4 by default, the historical value).
+    if not 0.0 <= config.equilibration_fraction < 1.0:
+        raise ValueError(
+            f"equilibration_fraction must lie in [0, 1), got "
+            f"{config.equilibration_fraction}")
+    n_eq = int(config.n_steps * config.equilibration_fraction)
     n_prod = config.n_steps - n_eq
+    result_prefix = {"equilibration_steps": n_eq, "production_steps": n_prod}
 
+    eq_trace: list = []
     # Run equilibration
     for step in range(n_eq):
         if step % config.neighbor_rebuild_every == 0:
@@ -662,6 +745,13 @@ def run_lj_fluid(config: LJFluidConfig) -> LJFluidResult:
 
         velocity_verlet_step(state, config, pairs,
                              noise_seed=config.seed + step + 1)
+
+        # Keep a sparse trace of the discarded window: this is the diagnostic
+        # that shows whether the quoted production mean still carries startup
+        # transient (lattice-melting) heat.
+        if step % config.sample_every == 0:
+            ke = 0.5 * state.mass * (state.velocities ** 2).sum(dim=-1)
+            eq_trace.append(2.0 * ke.mean().item() / config.dimension)
 
     # Production phase — collect data
     # For MSD we need unwrapped positions
@@ -697,6 +787,8 @@ def run_lj_fluid(config: LJFluidConfig) -> LJFluidResult:
             )
             state.stress_xy_history.append(stress)
 
+            state.potential_energy_history.append(
+                compute_lj_potential(state.positions, box, config.lj_cutoff, pairs))
             # Kinetic energy / temperature
             ke = 0.5 * state.mass * (state.velocities ** 2).sum(dim=-1)
             mean_ke = ke.mean().item()
@@ -745,11 +837,23 @@ def run_lj_fluid(config: LJFluidConfig) -> LJFluidResult:
         result.equipartition_ratio = mean_ke / expected_ke if expected_ke > 0 else 0
 
     # Temperature statistics
+    result.equilibration_steps = n_eq
+    result.production_steps = n_prod
+    result.equilibration_temperature = list(eq_trace)
+    result.potential_energy_history = list(state.potential_energy_history)
     if state.temperature_history:
         t_hist = torch.tensor(state.temperature_history, dtype=torch.float64)
         result.mean_temperature = float(t_hist.mean())
         result.std_temperature = float(t_hist.std())
         result.max_temperature = float(t_hist.max())
+        result.temperature_samples = [float(x) for x in t_hist]
+        result.n_samples_temperature = int(t_hist.numel())
+        # The samples are correlated (one Langevin relaxation time ~ 1/friction),
+        # so the naive std/sqrt(N) is a lower bound; block averaging is the
+        # honest error bar and is what the verification claim must be read
+        # against.
+        _mean, se, _nb = block_average_se(result.temperature_samples)
+        result.mean_temperature_se = se
     if state.kinetic_energy_history:
         ke_hist = torch.tensor(state.kinetic_energy_history, dtype=torch.float64)
         result.max_ke_per_particle = float(ke_hist.max())
