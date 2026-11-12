@@ -89,6 +89,22 @@ def compute_relative_l2(sph_samples, exp_data, max_tau=None):
     return math.sqrt(numerator / denominator), n_points
 
 
+def _reference_usable() -> bool:
+    """Whether the reference audit admits the bundled table as a validation target.
+
+    ``benchmarks/dam_break/reference_audit.json`` graded the bundled
+    Martin & Moyce table synthetic (exact tau lattice, ordinates exact multiples
+    of 0.05), so a pass/fail against it would arbitrate a 15 % gate with a table
+    of unknown provenance.  Missing audit file -> not usable (fail closed).
+    """
+    path = Path(__file__).resolve().parent / "reference_audit.json"
+    try:
+        audit = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return False
+    return bool(audit.get("table_audit", {}).get("usable_as_validation_target", False))
+
+
 def run_one(dx, args, seconds=None):
     """Run a single dam-break case."""
     cfg = DamBreakConfig(
@@ -119,6 +135,11 @@ def run_one(dx, args, seconds=None):
             "tau": t * math.sqrt(2.0 * cfg.gravity / cfg.column_width),
             "front": z,
             "front_over_a": z / cfg.column_width,
+            # Martin & Moyce measure Z from the initial column edge (x = a), so
+            # Z/a = (x_front - a)/a.  `front_over_a` above is the lab-frame
+            # front position and starts at 1.0; comparing it with the reference
+            # costs ~+1 in Z/a (docs/verification_dam_break_reference_convention.md).
+            "Z_over_a": (z - cfg.column_width) / cfg.column_width,
             "kinetic_energy": ke,
             "potential_energy": pe,
         })
@@ -229,6 +250,7 @@ def main():
               f"compression={result['max_density_compression']:.4f}")
 
     # Compute experimental comparison
+    reference_usable = _reference_usable()
     exp_comparison = []
     for result in results:
         max_tau = None
@@ -236,7 +258,11 @@ def main():
             max_tau = result["wall_impact_time"] * math.sqrt(
                 2.0 * 9.81 / args.column_width
             )
-        error, n_points = compute_relative_l2(result["samples"], exp_data, max_tau)
+        samples_exp = [dict(sample,
+                            front_over_a=sample.get("Z_over_a",
+                                                    sample["front_over_a"]))
+                       for sample in result["samples"]]
+        error, n_points = compute_relative_l2(samples_exp, exp_data, max_tau)
         exp_comparison.append({
             "dx": result["dx"],
             "particles": result["particles"],
@@ -283,7 +309,10 @@ def main():
                 "metric": "relative L2 error of Z/a vs Martin & Moyce (1952)",
                 "measured": comp["relative_l2_error"],
                 "limit": args.max_exp_error,
-                "result": "pass" if comp["relative_l2_error"] <= args.max_exp_error else "fail",
+                "result": ("withheld" if not reference_usable else
+                           "pass" if comp["relative_l2_error"] <= args.max_exp_error
+                           else "fail"),
+                "reference_usable": reference_usable,
             }
         else:
             gates[f"experimental_agreement_dx{dx}"] = {
