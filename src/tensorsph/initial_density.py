@@ -12,17 +12,22 @@ hex packing) the fluid starts at
 
     rho_i / rho0 = 1 + b,      b = m * S / rho0 - 1.
 
-For ``h = 1.3 dx`` a square lattice gives ``b = +5.88e-3``: the fluid is
-pre-compressed by 0.59 % *before the first time step*.  The Tait law turns that
+The offset depends on ``h/dx`` *and* on the lattice geometry, and the two
+lattices this repo builds sit on opposite sides of zero at the production
+``h = 1.3 dx``: the square lattice gives ``b = -5.3e-5`` (measured; the Tait
+clamp then hides it) while the hexagonal lattice of the Laplace benchmark gives
+``b = +5.9e-3``.  Only the over-dense side is visible: the Tait law turns it
 into a uniform spurious pressure
 
     p_spurious = B [(1+b)^gamma - 1],   B = rho0 c0^2 / gamma,
 
-which at ``c0 = 20 m/s`` (``B = 5.71e4 Pa``) is **2394 Pa** -- the number
-``backlog_update_m2971.md`` reports for the hex drop (2395 Pa), and 6.7x the
-Young-Laplace signal of a 2 cm water drop.  It is not a surface-tension defect
-and it is not confined to drops: every wcSPH case started this way carries the
-same offset, including the hydrostatic pool benchmarks.
+which at ``c0 = 20 m/s`` (``B = 5.71e4 Pa``) is **2394 Pa** for the hex drop --
+the number ``backlog_update_m2971.md`` reports (2395 Pa), and 6.7x the
+Young-Laplace signal of a 2 cm water drop.  ``backlog_update_m3211.md`` corrects
+the older claim that this is universal: it is a property of the *pair*
+``(h/dx, geometry)``, so a case run away from ``h/dx = 1.3`` (or on the hex
+lattice) carries it and a case run at the square production default does not.
+Calibration is therefore applied uniformly and costs nothing on the default.
 
 ``b`` depends only on ``h/dx`` and on the lattice geometry -- not on ``dx``,
 ``rho0``, ``c0``, the body shape or the resolution.  A single scalar therefore
@@ -142,8 +147,10 @@ def lattice_bias(dx: float, h: float, kind: str = "square",
     """``b`` with ``rho_i/rho0 = 1 + b`` for the lattice-constant mass.
 
     ``kind="square"`` uses ``m = rho0 dx^2``, ``kind="hex"`` uses
-    ``m = rho0 dx dy`` with ``dy = dx sqrt(3)/2``, matching the benchmark
-    lattices.  Positive ``b`` means the lattice starts over-dense.
+    ``m = rho0 dx dy`` with ``dy = dx sqrt(3)/2``, matching the lattices the
+    cases build.  Positive ``b`` means the lattice starts over-dense.  The 3-D
+    cubic lattice is *not* handled here: it needs the 3-D kernel and lives in
+    :func:`tensorsph.threed.kernel3.lattice_bias`.
     """
     area = dx * dx
     if kind == "hex":
