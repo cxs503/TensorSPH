@@ -45,12 +45,15 @@ from .brine import (V_IRR, band_check, drainage_advance, drainage_step,
 from .coupled import ThreeFieldConfig, ThreeFieldResult, coupling_strength, run_three_field
 from .darcy import RA_CRITICAL_EXACT, critical_rayleigh, mushy_rayleigh
 from .enthalpy import FRESH, SEA_ICE, EnthalpyModel, neumann_lambda, stefan_front
+from .conduction_slab import (SlabConfig, SlabResult, analytic_temperature,
+                              run_slab_contact)
 from .sph_thermal import StefanConfig, StefanResult, run_stefan_sph
 from .thermal_stress import (crack_assessment, critical_temperature_drop,
                             free_plate_stress, restrained_stress)
 
 __all__ = [
-    "brine", "coupled", "darcy", "enthalpy", "properties", "sph_thermal",
+    "brine", "conduction_slab", "coupled", "darcy", "enthalpy", "properties",
+    "sph_thermal",
     "thermal_stress",
     "V_IRR", "band_check", "drainage_advance", "drainage_step",
     "drainage_step_implicit", "drainage_velocity", "residual_salinity",
