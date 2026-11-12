@@ -1,0 +1,39 @@
+{
+ "benchmark": "startup_quiescence/density_diffusion_form",
+ "question": "does the hydrostatic-consistent (psi) form of the diffusive density term cure the resting-flume spurious current F1?",
+ "provenance": "values below were printed by run_flume_case(...) from this worktree (benchmarks/startup_quiescence/run.py, CPU, torch 2.14) and transcribed here; rerun with benchmarks/startup_quiescence/ablate_density_diffusion.py to reproduce (55 s and 156 s wall respectively). No value was taken from a paper.",
+ "case": {
+  "depth_m": 0.2,
+  "dx_m": 0.01,
+  "flume_length_m": 0.6,
+  "seconds": 0.06,
+  "sample_every": 4,
+  "viscosity": 1e-06,
+  "density_diffusion": 0.1,
+  "sound_speed": 30.0
+ },
+ "variants": [
+  {
+   "label": "shipped (molteni)",
+   "density_diffusion_form": "molteni",
+   "v_peak": 0.1430751,
+   "interior_v_late_rms": 0.0797595,
+   "initial_pressure_deviation": 0.0008733,
+   "wall_seconds": 55.0
+  },
+  {
+   "label": "hydrostatic-corrected (antuono)",
+   "density_diffusion_form": "antuono",
+   "v_peak": 0.1783794,
+   "interior_v_late_rms": 0.1015229,
+   "initial_pressure_deviation": 0.030691,
+   "wall_seconds": 155.96
+  }
+ ],
+ "gate": {
+  "criterion": "interior_v_late_rms <= 0.06 m/s",
+  "shipped": "FAIL 0.0798",
+  "corrected": "FAIL 0.1015 (worse)"
+ },
+ "verdict": "falsified: the corrected form does not cure F1; it raises both the dynamic noise (+27%) and the t=0 pressure deviation (35x)."
+}
