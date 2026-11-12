@@ -29,6 +29,7 @@ from .droplet_impact import (
     boundary_box,
     cell_centres,
     hydrostatic_density,
+    lattice_mass_unit,
     next_dt,
     resolve_device,
     rhs,
@@ -100,11 +101,18 @@ def make_column(cfg: DamBreakConfig, device: torch.device):
         raise ValueError("column discretization produced no particles")
     gx, gy = torch.meshgrid(xs, ys, indexing="xy")
     positions = torch.stack((gx.reshape(-1), gy.reshape(-1)), dim=-1)
+    # Lattice mass unit, calibrated unless ``Config.density_calibration`` is
+    # off (droplet_impact.lattice_mass_unit).  The flag was documented on
+    # Config but this case ignored it: the column started with the raw
+    # ``rho0 dx^2``, i.e. with the lattice kernel-sum bias ``b`` of the chosen
+    # h/dx baked in as a spurious pressure.  See
+    # docs/verification_case_lattice_mass_calibration.md.
+    mass_unit = lattice_mass_unit(cfg)
     if cfg.hydrostatic_init:
         mass = hydrostatic_density(positions[:, 1], cfg, surface=cfg.column_height
-                                   ) * dx * dx
+                                   ) * (mass_unit / cfg.rho0)
     else:
-        mass = torch.full((positions.shape[0],), cfg.rho0 * dx * dx, device=device)
+        mass = torch.full((positions.shape[0],), mass_unit, device=device)
     return positions, mass
 
 
