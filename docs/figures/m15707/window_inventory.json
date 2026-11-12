@@ -1,0 +1,675 @@
+{
+ "divergence": {
+  "upstream": "origin/main",
+  "behind": 0,
+  "ahead": 0,
+  "head": "1c9888e"
+ },
+ "surface": {
+  "benchmark_dirs": 68,
+  "src_py": 84,
+  "test_py": 124,
+  "docs_files": 140
+ },
+ "commits": [
+  {
+   "sha": "1c9888e",
+   "date": "2026-11-12",
+   "subject": "Merge #506 (m15558) via push-merge",
+   "n_parents": 2,
+   "files": 4,
+   "add": 140,
+   "dele": 0,
+   "test_files": 0,
+   "dirs": [
+    "docs"
+   ],
+   "by_cat": {
+    "src": 0,
+    "tests": 0,
+    "benchmarks": 0,
+    "scripts": 0,
+    "docs": 140,
+    "audit": 0,
+    "other": 0
+   },
+   "has_audit_path": true,
+   "mission": "m15558"
+  },
+  {
+   "sha": "55e1bd9",
+   "date": "2026-11-12",
+   "subject": "m15558: matured mission deliverables",
+   "n_parents": 1,
+   "files": 4,
+   "add": 140,
+   "dele": 0,
+   "test_files": 0,
+   "dirs": [
+    "docs"
+   ],
+   "by_cat": {
+    "src": 0,
+    "tests": 0,
+    "benchmarks": 0,
+    "scripts": 0,
+    "docs": 140,
+    "audit": 0,
+    "other": 0
+   },
+   "has_audit_path": true,
+   "mission": "m15558"
+  },
+  {
+   "sha": "b717fec",
+   "date": "2026-11-12",
+   "subject": "Merge #505 (m15493) via merge-master",
+   "n_parents": 1,
+   "files": 5,
+   "add": 1048,
+   "dele": 0,
+   "test_files": 1,
+   "dirs": [
+    "benchmarks",
+    "docs",
+    "src",
+    "tests"
+   ],
+   "by_cat": {
+    "src": 442,
+    "tests": 185,
+    "benchmarks": 201,
+    "scripts": 0,
+    "docs": 220,
+    "audit": 0,
+    "other": 0
+   },
+   "has_audit_path": false,
+   "mission": "m15493"
+  },
+  {
+   "sha": "8224568",
+   "date": "2026-11-12",
+   "subject": "Merge #504 (m15489) via merge-master",
+   "n_parents": 1,
+   "files": 16,
+   "add": 2976,
+   "dele": 0,
+   "test_files": 0,
+   "dirs": [
+    "audit",
+    "docs"
+   ],
+   "by_cat": {
+    "src": 0,
+    "tests": 0,
+    "benchmarks": 0,
+    "scripts": 0,
+    "docs": 131,
+    "audit": 2845,
+    "other": 0
+   },
+   "has_audit_path": true,
+   "mission": "m15489"
+  },
+  {
+   "sha": "19b53bf",
+   "date": "2026-11-12",
+   "subject": "Merge #503 (m15453) via merge-master",
+   "n_parents": 1,
+   "files": 7,
+   "add": 1054,
+   "dele": 0,
+   "test_files": 0,
+   "dirs": [
+    "docs",
+    "scripts"
+   ],
+   "by_cat": {
+    "src": 0,
+    "tests": 0,
+    "benchmarks": 0,
+    "scripts": 805,
+    "docs": 249,
+    "audit": 0,
+    "other": 0
+   },
+   "has_audit_path": true,
+   "mission": "m15453"
+  },
+  {
+   "sha": "a293de8",
+   "date": "2026-11-12",
+   "subject": "Merge #502 (m15445) via merge-master",
+   "n_parents": 1,
+   "files": 9,
+   "add": 1275,
+   "dele": 7,
+   "test_files": 1,
+   "dirs": [
+    "benchmarks",
+    "docs",
+    "src",
+    "tests"
+   ],
+   "by_cat": {
+    "src": 417,
+    "tests": 222,
+    "benchmarks": 486,
+    "scripts": 0,
+    "docs": 150,
+    "audit": 0,
+    "other": 0
+   },
+   "has_audit_path": false,
+   "mission": "m15445"
+  },
+  {
+   "sha": "9a12b6a",
+   "date": "2026-11-12",
+   "subject": "Merge #501 (m15437) via merge-master",
+   "n_parents": 1,
+   "files": 23,
+   "add": 71160,
+   "dele": 0,
+   "test_files": 1,
+   "dirs": [
+    "benchmarks",
+    "docs",
+    "src",
+    "tests"
+   ],
+   "by_cat": {
+    "src": 221,
+    "tests": 142,
+    "benchmarks": 1082,
+    "scripts": 0,
+    "docs": 69715,
+    "audit": 0,
+    "other": 0
+   },
+   "has_audit_path": false,
+   "mission": "m15437"
+  },
+  {
+   "sha": "1ad742e",
+   "date": "2026-11-12",
+   "subject": "Merge #500 (m14500) via merge-master",
+   "n_parents": 1,
+   "files": 0,
+   "add": 0,
+   "dele": 0,
+   "test_files": 0,
+   "dirs": [],
+   "by_cat": {
+    "src": 0,
+    "tests": 0,
+    "benchmarks": 0,
+    "scripts": 0,
+    "docs": 0,
+    "audit": 0,
+    "other": 0
+   },
+   "has_audit_path": false,
+   "mission": "m14500"
+  },
+  {
+   "sha": "f5f3f6a",
+   "date": "2026-11-12",
+   "subject": "Merge #499 (m15421) via merge-master",
+   "n_parents": 1,
+   "files": 3,
+   "add": 836,
+   "dele": 0,
+   "test_files": 0,
+   "dirs": [
+    "docs",
+    "scripts"
+   ],
+   "by_cat": {
+    "src": 0,
+    "tests": 0,
+    "benchmarks": 0,
+    "scripts": 758,
+    "docs": 78,
+    "audit": 0,
+    "other": 0
+   },
+   "has_audit_path": true,
+   "mission": "m15421"
+  },
+  {
+   "sha": "069c5b1",
+   "date": "2026-11-12",
+   "subject": "Merge #498 (m15419) via push-merge",
+   "n_parents": 2,
+   "files": 5,
+   "add": 748,
+   "dele": 0,
+   "test_files": 0,
+   "dirs": [
+    "docs",
+    "scripts"
+   ],
+   "by_cat": {
+    "src": 0,
+    "tests": 0,
+    "benchmarks": 0,
+    "scripts": 642,
+    "docs": 106,
+    "audit": 0,
+    "other": 0
+   },
+   "has_audit_path": true,
+   "mission": "m15419"
+  },
+  {
+   "sha": "9f6308e",
+   "date": "2026-11-12",
+   "subject": "m15419: matured mission deliverables（7 个文件被门禁滤除）",
+   "n_parents": 1,
+   "files": 5,
+   "add": 748,
+   "dele": 0,
+   "test_files": 0,
+   "dirs": [
+    "docs",
+    "scripts"
+   ],
+   "by_cat": {
+    "src": 0,
+    "tests": 0,
+    "benchmarks": 0,
+    "scripts": 642,
+    "docs": 106,
+    "audit": 0,
+    "other": 0
+   },
+   "has_audit_path": true,
+   "mission": "m15419"
+  },
+  {
+   "sha": "3be0d41",
+   "date": "2026-11-12",
+   "subject": "Merge #497 (m15412) via merge-master",
+   "n_parents": 1,
+   "files": 5,
+   "add": 1562,
+   "dele": 0,
+   "test_files": 1,
+   "dirs": [
+    "benchmarks",
+    "docs",
+    "tests"
+   ],
+   "by_cat": {
+    "src": 0,
+    "tests": 192,
+    "benchmarks": 1234,
+    "scripts": 0,
+    "docs": 136,
+    "audit": 0,
+    "other": 0
+   },
+   "has_audit_path": false,
+   "mission": "m15412"
+  },
+  {
+   "sha": "25fc915",
+   "date": "2026-11-12",
+   "subject": "Merge #496 (m15408) via merge-master",
+   "n_parents": 1,
+   "files": 13,
+   "add": 7994,
+   "dele": 0,
+   "test_files": 1,
+   "dirs": [
+    "benchmarks",
+    "docs",
+    "src",
+    "tests"
+   ],
+   "by_cat": {
+    "src": 100,
+    "tests": 156,
+    "benchmarks": 7537,
+    "scripts": 0,
+    "docs": 201,
+    "audit": 0,
+    "other": 0
+   },
+   "has_audit_path": false,
+   "mission": "m15408"
+  },
+  {
+   "sha": "80f3c7f",
+   "date": "2026-11-12",
+   "subject": "Merge #495 (m15396) via merge-master",
+   "n_parents": 1,
+   "files": 8,
+   "add": 2541,
+   "dele": 0,
+   "test_files": 1,
+   "dirs": [
+    "benchmarks",
+    "docs",
+    "src",
+    "tests"
+   ],
+   "by_cat": {
+    "src": 467,
+    "tests": 134,
+    "benchmarks": 1637,
+    "scripts": 0,
+    "docs": 303,
+    "audit": 0,
+    "other": 0
+   },
+   "has_audit_path": false,
+   "mission": "m15396"
+  },
+  {
+   "sha": "3b39225",
+   "date": "2026-11-12",
+   "subject": "Merge #494 (m15371) via push-merge",
+   "n_parents": 2,
+   "files": 5,
+   "add": 1231,
+   "dele": 0,
+   "test_files": 1,
+   "dirs": [
+    "benchmarks",
+    "docs",
+    "tests"
+   ],
+   "by_cat": {
+    "src": 0,
+    "tests": 89,
+    "benchmarks": 1036,
+    "scripts": 0,
+    "docs": 106,
+    "audit": 0,
+    "other": 0
+   },
+   "has_audit_path": false,
+   "mission": "m15371"
+  }
+ ],
+ "case_rows": [
+  {
+   "case": "CASE-LAPLACE-SPH",
+   "variant": "mls",
+   "level": "1",
+   "metric": "dp_error_pct",
+   "value": 0.9714066814682676,
+   "source": "benchmarks/laplace_sph/results.json#ladder_mls",
+   "parsed": true
+  },
+  {
+   "case": "CASE-LAPLACE-SPH",
+   "variant": "mls",
+   "level": "2",
+   "metric": "dp_error_pct",
+   "value": 0.6061815203874721,
+   "source": "benchmarks/laplace_sph/results.json#ladder_mls",
+   "parsed": true
+  },
+  {
+   "case": "CASE-LAPLACE-SPH",
+   "variant": "mls",
+   "level": "3",
+   "metric": "dp_error_pct",
+   "value": -0.21326281493778687,
+   "source": "benchmarks/laplace_sph/results.json#ladder_mls",
+   "parsed": true
+  },
+  {
+   "case": "CASE-LAPLACE-SPH",
+   "variant": "fit_quadratic",
+   "level": "1",
+   "metric": "dp_error_pct",
+   "value": -23.010132076774592,
+   "source": "benchmarks/laplace_sph/results.json#ladder_fit_quadratic",
+   "parsed": true
+  },
+  {
+   "case": "CASE-LAPLACE-SPH",
+   "variant": "fit_quadratic",
+   "level": "2",
+   "metric": "dp_error_pct",
+   "value": -23.692946339144484,
+   "source": "benchmarks/laplace_sph/results.json#ladder_fit_quadratic",
+   "parsed": true
+  },
+  {
+   "case": "CASE-LAPLACE-SPH",
+   "variant": "fit_quadratic",
+   "level": "3",
+   "metric": "dp_error_pct",
+   "value": -24.456987691186328,
+   "source": "benchmarks/laplace_sph/results.json#ladder_fit_quadratic",
+   "parsed": true
+  },
+  {
+   "case": "CASE-POISEUILLE-MIRROR",
+   "variant": "level0",
+   "level": "1",
+   "metric": "u_max_error_pct",
+   "value": 0.38416684585242944,
+   "source": "benchmarks/poiseuille_mirror/out/results.json#results.u_max",
+   "parsed": true
+  },
+  {
+   "case": "CASE-POISEUILLE-MIRROR",
+   "variant": "level0",
+   "level": "1",
+   "metric": "profile_rms_interior_pct",
+   "value": 2.7233093666419927,
+   "source": "benchmarks/poiseuille_mirror/out/results.json#results.rms",
+   "parsed": true
+  },
+  {
+   "case": "CASE-POISEUILLE-MIRROR",
+   "variant": "level0",
+   "level": "1",
+   "metric": "wall_shear_pct",
+   "value": -0.35418196619319,
+   "source": "benchmarks/poiseuille_mirror/out/results.json#results.shear",
+   "parsed": true
+  },
+  {
+   "case": "CASE-POISEUILLE-MIRROR",
+   "variant": "level1",
+   "level": "2",
+   "metric": "u_max_error_pct",
+   "value": 0.016608515281535396,
+   "source": "benchmarks/poiseuille_mirror/out/results.json#results.u_max",
+   "parsed": true
+  },
+  {
+   "case": "CASE-POISEUILLE-MIRROR",
+   "variant": "level1",
+   "level": "2",
+   "metric": "profile_rms_interior_pct",
+   "value": 1.2341170812769142,
+   "source": "benchmarks/poiseuille_mirror/out/results.json#results.rms",
+   "parsed": true
+  },
+  {
+   "case": "CASE-POISEUILLE-MIRROR",
+   "variant": "level1",
+   "level": "2",
+   "metric": "wall_shear_pct",
+   "value": -0.37626892338913365,
+   "source": "benchmarks/poiseuille_mirror/out/results.json#results.shear",
+   "parsed": true
+  },
+  {
+   "case": "CASE-POISEUILLE-MIRROR",
+   "variant": "level2",
+   "level": "3",
+   "metric": "u_max_error_pct",
+   "value": -0.254328316504826,
+   "source": "benchmarks/poiseuille_mirror/out/results.json#results.u_max",
+   "parsed": true
+  },
+  {
+   "case": "CASE-POISEUILLE-MIRROR",
+   "variant": "level2",
+   "level": "3",
+   "metric": "profile_rms_interior_pct",
+   "value": 0.4241340756126215,
+   "source": "benchmarks/poiseuille_mirror/out/results.json#results.rms",
+   "parsed": true
+  },
+  {
+   "case": "CASE-POISEUILLE-MIRROR",
+   "variant": "level2",
+   "level": "3",
+   "metric": "wall_shear_pct",
+   "value": -0.43650131500180267,
+   "source": "benchmarks/poiseuille_mirror/out/results.json#results.shear",
+   "parsed": true
+  },
+  {
+   "case": "CASE-SLOSHING",
+   "variant": "base cpd12",
+   "level": "12",
+   "metric": "omega_error_pct",
+   "value": 0.9550713289535521,
+   "source": "docs/benchmarks/sloshing-resonance/summary.json#headline",
+   "parsed": true
+  },
+  {
+   "case": "CASE-SLOSHING",
+   "variant": "refinement",
+   "level": "cpd8",
+   "metric": "omega_error_pct",
+   "value": 54.598241953326855,
+   "source": "docs/benchmarks/sloshing-resonance/summary.json#Q2",
+   "parsed": true
+  },
+  {
+   "case": "CASE-SLOSHING",
+   "variant": "refinement",
+   "level": "cpd12",
+   "metric": "omega_error_pct",
+   "value": 0.9550713289535521,
+   "source": "docs/benchmarks/sloshing-resonance/summary.json#Q2",
+   "parsed": true
+  }
+ ],
+ "doc_cited": [
+  {
+   "case": "CASE-CAPILLARY-WAVE",
+   "variant": "mls worst ppw=24",
+   "metric": "omega_error_pct",
+   "value": -4.22,
+   "source": "docs/case_capillary_wave_dispersion.md §3"
+  },
+  {
+   "case": "CASE-CAPILLARY-WAVE",
+   "variant": "fit_quadratic worst ppw=16",
+   "metric": "omega_error_pct",
+   "value": -24.27,
+   "source": "docs/case_capillary_wave_dispersion.md §3"
+  },
+  {
+   "case": "CASE-COUETTE-SPH",
+   "variant": "ladder-r24 interior L2",
+   "metric": "l2_interior_pct",
+   "value": 2.95,
+   "source": "docs/reports/m15412-couette-sph.md §3"
+  },
+  {
+   "case": "CASE-COUETTE-SPH",
+   "variant": "ladder-r16 wall shear (top)",
+   "metric": "wall_shear_ratio_dev_pct",
+   "value": -20.87,
+   "source": "docs/reports/m15412-couette-sph.md §3 (ratio 0.7913)"
+  }
+ ],
+ "lint": {
+  "available": true,
+  "violations": 1121,
+  "top": [
+   "E501 x562",
+   "W293 x187",
+   "E702 x107"
+  ],
+  "tracked": 452,
+  "exit_code": 1
+ },
+ "risks": [
+  {
+   "id": "R1",
+   "severity": "medium",
+   "title": "Empty merge commit in the window",
+   "evidence": "1ad742e (m14500) 0 files / 0 lines",
+   "action": "Mission m14500 landed no net change; ledger should record it as no-delta instead of counting it as a delivered node."
+  },
+  {
+   "id": "R2",
+   "severity": "medium",
+   "title": "Documentation share dominates the window",
+   "evidence": "docs/ = 71781 of 93453 inserted lines (76.8%)",
+   "action": "Report/audit text grows faster than solver code. Freeze new report variants until the case-pool verdicts are consolidated into one index."
+  },
+  {
+   "id": "R3",
+   "severity": "low",
+   "title": "Additive-only regime (no consolidation)",
+   "evidence": "7 deleted lines across 15 commits",
+   "action": "Duplicate benchmark trees (laplace*, capillary*, hydrostatic*) accumulate; schedule a deletion pass with owner sign-off (irreversible-ish)."
+  },
+  {
+   "id": "R4",
+   "severity": "high",
+   "title": "Audit evidence is git-ignored and never lands",
+   "evidence": ".gitignore drops artifacts/; runs/ is not committed, so m15419's commit message records '7 files filtered by the gate' (the 7 runs/m15419_audit/*.json)",
+   "action": "Evidence JSON must be committed under docs/ or benchmarks/*/out/ (as benchmarks/laplace_sph/results.json already does); 'evidence store empty as committed' makes audits unreproducible."
+  },
+  {
+   "id": "R5",
+   "severity": "high",
+   "title": "Tests depend on uncommitted run artifacts",
+   "evidence": "tests/test_case_hydrostatic.py::REPORT = runs/case_hydrostatic/report.json; 4 setup errors on a clean checkout (see evidence/clean_checkout_pytest.txt)",
+   "action": "Re-run the benchmark inside the fixture or skip with an explicit reason; the current form turns CI red for reasons unrelated to physics correctness."
+  },
+  {
+   "id": "R6",
+   "severity": "medium",
+   "title": "Rejected variants ship next to the accepted one",
+   "evidence": "4 committed case points exceed the 15% limit, e.g. CASE-LAPLACE-SPH fit_quadratic -23.01% -- they are the documented negative control.",
+   "action": "Keep them (they are the falsified branch) but tag every point with its verdict in the JSON so a downstream reader cannot quote -24% as a result."
+  },
+  {
+   "id": "R7",
+   "severity": "low",
+   "title": "Push-merge / merge-master double landing",
+   "evidence": "9f6308e (m15419 deliverables) is merged again by 069c5b1 'via push-merge'",
+   "action": "Two landing paths for one mission produce duplicate merge commits; harmless but it inflates the window and confuses the diff-set count."
+  },
+  {
+   "id": "R8",
+   "severity": "medium",
+   "title": "Benchmark tree fragmentation",
+   "evidence": "68 directories under benchmarks/ for 84 source modules",
+   "action": "Without an index of which benchmark is the authority for each physical claim, reviewers cannot tell a live case from a superseded probe."
+  },
+  {
+   "id": "R9",
+   "severity": "low",
+   "title": "Branch tracing an unchanged upstream",
+   "evidence": "tracking upstream origin/main: ahead 0, behind 0 (HEAD 1c9888e)",
+   "action": "No upstream delta to review, so this inventory falls back to the theme-evolution reading as the task allows."
+  },
+  {
+   "id": "R10",
+   "severity": "high",
+   "title": "The CI lint gate is red on the current tree",
+   "evidence": "`ruff check .` on the 452 git-tracked .py files (the exact CI step) exits 1 with 1121 violations; top rules: E501 x562; W293 x187; E702 x107",
+   "action": "Either fix/baseline the violations or narrow `[tool.ruff.lint] select`; a gate that is red by default carries no signal for the next landing."
+  }
+ ]
+}
