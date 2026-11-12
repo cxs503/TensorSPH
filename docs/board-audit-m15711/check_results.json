@@ -1,0 +1,170 @@
+{
+  "reproduction": {
+    "delivered_results": "m15412:runs/couette_full/results.json (untracked in repo)",
+    "independent_results": "m15711:runs/couette_repro/results.json",
+    "differing_fields": 0,
+    "first_diffs": [],
+    "deterministic": true,
+    "delivered_verdict": "FAIL",
+    "independent_verdict": "FAIL",
+    "reasons": [
+      "ladder-r16: gate 'steady_drift' missed"
+    ]
+  },
+  "report_zero_handcopy": {
+    "regenerated_from_independent_artifacts": "/tmp/regen_m15711.md",
+    "byte_identical_to_delivered": true,
+    "delivered_md_bytes": 5491,
+    "sections_present": [
+      "①",
+      "②",
+      "③",
+      "④",
+      "⑤",
+      "⑥"
+    ]
+  },
+  "benchmark_registry": {
+    "anchor_slug": "CASE-COUETTE-SPH",
+    "rows": 0,
+    "table_total_rows": 22,
+    "verdict": "NOT_REGISTERED",
+    "consequence": "平台基准裁判无行可裁；实际判据回落到仓内预声明 DESIGN.md 门限"
+  },
+  "predeclared_gates": {
+    "source": "benchmarks/couette/DESIGN.md (in-repo, predeclared) + results.json.gates",
+    "thresholds": {
+      "interior_l2": 0.05,
+      "flux_rel": 0.05,
+      "wall_shear_rel": 0.05,
+      "steady_drift": 0.01,
+      "control_flux": 0.2
+    },
+    "design_pass_rule": "H/dx=16 AND 24 全过四项门；负控 flux<0.2；分辨率响应不劣化",
+    "per_case": {
+      "ladder-r10": {
+        "gated_by_design": false,
+        "H_over_dx": 10,
+        "interior_l2": 0.029776,
+        "flux_ratio": 1.042635,
+        "wall_shear_ratio_bottom": 0.967642,
+        "steady_drift": 0.031846,
+        "checks_if_gated": {
+          "interior_l2": true,
+          "flux_rel": true,
+          "wall_shear_rel_bottom": true,
+          "steady_drift": false
+        },
+        "passes_all_four_if_gated": false
+      },
+      "ladder-r16": {
+        "gated_by_design": true,
+        "H_over_dx": 16,
+        "interior_l2": 0.029328,
+        "flux_ratio": 1.044155,
+        "wall_shear_ratio_bottom": 0.995219,
+        "steady_drift": 0.015471,
+        "checks_if_gated": {
+          "interior_l2": true,
+          "flux_rel": true,
+          "wall_shear_rel_bottom": true,
+          "steady_drift": false
+        },
+        "passes_all_four_if_gated": false
+      },
+      "ladder-r24": {
+        "gated_by_design": true,
+        "H_over_dx": 24,
+        "interior_l2": 0.029478,
+        "flux_ratio": 1.043688,
+        "wall_shear_ratio_bottom": 1.01602,
+        "steady_drift": 0.008148,
+        "checks_if_gated": {
+          "interior_l2": true,
+          "flux_rel": true,
+          "wall_shear_rel_bottom": true,
+          "steady_drift": true
+        },
+        "passes_all_four_if_gated": true
+      },
+      "speed-U0.4": {
+        "gated_by_design": false,
+        "H_over_dx": 16,
+        "interior_l2": 0.015053,
+        "flux_ratio": 1.016283,
+        "wall_shear_ratio_bottom": 0.964798,
+        "steady_drift": 0.021797,
+        "checks_if_gated": {
+          "interior_l2": true,
+          "flux_rel": true,
+          "wall_shear_rel_bottom": true,
+          "steady_drift": false
+        },
+        "passes_all_four_if_gated": false
+      },
+      "viscosity-nu0.04": {
+        "gated_by_design": false,
+        "H_over_dx": 16,
+        "interior_l2": 0.017846,
+        "flux_ratio": 0.991404,
+        "wall_shear_ratio_bottom": 0.917918,
+        "steady_drift": 0.011422,
+        "checks_if_gated": {
+          "interior_l2": true,
+          "flux_rel": true,
+          "wall_shear_rel_bottom": false,
+          "steady_drift": false
+        },
+        "passes_all_four_if_gated": false
+      },
+      "friction-f0.0": {
+        "gated_by_design": false,
+        "H_over_dx": 16,
+        "interior_l2": 0.482056,
+        "flux_ratio": 0.136343,
+        "wall_shear_ratio_bottom": 0.01922,
+        "steady_drift": 0.060507,
+        "checks_if_gated": {
+          "interior_l2": false,
+          "flux_rel": false,
+          "wall_shear_rel_bottom": false,
+          "steady_drift": false
+        },
+        "passes_all_four_if_gated": false
+      }
+    },
+    "gated_cases_only": [
+      "ladder-r16",
+      "ladder-r24"
+    ],
+    "gated_case_r16_pass": false,
+    "gated_case_r24_pass": true,
+    "sweep_note": "U/nu/f 三组为 DESIGN 声明的敏感性诊断，不受四项门约束；nu=0.04 的 wall_shear_ratio=0.918（8.2% 偏差）是近壁梯度随粘度变化的信号，报告列出了数字但未解释",
+    "case_verdict": "FAIL",
+    "overall_gate": "FAIL (r16 steady_drift 0.01547 >= 0.010)",
+    "accuracy_vs_15pct_standard": {
+      "interior_l2_r16_pct": 2.93,
+      "flux_ratio_dev_pct": 4.42,
+      "wall_shear_dev_pct": 0.48,
+      "answer": "剖面/通量/壁剪切三项 <5%（远优于 15% 标准）；失分项是自设的稳态漂移门，不是精度门"
+    }
+  },
+  "artifact_committed": {
+    "tracked_couette_files": [
+      "benchmarks/couette/DESIGN.md",
+      "benchmarks/couette/make_doc.py",
+      "benchmarks/couette/run.py",
+      "docs/reports/m15412-couette-sph.md",
+      "tests/test_couette.py"
+    ],
+    "runs_tracked": [],
+    "delivered_git_status_snippet": "?? runs/  (m15412 result.git_status)",
+    "verdict": "run 工件未入库（交付分支不带 results.json/png）；核验靠独立重跑补证"
+  },
+  "tests": {
+    "cmd": "PYTHONPATH=src python -m pytest tests/test_couette.py -q",
+    "result": "9 passed in 120.13s（m15711 独立执行）",
+    "assertion_kind": "解析恒等/通量在对称滑移下不变/负控/壁构造 + 一次短时真跑；",
+    "gap": "真跑用例阈值宽松（flux 0.6~1.2、L2<20%），锐判断由 ladder 承担"
+  }
+}
