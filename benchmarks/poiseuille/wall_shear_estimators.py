@@ -48,7 +48,16 @@ ARTIFACT = OUT / "wall_shear_estimators.json"
 FIG = ROOT / "docs" / "figures" / "poiseuille_wall_shear.png"
 DOC = ROOT / "docs" / "verification_poiseuille_wall_shear_estimator.md"
 
-WINDOW_FRACTION = 0.4   # fit the velocity drift over the last 40 % of the run
+#: **Start** fraction of the drift window.  NOTE: this is *not* a window
+#: length -- ``drift_rate`` selects ``t >= fraction * t_end``, so
+#: ``0.4`` fits the last 60 % of the run.  ``tensorsph.wall_shear`` uses
+#: the opposite convention (``fraction`` = window *length*, so its ``0.4``
+#: is the last 40 %); the same number therefore selects a different
+#: window in the two files.  The values stored under
+#: ``benchmarks/poiseuille/out/`` were produced with *this* convention and
+#: are left untouched; ``tests/test_wall_shear_window_audit.py`` pins the
+#: mapping (this file's 0.4 == the module's 0.6).
+WINDOW_FRACTION = 0.4
 
 
 # --------------------------------------------------------------------------- #
@@ -74,6 +83,10 @@ def drift_rate(trace: list[dict], t_end: float,
     ``trace`` samples ``u_mean`` (the arithmetic mean over the fluid particles,
     which equals the mass average because every particle carries ``rho0 dx^2``).
     Returns the slope, its standard error, the residual scatter and the window.
+
+    ``fraction`` is the **start** fraction (``t_lo = fraction * t_end``), so the
+    window length is ``(1 - fraction) * t_end`` -- see ``WINDOW_FRACTION`` for
+    the naming collision with :mod:`tensorsph.wall_shear`.
     """
     t = np.array([p["t"] for p in trace], dtype=float)
     u = np.array([p["u_mean"] for p in trace], dtype=float)
