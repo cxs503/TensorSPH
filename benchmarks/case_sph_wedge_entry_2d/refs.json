@@ -1,0 +1,36 @@
+{
+  "_comment": "Reference data for CASE-SPH-WEDGE-ENTRY-2D. Every number carries its provenance. A reference whose original source could not be read is status=WITHHELD with value null - a recalled or secondary number is never presented as the original table value. Derived analytic values are NOT typed here: run.py computes them from the in-repo implementation into artifacts/case_sph_wedge_entry_2d/refs_derived.json.",
+  "case": {
+    "id": "CASE-SPH-WEDGE-ENTRY-2D",
+    "physical_setup": "2D symmetric rigid wedge, deadrise angle beta = 30 deg (angle between one face and the undisturbed free surface), constant vertical velocity V, calm water, gravity neglected (self-similar regime: the only length scale is V*t)",
+    "metric": "peak slamming pressure coefficient on the wetted wedge surface, Cp_max = p_max / (0.5 rho V^2)"
+  },
+  "references": [
+    {
+      "id": "wagner_1932",
+      "role": "machine-checkable analytic anchor (primary verdict of this case)",
+      "citation": "Wagner (1932) - classical flat-plate / wedge water-impact solution. Pre-DOI publication: no Crossref record exists, so the anchor is the in-repo derivation and its tests, not an unreadable bibliographic record.",
+      "source_of_formula": "src/tensorsph/wedge_entry.py:11-60 (derivation, eq. 1-3), :180 wagner_pmax, :338 wagner_p_centre; tests/test_wedge_entry.py",
+      "formula": "C = pi / (2 tan beta); Cp_centre = C; Cp_max = C^2 + 1 (C >= 1)",
+      "provenance_kind": "closed-form analytic solution of the same idealisation (inviscid, incompressible, potential flow, jet ignored, gravity neglected)",
+      "status": "REAL",
+      "caveat": "small-deadrise asymptotic theory. Per the Z&F (1993) abstract (publisher-deposited, retrieved via OpenAlex) the Wagner asymptotic 'agrees with the similarity solution for small alpha', so at beta = 30 deg a SPH-vs-Wagner error is NOT the same quantity as SPH-vs-Z&F; it is reported as the case's analytic anchor and is not substituted for the withheld Z&F comparison."
+    },
+    {
+      "id": "zhao_faltinsen_1993",
+      "role": "mission-designated reference (metric owner)",
+      "citation": "Zhao, R. & Faltinsen, O. (1993) Water entry of two-dimensional bodies. Journal of Fluid Mechanics 246, 593-612. DOI 10.1017/S002211209300028X",
+      "bibliographic_verification": {
+        "checked_at": "2026-11-12",
+        "crossref": "GET https://api.crossref.org/works/10.1017/s002211209300028x -> HTTP 200, title='Water entry of two-dimensional bodies', volume=246, page=593-612, authors=[Zhao R. (first), Faltinsen O.]",
+        "openalex": "GET https://api.openalex.org/works/doi:10.1017/s002211209300028x -> open_access.is_oa=false, oa_status='closed', any_repository_has_fulltext=false"
+      },
+      "abstract_obtained": "A numerical method for studying water entry of a two-dimensional body of arbitrary cross-section is presented. It is a nonlinear boundary element method with a jet flow approximation. The method has been verified by comparisons with new similarity solution results for wedges with deadrise angles varying from 4 to 81 degrees. A simple asymptotic solution for small deadrise angles alpha based on Wagner (1932) agrees with the similarity solution for small alpha.",
+      "abstract_provenance": "OpenAlex record W2051783622, abstract_inverted_index (publisher-deposited abstract), retrieved 2026-11-12",
+      "table_or_figure_value_beta_30": null,
+      "status": "WITHHELD",
+      "withheld_reason": "The beta = 30 deg number lives in the paper's tables/figures; the article is closed access (OpenAlex oa_status=closed, no repository full text) and the ecosystem has no document-delivery channel and no registered copy (checked 2026-11-12: knowledge_base LIKE '%zhao|faltinsen|wedge|deadrise%' -> 0 numeric rows; oss_solutions -> 0 rows). Reporting a remembered or secondary-source number as the original table value would be fabrication, so the cell stays empty and the comparison is WITHHELD (not PASS, not FAIL).",
+      "what_would_close_it": "The paper delivered to the repo as a text-extractable file (PDF/text) with page/table coordinates for the wedge similarity-solution pressure coefficient at beta = 30 deg; then the digitised value is entered here with page/table/figure coordinates and the comparison re-run with --stage accept (no solver change needed)."
+    }
+  ]
+}
