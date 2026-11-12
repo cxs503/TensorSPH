@@ -19,6 +19,11 @@ import warnings
 
 import torch
 
+from .density_diffusion import (
+    FORMS as DENSITY_DIFFUSION_FORMS,
+    molteni_colagrossi_rate,
+    rate_from_positions,
+)
 from .neighbor_search import PairListCache, cell_linked_pairs
 
 
@@ -118,6 +123,18 @@ class Config:
     calibrate_initial_mass: bool = False
     wall_friction: float = 0.0
     density_diffusion: float = 0.0
+    # Form of the diffusive density term (:mod:`tensorsph.density_diffusion`).
+    # ``"molteni"`` is the shipped Molteni & Colagrossi term; ``"antuono"``
+    # adds the local density-gradient correction, which makes the term vanish
+    # identically on a hydrostatic (linear-density) field even where the
+    # kernel support is truncated by a free surface or a wall -- the
+    # resting-flume spurious-current defect F1 of
+    # benchmarks/startup_quiescence. See docs/verification_density_diffusion.md.
+    density_diffusion_form: str = "molteni"
+    # Eigenvalue floor (in units of trace(M)/D) of the renormalisation matrix
+    # used by the corrected form, so an almost missing support direction is
+    # left uncorrected instead of being amplified.
+    density_diffusion_eigenvalue_floor: float = 0.1
     density_calibration: bool = True
     # Adaptive time step. Off by default: a fixed step keeps every published
     # number reproducible bit for bit. When on, ``dt`` starts at the configured
@@ -296,7 +313,14 @@ def pair_kernels(delta: torch.Tensor, h: float, eps: float = 1.0e-12):
 def density_diffusion_rate(rho: torch.Tensor, mass: torch.Tensor,
                            distance: torch.Tensor, radial: torch.Tensor,
                            neighbours: tuple, cfg: Config) -> torch.Tensor:
-    """Rate of the Antuono-Colagrossi-Marrone diffusive term, on fluid pairs.
+    """Rate of the Molteni & Colagrossi diffusive term, on fluid pairs.
+
+    Kept as the public entry point of the shipped form. ``cfg`` selects the
+    form: ``"molteni"`` (default) is this function's original arithmetic bit for
+    bit, while ``"antuono"`` is rejected here because the hydrostatic correction
+    needs the pair displacement vectors and the particle positions -- call
+    :func:`tensorsph.density_diffusion.rate_from_positions` (what :func:`rhs`
+    does) instead of silently returning the uncorrected term.
 
     ``rho`` is the summation density, ``radial`` is ``-(delta . grad W)`` per
     pair, and ``neighbours`` are the pair indices. The term is
@@ -316,15 +340,15 @@ def density_diffusion_rate(rho: torch.Tensor, mass: torch.Tensor,
     scheme integrates the continuity equation, while this solver obtains
     density by summation, so the rate is applied over one time step.
     """
-    i, j = neighbours
-    v_j = mass[j] / rho[j]
-    v_i = mass[i] / rho[i]
-    coupling = (rho[i] - rho[j]) * radial / (distance.square() + 1.0e-12)
+    if cfg.density_diffusion_form != "molteni":
+        raise ValueError(
+            "density_diffusion_rate implements the 'molteni' form only; the "
+            f"configured form is {cfg.density_diffusion_form!r}. The corrected "
+            "form needs the pair displacements and the particle positions: use "
+            "tensorsph.density_diffusion.rate_from_positions.")
     scale = 2.0 * cfg.density_diffusion * cfg.sound_speed * cfg.h_factor * cfg.dx
-    rate = torch.zeros_like(rho)
-    rate = rate.index_add(0, i, -scale * v_j * coupling)
-    rate = rate.index_add(0, j, scale * v_i * coupling)
-    return rate
+    return molteni_colagrossi_rate(rho, mass, radial, distance.square(),
+                                   neighbours, scale)
 
 
 def tait_pressure(rho: torch.Tensor, cfg: Config) -> torch.Tensor:
@@ -815,9 +839,14 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None,
         # the solved field.
         fluid_only = (i < n) & (j < n)
         radial = -(delta[fluid_only] * grad_w[fluid_only]).sum(dim=1)
-        rate = density_diffusion_rate(
-            rho, mass, distance[fluid_only], radial,
-            (i[fluid_only], j[fluid_only]), cfg)
+        scale = (2.0 * cfg.density_diffusion * cfg.sound_speed
+                 * cfg.h_factor * cfg.dx)
+        rate = rate_from_positions(
+            all_pos[:n], rho, mass, delta[fluid_only], grad_w[fluid_only],
+            radial, distance[fluid_only].square(),
+            (i[fluid_only], j[fluid_only]), scale,
+            form=cfg.density_diffusion_form,
+            eigenvalue_floor=cfg.density_diffusion_eigenvalue_floor)
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
 
     pressure = tait_pressure(rho, cfg)
@@ -1052,6 +1081,12 @@ def validate_config(cfg: Config) -> None:
         raise ValueError("wall_friction must be in [0, 1]")
     if cfg.density_diffusion < 0.0:
         raise ValueError("density_diffusion must be non-negative")
+    if cfg.density_diffusion_form not in DENSITY_DIFFUSION_FORMS:
+        raise ValueError(
+            "density_diffusion_form must be one of "
+            f"{DENSITY_DIFFUSION_FORMS}, got {cfg.density_diffusion_form!r}")
+    if not 0.0 <= cfg.density_diffusion_eigenvalue_floor < 1.0:
+        raise ValueError("density_diffusion_eigenvalue_floor must be in [0, 1)")
     if cfg.csf_curvature not in ("mls", "fit_quadratic", "fit_circle"):
         raise ValueError(
             "csf_curvature must be 'mls', 'fit_quadratic' or 'fit_circle', "
