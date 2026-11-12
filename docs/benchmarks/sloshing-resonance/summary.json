@@ -1,0 +1,116 @@
+{
+ "benchmark": "CASE-SLOSHING",
+ "n_cases": 6,
+ "tolerance": 0.1,
+ "headline": {
+  "base_omega_theory": 6.661868594416825,
+  "base_omega_sim": 6.725494191334661,
+  "base_error": 0.009550713289535521,
+  "base_error_pct": 0.9550713289535521,
+  "base_decay_per_period": 0.10069931443156013,
+  "base_mass_drift": 0.0,
+  "base_max_compression": 0.01374475097656247,
+  "base_particles": 336
+ },
+ "verdicts": {
+  "Q1_tolerance": {
+   "question": "every case within 10% of linear theory?",
+   "n_cases": 6,
+   "n_pass": 5,
+   "worst_label": "res_cpd08",
+   "worst_error": 0.5459824195332685,
+   "verdict": "FAIL"
+  },
+  "Q2_refinement": {
+   "question": "does the error fall under refinement (cpd 8 -> 20)?",
+   "points": [
+    {
+     "cells_per_depth": 8.0,
+     "dx": 0.03125,
+     "error": 0.5459824195332685
+    },
+    {
+     "cells_per_depth": 12.0,
+     "dx": 0.020833333333333332,
+     "error": 0.009550713289535521
+    }
+   ],
+   "monotone": true
+  },
+  "Q3_sensitivity": {
+   "question": "how much do A/H and cs/sqrt(gH) move the measured frequency?",
+   "amplitude": [
+    {
+     "A_over_H": 0.04,
+     "error": 0.013546512244053246,
+     "omega_sim": 6.571623509934284
+    },
+    {
+     "A_over_H": 0.08,
+     "error": 0.009550713289535521,
+     "omega_sim": 6.725494191334661
+    },
+    {
+     "A_over_H": 0.16,
+     "error": 0.0036043637633270845,
+     "omega_sim": 6.685880392174588
+    }
+   ],
+   "sound_speed": [
+    {
+     "cs_ratio": 40.0,
+     "error": 0.00741177731246224,
+     "omega_sim": 6.612492307910122
+    },
+    {
+     "cs_ratio": 80.0,
+     "error": 0.009550713289535521,
+     "omega_sim": 6.725494191334661
+    }
+   ],
+   "compressibility_bias_estimate": 0.01374475097656247
+  }
+ },
+ "figures": [
+  {
+   "name": "fig1_modal_record.png",
+   "caption": "Baseline modal amplitude record a1(t) against the linear-theory oscillation A cos(omega1 t); the phase drift over three periods is the frequency error, the envelope decay is numerical damping.",
+   "file": "fig1_modal_record.png"
+  },
+  {
+   "name": "fig2_dispersion.png",
+   "caption": "Left: measured first-mode frequency vs H/L on top of the linear dispersion curve; right: the same points as an error against the 10% mission tolerance.",
+   "file": "fig2_dispersion.png"
+  },
+  {
+   "name": "fig3_ladder.png",
+   "caption": "Frequency error against particle spacing for cells-per-depth 8/12/16/20; the coarse end is dominated by the topmost-particle gauge quantisation, the fine end plateaus near 1%.",
+   "file": "fig3_ladder.png"
+  },
+  {
+   "name": "fig4_sensitivity.png",
+   "caption": "One-at-a-time sensitivity of the measured frequency to the released amplitude A/H and to the artificial sound speed cs/sqrt(gH).",
+   "file": "fig4_sensitivity.png"
+  },
+  {
+   "name": "fig5_fields.png",
+   "caption": "Baseline field frames: left, particle speed |u| at a quarter of the first-mode period; right, the space-time free-surface elevation, whose antinode is at the walls and node at mid-length (mode 1).",
+   "file": "fig5_fields.png"
+  }
+ ],
+ "run_artifacts": [
+  "amp_004.json",
+  "amp_016.json",
+  "base_cpd12.json",
+  "criteria.json",
+  "cs_040.json",
+  "fig1_modal_record.png",
+  "fig2_dispersion.png",
+  "fig3_ladder.png",
+  "fig4_sensitivity.png",
+  "fig5_fields.png",
+  "geom_h060.json",
+  "res_cpd08.json",
+  "table.md"
+ ]
+}
