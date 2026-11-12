@@ -28,11 +28,33 @@ import torch
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from tensorsph.kleefsman_obstacle import KleefsmanConfig, run_case  # noqa: E402
+from tensorsph.kleefsman_obstacle import (  # noqa: E402
+    KleefsmanConfig,
+    run_case,
+    validate_case,
+)
 
 HERE = Path(__file__).resolve().parent
 RESOLUTIONS = (0.04, 0.02, 0.01)
 T_END = 1.2   # long enough for the surge to reach and pass the box
+
+
+def driver_config(dx: float, sound_speed: float, t_end: float, geom: dict) -> KleefsmanConfig:
+    """Case config with a Courant-consistent dt for *this* sound speed."""
+    cfg = KleefsmanConfig(
+        dx=dx, t_end=t_end, device="cpu",
+        tank_length=geom["tank_length"], tank_height=geom["tank_height"],
+        column_length=geom["column_length"], column_height=geom["column_height"],
+        obstacle_x=geom["obstacle_upstream_face_x"],
+        obstacle_length=geom["obstacle_length"], obstacle_height=geom["obstacle_height"],
+        pool_width=geom["tank_length"], pool_depth=geom["tank_height"],
+        sound_speed=sound_speed,
+    )
+    # The old literal 20.0 made c0 > 78 m/s silently exceed the acoustic
+    # Courant limit at dx = 0.04 m (defect class fixed in run.py).
+    cfg.dt = min(2.0e-4, cfg.dt_acoustic())
+    validate_case(cfg)
+    return cfg
 
 
 def main() -> int:
@@ -42,6 +64,8 @@ def main() -> int:
     ap.add_argument("--t-end", type=float, default=T_END)
     ap.add_argument("--outdir", default=str(HERE / "results"))
     ap.add_argument("--promote", action="store_true")
+    ap.add_argument("--sound-speed", type=float, default=20.0,
+                    help="artificial sound speed c0 [m/s]; dt follows the CFL of *this* c0")
     args = ap.parse_args()
 
     ref = json.loads((HERE / "reference.json").read_text())
@@ -60,8 +84,12 @@ def main() -> int:
             obstacle_length=g["obstacle_length"],
             obstacle_height=g["obstacle_height"],
             pool_width=g["tank_length"], pool_depth=g["tank_height"],
-            dt=min(2.0e-4, 0.3 * 1.3 * dx / 20.0),
+            sound_speed=args.sound_speed,
         )
+        # Courant-consistent dt for the selected c0 (the old literal 20.0 made
+        # c0 > 78 m/s silently exceed the acoustic limit at dx = 0.04 m).
+        cfg.dt = min(2.0e-4, cfg.dt_acoustic())
+        validate_case(cfg)
         run = run_case(cfg)
         tag = f"dx{dx:g}"
         n_fluid = math.floor(cfg.column_length / dx) * math.floor(cfg.column_height / dx)
@@ -72,7 +100,7 @@ def main() -> int:
             "arrival_time_s": run.arrival_time,
             "mass_error_rel": run.mass_error, "boundary_escapes": run.escaped,
             "max_density_compression": run.max_density_compression,
-            "max_speed": run.max_speed,
+            "max_speed": run.max_speed, "sound_speed": cfg.sound_speed, "dt": cfg.dt,
             "height_capped_by_tank": bool(run.peak_height >= 0.995 * cfg.tank_height),
         }
         rows.append(row)
