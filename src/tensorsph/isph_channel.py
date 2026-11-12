@@ -770,6 +770,14 @@ def gates(result: dict, fit: dict, cfg: ChannelConfig,
     (``1`` for a run with no wall friction); passing it divides out the
     finite-window slope gain error of the estimator without touching the
     physics.
+
+    The gate verdict uses the **window band**, not the single declared window:
+    ``rel_error_pct`` is read over the last 40 % of the run and
+    ``rel_error_pct_band`` re-fits the same trace over 20/30/40/50 % windows.
+    The run passes only if every one of those readings is inside the limit, so
+    a residual transient that happens to look steady over one window cannot
+    buy a pass (measured window sensitivity of the committed ladder: see
+    ``docs/audit_verdict_m16581.md``).
     """
     tau_analytic = cfg.tau_wall_analytic
     centre_measured = result["u_max_measured"]
@@ -781,6 +789,10 @@ def gates(result: dict, fit: dict, cfg: ChannelConfig,
     )
     near_wall = cfg.rho0 * fit.get("tau_wall_per_unit_rho", float("nan"))
 
+    sensitivity = budget.get("window_sensitivity", {}) or {}
+    band = sensitivity.get("rel_error_pct_band") or [float("nan")] * 2
+    worst = sensitivity.get("worst_abs_rel_error_pct", float("nan"))
+    band_ok = bool(worst == worst and worst <= 3.0)   # NaN-safe: NaN -> False
     wall_shear_gate = {
         "estimator": budget["estimator"],
         "available": budget["available"],
@@ -793,9 +805,18 @@ def gates(result: dict, fit: dict, cfg: ChannelConfig,
         "drift_stderr": budget["drift_stderr"],
         "n_samples": budget["n_samples"],
         "window": budget.get("window"),
+        "window_length_fraction": budget.get("window_length_fraction"),
+        # The single-window number above is only as trustworthy as the window:
+        # the same trace re-fit over the other post-transient windows gives
+        # `rel_error_pct_band`.  A gate that quotes one window cannot tell a
+        # settled channel from a run whose residual transient happens to look
+        # steady over that one window, so the band is part of the verdict.
+        "rel_error_pct_band": band,
+        "window_sensitivity": sensitivity,
         "drift_gain": drift_gain,
         "pass": (budget["available"]
-                 and abs(budget["rel_error_pct"]) <= 3.0),
+                 and abs(budget["rel_error_pct"]) <= 3.0
+                 and band_ok),
     }
     if not budget["available"]:
         wall_shear_gate["reason"] = budget.get("reason", "")
