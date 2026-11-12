@@ -178,12 +178,18 @@ def make_column_3d(cfg: DamBreak3DConfig, device: torch.device,
         noise = torch.randn(positions.shape, generator=gen, device=device) * dx * 1e-4
         positions = positions + noise
 
+    # Calibrated 3-D lattice mass (tensorsph.threed.kernel3): the 3-D cubic
+    # lattice needs the 3-D-normalised kernel for this, so it cannot reuse the
+    # 2-D helper.  ``density_calibration`` on Config used to be ignored here.
+    mass_unit = cfg.rho0 * dx * dx * dx
+    if getattr(cfg, "density_calibration", True):
+        from .threed.kernel3 import calibrated_particle_mass
+        mass_unit = calibrated_particle_mass(dx, cfg.h_factor * dx, cfg.rho0)
     if cfg.hydrostatic_init:
         mass = hydrostatic_density(positions[:, 1], cfg,
-                                   surface=cfg.column_height) * dx * dx * dx
+                                   surface=cfg.column_height) * (mass_unit / cfg.rho0)
     else:
-        mass = torch.full((positions.shape[0],), cfg.rho0 * dx * dx * dx,
-                          device=device)
+        mass = torch.full((positions.shape[0],), mass_unit, device=device)
     return positions, mass
 
 

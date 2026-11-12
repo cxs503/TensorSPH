@@ -915,7 +915,12 @@ def build_dem_exchange(run: IceSplashRun, cfg: IceSplashConfig,
         rows.append([float(pos[k, 0]), float(pos[k, 1])])
         materials.append("water")
     velocities = [[float(vel[k, 0]), float(vel[k, 1])] for k in range(vel.shape[0])]
-    masses = [float(cfg.rho0 * dx * dx) for _ in range(pos.shape[0])]
+    # Latticed mass unit of the run, not the raw rho0 dx^2: a DEM channel seeded
+    # with a 0.3 % heavier water particle shifts the coupled dynamics it is
+    # meant to represent (docs/verification_case_lattice_mass_calibration.md).
+    from .droplet_impact import lattice_mass_unit
+    mass_unit = lattice_mass_unit(cfg)
+    masses = [float(mass_unit) for _ in range(pos.shape[0])]
     radii = [radius for _ in range(pos.shape[0])]
     if floes is None:
         floes = floe_layout(cfg, torch.device("cpu"))

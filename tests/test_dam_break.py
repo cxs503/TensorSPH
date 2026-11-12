@@ -40,8 +40,11 @@ def test_column_is_inside_the_tank_and_rests_on_the_floor():
 def test_hydrostatic_initialisation_matches_the_analytic_profile():
     cfg = small_case(hydrostatic_init=True)
     positions, mass = make_column(cfg, torch.device("cpu"))
-    expected = hydrostatic_density(positions[:, 1], cfg,
-                                   surface=cfg.column_height) * cfg.dx * cfg.dx
+    # The profile is scaled by the *calibrated* lattice mass unit (m3211/m16525),
+    # not the raw rho0 dx^2: the shape is analytic, the unit carries 1/(1+b).
+    from tensorsph.droplet_impact import lattice_mass_unit
+    expected = (hydrostatic_density(positions[:, 1], cfg, surface=cfg.column_height)
+                * (lattice_mass_unit(cfg) / cfg.rho0))
     torch.testing.assert_close(mass, expected)
 
     uniform_cfg = small_case(hydrostatic_init=False)
