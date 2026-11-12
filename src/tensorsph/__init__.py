@@ -93,6 +93,8 @@ from .neighbor_search import (
     cell_linked_pairs_host,
 )
 from . import ice_thermal
+from . import taylor_green
+from .taylor_green import CASE_KEY as TAYLOR_GREEN_CASE_KEY
 from .ice_thermal import (
     EnthalpyModel,
     StefanConfig,
@@ -146,7 +148,8 @@ __all__ = [
     "compute_surface_tension_force", "capillary_dt_limit",
     "HYDROSTATIC_CASE_ID", "analytic_pressure", "evaluate_hydrostatic",
     "pressure_profile", "run_hydrostatic_profile_case", "hydrostatic_initial_state",
-    "ice_thermal", "EnthalpyModel", "StefanConfig", "StefanResult",
+    "ice_thermal", "taylor_green", "TAYLOR_GREEN_CASE_KEY",
+    "EnthalpyModel", "StefanConfig", "StefanResult",
     "ThreeFieldConfig", "ThreeFieldResult", "crack_assessment",
     "critical_temperature_drop", "flexural_strength", "restrained_stress",
     "run_stefan_sph", "run_three_field", "strength_band",
