@@ -52,13 +52,20 @@ class HydrostaticCase:
     seconds: float = 2.0
     sound_speed: float = 20.0
     min_particles: int = 1000
+    # Averaging window of the time mean.  The defaults are the rung's original
+    # settings; they are exposed so a caller can ask for a denser sample (the
+    # acoustic oscillation of the pool is 6-15 % and the mean's sampling noise
+    # scales as 1/sqrt(samples)) without forking the case definition.
+    sample_every: int = 20
+    average_from: float = 0.5
 
     def rung_config(self) -> HydrostaticConfig:
         return HydrostaticConfig(dx=self.dx, tank_width=self.tank_width,
                                  depth=self.depth, seconds=self.seconds,
                                  sound_speed=self.sound_speed,
                                  hydrostatic_init=True, bands=8,
-                                 average_from=0.5, sample_every=20)
+                                 average_from=self.average_from,
+                                 sample_every=self.sample_every)
 
     def particle_count(self) -> int:
         from ..droplet_impact import cell_centres
@@ -101,8 +108,10 @@ def classify_bands(result: dict, depth: float, dx: float) -> dict:
     return result
 
 
-def run_hydrostatic_case(case: HydrostaticCase, gravity_override: float | None = None) -> dict:
-    rung = run_hydrostatic(case.rung_config(), gravity_override=gravity_override)
+def run_hydrostatic_case(case: HydrostaticCase, gravity_override: float | None = None,
+                         return_fields: bool = False) -> dict:
+    rung = run_hydrostatic(case.rung_config(), gravity_override=gravity_override,
+                           return_fields=return_fields)
     rung["case"] = "hydrostatic_pressure_profile"
     rung["config"]["n_particles"] = case.particle_count()
     rung["config"]["min_particles"] = case.min_particles

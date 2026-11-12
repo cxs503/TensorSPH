@@ -19,8 +19,23 @@ parser.add_argument("--boundary", default=None, choices=("wall", "clamp"))
 parser.add_argument("--device", default="auto")
 parser.add_argument("--no-plot", action="store_true",
                     help="skip the snapshot figure (saves ~1.5 s)")
+parser.add_argument("--case", default="droplet", choices=("droplet", "hydrostatic"),
+                    help="case to run: the droplet impact example (default) or the "
+                         "CASE-HYDROSTATIC still-water pressure-profile case")
+parser.add_argument("--json-out", default=None,
+                    help="hydrostatic case: write the case record here")
+parser.add_argument("--quick", action="store_true",
+                    help="hydrostatic case: CI-sized smoke configuration")
 parser.add_argument("--version", action="version", version=f"tensorsph {__version__}")
 args = parser.parse_args()
+
+if args.case == "hydrostatic":
+    from .case_hydrostatic import main as hydrostatic_main
+
+    argv = ["--quick"] if args.quick else []
+    if args.json_out:
+        argv += ["--json-out", args.json_out]
+    raise SystemExit(hydrostatic_main(argv))
 
 cfg = Config(device=args.device)
 if args.steps is not None:
