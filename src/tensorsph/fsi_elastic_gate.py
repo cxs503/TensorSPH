@@ -94,7 +94,19 @@ class ElasticGateCase:
     gate_nu: float = 0.0
     gate_rho: float = 2500.0
     n_gate_nodes: int = 25
-    load_scale: float = 1.0      # 1.0 physical; other values only in V2
+    #: 1.0 physical.  Kept only as a diagnostic knob: the production run must
+    #: not calibrate the fluid->solid transfer (m16257 audit, finding 3.3).
+    load_scale: float = 1.0
+    #: Fluid->solid load transfer mode: ``"panel"`` extrapolates the fluid
+    #: pressure onto the gate face (default, no systematic load deficit) and
+    #: ``"pairwise"`` is the legacy Adami wall-force sum, kept as the
+    #: before/after baseline of the m16257 audit finding 3.2.
+    load_transfer: str = "panel"
+    #: ``True`` = the gate is clamped at the floor (physical rig).  ``False``
+    #: reproduces the shipped rod, which only penalised the angle between
+    #: consecutive segments and therefore had a **pin** at the clamp; it is kept
+    #: for the before/after comparison only.
+    clamped_base: bool = True
 
     t_end: float = 0.4
     output_every: int = 5
@@ -238,22 +250,43 @@ def rod_energy(nodes: torch.Tensor, case: ElasticGateCase) -> torch.Tensor:
     cross = tangent[1:, 0] * tangent[:-1, 1] - tangent[1:, 1] * tangent[:-1, 0]
     dot = (tangent[1:] * tangent[:-1]).sum(dim=1).clamp(-1.0, 1.0)
     theta = torch.atan2(cross, dot)
+    # Clamped base: the *slope* of the gate at the floor is held vertical.  The
+    # shipped rod only penalised the angle between consecutive segments, i.e. it
+    # had a **pin** at the clamp; a pin lets the whole gate rotate rigidly about
+    # the floor at zero bending cost, which is why the delivered run "folded" to
+    # 354 mm (m16257 audit finding 3.3) -- the gate was a hinged flap, not a
+    # clamped cantilever.  The clamp hinge is the angle between the first segment
+    # and the fixed reference tangent (0, 1).
     kb = case.gate_stiffness_bending() / l0
+    if case.clamped_base:
+        ref = torch.zeros_like(tangent[0])
+        ref[1] = 1.0
+        theta0 = torch.atan2(tangent[0, 0] * ref[1] - tangent[0, 1] * ref[0],
+                             (tangent[0] * ref).sum().clamp(-1.0, 1.0))
+        return e_stretch + 0.5 * kb * (theta0.square() + theta.square().sum())
     return e_stretch + 0.5 * kb * theta.square().sum()
 
 
 def rod_forces(nodes: torch.Tensor, case: ElasticGateCase,
-               nodal_load: Optional[torch.Tensor] = None) -> torch.Tensor:
-    """Nodal force ``-dE/dx`` + load + gravity; the clamped node gets nothing."""
+               nodal_load: Optional[torch.Tensor] = None,
+               gravity: bool = True) -> torch.Tensor:
+    """Nodal force ``-dE/dx`` + load + gravity; the clamped node gets nothing.
+
+    ``gravity=False`` is required by the static verification: the m16257 audit
+    showed that the shipped V2 compared a *self-weight buckled* rod against a
+    small-deflection Green's function (the gate's own weight is 348x the Euler
+    buckling load of the rod), so its -92 % was a setup artefact.
+    """
     work = nodes.detach().clone().requires_grad_(True)
     grad, = torch.autograd.grad(rod_energy(work, case), work)
     force = -grad
     if nodal_load is not None:
         force = force + nodal_load
-    mass = rod_nodal_mass(case).to(nodes.dtype).to(nodes.device)
-    gravity = torch.zeros_like(nodes)
-    gravity[:, 1] = -case.gravity * mass
-    force = force + gravity
+    if gravity:
+        mass = rod_nodal_mass(case).to(nodes.dtype).to(nodes.device)
+        weight = torch.zeros_like(nodes)
+        weight[:, 1] = -case.gravity * mass
+        force = force + weight
     force = force.clone()
     force[0] = 0.0
     return force
@@ -286,14 +319,30 @@ def tip_displacement(nodes: torch.Tensor, case: ElasticGateCase):
 def gate_load(pos, rho, pressure, wall, wall_mass, gate_start, pairs, case):
     """Pressure force on each gate boundary particle [N per unit width].
 
-    Mirrors the Adami et al. (2012) pressure term that
-    :func:`tensorsph.droplet_impact.rhs` applies to wall particles::
+    Two transfer modes, selected by :attr:`ElasticGateCase.load_transfer`:
 
-        f_g = m_g sum_f m_f (p_f / rho_f^2 + p_g / rho_g^2) grad_g W
+    ``"panel"`` (default)
+        The gate face is treated as a wall panel: the fluid pressure is
+        extrapolated onto the gate particle by a *first-order* weighted least
+        squares fit of the neighbouring fluid pressures (a plane in 2-D) and the
+        force is that pressure times the tributary length ``dx``.  Because the
+        fit reproduces any linear pressure field exactly -- independently of how
+        much of the kernel support is cut away by the wall -- this mode carries
+        no systematic load deficit at the wet face.  This is the same
+        panel/pressure-integration approach used by wall-pressure boundary
+        conditions in WCSPH codes, and it is what ``V1`` measures.
 
-    with ``p_g`` the kernel-weighted pressure of the neighbouring fluid (a
-    first-order extrapolation to the gate face) and ``rho_g = rho0``.  Only
-    fluid/gate pairs contribute.
+    ``"pairwise"`` (legacy, kept for the before/after comparison)
+        The Adami, Hu & Adams (2012) pressure term that
+        :func:`tensorsph.droplet_impact.rhs` applies to wall particles::
+
+            f_g = m_g sum_f m_f (p_f / rho_f^2 + p_g / rho_g^2) grad_g W
+
+        It is the momentum-symmetric choice, but with fluid on one side only the
+        kernel sum loses part of the load: the m16257 audit measured -20.4 % at
+        ``dx = 10`` mm (this module reproduces -28.4 % at 12.5 mm, -20.4 % at
+        10 mm and -8.3 % at 7.5 mm), and m16214 divided that deficit out with
+        ``load_scale = 1.2558``.  It is retained here only as a baseline.
     """
     n = pos.shape[0]
     n_gate = wall.shape[0] - gate_start
@@ -320,13 +369,56 @@ def gate_load(pos, rho, pressure, wall, wall_mass, gate_start, pairs, case):
         return out
     fluid_idx, wall_idx = fluid_idx[active], wall_idx[active]
     r, delta = r[active], delta[active]
+    weight = di.cubic_spline_kernel(r, h)
+
+    if case.load_transfer == "panel":
+        # Weighted linear fit p(x) = a0 + a1 (x - x_g) + a2 (y - y_g) per gate
+        # particle; the value at the gate particle itself is a0, the face
+        # pressure.  A 2-D fit has three unknowns, so the two normal-equation
+        # rows/columns beyond the diagonal are assembled explicitly.
+        vol_f = di.lattice_mass_unit(case.fluid_config()) / case.rho0
+        dx_, dy_ = delta[:, 0], delta[:, 1]
+        w = weight * vol_f
+        s0 = torch.zeros(n_gate, dtype=pos.dtype, device=pos.device).index_add(0, wall_idx, w)
+        s1 = torch.zeros_like(s0).index_add(0, wall_idx, w * dx_)
+        s2 = torch.zeros_like(s0).index_add(0, wall_idx, w * dy_)
+        s11 = torch.zeros_like(s0).index_add(0, wall_idx, w * dx_ * dx_)
+        s12 = torch.zeros_like(s0).index_add(0, wall_idx, w * dx_ * dy_)
+        s22 = torch.zeros_like(s0).index_add(0, wall_idx, w * dy_ * dy_)
+        b0 = torch.zeros_like(s0).index_add(0, wall_idx, w * pressure[fluid_idx])
+        b1 = torch.zeros_like(s0).index_add(0, wall_idx, w * dx_ * pressure[fluid_idx])
+        b2 = torch.zeros_like(s0).index_add(0, wall_idx, w * dy_ * pressure[fluid_idx])
+        # A = [[s0,s1,s2],[s1,s11,s12],[s2,s12,s22]] assembled per gate particle
+        A = torch.zeros((n_gate, 3, 3), dtype=pos.dtype, device=pos.device)
+        A[:, 0, 0] = s0; A[:, 0, 1] = s1; A[:, 0, 2] = s2
+        A[:, 1, 0] = s1; A[:, 1, 1] = s11; A[:, 1, 2] = s12
+        A[:, 2, 0] = s2; A[:, 2, 1] = s12; A[:, 2, 2] = s22
+        b = torch.stack((b0, b1, b2), dim=1)
+        # Tikhonov-regularised solve: the tangential direction is poorly
+        # constrained when the support is cut by the wall, but it does not
+        # affect a0, which is the face pressure actually used.
+        trace = (s0 + s11 + s22).clamp_min(1.0e-30)
+        reg = 1.0e-10 * trace
+        eye = torch.eye(3, dtype=pos.dtype, device=pos.device).expand_as(A)
+        sol = torch.linalg.solve(A + reg[:, None, None] * eye, b[:, :, None])[:, :, 0]
+        p_face = sol[:, 0]
+        has_fluid = s0 > 1.0e-12
+        p_face = torch.where(has_fluid, p_face, torch.zeros_like(p_face))
+        force = torch.zeros_like(out)
+        force[:, 0] = p_face * case.dx
+        # the wall pushes the fluid the other way; the gate is loaded in +x when
+        # the water is on its upstream (x < x_gate) side
+        out = out.index_add(0, torch.arange(n_gate, device=pos.device), force)
+        return out
+
+    if case.load_transfer != "pairwise":
+        raise ValueError(f"unknown load_transfer {case.load_transfer!r}")
 
     eps = 1.0e-6 * h
     dWdr = (di.cubic_spline_kernel(r + eps, h)
             - di.cubic_spline_kernel((r - eps).clamp_min(1.0e-12), h)) / (2.0 * eps)
     grad = (dWdr / r)[:, None] * delta
 
-    weight = di.cubic_spline_kernel(r, h)
     denom = torch.zeros(n_gate, dtype=pos.dtype, device=pos.device).index_add(
         0, wall_idx, weight)
     numer = torch.zeros(n_gate, dtype=pos.dtype, device=pos.device).index_add(
@@ -335,8 +427,11 @@ def gate_load(pos, rho, pressure, wall, wall_mass, gate_start, pairs, case):
 
     coeff = (pressure[fluid_idx] / rho[fluid_idx].square()
              + p_gate[wall_idx] / case.rho0 ** 2)
-    contrib = (wall_mass[fluid_idx] * wall_mass[gate_start + wall_idx]
-               * coeff)[:, None] * grad
+    # m_f must be the *fluid* particle mass; the pre-m16252 code indexed
+    # ``wall_mass`` with a fluid index, which only happened to be right because
+    # every lattice particle carries the same unit mass.
+    m_fluid = rho[fluid_idx] * (di.lattice_mass_unit(case.fluid_config()) / case.rho0)
+    contrib = (m_fluid * wall_mass[gate_start + wall_idx] * coeff)[:, None] * grad
     return out.index_add(0, wall_idx, contrib)
 
 
@@ -468,13 +563,13 @@ def verify_hydrostatic_load(case: ElasticGateCase) -> Dict[str, float]:
             "rel_error": (got - exact) / exact}
 
 
-def cantilever_tip_deflection(load_per_length, height: float, EI: float,
-                              n_quad: int = 2001) -> float:
-    """Tip deflection of a cantilever under ``q(a)`` by Green's function.
+def eb_tip_distributed(load_per_length, height: float, EI: float,
+                       n_quad: int = 2001) -> float:
+    """Euler-Bernoulli cantilever tip deflection under ``q(a)`` by Green's function.
 
     Point load ``P`` at ``a`` gives tip deflection ``P a^2 (3H - a) / (6 EI)``;
     the distributed load is integrated with the trapezoidal rule.  Independent
-    of the SPH and rod code.
+    of the SPH and rod code (small-deflection linear beam theory).
     """
     a = torch.linspace(0.0, height, n_quad, dtype=torch.float64)
     q = (load_per_length(a) if callable(load_per_length)
@@ -483,36 +578,212 @@ def cantilever_tip_deflection(load_per_length, height: float, EI: float,
     return float(torch.trapezoid(q * kernel, a))
 
 
-def verify_cantilever(case: ElasticGateCase, load_scale: float = 1.0e-5,
-                      n_steps: int = 30000, damping: float = 0.995
-                      ) -> Dict[str, float]:
-    """V2: rod tip deflection under a small hydrostatic load vs Euler-Bernoulli.
+def eb_tip_point_load(load: float, height: float, EI: float) -> float:
+    """``P H^3 / (3 EI)`` -- tip deflection of a cantilever under a tip load."""
+    return load * height ** 3 / (3.0 * EI)
 
-    The physical rod (``E = 1e6 Pa``) is loaded with ``s * rho g (h_s - a)``
-    where ``s = load_scale`` keeps the deflection inside the small-deflection
-    range where the analytic cantilever is valid, and relaxed to static
-    equilibrium with velocity damping.  Reference: the point-load Green's
-    function ``a^2 (3H - a) / (6 EI)`` integrated over the loaded length, which
-    shares no code with the SPH or the rod.
+
+def elastica_tip(load: float, height: float, EI: float) -> Dict[str, float]:
+    """Large-deflection cantilever under a *tip* load: exact elastica reference.
+
+    Independent of the discrete rod: the Kirchhoff elastica is integrated as an
+    ODE in arc length with ``theta`` measured from the initial (undeflected)
+    axis of the cantilever::
+
+        EI dtheta/ds = M(s) = P * (x_tip - x(s)),
+        dx/ds = cos(theta),  dy/ds = sin(theta),
+
+    with ``theta(0) = 0``.  ``x_tip`` is the shooting unknown; the free-end
+    condition ``M(L) = 0`` requires ``x(L) = x_tip``.  This is the classical
+    Bisshopp & Drucker (1945) problem, solved here by quadrature instead of
+    tabulated values, so no reference number is transcribed.
     """
-    state = initial_state(case)
-    dt = case.dt()
-    nodes, vel = state.nodes, state.node_vel
+    import numpy as np
+    from scipy.integrate import solve_ivp
+    from scipy.optimize import brentq
+
+    def integrate(x_tip):
+        def rhs(_s, y):
+            theta, x, _yy = y
+            return [load * (x_tip - x) / EI, np.cos(theta), np.sin(theta)]
+        sol = solve_ivp(rhs, (0.0, height), [0.0, 0.0, 0.0], rtol=1e-11,
+                        atol=1e-13, dense_output=True)
+        return sol.y[1, -1], sol.y[2, -1], sol.y[0, -1]
+
+    def miss(x_tip):
+        x_end, _y, _t = integrate(x_tip)
+        return x_end - x_tip
+
+    lo, hi = 0.0, 50.0 * height
+    # bracket the root: the tip x must sit between the undeflected and the
+    # fully folded (quarter-circle) configurations
+    while miss(hi) > 0.0 and hi < 1.0e3 * height:
+        hi *= 2.0
+    x_tip = brentq(miss, lo, hi, xtol=1e-13)
+    x_end, y_end, theta_end = integrate(x_tip)
+    return {"tip_x": x_end, "tip_y": y_end, "tip_angle": theta_end,
+            "x_tip_self_consistent": float(miss(x_tip))}
+
+
+def rod_static_equilibrium(case: ElasticGateCase, nodal_load: Optional[torch.Tensor],
+                           gravity: bool = False, gtol: float = 1.0e-12
+                           ) -> torch.Tensor:
+    """Static equilibrium of the rod as a *minimisation* of the discrete energy.
+
+    The clamped node is frozen and the free coordinates are relaxed with
+    L-BFGS-B (``scipy.optimize``) on
+
+        Pi = E_rod - load . x (+ m g y),
+
+    both non-dimensionalised by ``H`` and by ``EI`` so the optimiser sees
+    O(1) numbers.  The gradient is the same automatic-differentiation gradient
+    :func:`rod_forces` uses, so the equilibrium is the minimum of exactly the
+    energy the rod integrates.
+
+    This replaces the shipped V2, which time-marched with a fixed ``0.995``
+    damping: the m16257 audit showed that schedule had not converged at all
+    (changing only the damping flipped the sign of the deflection), so its
+    -92 % was a setup artefact rather than a property of the rod.
+    """
+    import numpy as np
+    from scipy.optimize import minimize
+
+    n = case.n_gate_nodes
+    H = case.gate_height
+    scale = case.gate_stiffness_bending()      # EI  [N m]
+    z0 = torch.tensor(nodes_initial(case), dtype=torch.float64) / H
+
+    def expand(flat):
+        z = z0.clone()
+        z[1:] = torch.as_tensor(np.asarray(flat).reshape(n - 1, 2), dtype=torch.float64)
+        return z * H
+
+    def objective(flat):
+        nodes = expand(flat).requires_grad_(True)
+        energy = rod_energy(nodes, case) / scale
+        if nodal_load is not None:
+            energy = energy - (nodal_load * nodes).sum() / scale
+        if gravity:
+            mass = rod_nodal_mass(case).to(torch.float64)
+            energy = energy + (mass * case.gravity * nodes[:, 1]).sum() / scale
+        grad, = torch.autograd.grad(energy, nodes)
+        return float(energy), (grad[1:] * (H / scale)).flatten().numpy()
+
+    result = minimize(objective, z0[1:].flatten().numpy(), jac=True, method="L-BFGS-B",
+                      options={"gtol": gtol, "ftol": 0.0, "maxiter": 20000,
+                               "maxfun": 60000, "maxcor": 40})
+    nodes = expand(result.x)
+    nodes[0] = torch.tensor((case.water_width, 0.0), dtype=torch.float64)
+    return nodes
+
+
+def nodes_initial(case: ElasticGateCase):
+    return [[case.water_width, case.gate_height * k / (case.n_gate_nodes - 1)]
+            for k in range(case.n_gate_nodes)]
+
+
+def rod_nodal_load_from_line(case: ElasticGateCase, q_per_length) -> torch.Tensor:
+    """Nodal load equivalent of a line load ``q_per_length(a)`` [N/m]."""
     l0 = case.gate_height / (case.n_gate_nodes - 1)
-    q_mag = load_scale * case.rho0 * case.gravity
-    q_node = torch.zeros_like(nodes)
-    q_node[:, 0] = q_mag * torch.clamp(case.water_height - nodes[:, 1], min=0.0) * l0
-    for _ in range(n_steps):
-        mass = rod_nodal_mass(case).to(nodes.dtype)[:, None]
-        acc = rod_forces(nodes, case, q_node) / mass
-        vel = damping * (vel + dt * acc)
-        vel = vel.clone(); vel[0] = 0.0
-        nodes = nodes + dt * vel
-        nodes = nodes.clone()
-        nodes[0] = torch.tensor((case.water_width, 0.0), dtype=nodes.dtype)
-    got = float(nodes[-1, 0]) - case.water_width
-    exact = cantilever_tip_deflection(
-        lambda a: q_mag * torch.clamp(case.water_height - a, min=0.0),
-        case.gate_height, case.gate_stiffness_bending())
-    return {"tip_rod": got, "tip_exact": exact, "load_scale": load_scale,
-            "rel_error": (got - exact) / exact if exact else float("nan")}
+    a = torch.linspace(0.0, case.gate_height, case.n_gate_nodes, dtype=torch.float64)
+    q = (q_per_length(a) if callable(q_per_length)
+         else torch.as_tensor(q_per_length, dtype=torch.float64).expand_as(a))
+    load = torch.zeros((case.n_gate_nodes, 2), dtype=torch.float64)
+    load[:, 0] = q * l0
+    load[0] *= 0.5
+    load[-1] *= 0.5
+    return load
+
+
+def verify_cantilever(case: ElasticGateCase, stiff_E: float = 1.0e7
+                      ) -> Dict[str, object]:
+    """V2/V3: the rod against *two* independent beam references.
+
+    A0  small deflection, tip point load, ``P H^3 / (3 EI)``;
+    A1  small deflection, hydrostatic-like distributed load, Green's function
+        ``int q(a) a^2 (3H-a)/(6EI) da``;
+    A2  **large** deflection (``P L^2 / EI = 10``), the Kirchhoff elastica solved
+        as an ODE -- this is the regime the real gate lives in, and the regime
+        the shipped verification never tested.
+
+    All three run with ``gravity = 0`` and by energy minimisation, so the check
+    compares constitutive/geometry code against beam theory only.
+    """
+    EI = case.gate_stiffness_bending()
+    H = case.gate_height
+    out: Dict[str, object] = {"EI": EI, "EA": case.gate_stiffness_axial(),
+                              "rho_A": case.gate_area_density()}
+
+    def _run(load_nodes, gravity=False):
+        nodes = rod_static_equilibrium(case, load_nodes, gravity=gravity)
+        return float(nodes[-1, 0]) - case.water_width, float(nodes[-1, 1]) - H
+
+    # A0: tip point load, small deflection (P H^2 / (2 EI) = 1e-3)
+    P = 1.0e-3 * 2.0 * EI / H ** 2
+    load = torch.zeros((case.n_gate_nodes, 2), dtype=torch.float64)
+    load[-1, 0] = P
+    got, _ = _run(load)
+    exact = eb_tip_point_load(P, H, EI)
+    out["A0_point_load"] = {"P": P, "tip_rod": got, "tip_exact": exact,
+                            "rel_error": (got - exact) / exact}
+
+    # A1: distributed hydrostatic load, small deflection (scaled by 1e-6)
+    scale = 1.0e-6
+    q = lambda a: scale * case.rho0 * case.gravity * torch.clamp(
+        torch.as_tensor(case.water_height, dtype=torch.float64) - a, min=0.0)
+    got, _ = _run(rod_nodal_load_from_line(case, q))
+    exact = eb_tip_distributed(q, H, EI)
+    out["A1_distributed"] = {"load_scale": scale, "tip_rod": got,
+                             "tip_exact": exact, "rel_error": (got - exact) / exact}
+
+    # A2: large deflection against the elastica
+    P = 10.0 * EI / H ** 2          # P H^2 / EI = 10
+    load = torch.zeros((case.n_gate_nodes, 2), dtype=torch.float64)
+    load[-1, 0] = P
+    tip_x, tip_y = _run(load)
+    ref = elastica_tip(P, H, EI)
+    out["A2_elastica"] = {"P": P, "P_L2_over_EI": P * H ** 2 / EI,
+                          "tip_x_rod": tip_x, "tip_x_elastica": ref["tip_x"],
+                          "rel_error": (tip_x - ref["tip_x"]) / ref["tip_x"],
+                          "tip_y_rod": tip_y, "tip_y_elastica": ref["tip_y"],
+                          "rod_angle": float(math.atan2(tip_y, tip_x))
+                          if tip_x else 0.0,
+                          "elastica_angle": ref["tip_angle"]}
+    return out
+
+
+def verify_gate_load_path(case: ElasticGateCase, stiff_E: float = 1.0e7
+                          ) -> Dict[str, float]:
+    """V4 end-to-end: panel transfer + ``W^T`` lumping + rod vs beam theory.
+
+    The fluid is frozen at its hydrostatic pressure, the gate is made stiff so
+    that beam theory applies, and the *whole* fluid->solid path of the coupled
+    run (:func:`gate_load` -> ``interp^T`` -> :func:`rod_static_equilibrium`) is
+    driven to equilibrium.  Reference: the Euler-Bernoulli tip deflection of a
+    cantilever under ``p(a) = rho g (h_s - a)``.
+    """
+    stiff = ElasticGateCase(**{**case.__dict__, "gate_E": stiff_E})
+    state = initial_state(stiff)
+    pos = state.fluid_pos
+    rho = torch.full((pos.shape[0],), stiff.rho0, dtype=pos.dtype, device=pos.device)
+    p = (stiff.rho0 * stiff.gravity * (stiff.water_height - pos[:, 1])).clamp_min(0.0)
+    gate = state.interp @ state.nodes
+    wall = torch.cat((state.wall_static, gate), dim=0)
+    wall_mass = torch.cat((
+        state.wall_mass_static,
+        torch.full((gate.shape[0],), di.lattice_mass_unit(stiff.fluid_config()),
+                   dtype=pos.dtype, device=pos.device)))
+    pairs = cell_linked_pairs(torch.cat((pos, wall), dim=0), 2.0 * stiff.h())
+    f_gate = gate_load(pos, rho, p, wall, wall_mass, state.wall_static.shape[0],
+                       pairs, stiff)
+    nodal = state.interp.T @ f_gate
+    nodes = rod_static_equilibrium(stiff, nodal, gravity=False)
+    got = float(nodes[-1, 0]) - stiff.water_width
+    EI = stiff.gate_stiffness_bending()
+    exact = eb_tip_distributed(
+        lambda a: stiff.rho0 * stiff.gravity * torch.clamp(
+            torch.as_tensor(stiff.water_height, dtype=torch.float64) - a, min=0.0),
+        stiff.gate_height, EI)
+    return {"total_load": float(f_gate[:, 0].sum()), "tip_rod": got,
+            "tip_exact": exact, "rel_error": (got - exact) / exact,
+            "stiff_E": stiff_E, "gate_E": stiff_E}
