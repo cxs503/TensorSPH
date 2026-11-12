@@ -91,6 +91,7 @@ class SloshingModeCase:
     wall_layers: int = 3
     periods: float = 3.0             # simulated time in first-mode periods
     output_per_period: int = 40
+    snapshot_time: float = -1.0      # >=0: store the field frame nearest this time
     device: str = "cpu"
     gravity: float = GRAVITY
     label: str = ""
@@ -186,6 +187,7 @@ class SloshingModeResult:
     times: list = field(default_factory=list)
     modal: list = field(default_factory=list)       # a1(t), m
     surface_max: list = field(default_factory=list)  # max elevation, m
+    com_x: list = field(default_factory=list)        # horizontal centre of mass, m
     kinetic: list = field(default_factory=list)
     potential: list = field(default_factory=list)
     mass: float = 0.0
@@ -198,10 +200,32 @@ class SloshingModeResult:
     wall_clock: float = 0.0
     particle_count: int = 0
     profiles_store: list = field(default_factory=list)
+    # optional field frame (positions, velocity, density) for figures; only
+    # filled when ``SloshingModeCase.snapshot_time >= 0``
+    snapshot: dict = field(default_factory=dict)
 
     @property
     def mass_drift(self) -> float:
         return abs(self.mass_final - self.mass) / max(self.mass, 1e-30)
+
+    def omega_from_com(self) -> float:
+        """First-mode frequency from the horizontal centre of mass.
+
+        The centre of mass is an integral over the whole cloud, so it does not
+        carry the particle-spacing quantisation of the topmost-particle surface
+        gauge; for a released first mode its oscillation is the mode-1 frequency.
+        """
+        try:
+            return float(profiles.oscillation_frequency(self.times, self.com_x))
+        except ValueError:
+            return float("nan")
+
+    def com_amplitude_initial(self) -> float:
+        """Modal amplitude reconstructed from the initial centre of mass (m)."""
+        if not self.com_x:
+            return float("nan")
+        return float(profiles.first_mode_amplitude_from_com(
+            self.com_x[0], self.case.tank_length, self.case.water_depth))
 
     def summary(self) -> dict:
         """Frequency, damping and the analytic reference, as plain numbers."""
@@ -243,6 +267,9 @@ class SloshingModeResult:
             "mass_drift": self.mass_drift,
             "times": [float(v) for v in self.times],
             "modal": [float(v) for v in self.modal],
+            "com_x": [float(v) for v in self.com_x],
+            "omega_from_com": self.omega_from_com(),
+            "com_amplitude_initial": self.com_amplitude_initial(),
         }
 
 
@@ -309,12 +336,22 @@ def run_sloshing_mode(case: SloshingModeCase) -> SloshingModeResult:
             result.modal.append(profiles.first_mode_amplitude(centres, eta,
                                                               case.tank_length, slab))
             finite_eta = eta[torch.isfinite(eta)]
+            result.com_x.append(float(profiles.centre_of_mass(positions, mass)[0]))
             result.surface_max.append(float(finite_eta.max()) if finite_eta.numel()
                                       else float("nan"))
             result.kinetic.append(float(0.5 * (mass[:, None] * velocity.square()).sum()))
             result.potential.append(float((mass * cfg.gravity * positions[:, 1]).sum()))
             result.profiles_store.append((float(elapsed), centres.tolist(),
                                           eta.tolist()))
+            if (case.snapshot_time >= 0.0 and not result.snapshot
+                    and elapsed + 0.5 * cfg.dt >= case.snapshot_time):
+                result.snapshot = {
+                    "time": float(elapsed),
+                    "x": positions[:, 0].double().tolist(),
+                    "y": positions[:, 1].double().tolist(),
+                    "speed": torch.linalg.vector_norm(velocity, dim=-1).double().tolist(),
+                    "density": density.double().tolist(),
+                }
         if final:
             break
 
