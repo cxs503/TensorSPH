@@ -1,0 +1,97 @@
+{
+ "benchmark": "dam_break_reference_convention",
+ "generated_by": "benchmarks/dam_break/convention_audit.py",
+ "ledger_claim": "dam_break.martin_moyce.mae",
+ "shipped_gate": {
+  "metric": "mean absolute error in Z/a vs Martin & Moyce (1952)",
+  "measured": 0.5727571197674608,
+  "limit": 0.15,
+  "result": "fail",
+  "details": {
+   "max_absolute_error": 1.6182109315934694,
+   "rmse": 0.6993900256959237,
+   "points_compared": 20,
+   "within_uncertainty_fraction": 0.0
+  }
+ },
+ "bundled_reference": {
+  "n_points": 20,
+  "tau_step_mean": 0.22599999999999998,
+  "tau_step_spread": 8.881784197001252e-16,
+  "ordinate_quantum": 0.05,
+  "ordinate_quantum_residual": 7.105427357601002e-15,
+  "first_point": {
+   "tau": 0.0,
+   "Z_over_a": 0.0
+  },
+  "verdict": "synthetic-looking (exact tau lattice, ordinates exact multiples of 0.05): not a validation target",
+  "usable_as_validation_target": false
+ },
+ "crosscheck_reference": {
+  "n_points": 14,
+  "convention": "X = x_front / a, so Z/a = X - 1 for the front measured from the initial column edge (Martin & Moyce measure from the wall).",
+  "first_point": {
+   "tau": 0.0,
+   "X_over_a": 1.0
+  },
+  "offset_is_one": true,
+  "tau_range": [
+   0.0,
+   2.96
+  ],
+  "X_range": [
+   1.0,
+   3.67
+  ],
+  "claimed_uncertainty": 0.05,
+  "usable_as_validation_target": true
+ },
+ "probe_run": {
+  "dx": 0.04,
+  "dt": 0.000624,
+  "steps_taken": 801,
+  "particles": 50,
+  "wall_clock_s": 11.154150189831853,
+  "wall_impact_time": null
+ },
+ "comparison": {
+  "lab": {
+   "vs_bundled_Z_over_a": {
+    "points_compared": 20,
+    "max_absolute_error": 2.199644766105867,
+    "mean_absolute_error": 0.754387234160216,
+    "rmse": 0.98278031186352,
+    "within_uncertainty": 0.0
+   },
+   "vs_crosscheck_X_minus_1": {
+    "points_compared": 14,
+    "max_absolute_error": 0.929007424124068,
+    "mean_absolute_error": 0.8704788548466093,
+    "rmse": 0.8715405443578297,
+    "within_uncertainty": 0.0
+   }
+  },
+  "displacement": {
+   "vs_bundled_Z_over_a": {
+    "points_compared": 20,
+    "max_absolute_error": 1.199644766105867,
+    "mean_absolute_error": 0.5980641567703021,
+    "rmse": 0.676078895592908,
+    "within_uncertainty": 0.05
+   },
+   "vs_crosscheck_X_minus_1": {
+    "points_compared": 14,
+    "max_absolute_error": 0.21002789427806867,
+    "mean_absolute_error": 0.12952114515339092,
+    "rmse": 0.1364742128254409,
+    "within_uncertainty": 0.0
+   }
+  }
+ },
+ "frame_offset_mean_MAE_bundled": 0.1563230773899139,
+ "grading": {
+  "shipped": "fail",
+  "regraded": "withheld",
+  "reason": "bundled reference table graded synthetic by reference_audit.json (usable_as_validation_target = false); the shipped measurement additionally compared a lab-frame front position with a displacement-frame reference."
+ }
+}
