@@ -100,13 +100,26 @@ __all__ = [
     "exact_wave_positions",
     "evaluate_metrics",
     "contact_force_check",
+    "plateau_windows",
     "WAVE_WINDOW_FRACTION",
+    "WINDOW_TRIM_H",
 ]
 
 #: Fraction of each plateau width trimmed at both ends when averaging a plateau
 #: value.  Predeclared and *not* tuned: SPH smears a discontinuity over ~3-4 h,
 #: i.e. < 5% of the narrowest plateau (star-right, width ~0.165).
 WAVE_WINDOW_FRACTION = 0.10
+
+#: Minimum trim of a plateau window, in smoothing lengths.  A fraction of the
+#: plateau width is *not* a resolution-independent criterion: at N=200 the
+#: star-right plateau is 0.165 wide, so the 10% trim (0.0165) is thinner than
+#: 3h = 0.0375 and the average swallows the smeared shock/contact.  Measured
+#: effect: the reported max |rel err| at N=200 collapses from 4.03% to 0.10%
+#: once the trim is h-scaled (docs/audit/compressible_sod_metric_audit.md) —
+#: i.e. the coarse end of the resolution ladder was measuring the window, not
+#: the scheme.  SPH spreads a jump over ~3-4 h (kernel support is 2h), so 3h is
+#: the smallest defensible exclusion zone and is used for every plateau edge.
+WINDOW_TRIM_H = 3.0
 
 
 # ---------------------------------------------------------------------------
@@ -443,6 +456,52 @@ def _avg(x, q, lo, hi):
     return float(np.mean(q[sel]))
 
 
+def plateau_windows(cfg: SodSPHConfig, t: float) -> dict:
+    """Measurement windows of the four plateaus at time ``t``.
+
+    Every boundary is anchored on the *exact* wave positions (never on the SPH
+    result) and is pushed at least ``WINDOW_TRIM_H * h`` away from the nearest
+    wave, because SPH spreads a jump over ~3-4 h.  The trimming is therefore
+    resolution-aware: refining the lattice does not change the windows unless
+    the plateau fraction is the binding constraint.
+
+    Returns ``{"windows": {...}, "trim": {...}, "waves": {...}}``.
+    """
+    kw = dict(gamma=cfg.gamma, rho_L=cfg.rho_L, p_L=cfg.p_L, u_L=cfg.u_L,
+              rho_R=cfg.rho_R, p_R=cfg.p_R, u_R=cfg.u_R)
+    wp = exact_wave_positions(t, cfg.x_diaphragm, **kw)
+    x_head, x_tail = wp["x_rarefaction_head"], wp["x_rarefaction_tail"]
+    x_con, x_sho = wp["x_contact"], wp["x_shock"]
+
+    f = WAVE_WINDOW_FRACTION
+    trim_h = WINDOW_TRIM_H * cfg.h
+    trim_out = max(0.02, trim_h)                    # outer (wall) plateau edges
+    trim_l = max(f * (x_head - cfg.x_left), trim_h)
+    sl_w = x_con - x_tail
+    trim_sl = max(f * sl_w, trim_h)
+    sr_w = x_sho - x_con
+    trim_sr = max(f * sr_w, trim_h)
+    trim_r = trim_out
+
+    windows = {
+        "left_plateau": [cfg.x_left + trim_out, x_head - trim_l],
+        "star_left": [x_tail + trim_sl, x_con - trim_sl],
+        "star_right": [x_con + trim_sr, x_sho - trim_sr],
+        "right_plateau": [x_sho + trim_r, cfg.x_right - trim_out],
+    }
+    for name, (lo, hi) in windows.items():
+        if not hi > lo:
+            raise ValueError(f"empty measurement window {name!r}: [{lo}, {hi}] "
+                             f"(N={cfg.n_particles}, h={cfg.h})")
+    return {
+        "windows": windows,
+        "trim": {"left": trim_l, "star_left": trim_sl, "star_right": trim_sr,
+                 "right": trim_r, "outer": trim_out, "h_scaled": trim_h},
+        "waves": {"x_rarefaction_head": x_head, "x_rarefaction_tail": x_tail,
+                  "x_contact": x_con, "x_shock": x_sho},
+    }
+
+
 def evaluate_metrics(snap: dict, cfg: SodSPHConfig) -> dict:
     """Plateau / wave metrics of one SPH snapshot versus the exact Sod solution.
 
@@ -458,17 +517,13 @@ def evaluate_metrics(snap: dict, cfg: SodSPHConfig) -> dict:
 
     kw = dict(gamma=cfg.gamma, rho_L=cfg.rho_L, p_L=cfg.p_L, u_L=cfg.u_L,
               rho_R=cfg.rho_R, p_R=cfg.p_R, u_R=cfg.u_R)
+    pw = plateau_windows(cfg, t)
     wp = exact_wave_positions(t, cfg.x_diaphragm, **kw)
     x_head, x_tail = wp["x_rarefaction_head"], wp["x_rarefaction_tail"]
     x_con, x_sho = wp["x_contact"], wp["x_shock"]
-
-    f = WAVE_WINDOW_FRACTION
-    wl_lo, wl_hi = cfg.x_left + 0.02, x_head - f * (x_head - cfg.x_left)
-    sl_w = x_con - x_tail
-    sl_lo, sl_hi = x_tail + f * sl_w, x_con - f * sl_w
-    sr_w = x_sho - x_con
-    sr_lo, sr_hi = x_con + f * sr_w, x_sho - f * sr_w
-    wr_lo, wr_hi = x_sho + 0.02, cfg.x_right - 0.02
+    (wl_lo, wl_hi), (sl_lo, sl_hi), (sr_lo, sr_hi), (wr_lo, wr_hi) = (
+        pw["windows"]["left_plateau"], pw["windows"]["star_left"],
+        pw["windows"]["star_right"], pw["windows"]["right_plateau"])
 
     def _steepest(lo, hi, q):
         sel = (x >= lo) & (x <= hi)
@@ -489,6 +544,8 @@ def evaluate_metrics(snap: dict, cfg: SodSPHConfig) -> dict:
         "t": t,
         "windows": {"left_plateau": [wl_lo, wl_hi], "star_left": [sl_lo, sl_hi],
                     "star_right": [sr_lo, sr_hi], "right_plateau": [wr_lo, wr_hi]},
+        "window_trim": pw["trim"],
+        "window_trim_h": WINDOW_TRIM_H,
         "exact": {"rho_L": cfg.rho_L, "rho_star_L": wp["rho_star_L"],
                   "rho_star_R": wp["rho_star_R"], "rho_R": cfg.rho_R,
                   "p_L": cfg.p_L, "p_star": wp["p_star"], "p_R": cfg.p_R,
