@@ -1,0 +1,9 @@
+{
+ "sigma_ideal_Agk": 5.551488442905729,
+ "sigma_finite_depth": 5.55104045854192,
+ "sigma_viscous": 5.511702422345449,
+ "finite_depth_correction": 0.9999193037383729,
+ "viscous_correction": 0.99283326967723,
+ "k": 6.283185307179586,
+ "atwood": 0.5
+}
