@@ -25,9 +25,34 @@ import torch
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from tensorsph.kleefsman_obstacle import KleefsmanConfig, run_case  # noqa: E402
+from tensorsph.kleefsman_obstacle import (  # noqa: E402
+    KleefsmanConfig,
+    run_case,
+    validate_case,
+)
 
 HERE = Path(__file__).resolve().parent
+
+
+def driver_config(dx: float, sound_speed: float, t_end: float, geom: dict) -> KleefsmanConfig:
+    """Case config with a Courant-consistent dt for *this* sound speed.
+
+    ``dt`` is the smaller of the historical 2e-4 s cap and the acoustic limit
+    ``max_courant * h / c0``.  Hard-coding the 20 m/s of the default scan meant
+    that any c0 > ~78 m/s silently stepped past the acoustic Courant limit at
+    dx = 0.04 m (same defect class as the one fixed in ``run.py``).
+    """
+    cfg = KleefsmanConfig(
+        dx=dx, t_end=t_end, device="cpu",
+        tank_length=geom["tank_length"], tank_height=geom["tank_height"],
+        column_length=geom["column_length"], column_height=geom["column_height"],
+        obstacle_x=geom["obstacle_upstream_face_x"],
+        obstacle_length=geom["obstacle_length"], obstacle_height=geom["obstacle_height"],
+        pool_width=geom["tank_length"], pool_depth=geom["tank_height"],
+        sound_speed=sound_speed)
+    cfg.dt = min(2.0e-4, cfg.dt_acoustic())
+    validate_case(cfg)
+    return cfg
 
 
 def main() -> int:
@@ -36,6 +61,8 @@ def main() -> int:
     ap.add_argument("--t-end", type=float, default=1.2)
     ap.add_argument("--budget", type=float, default=95.0)
     ap.add_argument("--output-every", type=int, default=40)
+    ap.add_argument("--sound-speed", type=float, default=20.0,
+                    help="artificial sound speed c0 [m/s]; dt follows the CFL of *this* c0")
     args = ap.parse_args()
 
     ref = json.loads((HERE / "reference.json").read_text())
@@ -43,14 +70,8 @@ def main() -> int:
     res = HERE / "results"
     res.mkdir(exist_ok=True)
     tag = f"dx{args.dx:g}"
-    cfg = KleefsmanConfig(
-        dx=args.dx, t_end=args.t_end, device="cpu", output_every=args.output_every,
-        tank_length=g["tank_length"], tank_height=g["tank_height"],
-        column_length=g["column_length"], column_height=g["column_height"],
-        obstacle_x=g["obstacle_upstream_face_x"],
-        obstacle_length=g["obstacle_length"], obstacle_height=g["obstacle_height"],
-        pool_width=g["tank_length"], pool_depth=g["tank_height"],
-        dt=min(2.0e-4, 0.3 * 1.3 * args.dx / 20.0))
+    cfg = driver_config(args.dx, args.sound_speed, args.t_end, g)
+    cfg.output_every = args.output_every
 
     state_path = res / f"{tag}_state.pt"
     state = torch.load(state_path, weights_only=False) if state_path.exists() else None

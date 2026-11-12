@@ -1,0 +1,96 @@
+{
+  "case": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST",
+  "sound_speed": 80.0,
+  "t_end": 1.2,
+  "ladder_dx": [
+    0.04,
+    0.02,
+    0.01
+  ],
+  "levels_available": [
+    0.04,
+    0.02,
+    0.01
+  ],
+  "compression_limit": 0.05,
+  "safety_factor": 1.25,
+  "peak_ladder": {
+    "dx": [
+      0.04,
+      0.02,
+      0.01
+    ],
+    "peak_height_m": [
+      0.513088047504425,
+      0.45548737049102783,
+      0.4720599949359894
+    ],
+    "coarse_fine_rel_change": [
+      0.12645943827444023,
+      0.03510703008673457
+    ],
+    "refinement_ratio": 2.0,
+    "differences": [
+      0.05760067701339722,
+      -0.016572624444961548
+    ],
+    "signs": [
+      1.0,
+      -1.0
+    ],
+    "verdict": "oscillatory",
+    "observed_order": null,
+    "gci_fine": null,
+    "note": "successive refinement flips the sign of the change: no convergent sequence, no order may be quoted"
+  },
+  "peak_time_ladder": {
+    "dx": [
+      0.04,
+      0.02,
+      0.01
+    ],
+    "peak_height_m": [
+      0.8809979887204215,
+      0.706342054590357,
+      1.1675657371611465
+    ],
+    "coarse_fine_rel_change": [
+      0.2472682080799452,
+      0.3950301622349952
+    ],
+    "refinement_ratio": 2.0,
+    "differences": [
+      0.17465593413006442,
+      -0.4612236825707895
+    ],
+    "signs": [
+      1.0,
+      -1.0
+    ],
+    "verdict": "oscillatory",
+    "observed_order": null,
+    "gci_fine": null,
+    "note": "successive refinement flips the sign of the change: no convergent sequence, no order may be quoted"
+  },
+  "compression": {
+    "fine_dx": 0.01,
+    "max_density_compression": 0.04813146972656246,
+    "within_limit": true,
+    "per_level": {
+      "0.04": 0.03363037109375,
+      "0.02": 0.034054565429687544,
+      "0.01": 0.04813146972656246
+    }
+  },
+  "wall_clock_s": {
+    "0.04": 44.5,
+    "0.02": 170.9,
+    "0.01": 697.8
+  },
+  "steps": {
+    "0.04": 7113,
+    "0.02": 14261,
+    "0.01": 25257
+  },
+  "status": "complete"
+}
