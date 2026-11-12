@@ -10,3 +10,6 @@ artifacts/
 .coverage
 .scratch/
 runs/m15815/repro_wt/
+
+# chunked-run solver state (regenerable)
+*_state.pt
