@@ -108,7 +108,8 @@ def _synthetic_case(beta_deg: float, dx: float, scale: float = 1.0,
              "cp_centre": scale * C, "x_jet": C * velocity * 0.02,
              "max_rho_ratio": 1.01, "profile_tau": taus, "profile_cp": cps}
     return {"case_id": f"syn_{kind}_{dx}", "kind": kind,
-            "config": {"beta_deg": beta_deg, "velocity": velocity, "dx": dx},
+            "config": {"beta_deg": beta_deg, "velocity": velocity, "dx": dx,
+                       "sound_speed_factor": 20.0, "gamma": 7.0},
             "steps": 1, "wall_seconds": 0.1, "series": [frame] * 6}
 
 
