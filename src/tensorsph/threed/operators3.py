@@ -26,6 +26,7 @@ import math
 
 import torch
 
+from ..density_diffusion import rate_from_positions
 from .kernel3 import cubic_spline_kernel, pair_kernels
 from .neighbors3 import minimum_image
 
@@ -37,6 +38,7 @@ __all__ = [
     "pressure_acceleration",
     "viscous_acceleration",
     "wall_pressure_adami",
+    "density_diffusion_rate_3d",
     "accelerations",
     "laplacian_of_field",
     "laplacian_second_moment",
@@ -208,7 +210,10 @@ def accelerations(pos: torch.Tensor, vel: torch.Tensor, mass: torch.Tensor,
                   sound_speed: float, gamma: float = 7.0, viscosity: float = 0.0,
                   gravity=None, box=None, n_fluid: int | None = None,
                   renormalise: bool = True, wall_model: str = "adami",
-                  viscous_order: int = 2):
+                  viscous_order: int = 2, density_diffusion: float = 0.0,
+                  dt: float | None = None,
+                  density_diffusion_form: str = "antuono",
+                  density_diffusion_eigenvalue_floor: float = 0.1):
     """Full right-hand side for a fluid (+ optional static wall) particle set.
 
     Returns ``(acc, rho, pressure)``; ``acc`` rows for wall particles are the
@@ -217,6 +222,16 @@ def accelerations(pos: torch.Tensor, vel: torch.Tensor, mass: torch.Tensor,
     n = pos.shape[0]
     n_fluid = n if n_fluid is None else n_fluid
     rho = summation_density(pos, mass, h, pairs, box)
+    if density_diffusion > 0.0:
+        # ``density_diffusion > 0`` without a step would silently mean "no term".
+        if dt is None or dt <= 0.0:
+            raise ValueError("density_diffusion > 0 requires a positive dt")
+        rate = density_diffusion_rate_3d(
+            pos, rho, mass, h, pairs, sound_speed=sound_speed,
+            delta=density_diffusion, form=density_diffusion_form,
+            eigenvalue_floor=density_diffusion_eigenvalue_floor,
+            n_fluid=n_fluid, box=box)
+        rho = (rho + dt * rate).clamp_min(0.1 * rho0)
     pressure = tait_pressure(rho, rho0, sound_speed, gamma)
     rho_used = rho
     if n_fluid < n and wall_model == "adami":
@@ -235,6 +250,46 @@ def accelerations(pos: torch.Tensor, vel: torch.Tensor, mass: torch.Tensor,
         g = torch.as_tensor(gravity, dtype=pos.dtype, device=pos.device).reshape(1, -1)
         acc[:n_fluid] = acc[:n_fluid] + g
     return acc, rho, pressure
+
+
+def density_diffusion_rate_3d(pos: torch.Tensor, rho: torch.Tensor,
+                              mass: torch.Tensor, h: float, pairs: torch.Tensor,
+                              *, sound_speed: float, delta: float,
+                              form: str = "antuono",
+                              eigenvalue_floor: float = 0.1,
+                              n_fluid: int | None = None, box=None):
+    """Volumetric diffusive density *rate* for the 3-D WCSPH summation-density path.
+
+    The 2-D solver has carried this term since 0.6.0
+    (:mod:`tensorsph.density_diffusion`); the 3-D operator set did not, so a
+    resting 3-D column kept whatever layer-to-layer (odd-even) density mode the
+    initial condition handed it -- the mode lives in the null space of the
+    symmetric SPH gradient on a regular lattice and nothing in the 3-D right-hand
+    side damps it.  This function is the missing term, with the same
+    normalisation the 2-D path uses,
+
+        scale = 2 delta c0 h,   d rho_i/dt = scale sum_j V_j psi_ij . grad W_ij,
+
+    and it is **fluid/fluid only** (``n_fluid`` masks the wall rows out): wall
+    particles carry an extrapolated density, not a material one, so diffusing
+    into them would push the wall pressure away from the Adami prediction.
+    """
+    if delta <= 0.0:
+        return torch.zeros_like(rho)
+    pair_delta, _, grad, _ = pair_geometry(pos, pairs, h, box)
+    i, j = pairs[:, 0], pairs[:, 1]
+    if n_fluid is not None and n_fluid < pos.shape[0]:
+        mask = (i < n_fluid) & (j < n_fluid)
+        i, j = i[mask], j[mask]
+        pair_delta = pair_delta[mask]
+        grad = grad[mask]
+    distance_sq = pair_delta.square().sum(dim=1)
+    radial = -(pair_delta * grad).sum(dim=1)
+    return rate_from_positions(pos, rho, mass, pair_delta, grad, radial,
+                               distance_sq, (i, j),
+                               2.0 * delta * sound_speed * h,
+                               form=form, eigenvalue_floor=eigenvalue_floor)
+
 
 
 def laplacian_of_field(pos: torch.Tensor, field: torch.Tensor, volume: torch.Tensor,
