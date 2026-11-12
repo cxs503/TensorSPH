@@ -153,6 +153,12 @@ class Config:
     #   curvature error < 1 % on a circle (docs/verification_surface_tension_curvature.md);
     # "mls" = div n with MLS-consistent operators, +25 % on a circle, kept for A/B;
     # "fit_circle" = algebraic circle fit, unstable on lattice data.
+    #: Normalisation of the CSF surface delta function: ``"legacy"`` = 2*|grad c|
+    #: (the m2188 single-phase special case, which leaves the integrated force
+    #: 20-35 % low), ``"local_range"`` = |grad c| / (c_bulk - c_void) measured on
+    #: each particle's own support.  See
+    #: docs/verification_effective_sigma_delta_normalization.md.
+    csf_delta_normalization: str = "legacy"
     csf_curvature: str = "fit_quadratic"
     # Free-surface pressure closure. Density summation under-counts neighbours at
     # a free surface, so an outer-shell particle has rho < rho0 and the Tait law
@@ -1050,6 +1056,10 @@ def validate_config(cfg: Config) -> None:
         raise ValueError(
             "csf_curvature must be 'mls', 'fit_quadratic' or 'fit_circle', "
             f"got {cfg.csf_curvature!r}")
+    if cfg.csf_delta_normalization not in ("legacy", "local_range"):
+        raise ValueError(
+            "csf_delta_normalization must be 'legacy' or 'local_range', "
+            f"got {cfg.csf_delta_normalization!r}")
     if cfg.csf_scheme not in ("consistent", "legacy"):
         raise ValueError(
             f"csf_scheme must be 'consistent' or 'legacy', got {cfg.csf_scheme!r}")
