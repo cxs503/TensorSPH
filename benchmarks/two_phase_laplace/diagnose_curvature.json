@@ -1,0 +1,284 @@
+{
+  "dx": 0.0025,
+  "R_over_h": 12.307692307692307,
+  "R_over_dx": 16.0,
+  "n_particles": 3128,
+  "shepard_passes": 2,
+  "normal_radial_alignment": {
+    "indicator": 0.9985334649433946,
+    "kernel_sum": 0.9987528020361252
+  },
+  "colour_range": {},
+  "rows": [
+    {
+      "variant": "control/all_analytic",
+      "kappa_shell_mean": 25.0,
+      "kappa_error_pct": 0.0,
+      "shell_particles": 88,
+      "delta_s_integral": 0.25132741228718347,
+      "delta_s_over_2piR": 1.0,
+      "normal_radial_alignment": null,
+      "force_ratio": 0.9983392133831986
+    },
+    {
+      "variant": "fit_quadratic/analytic_n/analytic_ds/st2",
+      "kappa_shell_mean": 20.843797524872308,
+      "kappa_error_pct": -16.62480990051077,
+      "shell_particles": 88,
+      "delta_s_integral": 0.25132741228718347,
+      "delta_s_over_2piR": 1.0,
+      "normal_radial_alignment": null,
+      "force_ratio": 0.8074435069394115
+    },
+    {
+      "variant": "fit_quadratic/analytic_n/analytic_ds/st3",
+      "kappa_shell_mean": 24.69023404673355,
+      "kappa_error_pct": -1.2390638130657976,
+      "shell_particles": 88,
+      "delta_s_integral": 0.25132741228718347,
+      "delta_s_over_2piR": 1.0,
+      "normal_radial_alignment": null,
+      "force_ratio": 0.9611099323419076
+    },
+    {
+      "variant": "fit_quadratic/analytic_n/analytic_ds/st4",
+      "kappa_shell_mean": 25.36709778940525,
+      "kappa_error_pct": 1.4683911576209994,
+      "shell_particles": 88,
+      "delta_s_integral": 0.25132741228718347,
+      "delta_s_over_2piR": 1.0,
+      "normal_radial_alignment": null,
+      "force_ratio": 1.0023137579739123
+    },
+    {
+      "variant": "fit_quadratic/analytic_n/analytic_ds/st5",
+      "kappa_shell_mean": 25.36709778940525,
+      "kappa_error_pct": 1.4683911576209994,
+      "shell_particles": 88,
+      "delta_s_integral": 0.25132741228718347,
+      "delta_s_over_2piR": 1.0,
+      "normal_radial_alignment": null,
+      "force_ratio": 1.0023137579739123
+    },
+    {
+      "variant": "fit_quadratic/analytic/indicator_ds/st3",
+      "kappa_shell_mean": 11.377958243767308,
+      "kappa_error_pct": -54.48816702493077,
+      "shell_particles": 280,
+      "delta_s_integral": 0.1773713368970954,
+      "delta_s_over_2piR": 0.7057381257497652,
+      "normal_radial_alignment": null,
+      "force_ratio": 0.2679836557899033
+    },
+    {
+      "variant": "fit_quadratic/analytic/indicator_ds/st4",
+      "kappa_shell_mean": 17.309754644715415,
+      "kappa_error_pct": -30.76098142113834,
+      "shell_particles": 280,
+      "delta_s_integral": 0.1773713368970954,
+      "delta_s_over_2piR": 0.7057381257497652,
+      "normal_radial_alignment": null,
+      "force_ratio": 0.4690183858784271
+    },
+    {
+      "variant": "fit_quadratic/analytic/indicator_ds/st5",
+      "kappa_shell_mean": 17.309754644715415,
+      "kappa_error_pct": -30.76098142113834,
+      "shell_particles": 280,
+      "delta_s_integral": 0.1773713368970954,
+      "delta_s_over_2piR": 0.7057381257497652,
+      "normal_radial_alignment": null,
+      "force_ratio": 0.4690183858784271
+    },
+    {
+      "variant": "fit_quadratic/analytic/kernel_sum_ds/st3",
+      "kappa_shell_mean": 6.571621634250969,
+      "kappa_error_pct": -73.71351346299613,
+      "shell_particles": 212,
+      "delta_s_integral": 0.1646213538627608,
+      "delta_s_over_2piR": 0.6550075551434614,
+      "normal_radial_alignment": null,
+      "force_ratio": 0.27224843751922717
+    },
+    {
+      "variant": "fit_quadratic/analytic/kernel_sum_ds/st4",
+      "kappa_shell_mean": 10.892972917830777,
+      "kappa_error_pct": -56.4281083286769,
+      "shell_particles": 212,
+      "delta_s_integral": 0.1646213538627608,
+      "delta_s_over_2piR": 0.6550075551434614,
+      "normal_radial_alignment": null,
+      "force_ratio": 0.32034243762565917
+    },
+    {
+      "variant": "fit_quadratic/analytic/kernel_sum_ds/st5",
+      "kappa_shell_mean": 10.892972917830777,
+      "kappa_error_pct": -56.4281083286769,
+      "shell_particles": 212,
+      "delta_s_integral": 0.1646213538627608,
+      "delta_s_over_2piR": 0.6550075551434614,
+      "normal_radial_alignment": null,
+      "force_ratio": 0.32034243762565917
+    },
+    {
+      "variant": "fit_quadratic/indicator_n/indicator_ds/st3",
+      "kappa_shell_mean": 11.31403754802262,
+      "kappa_error_pct": -54.74384980790952,
+      "shell_particles": 280,
+      "delta_s_integral": 0.1773713368970954,
+      "delta_s_over_2piR": 0.7057381257497652,
+      "normal_radial_alignment": 0.9985334649433946,
+      "force_ratio": 0.27818128021872696
+    },
+    {
+      "variant": "fit_quadratic/indicator_n/indicator_ds/st4",
+      "kappa_shell_mean": 17.370949672294675,
+      "kappa_error_pct": -30.5162013108213,
+      "shell_particles": 280,
+      "delta_s_integral": 0.1773713368970954,
+      "delta_s_over_2piR": 0.7057381257497652,
+      "normal_radial_alignment": 0.9985334649433946,
+      "force_ratio": 0.47902585210474696
+    },
+    {
+      "variant": "fit_quadratic/indicator_n/indicator_ds/st5",
+      "kappa_shell_mean": 17.370949672294675,
+      "kappa_error_pct": -30.5162013108213,
+      "shell_particles": 280,
+      "delta_s_integral": 0.1773713368970954,
+      "delta_s_over_2piR": 0.7057381257497652,
+      "normal_radial_alignment": 0.9985334649433946,
+      "force_ratio": 0.47902585210474696
+    },
+    {
+      "variant": "fit_quadratic/indicator_n/kernel_sum_ds/st3",
+      "kappa_shell_mean": 0.0,
+      "kappa_error_pct": -100.0,
+      "shell_particles": 212,
+      "delta_s_integral": 0.1646213538627608,
+      "delta_s_over_2piR": 0.6550075551434614,
+      "normal_radial_alignment": 0.9985334649433946,
+      "force_ratio": 1.5573511353084185e-15
+    },
+    {
+      "variant": "fit_quadratic/indicator_n/kernel_sum_ds/st4",
+      "kappa_shell_mean": 0.0,
+      "kappa_error_pct": -100.0,
+      "shell_particles": 212,
+      "delta_s_integral": 0.1646213538627608,
+      "delta_s_over_2piR": 0.6550075551434614,
+      "normal_radial_alignment": 0.9985334649433946,
+      "force_ratio": 1.5573511353084185e-15
+    },
+    {
+      "variant": "fit_quadratic/indicator_n/kernel_sum_ds/st5",
+      "kappa_shell_mean": 0.0,
+      "kappa_error_pct": -100.0,
+      "shell_particles": 212,
+      "delta_s_integral": 0.1646213538627608,
+      "delta_s_over_2piR": 0.6550075551434614,
+      "normal_radial_alignment": 0.9985334649433946,
+      "force_ratio": 1.5573511353084185e-15
+    },
+    {
+      "variant": "fit_quadratic/kernel_sum_n/indicator_ds/st3",
+      "kappa_shell_mean": 0.01887920129368024,
+      "kappa_error_pct": -99.92448319482529,
+      "shell_particles": 280,
+      "delta_s_integral": 0.1773713368970954,
+      "delta_s_over_2piR": 0.7057381257497652,
+      "normal_radial_alignment": 0.9987528020361252,
+      "force_ratio": 2.8326540144867493e-05
+    },
+    {
+      "variant": "fit_quadratic/kernel_sum_n/indicator_ds/st4",
+      "kappa_shell_mean": 0.01887920129368024,
+      "kappa_error_pct": -99.92448319482529,
+      "shell_particles": 280,
+      "delta_s_integral": 0.1773713368970954,
+      "delta_s_over_2piR": 0.7057381257497652,
+      "normal_radial_alignment": 0.9987528020361252,
+      "force_ratio": 2.8326540144867493e-05
+    },
+    {
+      "variant": "fit_quadratic/kernel_sum_n/indicator_ds/st5",
+      "kappa_shell_mean": 0.01887920129368024,
+      "kappa_error_pct": -99.92448319482529,
+      "shell_particles": 280,
+      "delta_s_integral": 0.1773713368970954,
+      "delta_s_over_2piR": 0.7057381257497652,
+      "normal_radial_alignment": 0.9987528020361252,
+      "force_ratio": 2.8326540144867493e-05
+    },
+    {
+      "variant": "fit_quadratic/kernel_sum_n/kernel_sum_ds/st3",
+      "kappa_shell_mean": 6.289621584734749,
+      "kappa_error_pct": -74.841513661061,
+      "shell_particles": 212,
+      "delta_s_integral": 0.1646213538627608,
+      "delta_s_over_2piR": 0.6550075551434614,
+      "normal_radial_alignment": 0.9987528020361252,
+      "force_ratio": 0.2778679955445649
+    },
+    {
+      "variant": "fit_quadratic/kernel_sum_n/kernel_sum_ds/st4",
+      "kappa_shell_mean": 10.846086600017822,
+      "kappa_error_pct": -56.61565359992872,
+      "shell_particles": 212,
+      "delta_s_integral": 0.1646213538627608,
+      "delta_s_over_2piR": 0.6550075551434614,
+      "normal_radial_alignment": 0.9987528020361252,
+      "force_ratio": 0.33102168003275534
+    },
+    {
+      "variant": "fit_quadratic/kernel_sum_n/kernel_sum_ds/st5",
+      "kappa_shell_mean": 10.846086600017822,
+      "kappa_error_pct": -56.61565359992872,
+      "shell_particles": 212,
+      "delta_s_integral": 0.1646213538627608,
+      "delta_s_over_2piR": 0.6550075551434614,
+      "normal_radial_alignment": 0.9987528020361252,
+      "force_ratio": 0.33102168003275534
+    },
+    {
+      "variant": "fit_circle/indicator_n/indicator_ds/st3",
+      "kappa_shell_mean": 60.210555134711704,
+      "kappa_error_pct": 140.84222053884682,
+      "shell_particles": 280,
+      "delta_s_integral": 0.1773713368970954,
+      "delta_s_over_2piR": 0.7057381257497652,
+      "normal_radial_alignment": 0.9985334649433946,
+      "force_ratio": 1.7016541668085479
+    },
+    {
+      "variant": "fit_circle/indicator_n/indicator_ds/st4",
+      "kappa_shell_mean": 102.0660218480943,
+      "kappa_error_pct": 308.2640873923772,
+      "shell_particles": 280,
+      "delta_s_integral": 0.1773713368970954,
+      "delta_s_over_2piR": 0.7057381257497652,
+      "normal_radial_alignment": 0.9985334649433946,
+      "force_ratio": 2.6159007135450736
+    },
+    {
+      "variant": "fit_circle/indicator_n/indicator_ds/st5",
+      "kappa_shell_mean": 102.0660218480943,
+      "kappa_error_pct": 308.2640873923772,
+      "shell_particles": 280,
+      "delta_s_integral": 0.1773713368970954,
+      "delta_s_over_2piR": 0.7057381257497652,
+      "normal_radial_alignment": 0.9985334649433946,
+      "force_ratio": 2.6159007135450736
+    },
+    {
+      "variant": "mls_divergence/indicator",
+      "kappa_shell_mean": 24.38940649394808,
+      "kappa_error_pct": -2.4423740242076803,
+      "shell_particles": 280,
+      "delta_s_integral": 0.1773713368970954,
+      "delta_s_over_2piR": 0.7057381257497652,
+      "normal_radial_alignment": 0.9985334649433946,
+      "force_ratio": 0.7026788934186031
+    }
+  ]
+}
