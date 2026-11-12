@@ -1,0 +1,76 @@
+{
+ "l4_verdict_16244": {
+  "status": 200,
+  "data": {
+   "status": "CLAIMED_NOT_PROVEN",
+   "l4_benchmark_pass": false,
+   "rows": 0,
+   "claimed_level": null,
+   "failed_checks": [
+    "execution_success",
+    "source_cluster_job",
+    "cluster_job_bound",
+    "ref_got_error_present",
+    "within_tolerance"
+   ],
+   "reason": "no tensorbench_results row for this mission: the L4 benchmark claim is self-declared, not measured",
+   "rule": "L4 requires >=1 platform-recomputed benchmark row (ref/got/error)"
+  }
+ },
+ "gate_spec": {
+  "status": 200,
+  "data": {
+   "schema_version": "1.0",
+   "spec_id": "string",
+   "criteria_pass_threshold": {
+    "type": "number",
+    "default": 0.8,
+    "range": "(0, 1]"
+   },
+   "nodes": [
+    {
+     "node_key": "string (unique)",
+     "title": "string",
+     "repo": "string",
+     "mission_id": "int (optional)",
+     "capability": "string (optional, 台账条目名)",
+     "criteria": [
+      {
+       "criterion_id": "string (unique within node)",
+       "statement": "string",
+       "unit": "string (optional)",
+       "checks": [
+        {
+         "doc": "evidence_docs 的键",
+         "pointer": "a.b[0].c",
+         "comparator": [
+          "le",
+          "lt",
+          "ge",
+          "gt",
+          "eq",
+          "between",
+          "nonempty"
+         ],
+         "threshold": "number | [lo, hi] | bool(eq)",
+         "sha256": "hex64 (optional pin)",
+         "claim": "pointer to upstream bool (optional)"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "verdicts": [
+    "PASS",
+    "FAIL",
+    "WITHHELD"
+   ],
+   "verdict_rules": {
+    "FAIL": "任一已交付节点 pass_ratio < threshold，或出现 claim_mismatch",
+    "PASS": "全部节点已交付证据且 pass_ratio >= threshold",
+    "WITHHELD": "无低绿线节点但仍有节点零证据（在飞/未交付）"
+   }
+  }
+ }
+}
