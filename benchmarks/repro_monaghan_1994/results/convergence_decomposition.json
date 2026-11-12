@@ -1,0 +1,593 @@
+{
+ "benchmark": "REPRO-SPH-MONAGHAN1994",
+ "anchor": "REPRO-SPH-MONAGHAN1994",
+ "question": "given delta(tau) = bias(dx) + scatter(tau, dx): does the scatter converge and the bias converge to a non-zero limit, and can one registration parameter fitted at dx=0.04 explain the finer cases out of sample?",
+ "protocol": {
+  "registered": "2026-11-12, before any number in results/convergence_decomposition.json",
+  "reference": "benchmarks/dam_break/martin_moyce_1952_crosscheck.json",
+  "reference_rejected_as_pass_source": "benchmarks/dam_break/martin_moyce_1952.json",
+  "case": "benchmarks/repro_monaghan_1994/run.py trajectory, estimator x_max",
+  "window_tau": [
+   0.5,
+   3.0
+  ],
+  "n_samples": 161,
+  "ladder_dx": [
+   0.04,
+   0.02,
+   0.01
+  ],
+  "refinement_ratio": 2.0,
+  "offset_models": {
+   "M0_none": "delta = sim - ref",
+   "M1_spatial": "delta + dz   (constant shift of the front ordinate, Z/a)",
+   "M2_temporal": "compare sim(tau) with ref(tau - dtau)   (registration in tau)"
+  },
+  "fit_criterion": "MAE over the pre-registered window",
+  "out_of_sample_rule": "the coarsest case (dx = 0.04) is the only fitting case; the fitted parameter is applied unchanged to dx = 0.02 and 0.01",
+  "criteria": {
+   "C1_offset_survives_refinement": "|bias_limit| > 0.10 Z/a (2x the 0.05 claimed uncertainty of the independent transcription)",
+   "C2_scatter_converges": "scatter (mean |delta - bias|) strictly decreasing and the observed order p = log2(q_coarse/q_fine) >= 0.7 on both increments",
+   "C3_single_shift_insufficient": "after the coarse-fitted shift, no fine case reaches MAE/amplitude < 0.03 (the paper-level 3 % line)",
+   "C4_temporal_vs_spatial": "whichever of M1/M2 gives the smaller out-of-sample MAE/amplitude on the two finer cases, by more than 0.005 absolute"
+  },
+  "gate_contact": false,
+  "note": "criteria are deliberately hard to satisfy: C1 needs the offset to survive refinement, C2 needs the scatter to actually shrink, C3 is the honesty clause against declaring a convention from a single free parameter."
+ },
+ "reference": {
+  "name": "Martin & Moyce (1952) dam-break front trajectory \u2014 independent digitisation used as a cross-check",
+  "path": "benchmarks/dam_break/martin_moyce_1952_crosscheck.json",
+  "claimed_uncertainty": 0.05,
+  "n_points": 14
+ },
+ "cases": {
+  "dx0.04": {
+   "n_samples": 161,
+   "amplitude": 2.67,
+   "bias": -0.12457207153869439,
+   "mae": 0.12457207153869439,
+   "rmse": 0.13001309406996245,
+   "scatter_mean_abs": 0.03270856315161584,
+   "scatter_rms": 0.03721832374252388,
+   "mae_over_amplitude": 0.046656206568799395,
+   "max_abs": 0.21002789427806867,
+   "centred_trend_per_tau": -0.027877456575611515,
+   "dx": 0.04,
+   "case": "dx0.04_c025",
+   "particles": 50,
+   "bias_in_sample_fit": -0.11921238930477181,
+   "temporal_fit": {
+    "dtau": 0.1100000000000004,
+    "mae": 0.03377230405226948,
+    "window": [
+     0.6100000000000004,
+     3.0
+    ]
+   },
+   "residual_profile": [
+    {
+     "tau": 0.5,
+     "delta": -0.16313418526813708
+    },
+    {
+     "tau": 0.5922499999999999,
+     "delta": -0.15552886368549923
+    },
+    {
+     "tau": 0.6845,
+     "delta": -0.1425559881345238
+    },
+    {
+     "tau": 0.77675,
+     "delta": -0.1263333146054572
+    },
+    {
+     "tau": 0.869,
+     "delta": -0.11145018768904663
+    },
+    {
+     "tau": 0.9612499999999999,
+     "delta": -0.10512302323139411
+    },
+    {
+     "tau": 1.0535,
+     "delta": -0.09439502780378889
+    },
+    {
+     "tau": 1.14575,
+     "delta": -0.07953731126793218
+    },
+    {
+     "tau": 1.238,
+     "delta": -0.07347362008391467
+    },
+    {
+     "tau": 1.33025,
+     "delta": -0.07588420465266721
+    },
+    {
+     "tau": 1.4224999999999999,
+     "delta": -0.07499319012680439
+    },
+    {
+     "tau": 1.5147499999999998,
+     "delta": -0.08359360144905859
+    },
+    {
+     "tau": 1.607,
+     "delta": -0.08869937270695383
+    },
+    {
+     "tau": 1.69925,
+     "delta": -0.09255085336001656
+    },
+    {
+     "tau": 1.7914999999999999,
+     "delta": -0.09714507462798594
+    },
+    {
+     "tau": 1.88375,
+     "delta": -0.12122965212389558
+    },
+    {
+     "tau": 1.976,
+     "delta": -0.14759198551823682
+    },
+    {
+     "tau": 2.06825,
+     "delta": -0.12339696926757049
+    },
+    {
+     "tau": 2.1605,
+     "delta": -0.09890376742856177
+    },
+    {
+     "tau": 2.25275,
+     "delta": -0.11849577313540416
+    },
+    {
+     "tau": 2.3449999999999998,
+     "delta": -0.15566327055362184
+    },
+    {
+     "tau": 2.4372499999999997,
+     "delta": -0.15095048266161282
+    },
+    {
+     "tau": 2.5294999999999996,
+     "delta": -0.15586724886252257
+    },
+    {
+     "tau": 2.62175,
+     "delta": -0.18225588481352517
+    },
+    {
+     "tau": 2.714,
+     "delta": -0.18168737839296645
+    },
+    {
+     "tau": 2.80625,
+     "delta": -0.1720137716301
+    },
+    {
+     "tau": 2.8985,
+     "delta": -0.19265422196089954
+    }
+   ],
+   "after_in_sample_offset": {
+    "residual_form": "delta - median(delta)",
+    "mae": 0.032540380265802527,
+    "trend_per_tau": -0.027877456575611515,
+    "max_abs": 0.09081550497329686
+   }
+  },
+  "dx0.02": {
+   "n_samples": 161,
+   "amplitude": 2.67,
+   "bias": 0.031994941990778285,
+   "mae": 0.04404408686898193,
+   "rmse": 0.051441044638864036,
+   "scatter_mean_abs": 0.03150506820710646,
+   "scatter_rms": 0.040280327214961095,
+   "mae_over_amplitude": 0.01649591268501196,
+   "max_abs": 0.08870696181599547,
+   "centred_trend_per_tau": 0.008488647504675284,
+   "dx": 0.02,
+   "case": "dx0.02_c025",
+   "particles": 200,
+   "bias_in_sample_fit": 0.029433022933377906,
+   "temporal_fit": {
+    "dtau": -0.027999999999999692,
+    "mae": 0.031170363189521863,
+    "window": [
+     0.5,
+     2.9720000000000004
+    ]
+   },
+   "residual_profile": [
+    {
+     "tau": 0.5,
+     "delta": -0.08087157544486911
+    },
+    {
+     "tau": 0.5922499999999999,
+     "delta": -0.06551385025409132
+    },
+    {
+     "tau": 0.6845,
+     "delta": -0.04147748146363106
+    },
+    {
+     "tau": 0.77675,
+     "delta": -0.01077835802944943
+    },
+    {
+     "tau": 0.869,
+     "delta": 0.017219020266946633
+    },
+    {
+     "tau": 0.9612499999999999,
+     "delta": 0.031183151261420905
+    },
+    {
+     "tau": 1.0535,
+     "delta": 0.05205612843166191
+    },
+    {
+     "tau": 1.14575,
+     "delta": 0.07656267186138244
+    },
+    {
+     "tau": 1.238,
+     "delta": 0.08632394548089017
+    },
+    {
+     "tau": 1.33025,
+     "delta": 0.08288388866532725
+    },
+    {
+     "tau": 1.4224999999999999,
+     "delta": 0.08329556653651515
+    },
+    {
+     "tau": 1.5147499999999998,
+     "delta": 0.07591440708401531
+    },
+    {
+     "tau": 1.607,
+     "delta": 0.06974235297204556
+    },
+    {
+     "tau": 1.69925,
+     "delta": 0.06294647254707719
+    },
+    {
+     "tau": 1.7914999999999999,
+     "delta": 0.05984379947128726
+    },
+    {
+     "tau": 1.88375,
+     "delta": 0.04107201862142307
+    },
+    {
+     "tau": 1.976,
+     "delta": 0.0187993723112152
+    },
+    {
+     "tau": 2.06825,
+     "delta": 0.039062610907657946
+    },
+    {
+     "tau": 2.1605,
+     "delta": 0.061748277948441066
+    },
+    {
+     "tau": 2.25275,
+     "delta": 0.04391542166536855
+    },
+    {
+     "tau": 2.3449999999999998,
+     "delta": 0.010489155050723342
+    },
+    {
+     "tau": 2.4372499999999997,
+     "delta": 0.01997749672928828
+    },
+    {
+     "tau": 2.5294999999999996,
+     "delta": 0.021496788661467203
+    },
+    {
+     "tau": 2.62175,
+     "delta": 0.003124689719512297
+    },
+    {
+     "tau": 2.714,
+     "delta": 0.012229908725704064
+    },
+    {
+     "tau": 2.80625,
+     "delta": 0.029433022933377906
+    },
+    {
+     "tau": 2.8985,
+     "delta": 0.015329714456320254
+    }
+   ],
+   "after_in_sample_offset": {
+    "residual_form": "delta - median(delta)",
+    "mae": 0.0314768215120786,
+    "trend_per_tau": 0.008488647504675269,
+    "max_abs": 0.11030459837824702
+   }
+  },
+  "dx0.01": {
+   "n_samples": 161,
+   "amplitude": 2.67,
+   "bias": 0.11450794333658965,
+   "mae": 0.1168356055846473,
+   "rmse": 0.12380998327556715,
+   "scatter_mean_abs": 0.03307165704524219,
+   "scatter_rms": 0.04708336087749673,
+   "mae_over_amplitude": 0.04375865377702146,
+   "max_abs": 0.1653728394759102,
+   "centred_trend_per_tau": 0.03304487327934608,
+   "dx": 0.01,
+   "case": "dx0.01_c025",
+   "particles": 800,
+   "bias_in_sample_fit": 0.12532828618134229,
+   "temporal_fit": {
+    "dtau": -0.10399999999999976,
+    "mae": 0.029338157334817493,
+    "window": [
+     0.5,
+     2.8960000000000004
+    ]
+   },
+   "residual_profile": [
+    {
+     "tau": 0.5,
+     "delta": -0.03507928246008393
+    },
+    {
+     "tau": 0.5922499999999999,
+     "delta": -0.014265467085463446
+    },
+    {
+     "tau": 0.6845,
+     "delta": 0.014036804995958885
+    },
+    {
+     "tau": 0.77675,
+     "delta": 0.049033766282206875
+    },
+    {
+     "tau": 0.869,
+     "delta": 0.08109879505344406
+    },
+    {
+     "tau": 0.9612499999999999,
+     "delta": 0.09786551344653677
+    },
+    {
+     "tau": 1.0535,
+     "delta": 0.11858771153978437
+    },
+    {
+     "tau": 1.14575,
+     "delta": 0.14343371349077716
+    },
+    {
+     "tau": 1.238,
+     "delta": 0.15511077849189825
+    },
+    {
+     "tau": 1.33025,
+     "delta": 0.15466122387704628
+    },
+    {
+     "tau": 1.4224999999999999,
+     "delta": 0.1579131609830866
+    },
+    {
+     "tau": 1.5147499999999998,
+     "delta": 0.152858342825684
+    },
+    {
+     "tau": 1.607,
+     "delta": 0.15032552747813277
+    },
+    {
+     "tau": 1.69925,
+     "delta": 0.14739131418193052
+    },
+    {
+     "tau": 1.7914999999999999,
+     "delta": 0.14648812325758054
+    },
+    {
+     "tau": 1.88375,
+     "delta": 0.1292335111929197
+    },
+    {
+     "tau": 1.976,
+     "delta": 0.10860216112345444
+    },
+    {
+     "tau": 2.06825,
+     "delta": 0.13146155754963118
+    },
+    {
+     "tau": 2.1605,
+     "delta": 0.15643994870211486
+    },
+    {
+     "tau": 2.25275,
+     "delta": 0.14030739330533137
+    },
+    {
+     "tau": 2.3449999999999998,
+     "delta": 0.10835825984334901
+    },
+    {
+     "tau": 2.4372499999999997,
+     "delta": 0.11989187074602214
+    },
+    {
+     "tau": 2.5294999999999996,
+     "delta": 0.12324669320358339
+    },
+    {
+     "tau": 2.62175,
+     "delta": 0.10643938815092913
+    },
+    {
+     "tau": 2.714,
+     "delta": 0.11743158347319049
+    },
+    {
+     "tau": 2.80625,
+     "delta": 0.13650956571958828
+    },
+    {
+     "tau": 2.8985,
+     "delta": 0.12397893001372573
+    }
+   ],
+   "after_in_sample_offset": {
+    "residual_form": "delta - median(delta)",
+    "mae": 0.03134264613130262,
+    "trend_per_tau": 0.033044873279346076,
+    "max_abs": 0.16040756864142622
+   }
+  }
+ },
+ "convergence": {
+  "ladder": [
+   {
+    "dx": 0.04,
+    "bias": -0.12457207153869439,
+    "scatter_mean_abs": 0.03270856315161584,
+    "scatter_rms": 0.03721832374252388,
+    "mae_over_amplitude": 0.046656206568799395
+   },
+   {
+    "dx": 0.02,
+    "bias": 0.031994941990778285,
+    "scatter_mean_abs": 0.03150506820710646,
+    "scatter_rms": 0.040280327214961095,
+    "mae_over_amplitude": 0.01649591268501196
+   },
+   {
+    "dx": 0.01,
+    "bias": 0.11450794333658965,
+    "scatter_mean_abs": 0.03307165704524219,
+    "scatter_rms": 0.04708336087749673,
+    "mae_over_amplitude": 0.04375865377702146
+   }
+  ],
+  "bias_increments": [
+   {
+    "between": [
+     0.04,
+     0.02
+    ],
+    "order": 1.961064903500612
+   },
+   {
+    "between": [
+     0.02,
+     0.01
+    ],
+    "order": -1.8395319247470099
+   }
+  ],
+  "scatter_increments": [
+   {
+    "between": [
+     0.04,
+     0.02
+    ],
+    "order": 0.05408445190231645
+   },
+   {
+    "between": [
+     0.02,
+     0.01
+    ],
+    "order": -0.070011400104601
+   }
+  ],
+  "observed_order_bias": 0.06076648937680107,
+  "observed_order_scatter": -0.007963474101142273,
+  "richardson_bias_limit": NaN,
+  "richardson_note": "two increments at ratio 2 give one order estimate; the limit is an extrapolation, not a measurement"
+ },
+ "out_of_sample_registration": {
+  "fitted_on": "dx0.04",
+  "dz": -0.11921238930477181,
+  "dtau": 0.1100000000000004,
+  "applied": [
+   {
+    "dx": 0.04,
+    "M0_mae_over_amplitude": 0.046656206568799395,
+    "M1_mae_over_amplitude": 0.09130504151440681,
+    "M2_mae_over_amplitude": 0.012648803015831267
+   },
+   {
+    "dx": 0.02,
+    "M0_mae_over_amplitude": 0.01649591268501196,
+    "M1_mae_over_amplitude": 0.032665710604491964,
+    "M2_mae_over_amplitude": 0.05700205164294574
+   },
+   {
+    "dx": 0.01,
+    "M0_mae_over_amplitude": 0.04375865377702146,
+    "M1_mae_over_amplitude": 0.011946315464099381,
+    "M2_mae_over_amplitude": 0.08788063997997829
+   }
+  ]
+ },
+ "verdict": {
+  "C1_offset_survives_refinement": {
+   "criterion": "|bias_limit| > 0.10 Z/a (2x the 0.05 claimed uncertainty of the independent transcription)",
+   "limit": 0.1,
+   "measured": NaN,
+   "result": "not supported"
+  },
+  "C2_scatter_converges": {
+   "criterion": "scatter (mean |delta - bias|) strictly decreasing and the observed order p = log2(q_coarse/q_fine) >= 0.7 on both increments",
+   "limit": 0.7,
+   "measured": {
+    "orders": [
+     0.05408445190231645,
+     -0.070011400104601
+    ],
+    "mean_order": -0.007963474101142273,
+    "monotone": false
+   },
+   "result": "not supported"
+  },
+  "C3_single_shift_insufficient": {
+   "criterion": "after the coarse-fitted shift, no fine case reaches MAE/amplitude < 0.03 (the paper-level 3 % line)",
+   "limit": 0.03,
+   "measured": {
+    "M1_worst_fine": 0.032665710604491964,
+    "M2_worst_fine": 0.08788063997997829
+   },
+   "result": "supported"
+  },
+  "C4_temporal_vs_spatial": {
+   "criterion": "whichever of M1/M2 gives the smaller out-of-sample MAE/amplitude on the two finer cases, by more than 0.005 absolute",
+   "limit": 0.005,
+   "measured": {
+    "M1": 0.032665710604491964,
+    "M2": 0.08788063997997829,
+    "advantage": 0.055214929375486325
+   },
+   "result": "spatial"
+  }
+ },
+ "gate_contact": false,
+ "gate_contact_note": "this artefact is diagnostic: results/summary.json gates are unchanged and results/summary.json is not read as a pass source"
+}
