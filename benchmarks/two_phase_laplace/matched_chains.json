@@ -1,0 +1,63 @@
+{
+  "setup": {
+    "radius_m": 0.04,
+    "sigma": 0.072,
+    "rho0": 1000.0,
+    "h_factor": 1.3,
+    "dx_m": 0.0025,
+    "metric": "|sum_{x>0} sigma kappa |grad c| n dV| / (2 sigma)"
+  },
+  "cells": [
+    {
+      "dx_m": 0.0025,
+      "R_over_h": 12.307692307692307,
+      "geometry": "two_phase",
+      "chain": "csf_consistent",
+      "n_particles": 3128,
+      "d_s_mass": 0.7057381257497652,
+      "sigma_eff_over_sigma": 0.47852528573265074,
+      "curvature_shell_mean_per_m": 17.36068769923071,
+      "curvature_analytic_per_m": 25.0,
+      "sigma_eff_over_sigma_mls_curvature": 0.6995246853080219
+    },
+    {
+      "dx_m": 0.0025,
+      "R_over_h": 12.307692307692307,
+      "geometry": "two_phase",
+      "chain": "surface_tension",
+      "n_particles": 3128,
+      "d_s_mass": 0.6907578562562721,
+      "sigma_eff_over_sigma": 0.6709881562590397,
+      "curvature_shell_mean_per_m": 24.00036780724126,
+      "curvature_analytic_per_m": 25.0
+    },
+    {
+      "dx_m": 0.0025,
+      "R_over_h": 12.307692307692307,
+      "geometry": "one_sided",
+      "chain": "csf_consistent",
+      "n_particles": 788,
+      "d_s_mass": 0.3243169928858858,
+      "sigma_eff_over_sigma": 0.32284987321202024,
+      "curvature_shell_mean_per_m": 23.80721195370532,
+      "curvature_analytic_per_m": 25.0,
+      "sigma_eff_over_sigma_mls_curvature": 0.36700592763706313
+    },
+    {
+      "dx_m": 0.0025,
+      "R_over_h": 12.307692307692307,
+      "geometry": "one_sided",
+      "chain": "surface_tension",
+      "n_particles": 788,
+      "d_s_mass": 0.20644492771563877,
+      "sigma_eff_over_sigma": 0.1762177266130141,
+      "curvature_shell_mean_per_m": 21.21209510274663,
+      "curvature_analytic_per_m": 25.0
+    }
+  ],
+  "readings": {
+    "deficit_follows_geometry_not_chain": false,
+    "chain_gap_two_phase": 0.192462870526389,
+    "chain_gap_one_sided": -0.14663214659900614
+  }
+}
