@@ -1,0 +1,194 @@
+{
+  "case": "cup_case_gresho_vortex",
+  "anchor": "CASE-SPH-GRESHO-VORTEX",
+  "rows": [
+    {
+      "dx": 0.04,
+      "particles": 625,
+      "steps": 808,
+      "spurious_acceleration_pct": 12.122585349802366,
+      "spurious_acceleration_max_pct": 43.8158736806885,
+      "init_density_rel_error_max": 8.425974390657842e-06,
+      "velocity_error_pct_end": 52.870848713944376,
+      "velocity_error_pct_max": 53.19278425233903,
+      "energy_ratio": 0.8909266826999465,
+      "equivalent_viscosity": 0.0010662801639852127,
+      "equivalent_reynolds": 375.13592910235104,
+      "angular_momentum_drift_rel": 0.09699997731663967,
+      "linear_momentum_drift_rel": 6.134959172649085e-17,
+      "peak_speed_ratio": 0.9925306940457214,
+      "profile_error_pct_rms": 38.286272131262834,
+      "radial_migration_max_rel_router": 0.2627530640218926,
+      "density_rms_max": 0.008496856853487222,
+      "observed_order_acceleration": NaN,
+      "observed_order_velocity": NaN,
+      "wall_seconds": 6.307803392410278,
+      "observed_order_profile": NaN
+    },
+    {
+      "dx": 0.025,
+      "particles": 1600,
+      "steps": 1293,
+      "spurious_acceleration_pct": 5.055435362574704,
+      "spurious_acceleration_max_pct": 23.322441331328534,
+      "init_density_rel_error_max": 3.420227952855015e-06,
+      "velocity_error_pct_end": 43.18707427125808,
+      "velocity_error_pct_max": 43.18707427125808,
+      "energy_ratio": 0.9089642752990477,
+      "equivalent_viscosity": 0.0008371084418043957,
+      "equivalent_reynolds": 477.8353436954906,
+      "angular_momentum_drift_rel": 0.04834080076666872,
+      "linear_momentum_drift_rel": 6.960114772890361e-17,
+      "peak_speed_ratio": 1.165520647470728,
+      "profile_error_pct_rms": 34.98930581402011,
+      "radial_migration_max_rel_router": 0.13388031670440106,
+      "density_rms_max": 0.006891723189334204,
+      "observed_order_acceleration": 1.8608500919120405,
+      "observed_order_velocity": 0.4304453552704742,
+      "wall_seconds": 18.051342248916626,
+      "observed_order_profile": 0.1915919999540933
+    },
+    {
+      "dx": 0.02,
+      "particles": 2500,
+      "steps": 1616,
+      "spurious_acceleration_pct": 3.6719332175990718,
+      "spurious_acceleration_max_pct": 19.061689362125573,
+      "init_density_rel_error_max": 2.1289513418842887e-06,
+      "velocity_error_pct_end": 37.491834899571444,
+      "velocity_error_pct_max": 37.491834899571444,
+      "energy_ratio": 0.9191417901679189,
+      "equivalent_viscosity": 0.0007246297435169355,
+      "equivalent_reynolds": 552.0060466447738,
+      "angular_momentum_drift_rel": 0.041494766089692,
+      "linear_momentum_drift_rel": 6.378518999975883e-17,
+      "peak_speed_ratio": 1.0809475883950825,
+      "profile_error_pct_rms": 52.26363303374599,
+      "radial_migration_max_rel_router": 0.14723422602954678,
+      "density_rms_max": 0.0065552297082468415,
+      "observed_order_acceleration": 1.43291475982453,
+      "observed_order_velocity": 0.6337537863186171,
+      "wall_seconds": 29.891451835632324,
+      "observed_order_profile": NaN
+    }
+  ],
+  "controls": {
+    "forward": {
+      "a_pct": 12.122585349802366,
+      "a_residual_rms": 0.19963510896334338,
+      "a_exact_rms": 1.6468030803891023,
+      "a_residual_max_pct": 43.8158736806885,
+      "a_ref": 2.5,
+      "p_range_pa": [
+        0.024279091778315175,
+        772.6684781439326
+      ],
+      "init_mode": "analytic",
+      "pressure_scale": 1.0,
+      "init_density_rel_error_max": 8.425974390657842e-06,
+      "particles": 625,
+      "dx": 0.04
+    },
+    "reverse": {
+      "a_pct": 99.99999999999802,
+      "a_residual_rms": 1.6473079948293816,
+      "a_exact_rms": 1.647307994829414,
+      "a_residual_max_pct": 200.00000000007788,
+      "a_ref": 2.5,
+      "p_range_pa": [
+        0.0,
+        4.440892098500626e-10
+      ],
+      "init_mode": "uniform",
+      "pressure_scale": 1.0,
+      "init_density_rel_error_max": 5.323104412813251e-05,
+      "particles": 625,
+      "dx": 0.04
+    },
+    "half_pressure": {
+      "a_pct": 53.581802524445294,
+      "a_residual_rms": 0.8825213418660732,
+      "a_exact_rms": 1.6470542241714357,
+      "a_residual_max_pct": 121.87505408296673,
+      "a_ref": 2.5,
+      "p_range_pa": [
+        0.012202057814952079,
+        386.3342318297848
+      ],
+      "init_mode": "analytic",
+      "pressure_scale": 0.5,
+      "init_density_rel_error_max": 4.233508355655502e-06,
+      "particles": 625,
+      "dx": 0.04,
+      "note": "pressure field scaled by 0.5: the balance error must grow, which shows the metric responds to the pressure field and not to lattice noise"
+    },
+    "dx": 0.04
+  },
+  "verdict": {
+    "case": "gresho_chan_vortex_2d_periodic",
+    "verdict": "FAIL",
+    "checks": [
+      {
+        "name": "spurious_acceleration_pct (finest dx)",
+        "measured": 3.6719332175990718,
+        "limit": 5.0,
+        "direction": "<=",
+        "pass": true
+      },
+      {
+        "name": "velocity_error_pct_end (finest dx)",
+        "measured": 37.491834899571444,
+        "limit": 10.0,
+        "direction": "<=",
+        "pass": false
+      },
+      {
+        "name": "angular_momentum_drift_rel (drift must be round-off)",
+        "measured": 0.041494766089692,
+        "limit": 1e-06,
+        "direction": "<=",
+        "pass": false
+      },
+      {
+        "name": "observed_order_acceleration (best pair)",
+        "measured": 1.8608500919120405,
+        "limit": 0.8,
+        "direction": ">=",
+        "pass": true
+      },
+      {
+        "name": "negative control (uniform density is worse by >5x)",
+        "measured": 8.249065452166796,
+        "limit": 5.0,
+        "direction": ">=",
+        "pass": true
+      },
+      {
+        "name": "sensitivity control (half pressure is worse)",
+        "measured": 53.581802524445294,
+        "limit": 12.122585349802366,
+        "direction": ">",
+        "pass": true
+      }
+    ],
+    "finest_dx": 0.02,
+    "note": "A FAIL here is an honest measurement of the scheme, not an error of the harness: the reference is a closed form."
+  },
+  "gates": {
+    "spurious_acceleration_pct": 5.0,
+    "velocity_error_pct_end": 10.0,
+    "angular_momentum_drift_rel": 1e-06,
+    "min_observed_order": 0.8,
+    "min_initial_speed": 0.9
+  },
+  "environment": {
+    "python": "3.11.6",
+    "platform": "Linux-6.6.52-1.7.lns23.loongarch64-loongarch64-with-glibc2.38",
+    "torch": "2.7.1",
+    "torch_threads": 16,
+    "nproc": 128,
+    "cwd": "/root/tp-agent/work/m16545"
+  },
+  "t_end": 0.6,
+  "wall_seconds": 54.393540382385254
+}
