@@ -108,6 +108,9 @@ __all__ = [
     "run_case",
     "fit_profile",
     "gates",
+    "analytic_startup_profile",
+    "analytic_startup_centerline",
+    "diffusive_time",
     "main",
 ]
 
@@ -551,6 +554,49 @@ def wall_viscous_laplacian(pos_fluid, vel_fluid, mass_fluid, volume_fluid,
 # Time stepping
 # --------------------------------------------------------------------------- #
 
+def analytic_startup_profile(y, t, height: float, body_force: float,
+                             viscosity: float, n_terms: int = 200):
+    """Exact start-up from rest of the plane channel under a constant body force.
+
+    Solves ``u_t = nu u_yy + g`` on ``0 < y < height`` with no-slip walls and
+    ``u(y, 0) = 0``.  Writing the steady Hagen-Poiseuille parabola
+    ``u_s = g y (H - y) / (2 nu)`` and expanding ``y (H - y)`` in the sine
+    series ``(8 H^2 / pi^3) sum_{n odd} sin(n pi y / H) / n^3`` gives
+
+        u(y, t) = u_s(y) - (4 g H^2 / (nu pi^3)) *
+                  sum_{n odd} sin(n pi y / H) exp(-nu n^2 pi^2 t / H^2) / n^3 ,
+
+    the classical Rayleigh/Stokes start-up series (Batchelor 1967, Sec. 4.4;
+    the same problem Morris, Fox & Zhu 1997 used to measure their SPH viscous
+    operator).  At ``t = 0`` the series reproduces ``u_s`` exactly and it decays
+    to it with the slowest diffusive time ``H^2 / (nu pi^2)``.
+
+    Acceptance of the series itself is checked in
+    ``tests/test_isph_channel_startup.py`` (t = 0 identity, t -> oo identity,
+    monotone growth, wall no-slip).
+    """
+    y = torch.as_tensor(y, dtype=torch.float64).reshape(-1)
+    tt = float(t)
+    k = torch.arange(1, 2 * n_terms, 2, dtype=torch.float64).reshape(-1, 1)
+    yy = y.reshape(1, -1)
+    decay = torch.exp(-viscosity * k ** 2 * math.pi ** 2 * tt / height ** 2)
+    series = (torch.sin(k * math.pi * yy / height) * decay / k ** 3).sum(dim=0)
+    steady = body_force * y * (height - y) / (2.0 * viscosity)
+    return steady - 4.0 * body_force * height ** 2 / (viscosity * math.pi ** 3) * series
+
+
+def analytic_startup_centerline(t, cfg: "ChannelConfig", n_terms: int = 200) -> float:
+    """Centreline velocity of the exact start-up series, ``y = H/2``."""
+    val = analytic_startup_profile(0.5 * cfg.height, t, cfg.height,
+                                   cfg.body_force, cfg.viscosity, n_terms)
+    return float(val.reshape(-1)[0])
+
+
+def diffusive_time(cfg: "ChannelConfig") -> float:
+    """Slowest diffusive time of the start-up series, ``H^2 / (nu pi^2)``."""
+    return cfg.height ** 2 / (cfg.viscosity * math.pi ** 2)
+
+
 def _stability_dt(cfg: ChannelConfig, u_max: float) -> float:
     """No acoustic limit: convective CFL and the viscous limit only."""
     dt_cfl = cfg.cfl * cfg.h / max(u_max, 1e-12)
@@ -652,8 +698,17 @@ def run_case(cfg: ChannelConfig, device, report: bool = False) -> dict:
             samples += 1
 
         if steps % max(1, int(round(cfg.t_end / cfg.t_average / 50.0))) == 0:
+            # row-averaged streamwise velocity of the middle rows: the quantity
+            # the start-up series predicts, so the transient can be read without
+            # a single-particle outlier driving it.
+            y_now = pos[:n_fluid, 1]
+            centre = (y_now > 0.5 * cfg.height - cfg.dx) & (y_now < 0.5 * cfg.height + cfg.dx)
             trace.append({
                 "t": t,
+                "u_centre_rows": (
+                    float(vel[:n_fluid, 0][centre].mean()) if bool(centre.any())
+                    else float("nan")
+                ),
                 "steps": steps,
                 "dt": dt,
                 "u_max": u_max,
