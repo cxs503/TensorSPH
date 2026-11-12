@@ -63,6 +63,10 @@ def main() -> None:
     ap.add_argument("--end-time", type=float, default=0.45)
     ap.add_argument("--sound-speed", type=float, default=40.0)
     ap.add_argument("--threads", type=int, default=1)
+    ap.add_argument("--time-integrator", type=str, default="euler",
+                    choices=["euler", "rk2"], help="Time integrator")
+    ap.add_argument("--density-diffusion", type=float, default=0.0,
+                    help="δ-SPH density diffusion coefficient")
     args = ap.parse_args()
     torch.set_num_threads(args.threads)
     torch.manual_seed(0)
@@ -72,9 +76,15 @@ def main() -> None:
         for nu in args.viscosity:
             for amp in args.amplitude:
                 tag = f"dx{dx:g}_nu{nu:g}_a{amp:g}"
+                if args.time_integrator != "euler":
+                    tag += f"_{args.time_integrator}"
+                if args.density_diffusion > 0:
+                    tag += f"_dd{args.density_diffusion:g}"
                 cfg = rt.RTConfig(dx=dx, viscosity=nu, amplitude=amp,
                                   end_time=args.end_time,
-                                  sound_speed=args.sound_speed)
+                                  sound_speed=args.sound_speed,
+                                  time_integrator=args.time_integrator,
+                                  density_diffusion=args.density_diffusion)
                 if amp != 0.01:
                     tag += "_amp"
                 summary.append(run_one(cfg, tag))
