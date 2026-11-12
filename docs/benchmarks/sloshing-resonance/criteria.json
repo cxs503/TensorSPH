@@ -1,0 +1,236 @@
+{
+ "tolerance": 0.1,
+ "declared_questions": {
+  "Q1_tolerance": {
+   "question": "every case within 10% of linear theory?",
+   "n_cases": 6,
+   "n_pass": 5,
+   "worst_label": "res_cpd08",
+   "worst_error": 0.5459824195332685,
+   "verdict": "FAIL"
+  },
+  "Q2_refinement": {
+   "question": "does the error fall under refinement (cpd 8 -> 20)?",
+   "points": [
+    {
+     "cells_per_depth": 8.0,
+     "dx": 0.03125,
+     "error": 0.5459824195332685
+    },
+    {
+     "cells_per_depth": 12.0,
+     "dx": 0.020833333333333332,
+     "error": 0.009550713289535521
+    }
+   ],
+   "monotone": true
+  },
+  "Q3_sensitivity": {
+   "question": "how much do A/H and cs/sqrt(gH) move the measured frequency?",
+   "amplitude": [
+    {
+     "A_over_H": 0.04,
+     "error": 0.013546512244053246,
+     "omega_sim": 6.571623509934284
+    },
+    {
+     "A_over_H": 0.08,
+     "error": 0.009550713289535521,
+     "omega_sim": 6.725494191334661
+    },
+    {
+     "A_over_H": 0.16,
+     "error": 0.0036043637633270845,
+     "omega_sim": 6.685880392174588
+    }
+   ],
+   "sound_speed": [
+    {
+     "cs_ratio": 40.0,
+     "error": 0.00741177731246224,
+     "omega_sim": 6.612492307910122
+    },
+    {
+     "cs_ratio": 80.0,
+     "error": 0.009550713289535521,
+     "omega_sim": 6.725494191334661
+    }
+   ],
+   "compressibility_bias_estimate": 0.01374475097656247
+  }
+ },
+ "rows": [
+  {
+   "label": "base_cpd12",
+   "family": "baseline",
+   "H_over_L": 0.4166666666666667,
+   "A_over_H": 0.08,
+   "cells_per_depth": 12.0,
+   "sound_speed_ratio": 80.0,
+   "dx": 0.020833333333333332,
+   "omega_theory": 6.661868594416825,
+   "omega_sim": 6.725494191334661,
+   "error": 0.009550713289535521,
+   "omega_top": 6.681235791300507,
+   "error_top": 0.0029071718556431692,
+   "omega_full": 6.725494191334661,
+   "error_full": 0.009550713289535521,
+   "pass": true,
+   "noise_fraction": 0.07599278252222959,
+   "fit_decay": 0.22,
+   "decay_per_period": 0.10069931443156013,
+   "mass_drift": 0.0,
+   "max_compression": 0.01374475097656247,
+   "particles": 336,
+   "steps": 52355,
+   "simulated_time": 2.829474553455639,
+   "wall_clock_s": 321.93903335928917,
+   "json": "base_cpd12.json"
+  },
+  {
+   "label": "geom_h060",
+   "family": "geometry",
+   "H_over_L": 0.6,
+   "A_over_H": 0.08,
+   "cells_per_depth": 12.0,
+   "sound_speed_ratio": 80.0,
+   "dx": 0.03,
+   "omega_theory": 7.003574735269899,
+   "omega_sim": 7.116459208448925,
+   "error": 0.016118122165605146,
+   "omega_top": 19.1933988101748,
+   "error_top": 1.7405145994255085,
+   "omega_full": 10.6930162763003,
+   "error_full": 0.526794055962654,
+   "pass": true,
+   "noise_fraction": 0.16762691006942512,
+   "fit_decay": 0.58,
+   "decay_per_period": 0.48046717749255863,
+   "mass_drift": 0.0,
+   "max_compression": 0.017319091796875075,
+   "particles": 240,
+   "steps": 41501,
+   "simulated_time": 2.6914569407226443,
+   "wall_clock_s": 234.90643171034753,
+   "json": "geom_h060.json"
+  },
+  {
+   "label": "res_cpd08",
+   "family": "resolution",
+   "H_over_L": 0.4166666666666667,
+   "A_over_H": 0.08,
+   "cells_per_depth": 8.0,
+   "sound_speed_ratio": 80.0,
+   "dx": 0.03125,
+   "omega_theory": 6.661868594416825,
+   "omega_sim": 10.299131728209218,
+   "error": 0.5459824195332685,
+   "omega_top": 13.025016151051142,
+   "error_top": 0.9551595721907724,
+   "omega_full": 10.299131728209218,
+   "error_full": 0.5459824195332685,
+   "pass": false,
+   "noise_fraction": 0.3222740274394423,
+   "fit_decay": 0.06,
+   "decay_per_period": -0.1757801526090911,
+   "mass_drift": 0.0,
+   "max_compression": 0.01921606445312496,
+   "particles": 152,
+   "steps": 34904,
+   "simulated_time": 2.8295285974714437,
+   "wall_clock_s": 176.78669581003487,
+   "json": "res_cpd08.json"
+  },
+  {
+   "label": "amp_004",
+   "family": "amplitude",
+   "H_over_L": 0.4166666666666667,
+   "A_over_H": 0.04,
+   "cells_per_depth": 12.0,
+   "sound_speed_ratio": 80.0,
+   "dx": 0.020833333333333332,
+   "omega_theory": 6.661868594416825,
+   "omega_sim": 6.571623509934284,
+   "error": 0.013546512244053246,
+   "omega_top": 20.987254461669945,
+   "error_top": 2.1503555142560047,
+   "omega_full": 6.571623509934284,
+   "error_full": 0.013546512244053246,
+   "pass": true,
+   "noise_fraction": 0.36734200913641657,
+   "fit_decay": 0.1,
+   "decay_per_period": -0.21847384347838497,
+   "mass_drift": 0.0,
+   "max_compression": 0.013032958984374954,
+   "particles": 336,
+   "steps": 52355,
+   "simulated_time": 2.829474553455639,
+   "wall_clock_s": 331.8260108102113,
+   "json": "amp_004.json"
+  },
+  {
+   "label": "amp_016",
+   "family": "amplitude",
+   "H_over_L": 0.4166666666666667,
+   "A_over_H": 0.16,
+   "cells_per_depth": 12.0,
+   "sound_speed_ratio": 80.0,
+   "dx": 0.020833333333333332,
+   "omega_theory": 6.661868594416825,
+   "omega_sim": 6.685880392174588,
+   "error": 0.0036043637633270845,
+   "omega_top": 6.6374152271322515,
+   "error_top": 0.0036706468970384024,
+   "omega_full": 6.685880392174588,
+   "error_full": 0.0036043637633270845,
+   "pass": true,
+   "noise_fraction": 0.04182949079243682,
+   "fit_decay": 0.24,
+   "decay_per_period": -0.009085470254273377,
+   "mass_drift": 0.0,
+   "max_compression": 0.014237854003906314,
+   "particles": 338,
+   "steps": 52355,
+   "simulated_time": 2.829474553455639,
+   "wall_clock_s": 322.88652670010924,
+   "json": "amp_016.json"
+  },
+  {
+   "label": "cs_040",
+   "family": "sound_speed",
+   "H_over_L": 0.4166666666666667,
+   "A_over_H": 0.08,
+   "cells_per_depth": 12.0,
+   "sound_speed_ratio": 40.0,
+   "dx": 0.020833333333333332,
+   "omega_theory": 6.661868594416825,
+   "omega_sim": 6.612492307910122,
+   "error": 0.00741177731246224,
+   "omega_top": 6.509241400178837,
+   "error_top": 0.022910568119866838,
+   "omega_full": 6.612492307910122,
+   "error_full": 0.00741177731246224,
+   "pass": true,
+   "noise_fraction": 0.08052214373774658,
+   "fit_decay": 0.14,
+   "decay_per_period": -0.19488339272900826,
+   "mass_drift": 0.0,
+   "max_compression": 0.030621582031250094,
+   "particles": 336,
+   "steps": 26178,
+   "simulated_time": 2.82952859747192,
+   "wall_clock_s": 161.99964776821434,
+   "json": "cs_040.json"
+  }
+ ],
+ "headline": {
+  "base_omega_theory": 6.661868594416825,
+  "base_omega_sim": 6.725494191334661,
+  "base_error": 0.009550713289535521,
+  "base_error_pct": 0.9550713289535521,
+  "base_decay_per_period": 0.10069931443156013,
+  "base_mass_drift": 0.0,
+  "base_max_compression": 0.01374475097656247,
+  "base_particles": 336
+ }
+}

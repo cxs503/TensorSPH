@@ -28,6 +28,8 @@ import torch
 
 __all__ = [
     "binned_depth",
+    "centre_of_mass",
+    "first_mode_amplitude_from_com",
     "binned_velocity",
     "first_mode_amplitude",
     "front_from_profile",
@@ -233,6 +235,44 @@ def peak_decay_rate(times, amplitude, skip: int = 1) -> float:
     if variance <= 0.0:
         return float("nan")
     return -float((tt * la).sum()) / variance
+
+
+def centre_of_mass(positions: torch.Tensor, mass: torch.Tensor,
+                   x_origin: float = 0.0, y_origin: float = 0.0) -> tuple:
+    """Mass-weighted centre of mass ``(x_com, y_com)`` of the particle cloud.
+
+    Unlike the topmost-particle surface gauge this quantity is *continuous* in
+    time: it is an integral over the whole cloud, so a particle crossing into or
+    out of the top layer does not step it by a particle spacing. That is what
+    makes it usable when the sloshing amplitude is only a few ``dx``.
+    """
+    if positions.numel() == 0 or mass.numel() == 0:
+        raise ValueError("no particles to average")
+    total = mass.double().sum()
+    if not float(total) > 0.0:
+        raise ValueError("total mass must be positive")
+    x = (mass.double() * (positions[:, 0].double() - x_origin)).sum() / total
+    y = (mass.double() * (positions[:, 1].double() - y_origin)).sum() / total
+    return float(x), float(y)
+
+
+def first_mode_amplitude_from_com(com_x: float, tank_length: float, depth: float,
+                                  x_origin: float = 0.0) -> float:
+    """First-mode amplitude from the horizontal centre of mass (exact for mode 1).
+
+    For ``eta(x) = A cos(pi x / L)`` on ``[0, L]`` and volume conservation,
+
+        ``X_com - L/2 = (1/(L H)) int_0^L x eta dx = -2 A L / (pi^2 H)``
+
+    so ``A = -pi^2 H (X_com - L/2) / (2 L)``. Odd modes enter with weight
+    ``1/n^2`` and even modes not at all, so for a released first mode this is a
+    direct measurement of ``a1`` with no surface gauge in the loop.
+    """
+    if tank_length <= 0.0 or depth <= 0.0:
+        raise ValueError("tank length and depth must be positive")
+    absolute = float(com_x) + float(x_origin)
+    shift = absolute - 0.5 * float(tank_length)
+    return -math.pi ** 2 * depth * shift / (2.0 * tank_length)
 
 
 def first_mode_amplitude(centres: torch.Tensor, elevation: torch.Tensor,
