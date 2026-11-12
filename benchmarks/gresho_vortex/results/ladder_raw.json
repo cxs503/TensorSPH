@@ -1,0 +1,92 @@
+{
+  "rows": [
+    {
+      "dx": 0.04,
+      "particles": 625,
+      "steps": 808,
+      "spurious_acceleration_pct": 12.122585349802366,
+      "spurious_acceleration_max_pct": 43.8158736806885,
+      "init_density_rel_error_max": 8.425974390657842e-06,
+      "velocity_error_pct_end": 52.870848713944376,
+      "velocity_error_pct_max": 53.19278425233903,
+      "energy_ratio": 0.8909266826999465,
+      "equivalent_viscosity": 0.0010662801639852127,
+      "equivalent_reynolds": 375.13592910235104,
+      "angular_momentum_drift_rel": 0.09699997731663967,
+      "linear_momentum_drift_rel": 6.134959172649085e-17,
+      "peak_speed_ratio": 0.9925306940457214,
+      "profile_error_pct_rms": 38.286272131262834,
+      "radial_migration_max_rel_router": 0.2627530640218926,
+      "density_rms_max": 0.008496856853487222,
+      "observed_order_acceleration": NaN,
+      "observed_order_velocity": NaN,
+      "wall_seconds": 6.307803392410278
+    },
+    {
+      "dx": 0.025,
+      "particles": 1600,
+      "steps": 1293,
+      "spurious_acceleration_pct": 5.055435362574704,
+      "spurious_acceleration_max_pct": 23.322441331328534,
+      "init_density_rel_error_max": 3.420227952855015e-06,
+      "velocity_error_pct_end": 43.18707427125808,
+      "velocity_error_pct_max": 43.18707427125808,
+      "energy_ratio": 0.9089642752990477,
+      "equivalent_viscosity": 0.0008371084418043957,
+      "equivalent_reynolds": 477.8353436954906,
+      "angular_momentum_drift_rel": 0.04834080076666872,
+      "linear_momentum_drift_rel": 6.960114772890361e-17,
+      "peak_speed_ratio": 1.165520647470728,
+      "profile_error_pct_rms": 34.98930581402011,
+      "radial_migration_max_rel_router": 0.13388031670440106,
+      "density_rms_max": 0.006891723189334204,
+      "observed_order_acceleration": NaN,
+      "observed_order_velocity": NaN,
+      "wall_seconds": 18.051342248916626
+    },
+    {
+      "dx": 0.02,
+      "particles": 2500,
+      "steps": 1616,
+      "spurious_acceleration_pct": 3.6719332175990718,
+      "spurious_acceleration_max_pct": 19.061689362125573,
+      "init_density_rel_error_max": 2.1289513418842887e-06,
+      "velocity_error_pct_end": 37.491834899571444,
+      "velocity_error_pct_max": 37.491834899571444,
+      "energy_ratio": 0.9191417901679189,
+      "equivalent_viscosity": 0.0007246297435169355,
+      "equivalent_reynolds": 552.0060466447738,
+      "angular_momentum_drift_rel": 0.041494766089692,
+      "linear_momentum_drift_rel": 6.378518999975883e-17,
+      "peak_speed_ratio": 1.0809475883950825,
+      "profile_error_pct_rms": 52.26363303374599,
+      "radial_migration_max_rel_router": 0.14723422602954678,
+      "density_rms_max": 0.0065552297082468415,
+      "observed_order_acceleration": NaN,
+      "observed_order_velocity": NaN,
+      "wall_seconds": 29.891451835632324
+    }
+  ],
+  "t_end": 0.6,
+  "resolutions": [
+    0.04,
+    0.025,
+    0.02
+  ],
+  "environment": {
+    "python": "3.11.6",
+    "platform": "Linux-6.6.52-1.7.lns23.loongarch64-loongarch64-with-glibc2.38",
+    "torch": "2.7.1",
+    "torch_threads": 16,
+    "nproc": 128,
+    "cwd": "/root/tp-agent/work/m16545"
+  },
+  "wall_seconds": 54.393540382385254,
+  "gates": {
+    "spurious_acceleration_pct": 5.0,
+    "velocity_error_pct_end": 10.0,
+    "angular_momentum_drift_rel": 1e-06,
+    "min_observed_order": 0.8,
+    "min_initial_speed": 0.9
+  }
+}
