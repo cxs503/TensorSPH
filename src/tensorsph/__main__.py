@@ -19,15 +19,25 @@ parser.add_argument("--boundary", default=None, choices=("wall", "clamp"))
 parser.add_argument("--device", default="auto")
 parser.add_argument("--no-plot", action="store_true",
                     help="skip the snapshot figure (saves ~1.5 s)")
-parser.add_argument("--case", default="droplet", choices=("droplet", "hydrostatic"),
-                    help="case to run: the droplet impact example (default) or the "
-                         "CASE-HYDROSTATIC still-water pressure-profile case")
+parser.add_argument("--case", default="droplet",
+                    choices=("droplet", "hydrostatic", "taylor_green"),
+                    help="case to run: the droplet impact example (default), the "
+                         "CASE-HYDROSTATIC still-water pressure-profile case, or the "
+                         "CASE-TAYLOR-GREEN-SPH vortex-decay benchmark")
 parser.add_argument("--json-out", default=None,
                     help="hydrostatic case: write the case record here")
 parser.add_argument("--quick", action="store_true",
                     help="hydrostatic case: CI-sized smoke configuration")
 parser.add_argument("--version", action="version", version=f"tensorsph {__version__}")
 args = parser.parse_args()
+
+if args.case == "taylor_green":
+    from tensorsph.taylor_green import main as taylor_green_main
+
+    argv = ["--out", args.output]
+    if args.no_plot:
+        argv.append("--no-figures")
+    raise SystemExit(taylor_green_main(argv))
 
 if args.case == "hydrostatic":
     from .case_hydrostatic import main as hydrostatic_main
