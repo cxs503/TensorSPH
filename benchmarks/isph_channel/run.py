@@ -103,7 +103,9 @@ def main(argv=None) -> int:
     ax.plot(res, [r["gates"]["centre_velocity"]["rel_error_pct"] for r in results],
             "o-", label="centre velocity")
     ax.plot(res, [r["gates"]["wall_shear_budget"]["rel_error_pct"] for r in results],
-            "s-", label="wall shear (fitted wall slope)")
+            "s-", label="wall shear (momentum budget)")
+    ax.plot(res, [r["gates"]["wall_shear_near_wall"]["rel_error_pct"] for r in results],
+            "^:", label="wall shear (near-wall fit, diagnostic)")
     ax.axhline(3, color="r", ls=":", label="gate 3%")
     ax.axhline(-3, color="r", ls=":")
     ax.set_xlabel("H/dx"); ax.set_ylabel("error [%]")
