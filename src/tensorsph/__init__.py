@@ -109,6 +109,17 @@ from .ice_thermal import (
     run_three_field,
     strength_band,
 )
+from . import wall_mirror
+from .stokes_second import (
+    finite_depth,
+    finite_depth_amplitude,
+    harmonic_fit,
+    penetration_depth,
+    semi_infinite,
+    semi_infinite_amplitude,
+    verify_numeric as verify_stokes_second_numeric,
+    verify_symbolic as verify_stokes_second_symbolic,
+)
 from .surface_tension import (
     apply_contact_angle_boundary,
     compute_color_gradient,
