@@ -1,0 +1,140 @@
+{
+  "criterion": "CASE-WAVE-FLUME: |H_got - H_ref| / H_ref <= 10 %",
+  "tolerance": 0.1,
+  "cases_graded": 1,
+  "cases_failed": 0,
+  "worst_error_vs_target": 0.6547286897508499,
+  "worst_error_percent": 65.47286897508499,
+  "passed": false,
+  "per_case": [
+    {
+      "tag": "wf_D16.json",
+      "target_height": 0.04,
+      "height_cells": 2.56,
+      "mu_measured": -0.9844718912659132,
+      "mu_theory": 0.0011684718299723323,
+      "measured_loss": -0.6182557635143751,
+      "theory_loss": 0.0005711508643199137,
+      "wavelength_error": 7.576731458319035,
+      "reflection_ratio": 0.823831222191891,
+      "passed": false
+    }
+  ],
+  "cases": [
+    {
+      "record": "runs/wf_D16.json",
+      "label": "dx=0.01562 (H/dx=2.6)",
+      "height_cells": 2.56,
+      "target_height": 0.04,
+      "gauges": [
+        {
+          "x": 1.0013591589129858,
+          "height": 0.03916208417150333,
+          "error_vs_target": -0.020947895712416717,
+          "within_tolerance": true
+        },
+        {
+          "x": 1.1643395630192874,
+          "height": 0.056656242456335305,
+          "error_vs_target": 0.4164060614083826,
+          "within_tolerance": false
+        },
+        {
+          "x": 1.327319967125589,
+          "height": 0.0583859926178996,
+          "error_vs_target": 0.4596498154474899,
+          "within_tolerance": false
+        },
+        {
+          "x": 1.4903003712318905,
+          "height": 0.066189147590034,
+          "error_vs_target": 0.6547286897508499,
+          "within_tolerance": false
+        }
+      ],
+      "attenuation": {
+        "mu_per_m": -0.9844718912659132,
+        "span": 0.48894121231890475,
+        "loss_over_span": -0.6182557635143751,
+        "pairs": [
+          {
+            "x1": 1.0013591589129858,
+            "x2": 1.1643395630192874,
+            "h1": 0.03916208417150333,
+            "h2": 0.056656242456335305,
+            "mu_per_m": -2.265874469004907
+          },
+          {
+            "x1": 1.1643395630192874,
+            "x2": 1.327319967125589,
+            "h1": 0.056656242456335305,
+            "h2": 0.0583859926178996,
+            "mu_per_m": -0.1845242315450369
+          },
+          {
+            "x1": 1.327319967125589,
+            "x2": 1.4903003712318905,
+            "h1": 0.0583859926178996,
+            "h2": 0.066189147590034,
+            "mu_per_m": -0.769666193154752
+          }
+        ],
+        "h0": 0.015872555510744343
+      },
+      "theory": {
+        "mu_per_m": 0.0011684718299723323,
+        "k": 4.818972978402874,
+        "omega": 6.283185307179586,
+        "celerity": 1.303843232850413,
+        "group_velocity": 0.9365278339068391,
+        "sinh_kh": 1.5180667501011569,
+        "kinematic_viscosity": 1e-06,
+        "source": "Mei 1983 The Applied Dynamics of Ocean Surface Waves \u00a74.2; Dean & Dalrymple 1991 \u00a75.4 (Putnam & Johnson 1949)"
+      },
+      "measured_loss_over_span": -0.6182557635143751,
+      "theory_loss_over_span": 0.0005711508643199137,
+      "worst_error_vs_target": 0.6547286897508499,
+      "dispersion": {
+        "period_spectral": 1.1405112103739274,
+        "period_zero_crossing": 0.1937697886498322,
+        "period_target": 1.0,
+        "period_error": 0.14051121037392744,
+        "k_two_probe": 0.5618659044907709,
+        "k_theory": 4.818972978402874,
+        "wavelength_two_probe": 11.182713271904529,
+        "wavelength_theory": 1.303843232850413,
+        "wavelength_error": 7.576731458319035
+      },
+      "reflection": {
+        "incident_amplitude": 0.07544489392497264,
+        "reflected_amplitude": 0.06215385917034778,
+        "ratio": 0.823831222191891,
+        "relative_residual": 0.8275066535869243,
+        "samples": 101,
+        "gauges": 4
+      },
+      "window": [
+        1.9,
+        2.861684314879177
+      ],
+      "passed": false,
+      "derived": {
+        "kh": 1.2047432446007185,
+        "height_over_depth": 0.16,
+        "height_over_wavelength": 0.03067853480556363,
+        "ursell": 4.3520183701755295,
+        "mach": 0.04346144109501377,
+        "compressibility": 0.002725,
+        "reynolds": 325960.80821260327,
+        "wavelength_over_depth": 5.215372931401652,
+        "span_per_wavelength": 0.3749999999999999,
+        "mu_times_span": 0.0005713140331071613
+      },
+      "repro_record_command": "PYTHONPATH=src python benchmarks/wave_flume/run.py --case regular --depth 0.25 --depth-cells 16.0 --height-ratio 0.160 --wave-period 1.0 --out runs/wf_D16.json"
+    }
+  ],
+  "references": {
+    "G1": "Dean & Dalrymple 1991, *Water Wave Mechanics for Engineers and Scientists*, World Scientific, eq. 6.38 (piston transfer function `H/S = 2(cosh 2kh - 1)/(sinh 2kh + 2kh)`, after Biesel & Suquet 1951)",
+    "G2": "Putnam & Johnson 1949, *Trans. AGU* 30:295; Hunt 1952, *Houille Blanche* 7:838; Mei 1983 \u00a74.2; Dean & Dalrymple 1991 \u00a75.4 \u2014 laminar bottom-boundary-layer decay `mu = sigma^2 sqrt(nu sigma) / (4 g c_g sinh^2 kh)`"
+  }
+}
