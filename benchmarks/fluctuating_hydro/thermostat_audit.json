@@ -1,0 +1,502 @@
+{
+ "case": {
+  "model": "Lennard-Jones fluid, Langevin (BAOAB), rho* = 0.8, T* = 1.0",
+  "units": "LJ reduced (epsilon = sigma = m = k_B = 1)",
+  "n_particles": 128,
+  "timestep": 0.005,
+  "friction": 1.0,
+  "sample_every": 10,
+  "equilibration_steps_ladder": 2000,
+  "production_ladder": [
+   1000,
+   4000,
+   10000
+  ],
+  "seeds": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6
+  ],
+  "ensemble_production_steps": 3000,
+  "block_counts": [
+   4,
+   6,
+   8,
+   10,
+   12
+  ]
+ },
+ "replay": {
+  "n_steps": 800,
+  "seed": 42,
+  "equilibration_fraction": 0.4,
+  "equilibration_steps": 320,
+  "production_steps": 480,
+  "n_samples": 48,
+  "mean_temperature": 1.0880601294532628,
+  "std_temperature": 0.12648963505465996,
+  "se_block": 0.05079801295131715,
+  "se_plateau": {
+   "4": {
+    "se": 0.06577740212579142,
+    "n_blocks": 4
+   },
+   "6": {
+    "se": 0.05079801295131715,
+    "n_blocks": 6
+   },
+   "8": {
+    "se": 0.044107991365755855,
+    "n_blocks": 8
+   },
+   "10": {
+    "se": 0.03875367356370968,
+    "n_blocks": 10
+   },
+   "12": {
+    "se": 0.035531036855142244,
+    "n_blocks": 12
+   }
+  },
+  "rel_dev_pct": 8.80601294532628,
+  "dev_over_se": 1.7335349226682593,
+  "tau_int": 0.2804750894529568,
+  "equilibration_trace": {
+   "n": 32,
+   "first": 1.0328408619178757,
+   "last": 1.4364891157618975,
+   "max": 4.112420234758281
+  },
+  "mean_potential_per_particle": -4.993573050845058,
+  "trace_split": 32
+ },
+ "ladder": [
+  {
+   "n_steps": 3000,
+   "seed": 42,
+   "equilibration_fraction": 0.6666666666666666,
+   "equilibration_steps": 2000,
+   "production_steps": 1000,
+   "n_samples": 100,
+   "mean_temperature": 0.9478336436622001,
+   "std_temperature": 0.05918750282272994,
+   "se_block": 0.014433933525497772,
+   "se_plateau": {
+    "4": {
+     "se": 0.016637715220032354,
+     "n_blocks": 4
+    },
+    "6": {
+     "se": 0.015278786480149794,
+     "n_blocks": 6
+    },
+    "8": {
+     "se": 0.015581681009750175,
+     "n_blocks": 8
+    },
+    "10": {
+     "se": 0.014433933525497772,
+     "n_blocks": 10
+    },
+    "12": {
+     "se": 0.012544438096651598,
+     "n_blocks": 12
+    }
+   },
+   "rel_dev_pct": -5.216635633779987,
+   "dev_over_se": -3.6141469160604887,
+   "tau_int": 0.20784555588131753,
+   "equilibration_trace": {
+    "n": 200,
+    "first": 1.0328408619178757,
+    "last": 1.1260511625596639,
+    "max": 4.112420234758281
+   },
+   "mean_potential_per_particle": -5.149241374638201,
+   "trace_split": 200
+  },
+  {
+   "n_steps": 6000,
+   "seed": 42,
+   "equilibration_fraction": 0.3333333333333333,
+   "equilibration_steps": 2000,
+   "production_steps": 4000,
+   "n_samples": 400,
+   "mean_temperature": 0.9436350300875298,
+   "std_temperature": 0.0653751127687778,
+   "se_block": 0.009669952324682539,
+   "se_plateau": {
+    "4": {
+     "se": 0.016141550122436895,
+     "n_blocks": 4
+    },
+    "6": {
+     "se": 0.011008724418818944,
+     "n_blocks": 6
+    },
+    "8": {
+     "se": 0.01128570333607887,
+     "n_blocks": 8
+    },
+    "10": {
+     "se": 0.010223075157503888,
+     "n_blocks": 10
+    },
+    "12": {
+     "se": 0.011490266636916957,
+     "n_blocks": 12
+    }
+   },
+   "rel_dev_pct": -5.63649699124702,
+   "dev_over_se": -5.828877746232388,
+   "tau_int": 0.3546031464477623,
+   "equilibration_trace": {
+    "n": 200,
+    "first": 1.0328408619178757,
+    "last": 1.1260511625596639,
+    "max": 4.112420234758281
+   },
+   "mean_potential_per_particle": -5.156067919128232,
+   "trace_split": 200
+  },
+  {
+   "n_steps": 12000,
+   "seed": 42,
+   "equilibration_fraction": 0.16666666666666666,
+   "equilibration_steps": 2000,
+   "production_steps": 10000,
+   "n_samples": 1000,
+   "mean_temperature": 0.9593635222091402,
+   "std_temperature": 0.0666513904080031,
+   "se_block": 0.007239859007558409,
+   "se_plateau": {
+    "4": {
+     "se": 0.008540589583167113,
+     "n_blocks": 4
+    },
+    "6": {
+     "se": 0.009068759352799095,
+     "n_blocks": 6
+    },
+    "8": {
+     "se": 0.007521819805266871,
+     "n_blocks": 8
+    },
+    "10": {
+     "se": 0.008073778054535097,
+     "n_blocks": 10
+    },
+    "12": {
+     "se": 0.0064813701096399475,
+     "n_blocks": 12
+    }
+   },
+   "rel_dev_pct": -4.0636477790859775,
+   "dev_over_se": -5.612882481334969,
+   "tau_int": 0.35875111613788185,
+   "equilibration_trace": {
+    "n": 200,
+    "first": 1.0328408619178757,
+    "last": 1.1260511625596639,
+    "max": 4.112420234758281
+   },
+   "mean_potential_per_particle": -5.1462918730477325,
+   "trace_split": 200
+  }
+ ],
+ "ensemble": [
+  {
+   "n_steps": 5000,
+   "seed": 1,
+   "equilibration_fraction": 0.4,
+   "equilibration_steps": 2000,
+   "production_steps": 3000,
+   "n_samples": 300,
+   "mean_temperature": 0.9624288576851214,
+   "std_temperature": 0.07097269916402903,
+   "se_block": 0.012328529769696363,
+   "se_plateau": {
+    "4": {
+     "se": 0.017423799933228398,
+     "n_blocks": 4
+    },
+    "6": {
+     "se": 0.01891100457219522,
+     "n_blocks": 6
+    },
+    "8": {
+     "se": 0.016938199994601288,
+     "n_blocks": 8
+    },
+    "10": {
+     "se": 0.016173601922366183,
+     "n_blocks": 10
+    },
+    "12": {
+     "se": 0.013896504063383884,
+     "n_blocks": 12
+    }
+   },
+   "rel_dev_pct": -3.757114231487857,
+   "dev_over_se": -3.0474957693032283,
+   "tau_int": 0.48616182370579786,
+   "equilibration_trace": {
+    "n": 200,
+    "first": 1.0265928154046682,
+    "last": 0.9560432352523917,
+    "max": 4.277152645657308
+   },
+   "mean_potential_per_particle": -5.144953130531111,
+   "trace_split": 200
+  },
+  {
+   "n_steps": 5000,
+   "seed": 2,
+   "equilibration_fraction": 0.4,
+   "equilibration_steps": 2000,
+   "production_steps": 3000,
+   "n_samples": 300,
+   "mean_temperature": 0.9313837567422892,
+   "std_temperature": 0.06690202183353607,
+   "se_block": 0.011598695517542555,
+   "se_plateau": {
+    "4": {
+     "se": 0.015169746808104062,
+     "n_blocks": 4
+    },
+    "6": {
+     "se": 0.012795734378596706,
+     "n_blocks": 6
+    },
+    "8": {
+     "se": 0.012657934313658737,
+     "n_blocks": 8
+    },
+    "10": {
+     "se": 0.01145351783264406,
+     "n_blocks": 10
+    },
+    "12": {
+     "se": 0.009773453088613384,
+     "n_blocks": 12
+    }
+   },
+   "rel_dev_pct": -6.861624325771077,
+   "dev_over_se": -5.915858654443639,
+   "tau_int": 0.23695940039214541,
+   "equilibration_trace": {
+    "n": 200,
+    "first": 1.0142929037152215,
+    "last": 0.9853203975877899,
+    "max": 4.204511124003702
+   },
+   "mean_potential_per_particle": -5.176472340693358,
+   "trace_split": 200
+  },
+  {
+   "n_steps": 5000,
+   "seed": 3,
+   "equilibration_fraction": 0.4,
+   "equilibration_steps": 2000,
+   "production_steps": 3000,
+   "n_samples": 300,
+   "mean_temperature": 0.94737769018531,
+   "std_temperature": 0.06732052237972534,
+   "se_block": 0.01179309143995936,
+   "se_plateau": {
+    "4": {
+     "se": 0.01794764175762363,
+     "n_blocks": 4
+    },
+    "6": {
+     "se": 0.01585550233573404,
+     "n_blocks": 6
+    },
+    "8": {
+     "se": 0.01576184842579042,
+     "n_blocks": 8
+    },
+    "10": {
+     "se": 0.014050434319522284,
+     "n_blocks": 10
+    },
+    "12": {
+     "se": 0.012618229724484656,
+     "n_blocks": 12
+    }
+   },
+   "rel_dev_pct": -5.262230981468996,
+   "dev_over_se": -4.4621302296008745,
+   "tau_int": 0.5139444886832488,
+   "equilibration_trace": {
+    "n": 200,
+    "first": 1.0232980695123948,
+    "last": 0.9851542800468457,
+    "max": 4.359214227704855
+   },
+   "mean_potential_per_particle": -5.149128793194674,
+   "trace_split": 200
+  },
+  {
+   "n_steps": 5000,
+   "seed": 4,
+   "equilibration_fraction": 0.4,
+   "equilibration_steps": 2000,
+   "production_steps": 3000,
+   "n_samples": 300,
+   "mean_temperature": 0.9364364797616322,
+   "std_temperature": 0.06651585887694987,
+   "se_block": 0.010168432248053126,
+   "se_plateau": {
+    "4": {
+     "se": 0.015411709926621749,
+     "n_blocks": 4
+    },
+    "6": {
+     "se": 0.01635513751535916,
+     "n_blocks": 6
+    },
+    "8": {
+     "se": 0.01318758254789548,
+     "n_blocks": 8
+    },
+    "10": {
+     "se": 0.012628788617748892,
+     "n_blocks": 10
+    },
+    "12": {
+     "se": 0.012119016114051442,
+     "n_blocks": 12
+    }
+   },
+   "rel_dev_pct": -6.3563520238367754,
+   "dev_over_se": -6.251063948480139,
+   "tau_int": 0.3528568067422822,
+   "equilibration_trace": {
+    "n": 200,
+    "first": 1.0570922723559528,
+    "last": 1.0412646557596499,
+    "max": 4.01693716534571
+   },
+   "mean_potential_per_particle": -5.16279747334869,
+   "trace_split": 200
+  },
+  {
+   "n_steps": 5000,
+   "seed": 5,
+   "equilibration_fraction": 0.4,
+   "equilibration_steps": 2000,
+   "production_steps": 3000,
+   "n_samples": 300,
+   "mean_temperature": 0.9498533314564666,
+   "std_temperature": 0.06741906868792481,
+   "se_block": 0.010239754095105788,
+   "se_plateau": {
+    "4": {
+     "se": 0.018549852728898714,
+     "n_blocks": 4
+    },
+    "6": {
+     "se": 0.014491354372089066,
+     "n_blocks": 6
+    },
+    "8": {
+     "se": 0.013533331094987475,
+     "n_blocks": 8
+    },
+    "10": {
+     "se": 0.013950131808990436,
+     "n_blocks": 10
+    },
+    "12": {
+     "se": 0.011778610524674537,
+     "n_blocks": 12
+    }
+   },
+   "rel_dev_pct": -5.014666854353345,
+   "dev_over_se": -4.897253203326596,
+   "tau_int": 0.3922798947099624,
+   "equilibration_trace": {
+    "n": 200,
+    "first": 0.9727469505678242,
+    "last": 1.0784071298438211,
+    "max": 4.170950376920568
+   },
+   "mean_potential_per_particle": -5.152791373148648,
+   "trace_split": 200
+  },
+  {
+   "n_steps": 5000,
+   "seed": 6,
+   "equilibration_fraction": 0.4,
+   "equilibration_steps": 2000,
+   "production_steps": 3000,
+   "n_samples": 300,
+   "mean_temperature": 0.9626526502287602,
+   "std_temperature": 0.0739022554955193,
+   "se_block": 0.013563490520225428,
+   "se_plateau": {
+    "4": {
+     "se": 0.021357430349800255,
+     "n_blocks": 4
+    },
+    "6": {
+     "se": 0.0170873571064283,
+     "n_blocks": 6
+    },
+    "8": {
+     "se": 0.016876939301544627,
+     "n_blocks": 8
+    },
+    "10": {
+     "se": 0.015390251971265105,
+     "n_blocks": 10
+    },
+    "12": {
+     "se": 0.015542304359909349,
+     "n_blocks": 12
+    }
+   },
+   "rel_dev_pct": -3.734734977123977,
+   "dev_over_se": -2.7535205421899795,
+   "tau_int": 0.4581874816039374,
+   "equilibration_trace": {
+    "n": 200,
+    "first": 1.0164510956369668,
+    "last": 0.9818040960073512,
+    "max": 4.302968476665439
+   },
+   "mean_potential_per_particle": -5.134337086815092,
+   "trace_split": 200
+  }
+ ],
+ "ensemble_summary": {
+  "mean_of_seed_means": 0.9483554610099297,
+  "sem_across_seeds": 0.00527816453242962,
+  "inverse_variance_combined": 0.946962431193438,
+  "inverse_variance_se": 0.004670286833268989,
+  "n_seeds": 6,
+  "rel_dev_pct": -5.303756880656197,
+  "dev_over_se": -11.356383601269748
+ },
+ "energy_budget": {
+  "lattice_potential_per_particle": 1.831163135183555,
+  "equilibrium_potential_per_particle": -5.1462918730477325,
+  "excess_per_particle": 6.977455008231288,
+  "predicted_startup_temperature_offset": 4.651636672154192,
+  "observed_replay_equilibration_first_temperature": 1.0328408619178757,
+  "dissipation_time_1_over_friction": 1.0,
+  "historical_equilibration_time": 1.6
+ },
+ "verdicts": {
+  "A_replay_reproduces_stored_artifact": true,
+  "B_long_window_enters_3se_band": false,
+  "C_ensemble_consistent_with_target": false,
+  "D_short_window_deviation_exceeds_3se": false,
+  "E_se_plateau_stable_across_block_counts": true,
+  "F_startup_offset_matches_energy_budget": false
+ }
+}
