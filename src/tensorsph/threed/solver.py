@@ -379,6 +379,16 @@ def run_hydrostatic(*, nx: int = 10, ny: int = 10, nz: int = 8, dx: float = 0.01
 
     fluid = cubic_lattice((nx, ny, nz), dx, origin=(walls, walls, walls), dtype=dtype)
     n_fluid = fluid.shape[0]
+    # Lattice row of every fluid particle (0 = bottom row), taken from the
+    # *initial* z.  The particles are created on the lattice planes themselves
+    # (``z = walls + k dx``), which is why an Eulerian bin of width ``dx`` whose
+    # edges sit on the same planes is a degenerate partition of the column: a
+    # row lands in bin ``k`` or in bin ``k - 1`` depending on the last bit of
+    # ``(z - walls) / dx`` and on the sub-cell settling of the run.  Keeping the
+    # Lagrangian label lets the profile be built row by row, which is the only
+    # binning-invariant way to compare a discrete profile with ``rho0 g (H-z)``.
+    row_index = torch.unique(fluid[:, 2], sorted=True, return_inverse=True)[1]
+    n_rows = int(row_index.max()) + 1 if n_fluid else 0
     mass_fluid = torch.full((n_fluid,), calibrated_particle_mass(dx, h, rho0),
                             dtype=dtype)
 
@@ -460,7 +470,8 @@ def run_hydrostatic(*, nx: int = 10, ny: int = 10, nz: int = 8, dx: float = 0.01
     result.centre_of_mass_z = coms
     result.profile = build_pressure_profile(
         buckets, nz=nz, dx=dx, walls=walls, height=height, rho0=rho0,
-        gravity=gravity, h=h, sound_speed=sound_speed, gamma=gamma)
+        gravity=gravity, h=h, sound_speed=sound_speed, gamma=gamma,
+        row_index=row_index)
     result.profile["wall_displacement"] = wall_displacement
     result.diagnostics = [diagnostics(fluid, vel[:n_fluid], mass_fluid,
                                       rho0_field, rho0=rho0,
@@ -470,7 +481,8 @@ def run_hydrostatic(*, nx: int = 10, ny: int = 10, nz: int = 8, dx: float = 0.01
 
 def build_pressure_profile(buckets, *, nz: int, dx: float, walls: float,
                            height: float, rho0: float, gravity: float, h: float,
-                           sound_speed: float, gamma: float) -> dict:
+                           sound_speed: float, gamma: float,
+                           row_index=None) -> dict:
     """Time-averaged ``p(z)`` over layer bins, plus the analytic reference.
 
     Only particles whose support is complete in the vertical direction
@@ -479,6 +491,25 @@ def build_pressure_profile(buckets, *, nz: int, dx: float, walls: float,
     law clamps ``p`` to zero, so the relative error there says nothing about the
     operator.  The bins are one-particle-layer wide, which is the resolution at
     which a discrete profile can be compared at all.
+
+    Two binning schemes are reported, because they answer different questions:
+
+    ``rows``
+        Eulerian bins ``floor((z - walls) / dx)`` labelled with the bin *centre*
+        ``walls + (i + 1/2) dx``.  The column is created on the lattice planes
+        ``walls + k dx``, i.e. exactly on the bin edges, so this partition is
+        degenerate: a row lands in bin ``k`` or ``k - 1`` depending on the last
+        bit of the coordinate and on the sub-cell settling, and the label is half
+        a cell away from where the mass actually is.  The resulting per-layer
+        error grows like ``(dx/2) / depth`` and therefore explodes towards the
+        free surface even when the field itself is smooth.  Kept because the
+        shipped artifacts and the verification ledger quote it.
+
+    ``rows_by_lattice``
+        Lagrangian rows from the particle's *initial* lattice index, compared with
+        the analytic profile at the row's own (time-averaged) depth.  Invariant to
+        the binning above, so this is the profile the accuracy numbers should be
+        read from.  Pass ``row_index`` to build it.
     """
     z = torch.cat([b["z"] for b in buckets])
     p = torch.cat([b["p"] for b in buckets])
@@ -511,6 +542,38 @@ def build_pressure_profile(buckets, *, nz: int, dx: float, walls: float,
         })
     core = [r for r in rows if r["support_complete"]]
     scale = rho0 * gravity * height
+    lattice_rows: list[dict] = []
+    if row_index is not None and z.numel():
+        n_particles = int(row_index.numel())
+        samples = z.numel() // n_particles
+        label = torch.tile(row_index.to(torch.int64).reshape(-1), (samples,))
+        for index in range(int(label.max()) + 1):
+            mask = label == index
+            if not bool(mask.any()):
+                continue
+            z_row = float(z[mask].mean())
+            z_nominal = walls + index * dx
+            p_measured = float(p[mask].mean())
+            p_analytic = rho0 * gravity * (surface - z_row)
+            lattice_rows.append({
+                "row": index,
+                "z": z_row,
+                "z_nominal": z_nominal,
+                "z_offset_over_dx": (z_row - z_nominal) / dx,
+                "depth_below_surface": surface - z_row,
+                "particles": int(mask.sum()) // samples,
+                "p_measured": p_measured,
+                "p_analytic": p_analytic,
+                "p_rel_error": ((p_measured - p_analytic) / p_analytic
+                                if p_analytic > 0.0 else None),
+                "rho_measured": float(rho[mask].mean()),
+                "support_complete": bool(z_nominal < surface - 3.0 * h),
+            })
+        for r in lattice_rows:
+            if r["p_rel_error"] is None:
+                r["support_complete"] = False
+    core_lattice = [r for r in lattice_rows
+                    if r["support_complete"] and r["p_rel_error"] is not None]
     errors = [r["p_rel_error"] for r in core]
     # Depth-integrated load: the quantity a wall actually feels.  It is immune to
     # the odd-even (checkerboard) mode that a particle lattice supports in the
@@ -540,4 +603,53 @@ def build_pressure_profile(buckets, *, nz: int, dx: float, walls: float,
         "odd_even_amplitude_over_scale": odd_even,
         "bottom_pressure_measured": rows[0]["p_measured"] if rows else None,
         "bottom_pressure_analytic": rows[0]["p_analytic"] if rows else None,
+        "binning": _binning_diagnostic(z, layer, row_index, dx, walls),
+        "rows_by_lattice": lattice_rows,
+        "core_layers_lattice": len(core_lattice),
+        "max_rel_error_core_lattice": max(
+            (abs(r["p_rel_error"]) for r in core_lattice), default=None),
+        "mean_rel_error_core_lattice": (
+            sum(r["p_rel_error"] for r in core_lattice) / len(core_lattice)
+            if core_lattice else None),
+        "layers_within_15pct_lattice": sum(
+            1 for r in core_lattice if abs(r["p_rel_error"]) < 0.15),
+        "max_abs_error_over_scale_lattice": max(
+            (abs(r["p_measured"] - r["p_analytic"]) / scale
+             for r in core_lattice), default=None),
+        "odd_even_amplitude_over_scale_lattice": _odd_even(
+            [r["p_measured"] for r in lattice_rows], scale),
+    }
+
+def _odd_even(values: list[float], scale: float):
+    """Amplitude of the even/odd (checkerboard) mode of a layer sequence."""
+    if len(values) < 4:
+        return None
+    even = values[0::2]
+    odd = values[1::2]
+    return abs(sum(even) / len(even) - sum(odd) / len(odd)) / scale
+
+
+def _binning_diagnostic(z, layer, row_index, dx: float, walls: float) -> dict | None:
+    """How far the Eulerian bins are from a clean one-row-per-bin partition.
+
+    ``mean_offset_over_dx`` is the signed distance from the bin *centre* (the
+    label the analytic profile is evaluated at) to the particles it contains; for
+    a lattice-aligned column it is ``-0.5`` by construction.  ``misplaced_fraction``
+    is the share of particle samples that land in a bin whose index differs from
+    their lattice row, i.e. the share that the Eulerian estimator mixes with a
+    neighbouring row.
+    """
+    if row_index is None or z.numel() == 0:
+        return None
+    n_particles = int(row_index.numel())
+    samples = z.numel() // n_particles
+    label = torch.tile(row_index.to(torch.int64).reshape(-1), (samples,))
+    offset = z - (walls + (layer.to(z.dtype) + 0.5) * dx)
+    misplaced = layer != label
+    return {
+        "mean_offset_over_dx": float(offset.mean()) / dx,
+        "rms_offset_over_dx": float(torch.sqrt((offset * offset).mean())) / dx,
+        "misplaced_fraction": float(misplaced.to(z.dtype).mean()),
+        "rows": int(label.max()) + 1,
+        "bins": int(layer.max()) + 1,
     }
