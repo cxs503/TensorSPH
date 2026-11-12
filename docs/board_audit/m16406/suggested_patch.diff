@@ -1,0 +1,67 @@
+# m16406 audit — suggested patch for the A2 comparison + the tautological test
+#
+# NOT APPLIED by the audit (交差核验单不改被审交付).  Purpose: hand the rework
+# mission a minimal, reviewable change.  Against m16352 head 4af6b11:
+#   src/tensorsph/fsi_elastic_gate.py  lines 745-751  (A2 block of verify_cantilever)
+#   tests/test_fsi_elastic_gate.py     line 90        (assert ... or True)
+#
+# Why: the gate rod is vertical and loaded sideways, so rod x is the TRANSVERSE
+# coordinate and rod y the ALONG-BEAM one; the shipped block compares rod-x with
+# the elastica's along-beam x.  Audit-side recomputation with the axes paired
+# correctly gives +2.55 % / -4.58 % at n=25 and +1.28 % / -2.25 % at n=50
+# (vs the reported +86.8 %), i.e. A2 is a PASS-with-convergence, not a gap.
+#
+diff --git a/src/tensorsph/fsi_elastic_gate.py b/src/tensorsph/fsi_elastic_gate.py
+--- a/src/tensorsph/fsi_elastic_gate.py
++++ b/src/tensorsph/fsi_elastic_gate.py
+@@ -745,10 +745,20 @@ def verify_cantilever(case: ElasticGateCase, stiff_E: float = 1.0e7
+     # A2: large deflection against the elastica
+     P = 10.0 * EI / H ** 2          # P H^2 / EI = 10
+     load = torch.zeros((case.n_gate_nodes, 2), dtype=torch.float64)
+     load[-1, 0] = P
+-    tip_x, tip_y = _run(load)
++    tip_x, tip_y = _run(load)
++    # The gate is vertical and loaded along x, so the rod's x is the *transverse*
++    # (= elastica tip_y) coordinate and the rod's y the *along-beam* (= elastica
++    # tip_x) one.  Pairing them the other way round reported +86.8 % for a rod
++    # that is actually within 5 % of the elastica.
++    along = H + tip_y                       # y of the free node, absolute
++    transverse = tip_x
+     ref = elastica_tip(P, H, EI)
+     out["A2_elastica"] = {"P": P, "P_L2_over_EI": P * H ** 2 / EI,
+-                          "tip_x_rod": tip_x, "tip_x_elastica": ref["tip_x"],
+-                          "rel_error": (tip_x - ref["tip_x"]) / ref["tip_x"],
+-                          "tip_y_rod": tip_y, "tip_y_elastica": ref["tip_y"],
++                          "transverse_rod": transverse,
++                          "transverse_elastica": ref["tip_y"],
++                          "err_transverse": (transverse - ref["tip_y"]) / ref["tip_y"],
++                          "along_beam_rod": along,
++                          "along_beam_elastica": ref["tip_x"],
++                          "err_along_beam": (along - ref["tip_x"]) / ref["tip_x"],
++                          "rel_error": (transverse - ref["tip_y"]) / ref["tip_y"],
+                           "rod_angle": float(math.atan2(tip_y, tip_x))
+                           if tip_x else 0.0,
+                           "elastica_angle": ref["tip_angle"]}
+diff --git a/tests/test_fsi_elastic_gate.py b/tests/test_fsi_elastic_gate.py
+--- a/tests/test_fsi_elastic_gate.py
++++ b/tests/test_fsi_elastic_gate.py
+@@ -87,7 +87,11 @@ def test_clamp_is_a_clamp_not_a_pin():
+     # the pinned rod is an unstable/flapping base: its equilibrium is not on the
+     # gate line, which is exactly why it must not be used for the gate
+-    assert abs(float(nodes_pin[-1, 0]) - pinned.water_width) > abs(tip_dx) or True
++    pin_dx = float(nodes_pin[-1, 0]) - pinned.water_width
++    assert pin_dx > 0.1, pin_dx     # pinned base flaps away from the gate line
++    # (`or True` made the shipped assertion unfalsifiable -- m16406 audit F6)
+@@ -107,8 +111,11 @@ def test_elastica_large_deflection_rod_gap_is_known():
+     case = fg.ElasticGateCase(dx=0.0125, n_gate_nodes=25)
+     a2 = fg.verify_cantilever(case)["A2_elastica"]
+-    assert 0.2 < a2["rel_error"] < 1.2, a2
++    # with the axes paired correctly A2 is a converged 1-5 % result (m16406 F2)
++    for n, bound in ((25, 0.06), (50, 0.03)):
++        c = fg.ElasticGateCase(dx=0.0125, n_gate_nodes=n)
++        v = fg.verify_cantilever(c)["A2_elastica"]
++        assert abs(v["err_transverse"]) < bound, (n, v)
++        assert abs(v["err_along_beam"]) < 2.0 * bound, (n, v)
+#
+# Note: the second hunk changes the test's *meaning* (known-gap guard ->
+# verification) and must be declared in the rework report, not slipped in.
