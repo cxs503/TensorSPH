@@ -1,67 +1,68 @@
 #!/usr/bin/env python3
-"""Oscillating plate (Stokes' second problem) in a 2-D weakly-compressible SPH channel.
+"""Stokes' second problem: oscillating flat plate, 2-D SPH (case-pool anchor).
 
-Physics
--------
-A viscous fluid fills the gap ``0 < y < H`` between two parallel plates.  The
-lower plate oscillates tangentially, ``u_wall(t) = U cos(omega t)``, the upper
-plate is at rest, and the flow is invariant in ``x``.  The exact solution of the
-incompressible Navier-Stokes equations for this geometry is the difference of
-two Stokes layers (Landau & Lifshitz, *Fluid Mechanics*, §24; the second image
-term enforces the rest condition on the upper plate):
+Physics and reference
+---------------------
+An incompressible fluid fills ``0 <= y <= H``; the plate at ``y = 0``
+oscillates in its own plane at ``u(0,t) = U0 cos(omega t)`` and
+``x`` is periodic.  In a half space the exact solution is Landau & Lifshitz
+(*Fluid Mechanics*, 2nd English ed., §24)
 
-    k = (1 + i) / delta,      delta = sqrt(2 nu / omega)
-    W(y, t) = U * [exp(-k y) - exp(-k (2H - y))] / [1 - exp(-2 k H)] * exp(i omega t)
-    u(y, t) = Re W(y, t)
+    u(y,t) = U0 exp(-y/delta) cos(omega t - y/delta),  delta = sqrt(2 nu / omega)
 
-so the amplitude decays as ``A(y) = |W|`` and the phase lags by ``arg W``.  For
-``H >> delta`` both reduce to the familiar ``A = U exp(-y/delta)``,
-``phase = y/delta``; the finite-domain form is used here because it is exact for
-the geometry that is actually simulated (the upper wall really is a no-slip
-wall in the particle layout).
+so the **amplitude** decays as ``A(y) = U0 exp(-y/delta)``.  The case is graded
+on that decay: the wave is solenoidal, so no pressure work is involved and the
+only physics under test is the viscous operator plus the *moving* no-slip wall.
 
-What is verified
-----------------
-The case tests the *no-slip wall condition of the viscous operator* under an
-unsteady load, which neither ``benchmarks/couette`` (steady, straight profile)
-nor ``benchmarks/poiseuille`` (steady, curved profile) can: the answer is a
-decaying amplitude and a phase lag, and a wall model that is wrong in the
-tangential direction changes one or both.  The particle solver is the unchanged
-production path (``tensorsph.droplet_impact.rhs``): the oscillating plate enters
-through ``wall_vel`` -- the same input the wave-flume wavemaker uses -- with
-``wall_friction = 1`` for the no-slip blend, and the wall velocity is updated
-every step from the analytic ``U cos(omega t)``.  No parameter is calibrated
-against the run.
+The reference is re-derived, not transcribed: :func:`tensorsph.stokes_second.
+verify_symbolic` proves with sympy that ``u_t = nu u_yy`` identically, that
+``u(0,t) = U0 cos(omega t)``, that ``A(delta)/U0 = 1/e`` and that
+``delta = sqrt(2 nu/omega)``; the artifact carries those residuals.
 
-Acceptance gates (predeclared, ``benchmarks/stokes_second/DESIGN.md``)
----------------------------------------------------------------------
-* ``G1`` amplitude L2 error inside the Stokes layer (rows ``0 < y <= delta``,
-  first fluid row excluded -- see below) < 5 % of ``U``;
-* ``G2`` decay-rate error ``|d ln A/dy * delta + 1|`` < 5 %;
-* ``G3`` phase-lag slope error ``|d phase/dy * delta - 1|`` < 5 %;
-* ``G4`` free-slip negative control: amplitude of the first row < 20 % of the
-  analytic value (a wall that does not transfer tangential momentum cannot
-  produce the Stokes layer);
-* the Stokes layer must contain at least 5 particle rows (resolution
-  requirement of the anchor: "Stokes 层内 >=5 层粒子").
+Two references are reported, because they answer different questions:
 
-The first fluid row is excluded from G1 because the wall/fluid kernel support
-there is one-sided and the wall pressure is extrapolated (Adami et al. 2012);
-its measured amplitude is reported, not gated.  ``G2``/``G3`` are unaffected by
-a constant wall offset (they are slopes), so they carry the physics claim while
-``G1`` measures the absolute level.
+* ``half_space``   ``U0 exp(-y/delta)`` — the case-pool referent.  A numerical
+  channel of depth ``H`` cannot be a half space, so its exact solution differs
+  by ``O(exp(-(H-y)/delta))``; that truncation is part of the error budget and
+  is quantified, not hidden.
+* ``finite_depth`` ``Re{U0 sinh(m(H-y))/sinh(mH) e^{i omega t}}``, ``m = (1+i)/delta``
+  — the exact solution *of the problem actually run*.  Numerics minus this is
+  pure discretisation error.
 
-Usage::
+Wall model
+----------
+The moving no-slip wall is the mirror (ghost) construction of
+:mod:`tensorsph.wall_mirror` driven with ``plane_vel = (U0 cos omega t, 0)``:
+the ghost carries ``2w - v``, so the fluid/ghost viscous pair has mean ``w`` and
+the no-slip plane moves *on* ``y = 0``.  The solver itself is the production
+WCSPH ``rhs`` (Tait EOS, density summation, Morris/Brookshaw viscosity,
+``wall_friction = 1``); nothing is calibrated against the run — ``U0``, ``nu``,
+``omega``, ``H`` and ``dx`` are inputs and the run starts from rest.
 
-    PYTHONPATH=src python benchmarks/stokes_second/run.py --out benchmarks/stokes_second/out
-    PYTHONPATH=src python benchmarks/stokes_second/run.py --quick
-    PYTHONPATH=src python benchmarks/stokes_second/run.py --figure
+Predeclared gates (``benchmarks/stokes_second/DESIGN.md``, written first)
+-------------------------------------------------------------------------
+G1 amplitude L2 error over the Stokes layer vs ``U0 exp(-y/delta)``  <= 5 %
+G2 worst single row in the same set                                <= 10 %
+G3 decay-rate error, fitted ``-dlnA/dy`` vs ``1/delta``              <= 5 %
+G4 finite-depth (discretisation-only) L2 error                      <= 5 %
+G5 negative control: free-slip oscillating wall drives < 5 % of U0
+G6 resolution: G1 does not grow from the coarsest to the finest mesh
+
+Usage
+-----
+    PYTHONPATH=.:src python benchmarks/stokes_second/run.py --quick          # smoke
+    PYTHONPATH=.:src python benchmarks/stokes_second/run.py --ladder         # G1..G6
+    PYTHONPATH=.:src python benchmarks/stokes_second/run.py --sweep          # + sensitivity
 """
+
 from __future__ import annotations
 
 import argparse
+import dataclasses
+import hashlib
 import json
 import math
+import os
 import sys
 import time
 from pathlib import Path
@@ -69,531 +70,808 @@ from pathlib import Path
 import numpy as np
 import torch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO / "src"))
+sys.path.insert(0, str(REPO))
 
-from tensorsph.droplet_impact import Config, resolve_device, rhs  # noqa: E402
-
-OUT = Path(__file__).resolve().parent / "out"
-
-# --------------------------------------------------------------------------- #
-# Case definition
-# --------------------------------------------------------------------------- #
-HEIGHT = 0.5                 # m, gap between the plates
-NU = 0.05                    # m^2/s, kinematic viscosity (input, not fitted)
-PERIOD = 0.5                 # s, oscillation period of the plate
-OMEGA = 2.0 * math.pi / PERIOD
-DELTA = math.sqrt(2.0 * NU / OMEGA)   # Stokes layer thickness, 8.92 cm
-U0 = 0.02                    # m/s, plate velocity amplitude
-SOUND_SPEED = 5.0            # m/s, c0 (Mach = U/c0 = 4e-3, weakly compressible)
-RHO0 = 1000.0
-H_FACTOR = 1.3
-WALL_LAYERS = 3
-WALL_FRICTION = 1.0
-COLUMNS = 8                  # fluid columns in one periodic cell
-LENGTH = COLUMNS * (HEIGHT / 40.0)   # 8 dx at the reference resolution
-DX_REF = HEIGHT / 40.0       # 1.25 cm -> 7.1 rows inside the Stokes layer
-PERIODS_DISCARD = 2          # transient decay: delta^2/nu = 0.159 s = 0.32 T
-PERIODS_AVERAGE = 2
-
-GATES = {
-    "amplitude_l2": 0.05,
-    "decay_rate": 0.05,
-    "phase_slope": 0.05,
-    "freeslip_ratio": 0.20,
-    "min_rows_in_layer": 5,
-}
-
-REFERENCE_NOTE = (
-    "Landau & Lifshitz, Fluid Mechanics, §24 (oscillating plate); finite-gap "
-    "image form W = U[exp(-ky) - exp(-k(2H-y))]/[1-exp(-2kH)] exp(i omega t), "
-    "k=(1+i)/delta, delta=sqrt(2 nu/omega). Secondary: Macia et al. (2011) "
-    "Prog. Theor. Phys. 125:1091, doi:10.1143/ptp.125.1091 (SPH for this case)."
+from benchmarks.poiseuille.run import (  # noqa: E402
+    build_fluid,
+    make_config,
+    periodic_images,
 )
+from tensorsph.droplet_impact import resolve_device, rhs  # noqa: E402
+from tensorsph.stokes_second import (  # noqa: E402
+    finite_depth,
+    finite_depth_amplitude,
+    harmonic_fit,
+    penetration_depth,
+    semi_infinite_amplitude,
+    verify_numeric,
+    verify_symbolic,
+)
+from tensorsph.wall_mirror import plane_walls  # noqa: E402
+
+OUT = REPO / "benchmarks" / "stokes_second" / "out"
+
+
+def _jsonable(obj):
+    """numpy scalars/bools -> plain JSON types (artifacts must be pure JSON)."""
+    if hasattr(obj, "item"):
+        return obj.item()
+    raise TypeError(f"not JSON serializable: {type(obj)}")
+
+#: Case constants.  ``H = 6 delta`` and ``delta/dx`` on the ladder; nothing here
+#: is fitted to a measured profile.
+NU = 0.01                 # m^2/s
+OMEGA = 2.0 * math.pi     # rad/s   -> T = 1 s, delta = 5.64 cm
+U0 = 0.01                 # m/s     -> Ma = 1e-3 at c0 = 10 m/s
+H_OVER_DELTA = 6.0
+COLUMNS = 6               # fluid columns in x; x is periodic and invariant
+RHO0 = 1000.0
+SOUND_SPEED = 10.0
+GAMMA = 7.0
+H_FACTOR = 1.3
+FRICTION = 1.0
+LADDER = (8, 12, 18)      # delta/dx
+PERIODS = 6.0             # run length in oscillation periods
+MEASURE_PERIODS = 2.0     # harmonic fit window = last 2 periods
+SETTLE_PERIODS = 4.0      # rest -> periodic transient decays ~ exp(-t/1.16 T)
+SAMPLES_PER_PERIOD = 160
+GATES = {"G1_amplitude_l2_pct": 5.0, "G2_worst_row_pct": 10.0,
+         "G3_decay_rate_pct": 5.0, "G4_finite_depth_l2_pct": 5.0,
+         "G5_control_amp_pct": 5.0}
 
 
 # --------------------------------------------------------------------------- #
-# Exact reference
+# Driving loop
 # --------------------------------------------------------------------------- #
 
-def analytic(y, height: float = HEIGHT, nu: float = NU,
-             omega: float = OMEGA, u0: float = U0):
-    """Complex amplitude of the exact finite-gap Stokes solution.
-
-    Returns ``(amplitude, phase_lag)`` arrays; ``u(y, t) = A cos(omega t - phase)``.
-    """
-    y = np.asarray(y, dtype=float)
-    delta = math.sqrt(2.0 * nu / omega)
-    k = (1.0 + 1.0j) / delta
-    w = u0 * (np.exp(-k * y) - np.exp(-k * (2.0 * height - y))) / \
-        (1.0 - np.exp(-2.0 * k * height))
-    # u = Re(W e^{i omega t}) = A cos(omega t + arg W) -> lag = -arg W
-    return np.abs(w), -np.angle(w)
+def make_case_config(dx: float, height: float, viscosity: float,
+                     sound_speed: float, h_factor: float, friction: float,
+                     device):
+    """The Poiseuille channel config with this case's sound speed and support."""
+    base = make_config(dx, viscosity, friction, device)
+    return dataclasses.replace(
+        base, sound_speed=sound_speed, h_factor=h_factor, gravity=0.0,
+        wall_friction=friction, pool_width=COLUMNS * dx, pool_depth=height)
 
 
-def analytic_wall_amplitude(u0: float = U0) -> float:
-    """Analytic plate amplitude (the exact form equals ``u0`` at ``y = 0``)."""
-    return float(analytic(0.0, u0=u0)[0])
+def drive(cfg, height: float, length: float, viscosity: float, omega: float,
+          u0: float, t_end: float, t_measure: float, samples_per_period: int,
+          device, slip: str = "no_slip", h_oscillate: bool = True,
+          label: str = "") -> dict:
+    """Integrate the oscillating-plate channel and fit the amplitude per row.
 
-
-# --------------------------------------------------------------------------- #
-# Setup
-# --------------------------------------------------------------------------- #
-
-def make_config(dx: float, viscosity: float, friction: float, device) -> Config:
-    return Config(
-        dx=dx,
-        h_factor=H_FACTOR,
-        rho0=RHO0,
-        sound_speed=SOUND_SPEED,
-        gamma=7.0,
-        gravity=0.0,             # no hydrostatic loading: pure shear problem
-        viscosity=viscosity,
-        dt=0.0,                  # filled by the computed stable step
-        steps=0,
-        output_every=1000,
-        pool_width=LENGTH,
-        pool_depth=HEIGHT,
-        boundary="wall",
-        wall_layers=WALL_LAYERS,
-        wall_friction=friction,
-        fail_fast=False,
-        device=str(device),
-    )
-
-
-def build_fluid(cfg: Config, height: float, length: float, device):
-    """Fluid lattice, rows ``y = dx/2, 3dx/2, ... < height``, ``x`` in [0, L)."""
-    dx = cfg.dx
-    xs = torch.arange(dx * 0.5, length, dx, device=device)
-    ys = torch.arange(dx * 0.5, height, dx, device=device)
-    gx, gy = torch.meshgrid(xs, ys, indexing="xy")
-    pos = torch.stack((gx.reshape(-1), gy.reshape(-1)), dim=-1)
-    mass = torch.full((pos.shape[0],), cfg.rho0 * dx * dx, device=device)
-    return pos, mass
-
-
-def build_walls(cfg: Config, height: float, length: float, layers: int,
-                device):
-    """Bottom (oscillating) and top (rest) wall bands; velocities start at zero.
-
-    ``wall_vel`` is updated in the time loop: the bottom band carries
-    ``u_x = U cos(omega t)``, the top band stays at rest.  The bands are extended
-    three spacings past both ``x`` ends so periodic images of the fluid always
-    see full wall support (same construction as ``benchmarks/couette``).
+    The plate velocity ``U0 cos(omega t)`` is prescribed exactly (it is the
+    boundary condition, not a fit).  Row-mean ``u_x`` is sampled during the
+    measurement window; a harmonic fit at ``omega`` gives the amplitude and
+    phase of every row, which is what the gates grade.
     """
     dx = cfg.dx
-    margin = 3.0 * dx
-    xs = torch.arange(-margin, length + margin, dx, device=device)
-    bottom, top = [], []
-    for layer in range(1, layers + 1):
-        yb = torch.full_like(xs, -dx * 0.5 - (layer - 1) * dx)
-        bottom.append(torch.stack((xs, yb), dim=-1))
-        yt = torch.full_like(xs, height + dx * 0.5 + (layer - 1) * dx)
-        top.append(torch.stack((xs, yt), dim=-1))
-    # Bottom band first, so ``wall_vel[:n_bottom]`` is exactly the moving plate.
-    pos = torch.cat(bottom + top, dim=0)
-    n_bottom = xs.numel() * layers
-    return pos, torch.zeros_like(pos), n_bottom
-
-
-def periodic_images(pos, length: float):
-    shift = torch.tensor([length, 0.0], dtype=pos.dtype, device=pos.device)
-    return torch.cat((pos, pos + shift, pos - shift), dim=0)
-
-
-# --------------------------------------------------------------------------- #
-# Time integration
-# --------------------------------------------------------------------------- #
-
-def run_case(cfg: Config, height: float, length: float, u0: float,
-             omega: float, periods_discard: float, periods_average: float,
-             device, snapshot: bool = True):
-    """Integrate the oscillating-plate channel and project onto the fundamental."""
-    dx = cfg.dx
+    delta = penetration_depth(viscosity, omega)
     pos, mass = build_fluid(cfg, height, length, device)
     n = pos.shape[0]
-    wall, wall_vel, n_bottom = build_walls(cfg, height, length,
-                                              cfg.wall_layers, device)
     vel = torch.zeros_like(pos)
 
     h = cfg.h_factor * dx
+    support = 2.0 * h
+    planes = [(0.0, +1), (height, -1)]
+
     dt_acoustic = 0.3 * h / cfg.sound_speed
-    dt_viscous = 0.125 * h * h / cfg.viscosity
+    dt_viscous = 0.125 * h * h / viscosity
     dt = min(dt_acoustic, dt_viscous)
-    cfg.dt = dt
-
+    steps = int(round(t_end / dt))
     period = 2.0 * math.pi / omega
-    steps = int(round((periods_discard + periods_average) * period / dt))
-    window_start = int(round(periods_discard * period / dt))
-    window_steps = steps - window_start
-    tw = window_steps * dt                     # exact averaging window length
+    sample_every = max(1, int(round(period / samples_per_period / dt)))
+    measure_from = t_end - t_measure
 
-    # Row bins from the lattice construction (the flow is one-dimensional in y,
-    # so the label never has to be recomputed).
+    # Row index of each particle (the flow is x-invariant, y does not drift)
+    row_of = torch.round((pos[:, 1] - 0.5 * dx) / dx).to(torch.long)
     n_rows = int(round(height / dx))
-    row = torch.round((pos[:, 1] - dx * 0.5) / dx).to(torch.long).clamp_(0, n_rows - 1)
-    row_sum = torch.zeros(n_rows, dtype=pos.dtype, device=device)
-    row_count = torch.bincount(row, minlength=n_rows).clamp_min(1)
 
-    acc_cos = torch.zeros(n_rows, dtype=torch.float64, device=device)
-    acc_sin = torch.zeros(n_rows, dtype=torch.float64, device=device)
-    probe_rows = [1, max(2, int(round(0.5 * math.sqrt(2 * cfg.viscosity / omega) / dx)))]
-    probe = {k: [] for k in probe_rows}
-
-    sample_every = max(1, steps // 400)
+    sample_t: list[float] = []
+    sample_u: list[np.ndarray] = []
+    trace: list[dict] = []
     wall_clock = time.time()
-    snap = None
+    n_ghost = 0
+    n_ghost_max = 0
+
+    def plate_vel(t: float):
+        if not h_oscillate:
+            return (0.0, 0.0)
+        return (u0 * math.cos(omega * t), 0.0)
 
     for step in range(steps):
         t = step * dt
-        wall_vel[:n_bottom, 0] = u0 * math.cos(omega * t)
-        wall_vel[n_bottom:, 0] = 0.0
-
         pos_ext = periodic_images(pos, length)
         vel_ext = torch.cat((vel, vel, vel), dim=0)
         mass_ext = torch.cat((mass, mass, mass), dim=0)
-        _, _, acc = rhs(pos_ext, vel_ext, mass_ext, cfg, wall=wall,
-                        wall_vel=wall_vel)
+
+        w = plate_vel(t)
+        plane_list = [(planes[0][0], planes[0][1], w), planes[1]]
+        ghost_pos, ghost_vel, _ = plane_walls(pos_ext, vel_ext, mass_ext,
+                                             plane_list, support, slip=slip)
+        n_ghost = int(ghost_pos.shape[0])
+        n_ghost_max = max(n_ghost_max, n_ghost)
+
+        _, _, acc = rhs(pos_ext, vel_ext, mass_ext, cfg,
+                        wall=ghost_pos if n_ghost else None,
+                        wall_vel=ghost_vel if n_ghost else None)
         acc = acc[:n].clone()
 
-        if step >= window_start:
-            w = 2.0 * dt / tw
-            row_sum.zero_()
-            row_sum.index_add_(0, row, vel[:, 0])
-            row_mean = (row_sum / row_count).to(torch.float64)
-            acc_cos += w * row_mean * math.cos(omega * t)
-            acc_sin += w * row_mean * math.sin(omega * t)
-
-        if step % sample_every == 0 or step == steps - 1:
-            u = vel[:, 0]
-            entry = {"t": round(t, 6), "u_top": float(u.max()),
-                     "u_mean": float(u.mean())}
-            for k in probe_rows:
-                sel = row == k
-                entry[f"u_row{k}"] = float(u[sel].mean()) if bool(sel.any()) else 0.0
-            probe_entry = entry
-            for k in probe_rows:
-                probe[k].append({"t": entry["t"], "u": entry[f"u_row{k}"]})
-            if step >= steps - 1 or (snapshot and snap is None and t >= 0.9 * steps * dt):
-                snap = {"x": pos[:, 0].tolist(), "y": pos[:, 1].tolist(),
-                        "u": u.tolist(), "t": t}
+        if t >= measure_from:
+            idx = row_of.clamp(0, n_rows - 1).numpy()
+            sums = np.bincount(idx, weights=vel[:, 0].double().numpy(),
+                               minlength=n_rows)
+            counts = np.bincount(idx, minlength=n_rows)
+            row_mean = np.divide(sums, counts,
+                                 out=np.full(n_rows, np.nan),
+                                 where=counts > 0)
+            sample_t.append(t)
+            sample_u.append(row_mean)
 
         vel = vel + dt * acc
         pos = pos + dt * vel
         pos[:, 0] = torch.remainder(pos[:, 0], length)
 
-    y_rows = np.array([dx * 0.5 + k * dx for k in range(n_rows)])
-    amp = torch.sqrt(acc_cos ** 2 + acc_sin ** 2).cpu().numpy()
-    phase = torch.atan2(acc_sin, acc_cos).cpu().numpy()
-    a_ref, p_ref = analytic(y_rows, height=height, nu=cfg.viscosity, omega=omega,
-                            u0=u0)
+        if step % max(1, steps // 24) == 0 or step == steps - 1:
+            trace.append({
+                "t": t,
+                "phase": float((t / period) % 1.0),
+                "u_max": float(vel[:, 0].max()),
+                "u_mean": float(vel[:, 0].mean()),
+                "max_mach": float(vel.abs().max()) / cfg.sound_speed,
+                "wall_clock_s": time.time() - wall_clock,
+            })
 
-    profile = []
+    times = np.asarray(sample_t)
+    u_mat = np.asarray(sample_u)            # (n_samples, n_rows)
+    rows = []
     for k in range(n_rows):
-        profile.append({
+        signal = u_mat[:, k]
+        finite = np.isfinite(signal)
+        if finite.sum() < 8:
+            continue
+        fit = harmonic_fit(times[finite], signal[finite], omega)
+        y = 0.5 * dx + k * dx
+        rows.append({
             "row": k,
-            "y": float(y_rows[k]),
-            "y_over_delta": float(y_rows[k] / math.sqrt(2 * cfg.viscosity / omega)),
-            "amplitude": float(amp[k]),
-            "amplitude_ref": float(a_ref[k]),
-            "phase": float(phase[k]),
-            "phase_ref": float(p_ref[k]),
+            "y": float(y),
+            "y_over_delta": float(y / delta),
+            "amplitude": fit["amplitude"],
+            "amplitude_over_U0": fit["amplitude"] / u0 if u0 else float("nan"),
+            "phase": fit["phase"],
+            "mean_over_U0": fit["mean"] / u0 if u0 else float("nan"),
+            "fit_residual": fit["residual"],
+            "n_samples": fit["n_samples"],
         })
 
+    # Residual start-up transient: the same harmonic fit applied to each of the
+    # last three single-period windows.  A converged periodic state gives
+    # identical amplitudes; anything left of the rest-to-oscillation transient
+    # shows up as a trend, which is what the drift number reports.
+    period = 2.0 * math.pi / omega
+    windows = []
+    for back in (3, 2, 1):
+        lo = times[-1] - back * period
+        hi = lo + period
+        sel = (times >= lo) & (times < hi)
+        if sel.sum() < 8:
+            continue
+        amps = {}
+        for target in (0.5 * delta, 1.0 * delta):
+            k = int(min(range(n_rows), key=lambda i: abs(0.5 * dx + i * dx - target)))
+            amps[f"y_over_delta_{target / delta:.1f}"] = harmonic_fit(
+                times[sel], u_mat[sel, k], omega)["amplitude"]
+        windows.append({"t_start": float(lo), "t_end": float(hi), "amps": amps})
+    drift = None
+    if len(windows) >= 2:
+        a, b = windows[-2]["amps"], windows[-1]["amps"]
+        drift = {k: (b[k] - a[k]) / a[k] for k in a if a[k]}
+
+    # space-time field of the fitted measurement window (row-mean u_x)
+    field = {
+        "t": [float(x) for x in times.tolist()],
+        "y": [float(0.5 * dx + k * dx) for k in range(n_rows)],
+        "u": [[float(v) if np.isfinite(v) else None for v in row]
+              for row in u_mat.T.tolist()],
+    }
+
+    # instantaneous velocity profile at the phase where the plate is at peak
+    last_period = times[times >= times[-1] - period]
     return {
-        "n_fluid": int(n),
-        "n_wall": int(wall.shape[0]),
+        "label": label,
+        "slip": slip,
+        "h_oscillate": h_oscillate,
         "dx": dx,
-        "dt": dt,
+        "h": h,
+        "delta": delta,
+        "delta_over_dx": delta / dx,
+        "height": height,
+        "height_over_delta": height / delta,
+        "length": length,
+        "viscosity": viscosity,
+        "omega": omega,
         "period": period,
-        "steps": steps,
-        "window_steps": window_steps,
-        "window_s": tw,
-        "delta": math.sqrt(2.0 * cfg.viscosity / omega),
-        "rows_in_layer": int(np.sum((y_rows > 0) & (y_rows <= math.sqrt(2.0 * cfg.viscosity / omega)))),
+        "u0": u0,
+        "sound_speed": cfg.sound_speed,
+        "h_factor": cfg.h_factor,
         "wall_friction": cfg.wall_friction,
-        "profile": profile,
-        "probe": {f"row{k}": v for k, v in probe.items()},
-        "snapshot": snap,
-        "max_mach": float(max(p["u_top"] for p in [probe_entry])) / cfg.sound_speed,
+        "rho0": cfg.rho0,
+        "mach_number": u0 / cfg.sound_speed,
+        "stokes_reynolds": u0 * delta / viscosity,
+        "n_fluid": int(n),
+        "n_ghost_typical": n_ghost,
+        "n_ghost_max": n_ghost_max,
+        "dt": dt,
+        "steps": steps,
+        "steps_per_period": period / dt,
+        "sample_every": sample_every,
+        "n_samples": int(times.size),
+        "t_end": t_end,
+        "measure_from": measure_from,
+        "rows": rows,
+        "field": field,
+        "trace": trace,
         "wall_clock_s": time.time() - wall_clock,
+        "window_amplitudes": windows,
+        "window_drift": drift,
+        "sample_window_last_period_end": float(last_period[-1])
+        if last_period.size else float("nan"),
     }
 
 
 # --------------------------------------------------------------------------- #
-# Analysis
+# Metrics and gates
 # --------------------------------------------------------------------------- #
 
-def layer_metrics(result: dict, gate_delta: float) -> dict:
-    """Compare the measured amplitude/phase field with the exact solution."""
-    prof = result["profile"]
-    delta = result["delta"]
-    # Rows strictly inside the Stokes layer, first fluid row excluded.
-    sel = [p for p in prof if 0.0 < p["y"] <= delta and p["row"] >= 1]
-    first = prof[0]
-    if len(sel) < 2:
-        raise RuntimeError("fewer than two usable rows inside the Stokes layer")
+def evaluate(case: dict, height: float, viscosity: float, omega: float,
+             u0: float) -> dict:
+    """Row-by-row comparison with both references plus the gates' ingredients."""
+    delta = penetration_depth(viscosity, omega)
+    rows = case["rows"]
+    out_rows = []
+    for r in rows:
+        y = r["y"]
+        ref_half = semi_infinite_amplitude(y, u0, viscosity, omega)
+        ref_fd = float(finite_depth_amplitude(np.array([y]), height, u0,
+                                              viscosity, omega)[0])
+        out_rows.append({
+            **r,
+            "amplitude_half_space": float(ref_half),
+            "amplitude_finite_depth": ref_fd,
+            "rel_err_half_space": (r["amplitude"] - ref_half) / ref_half
+            if ref_half > 0 else float("nan"),
+            "rel_err_finite_depth": (r["amplitude"] - ref_fd) / ref_fd
+            if ref_fd > 0 else float("nan"),
+            "phase_half_space": float(-y / delta),
+            "phase_err": r["phase"] - float(-y / delta),
+        })
 
-    y = np.array([p["y"] for p in sel])
-    a = np.array([p["amplitude"] for p in sel])
-    ar = np.array([p["amplitude_ref"] for p in sel])
-    ph = np.array([p["phase"] for p in sel])
-    phr = np.array([p["phase_ref"] for p in sel])
+    layer = [r for r in out_rows if r["y"] <= delta]
+    outside = [r for r in out_rows if r["y"] > delta]
 
-    u0 = ar[0] / math.exp(-y[0] / delta) if y[0] < delta else float(ar[0])
-    l2 = float(np.sqrt(np.mean((a - ar) ** 2)) / u0)
+    def l2(rs, key):
+        if not rs:
+            return float("nan")
+        return math.sqrt(sum(r[key] ** 2 for r in rs) / len(rs))
 
-    # Decay rate: least squares on ln A (analytic slope is -1/delta).
-    lna = np.log(np.maximum(a, 1e-12))
-    slope_a = float(np.polyfit(y, lna, 1)[0])
-    slope_ar = float(np.polyfit(y, np.log(ar), 1)[0])
-    decay_err = abs((slope_a - slope_ar) * delta)
+    # decay rate: least-squares slope of ln A vs y over 0 < y <= delta
+    fit_pts = [r for r in out_rows if r["y"] <= delta and r["amplitude"] > 0]
+    if len(fit_pts) >= 3:
+        ys = np.array([r["y"] for r in fit_pts])
+        lnA = np.log(np.array([r["amplitude"] for r in fit_pts]))
+        slope = float(np.polyfit(ys, lnA, 1)[0])
+    else:
+        slope = float("nan")
 
-    # Phase lag: analytic phase grows as y/delta (modulo 2*pi wraps).
-    dph = np.unwrap(ph - phr)
-    phase_err = abs(float(np.polyfit(y, ph, 1)[0]) * delta - 1.0)
-
-    # Effective wall offset implied by the amplitude decay (diagnostic only).
-    intercept = float(np.polyfit(y, lna, 1)[1])
-    y_at_u0 = (math.log(u0) - intercept) / slope_a if slope_a != 0 else float("nan")
-    wall_offset = float(-y_at_u0) if math.isfinite(y_at_u0) else float("nan")
-
-    return {
-        "n_rows_in_layer": len(sel),
-        "amplitude_l2": l2,
-        "decay_rate": slope_a * delta,
-        "decay_rate_ref": slope_ar * delta,
-        "decay_err": decay_err,
-        "phase_slope": float(np.polyfit(y, ph, 1)[0]) * delta,
-        "phase_err": phase_err,
-        "phase_wrap_maxdev": float(np.max(np.abs(dph))),
-        "first_row_amplitude": float(first["amplitude"]),
-        "first_row_amplitude_ref": float(first["amplitude_ref"]),
-        "first_row_ratio": float(first["amplitude"] / first["amplitude_ref"]),
-        "wall_offset_over_dx": wall_offset / result["dx"] if math.isfinite(wall_offset) else float("nan"),
-        "u0_est": u0,
-        "max_abs_phase_dev_rad": float(np.max(np.abs(dph))),
+    metrics = {
+        "n_rows_stokes_layer": len(layer),
+        "n_rows_outside_layer": len(outside),
+        "amplitude_l2_half_space_pct": 100.0 * l2(layer, "rel_err_half_space"),
+        "amplitude_l2_finite_depth_pct": 100.0 * l2(layer, "rel_err_finite_depth"),
+        "amplitude_worst_row_half_space_pct": 100.0 * max(
+            (abs(r["rel_err_half_space"]) for r in layer), default=float("nan")),
+        "amplitude_worst_row_y_over_delta": max(
+            layer, key=lambda r: abs(r["rel_err_half_space"]))["y_over_delta"]
+        if layer else float("nan"),
+        # Relative error is meaningless where the amplitude itself is below the
+        # discretisation noise (A < 1 % of U0 beyond y ~ 4.6 delta), so the
+        # all-row numbers are quoted two ways: relative but limited to y<=2delta,
+        # and absolute (normalised by U0) over every row.
+        "amplitude_l2_rel_to_2delta_pct": 100.0 * l2(
+            [r for r in out_rows if r["y"] <= 2.0 * delta], "rel_err_half_space"),
+        "amplitude_abs_l2_all_rows_pct": 100.0 * math.sqrt(
+            sum(((r["amplitude"] - r["amplitude_half_space"]) / case["u0"]) ** 2
+                for r in out_rows) / max(len(out_rows), 1)),
+        "decay_rate_measured": slope,
+        "decay_rate_analytic": -1.0 / delta,
+        "decay_rate_error_pct": 100.0 * (slope * delta + 1.0),
+        "delta_measured": -1.0 / slope if slope else float("nan"),
+        "delta_analytic": delta,
+        "delta_ratio": (-1.0 / slope) / delta if slope else float("nan"),
+        "phase_max_abs_err_rad": max((abs(r["phase_err"]) for r in layer),
+                                     default=float("nan")),
+        "phase_l2_err_rad": l2(layer, "phase_err"),
+        "rectified_mean_max_over_U0": max(
+            (abs(r["mean_over_U0"]) for r in out_rows), default=float("nan")),
+        "fit_residual_max": max((r["fit_residual"] for r in out_rows),
+                                default=float("nan")),
+        "amplitude_max_over_U0": max((r["amplitude_over_U0"] for r in out_rows),
+                                     default=float("nan")),
+        "first_row_amplitude_over_U0": out_rows[0]["amplitude_over_U0"]
+        if out_rows else float("nan"),
+        "first_row_amplitude_analytic_over_U0": float(
+            math.exp(-(0.5 * case["dx"]) / delta)),
+        "window_drift_max_pct": 100.0 * max(
+            (abs(v) for v in (case.get("window_drift") or {}).values()),
+            default=float("nan")),
+        "truncation_bias_at_delta_pct": 100.0 * (
+            float(finite_depth_amplitude(np.array([delta]), height, u0,
+                                         viscosity, omega)[0])
+            / float(semi_infinite_amplitude(delta, u0, viscosity, omega)) - 1.0),
     }
+    return {"rows": out_rows, "metrics": metrics}
 
 
-def verdict(result: dict, metrics: dict, control_metrics: dict | None) -> dict:
-    reasons = []
-    ok = True
+def gates(res: dict) -> dict:
+    m = res["metrics"]
+    out = {
+        "G1_amplitude_l2_5pct": abs(m["amplitude_l2_half_space_pct"])
+        <= GATES["G1_amplitude_l2_pct"],
+        "G2_worst_row_10pct": abs(m["amplitude_worst_row_half_space_pct"])
+        <= GATES["G2_worst_row_pct"],
+        "G3_decay_rate_5pct": abs(m["decay_rate_error_pct"])
+        <= GATES["G3_decay_rate_pct"],
+        "G4_finite_depth_l2_5pct": abs(m["amplitude_l2_finite_depth_pct"])
+        <= GATES["G4_finite_depth_l2_pct"],
+        "stokes_layer_has_5_rows": m["n_rows_stokes_layer"] >= 5,
+    }
+    if res.get("slip") == "free_slip" or not res.get("h_oscillate", True):
+        # negative control: an inviscid tangential wall (or a still wall) must
+        # not drive the flow at all
+        out["G5_control_drives_no_flow_5pct"] = m["amplitude_max_over_U0"] <= 0.05
+    return out
 
-    def gate(name, passed, detail):
-        nonlocal ok
-        ok = ok and passed
-        if not passed:
-            reasons.append(f"{name}: {detail}")
 
-    gate("G1 amplitude L2", metrics["amplitude_l2"] < GATES["amplitude_l2"],
-         f"{100 * metrics['amplitude_l2']:.2f}% >= 5%")
-    gate("G2 decay rate", metrics["decay_err"] < GATES["decay_rate"],
-         f"slope*delta = {metrics['decay_rate']:.4f} (ref "
-         f"{metrics['decay_rate_ref']:.4f})")
-    gate("G3 phase slope", metrics["phase_err"] < GATES["phase_slope"],
-         f"phase slope*delta = {metrics['phase_slope']:.4f}")
-    gate("G5 rows in layer",
-         metrics["n_rows_in_layer"] >= GATES["min_rows_in_layer"],
-         f"{metrics['n_rows_in_layer']} < 5")
-    if control_metrics is not None:
-        gate("G4 free-slip control",
-             control_metrics["first_row_ratio"] < GATES["freeslip_ratio"],
-             f"free-slip first-row amplitude ratio "
-             f"{control_metrics['first_row_ratio']:.3f} >= 0.20")
-    return {"status": "pass" if ok else "fail", "reasons": reasons,
-            "gates": GATES}
+def run_one(delta_over_dx: int, device, *, u0: float = U0,
+            viscosity: float = NU, omega: float = OMEGA, h_factor: float = H_FACTOR,
+            sound_speed: float = SOUND_SPEED, slip: str = "no_slip",
+            h_oscillate: bool = True, periods: float = PERIODS,
+            measure_periods: float = MEASURE_PERIODS, label: str = "") -> dict:
+    delta = penetration_depth(viscosity, omega)
+    dx = delta / float(delta_over_dx)
+    height = H_OVER_DELTA * delta
+    length = COLUMNS * dx
+    cfg = make_case_config(dx, height, viscosity, sound_speed, h_factor,
+                           FRICTION, device)
+    period = 2.0 * math.pi / omega
+    t_end = periods * period
+    t_measure = measure_periods * period
+    case = drive(cfg, height, length, viscosity, omega, u0, t_end, t_measure,
+                 SAMPLES_PER_PERIOD, device, slip=slip,
+                 h_oscillate=h_oscillate, label=label or f"{delta_over_dx}")
+    ev = evaluate(case, height, viscosity, omega, u0)
+    result = {
+        **{k: v for k, v in case.items() if k not in ("rows", "field")},
+        "resolution_delta_over_dx": delta_over_dx,
+        "metrics": ev["metrics"],
+        "rows": ev["rows"],
+        "field": case["field"],
+    }
+    result["gates"] = gates(result)
+    return result
 
 
 # --------------------------------------------------------------------------- #
-# Driver
+# Figures
 # --------------------------------------------------------------------------- #
 
-def run_one(dx: float, friction: float, viscosity: float = NU,
-            periods_discard: float = PERIODS_DISCARD,
-            periods_average: float = PERIODS_AVERAGE, device=None,
-            label: str = "") -> dict:
-    device = resolve_device(device or "cpu")
-    cfg = make_config(dx, viscosity, friction, device)
-    res = run_case(cfg, HEIGHT, LENGTH, U0, OMEGA, periods_discard,
-                   periods_average, device)
-    res["metrics"] = layer_metrics(res, GATES["amplitude_l2"])
-    res["label"] = label
-    return res
-
-
-def make_figures(payload: dict, out: Path) -> list:
+def make_figures(results: list[dict], out_dir: Path) -> list[str]:
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    names = []
-    ref = min(payload["ladder"], key=lambda r: r["dx"])
-    prof = ref["profile"]
-    y = np.array([p["y_over_delta"] for p in prof])
-    a = np.array([p["amplitude"] for p in prof])
-    ar = np.array([p["amplitude_ref"] for p in prof])
-    ph = np.array([p["phase"] for p in prof])
-    phr = np.array([p["phase_ref"] for p in prof])
+    out_dir.mkdir(parents=True, exist_ok=True)
+    made = []
+    finest = max(results, key=lambda r: r["resolution_delta_over_dx"])
 
-    fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.2))
-    ax = axes[0]
-    ax.plot(y, a / U0, "o-", label="SPH (no-slip)")
-    ax.plot(y, ar / U0, "k--", label="exact")
-    ctrl = payload.get("control")
-    if ctrl:
-        yc = np.array([p["y_over_delta"] for p in ctrl["profile"]])
-        ac = np.array([p["amplitude"] for p in ctrl["profile"]])
-        ax.plot(yc, ac / U0, "s:", color="tab:red", label="free-slip control")
-    ax.axvline(1.0, color="0.7", lw=0.8)
-    ax.set_xlabel(r"$y/\delta$")
-    ax.set_ylabel(r"amplitude $A/U$")
-    ax.set_title(f"amplitude decay, dx/H=1/{round(HEIGHT / ref['dx'])}; "
-                 f"L2={100 * ref['metrics']['amplitude_l2']:.2f}%")
-    ax.legend()
-    ax.grid(alpha=0.3)
+    # 1. amplitude decay vs wall distance, log scale, half-space + finite depth
+    fig, ax = plt.subplots(1, 2, figsize=(11, 4.2))
+    for res in results:
+        y = np.array([r["y_over_delta"] for r in res["rows"]])
+        a = np.array([r["amplitude_over_U0"] for r in res["rows"]])
+        ax[0].semilogy(y, a, "o-", ms=3, lw=1.0,
+                       label=f"SPH $\\delta/dx$={res['resolution_delta_over_dx']}")
+    y = np.linspace(0.0, H_OVER_DELTA, 400)
+    ax[0].semilogy(y, np.exp(-y), "k-", lw=2.0, label=r"$e^{-y/\delta}$ (Landau §24)")
+    ax[0].semilogy(y, finite_depth_amplitude(y * finest["delta"],
+                                             finest["height"], finest["u0"],
+                                             finest["viscosity"],
+                                             finest["omega"]) / finest["u0"],
+                   "k--", lw=1.2, label="finite depth (exact, H=6$\\delta$)")
+    ax[0].set_xlabel(r"$y/\delta$")
+    ax[0].set_ylabel(r"$A(y)/U_0$")
+    ax[0].set_title("amplitude decay in the Stokes layer")
+    ax[0].legend(fontsize=7)
+    ax[0].grid(alpha=0.3)
 
-    ax = axes[1]
-    ax.plot(y, np.unwrap(ph), "o-", label="SPH")
-    ax.plot(y, np.unwrap(phr), "k--", label="exact")
-    ax.plot(y, y, ":", color="0.6", label=r"$y/\delta$ (H$\to\infty$)")
-    ax.set_xlabel(r"$y/\delta$")
-    ax.set_ylabel("phase lag [rad]")
-    ax.set_title(f"phase lag; slope*delta={ref['metrics']['phase_slope']:.3f}")
-    ax.legend()
-    ax.grid(alpha=0.3)
-
-    ax = axes[2]
-    snap = ref.get("snapshot")
-    if snap:
-        s = ax.scatter(snap["x"], snap["y"], c=snap["u"], s=6, cmap="coolwarm")
-        fig.colorbar(s, ax=ax, label=r"$u_x$ [m/s]")
-        ax.set_aspect("equal")
-        ax.set_xlabel("x [m]")
-        ax.set_ylabel("y [m]")
-        ax.set_title(f"u_x field at t={snap['t']:.3f} s")
+    # 2. relative error of the amplitude, per row
+    for res in results:
+        y = np.array([r["y_over_delta"] for r in res["rows"]])
+        e = 100.0 * np.array([r["rel_err_half_space"] for r in res["rows"]])
+        ax[1].plot(y, e, "o-", ms=3, lw=1.0,
+                   label=f"$\\delta/dx$={res['resolution_delta_over_dx']}")
+    ax[1].axhspan(-5, 5, color="0.85", label="±5 % gate (G1)")
+    ax[1].axvline(1.0, color="k", ls=":", lw=1.0)
+    ax[1].set_xlabel(r"$y/\delta$")
+    ax[1].set_ylabel(r"$(A_{SPH}-A_{analytic})/A_{analytic}$  [%]")
+    ax[1].set_title("amplitude error per row")
+    ax[1].legend(fontsize=7)
+    ax[1].grid(alpha=0.3)
     fig.tight_layout()
-    path = out / "stokes_second.png"
-    fig.savefig(path, dpi=140)
+    p1 = out_dir / "amplitude_decay.png"
+    fig.savefig(p1, dpi=150)
     plt.close(fig)
-    names.append(path.name)
+    made.append(str(os.path.relpath(p1, REPO)))
 
-    # Time series at two probe rows vs the exact forcing.
-    fig, ax = plt.subplots(figsize=(7.0, 3.6))
-    for key, colour in (("row1", "tab:blue"), ("row2", "tab:green")):
-        if key not in ref["probe"]:
+    # 3. space-time field of the finest run + phase snapshot
+    fig, ax = plt.subplots(1, 2, figsize=(11, 4.2))
+    y = np.array(finest["field"]["y"])
+    t = np.array(finest["field"]["t"])
+    u = np.array([[np.nan if v is None else v for v in row]
+                  for row in finest["field"]["u"]])
+    mesh = ax[0].pcolormesh(t, y / finest["delta"], u / finest["u0"],
+                            shading="auto", cmap="RdBu_r")
+    cb = fig.colorbar(mesh, ax=ax[0])
+    cb.set_label(r"$u_x/U_0$")
+    ax[0].set_xlabel("t [s]")
+    ax[0].set_ylabel(r"$y/\delta$")
+    ax[0].set_title("SPH velocity field (measurement window)")
+    ax[0].invert_yaxis()
+
+    t_cut = t[-1] - finest["period"]
+    for res in results:
+        tt = np.array(res["field"]["t"])
+        yy = np.array(res["field"]["y"]) / res["delta"]
+        uu = np.array([[np.nan if v is None else v for v in row]
+                       for row in res["field"]["u"]])
+        idx = int(np.argmin(np.abs(tt - t_cut)))
+        ax[1].plot(uu[:, idx] / res["u0"], yy, "o-", ms=3, lw=1.0,
+                   label=f"SPH $\\delta/dx$={res['resolution_delta_over_dx']}")
+    yv = np.linspace(0, H_OVER_DELTA, 400)
+    ax[1].plot(finite_depth(yv * finest["delta"], t_cut, finest["height"],
+                            finest["u0"], finest["viscosity"], finest["omega"])
+               / finest["u0"], yv, "k--", lw=1.6,
+               label="finite-depth exact")
+    ax[1].set_xlabel(r"$u_x/U_0$")
+    ax[1].set_ylabel(r"$y/\delta$")
+    ax[1].set_title("snapshot profile")
+    ax[1].legend(fontsize=7)
+    ax[1].grid(alpha=0.3)
+    fig.tight_layout()
+    p2 = out_dir / "field_snapshot.png"
+    fig.savefig(p2, dpi=150)
+    plt.close(fig)
+    made.append(str(os.path.relpath(p2, REPO)))
+    return made
+
+
+# --------------------------------------------------------------------------- #
+# Main
+# --------------------------------------------------------------------------- #
+
+SENSITIVITY_SPEC = (
+    ("U0_half", dict(u0=0.5 * U0)),
+    ("h_factor_1.9", dict(h_factor=1.9)),
+    ("free_slip_control", dict(slip="free_slip")),
+    ("static_wall_control", dict(h_oscillate=False)),
+)
+
+
+def run_sensitivities(device, args) -> list[dict]:
+    """One-at-a-time variation of U0, h/dx and the wall model, at one mesh."""
+    out = []
+    skip = set(args.skip_sensitivity or ())
+    for name, kw in SENSITIVITY_SPEC:
+        if name in skip:
             continue
-        tr = ref["probe"][key]
-        t = np.array([p["t"] for p in tr])
-        u = np.array([p["u"] for p in tr])
-        k = int(key.replace("row", ""))
-        yy = ref["dx"] * (0.5 + k)
-        plt_a, plt_p = analytic(np.array([yy]), u0=U0)
-        m = t >= (PERIODS_DISCARD * ref["period"])
-        ax.plot(t[m], u[m], ".", ms=3, color=colour,
-                label=f"SPH row {k}")
-        ax.plot(t[m], plt_a[0] * np.cos(OMEGA * t[m] - plt_p[0]), "-",
-                color=colour, lw=0.9, label=f"exact row {k}")
-    ax.set_xlabel("t [s]")
-    ax.set_ylabel(r"$u_x$ [m/s]")
-    ax.set_title("phase-resolved velocity at two rows")
-    ax.grid(alpha=0.3)
-    ax.legend(fontsize=8, ncol=2)
-    fig.tight_layout()
-    path = out / "stokes_second_timeseries.png"
-    fig.savefig(path, dpi=140)
-    plt.close(fig)
-    names.append(path.name)
-    return names
+        r = run_one(int(args.sensitivity_resolution), device,
+                    sound_speed=args.c0, periods=args.periods,
+                    measure_periods=args.measure_periods,
+                    label=f"sensitivity_{name}", **kw)
+        out.append(r)
+        print(f"  {name}: L2(layer)={r['metrics']['amplitude_l2_half_space_pct']:.2f} %"
+              f"  A_max/U0={r['metrics']['amplitude_max_over_U0']:.4f}"
+              f"  wall={r['wall_clock_s']:.1f} s", flush=True)
+    return out
+
+
+def _round_sig(obj, sig: int = 6):
+    """Round floats for persistence (full precision stays in memory)."""
+    if isinstance(obj, bool):
+        return obj
+    if isinstance(obj, float):
+        return float(f"{obj:.{sig}g}") if math.isfinite(obj) else obj
+    if isinstance(obj, dict):
+        return {k: _round_sig(v, sig) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_round_sig(v, sig) for v in obj]
+    return obj
+
+
+def _slim_payload(payload: dict) -> dict:
+    """Keep the artefacts reviewable: field only for the finest mesh, decimated.
+
+    A 4 MB result file is dropped by artefact filters (that is exactly how the
+    first delivery of this case lost its run artefacts), so the persisted form
+    carries every metric and every fitted row, but the space-time field only
+    once and every second sample.
+    """
+    out = _round_sig(payload)
+    runs = out.get("runs") or []
+    finest = max((r["resolution_delta_over_dx"] for r in runs), default=None)
+    for run in runs:
+        field = run.get("field")
+        if not isinstance(field, dict):
+            continue
+        if run["resolution_delta_over_dx"] != finest:
+            run.pop("field", None)
+            run["field_note"] = "dropped: only the finest mesh's field is kept"
+        else:
+            # 8x in time and 4 significant digits: the figure is rendered from
+            # the in-memory array, so the persisted copy only has to let a
+            # reviewer re-draw it, not to be the primary store.
+            step = 8
+            run["field"] = {"t": _round_sig(field["t"][::step], 4), "y": field["y"],
+                            "u": _round_sig([row[::step] for row in field["u"]], 4),
+                            "decimation": step}
+    for sub in ("sensitivity",):
+        for run in out.get(sub) or []:
+            run.pop("field", None)
+            run.pop("trace", None)
+    return out
+
+
+def _sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _benchmark_rows(run: dict) -> list[dict]:
+    """ref vs got, one row per judged quantity (machine-readable gate table)."""
+    m = run["metrics"]
+    rows = [
+        ("amplitude_l2_half_space_pct", 0.0, m["amplitude_l2_half_space_pct"],
+         GATES["G1_amplitude_l2_pct"],
+         "row-mean rms of (A_SPH-A_ref)/A_ref over y<=delta, %; ref = 0"),
+        ("amplitude_worst_row_half_space_pct", 0.0,
+         m["amplitude_worst_row_half_space_pct"], GATES["G2_worst_row_pct"],
+         "max |(A_SPH-A_ref)/A_ref| over y<=delta, %"),
+        ("decay_rate_error_pct", 0.0, m["decay_rate_error_pct"],
+         GATES["G3_decay_rate_pct"],
+         "100*(-dlnA/dy * delta + 1); 0 = exact exp(-y/delta)"),
+        ("amplitude_l2_finite_depth_pct", 0.0,
+         m["amplitude_l2_finite_depth_pct"], GATES["G4_finite_depth_l2_pct"],
+         "same rms vs the exact finite-depth solution of the run"),
+        ("delta_ratio", 1.0, m["delta_ratio"], 0.05,
+         "fitted delta = -1/slope vs delta = sqrt(2 nu/omega)"),
+        ("first_row_amplitude_over_U0", m["first_row_amplitude_analytic_over_U0"],
+         m["first_row_amplitude_over_U0"], 5.0,
+         "A at y=dx/2 vs exp(-dx/2/delta)"),
+    ]
+    out = []
+    for name, ref, got, tol, definition in rows:
+        err = 100.0 * (got - ref) / ref if ref else float(got)
+        out.append({"quantity": name, "reference": ref, "got": got,
+                    "tolerance": tol,
+                    "error_abs": abs(got - ref),
+                    "error_pct_of_ref": err,
+                    "pass": bool(abs(got - ref) <= tol) if ref == 0.0
+                    else bool(abs(got / ref - 1.0) * 100.0 <= tol),
+                    "definition": definition})
+    return out
+
+
+def _write_bundle(out_dir: Path, payload: dict, repro_cmd: str) -> None:
+    """benchmark.json (ref vs got) + MANIFEST.json (sha256 of every artefact)."""
+    if payload["mode"] == "ladder":
+        finest = max(payload["runs"],
+                     key=lambda r: r["resolution_delta_over_dx"])
+        bench = {
+            "anchor": "CASE-SPH-STOKES-2ND-PROBLEM",
+            "case": "stokes_second_oscillating_plate",
+            "primary_metric": "amplitude_l2_half_space_pct",
+            "primary_tolerance_pct": GATES["G1_amplitude_l2_pct"],
+            "primary_value_pct": finest["metrics"]["amplitude_l2_half_space_pct"],
+            "reference": ("u(y,t)=U0 exp(-y/delta) cos(omega t - y/delta), "
+                          "delta=sqrt(2 nu/omega) -- Landau & Lifshitz, Fluid "
+                          "Mechanics 2nd English ed., section 24 (Stokes' second "
+                          "problem); the finite-depth form is the exact solution "
+                          "of the channel actually run"),
+            "resolution_delta_over_dx": finest["resolution_delta_over_dx"],
+            "rows_of_finest_run": _benchmark_rows(finest),
+            "repro_cmd": repro_cmd,
+        }
+        (out_dir / "benchmark.json").write_text(
+            json.dumps(_slim_payload(bench), indent=1))
+    files = {}
+    for path in sorted(out_dir.iterdir()):
+        if path.is_file() and path.name != "MANIFEST.json":
+            files[path.name] = {"sha256": _sha256(path),
+                                "bytes": path.stat().st_size}
+    (out_dir / "MANIFEST.json").write_text(json.dumps(
+        {"case": "stokes_second_oscillating_plate",
+         "anchor": "CASE-SPH-STOKES-2ND-PROBLEM",
+         "mode": payload["mode"],
+         "provenance": payload["provenance"],
+         "gates": payload["provenance"]["gates"],
+         "artifacts": files,
+         "command": repro_cmd}, indent=1, default=_jsonable))
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--out", type=Path, default=OUT)
-    parser.add_argument("--resolutions", type=float, nargs="+",
-                        default=[DX_REF, DX_REF / 2])
-    parser.add_argument("--device", default="auto")
-    parser.add_argument("--threads", type=int, default=2)
-    parser.add_argument("--quick", action="store_true")
-    parser.add_argument("--figure", action="store_true")
-    parser.add_argument("--no-control", action="store_true")
-    args = parser.parse_args(argv)
-
-    args.out.mkdir(parents=True, exist_ok=True)
-    if args.figure:
-        payload = json.loads((args.out / "results.json").read_text())
-        print("[stokes2] figures:", make_figures(payload, args.out))
-        return 0
-
-    if args.device in ("auto", "cpu"):
-        torch.set_num_threads(args.threads)
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--out", type=Path, default=OUT)
+    ap.add_argument("--quick", action="store_true",
+                    help="one coarse run, short window (smoke test)")
+    ap.add_argument("--ladder", action="store_true",
+                    help="resolution ladder, gates G1..G4, G6")
+    ap.add_argument("--sweep", action="store_true",
+                    help="ladder plus parameter sensitivity and negative controls")
+    ap.add_argument("--probe", default=None,
+                    help="one run at the given delta/dx and dump its metrics")
+    ap.add_argument("--periods", type=float, default=PERIODS)
+    ap.add_argument("--measure-periods", type=float, default=MEASURE_PERIODS)
+    ap.add_argument("--c0", type=float, default=SOUND_SPEED)
+    ap.add_argument("--sensitivity-resolution", type=int, default=8)
+    ap.add_argument("--skip-sensitivity", nargs="*", default=None)
+    ap.add_argument("--sensitivity-only", action="store_true",
+                    help="skip the ladder, run only the sensitivity/control block")
+    ap.add_argument("--device", default="auto")
+    ap.add_argument("--threads", type=int, default=1,
+                    help="torch CPU threads; 1 is fastest for these tiny tensors")
+    args = ap.parse_args(argv)
+    repro_cmd = ("PYTHONPATH=.:src " + " ".join(
+        ["python", "benchmarks/stokes_second/run.py"] + list(sys.argv[1:])))
+    torch.set_num_threads(max(1, args.threads))
     device = resolve_device(args.device)
+    out_dir = args.out
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-    periods_discard, periods_average = PERIODS_DISCARD, PERIODS_AVERAGE
-    resolutions = list(args.resolutions)
-    if args.quick:
-        resolutions = [DX_REF * 2]
-        periods_discard, periods_average = 1, 1
-
-    ladder = []
-    for dx in resolutions:
-        print(f"[stokes2] ladder dx={dx:.5f} (H/dx={HEIGHT / dx:.0f})", flush=True)
-        res = run_one(dx, WALL_FRICTION, device=device,
-                      periods_discard=periods_discard,
-                      periods_average=periods_average,
-                      label=f"dx{HEIGHT / dx:.0f}")
-        m = res["metrics"]
-        print(f"[stokes2]   ampL2={100 * m['amplitude_l2']:.2f}% "
-              f"decay*delta={m['decay_rate']:.4f} phase*delta={m['phase_slope']:.4f} "
-              f"rows={m['n_rows_in_layer']} ({res['wall_clock_s']:.0f}s,"
-              f" {res['steps']} steps)", flush=True)
-        ladder.append(res)
-
-    control = None
-    if not args.no_control:
-        print("[stokes2] free-slip control", flush=True)
-        control = run_one(resolutions[0], 0.0, device=device,
-                          periods_discard=periods_discard,
-                          periods_average=periods_average, label="freeslip")
-        print(f"[stokes2]   first-row amplitude ratio "
-              f"{control['metrics']['first_row_ratio']:.3f}", flush=True)
-
-    payload = {
-        "case": "stokes_second_problem",
-        "description": ("2-D channel 0<y<H, bottom plate oscillates at "
-                        "U cos(omega t), top plate at rest, periodic in x"),
-        "reference": REFERENCE_NOTE,
-        "reference_form": "u = Re{ U [exp(-ky)-exp(-k(2H-y))]/[1-exp(-2kH)] e^{i omega t} }, "
-                          "k=(1+i)/delta, delta=sqrt(2 nu/omega)",
-        "height": HEIGHT,
-        "nu": NU,
-        "period": PERIOD,
-        "omega": OMEGA,
-        "delta": DELTA,
-        "u0": U0,
-        "sound_speed": SOUND_SPEED,
-        "rho0": RHO0,
-        "h_factor": H_FACTOR,
-        "wall_layers": WALL_LAYERS,
-        "wall_friction": WALL_FRICTION,
-        "periods_discard": periods_discard,
-        "periods_average": periods_average,
+    provenance = {
+        "symbolic": verify_symbolic(),
+        "numeric": verify_numeric(),
+        # filled from the parsed arguments below: a provenance block that
+        # repeats module defaults describes a run that may never have happened.
+        "case": {"nu": NU, "omega": OMEGA, "U0": U0, "H_over_delta": H_OVER_DELTA,
+                 "columns": COLUMNS, "rho0": RHO0, "c0": args.c0,
+                 "periods": args.periods,
+                 "measure_periods": args.measure_periods,
+                 "ladder": list(LADDER),
+                 "gamma": GAMMA, "h_factor": H_FACTOR,
+                 "wall_friction": FRICTION,
+                 "mach_number": U0 / args.c0,
+                 "reynolds_u0_delta_over_nu": U0 * penetration_depth(NU, OMEGA) / NU,
+                 "solvers": {"rhs": "tensorsph.droplet_impact.rhs",
+                             "wall": "tensorsph.wall_mirror.plane_walls",
+                             "mesh": "benchmarks.poiseuille.run.build_fluid"}},
         "gates": GATES,
         "device": str(device),
+        "torch_threads": torch.get_num_threads(),
         "torch": torch.__version__,
-        "ladder": ladder,
-        "control": control,
-        "verdict": verdict(ladder[0], ladder[0]["metrics"],
-                           control["metrics"] if control else None),
-        "wall_clock_s": sum(r["wall_clock_s"] for r in ladder + ([control] if control else [])),
+        "numpy": np.__version__,
+        "started": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
-    (args.out / "results.json").write_text(json.dumps(payload, indent=2))
-    print(f"[stokes2] verdict: {payload['verdict']['status']}")
-    for r in payload["verdict"]["reasons"]:
-        print(f"[stokes2]   ! {r}")
-    names = make_figures(payload, args.out) if ladder else []
-    print(f"[stokes2] figures: {names}")
-    return 0 if payload["verdict"]["status"] == "pass" else 1
+    started = time.time()
+
+    if args.probe:
+        res = run_one(int(args.probe), device, periods=args.periods,
+                      measure_periods=args.measure_periods,
+                      sound_speed=args.c0, label=f"probe_dx{args.probe}")
+        payload = {"mode": "probe", "provenance": provenance, "runs": [res],
+                   "repro_cmd": repro_cmd}
+        path = out_dir / "results_probe.json"
+        path.write_text(json.dumps(_slim_payload(payload), indent=1,
+                                   default=_jsonable))
+        _write_bundle(out_dir, payload, repro_cmd)
+        print(json.dumps(res["metrics"], indent=1))
+        print("gates", res["gates"])
+        print(f"wall {res['wall_clock_s']:.1f} s, steps {res['steps']}, "
+              f"dt {res['dt']:.3e}, n_fluid {res['n_fluid']}")
+        return 0
+
+    if args.sensitivity_only:
+        payload = {"mode": "sensitivity", "provenance": provenance,
+                   "sensitivity": run_sensitivities(device, args),
+                   "repro_cmd": repro_cmd}
+        path = out_dir / "results_sensitivity.json"
+        payload["elapsed_s"] = time.time() - started
+        path.write_text(json.dumps(_slim_payload(payload), indent=1,
+                                   default=_jsonable))
+        _write_bundle(out_dir, payload, repro_cmd)
+        print(f"wrote {path}")
+        return 0
+
+    if args.quick:
+        res = run_one(6, device, periods=2.0, measure_periods=1.0, label="quick",
+                      sound_speed=args.c0)
+        payload = {"mode": "quick", "provenance": provenance, "runs": [res],
+                   "repro_cmd": repro_cmd}
+    else:
+        ladder = LADDER if (args.ladder or args.sweep) else (LADDER[1],)
+        runs = []
+        for d in ladder:
+            r = run_one(int(d), device, sound_speed=args.c0,
+                        periods=args.periods,
+                        measure_periods=args.measure_periods,
+                        label=f"ladder_dx{d}")
+            runs.append(r)
+            print(f"  delta/dx={d}: L2(half-space)={r['metrics']['amplitude_l2_half_space_pct']:.2f} %"
+                  f"  L2(finite)={r['metrics']['amplitude_l2_finite_depth_pct']:.2f} %"
+                  f"  rows in layer={r['metrics']['n_rows_stokes_layer']}"
+                  f"  wall={r['wall_clock_s']:.1f} s", flush=True)
+        payload = {"mode": "ladder", "provenance": provenance, "runs": runs}
+
+        if args.sweep:
+            payload["sensitivity"] = run_sensitivities(device, args)
+
+    # convergence gate G6 across the ladder.  A one-rung "ladder" cannot test
+    # convergence, so completeness is part of the gate: the required meshes are
+    # the predeclared ones, and a missing rung fails the run instead of being
+    # silently skipped (that is how the first delivery shipped n=1).
+    if payload["mode"] == "ladder":
+        runs = payload["runs"]
+        res = [r["resolution_delta_over_dx"] for r in runs]
+        l2s = [abs(r["metrics"]["amplitude_l2_half_space_pct"]) for r in runs]
+        required = list(LADDER) if (args.ladder or args.sweep) else [LADDER[1]]
+        conv = {
+            "resolutions": res,
+            "required_resolutions": required,
+            "l2_by_resolution": l2s,
+            "l2_finite_depth_by_resolution": [
+                abs(r["metrics"]["amplitude_l2_finite_depth_pct"]) for r in runs],
+            "complete": res == required,
+        }
+        if len(runs) >= 2:
+            conv["observed_order_l2_half_space"] = [
+                math.log(l2s[i - 1] / l2s[i]) / math.log(res[i] / res[i - 1])
+                for i in range(1, len(runs)) if l2s[i] > 0 and l2s[i - 1] > 0]
+            conv["G6_not_growing"] = l2s[-1] <= l2s[0] + 0.5
+        else:
+            conv["observed_order_l2_half_space"] = []
+            conv["G6_not_growing"] = False
+            conv["G6_reason"] = ("fewer than two rungs were run: convergence "
+                                 "cannot be claimed")
+        conv["all_gates"] = bool(conv["complete"] and conv["G6_not_growing"]
+                                 and all(all(r["gates"].values()) for r in runs))
+        payload["convergence"] = conv
+
+    if payload["mode"] == "ladder" and len(payload["runs"]) >= 1:
+        try:
+            payload["figures"] = make_figures(payload["runs"], out_dir)
+        except Exception as exc:           # a broken plot must not lose the run
+            payload["figures_error"] = f"{type(exc).__name__}: {exc}"
+
+    payload["elapsed_s"] = time.time() - started
+    payload["finished"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    payload["repro_cmd"] = repro_cmd
+    path = out_dir / f"results_{payload['mode']}.json"
+    path.write_text(json.dumps(_slim_payload(payload), indent=1,
+                               default=_jsonable))
+    print(f"wrote {path}  ({payload['elapsed_s']:.1f} s)")
+    _write_bundle(out_dir, payload, repro_cmd)
+
+    if payload["mode"] != "quick":
+        ok = payload.get("convergence", {}).get("all_gates", False)
+        print("gates:", json.dumps({f"dx{r['resolution_delta_over_dx']}": r["gates"]
+                                    for r in payload["runs"]}, indent=1,
+                                   default=_jsonable))
+        return 0 if ok else 1
+    return 0
 
 
 if __name__ == "__main__":
