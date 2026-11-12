@@ -26,7 +26,7 @@ from tensorsph.taylor_green import (CASE_KEY, CaseSpec, analytic_decay_rate_from
                                     ns_residual, ref_vs_got, run_case)
 
 REPO = Path(__file__).resolve().parents[1]
-RUN_DIR = REPO / "runs" / "taylor_green" / "m16532"
+RUN_DIR = REPO / "runs" / "taylor_green" / "m16664"
 
 
 @pytest.fixture(scope="module", autouse=True)
