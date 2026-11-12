@@ -1,0 +1,67 @@
+{
+ "benchmark": "particle_shifting",
+ "scheme": "Lind et al. (2012) Fickian shift, tangential at the free surface",
+ "shift_every": 5,
+ "threads": 2,
+ "cases": {
+  "resting": {
+   "dx": 0.02,
+   "seconds": 0.4,
+   "off": {
+    "shift_every": 0,
+    "steps": 1026,
+    "simulated_time": 0.4001400000000014,
+    "wall_clock_s": 8.30792055092752,
+    "late_rms_speed": 0.008089317177679047,
+    "max_density_compression": 0.009109558105468762,
+    "max_acoustic_courant": 0.301157663539052,
+    "escaped": 0,
+    "mass_drift": 0.0,
+    "front_final": 0.9913740158081055
+   },
+   "on": {
+    "shift_every": 5,
+    "steps": 1026,
+    "simulated_time": 0.4001400000000014,
+    "wall_clock_s": 10.763215249404311,
+    "late_rms_speed": 0.009056276381317662,
+    "max_density_compression": 0.009087585449218727,
+    "max_acoustic_courant": 0.3011843027919531,
+    "escaped": 0,
+    "mass_drift": 0.0,
+    "front_final": 0.9908817410469055
+   },
+   "late_rms_ratio": 1.1195353306589038
+  },
+  "dam_break": {
+   "dx": 0.04,
+   "seconds": 0.8,
+   "off": {
+    "shift_every": 0,
+    "steps": 1026,
+    "simulated_time": 0.8002800000000028,
+    "wall_clock_s": 4.557962320744991,
+    "late_rms_speed": 1.7171257137686198,
+    "max_density_compression": 0.09698461914062495,
+    "max_acoustic_courant": 0.3545841693878174,
+    "escaped": 0,
+    "mass_drift": 0.0,
+    "front_final": 2.0
+   },
+   "on": {
+    "shift_every": 5,
+    "steps": 1026,
+    "simulated_time": 0.8002800000000028,
+    "wall_clock_s": 6.360070278868079,
+    "late_rms_speed": 1.721024252291763,
+    "max_density_compression": 0.09566870117187509,
+    "max_acoustic_courant": 0.35746699333190923,
+    "escaped": 0,
+    "mass_drift": 0.0,
+    "front_final": 1.982334852218628
+   },
+   "max_front_delta_m": 0.01766514778137207,
+   "front_delta_over_column": 0.08832573890686035
+  }
+ }
+}
