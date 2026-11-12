@@ -139,8 +139,22 @@ def run_case(name: str, *, t_end: float = T_END, viscosity: float = 0.02) -> dic
             "integral_rel_error": profile["integral_rel_error"],
             "odd_even_amplitude_over_scale": profile[
                 "odd_even_amplitude_over_scale"],
+            # Lagrangian (lattice-row) profile: the accuracy numbers that are
+            # invariant to the Eulerian binning.  See
+            # docs/verification_threed_hydrostatic_binning.md; the ``rows`` above
+            # are kept because the shipped artifacts and the ledger quote them.
+            "max_rel_error_core_lattice": profile["max_rel_error_core_lattice"],
+            "mean_rel_error_core_lattice": profile["mean_rel_error_core_lattice"],
+            "layers_within_15pct_lattice": profile["layers_within_15pct_lattice"],
+            "core_layers_lattice": profile["core_layers_lattice"],
+            "max_abs_error_over_rho0_g_H_lattice": profile[
+                "max_abs_error_over_scale_lattice"],
+            "odd_even_amplitude_over_scale_lattice": profile[
+                "odd_even_amplitude_over_scale_lattice"],
+            "binning": profile["binning"],
         },
         "profile": profile["rows"],
+        "profile_lattice": profile["rows_by_lattice"],
         "conservation": {
             "centre_of_mass_drift_over_height": (
                 result.centre_of_mass_z[-1] - result.centre_of_mass_z[0])
@@ -173,6 +187,11 @@ def _per_run_status(run: dict) -> dict:
             abs(run["settling"]["relative_change"] or 0.0) < 0.02),
         "centre_of_mass_drift_below_1pct": bool(
             abs(run["conservation"]["centre_of_mass_drift_over_height"]) < 0.01),
+        # Same 15 % band read from the Lagrangian rows instead of the Eulerian
+        # bins.  It is reported next to the Eulerian gate rather than replacing
+        # it: a binning change may not quietly turn a red row green.
+        "per_layer_error_within_15pct_lattice": bool(
+            (pressure["max_rel_error_core_lattice"] or 0.0) < 0.15),
     }
 
 
