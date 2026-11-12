@@ -1,0 +1,37 @@
+{
+  "artifacts": {
+    "benchmark.json": "256ec0305dc7931708ad5637838ecd59657af181f3b3f58a4b1ef227de47fb48",
+    "ref.json": "fa18af599279ca11c84828747f8d64e7b89ed6a41acbd8cdceb178df426edf9d",
+    "report.json": "842dd95bcfb529a342ca4b6ac2e5e94203ae2b20872ee16814408c5792d91cc0",
+    "summary.md": "b28047fcc2552517d00253bd40cb88cfd4ac0a44c6ed18bf8d025f602a52c735"
+  },
+  "case": "CASE-CAPILLARY-WAVE",
+  "environment": {
+    "OMP_NUM_THREADS": "4",
+    "command": "/usr/local/bin/python benchmarks/case_capillary_wave_dispersion/run.py --out-dir artifacts/audit_m15489/run_repro",
+    "git_branch": "agent/m15489",
+    "git_sha": "9a12b6a672c13ebfe91d2bdf89aa3f1a58111470",
+    "machine": "loongarch64",
+    "mpmath": true,
+    "platform": "Linux-6.6.52-1.7.lns23.loongarch64-loongarch64-with-glibc2.38",
+    "python": "3.11.6",
+    "timestamp_utc": "2026-11-12T00:36:18.622254+00:00",
+    "torch": "2.7.1",
+    "torch_threads": 4
+  },
+  "figures": [
+    {
+      "caption": "Frequency error vs particles per wavelength for the two shipped curvature operators; the shaded band is the 10 % case tolerance.",
+      "name": "error_vs_resolution.png"
+    },
+    {
+      "caption": "Measured CSF curvature along one wavelength vs the exact profile of the perturbation.",
+      "name": "curvature_profile.png"
+    },
+    {
+      "caption": "Amplitude and surface-tension sensitivity of the measured dispersion.",
+      "name": "sensitivity.png"
+    }
+  ],
+  "status": "PASS"
+}

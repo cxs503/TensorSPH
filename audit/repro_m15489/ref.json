@@ -1,0 +1,45 @@
+{
+  "citation": {
+    "generalisation": "two-layer finite-depth linear dispersion omega^2 = sigma k^3 / (rho1 coth(k h1) + rho2 coth(k h2)); reduces to Lamb Art. 267 for rho2 -> 0 and k h1 -> infinity.",
+    "provenance": "closed form -> reference numbers are evaluated (mpmath, dps=50), not transcribed; ref.json carries the formula string and a sha256.",
+    "same_citation_in_repo": [
+      "docs/verification_surface_tension_dispersion.md",
+      "docs/verification_capillary_wave_open_surface.md",
+      "docs/benchmarks/capillary-wave.md"
+    ],
+    "source": "Lamb, H. (1932). Hydrodynamics, 6th ed., Cambridge University Press, Art. 267 (capillary waves, deep water, inviscid: omega^2 = T k^3 / rho)."
+  },
+  "cross_checks": {
+    "omega_finite_depth_gc_g0": 47.246795713389034,
+    "omega_lamb_art267_deep_single_fluid": 47.24882983716726,
+    "rel_diff_two_layer_vs_finite_depth_gc": 0.0006016498604245812,
+    "rel_diff_two_layer_vs_lamb": 0.0006446752634861432,
+    "two_layer_denominator_over_rho1": 1.0012905984181468
+  },
+  "dps": 50,
+  "evaluator": "mpmath",
+  "formula": "omega^2 = sigma*k**3/(rho1*coth(k*h1) + rho2*coth(k*h2))",
+  "k_rad_m": "314.1592653589793",
+  "omega_ref_float": 47.218369685342566,
+  "omega_ref_rad_s": "47.218369685342566111",
+  "params": {
+    "amplitude_fraction": 0.02,
+    "curvature_stencil": 4.0,
+    "depth_fluid_factor": 0.8,
+    "depth_fluid_m": 0.016,
+    "depth_gas_factor": 0.5,
+    "depth_gas_m": 0.01,
+    "h_factor": 1.3,
+    "rho_gas_kg_m3": 1.2,
+    "rho_liquid_kg_m3": 1000.0,
+    "sigma_N_m": 0.072,
+    "wavelength_m": 0.02
+  },
+  "period_ref_s": 0.1330665448436692,
+  "phase_speed_ref_m_s": 0.15030073880325545,
+  "reductions": {
+    "all_below_1e-12": true,
+    "two_layer_deep_rho2_zero_vs_lamb_art267": 0.0,
+    "two_layer_rho2_zero_vs_finite_depth_gc": 0.0
+  }
+}
