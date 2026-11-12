@@ -80,6 +80,9 @@ def _row(tag, res, met, wall):
         "got": {k: v for k, v in g.items()},
         "exact": met["exact"],
         "contact_pressure_jump": met["contact_pressure_jump"],
+        "window_trim": met["window_trim"],
+        "frac_trim_star_right": S.WAVE_WINDOW_FRACTION
+        * (met["exact"]["x_shock"] - met["exact"]["x_contact"]),
         "neighbours": res["neighbours"],
         "mass_rel_err": abs(res["mass_final"] - res["mass_initial"]) / res["mass_initial"],
         "energy_rel_change": res["energy_rel_change"],
@@ -180,7 +183,8 @@ def markdown(prod, studies, ref, figlist):
         ("left plateau  rho (x<{:.2f})".format(ex["x_rarefaction_head"] - 0.02),
          g["rho_L"], ex["rho_L"], e["rho_L"]),
         ("left plateau  p", g["p_L"], ex["p_L"], e["p_L"]),
-        ("rarefaction head rho", g["rho_star_L"], ex["rho_star_L"], e["rho_star_L"]),
+        ("star-left rho (behind rarefaction tail)", g["rho_star_L"],
+         ex["rho_star_L"], e["rho_star_L"]),
         ("star-left  p", g["p_star_L"], ex["p_star"], e["p_star_L"]),
         ("star-right rho", g["rho_star_R"], ex["rho_star_R"], e["rho_star_R"]),
         ("star-right p", g["p_star_R"], ex["p_star"], e["p_star_R"]),
@@ -206,6 +210,18 @@ def markdown(prod, studies, ref, figlist):
                     lambda r: "✔" if r["pass_5pct"] else "✘",
                     lambda r: "✔" if r["pass_3pct"] else "✘")) + " |\n"
         return head + body
+
+    lad = studies["resolution"]
+    orders = []
+    for a, b in zip(lad[:-1], lad[1:]):
+        if a["l1_rho"] > 0 and b["l1_rho"] > 0:
+            orders.append(np.log(a["l1_rho"] / b["l1_rho"])
+                          / np.log(b["n_particles"] / a["n_particles"]))
+    order_txt = ("、".join(f"{o:.2f}" for o in orders)) if orders else "n/a"
+    plat_err = "、".join(f"{r['max_abs_rel_err']*100:.2f}%" for r in lad)
+    order_tot = (np.log(lad[0]["l1_rho"] / lad[-1]["l1_rho"])
+                 / np.log(lad[-1]["n_particles"] / lad[0]["n_particles"])
+                 if lad[0]["l1_rho"] > 0 and lad[-1]["l1_rho"] > 0 else float("nan"))
 
     res_tab = study_table(studies["resolution"],
                           ["N", "L1(rho)", "L2(rho)", "max |rel err|", "min neighbours", "<5%", "<3%"],
@@ -343,17 +359,38 @@ Q_ij    = (p_i+p_j)/(ρ_iρ_j) + Π_ij
 ### 分辨率阶梯（h = 2.5 dx，t=0.2）
 
 {res_tab}
-### 光滑长度敏感性（N=800）
+> 实测 L1(ρ) 收敛阶（逐对）：{order_txt}；首末点总阶 {order_tot:.2f}——**远低于一阶**。
+> 两点如实说明：(i) L1 由间断抹平主导（∝ 抹平宽度×跳幅），不会随 N 快速下降；
+> (ii) 平台量 max|rel err| 在 N=200…1600 上是非单调的（{plat_err}），
+> 即它并不趋于 0 而是趋于 ~0.7% 的**系统性残差**——对 N 加密无效，说明来源不是离散误差，
+> 而是初始膜片抹平（等熵 tanh）与精确解的模型差。故"平台/波位置"判据与"全场 L1"
+> 不可互相替代，且 0.7% 量级的残差不应被解读为"已达到 0.7% 精度"。
+### 光滑长度敏感性（N={studies['h_factor'][0]['n_particles']}）
 
 {h_tab}
 > h=1.3dx 一行是本案例的“生态病”原样记录：误差 40% 且与 N 无关（邻居饥饿）。h≥2.0dx 后误差进入 <5%，h=2.5dx 最优。
 
-### 人工黏性敏感性（N=800，h=2.5dx）
+### 人工黏性敏感性（N={studies['alpha'][0]['n_particles']}，h={studies['alpha'][0]['h_factor']}dx）
 
 {a_tab}
-### 初始抹平宽度敏感性（N=400，h=2.5dx）
+### 初始抹平宽度敏感性（N={studies['smoothing'][0]['n_particles']}，h={studies['smoothing'][0]['h_factor']}dx）
 
 {s_tab}
+> **表头纪律**：以上四张表的 N / h/dx 一律由行数据注入（`studies[...][0]['n_particles']`），
+> 不再手写常量。旧版此处把人工黏性表手写为 "N=800"，而该研究实际在 N=400 上运行，
+> 与分辨率阶梯的 N=800 行（L1 1.14%）并读会得出"同一配置两个 L1"的假矛盾
+> （见 `docs/audit/audit_verdict_compressible_sod.md` F1）。
+
+### 度量窗：平台误差里有多少是测量造出来的
+
+平台/波位置的测量窗以**精确波位置**为锚（不锚定 SPH 结果），两端各裁掉
+`max(10% 平台宽度, 3h)`；3h 是 SPH 抹平间断的下界（核支撑 2h）。旧版只用固定的
+10% 平台宽度，在粗网格上小于 3h 时滑窗会吞掉抹平的间断，把"测量伪影"记进格式误差：
+N={studies['resolution'][0]['n_particles']} 时 10% 裁宽 {studies['resolution'][0]['frac_trim_star_right']:.5f}
+< 3h = {studies['resolution'][0]['window_trim']['h_scaled']:.5f} ⇒ 该点窗内混入抹平间断，
+平台量（如 p*_L、右端平台 p_R）被系统性带偏；本报告已改用 h 标度裁法。
+量化审计（含逐量对照、L1 收敛阶、精确解标尺的独立 FV 复核）见
+`docs/audit/compressible_sod_metric_audit.md`，可复现命令 `python scripts/audit_sod_metrics.py`。
 ## ⑥ 失败模式与工件
 
 **已实证的失败模式（负面知识）**
