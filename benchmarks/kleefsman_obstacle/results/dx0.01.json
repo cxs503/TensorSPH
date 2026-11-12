@@ -1,0 +1,15 @@
+{
+  "tag": "dx0.01",
+  "dx": 0.01,
+  "t_end": 1.0,
+  "particles_fluid": 6710,
+  "steps": 2056,
+  "peak_height_m": 0.3772946298122406,
+  "peak_time_s": 0.9658586633250333,
+  "arrival_time_s": 0.4442808353981013,
+  "mass_error_rel": 0.0,
+  "boundary_escapes": 0,
+  "max_density_compression": 0.1305438232421876,
+  "max_speed": 6.229979038238525,
+  "height_capped_by_tank": false
+}
