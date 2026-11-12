@@ -27,7 +27,7 @@ balance and is not satisfied by construction.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import math
 
 import torch
@@ -127,7 +127,8 @@ def band_table(pos, pressure, weight, cfg: HydrostaticConfig) -> list[dict]:
 
 
 def run_hydrostatic(cfg: HydrostaticConfig, gravity_override: float | None = None,
-                    seconds_override: float | None = None) -> dict:
+                    seconds_override: float | None = None,
+                    return_fields: bool = False) -> dict:
     if gravity_override is not None:
         # The analytic reference keeps the nominal g: switching gravity off in
         # the solver must *fail* the rung, not move its target.
@@ -149,6 +150,7 @@ def run_hydrostatic(cfg: HydrostaticConfig, gravity_override: float | None = Non
     dt = cfg.seconds / steps
     accum_p = torch.zeros(fluid_count, dtype=pos.dtype, device=device)
     accum_p2 = torch.zeros_like(accum_p)
+    accum_x = torch.zeros((fluid_count, pos.shape[1]), dtype=pos.dtype, device=device)
     samples = 0
     times: list[float] = []
     band_history: list[list[dict]] = []
@@ -162,6 +164,7 @@ def run_hydrostatic(cfg: HydrostaticConfig, gravity_override: float | None = Non
         if t >= cfg.average_from * cfg.seconds and step % cfg.sample_every == 0:
             accum_p += pressure
             accum_p2 += pressure.square()
+            accum_x += pos
             samples += 1
             times.append(t)
             band_history.append(band_table(pos, pressure, mass, cfg))
@@ -194,7 +197,7 @@ def run_hydrostatic(cfg: HydrostaticConfig, gravity_override: float | None = Non
     mean_err = sum(errors) / len(errors) if errors else float("nan")
     surface = [r for r in rows if r["free_surface"]]
 
-    return {
+    result = {
         "case": "hydrostatic_square_tank",
         "config": {
             "dx": cfg.dx, "tank_width": cfg.tank_width, "depth": cfg.depth,
@@ -226,3 +229,17 @@ def run_hydrostatic(cfg: HydrostaticConfig, gravity_override: float | None = Non
         "gate": {"quantity": "max interior band pressure error vs rho g h",
                  "limit_pct": 1.0, "pass": bool(max_err < 1.0)},
     }
+    if return_fields:
+        # Time-averaged *fields* of the sampling window.  A band mean of the
+        # pressure paired with the instantaneous (settling) positions is two
+        # different times, so the consistent reduction needs the mean position
+        # as well; the tensors stay out of the JSON-able part of the record
+        # unless asked for.
+        result["fields"] = {
+            "mean_pos": accum_x / samples,
+            "mean_pressure": mean_p,
+            "mean_rms": std_p,
+            "mass": mass,
+            "samples": samples,
+        }
+    return result

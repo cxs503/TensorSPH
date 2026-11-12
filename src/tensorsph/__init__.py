@@ -68,6 +68,14 @@ from .ice_splash import (
     validate_dem_exchange,
     write_dem_exchange,
 )
+from .case_hydrostatic import (
+    CASE_ID as HYDROSTATIC_CASE_ID,
+    analytic_pressure,
+    evaluate as evaluate_hydrostatic,
+    pressure_profile,
+    run_case as run_hydrostatic_profile_case,
+    run_initial_state as hydrostatic_initial_state,
+)
 from .initial_density import (
     calibration_factor,
     calibrate_mass,
@@ -136,6 +144,8 @@ __all__ = [
     "spurious_pressure", "spurious_pressure_ratio",
     "apply_contact_angle_boundary", "compute_color_gradient", "compute_curvature", "compute_normal",
     "compute_surface_tension_force", "capillary_dt_limit",
+    "HYDROSTATIC_CASE_ID", "analytic_pressure", "evaluate_hydrostatic",
+    "pressure_profile", "run_hydrostatic_profile_case", "hydrostatic_initial_state",
     "ice_thermal", "EnthalpyModel", "StefanConfig", "StefanResult",
     "ThreeFieldConfig", "ThreeFieldResult", "crack_assessment",
     "critical_temperature_drop", "flexural_strength", "restrained_stress",
