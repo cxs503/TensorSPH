@@ -38,6 +38,9 @@ def main() -> int:
     ap.add_argument("--tag", default=None)
     ap.add_argument("--outdir", default=None)
     ap.add_argument("--figure", action="store_true")
+    ap.add_argument("--sound-speed", type=float, default=None,
+                    help="artificial sound speed c0 [m/s]; dt is reduced to the "
+                         "acoustic Courant limit when c0 makes 2e-4 s too large")
     ap.add_argument("--device", default="cpu")
     args = ap.parse_args()
 
@@ -52,8 +55,13 @@ def main() -> int:
         obstacle_length=g["obstacle_length"],
         obstacle_height=g["obstacle_height"],
         pool_width=g["tank_length"], pool_depth=g["tank_height"],
-        dt=min(2.0e-4, 0.3 * 1.3 * args.dx / 20.0),
     )
+    if args.sound_speed is not None:
+        cfg.sound_speed = args.sound_speed
+    # dt follows the *configured* c0 through the acoustic Courant limit instead
+    # of a literal 20 m/s: with c0 = 80 m/s at dx = 0.04 the historical 2e-4 s
+    # violates dt*c0/h <= max_courant and validate_case rejects it.
+    cfg.dt = min(2.0e-4, cfg.dt_acoustic())
     tag = args.tag or f"dx{args.dx:g}"
     outdir = Path(args.outdir) if args.outdir else HERE / "artifacts" / tag
     outdir.mkdir(parents=True, exist_ok=True)
@@ -62,6 +70,7 @@ def main() -> int:
 
     metrics = {
         "tag": tag, "dx": cfg.dx, "t_end": cfg.t_end,
+        "sound_speed": cfg.sound_speed, "dt": cfg.dt,
         "probe_x": cfg.probe_x(), "arrival_threshold": cfg.arrival_threshold,
         "peak_height_m": run.peak_height, "peak_time_s": run.peak_time,
         "arrival_time_s": run.arrival_time,
