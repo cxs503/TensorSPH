@@ -1,0 +1,72 @@
+{
+ "audited_commit": "9736ad7",
+ "audited_branch": "agent/m16141",
+ "note": "byte-exact snapshots of the audited commit; sha256 must match the m16141 working tree",
+ "files": {
+  "src/tensorsph/rayleigh_taylor.py": {
+   "snapshot": "docs/board_audit/m16198/evidence/rayleigh_taylor.py",
+   "sha256": "bbb09c91a4163681d4c1ee6bfdd648e2066032a851248ab4aed405105bfc8d38",
+   "bytes": 36492
+  },
+  "tests/test_rayleigh_taylor.py": {
+   "snapshot": "docs/board_audit/m16198/evidence/test_rayleigh_taylor.py",
+   "sha256": "386c2138947c0b314454aa6cf4d857e7b2a53951cee6694801f7f05dc17b860b",
+   "bytes": 10033
+  },
+  "benchmarks/rayleigh_taylor/run.py": {
+   "snapshot": "docs/board_audit/m16198/evidence/run.py",
+   "sha256": "a0629c8fd4a37ff759c65deb2d0fee3235f3239371a8910600693be157e41140",
+   "bytes": 3647
+  },
+  "benchmarks/rayleigh_taylor/damping.py": {
+   "snapshot": "docs/board_audit/m16198/evidence/damping.py",
+   "sha256": "890d1fc11fb992bfe52509d4300ddc376240b66644a4c9862501824ef9134633",
+   "bytes": 2474
+  },
+  "benchmarks/rayleigh_taylor/make_doc.py": {
+   "snapshot": "docs/board_audit/m16198/evidence/make_doc.py",
+   "sha256": "9b3a59c36327b0291d55cbe7169f4f86c9351b4a0e13b223c4c4a1405d2a12cb",
+   "bytes": 10422
+  },
+  "benchmarks/rayleigh_taylor/runs/reference.json": {
+   "snapshot": "docs/board_audit/m16198/evidence/reference.json",
+   "sha256": "20775e737329b97450f94b56b92121bf2f90230fde8017c8cc08c0730e25fa64",
+   "bytes": 249
+  },
+  "benchmarks/rayleigh_taylor/runs/table.json": {
+   "snapshot": "docs/board_audit/m16198/evidence/table.json",
+   "sha256": "f152d830bf23d3f2b6dc66d3692e0a4daeedcfc9fd36f3ee3b82b16e30cc5c17",
+   "bytes": 2583
+  },
+  "benchmarks/rayleigh_taylor/runs/damping.json": {
+   "snapshot": "docs/board_audit/m16198/evidence/damping.json",
+   "sha256": "b4d673a512e656629b15c0291d982cfddb9b6bf7c4563b73651839967aee57ac",
+   "bytes": 231
+  },
+  "benchmarks/rayleigh_taylor/runs/spurious.json": {
+   "snapshot": "docs/board_audit/m16198/evidence/spurious.json",
+   "sha256": "49817c202d92f407b9fac92e85165df10df58bc957eedfac239a0c77d0dd22b5",
+   "bytes": 392
+  },
+  "benchmarks/rayleigh_taylor/runs/summary.json": {
+   "snapshot": "docs/board_audit/m16198/evidence/summary.json",
+   "sha256": "004b8484be5e70d972ede82c450ec97ab4db27dcb4c9ab0aaa31cedb091d5246",
+   "bytes": 1408
+  },
+  "benchmarks/rayleigh_taylor/figures/rt_growth.png": {
+   "snapshot": "docs/board_audit/m16198/evidence/rt_growth.png",
+   "sha256": "ecf232a912808780229cf6fb5466e1b593688b57c9da2ef726465f2decdd820f",
+   "bytes": 115898
+  },
+  "benchmarks/rayleigh_taylor/figures/rt_density_field.png": {
+   "snapshot": "docs/board_audit/m16198/evidence/rt_density_field.png",
+   "sha256": "ce368f8d945643801b3011263ed986c4775df9e7ba7af7fedf61a7d1a0afbd5f",
+   "bytes": 31485
+  },
+  "docs/benchmarks/rayleigh-taylor.md": {
+   "snapshot": "docs/board_audit/m16198/evidence/rayleigh-taylor.md",
+   "sha256": "4383f01c852f5c810693639274efcad1207d590b61c41acbd477a7626f928fc9",
+   "bytes": 7023
+  }
+ }
+}
