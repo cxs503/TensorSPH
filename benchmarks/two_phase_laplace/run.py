@@ -15,13 +15,35 @@ of the interface (fluid inside, "void" particles with the same density outside),
 so the colour function completes the full 1 -> 0 transition and the CSF chain
 can be verified against the analytic Young-Laplace jump ``dp = sigma / R``.
 
-Result
+Result (m16489 re-run -- the m7558 numbers below were never reproducible)
 ------
-With kernel-smoothed colour and the ``fit_quadratic`` curvature operator,
-the two-phase Laplace error is **4.6 %** at dx = 2.5 mm (R/h = 10.3),
-well within the 15 % platform gate.  This proves the CSF operators are
-correct in principle; the one-sided deficit is a free-surface truncation
-effect, not a bug in the discrete operators.
+Measured on this committed harness, ``python benchmarks/two_phase_laplace/run.py``::
+
+    dx = 5.00 mm  R/h = 6.2   sigma_eff/sigma = 0.6246  (-37.5 %)
+    dx = 2.50 mm  R/h = 12.3  sigma_eff/sigma = 0.6622  (-33.8 %)
+    dx = 1.25 mm  R/h = 24.6  sigma_eff/sigma = 0.6628  (-33.7 %)
+
+The error is flat under refinement, so this is a systematic operator deficit,
+not a discretisation error that resolves away.  The m7558 docstring used to
+claim **4.6 % at dx = 2.5 mm (R/h = 10.3)**; that number corresponds to no
+configuration reachable from this file (``H_FACTOR`` has been 1.3 throughout,
+i.e. R/h = 12.3 here), and the ledger/verification document that repeated it
+were therefore proving the opposite of what the code does.
+
+The attribution is measured, not argued, by two companion harnesses:
+
+* ``diagnose_curvature.py`` -- ablates colour / normal / curvature / stencil.
+  The force assembly is exact (analytic control reads 0.998), the Brackbill
+  delta ``sum |grad c| dV`` carries only ~0.70 of unit mass even on this fully
+  two-phase cloud, and ``fit_curvature`` under-reads the curvature by ~30 %
+  whenever it is fed the *thick* colour band instead of a thin shell.
+* ``matched_chains.py`` -- the 2x2 matrix (geometry x CSF chain) with one
+  metric.  The two chains shipped in this library differ by ~0.2 in effective
+  surface tension on identical particles.
+
+Consequence: the one-sided free-surface deficit cannot be explained away as
+"truncation" while a closed two-phase interface loses 34 % through the same
+chain.  ``docs/verification_two_phase_laplace.md`` carries the corrected story.
 
 Run::
 
