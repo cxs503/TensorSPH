@@ -1,0 +1,68 @@
+{
+ "schema": "tensorsph.slamming.wagner_reference_audit/v1",
+ "document": "docs/slamming_campaign_report.json",
+ "tol_rel": 0.001,
+ "definition": "C_s = pi^2/tan(beta)  (== benchmarks/slamming/run.py derived.c_s_wagner == tensorsph.slamming.slamming_force_coefficient)",
+ "rows": [
+  {
+   "beta_deg": 20.0,
+   "velocity": 2.0,
+   "c_s_measured": "-",
+   "c_s_wagner_printed": 27.12,
+   "c_s_wagner_recomputed": 27.116515230942973,
+   "rel_err": 0.00012851094719765438,
+   "match": true,
+   "wagner_c_coeff": 4.315727438431242
+  },
+  {
+   "beta_deg": 30.0,
+   "velocity": 2.0,
+   "c_s_measured": "-",
+   "c_s_wagner_printed": 17.09,
+   "c_s_wagner_recomputed": 17.09465627329217,
+   "rel_err": -0.0002723818026949583,
+   "match": true,
+   "wagner_c_coeff": 2.720699046351327
+  }
+ ],
+ "scale_consistency": [
+  {
+   "pair": [
+    20.0,
+    30.0
+   ],
+   "printed_ratio": 1.5868929198361617,
+   "model_ratio": 1.5862568277145446,
+   "ratio_of_ratios": 1.0004010019755336
+  }
+ ],
+ "figures": [
+  {
+   "name": "wagner_pressure_shape",
+   "bytes": 0,
+   "claimed_path": "benchmarks/slamming/results/figures/wagner_pressure_shape.png",
+   "claimed_path_exists": true,
+   "empty": true
+  },
+  {
+   "name": "force_coefficient_vs_beta",
+   "bytes": 0,
+   "claimed_path": "benchmarks/slamming/results/figures/force_coefficient_vs_beta.png",
+   "claimed_path_exists": true,
+   "empty": true
+  },
+  {
+   "name": "added_mass_scaling",
+   "bytes": 0,
+   "claimed_path": "benchmarks/slamming/results/figures/added_mass_scaling.png",
+   "claimed_path_exists": true,
+   "empty": true
+  }
+ ],
+ "verdict": {
+  "mismatch": [],
+  "unattributable_rows": [],
+  "missing_figure": [],
+  "clean": true
+ }
+}
