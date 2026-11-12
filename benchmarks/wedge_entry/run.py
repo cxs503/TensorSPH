@@ -458,8 +458,11 @@ def aggregate() -> dict:
         "ladder_dx": list(LADDER_DX),
         "tank": {"half_width": BASE["half_width"], "depth": BASE["depth"]},
         "c_end": BASE["c_end"],
-        "sound_speed_factor": 10.0,
-        "alpha_visc": 0.1,
+        # read from the campaign settings, not retyped: the meta block used to
+        # hardcode 10.0 / 0.1 while every artefact ran at 20.0 / 0.03, so the
+        # summary contradicted the runs it summarised (found 2026-11-12)
+        "sound_speed_factor": BASE["sound_speed_factor"],
+        "alpha_visc": BASE["alpha_visc"],
     }
     write_json(ART / "summary.json", summary)
     write_tables(summary)

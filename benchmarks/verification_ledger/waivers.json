@@ -62,8 +62,7 @@
     "benchmarks/verification_ladder/": "harness only, no committed artifact at HEAD (evidence debt E1): the run has to be produced and committed before a claim can be registered, and until then a regression in it is invisible to the ledger. Waived by m14849 with this reason instead of left silent; closure path = run -> commit artifact -> claim.",
     "benchmarks/wave_flume/": "no committed artifact (the report was uploaded to the platform and filtered by the merge gate), so the flume capability has no reproducible in-repo evidence - evidence debt E2, see docs/verification_ledger_coverage_m6453.md",
     "benchmarks/wave_tank/": "no committed artifact (the m6232 report was uploaded to the platform and filtered by the merge gate), so the wave-tank capability has no reproducible in-repo evidence - evidence debt E2, see docs/verification_ledger_coverage_m6453.md",
-    "benchmarks/wcsph_chain/": "harness only, no committed artifact at HEAD (evidence debt E1): the run has to be produced and committed before a claim can be registered, and until then a regression in it is invisible to the ledger. Waived by m14849 with this reason instead of left silent; closure path = run -> commit artifact -> claim.",
-    "benchmarks/wedge_entry/": "harness only, no committed artifact at HEAD (evidence debt E1): the run has to be produced and committed before a claim can be registered, and until then a regression in it is invisible to the ledger. Waived by m14849 with this reason instead of left silent; closure path = run -> commit artifact -> claim."
+    "benchmarks/wcsph_chain/": "harness only, no committed artifact at HEAD (evidence debt E1): the run has to be produced and committed before a claim can be registered, and until then a regression in it is invisible to the ledger. Waived by m14849 with this reason instead of left silent; closure path = run -> commit artifact -> claim."
   },
   "schema_version": 1,
   "unregistered_ok": [
@@ -123,6 +122,10 @@
     "benchmarks/stability/",
     "benchmarks/static_droplet/laplace_validation.json",
     "benchmarks/wave_flume/",
-    "benchmarks/wave_tank/"
+    "benchmarks/wave_tank/",
+    "runs/wedge_entry_wagner/figures.json",
+    "runs/wedge_entry_wagner/figures/",
+    "runs/wedge_entry_wagner/raw/cases/",
+    "runs/wedge_entry_wagner/raw/ladder/"
   ]
 }
