@@ -92,7 +92,7 @@ __all__ = [
     "number_density", "two_phase_rhs", "h1_kernel", "interface_centroid",
     "modal_amplitude", "velocity_amplitude", "spurious_interface_pressure",
     "theory_growth_rate", "fit_growth_rate", "fit_window", "stable_dt", "reference_state",
-    "run_case", "initial_velocity",
+    "run_case", "initial_velocity", "density_diffusion_rate",
 ]
 
 
@@ -126,6 +126,12 @@ class RTConfig:
     wall_friction: float = 0.0     # free slip: the coth(kd) reference assumes it
     device: str = "cpu"
     dtype: str = "float64"
+    # δ-SPH density diffusion coefficient (Antuono et al. 2012).
+    # Zero disables (default, backward compatible).  Typical values 0.01–0.1.
+    density_diffusion: float = 0.0
+    # Time integrator: "euler" (symplectic Euler, 1st order, default) or
+    # "rk2" (midpoint, 2nd order, less dissipative).
+    time_integrator: str = "euler"
 
     @property
     def height(self) -> float:
@@ -458,6 +464,39 @@ def two_phase_rhs(pos, vel, mass, rho0, cfg: RTConfig, wall_pos=None,
             acc_pressure + acc_visc[:n] + gravity, ratio[:n])
 
 
+
+def density_diffusion_rate(rho: torch.Tensor, mass: torch.Tensor,
+                           all_pos: torch.Tensor, pairs: torch.Tensor,
+                           h: float, length: float,
+                           cfg) -> torch.Tensor:
+    """δ-SPH density diffusion rate (Antuono–Colagrossi–Marrone 2012).
+
+    Applied to the *summation* density.  The rate is
+
+        D rho_i / Dt = -2 delta c0 h sum_j V_j (rho_i - rho_j) L_ij
+
+    where ``L_ij = -(r_ij . grad W) / r_ij^2 > 0``.  The pair contribution is
+    applied as ``-c`` to ``i`` and ``+c V_i/V_j`` to ``j``, conserving the
+    volume-weighted mean density.
+    """
+    if pairs.numel() == 0:
+        return torch.zeros_like(rho)
+    i, j = pairs.unbind(dim=1)
+    sep = all_pos[i] - all_pos[j]
+    sep[:, 0] = sep[:, 0] - length * torch.round(sep[:, 0] / length)
+    r = sep.norm(dim=1)
+    _, grad_w = pair_kernels(sep, h)
+    radial = -(sep * grad_w).sum(dim=1)  # -(r . grad W) > 0
+    v_j = mass[j] / rho[j]
+    v_i = mass[i] / rho[i]
+    coupling = (rho[i] - rho[j]) * radial / (r.square() + 1e-12)
+    scale = 2.0 * cfg.density_diffusion * cfg.sound_speed * cfg.h_factor * cfg.dx
+    rate = torch.zeros_like(rho)
+    rate = rate.index_add(0, i, -scale * v_j * coupling)
+    rate = rate.index_add(0, j, scale * v_i * coupling)
+    return rate
+
+
 # --------------------------------------------------------------------------- #
 # Interface gauges
 # --------------------------------------------------------------------------- #
@@ -700,11 +739,24 @@ def run_case(cfg: RTConfig, snapshot: bool = True, progress=None) -> dict:
     t, dt, steps, pair_age = 0.0, cfg.dt_cap, 0, 0
     sample(0.0, vel)
     snap_rho = snap_p = snap_pos = None
+    use_rk2 = cfg.time_integrator == "rk2"
     while t < cfg.end_time:
-        rho, pressure, acc, ratio = two_phase_rhs(
-            pos, vel, mass, rho0, cfg, wall_pos, wall_rho0, pairs, ref_state)
-        vel = vel + dt * acc
-        pos = pos + dt * vel
+        if use_rk2:
+            # RK2 (midpoint) integration - 2nd order, less dissipative
+            rho, pressure, acc, ratio = two_phase_rhs(
+                pos, vel, mass, rho0, cfg, wall_pos, wall_rho0, pairs, ref_state)
+            pos_mid = pos + 0.5 * dt * vel
+            vel_mid = vel + 0.5 * dt * acc
+            _, _, acc_mid, _ = two_phase_rhs(
+                pos_mid, vel_mid, mass, rho0, cfg, wall_pos, wall_rho0, pairs, ref_state)
+            vel = vel + dt * acc_mid
+            pos = pos + dt * vel_mid
+        else:
+            # Symplectic Euler (original, backward compatible)
+            rho, pressure, acc, ratio = two_phase_rhs(
+                pos, vel, mass, rho0, cfg, wall_pos, wall_rho0, pairs, ref_state)
+            vel = vel + dt * acc
+            pos = pos + dt * vel
         t += dt
         steps += 1
         pair_age += 1
