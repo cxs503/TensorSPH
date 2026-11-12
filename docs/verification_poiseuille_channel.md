@@ -243,3 +243,15 @@ of the same profile against the nominal channel and against the channel whose
 walls are offset by the fitted `delta`; the residual band structure is the wall
 layer, and the 3 % gate is drawn for scale.*
 
+
+## 8. Update: the mirror-wall replacement has been measured
+
+The wall-shear acceptance test posed in section 6 ("the wall-shear ratio must
+reach 1 within 3 %" once the blend is replaced by mirrored/ghost particles) has
+been run: `src/tensorsph/wall_mirror.py` builds the ghost layer, and
+`benchmarks/poiseuille_mirror/` is the benchmark on it. The result —
+`docs/verification_poiseuille_mirror_wall.md` — passes the 3 % wall-shear gate
+and brings the row-by-row profile inside 5 % of the closed-form parabola at
+every resolution in the same `H/dx = 8..16` ladder used here, with wall slip
+falling from ~0.3–0.5 `u_max` to a few percent. The blend default is unchanged;
+the note above still describes what `wall_friction = 1` does.

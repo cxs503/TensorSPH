@@ -1,0 +1,27 @@
+{
+  "note": "same case as sensitivity.json g_x x2, longer averaging window; attribution run",
+  "results": [
+    {
+      "label": "g_x x2, t_end 2.0 s",
+      "resolution_H_over_dx": 12,
+      "u_max_error_pct": -13.061620263149265,
+      "profile_rms_interior_pct": 10.444445609340235,
+      "wall_shear_bottom_error_pct": -21.24557560671426,
+      "wall_shear_top_error_pct": -21.099287216160956,
+      "wall_slip_intercept_over_umax": 0.09655479690647042,
+      "steady_drift": 0.008270138719259617,
+      "max_mach": 0.12991733551025392,
+      "reynolds_number": 21.321637630462646,
+      "wall_clock_s": 158.76913785934448,
+      "t_end": 2.0,
+      "t_average": 0.2,
+      "body_force": 19.62,
+      "gates": {
+        "A": false,
+        "B": false,
+        "C": false,
+        "D": false
+      }
+    }
+  ]
+}
