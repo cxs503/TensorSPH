@@ -1,0 +1,72 @@
+{
+ "anchor": "CASE-SPH-STOKES-2ND-PROBLEM",
+ "case": "stokes_second_oscillating_plate",
+ "primary_metric": "amplitude_l2_half_space_pct",
+ "primary_tolerance_pct": 5.0,
+ "primary_value_pct": 0.0101682,
+ "reference": "u(y,t)=U0 exp(-y/delta) cos(omega t - y/delta), delta=sqrt(2 nu/omega) -- Landau & Lifshitz, Fluid Mechanics 2nd English ed., section 24 (Stokes' second problem); the finite-depth form is the exact solution of the channel actually run",
+ "resolution_delta_over_dx": 18,
+ "rows_of_finest_run": [
+  {
+   "quantity": "amplitude_l2_half_space_pct",
+   "reference": 0.0,
+   "got": 0.0101682,
+   "tolerance": 5.0,
+   "error_abs": 0.0101682,
+   "error_pct_of_ref": 0.0101682,
+   "pass": true,
+   "definition": "row-mean rms of (A_SPH-A_ref)/A_ref over y<=delta, %; ref = 0"
+  },
+  {
+   "quantity": "amplitude_worst_row_half_space_pct",
+   "reference": 0.0,
+   "got": 0.0170754,
+   "tolerance": 10.0,
+   "error_abs": 0.0170754,
+   "error_pct_of_ref": 0.0170754,
+   "pass": true,
+   "definition": "max |(A_SPH-A_ref)/A_ref| over y<=delta, %"
+  },
+  {
+   "quantity": "decay_rate_error_pct",
+   "reference": 0.0,
+   "got": -0.0176705,
+   "tolerance": 5.0,
+   "error_abs": 0.0176705,
+   "error_pct_of_ref": -0.0176705,
+   "pass": true,
+   "definition": "100*(-dlnA/dy * delta + 1); 0 = exact exp(-y/delta)"
+  },
+  {
+   "quantity": "amplitude_l2_finite_depth_pct",
+   "reference": 0.0,
+   "got": 0.0116763,
+   "tolerance": 5.0,
+   "error_abs": 0.0116763,
+   "error_pct_of_ref": 0.0116763,
+   "pass": true,
+   "definition": "same rms vs the exact finite-depth solution of the run"
+  },
+  {
+   "quantity": "delta_ratio",
+   "reference": 1.0,
+   "got": 0.999823,
+   "tolerance": 0.05,
+   "error_abs": 0.000177,
+   "error_pct_of_ref": -0.0177,
+   "pass": true,
+   "definition": "fitted delta = -1/slope vs delta = sqrt(2 nu/omega)"
+  },
+  {
+   "quantity": "first_row_amplitude_over_U0",
+   "reference": 0.972604,
+   "got": 0.9726,
+   "tolerance": 5.0,
+   "error_abs": 4e-06,
+   "error_pct_of_ref": -0.000411267,
+   "pass": true,
+   "definition": "A at y=dx/2 vs exp(-dx/2/delta)"
+  }
+ ],
+ "repro_cmd": "PYTHONPATH=.:src python benchmarks/stokes_second/run.py --ladder --c0 4 --periods 6 --measure-periods 2 --out benchmarks/stokes_second/out"
+}
