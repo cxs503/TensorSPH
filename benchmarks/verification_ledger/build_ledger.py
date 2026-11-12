@@ -2328,6 +2328,47 @@ def coverage_closure_claims() -> list[dict]:
             ),
         )
     )
+
+    # ---- same quantity, steady state, uncertainty-quantified (m16346 audit) ----
+    audit_rel = "benchmarks/fluctuating_hydro/thermostat_audit.json"
+    audit_path = REPO / audit_rel if "REPO" in globals() else None
+    try:
+        audit = json.loads(pathlib.Path(audit_rel).read_text())
+    except (OSError, ValueError):
+        audit = None
+    if audit:
+        ens = audit["ensemble_summary"]
+        replay = audit["replay"]
+        out.append(
+            _entry(
+                claim_id="fluctuating_hydro.thermostat.steady_state.n128.uq",
+                quantity_id="fluctuating_hydro_temperature",
+                quantity=(
+                    "steady-state temperature of the LJ fluid under the Langevin "
+                    "(BAOAB) thermostat, N = 128, uncertainty quantified"
+                ),
+                artifact=audit_rel,
+                json_path="ensemble_summary.inverse_variance_combined",
+                reference=(1.0, "T*", "target temperature T* = 1.0 (reduced LJ units)"),
+                measured=(ens["inverse_variance_combined"], "T*",
+                          f"{ens['n_seeds']} independent seeds, "
+                          f"+/- {ens['inverse_variance_se']:.4f} (1 SE)"),
+                guarding_test="tests/test_fluctuating_hydro_thermostat.py",
+                artifact_status="FAIL",
+                backlog_ref="docs/verification_fluctuating_hydro_thermostat.md",
+                notes=(
+                    f"Second reading of the same quantity, taken at a converged window "
+                    f"(10 relaxation times discarded, block-averaged SE, SE plateau "
+                    f"checked over 4-12 blocks). The window ladder is flat, so this is "
+                    f"a systematic offset of {ens['dev_over_se']:.1f} sigma, not sample "
+                    f"noise. The archived entry above reads {replay['mean_temperature']:.5f} T* "
+                    f"(+8.81 %) from an 800-step run whose discarded window is 1.6 "
+                    f"relaxation times: that reading is the startup transient, it points "
+                    f"the opposite way, and it must not be quoted as the thermostat's "
+                    f"steady state."
+                ),
+            )
+        )
     return out
 
 
