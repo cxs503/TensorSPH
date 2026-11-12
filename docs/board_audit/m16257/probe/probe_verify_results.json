@@ -1,0 +1,33 @@
+{
+  "V1_as_shipped": {
+    "load_sph": 333.040647974696,
+    "load_exact": 418.21991999999995,
+    "rel_error": -0.20367100645350403,
+    "wall_seconds": 0.10400080680847168,
+    "verdict": "FAIL"
+  },
+  "V2_as_shipped": {
+    "tip_rod": 0.00012678139673735767,
+    "tip_exact": 0.001680435261779291,
+    "load_scale": 1e-05,
+    "rel_error": -0.9245544296641823,
+    "wall_seconds": 52.87656879425049,
+    "verdict": "FAIL"
+  },
+  "V2_overdamped": {
+    "tip_rod": -0.0009053732737383802,
+    "tip_exact": 0.001680435261779291,
+    "load_scale": 1e-05,
+    "rel_error": -1.5387730752446518,
+    "wall_seconds": 33.92313241958618,
+    "verdict": "FAIL"
+  },
+  "V2_undamped_long": {
+    "tip_rod": -0.09505653024401389,
+    "tip_exact": 0.001680435261779291,
+    "load_scale": 1e-05,
+    "rel_error": -57.56661247596377,
+    "wall_seconds": 327.37562441825867,
+    "verdict": "FAIL"
+  }
+}
