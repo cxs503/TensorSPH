@@ -23,6 +23,7 @@ import math
 
 import torch
 
+from .particle_shifting import shift_positions
 from .droplet_impact import (
     Config,
     apply_boundary,
@@ -59,6 +60,19 @@ class DamBreakConfig(Config):
     output_every: int = 100
     device: str = "cpu"
     hydrostatic_init: bool = True
+    # Particle shifting (Lind, Xu, Stansby & Rogers 2012; implemented in
+    # ``tensorsph.particle_shifting``). Every ``shift_every`` steps the fluid
+    # positions are relaxed down ``grad C`` with the free-surface shift projected
+    # onto the surface tangent. 0 disables it, so every published B2 number is
+    # bit-identical to the pre-shifting solver.
+    shift_every: int = 0
+    shift_strength: float = 1.0
+    shift_limit: float = 0.25
+    # Reference speed of the shift coefficient. None = max(current speed,
+    # 0.05 c0): a resting column has v_max -> 0, and a shift that vanishes at
+    # rest cannot relax the lattice, which is precisely defect F1
+    # (docs/verification_startup_quiescence.md).
+    shift_v_ref: float | None = None
 
     def tank_top(self) -> float:
         return float(self.tank_height)
@@ -329,6 +343,17 @@ def run_case(cfg: DamBreakConfig, pair_skin_factor: float | None = None,
         velocity = velocity + step_dt * acc
         positions = positions + step_dt * velocity
         escaped += apply_boundary(positions, velocity, cfg, top=top)
+        if cfg.shift_every and step > 0 and step % cfg.shift_every == 0:
+            v_ref = (cfg.shift_v_ref if cfg.shift_v_ref is not None
+                     else max(speed_scalar, 0.05 * cfg.sound_speed))
+            # Volumes come from the summation density of this step; the shift
+            # moves positions only, so mass and velocity are untouched.
+            volume = mass / density
+            positions = shift_positions(positions, volume, h, dt=step_dt,
+                                        v_ref=v_ref,
+                                        strength=cfg.shift_strength,
+                                        limit=cfg.shift_limit)
+            escaped += apply_boundary(positions, velocity, cfg, top=top)
         elapsed += step_dt
         if cfg.adaptive_dt:
             dt = next_dt(cfg, dt, speed_scalar)
