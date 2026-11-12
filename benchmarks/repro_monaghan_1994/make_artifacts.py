@@ -41,6 +41,26 @@ def load() -> tuple[dict, list[dict], dict]:
     return summary, runs, verified
 
 
+def load_estimator_probe() -> dict | None:
+    """Merge the committed ``front_estimator_probe*.json`` fragments, if any.
+
+    The probe writes one JSON per invocation (one per ``--dx`` list), so the
+    fragments are merged here; a missing probe simply omits the section - it is
+    a diagnostic, not a gate.
+    """
+    cases: dict[str, dict] = {}
+    for path in sorted(RESULTS.glob("front_estimator_probe*.json")):
+        try:
+            payload = json.loads(path.read_text())
+        except json.JSONDecodeError:
+            continue
+        for case in payload.get("cases", []):
+            cases.setdefault(case["case"], case)
+    if not cases:
+        return None
+    return {"cases": [cases[k] for k in sorted(cases, key=lambda k: -cases[k]["dx"])]}
+
+
 def write_refs_declaration(summary: dict, verified: dict) -> dict:
     """The reference/protocol declaration, built from the audit and the DOI resolution."""
     audit = structural_audit()
@@ -323,22 +343,64 @@ def make_doc(summary: dict, runs: list[dict], refs_payload: dict,
             f"{pct(comp['mae_over_amplitude'])} | {num(comp['max_abs'])} | "
             f"{num(comp['bias']):} | {pct(comp['within_uncertainty_fraction'], 0)} | {grade} |")
     add("")
-    add("### 3.3 分辨率阶梯（MAE/幅值）")
+    add("### 3.3 分辨率阶梯（MAE/幅值，附偏置符号）")
     add("")
-    add("| dx [m] | vs independent | vs bundled |")
-    add("|---|---|---|")
+    add("| dx [m] | vs independent MAE/幅值 | 偏置 (sim−ref) | 偏置/幅值 | vs bundled MAE/幅值 |")
+    add("|---|---|---|---|---|")
     entries_c = {e["dx"]: e for e in summary["ladder"]["crosscheck"]}
     entries_b = {e["dx"]: e for e in summary["ladder"]["bundled"]}
+    bias_rows = []
     for dx in sorted(entries_c, reverse=True):
+        comp = summary["comparisons"][entries_c[dx]["case"]]["crosscheck"]
+        bias_rows.append((dx, comp["bias"], comp["amplitude"]))
         add(f"| {dx:g} | {pct(entries_c[dx]['mae_over_amplitude'])} | "
+            f"{comp['bias']:+.3f} | {pct(comp['bias'] / comp['amplitude'])} | "
             f"{pct(entries_b[dx]['mae_over_amplitude'])} |")
     add("")
-    missing = [d for d in DEFAULT_DX.split(",") if float(d) not in entries_c]
-    if missing:
-        add(f"* 协议缺省阶梯为 {DEFAULT_DX} m；本工件只含 {dx_list} m。"
-            f"缺失级数 {', '.join(missing)} m 如实声明为**未完成**（墙钟超限），"
-            "不外推、不插值、不用更粗的级替代。")
+    # Does the non-monotone |MAE| come from a *sign crossing* of a monotone bias?
+    # (Computed, not written: the diagnosis follows from the artefacts above.)
+    rows_fine = sorted(bias_rows, reverse=True)          # coarsest -> finest
+    biases = [r[1] for r in rows_fine]
+    amp_c = rows_fine[0][2]
+    slopes = [b - a for a, b in zip(biases, biases[1:])]
+    mono = all(s > 0 for s in slopes) or all(s < 0 for s in slopes)
+    crossed = any(a * b < 0 for a, b in zip(biases, biases[1:]))
+    sat = abs(slopes[-1]) / amp_c if slopes else float("nan")
+    add(f"* 偏置随加密（dx 递减）的逐级增量："
+        f"{', '.join(f'{100 * s / amp_c:+.2f} % 幅值' for s in slopes)}；"
+        f"偏置{'单调' if mono else '非单调'}"
+        f"{'且发生符号翻转' if crossed else '且未发生符号翻转'}。")
+    add(f"* 因此 `resolution_trend_vs_independent` 的 fail 是 **|偏置| 过零**造成的，"
+        f"不是“误差不随加密下降”：最细两级之间偏置仅再变化 {100 * sat:.2f} % 幅值"
+        f"（已进入饱和），残余差 {(biases[-1] and 100 * abs(biases[-1]) / amp_c):.2f} % 幅值"
+        "是**与分辨率无关**的固定偏移，按定义不能归因于离散误差。" if (mono and crossed)
+        else f"* 偏置{'单调' if mono else '非单调'}"
+             f"{'且已过零' if crossed else '且未过零'}；"
+             f"最细两级之间偏置变化 {100 * sat:.2f} % 幅值，"
+             "阶梯判据的 fail 如实保留，不解释为测量噪声。")
+    add("")
+    probe = load_estimator_probe()
+    if probe:
+        add("### 3.3b 前沿估计器敏感性（独立探针）")
         add("")
+        add("`front_estimator_probe.py` 用同一 `DamBreakConfig` 重跑，并在每个输出时刻记录粒子 "
+            "`x` 的分布（max / 99.5% / 99% / 95% 分位），检查判据量是不是被单颗飞溅粒子决定。")
+        add("")
+        add("| dx [m] | 估计器 | MAE/幅值 (independent) | 偏置 | 领先 99.5% 分位 >2dx 的粒子数（各时刻最大） |")
+        add("|---|---|---|---|---|")
+        for case in probe["cases"]:
+            ahead = max(q["n_ahead_of_p995_by_2dx"] for q in case["probe"])
+            for est, errs in case["errors"].items():
+                ref = errs.get("crosscheck") or {}
+                add(f"| {case['dx']:g} | `{est}` | {pct(ref.get('mae_over_amplitude'))} | "
+                    f"{num(ref.get('bias'))} | {ahead} |")
+        add("")
+        repro = [c["committed_diff"] for c in probe["cases"] if c.get("committed_diff")]
+        if repro:
+            worst = max(r["max_abs_za_diff"] for r in repro)
+            add(f"* 同机重跑与已提交轨迹的最大逐点差：**{num(worst, 6)}** in Z/a"
+                f"（{len(repro)} 个分辨率：{', '.join(str(r['path']).split('_')[-2] for r in repro)} m）。")
+            add("")
     add("### 3.4 参考对自洽性（T3）与括号")
     add("")
     add(f"* 两份数字化在同一窗口内的最大分歧：**{num(bracket.get('reference_spread_max'))} in Z/a**"
@@ -404,7 +466,12 @@ def make_doc(summary: dict, runs: list[dict], refs_payload: dict,
     add(f"| 弱可压质量/密度闭合 | max ρ/ρ0−1 ≤ {COMPRESSION_LIMIT} | "
         f"{finest['max_density_compression']:.4f} | 是 |")
     add("")
-    add("结论：**对唯一通过结构审计的参考，前沿轨迹误差在 3 % 以内（回答“是”）**；"
+    paper_grade = primary["mae_over_amplitude"] <= 0.03
+    platform_grade = primary["mae_over_amplitude"] <= TOL_REL
+    add(f"结论：**对唯一通过结构审计的参考，前沿轨迹误差 {pct(primary['mae_over_amplitude'])}，"
+        f"{'在 3 % 以内（回答“是”）' if paper_grade else '不在 3 % 以内（回答“否”）'}**；"
+        f"平台验收线（{pct(TOL_REL, 0)} 幅值）为 "
+        f"{'pass' if platform_grade else 'fail'}——两条线不是同一条，不得互相替代引用。"
         "论文自身的表/图数值仍为 WITHHELD（全文不可得），不得以任何转述值替代。")
     add("")
     DOC_PATH.write_text("\n".join(lines) + "\n")
