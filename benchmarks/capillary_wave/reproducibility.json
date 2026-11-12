@@ -1,0 +1,96 @@
+{
+ "benchmark": "capillary_wave_open_surface_reproducibility",
+ "audited_artifact": "benchmarks/capillary_wave/open_surface_audit.json",
+ "audited_artifact_sha256": "100f99802152847acf3b6fdf7f47dc680839a322169893925d6aec04e9a8af89",
+ "audited_verdict": "WITHHELD",
+ "environment": {
+  "python": "3.11.6",
+  "torch": "2.7.1",
+  "platform": "Linux-6.6.52-1.7.lns23.loongarch64-loongarch64-with-glibc2.38",
+  "machine": "loongarch64",
+  "git_head": "1b67ddbcc6ce2bf75958536f0176497bd61a5bea",
+  "measured_at_utc": "2026-11-12T15:35:34Z"
+ },
+ "subset_keys": [
+  "harness_at_head",
+  "initial_acceleration",
+  "curvature"
+ ],
+ "subset": {
+  "n_compared": 125,
+  "n_float": 96,
+  "rtol": 1e-06,
+  "atol": 1e-12,
+  "max_rel_diff": 0.0,
+  "worst_path": null,
+  "n_failures": 0,
+  "failures": [],
+  "wall_clock_s": 11.105819730088115,
+  "headline": [
+   {
+    "label": "harness status",
+    "path": "/harness_at_head/status",
+    "committed": "aborted",
+    "fresh": "aborted",
+    "rel_diff": null
+   },
+   {
+    "label": "abort step",
+    "path": "/harness_at_head/escape_step",
+    "committed": 336,
+    "fresh": 336,
+    "rel_diff": null
+   },
+   {
+    "label": "CSF excess / omega^2 A",
+    "path": "/initial_acceleration/csf_excess_over_physical",
+    "committed": 24.79138944543712,
+    "fresh": 24.79138944543712,
+    "rel_diff": 0.0
+   },
+   {
+    "label": "CSF-on a_max / omega^2 A",
+    "path": "/initial_acceleration/csf_on/a_max_over_physical",
+    "committed": 27.50530284098083,
+    "fresh": 27.50530284098083,
+    "rel_diff": 0.0
+   },
+   {
+    "label": "CSF-off a_max / omega^2 A",
+    "path": "/initial_acceleration/csf_off/a_max_over_physical",
+    "committed": 2.7139133955437096,
+    "fresh": 2.7139133955437096,
+    "rel_diff": 0.0
+   },
+   {
+    "label": "curvature noise/signal (min)",
+    "path": "/curvature/cells[2]/noise_over_signal",
+    "committed": 3.772043452526541,
+    "fresh": 3.772043452526541,
+    "rel_diff": 0.0
+   },
+   {
+    "label": "curvature noise/signal (max)",
+    "path": "/curvature/cells[1]/noise_over_signal",
+    "committed": 5.973671018555025,
+    "fresh": 5.973671018555025,
+    "rel_diff": 0.0
+   }
+  ]
+ },
+ "full_rerun": {
+  "n_compared": 5556,
+  "n_float": 5423,
+  "rtol": 1e-06,
+  "atol": 1e-12,
+  "max_rel_diff": 0.0,
+  "worst_path": null,
+  "n_failures": 0,
+  "failures": [],
+  "wall_clock_s": 242.59906620904803,
+  "excluded_fields": [
+   "/wall_clock_s",
+   "/figures"
+  ]
+ }
+}
