@@ -2372,6 +2372,192 @@ def coverage_closure_claims() -> list[dict]:
     return out
 
 
+def wedge_entry_claims() -> list[dict]:
+    """Wedge water entry vs Wagner (1932) — closing the E1 evidence debt.
+
+    ``benchmarks/wedge_entry`` has carried a full campaign harness (matrix x grid
+    ladder x resolved-band metric) and a written report, but every artefact it
+    produced went to ``artifacts/``, which repository policy ignores.  The ledger
+    therefore recorded it as an *uncovered benchmark*: nothing it produces was
+    graded, so a regression there was invisible (waiver by m14849).  The closure
+    path that waiver names is now taken — ``wagner_resolved.py --stage accept``
+    copies every per-case artefact next to the summary it grades
+    (``runs/wedge_entry_wagner/raw/<stage>/<id>.json``) and writes
+    ``summary_v2.json``; the readings below are entries of that summary.
+
+    Two metrics are registered side by side because they answer different
+    questions and must not be conflated:
+
+    * ``resolved_band`` — SPH and Wagner evaluated on the *same* band
+      ``|x| <= (1 - 3 dx/c) c`` with both maxima taken on the same ``tau`` bin
+      centres (``tau = |x|/(C V t)``, the analytic wetted edge).  This is the
+      like-for-like comparison.
+    * ``literal`` — the campaign's original definition, i.e. the largest
+      resolved-band SPH pressure against Wagner's *global* peak.  It is
+      registered for beta = 10 deg only, where the global peak sits
+      ``(1 - tau_peak) c_end / dx`` = 0.63 spacings from the spray root, i.e.
+      inside the stencil: there the literal metric cannot be satisfied by any
+      affordable resolution and the number measures that, not the solver.
+    """
+    import math
+
+    rel = "runs/wedge_entry_wagner/summary_v2.json"
+    d = _load(rel)
+    crit = d["criteria"]
+    runs = {e["id"]: e for e in d["cases"] + d["ladder"] + d.get("extra", [])}
+    out: list[dict] = []
+
+    def _wagner_c(beta_deg: float) -> float:
+        # C = pi / (2 tan beta); derived here so the reference is not retyped
+        return math.pi / (2.0 * math.tan(math.radians(beta_deg)))
+
+    def _case(cid: str) -> dict:
+        if cid not in runs:
+            raise KeyError(f"{rel}: case {cid} missing (campaign not run?)")
+        return runs[cid]
+
+    # ---- 1/4 kinematic anchor: wetted-width coefficient, beta = 30 deg ---- #
+    cid = "ladder_L400"
+    e = _case(cid)
+    c_ref = _wagner_c(e["beta_deg"])
+    out.append(
+        _entry(
+            claim_id="wedge_entry.c_wetted_coeff.beta30_dx1mm",
+            quantity_id="wedge_c_wetted_coeff_beta30",
+            quantity="wetted half-width coefficient c/(V t) vs Wagner C = pi/(2 tan beta), beta = 30 deg",
+            artifact=rel,
+            json_path=f"ladder[id={cid}].c_coeff_mean",
+            reference=(c_ref, "-", "Wagner (1932) C = pi/(2 tan beta), derived"),
+            measured=(
+                e["c_coeff_mean"],
+                "-",
+                "mean of c/(V t) over frames whose footprint spans >= 10 spacings; "
+                "c is the outermost wedge node whose Adami-extrapolated wall pressure "
+                "exceeds the middle threshold of the pre-registered band",
+            ),
+            guarding_test="tests/test_wedge_entry_ledger.py",
+            artifact_status="PASS",
+            backlog_ref="CASE-SPH-WEDGE-ENTRY-2D",
+            notes=(
+                "Kinematic quantity: it does not depend on the wall-pressure "
+                "magnitude, only on where the pressure crosses the detection "
+                "threshold, so it is the cleanest anchor the case has. Resolved-band "
+                "criteria (a) is graded FAIL campaign-wide (14.0 % at dx = 1 mm, "
+                "limit 10 %), and that FAIL comes from the coarse levels and the "
+                "small-deadrise cases, not from this reading."
+            ),
+        )
+    )
+
+    # ---- 2/4 peak pressure, resolved band, beta = 30 deg (resolvable) ----- #
+    # the matrix case and the finest ladder level are the same configuration
+    # (beta = 30 deg, V = 1 m/s, dx = 1 mm); the matrix id is preferred so the
+    # row is the one the campaign sheet names, the ladder level is the fallback
+    cid = "beta30_V1" if "beta30_V1" in runs else "ladder_L400"
+    e = _case(cid)
+    out.append(
+        _entry(
+            claim_id="wedge_entry.cp_peak.resolved_band.beta30_dx1mm",
+            quantity_id="wedge_cp_peak_beta30",
+            quantity="peak wall pressure on the resolved band vs Wagner q (C^2 + 1), beta = 30 deg",
+            artifact=rel,
+            json_path=f"cases[id={cid}].p_band_sph_mean",
+            reference=(
+                e["p_band_ref_mean"],
+                "Pa",
+                "Wagner (1932) maximum on the same band, same tau bin centres",
+            ),
+            measured=(
+                e["p_band_sph_mean"],
+                "Pa",
+                "ensemble band peak: frames binned in tau, bin mean over the last "
+                "frames, maximum on |x| <= (1 - 3 dx/c) c",
+            ),
+            guarding_test="tests/test_wedge_entry_ledger.py",
+            artifact_status="PASS",
+            backlog_ref="CASE-SPH-WEDGE-ENTRY-2D",
+            notes=(
+                "Wagner's peak is 3.5 spacings inside the spray root at dx = 1 mm, so "
+                "the like-for-like comparison is meaningful here. Campaign criterion "
+                "(b) is graded FAIL because beta = 10/15 deg pull the mean to "
+                f"{crit['b_resolved_rel_err'] * 100:.1f} %; the reading of this case "
+                f"is {e['p_band_rel_err_mean'] * 100:.1f} % "
+                f"(literal metric {e['literal_rel_err'] * 100:.1f} %) and the "
+                f"frame-to-frame scatter in the band is {e['noise_rel'] * 100:.1f} % "
+                "of the band mean, i.e. the error and the noise are the same size."
+            ),
+        )
+    )
+
+    # ---- 3/4 peak pressure, resolved band, beta = 10 deg (unresolvable) --- #
+    cid = "beta10_V1"
+    e = _case(cid)
+    out.append(
+        _entry(
+            claim_id="wedge_entry.cp_peak.resolved_band.beta10_dx1mm",
+            quantity_id="wedge_cp_peak_beta10",
+            quantity="peak wall pressure on the resolved band vs Wagner q (C^2 + 1), beta = 10 deg",
+            artifact=rel,
+            json_path=f"cases[id={cid}].p_band_sph_mean",
+            reference=(
+                e["p_band_ref_mean"],
+                "Pa",
+                "Wagner (1932) maximum on the same band, same tau bin centres",
+            ),
+            measured=(
+                e["p_band_sph_mean"],
+                "Pa",
+                "ensemble band peak, same estimator as the beta = 30 deg entry",
+            ),
+            guarding_test="tests/test_wedge_entry_ledger.py",
+            artifact_status="FAIL",
+            backlog_ref="CASE-SPH-WEDGE-ENTRY-2D",
+            notes=(
+                f"Honest FAIL: {e['p_band_rel_err_mean'] * 100:.1f} % at dx = 1 mm. "
+                f"Wagner's peak sits {e['cells_to_root']:.2f} spacings inside the spray "
+                "root at this deadrise, i.e. inside the kernel support, so the target "
+                "is not resolvable at any affordable dx and refining 1 mm -> 0.5 mm "
+                "did not recover it (docs/wedge_entry_wagner_resolved.md). Registered "
+                "as the exemplar of the resolvability limit, not as a solver defect "
+                "that a tolerance change could fix."
+            ),
+        )
+    )
+
+    # ---- 4/4 blunt control: pressure scale without a thin spray root ----- #
+    cid = "beta45_V1"
+    e = _case(cid)
+    out.append(
+        _entry(
+            claim_id="wedge_entry.cp_peak.blunt45_dx1mm",
+            quantity_id="wedge_cp_peak_blunt45",
+            quantity="peak wall pressure on the resolved band vs Wagner flat-plate value q (pi^2/4 + 1), beta = 45 deg",
+            artifact=rel,
+            json_path=f"cases[id={cid}].p_band_sph_mean",
+            reference=(
+                e["p_band_ref_mean"],
+                "Pa",
+                "Wagner (1932) flat-plate limit, same band, same tau bin centres",
+            ),
+            measured=(
+                e["p_band_sph_mean"],
+                "Pa",
+                "ensemble band peak, same estimator",
+            ),
+            guarding_test="tests/test_wedge_entry_ledger.py",
+            artifact_status="PASS",
+            backlog_ref="CASE-SPH-WEDGE-ENTRY-2D",
+            notes=(
+                "Control case: at 45 deg the Wagner peak is "
+                f"{e['cells_to_root']:.1f} spacings inside the root, so this is where "
+                "the *pressure scale* can be checked without the resolvability "
+                "confound. Campaign criterion (g) threshold is 15 %."
+            ),
+        )
+    )
+    return out
+
+
 def build() -> dict:
     entries = (
         young_laplace_claims()
@@ -2387,6 +2573,7 @@ def build() -> dict:
         + ice_floe_added_mass_claims()
         + ice_thermal_claims()
         + coverage_closure_claims()
+        + wedge_entry_claims()
     )
     V = _claim_validity()
     for e in entries:
