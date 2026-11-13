@@ -1,0 +1,1460 @@
+{
+ "case_id": "CASE-HYDROSTATIC",
+ "kind": "static_truncation_decomposition_ladder",
+ "config": {
+  "tank_width": 1.0,
+  "depth": 0.4,
+  "bands": 8,
+  "sound_speed": 20.0,
+  "device": "cpu",
+  "dxs": [
+   0.05,
+   0.04,
+   0.025,
+   0.02,
+   0.0125,
+   0.01
+  ],
+  "sound_speed_sweep_at_dx": 0.02
+ },
+ "records": [
+  {
+   "case_id": "CASE-HYDROSTATIC",
+   "kind": "static_truncation_decomposition",
+   "config": {
+    "dx": 0.05,
+    "tank_width": 1.0,
+    "depth": 0.4,
+    "bands": 8,
+    "sound_speed": 20.0,
+    "device": "cpu",
+    "fluid_particles": 160,
+    "support": 0.13,
+    "H_over_dx": 8.0,
+    "columns": 20,
+    "rho0": 1000.0,
+    "gamma": 7.0,
+    "bulk_modulus": 57142.857142857145
+   },
+   "bands": [
+    {
+     "band": 0,
+     "y": 0.02500000037252903,
+     "y_low": 0.0,
+     "y_high": 0.05,
+     "particles": 20,
+     "class": "floor",
+     "rho": 1006.3816528320312,
+     "rho_ref": 1008.952880859375,
+     "density_deficit_pct": -0.2548412394792643,
+     "density_response_error_pct": -28.719560415587253,
+     "pressure": 2602.32470703125,
+     "pressure_ref": 3678.74999634549,
+     "pressure_error_pct": -29.260626310120898,
+     "pressure_error_from_density_pct": -29.268642167177894,
+     "post_processing_pct": 0.0080158570569977,
+     "tait_amplification": 114.85049369162012
+    },
+    {
+     "band": 1,
+     "y": 0.07499999552965164,
+     "y_low": 0.05,
+     "y_high": 0.1,
+     "particles": 20,
+     "class": "floor",
+     "rho": 1007.4971923828125,
+     "rho_ref": 1007.786376953125,
+     "density_deficit_pct": -0.028695026736402784,
+     "density_response_error_pct": -3.7139811243846577,
+     "pressure": 3067.56103515625,
+     "pressure_ref": 3188.2500438541174,
+     "pressure_error_pct": -3.785431099750647,
+     "pressure_error_from_density_pct": -3.797685927709027,
+     "post_processing_pct": 0.012254827958380066,
+     "tait_amplification": 132.346485075452
+    },
+    {
+     "band": 2,
+     "y": 0.125,
+     "y_low": 0.1,
+     "y_high": 0.15000000000000002,
+     "particles": 20,
+     "class": "floor",
+     "rho": 1006.4468994140625,
+     "rho_ref": 1006.61181640625,
+     "density_deficit_pct": -0.01638337534882739,
+     "density_response_error_pct": -2.494276641311577,
+     "pressure": 2629.46826171875,
+     "pressure_ref": 2697.75,
+     "pressure_error_pct": -2.531062488416269,
+     "pressure_error_from_density_pct": -2.5426086526882608,
+     "post_processing_pct": 0.011546164271991621,
+     "tait_amplification": 155.1944332930298
+    },
+    {
+     "band": 3,
+     "y": 0.17499999701976776,
+     "y_low": 0.15000000000000002,
+     "y_high": 0.2,
+     "particles": 20,
+     "class": "interior",
+     "rho": 1005.2930908203125,
+     "rho_ref": 1005.4288940429688,
+     "density_deficit_pct": -0.01350699422514312,
+     "density_response_error_pct": -2.501489651140565,
+     "pressure": 2151.311767578125,
+     "pressure_ref": 2207.2500292360783,
+     "pressure_error_pct": -2.5342965643685322,
+     "pressure_error_from_density_pct": -2.5412732111794067,
+     "post_processing_pct": 0.0069766468108745094,
+     "tait_amplification": 188.1449839112876
+    },
+    {
+     "band": 4,
+     "y": 0.2250000238418579,
+     "y_low": 0.2,
+     "y_high": 0.25,
+     "particles": 20,
+     "class": "interior",
+     "rho": 1004.1309814453125,
+     "rho_ref": 1004.2376708984375,
+     "density_deficit_pct": -0.010623924616326441,
+     "density_response_error_pct": -2.5176436698833404,
+     "pressure": 1673.1148681640625,
+     "pressure_ref": 1716.7497661113741,
+     "pressure_error_pct": -2.541715677419276,
+     "pressure_error_from_density_pct": -2.5488826541517073,
+     "post_processing_pct": 0.007166976732431163,
+     "tait_amplification": 239.91912087127218
+    },
+    {
+     "band": 5,
+     "y": 0.2750000059604645,
+     "y_low": 0.25,
+     "y_high": 0.30000000000000004,
+     "particles": 20,
+     "class": "free_surface",
+     "rho": 1002.9605712890625,
+     "rho_ref": 1003.0377807617188,
+     "density_deficit_pct": -0.00769756375453845,
+     "density_response_error_pct": -2.541640714472282,
+     "pressure": 1194.86767578125,
+     "pressure_ref": 1226.2499415278437,
+     "pressure_error_pct": -2.5592062991247166,
+     "pressure_error_from_density_pct": -2.564234585728631,
+     "post_processing_pct": 0.005028286603914189,
+     "tait_amplification": 333.1228772501909
+    },
+    {
+     "band": 6,
+     "y": 0.32499998807907104,
+     "y_low": 0.30000000000000004,
+     "y_high": 0.35000000000000003,
+     "particles": 20,
+     "class": "free_surface",
+     "rho": 992.2221069335938,
+     "rho_ref": 1001.8292846679688,
+     "density_deficit_pct": -0.958963556107173,
+     "density_response_error_pct": -525.1876814253778,
+     "pressure": 0.0,
+     "pressure_ref": 735.7501169443133,
+     "pressure_error_pct": -100.0,
+     "pressure_error_from_density_pct": -513.120035591311,
+     "post_processing_pct": 413.12003559131097,
+     "tait_amplification": 535.0777225302242
+    },
+    {
+     "band": 7,
+     "y": 0.375,
+     "y_low": 0.35000000000000003,
+     "y_high": 0.4,
+     "particles": 20,
+     "class": "free_surface",
+     "rho": 764.0150756835938,
+     "rho_ref": 1000.6119995117188,
+     "density_deficit_pct": -23.645221518788517,
+     "density_response_error_pct": -38659.658920913535,
+     "pressure": 0.0,
+     "pressure_ref": 245.25000000000023,
+     "pressure_error_pct": -100.0,
+     "pressure_error_from_density_pct": -19859.34778292375,
+     "post_processing_pct": 19759.34778292375,
+     "tait_amplification": 839.8884217322088
+    }
+   ],
+   "summary": {
+    "floor": {
+     "bands": [
+      0,
+      1,
+      2
+     ],
+     "max_abs_pressure_error_pct": 29.260626310120898,
+     "mean_signed_pressure_error_pct": -11.859039966095937,
+     "mean_density_deficit_pct": -0.09997321385483149,
+     "mean_density_response_error_pct": -11.64260606042783,
+     "max_abs_post_processing_pct": 0.012254827958380066,
+     "mean_tait_amplification": 134.13047068670062
+    },
+    "interior": {
+     "bands": [
+      3,
+      4
+     ],
+     "max_abs_pressure_error_pct": 2.541715677419276,
+     "mean_signed_pressure_error_pct": -2.538006120893904,
+     "mean_density_deficit_pct": -0.012065459420734781,
+     "mean_density_response_error_pct": -2.5095666605119527,
+     "max_abs_post_processing_pct": 0.007166976732431163,
+     "mean_tait_amplification": 214.03205239127988
+    },
+    "free_surface": {
+     "bands": [
+      5,
+      6,
+      7
+     ],
+     "max_abs_pressure_error_pct": 100.0,
+     "mean_signed_pressure_error_pct": -67.51973543304156,
+     "mean_density_deficit_pct": -8.203960879550076,
+     "mean_density_response_error_pct": -13062.462747684462,
+     "max_abs_post_processing_pct": 19759.34778292375,
+     "mean_tait_amplification": 569.3630071708747
+    }
+   }
+  },
+  {
+   "case_id": "CASE-HYDROSTATIC",
+   "kind": "static_truncation_decomposition",
+   "config": {
+    "dx": 0.04,
+    "tank_width": 1.0,
+    "depth": 0.4,
+    "bands": 8,
+    "sound_speed": 20.0,
+    "device": "cpu",
+    "fluid_particles": 250,
+    "support": 0.10400000000000001,
+    "H_over_dx": 10.0,
+    "columns": 25,
+    "rho0": 1000.0,
+    "gamma": 7.0,
+    "bulk_modulus": 57142.857142857145
+   },
+   "bands": [
+    {
+     "band": 0,
+     "y": 0.020000003278255463,
+     "y_low": 0.0,
+     "y_high": 0.05,
+     "particles": 25,
+     "class": "floor",
+     "rho": 1006.5582275390625,
+     "rho_ref": 1009.0689697265625,
+     "density_deficit_pct": -0.24881769857419966,
+     "density_response_error_pct": -27.684977050327753,
+     "pressure": 2675.71533203125,
+     "pressure_ref": 3727.799967840314,
+     "pressure_error_pct": -28.222668729153533,
+     "pressure_error_from_density_pct": -28.228998765244818,
+     "post_processing_pct": 0.006330036091284352,
+     "tait_amplification": 113.45253543861824
+    },
+    {
+     "band": 1,
+     "y": 0.07999070733785629,
+     "y_low": 0.05,
+     "y_high": 0.1,
+     "particles": 50,
+     "class": "floor",
+     "rho": 1007.46923828125,
+     "rho_ref": 1007.66943359375,
+     "density_deficit_pct": -0.019867161375142217,
+     "density_response_error_pct": -2.6103011396192755,
+     "pressure": 3056.03173828125,
+     "pressure_ref": 3139.2911610156298,
+     "pressure_error_pct": -2.652172686889087,
+     "pressure_error_from_density_pct": -2.668918611893578,
+     "post_processing_pct": 0.016745925004491014,
+     "tait_amplification": 134.33819565350328
+    },
+    {
+     "band": 2,
+     "y": 0.13999997079372406,
+     "y_low": 0.1,
+     "y_high": 0.15000000000000002,
+     "particles": 25,
+     "class": "floor",
+     "rho": 1006.133056640625,
+     "rho_ref": 1006.2577514648438,
+     "density_deficit_pct": -0.012391936761457778,
+     "density_response_error_pct": -1.9926458396324898,
+     "pressure": 2499.1044921875,
+     "pressure_ref": 2550.600286513567,
+     "pressure_error_pct": -2.0189676366913933,
+     "pressure_error_from_density_pct": -2.0293762942947047,
+     "post_processing_pct": 0.010408657603311333,
+     "tait_amplification": 163.7658691582905
+    },
+    {
+     "band": 3,
+     "y": 0.18000002205371857,
+     "y_low": 0.15000000000000002,
+     "y_high": 0.2,
+     "particles": 25,
+     "class": "interior",
+     "rho": 1005.2044067382812,
+     "rho_ref": 1005.3101806640625,
+     "density_deficit_pct": -0.01052152139863205,
+     "density_response_error_pct": -1.9919082319946657,
+     "pressure": 2114.632080078125,
+     "pressure_ref": 2158.199783653021,
+     "pressure_error_pct": -2.018705770656326,
+     "pressure_error_from_density_pct": -2.0230570256978497,
+     "post_processing_pct": 0.004351255041523672,
+     "tait_amplification": 192.27799374726135
+    },
+    {
+     "band": 4,
+     "y": 0.2199999839067459,
+     "y_low": 0.2,
+     "y_high": 0.25,
+     "particles": 25,
+     "class": "interior",
+     "rho": 1004.27001953125,
+     "rho_ref": 1004.3571166992188,
+     "density_deficit_pct": -0.008671932176373964,
+     "density_response_error_pct": -1.9989633966968734,
+     "pressure": 1730.13671875,
+     "pressure_ref": 1765.8001578748228,
+     "pressure_error_pct": -2.0196758373690837,
+     "pressure_error_from_density_pct": -2.024603223461674,
+     "post_processing_pct": 0.004927386092590247,
+     "tait_amplification": 233.4662197863534
+    },
+    {
+     "band": 5,
+     "y": 0.27999037504196167,
+     "y_low": 0.25,
+     "y_high": 0.30000000000000004,
+     "particles": 50,
+     "class": "free_surface",
+     "rho": 1002.8582153320312,
+     "rho_ref": 1002.9175415039062,
+     "density_deficit_pct": -0.005915358882446764,
+     "density_response_error_pct": -2.033430262965208,
+     "pressure": 1153.418212890625,
+     "pressure_ref": 1177.2944208383562,
+     "pressure_error_pct": -2.028057512642323,
+     "pressure_error_from_density_pct": -2.0508812921607777,
+     "post_processing_pct": 0.022823779518454934,
+     "tait_amplification": 346.70445748381604
+    },
+    {
+     "band": 6,
+     "y": 0.3399999141693115,
+     "y_low": 0.30000000000000004,
+     "y_high": 0.35000000000000003,
+     "particles": 25,
+     "class": "free_surface",
+     "rho": 991.8735961914062,
+     "rho_ref": 1001.465087890625,
+     "density_deficit_pct": -0.957745987872749,
+     "density_response_error_pct": -654.6700549908348,
+     "pressure": 0.0,
+     "pressure_ref": 588.6008419990542,
+     "pressure_error_pct": -100.0,
+     "pressure_error_from_density_pct": -638.9546624616337,
+     "post_processing_pct": 538.9546624616337,
+     "tait_amplification": 667.1441807663604
+    },
+    {
+     "band": 7,
+     "y": 0.37999996542930603,
+     "y_low": 0.35000000000000003,
+     "y_high": 0.4,
+     "particles": 25,
+     "class": "free_surface",
+     "rho": 763.8690185546875,
+     "rho_ref": 1000.4898071289062,
+     "density_deficit_pct": -23.650494676527156,
+     "density_response_error_pct": -48308.97196261682,
+     "pressure": 0.0,
+     "pressure_ref": 196.20033913850807,
+     "pressure_error_pct": -100.0,
+     "pressure_error_from_density_pct": -24803.692556371214,
+     "post_processing_pct": 24703.692556371214,
+     "tait_amplification": 1048.759989827553
+    }
+   ],
+   "summary": {
+    "floor": {
+     "bands": [
+      0,
+      1,
+      2
+     ],
+     "max_abs_pressure_error_pct": 28.222668729153533,
+     "mean_signed_pressure_error_pct": -10.964603017578005,
+     "mean_density_deficit_pct": -0.09369226557026655,
+     "mean_density_response_error_pct": -10.762641343193172,
+     "max_abs_post_processing_pct": 0.016745925004491014,
+     "mean_tait_amplification": 137.18553341680402
+    },
+    "interior": {
+     "bands": [
+      3,
+      4
+     ],
+     "max_abs_pressure_error_pct": 2.0196758373690837,
+     "mean_signed_pressure_error_pct": -2.019190804012705,
+     "mean_density_deficit_pct": -0.009596726787503007,
+     "mean_density_response_error_pct": -1.9954358143457696,
+     "max_abs_post_processing_pct": 0.004927386092590247,
+     "mean_tait_amplification": 212.87210676680738
+    },
+    "free_surface": {
+     "bands": [
+      5,
+      6,
+      7
+     ],
+     "max_abs_pressure_error_pct": 100.0,
+     "mean_signed_pressure_error_pct": -67.34268583754744,
+     "mean_density_deficit_pct": -8.20471867442745,
+     "mean_density_response_error_pct": -16321.891815956873,
+     "max_abs_post_processing_pct": 24703.692556371214,
+     "mean_tait_amplification": 687.5362093592431
+    }
+   }
+  },
+  {
+   "case_id": "CASE-HYDROSTATIC",
+   "kind": "static_truncation_decomposition",
+   "config": {
+    "dx": 0.025,
+    "tank_width": 1.0,
+    "depth": 0.4,
+    "bands": 8,
+    "sound_speed": 20.0,
+    "device": "cpu",
+    "fluid_particles": 640,
+    "support": 0.065,
+    "H_over_dx": 16.0,
+    "columns": 40,
+    "rho0": 1000.0,
+    "gamma": 7.0,
+    "bulk_modulus": 57142.857142857145
+   },
+   "bands": [
+    {
+     "band": 0,
+     "y": 0.024996399879455566,
+     "y_low": 0.0,
+     "y_high": 0.05,
+     "particles": 80,
+     "class": "floor",
+     "rho": 1007.6430053710938,
+     "rho_ref": 1008.952880859375,
+     "density_deficit_pct": -0.12982523893143583,
+     "density_response_error_pct": -14.630770908892588,
+     "pressure": 3129.2568359375,
+     "pressure_ref": 3678.785317182541,
+     "pressure_error_pct": -14.937769776299604,
+     "pressure_error_from_density_pct": -14.966483085948045,
+     "post_processing_pct": 0.028713309648442653,
+     "tait_amplification": 115.28176808403369
+    },
+    {
+     "band": 1,
+     "y": 0.07499635964632034,
+     "y_low": 0.05,
+     "y_high": 0.1,
+     "particles": 80,
+     "class": "floor",
+     "rho": 1007.6895141601562,
+     "rho_ref": 1007.786376953125,
+     "density_deficit_pct": -0.009611440994228282,
+     "density_response_error_pct": -1.2440033863230227,
+     "pressure": 3148.064208984375,
+     "pressure_ref": 3188.2857118695974,
+     "pressure_error_pct": -1.2615401039964058,
+     "pressure_error_from_density_pct": -1.2727688468303744,
+     "post_processing_pct": 0.011228742833968575,
+     "tait_amplification": 132.42227129050457
+    },
+    {
+     "band": 2,
+     "y": 0.12499634921550751,
+     "y_low": 0.1,
+     "y_high": 0.15000000000000002,
+     "particles": 80,
+     "class": "interior",
+     "rho": 1006.5292358398438,
+     "rho_ref": 1006.61181640625,
+     "density_deficit_pct": -0.008203814525153952,
+     "density_response_error_pct": -1.2489845653939846,
+     "pressure": 2663.738037109375,
+     "pressure_ref": 2697.7858141958714,
+     "pressure_error_pct": -1.2620637601152507,
+     "pressure_error_from_density_pct": -1.2734987947537801,
+     "post_processing_pct": 0.011435034638529462,
+     "tait_amplification": 155.23251907378804
+    },
+    {
+     "band": 3,
+     "y": 0.17499633133411407,
+     "y_low": 0.15000000000000002,
+     "y_high": 0.2,
+     "particles": 80,
+     "class": "interior",
+     "rho": 1005.361328125,
+     "rho_ref": 1005.4290161132812,
+     "density_deficit_pct": -0.006732249337992879,
+     "density_response_error_pct": -1.2467818637646344,
+     "pressure": 2179.523681640625,
+     "pressure_ref": 2207.285989612341,
+     "pressure_error_pct": -1.2577576309715899,
+     "pressure_error_from_density_pct": -1.2668685215418085,
+     "post_processing_pct": 0.009110890570218633,
+     "tait_amplification": 188.1790851673219
+    },
+    {
+     "band": 4,
+     "y": 0.22499628365039825,
+     "y_low": 0.2,
+     "y_high": 0.25,
+     "particles": 80,
+     "class": "interior",
+     "rho": 1004.1845703125,
+     "rho_ref": 1004.2376708984375,
+     "density_deficit_pct": -0.005287651267849025,
+     "density_response_error_pct": -1.253060636612413,
+     "pressure": 1695.1236572265625,
+     "pressure_ref": 1716.7864573895934,
+     "pressure_error_pct": -1.2618226378585007,
+     "pressure_error_from_density_pct": -1.2688117437995916,
+     "post_processing_pct": 0.006989105941090923,
+     "tait_amplification": 239.95753114704448
+    },
+    {
+     "band": 5,
+     "y": 0.274996280670166,
+     "y_low": 0.25,
+     "y_high": 0.30000000000000004,
+     "particles": 80,
+     "class": "interior",
+     "rho": 1002.999755859375,
+     "rho_ref": 1003.0379028320312,
+     "density_deficit_pct": -0.0038031436846552857,
+     "density_response_error_pct": -1.2557008820042959,
+     "pressure": 1210.8831787109375,
+     "pressure_ref": 1226.2864866256716,
+     "pressure_error_pct": -1.2560937499294211,
+     "pressure_error_from_density_pct": -1.2670118907940453,
+     "post_processing_pct": 0.01091814086462417,
+     "tait_amplification": 333.14857282571654
+    },
+    {
+     "band": 6,
+     "y": 0.3249962627887726,
+     "y_low": 0.30000000000000004,
+     "y_high": 0.35000000000000003,
+     "particles": 80,
+     "class": "free_surface",
+     "rho": 1001.805908203125,
+     "rho_ref": 1001.8294067382812,
+     "density_deficit_pct": -0.0023455625277279957,
+     "density_response_error_pct": -1.284489373769726,
+     "pressure": 726.3585205078125,
+     "pressure_ref": 735.7866620421412,
+     "pressure_error_pct": -1.2813689104068993,
+     "pressure_error_from_density_pct": -1.2914523312754,
+     "post_processing_pct": 0.010083420868500781,
+     "tait_amplification": 550.5938622435069
+    },
+    {
+     "band": 7,
+     "y": 0.37499627470970154,
+     "y_low": 0.35000000000000003,
+     "y_high": 0.4,
+     "particles": 80,
+     "class": "free_surface",
+     "rho": 877.5289916992188,
+     "rho_ref": 1000.6121215820312,
+     "density_deficit_pct": -12.300783413278094,
+     "density_response_error_pct": -20107.627879150466,
+     "pressure": 0.0,
+     "pressure_ref": 245.28654509782814,
+     "pressure_error_pct": -100.0,
+     "pressure_error_from_density_pct": -14060.584604033778,
+     "post_processing_pct": 13960.584604033778,
+     "tait_amplification": 1143.0641554794036
+    }
+   ],
+   "summary": {
+    "floor": {
+     "bands": [
+      0,
+      1
+     ],
+     "max_abs_pressure_error_pct": 14.937769776299604,
+     "mean_signed_pressure_error_pct": -8.099654940148005,
+     "mean_density_deficit_pct": -0.06971833996283205,
+     "mean_density_response_error_pct": -7.937387147607805,
+     "max_abs_post_processing_pct": 0.028713309648442653,
+     "mean_tait_amplification": 123.85201968726912
+    },
+    "interior": {
+     "bands": [
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_abs_pressure_error_pct": 1.2620637601152507,
+     "mean_signed_pressure_error_pct": -1.2594344447186905,
+     "mean_density_deficit_pct": -0.0060067147039127855,
+     "mean_density_response_error_pct": -1.251131986943832,
+     "max_abs_post_processing_pct": 0.011435034638529462,
+     "mean_tait_amplification": 229.12942705346774
+    },
+    "free_surface": {
+     "bands": [
+      6,
+      7
+     ],
+     "max_abs_pressure_error_pct": 100.0,
+     "mean_signed_pressure_error_pct": -50.64068445520345,
+     "mean_density_deficit_pct": -6.1515644879029105,
+     "mean_density_response_error_pct": -10054.456184262119,
+     "max_abs_post_processing_pct": 13960.584604033778,
+     "mean_tait_amplification": 846.8290088614552
+    }
+   }
+  },
+  {
+   "case_id": "CASE-HYDROSTATIC",
+   "kind": "static_truncation_decomposition",
+   "config": {
+    "dx": 0.02,
+    "tank_width": 1.0,
+    "depth": 0.4,
+    "bands": 8,
+    "sound_speed": 20.0,
+    "device": "cpu",
+    "fluid_particles": 1000,
+    "support": 0.052000000000000005,
+    "H_over_dx": 20.0,
+    "columns": 50,
+    "rho0": 1000.0,
+    "gamma": 7.0,
+    "bulk_modulus": 57142.857142857145
+   },
+   "bands": [
+    {
+     "band": 0,
+     "y": 0.029993847012519836,
+     "y_low": 0.0,
+     "y_high": 0.05,
+     "particles": 150,
+     "class": "floor",
+     "rho": 1007.952880859375,
+     "rho_ref": 1008.8366088867188,
+     "density_deficit_pct": -0.08759872704451332,
+     "density_response_error_pct": -10.000759778697187,
+     "pressure": 3258.942138671875,
+     "pressure_ref": 3629.7603608071804,
+     "pressure_error_pct": -10.21605244630649,
+     "pressure_error_from_density_pct": -10.239697485838995,
+     "post_processing_pct": 0.023645039532504963,
+     "tait_amplification": 116.89322243958738
+    },
+    {
+     "band": 1,
+     "y": 0.07999767363071442,
+     "y_low": 0.05,
+     "y_high": 0.1,
+     "particles": 100,
+     "class": "floor",
+     "rho": 1007.5933837890625,
+     "rho_ref": 1007.6693115234375,
+     "density_deficit_pct": -0.00753498528800467,
+     "density_response_error_pct": -0.9900202142390957,
+     "pressure": 3107.66162109375,
+     "pressure_ref": 3139.2228216826916,
+     "pressure_error_pct": -1.0053826179826308,
+     "pressure_error_from_density_pct": -1.0126265028432169,
+     "post_processing_pct": 0.007243884860586025,
+     "tait_amplification": 134.3899774370189
+    },
+    {
+     "band": 2,
+     "y": 0.1299937218427658,
+     "y_low": 0.1,
+     "y_high": 0.15000000000000002,
+     "particles": 150,
+     "class": "interior",
+     "rho": 1006.4291381835938,
+     "rho_ref": 1006.4940185546875,
+     "density_deficit_pct": -0.006446175525898212,
+     "density_response_error_pct": -0.9990789300550751,
+     "pressure": 2622.160888671875,
+     "pressure_ref": 2648.7615887224674,
+     "pressure_error_pct": -1.0042693220805199,
+     "pressure_error_from_density_pct": -1.0183873977387292,
+     "post_processing_pct": 0.014118075658209328,
+     "tait_amplification": 157.98319385614724
+    },
+    {
+     "band": 3,
+     "y": 0.17999763786792755,
+     "y_low": 0.15000000000000002,
+     "y_high": 0.2,
+     "particles": 100,
+     "class": "interior",
+     "rho": 1005.2574462890625,
+     "rho_ref": 1005.3101806640625,
+     "density_deficit_pct": -0.0052455825091834996,
+     "density_response_error_pct": -0.9930806188363506,
+     "pressure": 2136.611572265625,
+     "pressure_ref": 2158.2231725156307,
+     "pressure_error_pct": -1.0013607733075691,
+     "pressure_error_from_density_pct": -1.0087697302956333,
+     "post_processing_pct": 0.007408956988064208,
+     "tait_amplification": 192.3084287645021
+    },
+    {
+     "band": 4,
+     "y": 0.21999762952327728,
+     "y_low": 0.2,
+     "y_high": 0.25,
+     "particles": 100,
+     "class": "interior",
+     "rho": 1004.31396484375,
+     "rho_ref": 1004.3572387695312,
+     "density_deficit_pct": -0.0043086188968199934,
+     "density_response_error_pct": -0.9931502052136887,
+     "pressure": 1748.1573486328125,
+     "pressure_ref": 1765.82325437665,
+     "pressure_error_pct": -1.0004345395300485,
+     "pressure_error_from_density_pct": -1.0060209480219795,
+     "post_processing_pct": 0.005586408491931039,
+     "tait_amplification": 233.49035319983403
+    },
+    {
+     "band": 5,
+     "y": 0.2699935734272003,
+     "y_low": 0.25,
+     "y_high": 0.30000000000000004,
+     "particles": 150,
+     "class": "interior",
+     "rho": 1003.1262817382812,
+     "rho_ref": 1003.1583251953125,
+     "density_deficit_pct": -0.0031942572001342207,
+     "density_response_error_pct": -1.014571174583545,
+     "pressure": 1262.56787109375,
+     "pressure_ref": 1275.3630446791651,
+     "pressure_error_pct": -1.0032573578791393,
+     "pressure_error_from_density_pct": -1.0240960952965894,
+     "post_processing_pct": 0.020838737417450126,
+     "tait_amplification": 320.6053962259387
+    },
+    {
+     "band": 6,
+     "y": 0.319997638463974,
+     "y_low": 0.30000000000000004,
+     "y_high": 0.35000000000000003,
+     "particles": 100,
+     "class": "free_surface",
+     "rho": 1001.93115234375,
+     "rho_ref": 1001.9506225585938,
+     "density_deficit_pct": -0.0019432309741995724,
+     "density_response_error_pct": -0.998153884664732,
+     "pressure": 777.0092163085938,
+     "pressure_ref": 784.8231666684153,
+     "pressure_error_pct": -0.9956319705739403,
+     "pressure_error_from_density_pct": -1.0039401966627337,
+     "post_processing_pct": 0.008308226088793447,
+     "tait_amplification": 516.6345174568156
+    },
+    {
+     "band": 7,
+     "y": 0.36999356746673584,
+     "y_low": 0.35000000000000003,
+     "y_high": 0.4,
+     "particles": 150,
+     "class": "free_surface",
+     "rho": 918.686767578125,
+     "rho_ref": 1000.7343139648438,
+     "density_deficit_pct": -8.19873419365943,
+     "density_response_error_pct": -11173.360485412684,
+     "pressure": 161.87222290039062,
+     "pressure_ref": 294.36310315132164,
+     "pressure_error_pct": -45.00933671120533,
+     "pressure_error_from_density_pct": -8790.682792471038,
+     "post_processing_pct": 8745.673455759832,
+     "tait_amplification": 1072.1999987838851
+    }
+   ],
+   "summary": {
+    "floor": {
+     "bands": [
+      0,
+      1
+     ],
+     "max_abs_pressure_error_pct": 10.21605244630649,
+     "mean_signed_pressure_error_pct": -5.610717532144561,
+     "mean_density_deficit_pct": -0.047566856166259,
+     "mean_density_response_error_pct": -5.495389996468141,
+     "max_abs_post_processing_pct": 0.023645039532504963,
+     "mean_tait_amplification": 125.64159993830313
+    },
+    "interior": {
+     "bands": [
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_abs_pressure_error_pct": 1.0042693220805199,
+     "mean_signed_pressure_error_pct": -1.0023304981993193,
+     "mean_density_deficit_pct": -0.0047986585330089815,
+     "mean_density_response_error_pct": -0.9999702321721649,
+     "max_abs_post_processing_pct": 0.020838737417450126,
+     "mean_tait_amplification": 226.09684301160553
+    },
+    "free_surface": {
+     "bands": [
+      6,
+      7
+     ],
+     "max_abs_pressure_error_pct": 45.00933671120533,
+     "mean_signed_pressure_error_pct": -23.002484340889634,
+     "mean_density_deficit_pct": -4.100338712316814,
+     "mean_density_response_error_pct": -5587.179319648674,
+     "max_abs_post_processing_pct": 8745.673455759832,
+     "mean_tait_amplification": 794.4172581203504
+    }
+   }
+  },
+  {
+   "case_id": "CASE-HYDROSTATIC",
+   "kind": "static_truncation_decomposition",
+   "config": {
+    "dx": 0.0125,
+    "tank_width": 1.0,
+    "depth": 0.4,
+    "bands": 8,
+    "sound_speed": 20.0,
+    "device": "cpu",
+    "fluid_particles": 2560,
+    "support": 0.0325,
+    "H_over_dx": 32.0,
+    "columns": 80,
+    "rho0": 1000.0,
+    "gamma": 7.0,
+    "bulk_modulus": 57142.857142857145
+   },
+   "bands": [
+    {
+     "band": 0,
+     "y": 0.02499549649655819,
+     "y_low": 0.0,
+     "y_high": 0.05,
+     "particles": 320,
+     "class": "floor",
+     "rho": 1008.3036499023438,
+     "rho_ref": 1008.952880859375,
+     "density_deficit_pct": -0.06434700463695542,
+     "density_response_error_pct": -7.251642987646911,
+     "pressure": 3406.236572265625,
+     "pressure_ref": 3678.794179368764,
+     "pressure_error_pct": -7.408884373898483,
+     "pressure_error_from_density_pct": -7.432617645339967,
+     "post_processing_pct": 0.02373327144148396,
+     "tait_amplification": 115.50837039384592
+    },
+    {
+     "band": 1,
+     "y": 0.07499545812606812,
+     "y_low": 0.05,
+     "y_high": 0.1,
+     "particles": 320,
+     "class": "interior",
+     "rho": 1007.7379760742188,
+     "rho_ref": 1007.7864990234375,
+     "density_deficit_pct": -0.004814804451713783,
+     "density_response_error_pct": -0.623167730101748,
+     "pressure": 3168.241943359375,
+     "pressure_ref": 3188.294555783272,
+     "pressure_error_pct": -0.6289447876615784,
+     "pressure_error_from_density_pct": -0.6376694035068686,
+     "post_processing_pct": 0.008724615845290273,
+     "tait_amplification": 132.43931501307313
+    },
+    {
+     "band": 2,
+     "y": 0.12499545514583588,
+     "y_low": 0.1,
+     "y_high": 0.15000000000000002,
+     "particles": 320,
+     "class": "interior",
+     "rho": 1006.5709228515625,
+     "rho_ref": 1006.61181640625,
+     "density_deficit_pct": -0.004062494997669752,
+     "density_response_error_pct": -0.6184919872978312,
+     "pressure": 2680.880126953125,
+     "pressure_ref": 2697.79458501935,
+     "pressure_error_pct": -0.6269735346104421,
+     "pressure_error_from_density_pct": -0.6307096848545468,
+     "post_processing_pct": 0.0037361502441046746,
+     "tait_amplification": 155.25180590162498
+    },
+    {
+     "band": 3,
+     "y": 0.17499537765979767,
+     "y_low": 0.15000000000000002,
+     "y_high": 0.2,
+     "particles": 320,
+     "class": "interior",
+     "rho": 1005.3948974609375,
+     "rho_ref": 1005.4290161132812,
+     "density_deficit_pct": -0.0033934421820869254,
+     "density_response_error_pct": -0.6284500106802815,
+     "pressure": 2193.448486328125,
+     "pressure_ref": 2207.295345157385,
+     "pressure_error_pct": -0.6273224314833348,
+     "pressure_error_from_density_pct": -0.6386388098667428,
+     "post_processing_pct": 0.011316378383408043,
+     "tait_amplification": 188.19793460396835
+    },
+    {
+     "band": 4,
+     "y": 0.22499532997608185,
+     "y_low": 0.2,
+     "y_high": 0.25,
+     "particles": 320,
+     "class": "interior",
+     "rho": 1004.211181640625,
+     "rho_ref": 1004.23779296875,
+     "density_deficit_pct": -0.0026499030718940553,
+     "density_response_error_pct": -0.627952529093212,
+     "pressure": 1706.0726318359375,
+     "pressure_ref": 1716.7958129346373,
+     "pressure_error_pct": -0.6246043366316179,
+     "pressure_error_from_density_pct": -0.6358965079861556,
+     "post_processing_pct": 0.01129217135453775,
+     "tait_amplification": 239.96972369696513
+    },
+    {
+     "band": 5,
+     "y": 0.2749953269958496,
+     "y_low": 0.25,
+     "y_high": 0.30000000000000004,
+     "particles": 320,
+     "class": "interior",
+     "rho": 1003.0184326171875,
+     "rho_ref": 1003.0379028320312,
+     "density_deficit_pct": -0.0019411245366529606,
+     "density_response_error_pct": -0.6409097301749989,
+     "pressure": 1218.51123046875,
+     "pressure_ref": 1226.2958421707156,
+     "pressure_error_pct": -0.6348069881885632,
+     "pressure_error_from_density_pct": -0.6467189938002771,
+     "post_processing_pct": 0.011912005611713905,
+     "tait_amplification": 333.16718303679824
+    },
+    {
+     "band": 6,
+     "y": 0.324995219707489,
+     "y_low": 0.30000000000000004,
+     "y_high": 0.35000000000000003,
+     "particles": 320,
+     "class": "interior",
+     "rho": 1001.8174438476562,
+     "rho_ref": 1001.8294067382812,
+     "density_deficit_pct": -0.0011941045595764699,
+     "density_response_error_pct": -0.653921863010043,
+     "pressure": 731.1539916992188,
+     "pressure_ref": 735.796894669533,
+     "pressure_error_pct": -0.6310033385503067,
+     "pressure_error_from_density_pct": -0.6574893529987302,
+     "post_processing_pct": 0.026486014448423578,
+     "tait_amplification": 550.6128820343265
+    },
+    {
+     "band": 7,
+     "y": 0.3749951124191284,
+     "y_low": 0.35000000000000003,
+     "y_high": 0.4,
+     "particles": 320,
+     "class": "free_surface",
+     "rho": 939.070556640625,
+     "rho_ref": 1000.6121215820312,
+     "density_deficit_pct": -6.150391706639047,
+     "density_response_error_pct": -10053.813939575233,
+     "pressure": 182.86448669433594,
+     "pressure_ref": 245.29794716835045,
+     "pressure_error_pct": -25.452092524510938,
+     "pressure_error_from_density_pct": -8393.03665595058,
+     "post_processing_pct": 8367.58456342607,
+     "tait_amplification": 1364.6344909854615
+    }
+   ],
+   "summary": {
+    "floor": {
+     "bands": [
+      0
+     ],
+     "max_abs_pressure_error_pct": 7.408884373898483,
+     "mean_signed_pressure_error_pct": -7.408884373898483,
+     "mean_density_deficit_pct": -0.06434700463695542,
+     "mean_density_response_error_pct": -7.251642987646911,
+     "max_abs_post_processing_pct": 0.02373327144148396,
+     "mean_tait_amplification": 115.50837039384592
+    },
+    "interior": {
+     "bands": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "max_abs_pressure_error_pct": 0.6348069881885632,
+     "mean_signed_pressure_error_pct": -0.6289425695209738,
+     "mean_density_deficit_pct": -0.0030093122999323243,
+     "mean_density_response_error_pct": -0.6321489750596857,
+     "max_abs_post_processing_pct": 0.026486014448423578,
+     "mean_tait_amplification": 266.6064740477927
+    },
+    "free_surface": {
+     "bands": [
+      7
+     ],
+     "max_abs_pressure_error_pct": 25.452092524510938,
+     "mean_signed_pressure_error_pct": -25.452092524510938,
+     "mean_density_deficit_pct": -6.150391706639047,
+     "mean_density_response_error_pct": -10053.813939575233,
+     "max_abs_post_processing_pct": 8367.58456342607,
+     "mean_tait_amplification": 1364.6344909854615
+    }
+   }
+  },
+  {
+   "case_id": "CASE-HYDROSTATIC",
+   "kind": "static_truncation_decomposition",
+   "config": {
+    "dx": 0.01,
+    "tank_width": 1.0,
+    "depth": 0.4,
+    "bands": 8,
+    "sound_speed": 20.0,
+    "device": "cpu",
+    "fluid_particles": 4000,
+    "support": 0.026000000000000002,
+    "H_over_dx": 40.0,
+    "columns": 100,
+    "rho0": 1000.0,
+    "gamma": 7.0,
+    "bulk_modulus": 57142.857142857145
+   },
+   "bands": [
+    {
+     "band": 0,
+     "y": 0.02499539405107498,
+     "y_low": 0.0,
+     "y_high": 0.05,
+     "particles": 500,
+     "class": "floor",
+     "rho": 1008.434814453125,
+     "rho_ref": 1008.952880859375,
+     "density_deficit_pct": -0.05134693761008613,
+     "density_response_error_pct": -5.786588857680453,
+     "pressure": 3461.188720703125,
+     "pressure_ref": 3678.7951843589544,
+     "pressure_error_pct": -5.9151557167689495,
+     "pressure_error_from_density_pct": -5.933314194549499,
+     "post_processing_pct": 0.01815847778054991,
+     "tait_amplification": 115.55341897126135
+    },
+    {
+     "band": 1,
+     "y": 0.07499536126852036,
+     "y_low": 0.05,
+     "y_high": 0.1,
+     "particles": 500,
+     "class": "interior",
+     "rho": 1007.7478637695312,
+     "rho_ref": 1007.7864990234375,
+     "density_deficit_pct": -0.0038336744879630125,
+     "density_response_error_pct": -0.4961826077413911,
+     "pressure": 3172.331298828125,
+     "pressure_ref": 3188.2955059558153,
+     "pressure_error_pct": -0.5007129075039862,
+     "pressure_error_from_density_pct": -0.5077441676247019,
+     "post_processing_pct": 0.007031260120715643,
+     "tait_amplification": 132.44321321982844
+    },
+    {
+     "band": 2,
+     "y": 0.12499532848596573,
+     "y_low": 0.1,
+     "y_high": 0.15000000000000002,
+     "particles": 500,
+     "class": "interior",
+     "rho": 1006.5791625976562,
+     "rho_ref": 1006.61181640625,
+     "density_deficit_pct": -0.0032439325727717794,
+     "density_response_error_pct": -0.49387046746917074,
+     "pressure": 2684.319580078125,
+     "pressure_ref": 2697.795827552676,
+     "pressure_error_pct": -0.4995280716545647,
+     "pressure_error_from_density_pct": -0.5036387576342949,
+     "post_processing_pct": 0.004110685979730189,
+     "tait_amplification": 155.25561840021865
+    },
+    {
+     "band": 3,
+     "y": 0.1749952882528305,
+     "y_low": 0.15000000000000002,
+     "y_high": 0.2,
+     "particles": 500,
+     "class": "interior",
+     "rho": 1005.4019775390625,
+     "rho_ref": 1005.4290161132812,
+     "density_deficit_pct": -0.002689257400112499,
+     "density_response_error_pct": -0.4980382016661178,
+     "pressure": 2196.30615234375,
+     "pressure_ref": 2207.2962222397327,
+     "pressure_error_pct": -0.49789737259783307,
+     "pressure_error_from_density_pct": -0.5061233802285403,
+     "post_processing_pct": 0.008226007630707244,
+     "tait_amplification": 188.20191038885596
+    },
+    {
+     "band": 4,
+     "y": 0.22499525547027588,
+     "y_low": 0.2,
+     "y_high": 0.25,
+     "particles": 500,
+     "class": "interior",
+     "rho": 1004.2166137695312,
+     "rho_ref": 1004.23779296875,
+     "density_deficit_pct": -0.0021089824907005728,
+     "density_response_error_pct": -0.4997695587049211,
+     "pressure": 1708.3070068359375,
+     "pressure_ref": 1716.7965438365939,
+     "pressure_error_pct": -0.49449872386650995,
+     "pressure_error_from_density_pct": -0.5061001582443603,
+     "post_processing_pct": 0.011601434377850328,
+     "tait_amplification": 239.9736178351302
+    },
+    {
+     "band": 5,
+     "y": 0.27499520778656006,
+     "y_low": 0.25,
+     "y_high": 0.30000000000000004,
+     "particles": 500,
+     "class": "interior",
+     "rho": 1003.0225830078125,
+     "rho_ref": 1003.0379028320312,
+     "density_deficit_pct": -0.0015273425037598543,
+     "density_response_error_pct": -0.5042894742129267,
+     "pressure": 1220.176513671875,
+     "pressure_ref": 1226.297011613846,
+     "pressure_error_pct": -0.49910404119115626,
+     "pressure_error_from_density_pct": -0.5088667162327143,
+     "post_processing_pct": 0.009762675041558033,
+     "tait_amplification": 333.17131879721717
+    },
+    {
+     "band": 6,
+     "y": 0.324995219707489,
+     "y_low": 0.30000000000000004,
+     "y_high": 0.35000000000000003,
+     "particles": 500,
+     "class": "interior",
+     "rho": 1001.8203125,
+     "rho_ref": 1001.8294067382812,
+     "density_deficit_pct": -0.0009077631600851177,
+     "density_response_error_pct": -0.4971140693290632,
+     "pressure": 732.20849609375,
+     "pressure_ref": 735.796894669533,
+     "pressure_error_pct": -0.48768873608724395,
+     "pressure_error_from_density_pct": -0.49983038340646324,
+     "post_processing_pct": 0.012141647319219295,
+     "tait_amplification": 550.6176119326058
+    },
+    {
+     "band": 7,
+     "y": 0.3749949634075165,
+     "y_low": 0.35000000000000003,
+     "y_high": 0.4,
+     "particles": 500,
+     "class": "free_surface",
+     "rho": 951.379150390625,
+     "rho_ref": 1000.6121215820312,
+     "density_deficit_pct": -4.9202853063148755,
+     "density_response_error_pct": -8043.005284674445,
+     "pressure": 205.0321502685547,
+     "pressure_ref": 245.29940897226356,
+     "pressure_error_pct": -16.41555471838172,
+     "pressure_error_from_density_pct": -6961.257677391611,
+     "post_processing_pct": 6944.842122673229,
+     "tait_amplification": 1414.8077284171459
+    }
+   ],
+   "summary": {
+    "floor": {
+     "bands": [
+      0
+     ],
+     "max_abs_pressure_error_pct": 5.9151557167689495,
+     "mean_signed_pressure_error_pct": -5.9151557167689495,
+     "mean_density_deficit_pct": -0.05134693761008613,
+     "mean_density_response_error_pct": -5.786588857680453,
+     "max_abs_post_processing_pct": 0.01815847778054991,
+     "mean_tait_amplification": 115.55341897126135
+    },
+    "interior": {
+     "bands": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "max_abs_pressure_error_pct": 0.5007129075039862,
+     "mean_signed_pressure_error_pct": -0.4965716421502157,
+     "mean_density_deficit_pct": -0.0023851587692321394,
+     "mean_density_response_error_pct": -0.4982107298539318,
+     "max_abs_post_processing_pct": 0.012141647319219295,
+     "mean_tait_amplification": 266.6105484289761
+    },
+    "free_surface": {
+     "bands": [
+      7
+     ],
+     "max_abs_pressure_error_pct": 16.41555471838172,
+     "mean_signed_pressure_error_pct": -16.41555471838172,
+     "mean_density_deficit_pct": -4.9202853063148755,
+     "mean_density_response_error_pct": -8043.005284674445,
+     "max_abs_post_processing_pct": 6944.842122673229,
+     "mean_tait_amplification": 1414.8077284171459
+    }
+   }
+  }
+ ],
+ "ladder": {
+  "floor": {
+   "points": [
+    {
+     "dx": 0.05,
+     "max_abs_pressure_error_pct": 29.260626310120898
+    },
+    {
+     "dx": 0.04,
+     "max_abs_pressure_error_pct": 28.222668729153533
+    },
+    {
+     "dx": 0.025,
+     "max_abs_pressure_error_pct": 14.937769776299604
+    },
+    {
+     "dx": 0.02,
+     "max_abs_pressure_error_pct": 10.21605244630649
+    },
+    {
+     "dx": 0.0125,
+     "max_abs_pressure_error_pct": 7.408884373898483
+    },
+    {
+     "dx": 0.01,
+     "max_abs_pressure_error_pct": 5.9151557167689495
+    }
+   ],
+   "order": {
+    "order": 1.0552155429646748,
+    "coefficient": 733.4052390739137,
+    "points": 6
+   }
+  },
+  "interior": {
+   "points": [
+    {
+     "dx": 0.05,
+     "max_abs_pressure_error_pct": 2.541715677419276
+    },
+    {
+     "dx": 0.04,
+     "max_abs_pressure_error_pct": 2.0196758373690837
+    },
+    {
+     "dx": 0.025,
+     "max_abs_pressure_error_pct": 1.2620637601152507
+    },
+    {
+     "dx": 0.02,
+     "max_abs_pressure_error_pct": 1.0042693220805199
+    },
+    {
+     "dx": 0.0125,
+     "max_abs_pressure_error_pct": 0.6348069881885632
+    },
+    {
+     "dx": 0.01,
+     "max_abs_pressure_error_pct": 0.5007129075039862
+    }
+   ],
+   "order": {
+    "order": 1.0047109771450096,
+    "coefficient": 51.39083082698186,
+    "points": 6
+   }
+  },
+  "free_surface": {
+   "points": [
+    {
+     "dx": 0.05,
+     "max_abs_pressure_error_pct": 100.0
+    },
+    {
+     "dx": 0.04,
+     "max_abs_pressure_error_pct": 100.0
+    },
+    {
+     "dx": 0.025,
+     "max_abs_pressure_error_pct": 100.0
+    },
+    {
+     "dx": 0.02,
+     "max_abs_pressure_error_pct": 45.00933671120533
+    },
+    {
+     "dx": 0.0125,
+     "max_abs_pressure_error_pct": 25.452092524510938
+    },
+    {
+     "dx": 0.01,
+     "max_abs_pressure_error_pct": 16.41555471838172
+    }
+   ],
+   "order": {
+    "order": 1.1715287020183711,
+    "coefficient": 4425.944577377201,
+    "points": 6
+   }
+  },
+  "interior_density_deficit": {
+   "points": [
+    {
+     "dx": 0.05,
+     "abs_mean_density_deficit_pct": 0.012065459420734781
+    },
+    {
+     "dx": 0.04,
+     "abs_mean_density_deficit_pct": 0.009596726787503007
+    },
+    {
+     "dx": 0.025,
+     "abs_mean_density_deficit_pct": 0.0060067147039127855
+    },
+    {
+     "dx": 0.02,
+     "abs_mean_density_deficit_pct": 0.0047986585330089815
+    },
+    {
+     "dx": 0.0125,
+     "abs_mean_density_deficit_pct": 0.0030093122999323243
+    },
+    {
+     "dx": 0.01,
+     "abs_mean_density_deficit_pct": 0.0023851587692321394
+    }
+   ],
+   "order": {
+    "order": 1.0037689224414683,
+    "coefficient": 0.24357743951524283,
+    "points": 6
+   }
+  },
+  "interior_density_response": {
+   "points": [
+    {
+     "dx": 0.05,
+     "abs_mean_density_response_error_pct": 2.5095666605119527
+    },
+    {
+     "dx": 0.04,
+     "abs_mean_density_response_error_pct": 1.9954358143457696
+    },
+    {
+     "dx": 0.025,
+     "abs_mean_density_response_error_pct": 1.251131986943832
+    },
+    {
+     "dx": 0.02,
+     "abs_mean_density_response_error_pct": 0.9999702321721649
+    },
+    {
+     "dx": 0.0125,
+     "abs_mean_density_response_error_pct": 0.6321489750596857
+    },
+    {
+     "dx": 0.01,
+     "abs_mean_density_response_error_pct": 0.4982107298539318
+    }
+   ],
+   "order": {
+    "order": 0.9990580891458989,
+    "coefficient": 49.90609190091374,
+    "points": 6
+   }
+  }
+ },
+ "sound_speed_sweep": [
+  {
+   "dx": 0.02,
+   "sound_speed": 20.0,
+   "bulk_modulus": 57142.857142857145,
+   "interior_density_deficit_pct": -0.0047986585330089815,
+   "interior_max_abs_pressure_error_pct": 1.0042693220805199,
+   "interior_mean_tait_amplification": 226.09684301160553,
+   "interior_density_response_error_pct": -0.9999702321721649,
+   "floor_max_abs_pressure_error_pct": 10.21605244630649
+  },
+  {
+   "dx": 0.02,
+   "sound_speed": 10.0,
+   "bulk_modulus": 14285.714285714286,
+   "interior_density_deficit_pct": -0.018744299311748702,
+   "interior_max_abs_pressure_error_pct": 1.060322180040818,
+   "interior_mean_tait_amplification": 61.745041579947454,
+   "interior_density_response_error_pct": -1.0380874414179093,
+   "floor_max_abs_pressure_error_pct": 10.760672953477302
+  },
+  {
+   "dx": 0.02,
+   "sound_speed": 30.0,
+   "bulk_modulus": 128571.42857142857,
+   "interior_density_deficit_pct": -0.002132834495063851,
+   "interior_max_abs_pressure_error_pct": 0.9918468479436227,
+   "interior_mean_tait_amplification": 500.00423977119294,
+   "interior_density_response_error_pct": -0.9869873537983187,
+   "floor_max_abs_pressure_error_pct": 10.10480331480813
+  }
+ ],
+ "dynamic_gate": {
+  "source": "tests/data/case_hydrostatic/runs/window_8s.json",
+  "kind": "dynamic_time_mean",
+  "max_band_error_pct": 0.7710424635550619,
+  "limit_pct": 1.0,
+  "pass": true,
+  "worst_band": 1
+ },
+ "how": "python benchmarks/case_hydrostatic/truncation_decomposition.py --dxs 0.05,0.04,0.025,0.02,0.0125,0.01 --bands 8 --sound-speeds 10.0,30.0 --sweep-dx 0.02"
+}
