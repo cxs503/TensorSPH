@@ -13,11 +13,16 @@ whose answer is known in closed form.  What is being protected:
   zero row error when it is handed the exact solution, and *fails* the 5 % gates
   by the right amount when the profile is deliberately scaled by 1.1;
 * ``gates()`` is a real threshold comparison, not a constant.
+* ``_order_from_recheck()`` in ``make_doc.py`` reads the multi-level fit from
+  the adversarial recheck artifact and the convergence section uses it instead
+  of the two-point ratio that overstates the order.
 """
 
 from __future__ import annotations
 
+import json
 import math
+from pathlib import Path
 
 import pytest
 
@@ -34,6 +39,7 @@ from benchmarks.poiseuille_mirror.adversarial_recheck import (
     order_fit,
     resolution_needed,
 )
+from benchmarks.poiseuille_mirror.make_doc import _order_from_recheck
 
 RES = 16
 DX = HEIGHT / RES
@@ -143,3 +149,46 @@ def test_gates_are_threshold_comparisons():
     bad = dict(ok, tau_top_error_pct=-5.1)
     assert gates(bad)["C_wall_shear_5pct"] is False
     assert gates(dict(ok, u_max_error_pct=5.1))["A_centreline_5pct"] is False
+
+
+# --------------------------------------------------------------------------- #
+# Convergence-order extraction from adversarial recheck artifact
+# --------------------------------------------------------------------------- #
+
+def test_order_from_recheck_reads_multi_level_fit():
+    """``_order_from_recheck`` returns the 5-level fit, not the two-point ratio."""
+    recheck_path = Path(__file__).resolve().parents[1] / (
+        "benchmarks/poiseuille_mirror/out/adversarial_recheck.json")
+    if not recheck_path.is_file():
+        pytest.skip("adversarial_recheck.json not present")
+    recheck = json.loads(recheck_path.read_text())
+    fit = _order_from_recheck(recheck, "profile_rms_all_pct")
+    assert fit is not None
+    # The 5-level fit gives p ≈ 1.53, not the two-point 2.68.
+    assert 1.0 < fit["p"] < 2.0, (
+        f"multi-level order {fit['p']:.2f} outside expected range 1..2; "
+        "the two-point ratio (2.68) would have been used instead")
+    assert fit["n_points"] >= 5
+    assert fit["r2"] > 0.99
+
+
+def test_order_from_recheck_returns_none_when_no_recheck():
+    """Without the recheck artifact the function returns None (fallback path)."""
+    assert _order_from_recheck(None) is None
+    assert _order_from_recheck({}) is None
+    assert _order_from_recheck({"order_fits": {}}) is None
+
+
+def test_order_from_recheck_uses_requested_metric():
+    """Different metrics have different orders; the function reads the right one."""
+    recheck_path = Path(__file__).resolve().parents[1] / (
+        "benchmarks/poiseuille_mirror/out/adversarial_recheck.json")
+    if not recheck_path.is_file():
+        pytest.skip("adversarial_recheck.json not present")
+    recheck = json.loads(recheck_path.read_text())
+    fit_all = _order_from_recheck(recheck, "profile_rms_all_pct")
+    fit_max = _order_from_recheck(recheck, "max_row_error_pct")
+    assert fit_all is not None
+    assert fit_max is not None
+    # max_row_error_pct converges at ~1.0 (first order), profile_rms_all at ~1.5
+    assert fit_max["p"] < fit_all["p"]
