@@ -1,0 +1,205 @@
+{
+ "case_id": "CASE-HYDROSTATIC",
+ "kind": "static_initial_state",
+ "config": {
+  "dx": 0.025,
+  "tank_width": 1.0,
+  "depth": 0.4,
+  "fluid_particles": 640,
+  "columns": 40,
+  "sound_speed": 20.0,
+  "gravity_solver": 9.81,
+  "gravity_reference": 9.81,
+  "h": 0.0325,
+  "support": 0.065,
+  "bands": 8,
+  "device": "cpu"
+ },
+ "reference": {
+  "kind": "analytic",
+  "formula": "p(y) = rho0 * g * (H - y)",
+  "derivation": "hydrostatic equilibrium dp/dy = -rho0 g integrated from p(H)=0",
+  "provenance": "closed form; the same hydrostatic-tank reference is used by Adami, Hu & Adams, J. Comput. Phys. 231 (2012) 7057-7075 and by this repository's benchmarks/hydrostatic/run.py. Reference values are evaluated from the closed form at the measured band centres (no table transcription).",
+  "rho0": 1000.0,
+  "g": 9.81,
+  "H": 0.4
+ },
+ "gate": {
+  "quantity": "max interior-band |p_SPH - p_ref| / p_ref",
+  "limit_pct": 1.0,
+  "max_band_error_pct": 14.937769776299598,
+  "mean_band_error_pct": 3.539507943195128,
+  "worst_band": 0,
+  "worst_band_y": 0.024996399879455566,
+  "gated_bands": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5
+  ],
+  "free_surface_bands": [
+   6,
+   7
+  ],
+  "pass": false
+ },
+ "benchmark": [
+  {
+   "band": 0,
+   "y_m": 0.024996399879455566,
+   "ref_Pa": 3678.785317182541,
+   "got_Pa": 3129.2568359375,
+   "rel_error_pct": -14.937769776299598,
+   "within_tolerance": false
+  },
+  {
+   "band": 1,
+   "y_m": 0.07499635964632034,
+   "ref_Pa": 3188.2857118695974,
+   "got_Pa": 3148.064208984375,
+   "rel_error_pct": -1.261540103996411,
+   "within_tolerance": false
+  },
+  {
+   "band": 2,
+   "y_m": 0.12499634921550751,
+   "ref_Pa": 2697.7858141958714,
+   "got_Pa": 2663.738037109375,
+   "rel_error_pct": -1.2620637601152547,
+   "within_tolerance": false
+  },
+  {
+   "band": 3,
+   "y_m": 0.17499633133411407,
+   "ref_Pa": 2207.285989612341,
+   "got_Pa": 2179.523681640625,
+   "rel_error_pct": -1.257757630971587,
+   "within_tolerance": false
+  },
+  {
+   "band": 4,
+   "y_m": 0.22499628365039825,
+   "ref_Pa": 1716.7864573895934,
+   "got_Pa": 1695.1236572265625,
+   "rel_error_pct": -1.2618226378584996,
+   "within_tolerance": false
+  },
+  {
+   "band": 5,
+   "y_m": 0.274996280670166,
+   "ref_Pa": 1226.2864866256716,
+   "got_Pa": 1210.8831787109375,
+   "rel_error_pct": -1.2560937499294185,
+   "within_tolerance": false
+  }
+ ],
+ "profile": [
+  {
+   "band": 0,
+   "y": 0.024996399879455566,
+   "y_low": 0.0,
+   "y_high": 0.05,
+   "particles": 80,
+   "pressure": 3129.2568359375,
+   "pressure_analytic": 3678.785317182541,
+   "rel_error_pct": -14.937769776299598,
+   "free_surface": false,
+   "gated": true,
+   "abs_error_pct": 14.937769776299598
+  },
+  {
+   "band": 1,
+   "y": 0.07499635964632034,
+   "y_low": 0.05,
+   "y_high": 0.1,
+   "particles": 80,
+   "pressure": 3148.064208984375,
+   "pressure_analytic": 3188.2857118695974,
+   "rel_error_pct": -1.261540103996411,
+   "free_surface": false,
+   "gated": true,
+   "abs_error_pct": 1.261540103996411
+  },
+  {
+   "band": 2,
+   "y": 0.12499634921550751,
+   "y_low": 0.1,
+   "y_high": 0.15000000000000002,
+   "particles": 80,
+   "pressure": 2663.738037109375,
+   "pressure_analytic": 2697.7858141958714,
+   "rel_error_pct": -1.2620637601152547,
+   "free_surface": false,
+   "gated": true,
+   "abs_error_pct": 1.2620637601152547
+  },
+  {
+   "band": 3,
+   "y": 0.17499633133411407,
+   "y_low": 0.15000000000000002,
+   "y_high": 0.2,
+   "particles": 80,
+   "pressure": 2179.523681640625,
+   "pressure_analytic": 2207.285989612341,
+   "rel_error_pct": -1.257757630971587,
+   "free_surface": false,
+   "gated": true,
+   "abs_error_pct": 1.257757630971587
+  },
+  {
+   "band": 4,
+   "y": 0.22499628365039825,
+   "y_low": 0.2,
+   "y_high": 0.25,
+   "particles": 80,
+   "pressure": 1695.1236572265625,
+   "pressure_analytic": 1716.7864573895934,
+   "rel_error_pct": -1.2618226378584996,
+   "free_surface": false,
+   "gated": true,
+   "abs_error_pct": 1.2618226378584996
+  },
+  {
+   "band": 5,
+   "y": 0.274996280670166,
+   "y_low": 0.25,
+   "y_high": 0.30000000000000004,
+   "particles": 80,
+   "pressure": 1210.8831787109375,
+   "pressure_analytic": 1226.2864866256716,
+   "rel_error_pct": -1.2560937499294185,
+   "free_surface": false,
+   "gated": true,
+   "abs_error_pct": 1.2560937499294185
+  },
+  {
+   "band": 6,
+   "y": 0.3249962627887726,
+   "y_low": 0.30000000000000004,
+   "y_high": 0.35000000000000003,
+   "particles": 80,
+   "pressure": 726.3585205078125,
+   "pressure_analytic": 735.7866620421412,
+   "rel_error_pct": -1.2813689104069004,
+   "free_surface": true,
+   "gated": false,
+   "abs_error_pct": null
+  },
+  {
+   "band": 7,
+   "y": 0.37499627470970154,
+   "y_low": 0.35000000000000003,
+   "y_high": 0.4,
+   "particles": 80,
+   "pressure": 0.0,
+   "pressure_analytic": 245.28654509782814,
+   "rel_error_pct": -100.0,
+   "free_surface": true,
+   "gated": false,
+   "abs_error_pct": null
+  }
+ ],
+ "config_name": "dx_0025"
+}

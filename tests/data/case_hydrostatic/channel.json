@@ -1,0 +1,41 @@
+{
+ "case_id": "CASE-HYDROSTATIC",
+ "source_bundle": "runs/case_hydrostatic",
+ "gate_config": "window_8s",
+ "gate_value_pct": 0.7710424635550619,
+ "gate_limit_pct": 1.0,
+ "gate_pass": true,
+ "files": [
+  "report.json",
+  "runs/control_g0.json",
+  "runs/dx_0025.json",
+  "runs/dx_004.json",
+  "runs/sound_c30.json",
+  "runs/static_dx_0025.json",
+  "runs/static_dx_004.json",
+  "runs/static_sound_c30.json",
+  "runs/static_width_w15.json",
+  "runs/static_window_2s.json",
+  "runs/static_window_4s.json",
+  "runs/static_window_8s.json",
+  "runs/width_w15.json",
+  "runs/window_2s.json",
+  "runs/window_4s.json",
+  "runs/window_8s.json"
+ ],
+ "dropped_not_shippable": [
+  "figures/band_errors.png",
+  "figures/profile_vs_analytic.png",
+  "figures/sensitivity.png"
+ ],
+ "why": "text payload only: *.png is artifact-class in the delivery rule (merge governor artifact cap, outputs/ + .png), and the shipped-evidence tests must be decidable on a fresh checkout",
+ "repro": {
+  "one_shot": "python -m tensorsph.case_hydrostatic --json-out runs/case_hydrostatic/cli_record.json",
+  "gate": "python benchmarks/case_hydrostatic/run.py --config window_8s",
+  "grid": "python benchmarks/case_hydrostatic/run.py --config all --static  # -> runs/case_hydrostatic",
+  "figures": "python benchmarks/case_hydrostatic/run.py --aggregate --figure",
+  "tests": "python -m pytest -q tests/test_case_hydrostatic.py",
+  "shipped": "outputs/case_hydrostatic (mirror of runs/case_hydrostatic + MANIFEST.sha256, copied by --aggregate)"
+ },
+ "manifest": "MANIFEST.sha256"
+}

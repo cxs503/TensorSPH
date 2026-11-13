@@ -1,0 +1,13 @@
+{
+ "case_id": "CASE-HYDROSTATIC",
+ "check": "independent reproduction of the frozen gate number",
+ "shipped_root": "tests/data/case_hydrostatic",
+ "fresh_source": ".cache/fresh/runs/case_hydrostatic/runs/window_8s.json",
+ "gate_value_shipped_pct": 0.7710424635550619,
+ "gate_value_fresh_pct": 0.7710424635550619,
+ "delta_pp": 0.0,
+ "gate_limit_pct": 1.0,
+ "fresh_pass": true,
+ "reproduced": true,
+ "how": "fresh tree from `git archive HEAD` (pristine main, no runs/, no outputs/), pre-declared command `python benchmarks/case_hydrostatic/run.py --config window_8s`, 1 thread, 209 s wall, 1000 particles, 20513 steps; compare with `python benchmarks/case_hydrostatic/freeze.py --verify`"
+}
