@@ -97,29 +97,53 @@ __all__ = [
 # --------------------------------------------------------------------------- #
 # geometry
 # --------------------------------------------------------------------------- #
-def hex_block(radius: float, dx: float, outer: float, rho0: float = 1000.0):
+def hex_block(radius: float, dx: float, outer: float, rho0: float = 1000.0,
+              center=None, angle: float = 0.0):
     """Hexagonal lattice filling a square block ``[-L, L]**2``, ``L = R + outer``.
 
-    Every lattice site is kept: sites with ``r < R`` are liquid, the rest is the
-    (equal-density) vapour carrier.  The outer 1.6 dx layer of the block is the
-    Dirichlet boundary of the pressure solve.
+    Every lattice site is kept: sites with ``|x - center| < R`` are liquid, the
+    rest is the (equal-density) vapour carrier.  The outer 1.6 dx layer of the
+    block is the Dirichlet boundary of the pressure solve.
+
+    ``center`` (``(2,)`` sequence, default ``(0, 0)``) moves the *interface*
+    relative to the *lattice*, which is how the lattice-alignment (translation)
+    invariance of the Young-Laplace measurement is probed: a static drop is a
+    physical solution, so the measured jump must not depend on where the
+    interface falls inside a lattice cell.
     """
     dy = dx * math.sqrt(3.0) / 2.0
     half = radius + outer
-    ny = int(math.floor(2.0 * half / dy))
-    points = []
-    for j in range(ny + 1):
-        y = -half + j * dy
-        shift = 0.5 * dx if (j % 2) else 0.0
-        nx = int(math.floor((2.0 * half - shift) / dx))
-        x = -half + shift + torch.arange(nx + 1, dtype=torch.float64) * dx
-        yy = torch.full_like(x, y)
-        points.append(torch.stack([x, yy], dim=1))
-    pos = torch.cat(points, dim=0)
+    if angle == 0.0:
+        # exact historical path (bit-identical): rows of the triangular lattice
+        ny = int(math.floor(2.0 * half / dy))
+        points = []
+        for j in range(ny + 1):
+            y = -half + j * dy
+            shift = 0.5 * dx if (j % 2) else 0.0
+            nx = int(math.floor((2.0 * half - shift) / dx))
+            x = -half + shift + torch.arange(nx + 1, dtype=torch.float64) * dx
+            yy = torch.full_like(x, y)
+            points.append(torch.stack([x, yy], dim=1))
+        pos = torch.cat(points, dim=0)
+    else:
+        # same triangular lattice, basis vectors rotated by ``angle``; used only
+        # to probe the *orientation* (anisotropy) of the interface measurement.
+        c, s_ = math.cos(angle), math.sin(angle)
+        c2 = math.cos(angle + math.pi / 3.0)
+        s2 = math.sin(angle + math.pi / 3.0)
+        a1 = torch.tensor([dx * c, dx * s_], dtype=torch.float64)
+        a2 = torch.tensor([dx * c2, dx * s2], dtype=torch.float64)
+        n_side = int(math.ceil(2.0 * half / dx)) + 2
+        idx = torch.arange(-n_side, n_side + 1, dtype=torch.float64)
+        gi, gj = torch.meshgrid(idx, idx, indexing="ij")
+        pts = (gi.reshape(-1, 1) * a1 + gj.reshape(-1, 1) * a2)
+        pos = pts[(pts[:, 0].abs() <= half) & (pts[:, 1].abs() <= half)]
     pos = pos[(pos[:, 0].abs() <= half) & (pos[:, 1].abs() <= half)]
     area = dx * dy
     mass = torch.full((pos.shape[0],), rho0 * area, dtype=torch.float64)
-    liquid = torch.linalg.vector_norm(pos, dim=1) < radius
+    c = (torch.zeros(2, dtype=torch.float64) if center is None
+         else torch.as_tensor(center, dtype=torch.float64))
+    liquid = torch.linalg.vector_norm(pos - c, dim=1) < radius
     return pos, mass, liquid, half
 
 
@@ -262,7 +286,8 @@ def laplace_isph_case(radius: float = 0.02, dx: float = 0.002,
                       curvature_method: str = "fit_quadratic",
                       variant: str = "model",
                       curvature_stencil: float = 4.0,
-                      out_band=(1.25, 1.45), core_frac: float = 0.5):
+                      out_band=(1.25, 1.45), core_frac: float = 0.5,
+                      center=None, angle: float = 0.0):
     """One static equilibrium of the projection-SPH droplet.
 
     ``variant``
@@ -273,15 +298,19 @@ def laplace_isph_case(radius: float = 0.02, dx: float = 0.002,
         ``gauge``       both replaced (instrument check: must return 1.000)
     """
     h = h_factor * dx
-    pos, mass, liquid, half = hex_block(radius, dx, outer, rho0)
+    pos, mass, liquid, half = hex_block(radius, dx, outer, rho0, center=center,
+                                        angle=angle)
     st = csf_state_two_phase(pos, mass, liquid, h, rho0, sigma,
                              curvature_method=curvature_method,
                              curvature_stencil=curvature_stencil)
     vol, pairs, active = st["vol"], st["pairs"], st["active"]
     delta_s, kappa, normal = st["delta_s"], st["kappa"], st["normal"]
 
-    r = torch.linalg.vector_norm(pos, dim=1)
-    rhat = pos / r.clamp_min(1e-30)[:, None]
+    c = (torch.zeros(2, dtype=pos.dtype) if center is None
+         else torch.as_tensor(center, dtype=pos.dtype))
+    rel = pos - c
+    r = torch.linalg.vector_norm(rel, dim=1)
+    rhat = rel / r.clamp_min(1e-30)[:, None]
     # sign of the model curvature along the radial direction: +1 when the
     # interface bends away from the outward normal (convex droplet).
     sign = torch.sign((normal * rhat).sum(dim=1))
@@ -342,6 +371,8 @@ def laplace_isph_case(radius: float = 0.02, dx: float = 0.002,
     kappa_w = float((kappa_use * delta_use * vol / (delta_use * vol).sum()).sum())
     return {
         "variant": variant,
+        "center_m": [float(c[0]), float(c[1])],
+        "lattice_angle_deg": math.degrees(angle),
         "dx_m": dx, "h_m": h,
         "R_over_h": radius / h, "R_over_dx": radius / dx,
         "n_particles": int(pos.shape[0]),
