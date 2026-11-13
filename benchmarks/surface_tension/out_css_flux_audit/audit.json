@@ -1,0 +1,430 @@
+{
+  "audit": "XVAL-SPH-MIXTURE-MATERIAL-AND-SURFACE-TENSION / m17909 flux-reading claim",
+  "model": "SPHinXsys CSS (Zhang & Hu) as ported in src/tensorsph/sphinxys_css.py",
+  "sigma": 0.072,
+  "radius": 0.1,
+  "rho_ratio": 1000.0,
+  "h_over_dx": 1.3,
+  "hourglass": false,
+  "theory_pa": 0.7199999999999999,
+  "operator_calibration": {
+    "operator": "sum_j V_j (S_i+S_j).gradW_ij",
+    "field": "S = x^2 I",
+    "exact_div": "2x",
+    "h_over_dx": 1.3,
+    "probes": [
+      {
+        "x": 0.0,
+        "pair_div": 0.0,
+        "exact": 0.0,
+        "err_pct": 0.0
+      },
+      {
+        "x": 2.0,
+        "pair_div": 3.895685928573509,
+        "exact": 4.0,
+        "err_pct": -2.607851785662274
+      },
+      {
+        "x": 5.0,
+        "pair_div": 9.739214821433771,
+        "exact": 10.0,
+        "err_pct": -2.6078517856622874
+      }
+    ],
+    "worst_err_pct": 2.6078517856622874,
+    "verdict": "correct divergence operator"
+  },
+  "droplet": [
+    {
+      "radius_over_dx": 16,
+      "dx_m": 0.00625,
+      "particles": 1517,
+      "water_particles": 797,
+      "delta_integral": 0.9604538859874147,
+      "theory_pa": 0.7199999999999999,
+      "dp_ported_pa": 0.020526996063182385,
+      "dp_ported_err_pct": -97.14902832455799,
+      "dp_normalised_pa": 0.525491099217469,
+      "dp_normalised_err_pct": -27.015125108684856,
+      "flux_centroid_radius_m": 0.0962298055123634,
+      "band_particles": 172,
+      "particle_mass_rho0_vol": 0.03906250000000001,
+      "band_force_ratio": 0.03626778539566765,
+      "band_force_ratio_over_mass": 0.9284553061290917,
+      "dp_ported_over_mass_ratio": 0.7298487489131514,
+      "ideal_css_field_flux": [
+        {
+          "width_over_dx": 1.0,
+          "shift_over_dx": [
+            0.0,
+            0.0
+          ],
+          "dp_pa": 1.8901507723272927e-05,
+          "dp_ratio": 2.6252094060101293e-05
+        },
+        {
+          "width_over_dx": 1.0,
+          "shift_over_dx": [
+            0.5,
+            0.0
+          ],
+          "dp_pa": 1.890150772327292e-05,
+          "dp_ratio": 2.6252094060101283e-05
+        },
+        {
+          "width_over_dx": 1.0,
+          "shift_over_dx": [
+            0.5,
+            0.3
+          ],
+          "dp_pa": 1.8825613379164165e-05,
+          "dp_ratio": 2.6146685248839124e-05
+        },
+        {
+          "width_over_dx": 1.0,
+          "shift_over_dx": [
+            0.25,
+            0.5
+          ],
+          "dp_pa": 1.8901507723272924e-05,
+          "dp_ratio": 2.6252094060101286e-05
+        },
+        {
+          "width_over_dx": 2.0,
+          "shift_over_dx": [
+            0.0,
+            0.0
+          ],
+          "dp_pa": 2.4058046098282556e-05,
+          "dp_ratio": 3.341395291428134e-05
+        },
+        {
+          "width_over_dx": 2.0,
+          "shift_over_dx": [
+            0.5,
+            0.0
+          ],
+          "dp_pa": 2.4058046098282556e-05,
+          "dp_ratio": 3.341395291428134e-05
+        },
+        {
+          "width_over_dx": 2.0,
+          "shift_over_dx": [
+            0.5,
+            0.3
+          ],
+          "dp_pa": 2.4020138856587226e-05,
+          "dp_ratio": 3.336130396748226e-05
+        },
+        {
+          "width_over_dx": 2.0,
+          "shift_over_dx": [
+            0.25,
+            0.5
+          ],
+          "dp_pa": 2.405804609828255e-05,
+          "dp_ratio": 3.341395291428132e-05
+        },
+        {
+          "width_over_dx": 3.0,
+          "shift_over_dx": [
+            0.0,
+            0.0
+          ],
+          "dp_pa": 2.6915487561488445e-05,
+          "dp_ratio": 3.73826216131784e-05
+        },
+        {
+          "width_over_dx": 3.0,
+          "shift_over_dx": [
+            0.5,
+            0.0
+          ],
+          "dp_pa": 2.6915487561488445e-05,
+          "dp_ratio": 3.73826216131784e-05
+        },
+        {
+          "width_over_dx": 3.0,
+          "shift_over_dx": [
+            0.5,
+            0.3
+          ],
+          "dp_pa": 2.6890318761590215e-05,
+          "dp_ratio": 3.7347664946653085e-05
+        },
+        {
+          "width_over_dx": 3.0,
+          "shift_over_dx": [
+            0.25,
+            0.5
+          ],
+          "dp_pa": 2.691548756148844e-05,
+          "dp_ratio": 3.73826216131784e-05
+        }
+      ],
+      "ideal_css_field_worst_ratio": 3.73826216131784e-05,
+      "band_particles_over_mass": 0.9284553061290917
+    },
+    {
+      "radius_over_dx": 32,
+      "dx_m": 0.003125,
+      "particles": 4513,
+      "water_particles": 3209,
+      "delta_integral": 0.9777720817928546,
+      "theory_pa": 0.7199999999999999,
+      "dp_ported_pa": 0.004906032029341519,
+      "dp_ported_err_pct": -99.31860666259146,
+      "dp_normalised_pa": 0.5023776798045717,
+      "dp_normalised_err_pct": -30.22532224936503,
+      "flux_centroid_radius_m": 0.10028078359712449,
+      "band_particles": 356,
+      "particle_mass_rho0_vol": 0.009765625000000002,
+      "band_force_ratio": 0.020587575924539386,
+      "band_force_ratio_over_mass": 2.108167774672833,
+      "dp_ported_over_mass_ratio": 0.6977467775063494,
+      "ideal_css_field_flux": [
+        {
+          "width_over_dx": 1.0,
+          "shift_over_dx": [
+            0.0,
+            0.0
+          ],
+          "dp_pa": 4.8955241765019615e-06,
+          "dp_ratio": 6.7993391340305035e-06
+        },
+        {
+          "width_over_dx": 1.0,
+          "shift_over_dx": [
+            0.5,
+            0.0
+          ],
+          "dp_pa": 4.895524176501963e-06,
+          "dp_ratio": 6.799339134030506e-06
+        },
+        {
+          "width_over_dx": 1.0,
+          "shift_over_dx": [
+            0.5,
+            0.3
+          ],
+          "dp_pa": 4.895524176501963e-06,
+          "dp_ratio": 6.799339134030506e-06
+        },
+        {
+          "width_over_dx": 1.0,
+          "shift_over_dx": [
+            0.25,
+            0.5
+          ],
+          "dp_pa": 4.895524176501962e-06,
+          "dp_ratio": 6.799339134030504e-06
+        },
+        {
+          "width_over_dx": 2.0,
+          "shift_over_dx": [
+            0.0,
+            0.0
+          ],
+          "dp_pa": 5.900606873264025e-06,
+          "dp_ratio": 8.195287323977814e-06
+        },
+        {
+          "width_over_dx": 2.0,
+          "shift_over_dx": [
+            0.5,
+            0.0
+          ],
+          "dp_pa": 5.900606873264026e-06,
+          "dp_ratio": 8.195287323977816e-06
+        },
+        {
+          "width_over_dx": 2.0,
+          "shift_over_dx": [
+            0.5,
+            0.3
+          ],
+          "dp_pa": 5.900606873264025e-06,
+          "dp_ratio": 8.195287323977814e-06
+        },
+        {
+          "width_over_dx": 2.0,
+          "shift_over_dx": [
+            0.25,
+            0.5
+          ],
+          "dp_pa": 5.900606873264027e-06,
+          "dp_ratio": 8.195287323977816e-06
+        },
+        {
+          "width_over_dx": 3.0,
+          "shift_over_dx": [
+            0.0,
+            0.0
+          ],
+          "dp_pa": 6.404099254451487e-06,
+          "dp_ratio": 8.894582297849289e-06
+        },
+        {
+          "width_over_dx": 3.0,
+          "shift_over_dx": [
+            0.5,
+            0.0
+          ],
+          "dp_pa": 6.404099254451485e-06,
+          "dp_ratio": 8.894582297849287e-06
+        },
+        {
+          "width_over_dx": 3.0,
+          "shift_over_dx": [
+            0.5,
+            0.3
+          ],
+          "dp_pa": 6.404099254451483e-06,
+          "dp_ratio": 8.894582297849283e-06
+        },
+        {
+          "width_over_dx": 3.0,
+          "shift_over_dx": [
+            0.25,
+            0.5
+          ],
+          "dp_pa": 6.4040992544514875e-06,
+          "dp_ratio": 8.89458229784929e-06
+        }
+      ],
+      "ideal_css_field_worst_ratio": 8.89458229784929e-06,
+      "band_particles_over_mass": 2.108167774672833
+    },
+    {
+      "radius_over_dx": 64,
+      "dx_m": 0.0015625,
+      "particles": 15373,
+      "water_particles": 12853,
+      "delta_integral": 0.9835369789398489,
+      "theory_pa": 0.7199999999999999,
+      "dp_ported_pa": 0.0012100144377564352,
+      "dp_ported_err_pct": -99.83194243920049,
+      "dp_normalised_pa": 0.4956219137050357,
+      "dp_normalised_err_pct": -31.1636230965228,
+      "flux_centroid_radius_m": 0.10182673625724088,
+      "band_particles": 716,
+      "particle_mass_rho0_vol": 0.0024414062500000004,
+      "band_force_ratio": 0.010447467578984146,
+      "band_force_ratio_over_mass": 4.2792827203519055,
+      "dp_ported_over_mass_ratio": 0.688363769034772,
+      "ideal_css_field_flux": [
+        {
+          "width_over_dx": 1.0,
+          "shift_over_dx": [
+            0.0,
+            0.0
+          ],
+          "dp_pa": 1.2213187536054803e-06,
+          "dp_ratio": 1.6962760466742786e-06
+        },
+        {
+          "width_over_dx": 1.0,
+          "shift_over_dx": [
+            0.5,
+            0.0
+          ],
+          "dp_pa": 1.2213187536054803e-06,
+          "dp_ratio": 1.6962760466742786e-06
+        },
+        {
+          "width_over_dx": 1.0,
+          "shift_over_dx": [
+            0.5,
+            0.3
+          ],
+          "dp_pa": 1.22239721639152e-06,
+          "dp_ratio": 1.6977739116548892e-06
+        },
+        {
+          "width_over_dx": 1.0,
+          "shift_over_dx": [
+            0.25,
+            0.5
+          ],
+          "dp_pa": 1.2213187536054803e-06,
+          "dp_ratio": 1.6962760466742786e-06
+        },
+        {
+          "width_over_dx": 2.0,
+          "shift_over_dx": [
+            0.0,
+            0.0
+          ],
+          "dp_pa": 1.4501307561828355e-06,
+          "dp_ratio": 2.014070494698383e-06
+        },
+        {
+          "width_over_dx": 2.0,
+          "shift_over_dx": [
+            0.5,
+            0.0
+          ],
+          "dp_pa": 1.450130756182835e-06,
+          "dp_ratio": 2.0140704946983823e-06
+        },
+        {
+          "width_over_dx": 2.0,
+          "shift_over_dx": [
+            0.5,
+            0.3
+          ],
+          "dp_pa": 1.4506699652914881e-06,
+          "dp_ratio": 2.0148193962381783e-06
+        },
+        {
+          "width_over_dx": 2.0,
+          "shift_over_dx": [
+            0.25,
+            0.5
+          ],
+          "dp_pa": 1.4501307561828349e-06,
+          "dp_ratio": 2.0140704946983823e-06
+        },
+        {
+          "width_over_dx": 3.0,
+          "shift_over_dx": [
+            0.0,
+            0.0
+          ],
+          "dp_pa": 1.5564991610249954e-06,
+          "dp_ratio": 2.161804390312494e-06
+        },
+        {
+          "width_over_dx": 3.0,
+          "shift_over_dx": [
+            0.5,
+            0.0
+          ],
+          "dp_pa": 1.5564991610249952e-06,
+          "dp_ratio": 2.1618043903124936e-06
+        },
+        {
+          "width_over_dx": 3.0,
+          "shift_over_dx": [
+            0.5,
+            0.3
+          ],
+          "dp_pa": 1.556858565927698e-06,
+          "dp_ratio": 2.16230356378847e-06
+        },
+        {
+          "width_over_dx": 3.0,
+          "shift_over_dx": [
+            0.25,
+            0.5
+          ],
+          "dp_pa": 1.556499161024995e-06,
+          "dp_ratio": 2.1618043903124936e-06
+        }
+      ],
+      "ideal_css_field_worst_ratio": 2.16230356378847e-06,
+      "band_particles_over_mass": 4.2792827203519055
+    }
+  ]
+}
