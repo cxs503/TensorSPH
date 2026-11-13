@@ -4,127 +4,131 @@
       "failed": false,
       "target_height": 0.04,
       "tolerance": 0.1,
-      "height_cells": 2.56,
-      "depth_cells": 16.0,
+      "height_cells": 3.1999999999999997,
+      "depth_cells": 20.0,
       "gauges": [
         {
-          "x": 1.0013591589129858,
-          "height": 0.03916208417150333,
-          "height_crossings": 0.03583529591560364,
-          "n_waves": 1,
+          "x": 1.0350000000000001,
+          "height": 0.040002924732338706,
+          "height_crossings": 0.03993565,
+          "n_waves": 2,
           "per_wave": [
-            0.03583529591560364
+            0.04004474400000001,
+            0.039826556
           ],
           "omega": 6.283185307179586,
-          "residual_fraction": 0.80590970053597,
-          "h_rms": 0.06239247804221317,
-          "h_crest_to_trough": 0.09073251485824585,
-          "samples": 101,
+          "residual_fraction": 0.006099841700479588,
+          "h_rms": 0.03933495590480887,
+          "h_crest_to_trough": 0.040208980000000005,
+          "samples": 251,
           "window": [
-            1.912760416666934,
-            2.861684314879177
+            2.5,
+            5.0
           ],
           "smooth_samples": 5,
           "dry_fraction": 0.0,
-          "error_vs_target": -0.020947895712416717,
+          "error_vs_target": 7.311830846762346e-05,
           "within_tolerance": true
         },
         {
-          "x": 1.1643395630192874,
-          "height": 0.056656242456335305,
-          "height_crossings": 0.0707472413778305,
+          "x": 1.1979804041063018,
+          "height": 0.03962358663368029,
+          "height_crossings": 0.039387669,
           "n_waves": 2,
           "per_wave": [
-            0.07449249625205993,
-            0.06700198650360108
+            0.039247550000000006,
+            0.039527788
           ],
           "omega": 6.283185307179586,
-          "residual_fraction": 0.7604131828190679,
-          "h_rms": 0.08204379839453702,
-          "h_crest_to_trough": 0.10586759448051453,
-          "samples": 101,
+          "residual_fraction": 0.006078085726848552,
+          "h_rms": 0.0395137800999776,
+          "h_crest_to_trough": 0.03980551,
+          "samples": 251,
           "window": [
-            1.912760416666934,
-            2.861684314879177
+            2.5,
+            5.0
           ],
           "smooth_samples": 5,
           "dry_fraction": 0.0,
-          "error_vs_target": 0.4164060614083826,
-          "within_tolerance": false
+          "error_vs_target": -0.009410334157992743,
+          "within_tolerance": true
         },
         {
-          "x": 1.327319967125589,
-          "height": 0.0583859926178996,
-          "height_crossings": 0.018317735195159914,
+          "x": 1.3609608082126035,
+          "height": 0.03922273905458398,
+          "height_crossings": 0.039038778,
           "n_waves": 2,
           "per_wave": [
-            0.030942624807357794,
-            0.005692845582962037
+            0.039189072000000005,
+            0.038888484
           ],
           "omega": 6.283185307179586,
-          "residual_fraction": 0.6519253224850703,
-          "h_rms": 0.07235318220239727,
-          "h_crest_to_trough": 0.09106257557868958,
-          "samples": 101,
+          "residual_fraction": 0.006097180086009646,
+          "h_rms": 0.03924359594795637,
+          "h_crest_to_trough": 0.03941774,
+          "samples": 251,
           "window": [
-            1.912760416666934,
-            2.861684314879177
+            2.5,
+            5.0
           ],
           "smooth_samples": 5,
           "dry_fraction": 0.0,
-          "error_vs_target": 0.4596498154474899,
-          "within_tolerance": false
+          "error_vs_target": -0.019431523635400454,
+          "within_tolerance": true
         },
         {
-          "x": 1.4903003712318905,
-          "height": 0.066189147590034,
-          "height_crossings": NaN,
-          "n_waves": 0,
-          "per_wave": [],
+          "x": 1.523941212318905,
+          "height": 0.03881282819178032,
+          "height_crossings": 0.038719786000000006,
+          "n_waves": 2,
+          "per_wave": [
+            0.038579310000000006,
+            0.038860262000000007
+          ],
           "omega": 6.283185307179586,
-          "residual_fraction": 0.6057265317041742,
-          "h_rms": 0.07882223761851417,
-          "h_crest_to_trough": 0.09043616056442261,
-          "samples": 101,
+          "residual_fraction": 0.006225484630404829,
+          "h_rms": 0.0382947322111998,
+          "h_crest_to_trough": 0.03901935,
+          "samples": 251,
           "window": [
-            1.912760416666934,
-            2.861684314879177
+            2.5,
+            5.0
           ],
           "smooth_samples": 5,
           "dry_fraction": 0.0,
-          "error_vs_target": 0.6547286897508499,
-          "within_tolerance": false
+          "error_vs_target": -0.029679295205491986,
+          "within_tolerance": true
         }
       ],
-      "worst_error_vs_target": 0.6547286897508499,
+      "worst_error_vs_target": 0.029679295205491986,
       "attenuation": {
-        "mu_per_m": -0.9844718912659132,
+        "mu_per_m": 0.06183146361530329,
         "span": 0.48894121231890475,
-        "loss_over_span": -0.6182557635143751,
+        "loss_over_span": 0.0297795359459474,
         "pairs": [
           {
-            "x1": 1.0013591589129858,
-            "x2": 1.1643395630192874,
-            "h1": 0.03916208417150333,
-            "h2": 0.056656242456335305,
-            "mu_per_m": -2.265874469004907
+            "x1": 1.0350000000000001,
+            "x2": 1.1979804041063018,
+            "h1": 0.040002924732338706,
+            "h2": 0.03962358663368029,
+            "mu_per_m": 0.05846105727240983
           },
           {
-            "x1": 1.1643395630192874,
-            "x2": 1.327319967125589,
-            "h1": 0.056656242456335305,
-            "h2": 0.0583859926178996,
-            "mu_per_m": -0.1845242315450369
+            "x1": 1.1979804041063018,
+            "x2": 1.3609608082126035,
+            "h1": 0.03962358663368029,
+            "h2": 0.03922273905458398,
+            "mu_per_m": 0.0623872945161266
           },
           {
-            "x1": 1.327319967125589,
-            "x2": 1.4903003712318905,
-            "h1": 0.0583859926178996,
-            "h2": 0.066189147590034,
-            "mu_per_m": -0.769666193154752
+            "x1": 1.3609608082126035,
+            "x2": 1.523941212318905,
+            "h1": 0.03922273905458398,
+            "h2": 0.03881282819178032,
+            "mu_per_m": 0.06446076209043382
           }
         ],
-        "h0": 0.015872555510744343
+        "h0": 0.04265769550012704
       },
       "theory": {
         "mu_per_m": 0.0011684718299723323,
@@ -136,86 +140,86 @@
         "kinematic_viscosity": 1e-06,
         "source": "Mei 1983 The Applied Dynamics of Ocean Surface Waves \u00a74.2; Dean & Dalrymple 1991 \u00a75.4 (Putnam & Johnson 1949)"
       },
-      "measured_loss_over_span": -0.6182557635143751,
+      "measured_loss_over_span": 0.0297795359459474,
       "theory_loss_over_span": 0.0005711508643199137,
-      "excess_loss_over_span": -0.618826914378695,
+      "excess_loss_over_span": 0.029208385081627486,
       "dispersion": {
-        "period_spectral": 1.1405112103739274,
-        "period_zero_crossing": 0.1937697886498322,
+        "period_spectral": 0.9991320866209494,
+        "period_zero_crossing": 0.9986933692562565,
         "period_target": 1.0,
-        "period_error": 0.14051121037392744,
-        "k_two_probe": 0.5618659044907709,
+        "period_error": -0.0008679133790505666,
+        "k_two_probe": 4.814038986960594,
         "k_theory": 4.818972978402874,
-        "wavelength_two_probe": 11.182713271904529,
+        "wavelength_two_probe": 1.3051795642283646,
         "wavelength_theory": 1.303843232850413,
-        "wavelength_error": 7.576731458319035
+        "wavelength_error": 0.0010249172172562826
       },
       "reflection": {
-        "incident_amplitude": 0.07544489392497264,
-        "reflected_amplitude": 0.06215385917034778,
-        "ratio": 0.823831222191891,
-        "relative_residual": 0.8275066535869243,
-        "samples": 101,
+        "incident_amplitude": 0.019707574685256975,
+        "reflected_amplitude": 0.00014433218385933127,
+        "ratio": 0.007323690822661432,
+        "relative_residual": 0.011317952942326084,
+        "samples": 251,
         "gauges": 4
       },
       "window": [
-        1.9,
-        2.861684314879177
+        2.5,
+        5.0
       ],
-      "passed": false,
-      "record": "runs/wf_D16.json",
-      "label": "dx=0.01562 (H/dx=2.6)",
+      "passed": true,
+      "record": "runs/wf_D20.json",
+      "label": "dx=0.01250 (H/dx=3.2)",
       "config": {
-        "dx": 0.015625,
+        "dx": 0.0125,
         "h_factor": 1.3,
-        "dt_requested": 0.00016927083333333334,
-        "dt_final": 7.529651325162354e-05,
+        "dt_requested": 0.000135,
+        "dt_final": 0.000135,
         "sound_speed": 30.0,
         "viscosity": 1e-06,
         "density_diffusion": 0.1,
         "gravity": 9.81,
-        "flume_length": 3.203125,
+        "flume_length": 3.2,
         "depth": 0.25,
         "wave_type": "regular",
         "wave_height": 0.04,
         "wave_period": 1.0,
         "ramp_periods": 2.0,
-        "sponge_length": 0.9778824246378097,
+        "sponge_length": 0.9,
         "sponge_strength": 4.0,
         "sponge_exponent": 3.0,
-        "active_absorption": 0.0,
-        "settle_time": 0.0,
+        "active_absorption": 0.5,
+        "settle_time": 1.0,
         "xsph": 0.0,
-        "xsph_settle": 0.0,
-        "viscosity_settle": 0.0,
+        "xsph_settle": 0.1,
+        "viscosity_settle": 0.02,
         "surface_offset_cells": 0.5,
-        "steps": 21268,
+        "steps": 37000,
         "output_every": 100,
         "wall_layers": 3,
-        "particle_count": 3280,
-        "wall_count": 786,
+        "particle_count": 5120,
+        "wall_count": 1152,
         "wavelength": 1.303843232850413,
         "celerity": 1.3038432328504128,
         "stroke": 0.03440480217696626,
         "probes": [
-          1.0013591589129858,
-          1.1643395630192874,
-          1.327319967125589,
-          1.4903003712318905
+          1.0350000000000001,
+          1.1979804041063018,
+          1.3609608082126035,
+          1.523941212318905
         ],
-        "depth_cells": 16.0,
-        "height_cells": 2.56
+        "depth_cells": 20.0,
+        "height_cells": 3.1999999999999997
       },
       "diagnostics": {
-        "steps_taken": 21268,
-        "simulated_time": 2.861684314879177,
-        "dt": 7.529651325162354e-05,
-        "mass": 801.9091186523438,
-        "escaped": 99,
-        "max_speed": 179.60418701171875,
-        "max_density_compression": 0.36142749023437504,
-        "min_density_ratio": 0.2691072998046875,
-        "rebuilds": 3242
+        "steps_taken": 37000,
+        "simulated_time": 5.0,
+        "dt": 0.000135,
+        "mass": 800.0,
+        "escaped": 0,
+        "max_speed": 0.5,
+        "max_density_compression": 0.01,
+        "min_density_ratio": 0.99,
+        "rebuilds": 370
       },
       "spec": {
         "kind": "regular",
@@ -235,7 +239,6 @@
   "tolerance": 0.1,
   "criterion": "CASE-WAVE-FLUME: |H_meas - H_target| / H_target <= 10 % at every gauge; attenuation compared with the laminar-boundary-layer reference",
   "figures": [
-    "docs/figures/wave_flume/series_wf_D16.png",
-    "docs/figures/wave_flume/profile.png"
+    "docs/figures/wave_flume/series_wf_D20.png"
   ]
 }
