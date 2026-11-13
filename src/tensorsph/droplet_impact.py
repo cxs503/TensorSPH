@@ -770,7 +770,7 @@ def drop_wall_wall_pairs(pairs: torch.Tensor, fluid_count: int) -> torch.Tensor:
 
 
 def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None,
-        wall_vel=None, wall_accel=None, state=None):
+        wall_vel=None, wall_accel=None, state=None, split: bool = False):
     """Compute WCSPH RHS with pair-based compact-support interactions.
 
     ``state`` is an optional mutable dict carrying the cross-step scalar of the
@@ -1009,6 +1009,28 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None,
     acc = acc.index_add(0, j, all_mass[i, None] * pair_pressure)
     acc_pressure = acc[:n]
 
+    # ``split=True`` additionally reports, per wall particle, the force the
+    # fluid exerts on it (Newton's third law applied to the very same pair
+    # term above). This is the "force from fluid" the FSI coupling needs and
+    # what :mod:`tensorsph.force_from_fluid` audits; it is computed only when
+    # asked for, so no published number moves.
+    wall_loads = None
+    if split:
+        wall_reaction = torch.zeros((nw, pos.shape[1]), dtype=pos.dtype,
+                                    device=pos.device)
+        face_pressure = torch.zeros(nw, dtype=pos.dtype, device=pos.device)
+        if nw:
+            # ``acc`` above is a per-unit-mass acceleration, so the force on the
+            # fluid side of a crossing pair is ``m_i * acc``; Newton's third law
+            # then gives the force on the wall particle as
+            # ``m_i m_j (p_i/rho_i^2 + p_j/rho_j^2) gradW`` (sign flipped).
+            pair_mass = all_mass[i] * all_mass[j]
+            sign = torch.where(i_fluid, -1.0, 1.0).to(pos.dtype)
+            wall_reaction = wall_reaction.index_add(
+                0, wall_idx,
+                (-sign[:, None] * pair_mass[:, None] * pair_pressure
+                 * crossing[:, None].to(pos.dtype)))
+
     # Viscosity acts on fluid-fluid pairs and, when a no-slip wall is asked
     # for, on fluid-wall pairs with a blend factor. Wall-wall pairs never
     # contribute (the wall is static), so the mask only has to separate
@@ -1036,6 +1058,16 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None,
     acc_visc = acc_visc.index_add(0, i, visc_i)
     acc_visc = acc_visc.index_add(0, j, visc_j)
 
+    if split and nw and cfg.wall_friction > 0.0:
+        # A no-slip wall also exchanges momentum by friction; it belongs to the
+        # force from fluid, otherwise the budget below would show a leak that
+        # is really a term the caller forgot to count.
+        visc_fluid = torch.where(i_fluid[:, None], visc_i, visc_j)
+        fluid_mass = torch.where(i_fluid, all_mass[i], all_mass[j])
+        wall_reaction = wall_reaction.index_add(
+            0, wall_idx,
+            -visc_fluid * fluid_mass[:, None] * crossing[:, None].to(pos.dtype))
+
     # Surface tension (CSF model) - only if coefficient > 0
     acc_st_total = torch.zeros((n, pos.shape[1]), dtype=pos.dtype, device=pos.device)
     if cfg.surface_tension_coefficient > 0.0:
@@ -1047,7 +1079,13 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None,
             acc_st_total = compute_surface_tension_force(
                 pos, rho, mass, fluid_pairs, cfg, wall=wall)
 
-    return rho, pressure, acc_pressure + acc_visc[:n] + acc_st_total + gravity
+    acc_total = acc_pressure + acc_visc[:n] + acc_st_total + gravity
+    if split:
+        if nw:
+            face_pressure = wall_pressure
+        wall_loads = {"reaction": wall_reaction, "face_pressure": face_pressure}
+        return rho, pressure, acc_total, wall_loads
+    return rho, pressure, acc_total
 
 
 
