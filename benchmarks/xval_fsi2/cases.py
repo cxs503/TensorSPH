@@ -298,11 +298,70 @@ def fsi2_insert_linear(dx: float, gradient=(0.0, -1.0), p0: float = 1.0,
     )
 
 
+def curved_disk_shear(dx: float, radius: float = 0.5, centre=(2.0, 2.0),
+                      gamma: float = 1.0, beta: float = 1.0, mu: float = 0.01,
+                      h_factor: float = 1.3) -> "LoadCase":
+    """Curved wall: a closed disk in a *quadratic* shear field ``u_x = g y + b y^2/2``.
+
+    This is the only case in the bundle with a non-flat wall, so it separates
+    curvature error from the flat-wall truncation error of X1-X3.  The exact
+    traction integral over the closed surface is
+
+        F_x = oint mu (du_x/dy) n_y dl = mu [ g oint n_y dl + b oint y n_y dl ]
+            = mu b * A,          A = pi R^2   (divergence theorem, oint n_y dl = 0)
+
+    i.e. the linear part cancels identically and the quadratic part is the body
+    average of the shear gradient -- a non-degenerate, analytically known scalar.
+    ``vel_solid`` carries the *no-slip* value of the same field on the wall
+    (``vel_solid == u(x_solid)``); feeding a mismatched solid velocity is not a
+    variant of this case, it is invalid data (see the pitfall in the report).
+
+    Geometry is the fsi2 cylinder (``fsi2.h:14-35``: r = 0.5 at (2, 2)) with the
+    beam removed, because the beam's rear face is not wetted and would add an
+    interior surface to the "closed body".
+    """
+    cx, cy = centre
+    fluid = _lattice([cx - 4.0 * radius, cy - 4.0 * radius],
+                     [cx + 4.0 * radius, cy + 4.0 * radius], dx)
+    rc = torch.tensor([cx, cy], dtype=torch.float64)
+    fluid = fluid[torch.linalg.vector_norm(fluid - rc, dim=1) > radius + 0.25 * dx]
+    n_face = max(int(round(2.0 * math.pi * radius / dx)), 8)
+    ang = torch.arange(n_face, dtype=torch.float64) * 2.0 * math.pi / n_face
+    wall = torch.stack([cx + radius * torch.cos(ang), cy + radius * torch.sin(ang)], dim=1)
+    normal = torch.stack([torch.cos(ang), torch.sin(ang)], dim=1)  # outward = into fluid
+
+    def field(x: torch.Tensor) -> torch.Tensor:
+        y = x[:, 1] - cy
+        v = torch.zeros_like(x)
+        v[:, 0] = gamma * y + 0.5 * beta * y * y
+        return v
+
+    f_ref = torch.tensor([mu * beta * math.pi * radius ** 2, 0.0], dtype=torch.float64)
+    return LoadCase(
+        name="curved_disk_shear",
+        source="fsi2.h:14-35 (cylinder r=0.5 at (2,2)); viscous branch of "
+               "force_on_structure.hpp:55-72 on a curved wall",
+        description=(f"closed disk R={radius} in a quadratic shear field "
+                     f"u_x = {gamma} y + {beta} y^2/2, mu={mu}; exact net load = mu beta A"),
+        dx=dx, h_factor=h_factor,
+        pos_solid=wall, vol_solid=_vol(wall.shape[0], dx), normal_solid=normal,
+        pos_fluid=fluid, vol_fluid=_vol(fluid.shape[0], dx),
+        pressure_fluid=torch.zeros(fluid.shape[0], dtype=torch.float64),
+        rho_fluid=torch.ones(fluid.shape[0], dtype=torch.float64),
+        vel_fluid=field(fluid), vel_solid=field(wall),
+        acc_ext_fluid=torch.zeros(2, dtype=torch.float64),
+        mu_fluid=torch.full((fluid.shape[0],), mu, dtype=torch.float64),
+        reference_force=f_ref, reference_label="mu beta A (quadratic shear, disk)",
+        wetted_area=2.0 * math.pi * radius, fluid_state="analytic",
+    )
+
+
 CASE_BUILDERS: Dict[str, Callable[..., LoadCase]] = {
     "vertical_wall": vertical_wall,
     "horizontal_gate": horizontal_gate,
     "couette_shear": couette_shear,
     "fsi2_insert_linear": fsi2_insert_linear,
+    "curved_disk_shear": curved_disk_shear,
 }
 
 
@@ -310,5 +369,6 @@ def dx_ladder(case: str, ladder: Optional[List[float]] = None) -> List[float]:
     default = {"vertical_wall": [0.05, 0.025, 0.0125],
                "horizontal_gate": [0.05, 0.025, 0.0125],
                "couette_shear": [0.025, 0.0125, 0.00625],
-               "fsi2_insert_linear": [0.1, 0.05, 0.025]}
+               "fsi2_insert_linear": [0.1, 0.05, 0.025],
+               "curved_disk_shear": [0.1, 0.05, 0.025, 0.0125]}
     return list(ladder if ladder is not None else default[case])

@@ -165,3 +165,19 @@ Kernel / smoothing-length sensitivity (pressure branch):
 2. There is no route to run the OSS case itself (C++/TBB build, no compiler toolchain budget this round), so the OSS arm had to be reproduced algebraically here.  That is weaker than running the reference: the regression XMLs remain the only direct OSS numbers, and they belong to the coupled case that is deferred.
 3. `oss_solutions` id 359 (this very feature) carries the method summary and the file:line pointers that made the blueprint lookup one query; the record's `transfer` field points at the density-regularisation xval, which is unrelated to FSI -- a small data-hygiene defect in the ledger.
 
+
+## 10. Update (round 1b, same anchor): the viscous deficit is derived and repaired
+
+The X3 hypothesis of §6.3 ("the one-sided sum is missing the factor 2 of the
+standard SPH Laplacian") is **confirmed in structure and corrected in value**:
+the deficit is not a missing constant but a *kernel truncation moment*,
+`ratio = -2 s int_0^R (dW/dr) r dr`, which for Wendland C2 is `7/(3 pi) (s/h)` —
+independent of `dx`, hence the flat `-38 %`.  A `wall_shear_from_gradient` arm
+(kernel-corrected velocity-gradient reconstruction, `B` measured on the actual
+truncated neighbour set) is now exact on the plane Couette case (1.9e-12) and
+first-order on a curved wall (new X5 case: closed disk in a quadratic shear,
+reference `mu beta A`; +14.95 % → +1.92 % over `R/dx = 5..40`, still 15 % at the
+fsi2 resolution `dx = 0.1`).  Full derivation, tables, pitfalls and the
+error-vs-3 % judgement: `X3_VISCOUS_DEFICIT.md`.  The pressure verdict of this
+report is **unchanged** — the pressure arms reproduce every number in §4 exactly
+after the addition, and the coupled fsi2 transient remains the round-2 target.
