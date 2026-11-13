@@ -163,9 +163,20 @@ density compression, Courant peak, distribution metrics, environment).
 coarser grid (17.0 %). The baseline solvers (no correction, PST) are at
 47–51 % at both resolutions, i.e. 3–4× worse. Grade of the claim: **REAL** for
 the operator (`alpha = 0.10`, `dx <= 0.03`); **WITHHELD** for "improves
-convergence" — that needs the `dx = 0.02/0.01` ladder, which is queued
+convergence" — that needed the `dx = 0.02/0.01` ladder, which is queued
 (cluster jobs `cj1623`, `cj1624`) and had not run when this report was
 written.
+
+> **Round 2 update (2026-11-13).** The ladder was run (four levels,
+> `dx = 0.04 … 0.01`, dense sampling): see [`RESOLUTION_LADDER.md`](RESOLUTION_LADDER.md).
+> Result, in one line: the accuracy standard is met at `dx = 0.03` (10.6 %) and
+> `dx = 0.02` (12.5 %), and at `dx = 0.01` only with a re-calibrated
+> `alpha = 0.15` (14.3 %); the *"improves convergence"* claim is **FALSIFIED as
+> stated** for a fixed coefficient (error 17.1 / 10.6 / 12.5 / 16.4 % and a
+> reversed observed order over the finest pair), because at fixed `alpha` the
+> cumulative correction rate scales as `alpha * dx` and therefore weakens with
+> refinement. Data: `data/ladder_dense.json`, `data/sweep_dx001_alpha.json`,
+> `data/convergence_ladder.json`, figure `figure_convergence_ladder.png`.
 
 
 ### Mechanism evidence: the correction restores lattice regularity (dx = 0.04)

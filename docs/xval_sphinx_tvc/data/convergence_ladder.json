@@ -1,0 +1,210 @@
+{
+  "anchor": "XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION",
+  "analysis": "resolution ladder: Cauchy self-convergence + Richardson limit vs Martin & Moyce",
+  "environment": {
+    "python": "3.11.6",
+    "machine": "loongarch64"
+  },
+  "inputs": [
+    "docs/xval_sphinx_tvc/data/grid_dx004.json",
+    "docs/xval_sphinx_tvc/data/grid_dx003.json",
+    "artifacts/xval_sphinx_tvc/grid_dx002.json",
+    "/dev/shm/ladder_dense.json"
+  ],
+  "variants": {
+    "baseline": {
+      "levels": [
+        0.04,
+        0.03,
+        0.02,
+        0.01
+      ],
+      "grid_points": 401,
+      "pairs": [
+        {
+          "dx_coarse": 0.04,
+          "dx_fine": 0.03,
+          "r": 1.3333333333333335,
+          "cauchy_l2": 0.05473306847426983,
+          "cauchy_linf": 0.07545329164713643
+        },
+        {
+          "dx_coarse": 0.03,
+          "dx_fine": 0.02,
+          "r": 1.5,
+          "cauchy_l2": 0.25752712840059366,
+          "cauchy_linf": 0.3787870705127716
+        },
+        {
+          "dx_coarse": 0.02,
+          "dx_fine": 0.01,
+          "r": 2.0,
+          "cauchy_l2": 0.09815949099070154,
+          "cauchy_linf": 0.1403857767581922
+        }
+      ],
+      "orders": [
+        {
+          "dx_fine_interval": [
+            0.03,
+            0.02
+          ],
+          "r": 1.4142135623730951,
+          "observed_order_l2": -4.468479542998514,
+          "cauchy_ratio": 0.21253321471099684
+        },
+        {
+          "dx_fine_interval": [
+            0.02,
+            0.01
+          ],
+          "r": 1.7320508075688772,
+          "observed_order_l2": 1.7559087270960618,
+          "cauchy_ratio": 2.6235581073356293
+        }
+      ],
+      "richardson": {
+        "p_used": 1.7559087270960618,
+        "p_source": "measured (finest interval)",
+        "from_levels": [
+          0.02,
+          0.01
+        ],
+        "r": 2.0,
+        "vs_experiment": {
+          "points": 20,
+          "mae": 0.5704750121550918,
+          "mean_rel_error": 0.3764114760823936,
+          "max_abs_error": 1.6755288339101817,
+          "within_digitisation_uncertainty": 0.1
+        }
+      },
+      "per_level_vs_experiment": {
+        "0.04": {
+          "points": 20,
+          "mae": 0.5910278617333649,
+          "mean_rel_error": 0.4675118642232826,
+          "max_abs_error": 1.1507710554191393,
+          "within_digitisation_uncertainty": 0.05
+        },
+        "0.03": {
+          "points": 20,
+          "mae": 0.6214371682116635,
+          "mean_rel_error": 0.5099288741519757,
+          "max_abs_error": 1.107281458643146,
+          "within_digitisation_uncertainty": 0.0
+        },
+        "0.02": {
+          "points": 20,
+          "mae": 0.5758548534918072,
+          "mean_rel_error": 0.4137686037594625,
+          "max_abs_error": 1.479366951954744,
+          "within_digitisation_uncertainty": 0.05
+        },
+        "0.01": {
+          "points": 20,
+          "mae": 0.571705115256965,
+          "mean_rel_error": 0.3873411539531569,
+          "max_abs_error": 1.6174458177069067,
+          "within_digitisation_uncertainty": 0.05
+        }
+      },
+      "cauchy_slope_fit": {
+        "slope": -0.32459787643355076,
+        "points": 3,
+        "note": "slope 1 = first order, 2 = second order in dx"
+      }
+    },
+    "tvc_a010_all": {
+      "levels": [
+        0.04,
+        0.03,
+        0.02,
+        0.01
+      ],
+      "grid_points": 401,
+      "pairs": [
+        {
+          "dx_coarse": 0.04,
+          "dx_fine": 0.03,
+          "r": 1.3333333333333335,
+          "cauchy_l2": 0.23537800552530364,
+          "cauchy_linf": 0.34045129573593513
+        },
+        {
+          "dx_coarse": 0.03,
+          "dx_fine": 0.02,
+          "r": 1.5,
+          "cauchy_l2": 0.119004289369806,
+          "cauchy_linf": 0.2884531021118164
+        },
+        {
+          "dx_coarse": 0.02,
+          "dx_fine": 0.01,
+          "r": 2.0,
+          "cauchy_l2": 0.1904221261389095,
+          "cauchy_linf": 0.45095667243003756
+        }
+      ],
+      "orders": [
+        {
+          "dx_fine_interval": [
+            0.03,
+            0.02
+          ],
+          "r": 1.4142135623730951,
+          "observed_order_l2": 1.9679318838219904,
+          "cauchy_ratio": 1.9778951395093511
+        },
+        {
+          "dx_fine_interval": [
+            0.02,
+            0.01
+          ],
+          "r": 1.7320508075688772,
+          "observed_order_l2": -0.8557774049694575,
+          "cauchy_ratio": 0.6249499035789283
+        }
+      ],
+      "richardson": null,
+      "per_level_vs_experiment": {
+        "0.04": {
+          "points": 20,
+          "mae": 0.14696373326541493,
+          "mean_rel_error": 0.17059208092684724,
+          "max_abs_error": 0.3228084561817175,
+          "within_digitisation_uncertainty": 0.25
+        },
+        "0.03": {
+          "points": 20,
+          "mae": 0.142262581804265,
+          "mean_rel_error": 0.10646706528059385,
+          "max_abs_error": 0.30762671808343467,
+          "within_digitisation_uncertainty": 0.2
+        },
+        "0.02": {
+          "points": 20,
+          "mae": 0.15618802897091297,
+          "mean_rel_error": 0.12480203376603916,
+          "max_abs_error": 0.3490466930841527,
+          "within_digitisation_uncertainty": 0.15
+        },
+        "0.01": {
+          "points": 20,
+          "mae": 0.28009640778465883,
+          "mean_rel_error": 0.16385734653204911,
+          "max_abs_error": 0.7216470052433874,
+          "within_digitisation_uncertainty": 0.2
+        }
+      },
+      "cauchy_slope_fit": {
+        "slope": 0.09912154770011213,
+        "points": 3,
+        "note": "slope 1 = first order, 2 = second order in dx"
+      }
+    }
+  },
+  "figures": [
+    "/dev/shm/conv.png"
+  ]
+}
