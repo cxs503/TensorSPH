@@ -35,6 +35,11 @@ def main() -> int:
     ap.add_argument("--t-end", type=float, default=3.0)
     ap.add_argument("--probe-offset", type=float, default=0.05)
     ap.add_argument("--arrival-threshold", type=float, default=0.02)
+    ap.add_argument("--gauge-aperture", type=float, default=0.03,
+                    help="FULL physical width [m] of the slab gauge; kept independent "
+                         "of dx so the same gauge is comparable across a ladder")
+    ap.add_argument("--stations", type=float, nargs="*", default=None,
+                    help="gauge stations as distances UPSTREAM of the box face [m]")
     ap.add_argument("--tag", default=None)
     ap.add_argument("--outdir", default=None)
     ap.add_argument("--figure", action="store_true")
@@ -58,6 +63,9 @@ def main() -> int:
     )
     if args.sound_speed is not None:
         cfg.sound_speed = args.sound_speed
+    cfg.gauge_aperture = args.gauge_aperture
+    if args.stations:
+        cfg.stations_offset = tuple(args.stations)
     # dt follows the *configured* c0 through the acoustic Courant limit instead
     # of a literal 20 m/s: with c0 = 80 m/s at dx = 0.04 the historical 2e-4 s
     # violates dt*c0/h <= max_courant and validate_case rejects it.
@@ -73,6 +81,10 @@ def main() -> int:
         "sound_speed": cfg.sound_speed, "dt": cfg.dt,
         "probe_x": cfg.probe_x(), "arrival_threshold": cfg.arrival_threshold,
         "peak_height_m": run.peak_height, "peak_time_s": run.peak_time,
+        "gauge_aperture_m": cfg.resolve_gauge_aperture(),
+        "stations_offset_m": list(cfg.stations_offset),
+        "gauges": {k: dict(v, station_x_m=float(k.split("@x")[1]),
+                           operator=k.split("@")[0]) for k, v in run.metrics.items()},
         "column_peak_m": (max(run.column) if run.column else float("nan")),
         "arrival_time_s": run.arrival_time,
         "steps": run.steps_taken, "simulated_time_s": run.simulated_time,
@@ -83,11 +95,17 @@ def main() -> int:
         "particles_fluid": int(math.floor(cfg.column_length / cfg.dx)
                                * math.floor(cfg.column_height / cfg.dx)),
     }
+    series_keys = sorted(run.series)
     with (outdir / "time_series.csv").open("w") as fh:
-        fh.write("t_s,height_m,front_x_m,column_level_m\n")
+        fh.write("t_s,height_m,front_x_m,column_level_m,"
+                 + ",".join(k.replace("@", "_") for k in series_keys) + "\n")
         cols = run.column if len(run.column) == len(run.times) else [float("nan")] * len(run.times)
-        for t, hh, fr, cl in zip(run.times, run.height, run.front, cols):
-            fh.write(f"{t:.6f},{hh:.6f},{fr:.6f},{cl:.6f}\n")
+        for idx, (t, hh, fr, cl) in enumerate(zip(run.times, run.height, run.front, cols)):
+            row = [f"{t:.6f}", f"{hh:.6f}", f"{fr:.6f}", f"{cl:.6f}"]
+            for k in series_keys:
+                v = run.series[k]
+                row.append(f"{v[idx]:.6f}" if idx < len(v) else "nan")
+            fh.write(",".join(row) + "\n")
 
     exp = ref["experimental_values"]
     tol = ref["tolerance"]["relative"]
