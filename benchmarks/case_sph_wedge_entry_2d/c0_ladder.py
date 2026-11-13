@@ -57,7 +57,13 @@ HERE = Path(__file__).resolve().parent
 if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
-import run as case  # noqa: E402  (the case's own runner/grading module)
+# Load the case driver by path: a bare ``import run`` resolves to whichever
+# ``run.py`` an earlier import cached in ``sys.modules`` (m17109).
+import importlib.util as _ilu  # noqa: E402
+
+_spec = _ilu.spec_from_file_location("case_sph_wedge_entry_2d_run", HERE / "run.py")
+case = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(case)
 
 ART = case.ROOT / "artifacts" / "case_sph_wedge_entry_2d" / "c0_ladder"
 
