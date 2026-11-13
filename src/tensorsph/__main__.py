@@ -20,7 +20,7 @@ parser.add_argument("--device", default="auto")
 parser.add_argument("--no-plot", action="store_true",
                     help="skip the snapshot figure (saves ~1.5 s)")
 parser.add_argument("--case", default="droplet",
-                    choices=("droplet", "hydrostatic", "taylor_green", "compressible_sod"),
+                    choices=("droplet", "hydrostatic", "taylor_green", "compressible_sod", "stokes_second"),
                     help="case to run: the droplet impact example (default), the "
                          "CASE-HYDROSTATIC still-water pressure-profile case, the "
                          "CASE-TAYLOR-GREEN-SPH vortex-decay benchmark, or the "
@@ -69,6 +69,21 @@ if args.case == "hydrostatic":
     if args.json_out:
         argv += ["--json-out", args.json_out]
     raise SystemExit(hydrostatic_main(argv))
+
+if args.case == "stokes_second":
+    from benchmarks.stokes_second.run import run_one
+    import torch
+    torch.set_num_threads(1)
+    dev = "cpu" if args.device == "auto" else args.device
+    res = run_one(12, dev, periods=3.0, measure_periods=1.0,
+                  sound_speed=4.0, label="cli")
+    m = res["metrics"]
+    print(f"CASE-SPH-STOKES-2ND-PROBLEM (delta/dx=12): "
+          f"L2={m['amplitude_l2_half_space_pct']:.3f}%  "
+          f"decay_err={m['decay_rate_error_pct']:.3f}%  "
+          f"delta_ratio={m['delta_ratio']:.5f}  "
+          f"rows_in_layer={m['n_rows_stokes_layer']}")
+    raise SystemExit(0 if m["amplitude_l2_half_space_pct"] < 5.0 else 1)
 
 cfg = Config(device=args.device)
 if args.steps is not None:
