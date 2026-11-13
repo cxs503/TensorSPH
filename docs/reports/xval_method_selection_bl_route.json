@@ -1,0 +1,67 @@
+{
+  "case": {
+    "period": 1.0,
+    "depth": 0.25,
+    "height": 0.04,
+    "kinematic_viscosity": 1e-06
+  },
+  "intermediates": {
+    "u_b_per_H": 2.0694693783263824,
+    "k": 4.818972978402874,
+    "sigma": 6.283185307179586,
+    "celerity": 1.303843232850413,
+    "group_velocity": 0.9365278339068391,
+    "sinh_kh": 1.5180667501011569,
+    "mu_repo_per_m": 0.0011684718299723323
+  },
+  "u_b": 0.0827787751330553,
+  "delta": 0.0005641895835477562,
+  "delta_over_h": 0.002256758334191025,
+  "routes": {
+    "repo_closed_form": {
+      "D": 4.2940582818358045e-06,
+      "mu_per_m": 0.0011684718299723323,
+      "source": "Putnam & Johnson 1949 / Mei 1983 \u00a74.2 as implemented in wave_flume_grade"
+    },
+    "closed_form_rebuilt": {
+      "D": 4.2940582818358045e-06,
+      "mu_per_m": 0.0023369436599446646
+    },
+    "stokes_integral": {
+      "D": 6.0726135656664575e-06,
+      "mu_per_m": 0.0033048819648323624
+    }
+  },
+  "quadrature": [
+    {
+      "nz": 200,
+      "nt": 128,
+      "delta_m": 0.0005641895835477562,
+      "D_numeric": 6.0710956880268296e-06,
+      "mu_numeric_per_m": 0.0033040558944128
+    },
+    {
+      "nz": 800,
+      "nt": 512,
+      "delta_m": 0.0005641895835477562,
+      "D_numeric": 6.0726135656664575e-06,
+      "mu_numeric_per_m": 0.0033048819648323624
+    }
+  ],
+  "quadrature_convergence": {
+    "mu_coarse": 0.0033040558944128,
+    "mu_fine": 0.0033048819648323624,
+    "relative_change": 0.0002500170838390936
+  },
+  "comparison": {
+    "repo_vs_stokes_relative_error": -0.646440677032893,
+    "closed_form_vs_stokes_relative_error": -0.2928813540657861,
+    "ratio_stokes_over_closed": 1.4141898332759195,
+    "gate_15pct": 0.15,
+    "within_gate": false
+  },
+  "implication_over_2m": {
+    "physical_loss_repo": 0.0023342151329949212,
+    "physical_loss_stokes": 0.0065879674896096585
+  }
+}
