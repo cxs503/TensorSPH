@@ -33,6 +33,15 @@ from .droplet_impact import (
     viscous_dt_limit,
     wall_lattice,
 )
+from . import eos_hydrostatics
+from .eos_hydrostatics import (
+    acoustic_mach,
+    acoustic_parameter,
+    compressibility_bias_pct,
+    eos_hydrostatic_density,
+    eos_hydrostatic_pressure,
+    pointwise_eos_pressure,
+)
 from .dam_break import DamBreakConfig, make_column, run_case
 from .dam_break_3d import (
     DamBreak3DConfig,
@@ -137,6 +146,9 @@ __all__ = [
     "wendland_c2_gradient", "wendland_c2_kernel", "density_from_neighbor_pairs",
     "diffusion_dt_limit", "drop_wall_wall_pairs",
     "evaluate_acceptance", "gravity_dt_limit", "hydrostatic_density",
+    "eos_hydrostatics", "eos_hydrostatic_pressure", "eos_hydrostatic_density",
+    "compressibility_bias_pct", "pointwise_eos_pressure", "acoustic_parameter",
+    "acoustic_mach",
     "make_particles", "pair_kernels",
     "acoustic_dt_limit", "next_dt", "stable_dt",
     "resolve_device", "rhs", "rhs_all_pairs", "run", "suggested_dt",
