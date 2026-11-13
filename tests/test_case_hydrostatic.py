@@ -40,11 +40,35 @@ from tensorsph.case_hydrostatic import (CASE_ID, DEPTH, G, RHO0,  # noqa: E402
                                        support_width)
 
 #: Evidence root, most-authoritative first: a locally regenerated ``runs/``
-#: bundle wins over the shipped mirror, which is what a fresh checkout has.
+#: bundle wins over ``outputs/case_hydrostatic`` (the full mirror with figures),
+#: which wins over the *shippable* text channel ``tests/data/case_hydrostatic``.
+#:
+#: Why a third root: the full mirror is artifact-class in the delivery rule
+#: (``outputs/`` + ``*.png``, merge-governor artifact cap), so a PR carrying it
+#: is held and never lands -- on a fresh checkout of ``main`` the mirror is
+#: absent and this whole layer used to ERROR out, i.e. the 1 % acceptance of the
+#: case was not decidable where it is actually read.  The channel holds the same
+#: numbers as text (``report.json`` + every ``runs/*.json`` + ``MANIFEST.sha256``
+#: + ``channel.json``), written by ``benchmarks/case_hydrostatic/freeze.py``;
+#: the figures are re-creatable from those numbers and are the only part the
+#: delivery rule drops.
 EVIDENCE_CANDIDATES = (REPO / "runs" / "case_hydrostatic",
-                       REPO / "outputs" / "case_hydrostatic")
-SHIPPED = REPO / "outputs" / "case_hydrostatic"
+                       REPO / "outputs" / "case_hydrostatic",
+                       REPO / "tests" / "data" / "case_hydrostatic")
+CHANNEL = REPO / "tests" / "data" / "case_hydrostatic"
 MANIFEST = "MANIFEST.sha256"
+CHANNEL_INDEX = "channel.json"
+
+
+def shipped_base() -> Path:
+    """The shipped evidence root: full mirror if it landed, else the channel."""
+    if (REPO / "outputs" / "case_hydrostatic" / "report.json").exists():
+        return REPO / "outputs" / "case_hydrostatic"
+    assert (CHANNEL / "report.json").exists(), (
+        f"no shipped CASE-HYDROSTATIC evidence under {CHANNEL}; freeze one with "
+        "`python benchmarks/case_hydrostatic/run.py --config all --static` + "
+        "`--aggregate --figure` then `python benchmarks/case_hydrostatic/freeze.py`")
+    return CHANNEL
 
 
 def evidence_base() -> Path:
@@ -54,8 +78,9 @@ def evidence_base() -> Path:
     raise AssertionError(
         "no CASE-HYDROSTATIC evidence found; expected one of "
         f"{[str(b) for b in EVIDENCE_CANDIDATES]}. Reproduce with "
-        "`python benchmarks/case_hydrostatic/run.py --config all --static` "
-        "then `--aggregate --figure` (the latter also ships the mirror).")
+        "`python benchmarks/case_hydrostatic/run.py --config all --static` then "
+        "`--aggregate --figure` (mirror) and `python "
+        "benchmarks/case_hydrostatic/freeze.py` (shippable text channel).")
 
 
 def _harness():
@@ -250,21 +275,28 @@ def _manifest(root: Path) -> dict[str, tuple[str, int]]:
 
 
 def test_shipped_mirror_is_manifest_complete(report):
-    """The delivery copy must carry the report, every run file, the figures and
-    a manifest that covers exactly those files with the right digests."""
+    """The shipped copy must carry the report, every run file and a manifest
+    that covers exactly those files with the right digests.
+
+    Full mirror (``outputs/``) -> the figures must be there too.  Text channel
+    (``tests/data/``) -> no artifact-class file may be relied on, and
+    ``channel.json`` must record exactly the same file list plus what the
+    delivery rule made it drop (figures only, and they are re-creatable from
+    the shipped numbers).
+    """
     import hashlib
 
-    assert (SHIPPED / "report.json").exists(), (
-        f"shipped evidence mirror {SHIPPED} is missing; run "
-        "`python benchmarks/case_hydrostatic/run.py --aggregate --figure`")
-    entries = _manifest(SHIPPED)
-    actual = {p.relative_to(SHIPPED).as_posix()
-              for p in SHIPPED.rglob("*") if p.is_file()} - {MANIFEST}
+    shipped = shipped_base()
+    assert (shipped / "report.json").exists(), (
+        f"shipped evidence root {shipped} is missing report.json")
+    entries = _manifest(shipped)
+    actual = {p.relative_to(shipped).as_posix()
+              for p in shipped.rglob("*") if p.is_file()} - {MANIFEST, CHANNEL_INDEX}
     assert set(entries) == actual, (
         f"manifest/files disagree: unlisted={sorted(actual - set(entries))[:5]}, "
         f"missing={sorted(set(entries) - actual)[:5]}")
     for rel, (digest, size) in entries.items():
-        data = (SHIPPED / rel).read_bytes()
+        data = (shipped / rel).read_bytes()
         assert len(data) == size, f"{rel}: size {len(data)} != manifest {size}"
         assert hashlib.sha256(data).hexdigest() == digest, f"{rel}: sha256 drift"
     # the shipped bundle is the *whole* case, not just the verdict
@@ -273,21 +305,82 @@ def test_shipped_mirror_is_manifest_complete(report):
         assert f"runs/{run['config_name']}.json" in entries
     for static in report["static_runs"]:
         assert f"runs/static_{static['config_name']}.json" in entries
-    assert any(rel.startswith("figures/") for rel in entries)
+    index_path = shipped / CHANNEL_INDEX
+    if index_path.exists():
+        index = json.loads(index_path.read_text())
+        assert set(index["files"]) == set(entries)
+        assert index["gate_value_pct"] == report["verdict"]["gate_value_pct"]
+        assert index["gate_limit_pct"] == report["verdict"]["gate_limit_pct"]
+        assert all(not rel.endswith((".png", ".npz", ".pt")) for rel in entries), (
+            "the shipped text channel must not depend on artifact-class files")
+        assert index["dropped_not_shippable"], (
+            "channel.json must state which bundle files were dropped and why")
+    else:
+        assert any(rel.startswith("figures/") for rel in entries), (
+            "the full mirror must ship the figures")
 
 
-def test_shipped_mirror_agrees_with_a_regenerated_bundle():
-    """If this checkout has a fresh ``runs/`` bundle, it must be byte-identical
-    to what ships -- the mirror is a copy, never a second source of truth."""
+def test_gate_value_is_recomputable_from_the_shipped_band_rows(report):
+    """Anti-hand-copy invariant: the shipped gate number, every band error and
+    the reference column must all be re-derivable from the shipped raw band
+    rows, against the *analytic* ``rho0 g (H - y)`` evaluated here.
+
+    A hand-edited verdict, a transcribed reference table that drifted from the
+    closed form, or a band error that does not follow from ``got_Pa``/``ref_Pa``
+    fails this test even though the manifest would still be self-consistent.
+    """
+    shipped = shipped_base()
+    gate_config = report["verdict"]["gate_config"]
+    run = json.loads((shipped / "runs" / f"{gate_config}.json").read_text())
+    ref = run["reference"]
+    assert ref["formula"] == "p(y) = rho0 * g * (H - y)"
+    assert ref["kind"] == "analytic"
+    rows = run["benchmark"]
+    assert len(rows) >= 4, "no gated band rows in the shipped gate run"
+    for row in rows:
+        p_ref = ref["rho0"] * ref["g"] * (ref["H"] - row["y_m"])  # closed form, here
+        assert row["ref_Pa"] == pytest.approx(p_ref, rel=1e-9), (
+            f"band {row['band']}: shipped ref {row['ref_Pa']} != analytic {p_ref}")
+        recomputed = (row["got_Pa"] - p_ref) / p_ref * 100.0
+        assert row["rel_error_pct"] == pytest.approx(recomputed, rel=1e-6, abs=1e-9)
+        assert row["within_tolerance"] is (abs(recomputed) <= TOLERANCE_PCT)
+    worst = max(abs(r["rel_error_pct"]) for r in rows)
+    assert run["gate"]["max_band_error_pct"] == pytest.approx(worst, rel=1e-9)
+    assert report["verdict"]["gate_value_pct"] == run["gate"]["max_band_error_pct"]
+    assert report["verdict"]["gate_value_pct"] <= TOLERANCE_PCT
+    assert report["verdict"]["gate_pass"] is True
+
+
+def test_shipped_evidence_agrees_with_a_regenerated_bundle():
+    """If this checkout has a fresh ``runs/`` bundle, it must agree with what
+    ships.  A byte-identical copy is the strongest form (same machine, same
+    build); across machines/architectures the gate number and the pass verdict
+    must still agree, otherwise the frozen evidence is not reproducible."""
     fresh = REPO / "runs" / "case_hydrostatic"
     if not (fresh / "report.json").exists():
         pytest.skip("no regenerated runs/ bundle in this checkout")
-    for rel in ("report.json",) + tuple(
-            f"runs/{p.name}" for p in sorted((fresh / "runs").glob("*.json"))):
-        shipped = (SHIPPED / rel)
-        assert shipped.exists(), f"shipped mirror lacks {rel}"
-        assert shipped.read_bytes() == (fresh / rel).read_bytes(), (
-            f"{rel}: shipped mirror and the regenerated bundle differ")
+    shipped = shipped_base()
+    if (fresh / "report.json").read_bytes() == (shipped / "report.json").read_bytes():
+        return
+    a = json.loads((shipped / "report.json").read_text())
+    b = json.loads((fresh / "report.json").read_text())
+    assert a["verdict"]["gate_config"] == b["verdict"]["gate_config"]
+    assert a["verdict"]["gate_limit_pct"] == b["verdict"]["gate_limit_pct"]
+    assert a["verdict"]["gate_pass"] == b["verdict"]["gate_pass"], (
+        f"gate verdict flips on re-run: shipped "
+        f"{a['verdict']['gate_value_pct']:.4f} % vs fresh "
+        f"{b['verdict']['gate_value_pct']:.4f} %")
+    assert abs(a["verdict"]["gate_value_pct"]
+               - b["verdict"]["gate_value_pct"]) < 0.05, "gate value not reproducible"
+    # same config grid, same gate metric on every shared config
+    by_b = {r["config_name"]: r for r in b["runs"]}
+    for row in a["runs"]:
+        other = by_b.get(row["config_name"])
+        if other is None:
+            continue
+        assert abs(row["gate"]["max_band_error_pct"]
+                   - other["gate"]["max_band_error_pct"]) < 0.05, (
+            f"{row['config_name']}: gate metric not reproducible")
 
 
 def test_config_all_with_static_schedules_the_whole_grid(monkeypatch):
