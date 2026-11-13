@@ -33,9 +33,10 @@ from tensorsph.kleefsman_obstacle import (  # noqa: E402
     run_case,
     validate_case,
 )
+from convergence_analysis import check_protocol  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
-RESOLUTIONS = (0.04, 0.02, 0.01)
+RESOLUTIONS = (0.04, 0.02, 0.01, 0.005)
 T_END = 1.2   # long enough for the surge to reach and pass the box
 
 
@@ -63,6 +64,9 @@ def main() -> int:
     ap.add_argument("--shards", type=int, default=1)
     ap.add_argument("--t-end", type=float, default=T_END)
     ap.add_argument("--outdir", default=str(HERE / "results"))
+    ap.add_argument("--resolutions", default=None,
+                    help="comma separated dx ladder, coarse -> fine "
+                         "(default: %s)" % ",".join(f"{d:g}" for d in RESOLUTIONS))
     ap.add_argument("--promote", action="store_true")
     ap.add_argument("--sound-speed", type=float, default=20.0,
                     help="artificial sound speed c0 [m/s]; dt follows the CFL of *this* c0")
@@ -72,7 +76,9 @@ def main() -> int:
     g = ref["geometry_m"]
     outdir = Path(args.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
-    todo = list(RESOLUTIONS)[args.shard - 1::args.shards]
+    ladder = (tuple(float(v) for v in args.resolutions.split(","))
+              if args.resolutions else RESOLUTIONS)
+    todo = list(ladder)[args.shard - 1::args.shards]
 
     rows = []
     for dx in todo:
@@ -97,26 +103,50 @@ def main() -> int:
             "tag": tag, "dx": dx, "t_end": args.t_end, "particles_fluid": n_fluid,
             "steps": run.steps_taken,
             "peak_height_m": run.peak_height, "peak_time_s": run.peak_time,
+            "column_peak_m": (max(run.column) if run.column else float("nan")),
             "arrival_time_s": run.arrival_time,
             "mass_error_rel": run.mass_error, "boundary_escapes": run.escaped,
             "max_density_compression": run.max_density_compression,
             "max_speed": run.max_speed, "sound_speed": cfg.sound_speed, "dt": cfg.dt,
+            # protocol fingerprint -- see convergence_analysis.check_protocol
+            "probe_offset": cfg.probe_offset, "probe_halfwidth": cfg.probe_halfwidth,
+            "surface_particles": cfg.surface_particles,
+            "surface_gap": cfg.surface_gap,
+            "arrival_threshold": cfg.arrival_threshold,
+            "h_factor": cfg.h_factor,
             "height_capped_by_tank": bool(run.peak_height >= 0.995 * cfg.tank_height),
         }
         rows.append(row)
         (outdir / f"{tag}.json").write_text(json.dumps(row, indent=2))
         with (outdir / f"{tag}_time_series.csv").open("w") as fh:
-            fh.write("t_s,height_m,front_x_m\n")
-            for t, hh, fr in zip(run.times, run.height, run.front):
-                fh.write(f"{t:.6f},{hh:.6f},{fr:.6f}\n")
+            fh.write("t_s,height_m,front_x_m,column_level_m\n")
+            cols = run.column if len(run.column) == len(run.times) else [float("nan")] * len(run.times)
+            for t, hh, fr, cl in zip(run.times, run.height, run.front, cols):
+                fh.write(f"{t:.6f},{hh:.6f},{fr:.6f},{cl:.6f}\n")
         (outdir / f"shard{args.shard}.json").write_text(json.dumps(rows, indent=2))
         study = outdir / "resolution_study.json"
         merged = json.loads(study.read_text()) if study.exists() else {"t_end": args.t_end,
                                                                       "runs": []}
-        merged["t_end"] = args.t_end
-        merged["runs"] = sorted(
-            [r for r in merged["runs"] if r["dx"] != dx] + [row],
-            key=lambda r: -r["dx"])
+        merged.setdefault("runs_stale_protocol", [])
+        others = [r for r in merged["runs"] if r["dx"] != dx]
+        # The freshly computed row defines the protocol.  A rung produced with a
+        # different t_end / sound speed / probe definition is NOT part of this
+        # ladder: mixing them (dx=0.01 at t_end=1.0 next to dx=0.02 at 1.2) makes
+        # the residual differences meaningless, so it is quarantined instead.
+        keep = [row]
+        for cand in sorted(others, key=lambda r: -r["dx"]):
+            diff = check_protocol([row, cand])
+            if diff:
+                stale = dict(cand)
+                stale["quarantine_reason"] = "protocol fingerprint differs: " + json.dumps(diff)
+                merged["runs_stale_protocol"] = [
+                    s for s in merged["runs_stale_protocol"] if s.get("dx") != cand["dx"]] + [stale]
+                print("QUARANTINED", cand.get("tag"), stale["quarantine_reason"], flush=True)
+            else:
+                keep.append(cand)
+        merged["runs"] = sorted(keep, key=lambda r: -r["dx"])
+        merged["protocol_mismatch"] = check_protocol(merged["runs"])
+        merged["t_end"] = merged["runs"][0].get("t_end") if merged["runs"] else args.t_end
         study.write_text(json.dumps(merged, indent=2))
         print(json.dumps(row), flush=True)
         if args.promote:

@@ -1,0 +1,220 @@
+{
+  "protocol": {
+    "t_end": 1.0,
+    "sound_speed": null,
+    "probe_offset": null,
+    "probe_halfwidth": null,
+    "surface_particles": null,
+    "surface_gap": null,
+    "arrival_threshold": null,
+    "h_factor": null
+  },
+  "protocol_mismatch": [],
+  "comparable": true,
+  "dx": [
+    0.04,
+    0.02,
+    0.01
+  ],
+  "metrics": {
+    "arrival_time_s": {
+      "metric": "arrival_time_s",
+      "values": [
+        0.48414582084182756,
+        0.4540684757798631,
+        0.444281036199095
+      ],
+      "dx": [
+        0.04,
+        0.02,
+        0.01
+      ],
+      "orders": [
+        {
+          "dx_triplet": [
+            0.04,
+            0.02,
+            0.01
+          ],
+          "r": 2.0,
+          "r_uniform": true,
+          "p": 1.6196738238412804,
+          "richardson": 0.4395597735182036,
+          "gci_fine": 0.013283435191389945
+        }
+      ],
+      "verdict": "CONVERGED",
+      "richardson": 0.4395597735182036,
+      "gci_fine": 0.013283435191389945,
+      "p_finest": 1.6196738238412804,
+      "monotone": true
+    },
+    "peak_height_m_raw": {
+      "metric": "peak_height_m",
+      "values": [
+        0.425458,
+        0.517466,
+        0.377295
+      ],
+      "dx": [
+        0.04,
+        0.02,
+        0.01
+      ],
+      "orders": [
+        {
+          "dx_triplet": [
+            0.04,
+            0.02,
+            0.01
+          ],
+          "r": 2.0,
+          "r_uniform": true,
+          "p": NaN,
+          "richardson": NaN,
+          "gci_fine": NaN
+        }
+      ],
+      "verdict": "NOT_CONVERGED",
+      "richardson": NaN,
+      "gci_fine": NaN,
+      "p_finest": NaN,
+      "monotone": false
+    },
+    "gauge_level_peak_w020ms": {
+      "metric": "gauge_level_peak_w020ms",
+      "values": [
+        0.414896,
+        0.5080366,
+        0.37049533333333334
+      ],
+      "dx": [
+        0.04,
+        0.02,
+        0.01
+      ],
+      "orders": [
+        {
+          "dx_triplet": [
+            0.04,
+            0.02,
+            0.01
+          ],
+          "r": 2.0,
+          "r_uniform": true,
+          "p": NaN,
+          "richardson": NaN,
+          "gci_fine": NaN
+        }
+      ],
+      "verdict": "NOT_CONVERGED",
+      "richardson": NaN,
+      "gci_fine": NaN,
+      "p_finest": NaN,
+      "monotone": false,
+      "window_s": 0.02
+    },
+    "gauge_level_peak_w030ms": {
+      "metric": "gauge_level_peak_w030ms",
+      "values": [
+        0.40928099999999995,
+        0.5019225714285714,
+        0.3673082
+      ],
+      "dx": [
+        0.04,
+        0.02,
+        0.01
+      ],
+      "orders": [
+        {
+          "dx_triplet": [
+            0.04,
+            0.02,
+            0.01
+          ],
+          "r": 2.0,
+          "r_uniform": true,
+          "p": NaN,
+          "richardson": NaN,
+          "gci_fine": NaN
+        }
+      ],
+      "verdict": "NOT_CONVERGED",
+      "richardson": NaN,
+      "gci_fine": NaN,
+      "p_finest": NaN,
+      "monotone": false,
+      "window_s": 0.03
+    },
+    "gauge_level_peak_w050ms": {
+      "metric": "gauge_level_peak_w050ms",
+      "values": [
+        0.39107461538461535,
+        0.48453184615384615,
+        0.3660018571428572
+      ],
+      "dx": [
+        0.04,
+        0.02,
+        0.01
+      ],
+      "orders": [
+        {
+          "dx_triplet": [
+            0.04,
+            0.02,
+            0.01
+          ],
+          "r": 2.0,
+          "r_uniform": true,
+          "p": NaN,
+          "richardson": NaN,
+          "gci_fine": NaN
+        }
+      ],
+      "verdict": "NOT_CONVERGED",
+      "richardson": NaN,
+      "gci_fine": NaN,
+      "p_finest": NaN,
+      "monotone": false,
+      "window_s": 0.05
+    }
+  },
+  "truncated_to_s": 1.0,
+  "series_metrics": {
+    "0.04": {
+      "raw_peak": 0.425458,
+      "raw_peak_time": 0.92,
+      "gauge_peak": 0.40928099999999995,
+      "gauge_peak_time": 0.908,
+      "arrival_time_s": 0.48414582084182756,
+      "n_samples": 251,
+      "horizon_s": 1.0,
+      "censored": false
+    },
+    "0.02": {
+      "raw_peak": 0.517466,
+      "raw_peak_time": 0.716,
+      "gauge_peak": 0.5019225714285714,
+      "gauge_peak_time": 0.712,
+      "arrival_time_s": 0.4540684757798631,
+      "n_samples": 251,
+      "horizon_s": 1.0,
+      "censored": false
+    },
+    "0.01": {
+      "raw_peak": 0.377295,
+      "raw_peak_time": 0.965859,
+      "gauge_peak": 0.3673082,
+      "gauge_peak_time": 0.953188,
+      "arrival_time_s": 0.444281036199095,
+      "n_samples": 165,
+      "horizon_s": 0.997569,
+      "censored": true
+    }
+  },
+  "censored": true,
+  "verdict": "PARTIALLY_CONVERGED",
+  "source_study": "resolution_study.json"
+}
