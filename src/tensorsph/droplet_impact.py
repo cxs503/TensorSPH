@@ -33,6 +33,7 @@ from .compression_regularization import (
     regularize as regularize_compression,
 )
 from .neighbor_search import PairListCache, cell_linked_pairs
+from .transport_velocity import transport_velocity_correction
 
 
 __version__ = "0.8.0"
@@ -229,6 +230,17 @@ class Config:
     # "reference_mean" = SPHinXsys master (neighbour sum scaled by 1/Kref);
     # "none" = the formulation before commit 375ec50b42 (2026-07-19).
     compression_normalization: str = "reference_mean"
+    # Transport-velocity correction (Zhang, Hu & Adams 2017; SPHinXsys port).
+    # "off" = no correction (default, backward compatible); "on" = apply the
+    # correction δv = -A·∇C/C to the advection velocity, where A = C_d·h·v_ref·dt.
+    # This maintains particle regularity without a separate position-shift pass.
+    # See src/tensorsph/transport_velocity.py and docs/verification_transport_velocity.md.
+    transport_velocity: str = "off"
+    transport_velocity_strength: float = 1.0
+    # Reference speed for the transport-velocity coefficient. When None, uses
+    # the sound speed (c0); otherwise the given value. A resting column needs
+    # a non-zero floor to relax the lattice.
+    transport_velocity_v_ref: float | None = None
 
 
 # --------------------------------------------------------------------------- #
@@ -1589,7 +1601,17 @@ def run(cfg: Config, output: str | Path, plot: bool = True):
             break
         # Semi-implicit Euler with explicit boundary handling.
         vel = vel + step_dt * acc
-        pos = pos + step_dt * vel
+        if cfg.transport_velocity == "on":
+            v_ref = (cfg.transport_velocity_v_ref
+                     if cfg.transport_velocity_v_ref is not None
+                     else cfg.sound_speed)
+            vol = mass / rho
+            delta_v = transport_velocity_correction(
+                pos, vol, h, dt=step_dt, v_ref=v_ref,
+                strength=cfg.transport_velocity_strength)
+            pos = pos + step_dt * (vel + delta_v)
+        else:
+            pos = pos + step_dt * vel
         boundary_events += apply_boundary(pos, vel, cfg)
         elapsed += step_dt
         last_step_dt = step_dt
