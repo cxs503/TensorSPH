@@ -17,11 +17,21 @@
     "downstream_gap": 0.744
   },
   "geometry_provenance": {
-    "primary_strings": ["1.000", "1.228", "1.248", "0.744", "0.550", "0.161", "0.403"],
+    "primary_strings": [
+      "1.000",
+      "1.228",
+      "1.248",
+      "0.744",
+      "0.550",
+      "0.161",
+      "0.403"
+    ],
     "reading": "tank 3.22 x 1.00 m; column 1.228 x 0.550 m at the closed end; box 0.161 m (streamwise) x 0.161 m high, 0.403 m wide, upstream face at 1.228 + 1.248 = 2.476 m",
     "consistency_check": "1.228 + 1.248 + 0.744 = 3.220 m = tank length (exact, residuals 0)",
     "secondary_source": "Amaro Junior R.A., Cheng L.-Y., Buruchenko S.K. (2020) A comparison between WCSPH and MPS methods for 3D dam-break flows. Int. J. Offshore Polar Eng. 30(4), doi:10.1142/s021987622050036x; open preprint arXiv:2306.01959, Fig. 2 (dimensioned setup reproduced from Kleefsman et al. 2005) and Sec. 'Computational domain and model parameters'.",
-    "verified_against": ["3.22 m tank, 1.22 m column, 0.55 m column height, 0.40 x 0.16 x 0.16 m box placed 1.248 m downstream (A. English et al. 2021, doi:10.1007/s40571-021-00403-3, Sec. 'Three-dimensional dam-break flow with a fixed structure')"]
+    "verified_against": [
+      "3.22 m tank, 1.22 m column, 0.55 m column height, 0.40 x 0.16 x 0.16 m box placed 1.248 m downstream (A. English et al. 2021, doi:10.1007/s40571-021-00403-3, Sec. 'Three-dimensional dam-break flow with a fixed structure')"
+    ]
   },
   "experimental_values": {
     "status": "WITHHELD",
@@ -31,5 +41,34 @@
     "reason": "Kleefsman et al. (2005) report the water-height traces graphically (gauges H1-H4). The paper PDF could not be retrieved from this node: the University of Groningen repository copy (research.rug.nl/files/2941055/2005JCompPhysKleefsman.pdf) is behind a Cloudflare challenge (HTTP 403), ScienceDirect returns HTTP 403, and no digitized table of the Kleefsman water-level traces was found in the openly reachable literature. The gauge x-coordinates of H1-H4 are printed only inside the setup figure, not in its caption or body text.",
     "resolve_by": "obtain the paper PDF via an institutional subscription, read the water-height traces at the gauge nearest the box, and fill peak_height_m / arrival_time_s / probe_x_m here; benchmarks/kleefsman_obstacle/run.py then performs the <10% tolerance check automatically and flips the verdict from WITHHELD to PASS/FAIL."
   },
-  "tolerance": {"relative": 0.10, "rule": "|got - ref| / |ref| < 0.10 for both the peak height and the arrival time"}
+  "tolerance": {
+    "relative": 0.1,
+    "rule": "|got - ref| / |ref| < 0.10 for both the peak height and the arrival time"
+  },
+  "metric_definition": {
+    "operators": {
+      "height": "legacy top-3 particle-centre mean (water_height_at); systematic bias -0.38..-1.33 dx",
+      "surface": "same with the (k-1)/2 dx row offset removed (surface_level); residual +/-0.5 dx",
+      "slab": "fixed physical aperture volume gauge (slab_level); dx-independent for a planar surface"
+    },
+    "aperture_m": 0.08,
+    "stations_offset_m": [
+      0.05,
+      0.248
+    ],
+    "arrival_threshold_m": 0.02,
+    "why": "the case-pool tolerance is 10 %, so the gauge itself must not carry a resolution-dependent bias of that size; measured on a still lattice, the historical operator is 1.8-2.7 cm low at dx=0.02 and 1.5-5.3 cm low at dx=0.04, i.e. it exceeds its own 0.02 m arrival threshold",
+    "evidence": "docs/verification_kleefsman_gauge_bias.md, results/gauge_ladder/analysis.json, tests/test_kleefsman_gauge_bias.py"
+  },
+  "gauge_ladder_status": {
+    "grids_completed": [
+      0.02,
+      0.04
+    ],
+    "grids_pending": [
+      0.01
+    ],
+    "pending_job": "cluster cj1576 (queued); rerun benchmarks/kleefsman_obstacle/gauge_convergence.py after it lands",
+    "pair_spread": "peak 21.6 % (height@x2.426) -> 9.9 % (slab@x2.426) -> 1.3 % (slab@x2.228); arrival 6.2 % -> 4.2 % -> 4.4 %"
+  }
 }

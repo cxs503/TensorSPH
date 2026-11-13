@@ -79,6 +79,14 @@ class KleefsmanConfig(Config):
     probe_offset: float = 0.05         # probe upstream of the box face
     probe_halfwidth: float = 1.0       # in units of dx
     surface_particles: int = 3         # top-N average within the contiguous stack
+    # gauge stations, measured upstream of the box face [m]; the first one is
+    # the historical probe (probe_offset), the second sits 0.248 m upstream of
+    # the box, i.e. in the calming part of the surge rather than in the run-up
+    # jet on the box face
+    stations_offset: tuple[float, ...] = (0.05, 0.248)
+    # slab-gauge aperture: FULL physical width [m], deliberately independent of
+    # dx so that the same gauge is used on every grid of a ladder
+    gauge_aperture: float = 0.0        # 0 -> resolve_gauge_aperture() (2 dx, >= 0.03 m)
     surface_gap: float = 2.5           # in units of dx; max hole inside the stack
     robust_surface: bool = True        # reject disconnected spray above the water
     arrival_threshold: float = 0.02    # m above the dry floor
@@ -99,6 +107,20 @@ class KleefsmanConfig(Config):
     def probe_x(self) -> float:
         return self.obstacle_x - self.probe_offset
 
+    def station_x(self) -> tuple[float, ...]:
+        return tuple(self.obstacle_x - off for off in self.stations_offset)
+
+    def resolve_gauge_aperture(self) -> float:
+        """Physical slab-gauge width [m]; ``0`` means "2 dx, at least 30 mm".
+
+        A ladder must pass the same *metres* here on every grid -- that is what
+        makes the gauge dx-consistent.  The adaptive default only exists so that
+        old callers (and small smoke grids) keep validating.
+        """
+        if self.gauge_aperture > 0.0:
+            return self.gauge_aperture
+        return max(2.0 * self.dx, 0.03)
+
     def dt_acoustic(self) -> float:
         return self.max_courant * self.h_factor * self.dx / self.sound_speed
 
@@ -107,6 +129,8 @@ class KleefsmanConfig(Config):
 class KleefsmanRun:
     times: list[float] = field(default_factory=list)
     height: list[float] = field(default_factory=list)      # at the probe
+    series: dict[str, list[float]] = field(default_factory=dict)   # gauge series
+    metrics: dict[str, dict] = field(default_factory=dict)         # gauge metrics
     column: list[float] = field(default_factory=list)      # mass-based slab level
     front: list[float] = field(default_factory=list)       # max fluid x
     mass_error: float = 0.0
@@ -139,6 +163,12 @@ def validate_case(cfg: KleefsmanConfig) -> None:
         raise ValueError("column and box must be lower than the tank")
     if not (cfg.column_length < cfg.probe_x() < cfg.obstacle_x):
         raise ValueError("the probe must sit between the gate and the box")
+    for xs in cfg.station_x():
+        if not (cfg.column_length <= xs < cfg.obstacle_x):
+            raise ValueError(f"gauge station x={xs:g} outside (gate, box face)")
+    if cfg.resolve_gauge_aperture() < cfg.dx:
+        raise ValueError(f"gauge_aperture={cfg.gauge_aperture:g} m is narrower than one "
+                         f"particle (dx={cfg.dx:g} m): the slab gauge would alias")
     if cfg.dt > cfg.dt_acoustic() * (1.0 + 1.0e-9):
         raise ValueError(f"dt={cfg.dt:g} exceeds the acoustic limit "
                          f"{cfg.dt_acoustic():.3e} s")
@@ -245,6 +275,97 @@ def column_level(positions: torch.Tensor, cfg: "KleefsmanConfig",
     return count * cfg.dx * cfg.dx / (2.0 * halfwidth)
 
 
+def surface_level(pos: torch.Tensor, cfg: KleefsmanConfig,
+                  x: float | None = None, correct_bias: bool = True) -> float:
+    """Resolution-consistent free-surface level in a vertical strip [m].
+
+    ``water_height_at`` averages the centres of the top ``surface_particles``
+    particles, which on a free surface built from a lattice sits a *systematic*
+    ``(k - 1) / 2 * dx`` below the posterior top-particle centre and ``dx / 2``
+    below the true surface, i.e. ``0.5 * k * dx`` below the water level:
+
+    * sweeping the surface phase of a still lattice (``tests/test_kleefsman_gauge_bias.py``)
+      gives an error of ``-1.33 dx ... -0.38 dx`` for ``k = 3``, mean
+      ``-0.86 dx`` -- at ``dx = 0.02`` that is ``-1.8 ... -2.7 cm`` and at
+      ``dx = 0.04`` ``-1.5 ... -5.3 cm``;
+    * that bias is **larger than the case's own arrival threshold (0.02 m)** on
+      the coarse grids and eats 6 % of a 0.50 m peak at ``dx = 0.02`` -- inside
+      the 10 % acceptance tolerance of the case pool, so it cannot be left in.
+
+    ``correct_bias = True`` (default) adds ``0.5 k dx`` and therefore makes
+    the operator *dx-consistent* on lattice-aligned free surfaces (residual
+    error ``0`` for still water, ``O(noise)`` otherwise).  The correction is
+    the standard half-cell offset between a particle centre and the surface of
+    the volume it represents; it is exact for a flat surface and first-order
+    accurate for a tilted one.  ``correct_bias = False`` reproduces
+    ``water_height_at`` exactly and is kept for regression against the earlier
+    rounds.
+    """
+    base = water_height_at(pos, cfg, x=x)
+    if not correct_bias or base == 0.0:
+        return base
+    k = max(1, int(cfg.surface_particles))
+    # rows of the lattice are dx apart, so the mean of the top k rows sits
+    # (k - 1)/2 rows below the top row: that is the part of the bias that is
+    # removed here.  The remaining +/-0.5 dx is the position of the free
+    # surface inside the top row, which no particle-count estimator can know.
+    return base + 0.5 * (k - 1) * cfg.dx
+
+
+def slab_level(pos: torch.Tensor, cfg: KleefsmanConfig, x: float | None = None,
+               aperture: float | None = None) -> float:
+    """Volume-based water level over a **fixed physical aperture** [m].
+
+    The slab ``|x_p - x| <= aperture / 2`` is integrated with exact cell-overlap
+    weights in ``x`` (a particle is a square of side ``dx`` and contributes the
+    fraction of it that falls inside the slab):
+
+        level = sum_p w_p V_p / aperture,   V_p = dx^2 (unit depth).
+
+    Because ``sum_p w_p`` tiles the aperture exactly, a *planar* water surface
+    of depth ``H`` returns ``H`` for **every** ``dx`` and for every alignment of
+    the lattice with the station: the operator has no ``O(dx)`` gauge bias, so
+    the same physical gauge can be used across a resolution ladder -- which is
+    what a conductivity wave probe of finite width measures.  It still inherits
+    the ``dx``-quantisation of the *free surface itself* (the surface is only
+    known to within a particle row), which is physical discretisation error and
+    is what the convergence ladder is supposed to measure.
+    """
+    if pos.numel() == 0:
+        return 0.0
+    x = cfg.probe_x() if x is None else float(x)
+    a = ((cfg.resolve_gauge_aperture() if aperture is None else float(aperture)) / 2.0)
+    if a <= 0.0:
+        return 0.0
+    half = 0.5 * cfg.dx
+    # exact overlap of the particle square [x_p - dx/2, x_p + dx/2] with the
+    # slab [x - a, x + a], in units of the particle width dx
+    lo = torch.clamp_min(pos[:, 0] - half, x - a)
+    hi = torch.clamp_max(pos[:, 0] + half, x + a)
+    w = torch.clamp(hi - lo, min=0.0) / cfg.dx
+    volume = float(w.sum()) * cfg.dx * cfg.dx
+    return volume / (2.0 * a)
+
+
+def gauge_series(pos: torch.Tensor, cfg: KleefsmanConfig) -> dict[str, float]:
+    """All gauge readings of one snapshot, keyed by ``operator@x``.
+
+    Three operators are recorded side by side so a ladder can tell a *gauge*
+    artefact from a *solution* artefact:
+
+    * ``height``  -- legacy top-N particle mean (biased by ``-0.5 k dx``);
+    * ``surface`` -- top-N mean with the half-cell bias removed;
+    * ``slab``    -- fixed-aperture volume gauge (dx-independent aperture).
+    """
+    out: dict[str, float] = {}
+    for xs in cfg.station_x():
+        tag = f"x{xs:.3f}"
+        out[f"height@{tag}"] = water_height_at(pos, cfg, x=xs)
+        out[f"surface@{tag}"] = surface_level(pos, cfg, x=xs)
+        out[f"slab@{tag}"] = slab_level(pos, cfg, x=xs)
+    return out
+
+
 def _peak_metrics(times: list[float], height: list[float],
                   threshold: float) -> tuple[float, float, float]:
     """Return ``(peak_height, peak_time, arrival_time)``.
@@ -287,7 +408,8 @@ def run_case(cfg: KleefsmanConfig, resume: dict | None = None,
         velocity = torch.zeros_like(positions)
         initial_mass = float(mass.sum())
         carried = {"times": [], "height": [], "column": [], "front": [], "max_speed": 0.0,
-                   "compression": 0.0, "escaped": 0, "dt": cfg.dt, "elapsed": 0.0}
+                   "compression": 0.0, "escaped": 0, "dt": cfg.dt, "elapsed": 0.0,
+                   "series": {}}
     else:
         positions = resume["positions"].clone()
         velocity = resume["velocity"].clone()
@@ -296,6 +418,7 @@ def run_case(cfg: KleefsmanConfig, resume: dict | None = None,
         carried = {k: (list(resume[k]) if isinstance(resume[k], list) else resume[k])
                    for k in ("times", "height", "column", "front", "max_speed", "compression",
                              "escaped", "dt", "elapsed")}
+        carried["series"] = {k: list(v) for k, v in (resume.get("series") or {}).items()}
     wall = torch.cat((wall_lattice(cfg, device, top=top),
                       obstacle_lattice(cfg, device)), dim=0)
     h = cfg.h_factor * cfg.dx
@@ -310,6 +433,7 @@ def run_case(cfg: KleefsmanConfig, resume: dict | None = None,
     run.height = list(carried["height"])
     run.column = list(carried["column"] if isinstance(carried["column"], list) else [])
     run.front = list(carried["front"])
+    run.series = {k: list(v) for k, v in carried.get("series", {}).items()}
     run.max_speed = carried["max_speed"]
     run.dt_min = run.dt_max = dt
     max_steps = cfg.max_steps or int(6.0 * cfg.t_end / dt) + 1000
@@ -333,6 +457,8 @@ def run_case(cfg: KleefsmanConfig, resume: dict | None = None,
             run.times.append(elapsed)
             run.height.append(water_height_at(positions, cfg))
             run.column.append(column_level(positions, cfg))
+            for key, value in gauge_series(positions, cfg).items():
+                run.series.setdefault(key, []).append(value)
             run.front.append(float(positions[:, 0].max()) if positions.numel() else 0.0)
         if elapsed >= cfg.t_end:
             break
@@ -356,11 +482,15 @@ def run_case(cfg: KleefsmanConfig, resume: dict | None = None,
     run.max_density_compression = float(compression)
     run.peak_height, run.peak_time, run.arrival_time = _peak_metrics(
         run.times, run.height, cfg.arrival_threshold)
+    for key, values in run.series.items():
+        peak, peak_t, arrival = _peak_metrics(run.times, values, cfg.arrival_threshold)
+        run.metrics[key] = {"peak_m": peak, "peak_time_s": peak_t,
+                            "arrival_time_s": arrival}
     run.state = {
         "positions": positions.detach().clone(), "velocity": velocity.detach().clone(),
         "mass": mass, "initial_mass": initial_mass, "dt": dt, "elapsed": elapsed,
         "times": run.times, "height": run.height, "column": run.column,
-        "front": run.front,
+        "front": run.front, "series": run.series,
         "max_speed": run.max_speed, "compression": float(compression),
         "escaped": escaped, "steps_done": run.steps_taken,
         "finished": run.finished,
@@ -371,5 +501,6 @@ def run_case(cfg: KleefsmanConfig, resume: dict | None = None,
 __all__ = [
     "KleefsmanConfig", "KleefsmanRun", "column_level", "make_water",
     "obstacle_lattice",
-    "run_case", "validate_case", "water_height_at",
+    "gauge_series", "run_case", "slab_level", "surface_level", "validate_case",
+    "water_height_at",
 ]
