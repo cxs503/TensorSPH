@@ -1,0 +1,649 @@
+{
+ "anchor": "CASE-POISEUILLE-SPH",
+ "consistency": {
+  "stored_vs_recomputed": {
+   "8": {
+    "u_max_measured": {
+     "recomputed": 1.2309608459472656,
+     "stored": 1.2309608459472656,
+     "rel_diff": 0.0,
+     "agree": true
+    },
+    "u_max_error_pct": {
+     "recomputed": 0.38416684585242944,
+     "stored": 0.38416684585242944,
+     "rel_diff": 0.0,
+     "agree": true
+    },
+    "rms_interior_rel_pct": {
+     "recomputed": 2.7233093666419927,
+     "stored": 2.7233093666419927,
+     "rel_diff": 0.0,
+     "agree": true
+    },
+    "rms_all_rel_pct": {
+     "recomputed": 5.212100890703678,
+     "stored": 5.212100890703678,
+     "rel_diff": 0.0,
+     "agree": true
+    },
+    "wall_shear_bottom_ratio": {
+     "recomputed": 0.9964581803380799,
+     "stored": 0.9964581803380681,
+     "rel_diff": 1.1810193637061628e-14,
+     "agree": true
+    },
+    "wall_slip_intercept_over_umax": {
+     "recomputed": 0.0230212085892515,
+     "stored": 0.023021208589259205,
+     "rel_diff": 3.347192503126933e-13,
+     "agree": true
+    },
+    "fit_c1": {
+     "recomputed": 48.87627374558282,
+     "stored": 48.87627374558224,
+     "rel_diff": 1.1920815534264116e-14,
+     "agree": true
+    }
+   },
+   "12": {
+    "u_max_measured": {
+     "recomputed": 1.2264536619186401,
+     "stored": 1.2264536619186401,
+     "rel_diff": 0.0,
+     "agree": true
+    },
+    "u_max_error_pct": {
+     "recomputed": 0.016608515281535396,
+     "stored": 0.016608515281535396,
+     "rel_diff": 0.0,
+     "agree": true
+    },
+    "rms_interior_rel_pct": {
+     "recomputed": 1.2341170812769142,
+     "stored": 1.2341170812769142,
+     "rel_diff": 0.0,
+     "agree": true
+    },
+    "rms_all_rel_pct": {
+     "recomputed": 2.7137264886402956,
+     "stored": 2.7137264886402956,
+     "rel_diff": 0.0,
+     "agree": true
+    },
+    "wall_shear_bottom_ratio": {
+     "recomputed": 0.996237310766098,
+     "stored": 0.9962373107661087,
+     "rel_diff": 1.0698395775004019e-14,
+     "agree": true
+    },
+    "wall_slip_intercept_over_umax": {
+     "recomputed": 0.010424334953669784,
+     "stored": 0.010424334953662009,
+     "rel_diff": 7.458538749847754e-13,
+     "agree": true
+    },
+    "fit_c1": {
+     "recomputed": 48.86544009307711,
+     "stored": 48.86544009307763,
+     "rel_diff": 1.0614786158006026e-14,
+     "agree": true
+    }
+   },
+   "16": {
+    "u_max_measured": {
+     "recomputed": 1.2231312990188599,
+     "stored": 1.2231312990188599,
+     "rel_diff": 0.0,
+     "agree": true
+    },
+    "u_max_error_pct": {
+     "recomputed": -0.254328316504826,
+     "stored": -0.254328316504826,
+     "rel_diff": 0.0,
+     "agree": true
+    },
+    "rms_interior_rel_pct": {
+     "recomputed": 0.4241340756126215,
+     "stored": 0.4241340756126215,
+     "rel_diff": 0.0,
+     "agree": true
+    },
+    "rms_all_rel_pct": {
+     "recomputed": 1.749767841851525,
+     "stored": 1.749767841851525,
+     "rel_diff": 0.0,
+     "agree": true
+    },
+    "wall_shear_bottom_ratio": {
+     "recomputed": 0.995634986849982,
+     "stored": 0.995634986849982,
+     "rel_diff": 0.0,
+     "agree": true
+    },
+    "wall_slip_intercept_over_umax": {
+     "recomputed": 0.006303921620634237,
+     "stored": 0.006303921620634186,
+     "rel_diff": 8.117858314388048e-15,
+     "agree": true
+    },
+    "fit_c1": {
+     "recomputed": 48.83589610499162,
+     "stored": 48.83589610499162,
+     "rel_diff": 0.0,
+     "agree": true
+    }
+   }
+  },
+  "all_agree_1e-6": true
+ },
+ "case": "plane_poiseuille_channel_mirror_wall",
+ "tolerance_pct": 5.0,
+ "source_artifact": "benchmarks/poiseuille_mirror/out/results.json",
+ "source_sha256": "e6c0c985096a08113f9dfcf03dfc8f893ec2aa2ef832447698f1837519aaaaf2",
+ "parameters": {
+  "rho0": 1000.0,
+  "nu": 0.01,
+  "g_x": 9.81,
+  "H": 0.1,
+  "t_end": 1.0,
+  "t_average": 0.2
+ },
+ "reference": "White, Viscous Fluid Flow 3rd ed. \u00a73-2.2; Batchelor, An Introduction to Fluid Dynamics \u00a74.2 (closed form re-derived symbolically below the tables)",
+ "analytic": "u(y) = g (H-y) y / (2 nu); u_max = g H^2/(8 nu); tau_w = rho g H/2",
+ "overall": "PASS_WITH_CAVEAT",
+ "counts": {
+  "pass": 5,
+  "pass_with_caveat": 1,
+  "fail": 0
+ },
+ "gates": [
+  {
+   "id": "A_centreline",
+   "statement": "u_max vs g H^2/(8 nu), recomputed from raw row means",
+   "threshold_pct": 5.0,
+   "unit": "%",
+   "measured": 0.3842,
+   "worst_rung": 8,
+   "status": "PASS",
+   "evidence": "out/results.json:results[*].rows"
+  },
+  {
+   "id": "B_profile_rms_interior",
+   "statement": "row-rms of u - u_analytic over interior rows, as the benchmark publishes it",
+   "threshold_pct": 5.0,
+   "unit": "%",
+   "measured": 2.7233,
+   "worst_rung": 8,
+   "status": "PASS",
+   "evidence": "out/results.json:results[*].rows"
+  },
+  {
+   "id": "B2_profile_rms_all_rows",
+   "statement": "per-row *relative* error over ALL rows, including the two wall rows where u_a is small (the stricter reading of the same profile claim)",
+   "threshold_pct": 5.0,
+   "unit": "%",
+   "measured_per_rung": {
+    "8": 5.2121,
+    "12": 2.7137,
+    "16": 1.7498
+   },
+   "min_resolution_passing": 12,
+   "status": "PASS",
+   "note": "gate B as published is interior-only (0.1 <= y/H <= 0.9); read over all rows the coarsest rung H/dx=8 exceeds 5 %, so the anchor's <5 % profile claim carries a resolution requirement of H/dx >= 12. Normalised by u_max instead of by the local u_a the same rungs read 8: 2.08 %, 12: 0.80 %, 16: 0.36 %",
+   "evidence": "out/results.json:results[*].rows"
+  },
+  {
+   "id": "C_wall_shear_battery",
+   "statement": "tau_w vs rho g H/2 under five independent gauges",
+   "threshold_pct": 5.0,
+   "unit": "%",
+   "per_ratio": {
+    "8": {
+     "G1_secant_wall_plane": {
+      "ratio": 1.024649364381998,
+      "error_pct": 2.464936438199805,
+      "ratio_bias_corrected": 1.0929593220074645,
+      "error_pct_bias_corrected": 9.29593220074645,
+      "pass_5pct": true,
+      "pass_5pct_bias_corrected": false
+     },
+     "G2_secant_row_pair": {
+      "ratio": 0.7506322423252488,
+      "error_pct": -24.936775767475115,
+      "ratio_bias_corrected": 1.0008429897669986,
+      "error_pct_bias_corrected": 0.0842989766998592,
+      "pass_5pct": false,
+      "pass_5pct_bias_corrected": true
+     },
+     "G3_three_point_quad": {
+      "ratio": 0.8784892726746536,
+      "error_pct": -12.15107273253464,
+      "ratio_bias_corrected": 1.003987740199604,
+      "error_pct_bias_corrected": 0.39877401996040174,
+      "pass_5pct": false,
+      "pass_5pct_bias_corrected": true
+     },
+     "G4_global_fit_slope": {
+      "ratio": 0.9964581803380799,
+      "error_pct": -0.35418196619201314,
+      "ratio_bias_corrected": 0.9964581803380799,
+      "error_pct_bias_corrected": -0.35418196619201314,
+      "pass_5pct": true,
+      "pass_5pct_bias_corrected": true
+     },
+     "G5_budget_drag": {
+      "ratio": 0.9981395611676012,
+      "error_pct": -0.18604388323988363,
+      "pass_5pct": true,
+      "ratio_control_corrected": 0.9981395631173284,
+      "error_pct_control_corrected": -0.18604368826715678
+     }
+    },
+    "12": {
+     "G1_secant_wall_plane": {
+      "ratio": 1.016287264109387,
+      "error_pct": 1.6287264109386967,
+      "ratio_bias_corrected": 1.0604736668967516,
+      "error_pct_bias_corrected": 6.04736668967516,
+      "pass_5pct": true,
+      "pass_5pct_bias_corrected": false
+     },
+     "G2_secant_row_pair": {
+      "ratio": 0.8323049691109845,
+      "error_pct": -16.76950308890155,
+      "ratio_bias_corrected": 0.9987659629331819,
+      "error_pct_bias_corrected": -0.12340370668181277,
+      "pass_5pct": false,
+      "pass_5pct_bias_corrected": true
+     },
+     "G3_three_point_quad": {
+      "ratio": 0.9180073344379388,
+      "error_pct": -8.199266556206119,
+      "ratio_bias_corrected": 1.00146254665957,
+      "error_pct_bias_corrected": 0.14625466595699077,
+      "pass_5pct": false,
+      "pass_5pct_bias_corrected": true
+     },
+     "G4_global_fit_slope": {
+      "ratio": 0.996237310766098,
+      "error_pct": -0.37626892339019946,
+      "ratio_bias_corrected": 0.996237310766098,
+      "error_pct_bias_corrected": -0.37626892339019946,
+      "pass_5pct": true,
+      "pass_5pct_bias_corrected": true
+     },
+     "G5_budget_drag": {
+      "ratio": 0.9982375841752636,
+      "error_pct": -0.1762415824736352,
+      "pass_5pct": true,
+      "ratio_control_corrected": 0.9982375860222635,
+      "error_pct_control_corrected": -0.17624139777364656
+     }
+    },
+    "16": {
+     "G1_secant_wall_plane": {
+      "ratio": 1.013447142279233,
+      "error_pct": 1.3447142279233049,
+      "ratio_bias_corrected": 1.0461389855785632,
+      "error_pct_bias_corrected": 4.613898557856322,
+      "pass_5pct": true,
+      "pass_5pct_bias_corrected": true
+     },
+     "G2_secant_row_pair": {
+      "ratio": 0.8724727397300415,
+      "error_pct": -12.752726026995854,
+      "ratio_bias_corrected": 0.9971117025486188,
+      "error_pct_bias_corrected": -0.28882974513811943,
+      "pass_5pct": false,
+      "pass_5pct_bias_corrected": true
+     },
+     "G3_three_point_quad": {
+      "ratio": 0.9359744467623492,
+      "error_pct": -6.40255532376508,
+      "ratio_bias_corrected": 0.998372743213172,
+      "error_pct_bias_corrected": -0.16272567868279575,
+      "pass_5pct": false,
+      "pass_5pct_bias_corrected": true
+     },
+     "G4_global_fit_slope": {
+      "ratio": 0.995634986849982,
+      "error_pct": -0.43650131500180267,
+      "ratio_bias_corrected": 0.995634986849982,
+      "error_pct_bias_corrected": -0.43650131500180267,
+      "pass_5pct": true,
+      "pass_5pct_bias_corrected": true
+     },
+     "G5_budget_drag": {
+      "ratio": 0.9982383947033955,
+      "error_pct": -0.17616052966045181,
+      "pass_5pct": true,
+      "ratio_control_corrected": 0.9982383965495459,
+      "error_pct_control_corrected": -0.17616034504540634
+     }
+    }
+   },
+   "gauges_failing_uncorrected": [
+    "G2_secant_row_pair",
+    "G3_three_point_quad"
+   ],
+   "gauges_failing_bias_corrected": [
+    "G1_secant_wall_plane"
+   ],
+   "status": "PASS_WITH_CAVEAT",
+   "note": "the published gate C is gauge G4 (global parabola-fit slope), which is exact for any parabola of the right height; the stencil gauges G1-G3 are reported raw and bias-corrected. A PASS here means the wall shear is reproduced within 5 % by every stencil-corrected gauge, not only by G4",
+   "evidence": "out/results.json:results[*].rows"
+  },
+  {
+   "id": "D_wall_slip",
+   "statement": "|u at the analytic wall plane| / u_max, from the fitted parabola intercept",
+   "threshold": 0.05,
+   "unit": "-",
+   "measured": 0.023021,
+   "worst_rung": 8,
+   "status": "PASS",
+   "evidence": "out/results.json:results[*].rows"
+  },
+  {
+   "id": "E_negative_control",
+   "statement": "free slip must fail gates A and C (a gauge that passes both models measures nothing)",
+   "status": "PASS",
+   "measured": {
+    "u_max_error_pct": 620.04,
+    "global_fit_slope_ratio": 0.0
+   },
+   "evidence": "out/results.json:free_slip_control.rows"
+  }
+ ],
+ "runs": [
+  {
+   "resolution_H_over_dx": 8,
+   "slip_model": "no_slip",
+   "profile": {
+    "u_max_measured": 1.2309608459472656,
+    "u_max_analytic": 1.2262500000000003,
+    "u_max_error_pct": 0.38416684585242944,
+    "rms_interior_rel_pct": 2.7233093666419927,
+    "rms_all_rel_pct": 5.212100890703678,
+    "rms_umax_pct": 2.076588438349921,
+    "max_row_rel_pct": 9.29597367893637,
+    "n_interior_rows": 6,
+    "n_rows": 8
+   },
+   "wall": {
+    "dx": 0.012500000000000002,
+    "n_rows": 8,
+    "tau_ref_pa": 490.5,
+    "slope_ref": 49.050000000000004,
+    "fit": {
+     "c0": 0.028338206399753485,
+     "c1": 48.87627374558282,
+     "c2": -488.7627488090937,
+     "nu_eff_over_nu": 1.0035543854255244,
+     "fit_residual_rms": 0.0008332953935458108
+    },
+    "gauges": {
+     "G1_secant_wall_plane": {
+      "slope": 50.25905132293701,
+      "ratio": 1.024649364381998,
+      "stencil_bias": 1.0666666666666667,
+      "ratio_bias_corrected": 1.0929593220074645,
+      "tau_pa": 502.5905132293701,
+      "error_pct": 2.464936438199805,
+      "error_pct_bias_corrected": 9.29593220074645,
+      "pass_5pct": true,
+      "pass_5pct_bias_corrected": false
+     },
+     "G2_secant_row_pair": {
+      "slope": 36.81851148605346,
+      "ratio": 0.7506322423252488,
+      "stencil_bias": 1.3333333333333335,
+      "ratio_bias_corrected": 1.0008429897669986,
+      "tau_pa": 368.1851148605346,
+      "error_pct": -24.936775767475115,
+      "error_pct_bias_corrected": 0.0842989766998592,
+      "pass_5pct": false,
+      "pass_5pct_bias_corrected": true
+     },
+     "G3_three_point_quad": {
+      "slope": 43.089898824691765,
+      "ratio": 0.8784892726746536,
+      "stencil_bias": 1.1428571428571428,
+      "ratio_bias_corrected": 1.003987740199604,
+      "tau_pa": 430.89898824691767,
+      "error_pct": -12.15107273253464,
+      "error_pct_bias_corrected": 0.39877401996040174,
+      "pass_5pct": false,
+      "pass_5pct_bias_corrected": true
+     },
+     "G4_global_fit_slope": {
+      "slope": 48.87627374558282,
+      "ratio": 0.9964581803380799,
+      "stencil_bias": 1.0,
+      "ratio_bias_corrected": 0.9964581803380799,
+      "tau_pa": 488.76273745582824,
+      "error_pct": -0.35418196619201314,
+      "error_pct_bias_corrected": -0.35418196619201314,
+      "pass_5pct": true,
+      "pass_5pct_bias_corrected": true
+     }
+    }
+   },
+   "budget": {
+    "available": true,
+    "window_s": 0.6,
+    "n_samples": 9,
+    "rate": 0.018250904945832855,
+    "rate_stderr": 0.0050961157978172515,
+    "residual_rms": 0.003085826627679379,
+    "rate_over_g": 0.0018604388323988639,
+    "drag_over_weight": 0.9981395611676012,
+    "tau_eff_pa": 489.5874547527085
+   },
+   "n_fluid": 96,
+   "steps": 4103,
+   "max_mach": 0.06169689893722534
+  },
+  {
+   "resolution_H_over_dx": 12,
+   "slip_model": "no_slip",
+   "profile": {
+    "u_max_measured": 1.2264536619186401,
+    "u_max_analytic": 1.2262500000000003,
+    "u_max_error_pct": 0.016608515281535396,
+    "rms_interior_rel_pct": 1.2341170812769142,
+    "rms_all_rel_pct": 2.7137264886402956,
+    "rms_umax_pct": 0.7998236776879772,
+    "max_row_rel_pct": 6.047366689675143,
+    "n_interior_rows": 10,
+    "n_rows": 12
+   },
+   "wall": {
+    "dx": 0.008333333333333335,
+    "n_rows": 12,
+    "tau_ref_pa": 490.5,
+    "slope_ref": 49.050000000000004,
+    "fit": {
+     "c0": 0.012784963776994784,
+     "c1": 48.86544009307711,
+     "c2": -488.6544016810396,
+     "nu_eff_over_nu": 1.003776898995714,
+     "fit_residual_rms": 0.0005567709595047953
+    },
+    "gauges": {
+     "G1_secant_wall_plane": {
+      "slope": 49.84889030456543,
+      "ratio": 1.016287264109387,
+      "stencil_bias": 1.0434782608695652,
+      "ratio_bias_corrected": 1.0604736668967516,
+      "tau_pa": 498.4889030456543,
+      "error_pct": 1.6287264109386967,
+      "error_pct_bias_corrected": 6.04736668967516,
+      "pass_5pct": true,
+      "pass_5pct_bias_corrected": false
+     },
+     "G2_secant_row_pair": {
+      "slope": 40.82455873489379,
+      "ratio": 0.8323049691109845,
+      "stencil_bias": 1.2000000000000006,
+      "ratio_bias_corrected": 0.9987659629331819,
+      "tau_pa": 408.24558734893793,
+      "error_pct": -16.76950308890155,
+      "error_pct_bias_corrected": -0.12340370668181277,
+      "pass_5pct": false,
+      "pass_5pct_bias_corrected": true
+     },
+     "G3_three_point_quad": {
+      "slope": 45.0282597541809,
+      "ratio": 0.9180073344379388,
+      "stencil_bias": 1.0909090909090913,
+      "ratio_bias_corrected": 1.00146254665957,
+      "tau_pa": 450.282597541809,
+      "error_pct": -8.199266556206119,
+      "error_pct_bias_corrected": 0.14625466595699077,
+      "pass_5pct": false,
+      "pass_5pct_bias_corrected": true
+     },
+     "G4_global_fit_slope": {
+      "slope": 48.86544009307711,
+      "ratio": 0.996237310766098,
+      "stencil_bias": 1.0,
+      "ratio_bias_corrected": 0.996237310766098,
+      "tau_pa": 488.65440093077115,
+      "error_pct": -0.37626892339019946,
+      "error_pct_bias_corrected": -0.37626892339019946,
+      "pass_5pct": true,
+      "pass_5pct_bias_corrected": true
+     }
+    }
+   },
+   "budget": {
+    "available": true,
+    "window_s": 0.6,
+    "n_samples": 9,
+    "rate": 0.017289299240663965,
+    "rate_stderr": 0.004539277698714024,
+    "residual_rms": 0.0027494259387335117,
+    "rate_over_g": 0.0017624158247363877,
+    "drag_over_weight": 0.9982375841752636,
+    "tau_eff_pa": 489.63553503796686
+   },
+   "n_fluid": 144,
+   "steps": 6154,
+   "max_mach": 0.06137929558753967
+  },
+  {
+   "resolution_H_over_dx": 16,
+   "slip_model": "no_slip",
+   "profile": {
+    "u_max_measured": 1.2231312990188599,
+    "u_max_analytic": 1.2262500000000003,
+    "u_max_error_pct": -0.254328316504826,
+    "rms_interior_rel_pct": 0.4241340756126215,
+    "rms_all_rel_pct": 1.749767841851525,
+    "rms_umax_pct": 0.36232997724377297,
+    "max_row_rel_pct": 4.613898557856302,
+    "n_interior_rows": 12,
+    "n_rows": 16
+   },
+   "wall": {
+    "dx": 0.006250000000000001,
+    "n_rows": 16,
+    "tau_ref_pa": 490.5,
+    "slope_ref": 49.050000000000004,
+    "fit": {
+     "c0": 0.007710523840759431,
+     "c1": 48.83589610499162,
+     "c2": -488.35897472392276,
+     "nu_eff_over_nu": 1.0043841218998537,
+     "fit_residual_rms": 0.0003803514909245438
+    },
+    "gauges": {
+     "G1_secant_wall_plane": {
+      "slope": 49.70958232879639,
+      "ratio": 1.013447142279233,
+      "stencil_bias": 1.032258064516129,
+      "ratio_bias_corrected": 1.0461389855785632,
+      "tau_pa": 497.09582328796387,
+      "error_pct": 1.3447142279233049,
+      "error_pct_bias_corrected": 4.613898557856322,
+      "pass_5pct": true,
+      "pass_5pct_bias_corrected": true
+     },
+     "G2_secant_row_pair": {
+      "slope": 42.79478788375854,
+      "ratio": 0.8724727397300415,
+      "stencil_bias": 1.1428571428571428,
+      "ratio_bias_corrected": 0.9971117025486188,
+      "tau_pa": 427.9478788375854,
+      "error_pct": -12.752726026995854,
+      "error_pct_bias_corrected": -0.28882974513811943,
+      "pass_5pct": false,
+      "pass_5pct_bias_corrected": true
+     },
+     "G3_three_point_quad": {
+      "slope": 45.90954661369323,
+      "ratio": 0.9359744467623492,
+      "stencil_bias": 1.0666666666666662,
+      "ratio_bias_corrected": 0.998372743213172,
+      "tau_pa": 459.0954661369323,
+      "error_pct": -6.40255532376508,
+      "error_pct_bias_corrected": -0.16272567868279575,
+      "pass_5pct": false,
+      "pass_5pct_bias_corrected": true
+     },
+     "G4_global_fit_slope": {
+      "slope": 48.83589610499162,
+      "ratio": 0.995634986849982,
+      "stencil_bias": 1.0,
+      "ratio_bias_corrected": 0.995634986849982,
+      "tau_pa": 488.35896104991616,
+      "error_pct": -0.43650131500180267,
+      "error_pct_bias_corrected": -0.43650131500180267,
+      "pass_5pct": true,
+      "pass_5pct_bias_corrected": true
+     }
+    }
+   },
+   "budget": {
+    "available": true,
+    "window_s": 0.6,
+    "n_samples": 9,
+    "rate": 0.01728134795969056,
+    "rate_stderr": 0.004551255088507289,
+    "residual_rms": 0.002757072936617635,
+    "rate_over_g": 0.001761605296604542,
+    "drag_over_weight": 0.9982383947033955,
+    "tau_eff_pa": 489.63593260201554
+   },
+   "n_fluid": 192,
+   "steps": 8205,
+   "max_mach": 0.06132914423942566
+  }
+ ],
+ "negative_control": {
+  "resolution_H_over_dx": 8,
+  "u_max_error_pct": 620.043279587554,
+  "global_fit_slope_ratio": 0.0,
+  "budget": {
+   "available": true,
+   "window_s": 0.6,
+   "n_samples": 9,
+   "rate": 9.810010280824605,
+   "rate_stderr": 0.00015509516950301571,
+   "residual_rms": 9.391403627088759e-05,
+   "rate_over_g": 1.000001047994353,
+   "drag_over_weight": -1.0479943530761204e-06,
+   "tau_eff_pa": -0.0005140412301838371
+  },
+  "fails_centreline_gate": true,
+  "fails_wall_shear_gate": true,
+  "expected": "rigid-body acceleration u = g t, no parabola",
+  "drift_bias": 1.0479943530761204e-06
+ },
+ "resolution_requirement": {
+  "centreline": "H/dx >= 8 (passes on every rung)",
+  "profile_all_rows": "H/dx >= 12",
+  "wall_shear_battery": "H/dx >= 8 for G1-G4; G5 budget needs the steady window"
+ }
+}
