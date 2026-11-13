@@ -183,7 +183,8 @@ def aggregate() -> dict:
             "one_shot": "python -m tensorsph.case_hydrostatic --json-out "
                         "runs/case_hydrostatic/cli_record.json",
             "gate": "python benchmarks/case_hydrostatic/run.py --config window_8s",
-            "grid": "python benchmarks/case_hydrostatic/run.py --config all --static",
+            "grid": "python benchmarks/case_hydrostatic/run.py --config all "
+                    "--static  # -> runs/case_hydrostatic",
             "figures": "python benchmarks/case_hydrostatic/run.py --aggregate --figure",
             "tests": "python -m pytest -q tests/test_case_hydrostatic.py",
             "shipped": "outputs/case_hydrostatic (mirror of runs/case_hydrostatic"

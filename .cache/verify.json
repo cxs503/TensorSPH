@@ -1,0 +1,95 @@
+{
+ "shipped_root": "tests/data/case_hydrostatic",
+ "bundle_root": ".cache/fresh/runs/case_hydrostatic",
+ "gate_config": "window_8s",
+ "gate_value_shipped_pct": 0.7710424635550619,
+ "gate_limit_pct": 1.0,
+ "files": [
+  {
+   "file": "report.json",
+   "shipped": true,
+   "fresh": false
+  },
+  {
+   "file": "runs/control_g0.json",
+   "shipped": true,
+   "fresh": false
+  },
+  {
+   "file": "runs/dx_0025.json",
+   "shipped": true,
+   "fresh": false
+  },
+  {
+   "file": "runs/dx_004.json",
+   "shipped": true,
+   "fresh": false
+  },
+  {
+   "file": "runs/sound_c30.json",
+   "shipped": true,
+   "fresh": false
+  },
+  {
+   "file": "runs/static_dx_0025.json",
+   "shipped": true,
+   "fresh": false
+  },
+  {
+   "file": "runs/static_dx_004.json",
+   "shipped": true,
+   "fresh": false
+  },
+  {
+   "file": "runs/static_sound_c30.json",
+   "shipped": true,
+   "fresh": false
+  },
+  {
+   "file": "runs/static_width_w15.json",
+   "shipped": true,
+   "fresh": false
+  },
+  {
+   "file": "runs/static_window_2s.json",
+   "shipped": true,
+   "fresh": false
+  },
+  {
+   "file": "runs/static_window_4s.json",
+   "shipped": true,
+   "fresh": false
+  },
+  {
+   "file": "runs/static_window_8s.json",
+   "shipped": true,
+   "fresh": false
+  },
+  {
+   "file": "runs/width_w15.json",
+   "shipped": true,
+   "fresh": false
+  },
+  {
+   "file": "runs/window_2s.json",
+   "shipped": true,
+   "fresh": false
+  },
+  {
+   "file": "runs/window_4s.json",
+   "shipped": true,
+   "fresh": false
+  },
+  {
+   "file": "runs/window_8s.json",
+   "shipped": true,
+   "fresh": true,
+   "byte_identical": false
+  }
+ ],
+ "fresh_source": ".cache/fresh/runs/case_hydrostatic/runs/window_8s.json",
+ "gate_value_fresh_pct": 0.7710424635550619,
+ "fresh_pass": true,
+ "delta_pp": 0.0,
+ "reproduced": true
+}
