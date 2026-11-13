@@ -122,7 +122,8 @@ wall model itself.
 | 12 | 144 | 1.234 | +0.017 | -0.376 | 1.04 | 83.5 |
 | 16 | 192 | 0.424 | -0.254 | -0.437 | 0.63 | 117.2 |
 
-* Profile RMS falls by a factor 6.42 when `H/dx` grows by 2.0, i.e. an observed order of 2.68 (a first-order wall model that slides over a spacing would sit at 1.0).
+* Profile RMS (all rows) converges at order p = 1.53 ± 0.02 (R² = 0.999, 5-level fit over H/dx = 8..32). A first-order wall model that slides over a spacing would sit at p = 1.0; the mirror wall is well above that.
+  (The two-point ratio H/dx 8→16 alone reads p = 2.68, which overstates the order because the coarsest grid's error is dominated by the wall-row contribution that the all-rows RMS captures.)
 * Wall shear is flat across the ladder: -0.35 %, -0.38 %, -0.44 % — the momentum balance is closed at every resolution, not only at the finest one.
 * Wall slip shrinks with resolution (2.30 %, 1.04 %, 0.63 %), the signature of a boundary condition applied *on* the plane rather than a fixed fraction of a spacing inside the flow.
 
