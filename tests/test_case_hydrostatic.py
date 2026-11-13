@@ -6,12 +6,21 @@ Two layers:
   the gate arithmetic, the free-surface overlap rule, one live ``rhs``
   evaluation of the lattice (interior complete-support column is exact, the
   wall columns are not), and a coarse smoke run of the case.
-* **Artifact checks** (read ``artifacts/case_hydrostatic/report.json``): the
+* **Artifact checks** (read ``report.json`` + the run files next to it): the
   shipped gate value is the one in the run file, it is the pre-declared config,
   and it is inside the 1 % limit.  These assert an *invariant of the shipped
   evidence* (a report that disagrees with its own run files fails here), not
   that a simulation was executed; the simulation is reproducible with
   ``python benchmarks/case_hydrostatic/run.py --config window_8s``.
+* **Shipped-mirror checks** (``outputs/case_hydrostatic``): the delivery copy of
+  the bundle is complete (report + every run file + the figures) and matches its
+  own sha256 manifest, so a half-copied or hand-edited bundle fails here.  The
+  mirror exists because ``runs/`` is outside the delivery whitelist
+  (``docs/ src/ tests/ examples/ outputs/``): evidence kept only in ``runs/``
+  never reaches a fresh checkout.
+* **Harness checks**: ``--config all --static`` must schedule *both* layers of
+  the declared grid, and ``--aggregate`` must refuse to emit a report with no
+  gate record (it used to die with a ``TypeError`` on ``None``).
 """
 from __future__ import annotations
 
@@ -30,8 +39,34 @@ from tensorsph.case_hydrostatic import (CASE_ID, DEPTH, G, RHO0,  # noqa: E402
                                        evaluate, run_case, run_initial_state,
                                        support_width)
 
-REPORT = REPO / "runs" / "case_hydrostatic" / "report.json"
-RUNS = REPORT.parent / "runs"
+#: Evidence root, most-authoritative first: a locally regenerated ``runs/``
+#: bundle wins over the shipped mirror, which is what a fresh checkout has.
+EVIDENCE_CANDIDATES = (REPO / "runs" / "case_hydrostatic",
+                       REPO / "outputs" / "case_hydrostatic")
+SHIPPED = REPO / "outputs" / "case_hydrostatic"
+MANIFEST = "MANIFEST.sha256"
+
+
+def evidence_base() -> Path:
+    for base in EVIDENCE_CANDIDATES:
+        if (base / "report.json").exists():
+            return base
+    raise AssertionError(
+        "no CASE-HYDROSTATIC evidence found; expected one of "
+        f"{[str(b) for b in EVIDENCE_CANDIDATES]}. Reproduce with "
+        "`python benchmarks/case_hydrostatic/run.py --config all --static` "
+        "then `--aggregate --figure` (the latter also ships the mirror).")
+
+
+def _harness():
+    """Import the benchmark harness script (``benchmarks/`` is not a package)."""
+    import importlib.util
+
+    path = REPO / "benchmarks" / "case_hydrostatic" / "run.py"
+    spec = importlib.util.spec_from_file_location("case_hydrostatic_harness", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 # --------------------------------------------------------------------------- #
@@ -161,27 +196,28 @@ def test_smoke_case_produces_a_benchmark_table():
 # --------------------------------------------------------------------------- #
 
 @pytest.fixture(scope="module")
-def report():
-    assert REPORT.exists(), (
-        "runs/case_hydrostatic/report.json is missing; reproduce with "
-        "`python benchmarks/case_hydrostatic/run.py --config all --static` "
-        "then `--aggregate --figure`")
-    return json.loads(REPORT.read_text())
+def evidence():
+    return evidence_base()
 
 
-def test_shipped_gate_is_the_predeclared_config_and_within_limit(report):
+@pytest.fixture(scope="module")
+def report(evidence):
+    return json.loads((evidence / "report.json").read_text())
+
+
+def test_shipped_gate_is_the_predeclared_config_and_within_limit(report, evidence):
     verdict = report["verdict"]
     assert verdict["case_id"] == CASE_ID
     assert verdict["gate_limit_pct"] == TOLERANCE_PCT
     assert verdict["gate_config"] == "window_8s"
-    run = json.loads((RUNS / f"{verdict['gate_config']}.json").read_text())
+    run = json.loads((evidence / "runs" / f"{verdict['gate_config']}.json").read_text())
     assert verdict["gate_value_pct"] == run["gate"]["max_band_error_pct"]
     assert verdict["gate_pass"] is bool(verdict["gate_value_pct"] <= TOLERANCE_PCT)
     assert verdict["gate_pass"] is True
 
 
-def test_every_gated_benchmark_row_has_ref_and_got(report):
-    run = json.loads((RUNS / f"{report['verdict']['gate_config']}.json").read_text())
+def test_every_gated_benchmark_row_has_ref_and_got(report, evidence):
+    run = json.loads((evidence / "runs" / f"{report['verdict']['gate_config']}.json").read_text())
     assert len(run["benchmark"]) >= 4
     for row in run["benchmark"]:
         assert row["ref_Pa"] > 0
@@ -189,12 +225,12 @@ def test_every_gated_benchmark_row_has_ref_and_got(report):
     assert run["config"]["fluid_particles"] >= run["config"]["min_particles"]
 
 
-def test_report_quotes_the_run_files(report):
+def test_report_quotes_the_run_files(report, evidence):
     for run in report["runs"]:
-        stored = json.loads((RUNS / f"{run['config_name']}.json").read_text())
+        stored = json.loads((evidence / "runs" / f"{run['config_name']}.json").read_text())
         assert run == stored
     for static in report["static_runs"]:
-        stored = json.loads((RUNS / f"static_{static['config_name']}.json").read_text())
+        stored = json.loads((evidence / "runs" / f"static_{static['config_name']}.json").read_text())
         assert static == stored
 
 
@@ -202,6 +238,95 @@ def test_repro_command_is_recorded(report):
     repro = report["repro"]
     assert "python benchmarks/case_hydrostatic/run.py --config window_8s" == repro["gate"]
     assert "runs/case_hydrostatic" in repro["one_shot"] + repro["grid"]
+
+def _manifest(root: Path) -> dict[str, tuple[str, int]]:
+    entries = {}
+    for line in (root / MANIFEST).read_text().splitlines():
+        if not line.strip():
+            continue
+        digest, size, rel = line.split("  ", 2)
+        entries[rel] = (digest, int(size))
+    return entries
+
+
+def test_shipped_mirror_is_manifest_complete(report):
+    """The delivery copy must carry the report, every run file, the figures and
+    a manifest that covers exactly those files with the right digests."""
+    import hashlib
+
+    assert (SHIPPED / "report.json").exists(), (
+        f"shipped evidence mirror {SHIPPED} is missing; run "
+        "`python benchmarks/case_hydrostatic/run.py --aggregate --figure`")
+    entries = _manifest(SHIPPED)
+    actual = {p.relative_to(SHIPPED).as_posix()
+              for p in SHIPPED.rglob("*") if p.is_file()} - {MANIFEST}
+    assert set(entries) == actual, (
+        f"manifest/files disagree: unlisted={sorted(actual - set(entries))[:5]}, "
+        f"missing={sorted(set(entries) - actual)[:5]}")
+    for rel, (digest, size) in entries.items():
+        data = (SHIPPED / rel).read_bytes()
+        assert len(data) == size, f"{rel}: size {len(data)} != manifest {size}"
+        assert hashlib.sha256(data).hexdigest() == digest, f"{rel}: sha256 drift"
+    # the shipped bundle is the *whole* case, not just the verdict
+    assert "report.json" in entries
+    for run in report["runs"]:
+        assert f"runs/{run['config_name']}.json" in entries
+    for static in report["static_runs"]:
+        assert f"runs/static_{static['config_name']}.json" in entries
+    assert any(rel.startswith("figures/") for rel in entries)
+
+
+def test_shipped_mirror_agrees_with_a_regenerated_bundle():
+    """If this checkout has a fresh ``runs/`` bundle, it must be byte-identical
+    to what ships -- the mirror is a copy, never a second source of truth."""
+    fresh = REPO / "runs" / "case_hydrostatic"
+    if not (fresh / "report.json").exists():
+        pytest.skip("no regenerated runs/ bundle in this checkout")
+    for rel in ("report.json",) + tuple(
+            f"runs/{p.name}" for p in sorted((fresh / "runs").glob("*.json"))):
+        shipped = (SHIPPED / rel)
+        assert shipped.exists(), f"shipped mirror lacks {rel}"
+        assert shipped.read_bytes() == (fresh / rel).read_bytes(), (
+            f"{rel}: shipped mirror and the regenerated bundle differ")
+
+
+def test_config_all_with_static_schedules_the_whole_grid(monkeypatch):
+    """Regression: ``--config all --static`` used to run the t = 0 layer only,
+    so the documented one-shot grid left the gate record absent."""
+    harness = _harness()
+    calls: list[tuple[str, bool]] = []
+    monkeypatch.setattr(harness, "run_one",
+                        lambda name, static=False: calls.append((name, static)) or {})
+    monkeypatch.setattr(harness, "aggregate",
+                        lambda: {"verdict": {"gate_value_pct": 0.5, "gate_pass": True}})
+    monkeypatch.setattr(harness, "ship",
+                        lambda: {"dest": "x", "manifest": "y", "files": 0})
+    assert harness.main(["--config", "all", "--static"]) == 0
+    stepped = [name for name, static in calls if not static]
+    static_layer = [name for name, static in calls if static]
+    assert stepped == list(harness.CONFIGS), "time-stepped ladder missing"
+    assert static_layer == list(harness.CONFIGS), "t = 0 layer missing"
+    # the harness schedules every config; ``run_one`` drops the g = 0 static
+    # record itself (a single RHS evaluation carries no gravity balance)
+    assert harness.run_one("control_g0", static=True) == {}
+
+
+def test_named_config_with_static_stays_static_only(monkeypatch):
+    harness = _harness()
+    calls: list[tuple[str, bool]] = []
+    monkeypatch.setattr(harness, "run_one",
+                        lambda name, static=False: calls.append((name, static)) or {})
+    harness.main(["--config", "window_8s", "--static"])
+    assert calls == [("window_8s", True)]
+
+
+def test_aggregate_refuses_a_missing_gate_record(monkeypatch, tmp_path):
+    harness = _harness()
+    monkeypatch.setattr(harness, "RUNS", tmp_path)
+    with pytest.raises(SystemExit) as excinfo:
+        harness.aggregate()
+    assert "gate config" in str(excinfo.value)
+
 
 @pytest.mark.slow
 def test_package_entry_dispatches_to_the_case(tmp_path):
