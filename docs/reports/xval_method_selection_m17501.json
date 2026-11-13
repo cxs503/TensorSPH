@@ -1,0 +1,103 @@
+{
+  "mission": 17501,
+  "anchor": "XVAL-SPH-METHOD-SELECTION-2026-11-12",
+  "reference": "oss_solutions id=408 (TensorSPH CASE-WAVE-FLUME method-selection-2026-11-12)",
+  "oss_counterparts": {
+    "no_delta_sph_compression_regularization": "oss_solutions id=356 (Xiangyu-Hu/SPHinXsys)",
+    "mach_limited_riemann_dissipation": "oss_solutions id=355 (Xiangyu-Hu/SPHinXsys)",
+    "transport_velocity_correction": "oss_solutions id=358 (Xiangyu-Hu/SPHinXsys)"
+  },
+  "tolerance_owner": 0.15,
+  "tolerance_case": 0.1,
+  "windows": [
+    4.0,
+    5.0
+  ],
+  "physics_reference": {},
+  "rows": [
+    {
+      "label": "D13_hn016_d010_settle",
+      "group": "ladder",
+      "knob": "ref A, H/dx=2.08",
+      "record": "runs/local/wf_D13_settle_d010.json",
+      "present": false,
+      "note": "record missing (job not dispatched)"
+    },
+    {
+      "label": "D16_hn016_d010_settle",
+      "group": "ladder",
+      "knob": "ref A, H/dx=2.56",
+      "record": "runs/local/wf_D16_settle_d010.json",
+      "present": false,
+      "note": "record missing (job not dispatched)"
+    },
+    {
+      "label": "D20_hn016_d010_settle",
+      "group": "ladder",
+      "knob": "ref A, H/dx=3.20",
+      "record": "runs/local/wf_D20_settle_d010.json",
+      "present": false,
+      "note": "record missing (job not dispatched)"
+    },
+    {
+      "label": "D13_hn016_d000_settle",
+      "group": "delta",
+      "knob": "delta-SPH = 0.0",
+      "record": "runs/local/wf_D13_settle_d000.json",
+      "present": false,
+      "note": "record missing (job not dispatched)"
+    },
+    {
+      "label": "D13_hn016_d020_settle",
+      "group": "delta",
+      "knob": "delta-SPH = 0.2",
+      "record": "runs/local/wf_D13_settle_d020.json",
+      "present": false,
+      "note": "record missing (job not dispatched)"
+    },
+    {
+      "label": "D13_hn010_d010_settle",
+      "group": "height",
+      "knob": "H/h = 0.10",
+      "record": "runs/local/wf_D13_hr010_settle_d010.json",
+      "present": false,
+      "note": "record missing (job not dispatched)"
+    },
+    {
+      "label": "D13_hn016_d010_nosettle",
+      "group": "settle",
+      "knob": "no settle window",
+      "record": "runs/local/wf_D13_nosettle_d010.json",
+      "present": false,
+      "note": "record missing (job not dispatched)"
+    }
+  ],
+  "figures": [
+    {
+      "name": "ladder.png",
+      "path": "docs/figures/xval_method_selection_m17501/ladder.png",
+      "made": false
+    },
+    {
+      "name": "series.png",
+      "path": "docs/figures/xval_method_selection_m17501/series.png",
+      "made": false
+    },
+    {
+      "name": "attenuation.png",
+      "path": "docs/figures/xval_method_selection_m17501/attenuation.png",
+      "made": false
+    },
+    {
+      "name": "sensitivity.png",
+      "path": "docs/figures/xval_method_selection_m17501/sensitivity.png",
+      "made": false
+    }
+  ],
+  "counts": {
+    "matrix": 7,
+    "present": 0,
+    "failed": 0,
+    "within_owner_tol": 0
+  }
+}
