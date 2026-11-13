@@ -73,6 +73,7 @@ def main() -> int:
         "sound_speed": cfg.sound_speed, "dt": cfg.dt,
         "probe_x": cfg.probe_x(), "arrival_threshold": cfg.arrival_threshold,
         "peak_height_m": run.peak_height, "peak_time_s": run.peak_time,
+        "column_peak_m": (max(run.column) if run.column else float("nan")),
         "arrival_time_s": run.arrival_time,
         "steps": run.steps_taken, "simulated_time_s": run.simulated_time,
         "dt_min": run.dt_min, "dt_max": run.dt_max,
@@ -83,9 +84,10 @@ def main() -> int:
                                * math.floor(cfg.column_height / cfg.dx)),
     }
     with (outdir / "time_series.csv").open("w") as fh:
-        fh.write("t_s,height_m,front_x_m\n")
-        for t, hh, fr in zip(run.times, run.height, run.front):
-            fh.write(f"{t:.6f},{hh:.6f},{fr:.6f}\n")
+        fh.write("t_s,height_m,front_x_m,column_level_m\n")
+        cols = run.column if len(run.column) == len(run.times) else [float("nan")] * len(run.times)
+        for t, hh, fr, cl in zip(run.times, run.height, run.front, cols):
+            fh.write(f"{t:.6f},{hh:.6f},{fr:.6f},{cl:.6f}\n")
 
     exp = ref["experimental_values"]
     tol = ref["tolerance"]["relative"]

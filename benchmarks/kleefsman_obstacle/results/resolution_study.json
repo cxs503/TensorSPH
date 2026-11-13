@@ -46,5 +46,17 @@
       "max_speed": 6.229979038238525,
       "height_capped_by_tank": false
     }
-  ]
+  ],
+  "protocol_mismatch": [
+    {
+      "dx": 0.01,
+      "differs": {
+        "t_end": [
+          1.2,
+          1.0
+        ]
+      }
+    }
+  ],
+  "protocol_mismatch_note": "dx=0.01 rung was advanced to t_end=1.0 s while dx=0.04/0.02 used 1.2 s; declared here, equalised by convergence_analysis --window-t before scoring"
 }

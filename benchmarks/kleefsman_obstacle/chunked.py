@@ -88,6 +88,7 @@ def main() -> int:
            "particles_fluid": math.floor(cfg.column_length / args.dx)
            * math.floor(cfg.column_height / args.dx),
            "steps": run.steps_taken, "peak_height_m": run.peak_height,
+           "column_peak_m": (max(run.column) if run.column else float("nan")),
            "peak_time_s": run.peak_time, "arrival_time_s": run.arrival_time,
            "mass_error_rel": run.mass_error, "boundary_escapes": run.escaped,
            "max_density_compression": run.max_density_compression,
@@ -95,7 +96,7 @@ def main() -> int:
            "height_capped_by_tank": bool(run.peak_height >= 0.995 * cfg.tank_height)}
     (res / f"{tag}.json").write_text(json.dumps(row, indent=2))
     with (res / f"{tag}_time_series.csv").open("w") as fh:
-        fh.write("t_s,height_m,front_x_m\n")
+        fh.write("t_s,height_m,front_x_m,column_level_m\n")
         for t, hh, fr in zip(run.times, run.height, run.front):
             fh.write(f"{t:.6f},{hh:.6f},{fr:.6f}\n")
     study = res / "resolution_study.json"
