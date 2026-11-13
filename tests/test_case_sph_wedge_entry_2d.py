@@ -51,7 +51,9 @@ def test_refs_derived_is_computed_not_typed():
     C = math.pi / (2.0 * math.tan(beta))
     assert ref["wagner"]["C"] == pytest.approx(C, rel=1e-12)
     assert ref["wagner"]["cp_max"] == pytest.approx(C * C + 1.0, rel=1e-12)
-    assert ref["wagner"]["cp_centre"] == pytest.approx(C, rel=1e-12)
+    # cp in this driver is p/q with q = rho V^2/2, so the stagnation reference
+    # is p(0)/q = 2C (see docs/audit_wagner_pressure_reference_m17079.md).
+    assert ref["wagner"]["cp_centre"] == pytest.approx(2.0 * C, rel=1e-12)
     assert ref["zhao_faltinsen_1993"]["status"] == "WITHHELD"
     assert ref["zhao_faltinsen_1993"]["cp_max"] is None
 
@@ -105,7 +107,8 @@ def _synthetic_case(beta_deg: float, dx: float, scale: float = 1.0,
     cps = [scale * _wagner_cp(t, beta) for t in taus]
     frame = {"t": 0.02, "c_sph": C * velocity * 0.02,
              "cp_max_footprint": max(cps), "cp_max_interior": max(cps),
-             "cp_centre": scale * C, "x_jet": C * velocity * 0.02,
+             # q-unit stagnation reference: p(0)/q = 2C (not p(0)/(rho V^2) = C).
+             "cp_centre": scale * 2.0 * C, "x_jet": C * velocity * 0.02,
              "max_rho_ratio": 1.01, "profile_tau": taus, "profile_cp": cps}
     return {"case_id": f"syn_{kind}_{dx}", "kind": kind,
             "config": {"beta_deg": beta_deg, "velocity": velocity, "dx": dx,
