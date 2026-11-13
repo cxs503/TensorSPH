@@ -1,0 +1,144 @@
+{
+  "anchor": "XVAL-SPH-METHOD-SELECTION-2026-11-12",
+  "generated_by": "benchmarks/method_selection/build_registry.py",
+  "methods_with_evidence": [
+    "compressible_riemann",
+    "compression_regularization",
+    "csf_surface_tension",
+    "density_diffusion",
+    "heat_conduction_operator",
+    "isph_projection",
+    "particle_shifting",
+    "wcsph_delta_sph",
+    "wcsph_wall_no_slip"
+  ],
+  "methods_without_evidence": [
+    "transport_velocity_correction"
+  ],
+  "missing_sources": [],
+  "mission": 18056,
+  "owner_tolerance_pct": 15.0,
+  "records": [
+    {
+      "case": "CASE-WAVE-FLUME",
+      "extractor": "x_wave_flume",
+      "gate_pct": 10.0,
+      "measured_pct": 2.9679295205491987,
+      "method": "wcsph_delta_sph",
+      "own_gate_passed": true,
+      "quantity": "max gauge wave-height error vs piston-transfer target (H/dx=3.2, delta=0.1)",
+      "source": "docs/reports/wave_flume_numbers.json",
+      "source_sha256": "d06162462da1879c5560b4c495329e70430c05fb49001e8f77126b8c6abd081e",
+      "within_owner_tolerance": true
+    },
+    {
+      "case": "CASE-SPH-SOD-SHOCK-COMPRESSIBLE",
+      "extractor": "x_sod",
+      "gate_pct": 5.0,
+      "measured_pct": 0.7768408089469451,
+      "method": "compressible_riemann",
+      "own_gate_passed": true,
+      "quantity": "max abs relative error over the gated shock quantities (rho*, p*, u*, wave positions)",
+      "source": "benchmarks/case_sod_shock_compressible/result.json",
+      "source_sha256": "ffda8daa4cd10c2a9301c41c3cb252dd96072b0356a297fbfa5a5c5ada2b323c",
+      "within_owner_tolerance": true
+    },
+    {
+      "case": "CASE-SPH-CONDUCTION-1D",
+      "extractor": "x_conduction",
+      "gate_pct": 3.0,
+      "measured_pct": 0.00021805730765489528,
+      "method": "heat_conduction_operator",
+      "own_gate_passed": true,
+      "quantity": "max normalised error vs the erfc similarity solution",
+      "source": "benchmarks/case_conduction_1d/result.json",
+      "source_sha256": "21384c60e6d136b6f8efda1f3c89196692c75812345cc25789dbf8abe829fea0",
+      "within_owner_tolerance": true
+    },
+    {
+      "case": "CASE-LAPLACE-SPH",
+      "extractor": "x_laplace_pressure",
+      "gate_pct": 15.0,
+      "measured_pct": 5.59931563881463,
+      "method": "csf_surface_tension",
+      "own_gate_passed": true,
+      "quantity": "Laplace pressure jump rel. error (delta_p vs 2*sigma/R)",
+      "source": "benchmarks/laplace_law/validation_report.json",
+      "source_sha256": "73b9777bb312bb8a3cc15a2fb7c2a39accaabd62bef8d97ae1a4946f01c6bff4",
+      "within_owner_tolerance": true
+    },
+    {
+      "case": "CASE-LAPLACE-SPH (consistent CSF)",
+      "extractor": "x_csf_curvature",
+      "gate_pct": 15.0,
+      "measured_pct": 23.79926667246913,
+      "method": "csf_surface_tension",
+      "own_gate_passed": false,
+      "quantity": "delta_s-weighted mean curvature rel. error",
+      "source": "benchmarks/csf_consistent/validation_report.json",
+      "source_sha256": "84e0ae27bb78b0bada35ffda28a7f8d7ff5f3711ca6eef0799d85f936a784109",
+      "within_owner_tolerance": false
+    },
+    {
+      "case": "plane density wave decay",
+      "extractor": "x_density_diffusion_decay",
+      "gate_pct": 3.0,
+      "measured_pct": 1.0208380223078255,
+      "method": "density_diffusion",
+      "own_gate_passed": true,
+      "quantity": "max relative error of the decay rate vs the analytic gamma = D k^2",
+      "source": "benchmarks/density_diffusion_decay/decay_rate.json",
+      "source_sha256": "f97947eb8a7b92d2d7e2bf65e6d17c6b107abe7aec7cd43d4c8b17d4e52da4fd",
+      "within_owner_tolerance": true
+    },
+    {
+      "case": "CASE-ISPH-CHANNEL (GAP-SPH-ISPH-PROJECTION ladder)",
+      "extractor": "x_isph_channel",
+      "gate_pct": 3.0,
+      "measured_pct": 0.8665938382240863,
+      "method": "isph_projection",
+      "own_gate_passed": true,
+      "quantity": "centre-velocity error vs the analytic Poiseuille parabola (H/dx=16, momentum-budget wall-shear record also banked)",
+      "source": "benchmarks/isph_channel/results.json",
+      "source_sha256": "5f01ce56b5b7780063326ec948a1b6110fa8baee86055f151a74cfaff21d6aae",
+      "within_owner_tolerance": true
+    },
+    {
+      "case": "XVAL-SPHINXSYS-COMPRESSION-DENSITY-REGULARIZATION",
+      "extractor": "x_compression_regularization",
+      "gate_pct": 1.0,
+      "measured_pct": 5.532656212791526,
+      "method": "compression_regularization",
+      "own_gate_passed": false,
+      "quantity": "max interior-band hydrostatic pressure error vs analytic p = rho0 g (H - y), SPHinXsys reference-mean arm",
+      "source": "benchmarks/xval_sphinxsys_compression/records.json",
+      "source_sha256": "63d39f96ccb6aadd3838c54bc1dd767298f213c853c9469cb503058e3622ad17",
+      "within_owner_tolerance": true
+    },
+    {
+      "case": "CASE-PARTICLE-SHIFTING-DAMBREAK (B2, shifting on vs off)",
+      "extractor": "x_particle_shifting",
+      "gate_pct": 10.0,
+      "measured_pct": 8.832573890686035,
+      "method": "particle_shifting",
+      "own_gate_passed": true,
+      "quantity": "dam-break front-position deviation from the unshifted published answer, relative to the 0.2 m column",
+      "source": "benchmarks/particle_shifting/results.json",
+      "source_sha256": "5c8957caf1c878b1aab5ad0fc104021c472bf187575fd700505ac43158086313",
+      "within_owner_tolerance": true
+    },
+    {
+      "case": "plane Couette channel",
+      "extractor": "x_couette",
+      "gate_pct": 5.0,
+      "measured_pct": 5.654072500230903,
+      "method": "wcsph_wall_no_slip",
+      "own_gate_passed": false,
+      "quantity": "interior L2 velocity error vs u=U*y/H (finest rung)",
+      "source": "benchmarks/couette/out/results.json",
+      "source_sha256": "71cb10053fab7df60ba023d93e25809f0280ea6c73adf8d1342e9283b17978cd",
+      "within_owner_tolerance": true
+    }
+  ],
+  "schema_version": "1.0"
+}

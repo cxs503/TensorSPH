@@ -219,7 +219,7 @@ def main(argv=None) -> int:
     ap.add_argument("--sample-every", type=int, default=4)
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--arms", default=",".join(a[0] for a in ARMS))
-    ap.add_argument("--out", default=str("xval_output" /
+    ap.add_argument("--out", default=str(Path("xval_output") /
                                          "xval_sphinxsys_compression" /
                                          "records.json"))
     ap.add_argument("--quick", action="store_true",
