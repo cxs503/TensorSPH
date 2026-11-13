@@ -24,6 +24,14 @@ from .density_diffusion import (
     molteni_colagrossi_rate,
     rate_from_positions,
 )
+from .compression_regularization import (
+    NORMALIZATIONS as COMPRESSION_NORMALIZATIONS,
+    RULES as COMPRESSION_RULES,
+    CompressionRegularization,
+    average_inverse_reference_compression,
+    compression_summation,
+    regularize as regularize_compression,
+)
 from .neighbor_search import PairListCache, cell_linked_pairs
 
 
@@ -206,6 +214,21 @@ class Config:
     # the surface and a hydrostatic column does not hold itself up. Off by
     # default so every published number stays reproducible.
     density_renormalization: bool = False
+    # Compression-based density regularization -- a port of SPHinXsys
+    # (:mod:`tensorsph.compression_regularization`, cross-checked in
+    # docs/xval_sphinxsys_compression_density_regularization.md). "none" keeps
+    # the summation density above; "compression" *replaces* it every step by
+    #     rho_i = rule(K_i) * rho0,   K_i = W(0) Vref_i + (1/Kref) sum_j W_ij Vref_j,
+    # with Vref = m / rho0 the reference volume, Kref the global inverse
+    # reference compression (AverageCompression) and rule in {"internal",
+    # "free_surface", "free_stream"}. It is an alternative to the summation
+    # density, not a term on top of it, so it cannot be combined with
+    # density_renormalization or density_diffusion (both raise).
+    density_regularization: str = "none"
+    compression_regularization_rule: str = "free_surface"
+    # "reference_mean" = SPHinXsys master (neighbour sum scaled by 1/Kref);
+    # "none" = the formulation before commit 375ec50b42 (2026-07-19).
+    compression_normalization: str = "reference_mean"
 
 
 # --------------------------------------------------------------------------- #
@@ -747,8 +770,15 @@ def drop_wall_wall_pairs(pairs: torch.Tensor, fluid_count: int) -> torch.Tensor:
 
 
 def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None,
-        wall_vel=None, wall_accel=None):
+        wall_vel=None, wall_accel=None, state=None):
     """Compute WCSPH RHS with pair-based compact-support interactions.
+
+    ``state`` is an optional mutable dict carrying the cross-step scalar of the
+    compression regularization (``AverageCompression``'s
+    ``InverseReferenceCompression``).  Without it a
+    ``density_regularization="compression"`` call is the *first* step of a run
+    (the scalar still at its registered value 1); a driver that integrates over
+    time must hand the same dict to every step.
 
     ``wall`` is an optional ``(W, D)`` tensor of static wall particles. When it
     is given, wall particles contribute to the fluid density summation, their
@@ -848,6 +878,54 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None,
             form=cfg.density_diffusion_form,
             eigenvalue_floor=cfg.density_diffusion_eigenvalue_floor)
         rho = (rho + step_dt * rate).clamp_min(0.1 * cfg.rho0)
+
+    if cfg.density_regularization != "none":
+        if cfg.density_regularization != "compression":
+            raise ValueError(
+                f"unknown density_regularization {cfg.density_regularization!r};"
+                " expected 'none' or 'compression'")
+        if cfg.density_renormalization:
+            raise ValueError(
+                "density_regularization='compression' replaces the summation "
+                "density; combining it with density_renormalization would "
+                "normalise an already-normalised field")
+        if cfg.compression_regularization_rule not in COMPRESSION_RULES:
+            raise ValueError(
+                f"unknown compression_regularization_rule "
+                f"{cfg.compression_regularization_rule!r}; expected one of "
+                f"{COMPRESSION_RULES}")
+        if cfg.compression_normalization not in COMPRESSION_NORMALIZATIONS:
+            raise ValueError(
+                f"unknown compression_normalization "
+                f"{cfg.compression_normalization!r}; expected one of "
+                f"{COMPRESSION_NORMALIZATIONS}")
+        if cfg.density_diffusion > 0.0:
+            raise ValueError(
+                "density_regularization='compression' and density_diffusion are "
+                "two different ways of obtaining the density (an overwrite and "
+                "an integrated rate); pick one")
+        vol_ref = all_mass / cfg.rho0
+        w_self = float(cubic_spline_kernel(zero, h)[0])
+        regularizer = None if state is None else state.get("compression")
+        if regularizer is None:
+            regularizer = CompressionRegularization(
+                rule=cfg.compression_regularization_rule,
+                normalization=cfg.compression_normalization)
+        comp_sum = compression_summation(
+            vol_ref, w_self, pairs, wij, n,
+            inverse_reference_compression=(regularizer.inverse_reference_compression
+                                           if cfg.compression_normalization
+                                           == "reference_mean" else 1.0))
+        # AverageCompression: the reduce writes the scalar *after* step 1 has
+        # consumed it, exactly as the reference dynamics list does.
+        written, comp_counted = average_inverse_reference_compression(comp_sum)
+        regularizer.inverse_reference_compression = written
+        compression = regularize_compression(
+            comp_sum, cfg.compression_regularization_rule)
+        rho = (compression * cfg.rho0).clamp_min(0.1 * cfg.rho0)
+        if state is not None:
+            state["compression"] = regularizer
+            state["compression_counted"] = comp_counted
 
     pressure = tait_pressure(rho, cfg)
     if cfg.surface_pressure_closure:
