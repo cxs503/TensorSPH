@@ -173,7 +173,9 @@ VARIANTS = {
     "baseline": dict(),
     "tvc_a005_all": dict(tvc_every=1, tvc_alpha=0.05, tvc_scope="all"),
     "tvc_a010_all": dict(tvc_every=1, tvc_alpha=0.10, tvc_scope="all"),
+    "tvc_a015_all": dict(tvc_every=1, tvc_alpha=0.15, tvc_scope="all"),
     "tvc_a020_all": dict(tvc_every=1, tvc_alpha=0.20, tvc_scope="all"),
+    "tvc_a030_all": dict(tvc_every=1, tvc_alpha=0.30, tvc_scope="all"),
     "tvc_a005_bulk": dict(tvc_every=1, tvc_alpha=0.05, tvc_scope="bulk"),
     "tvc_a005_all_c5": dict(tvc_every=5, tvc_alpha=0.05, tvc_scope="all"),
     "pst_lind": dict(shift_every=1),
@@ -215,12 +217,12 @@ def hydrostatic_consistency(dx: float, seconds: float, variant: dict) -> dict:
 
 
 def run_variant(name: str, variant: dict, dx: float, seconds: float,
-                gravity: float = 9.81) -> dict:
+                gravity: float = 9.81, output_samples: int = 60) -> dict:
     dt = DamBreakConfig(dx=dx).dt_from_courant()
     steps = int(round(seconds / dt))
     cfg = DamBreakConfig(dx=dx, dt=dt, steps=steps,
-                         output_every=max(1, steps // 60), device="cpu",
-                         **variant)
+                         output_every=max(1, steps // output_samples),
+                         device="cpu", **variant)
     t0 = time.time()
     run = run_case(cfg)
     wall = time.time() - t0
@@ -257,12 +259,18 @@ def main(argv=None) -> int:
     ap.add_argument("--out", type=Path,
                     default=ROOT / "artifacts" / "xval_sphinx_tvc" / "grid.json")
     ap.add_argument("--skip-hydrostatic", action="store_true")
+    ap.add_argument("--output-samples", type=int, default=60,
+                    help="time-history samples per run (default 60; the "
+                         "resolution ladder uses a denser sampling so the "
+                         "level-to-level differences are not "
+                         "sampling-limited)")
     args = ap.parse_args(argv)
 
     records = []
     for dx in args.resolutions:
         for name in args.variants:
-            rec = run_variant(name, VARIANTS[name], dx, args.seconds)
+            rec = run_variant(name, VARIANTS[name], dx, args.seconds,
+                              output_samples=args.output_samples)
             sc = rec["score"]
             print(f"dx={dx:<6} {name:<16} mae={sc.get('mae', float('nan')):.4f} "
                   f"rel={sc.get('mean_rel_error', float('nan')):.3f} "
