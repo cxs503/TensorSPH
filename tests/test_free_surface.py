@@ -95,13 +95,13 @@ def test_the_term_is_not_evaluated_when_it_is_off(monkeypatch):
     import tensorsph.droplet_impact as module
 
     calls = []
-    original = module.density_diffusion_rate
+    original = module.rate_from_positions  # m17109: rhs now calls rate_from_positions directly
 
     def spy(*args, **kwargs):
         calls.append(1)
         return original(*args, **kwargs)
 
-    monkeypatch.setattr(module, "density_diffusion_rate", spy)
+    monkeypatch.setattr(module, "rate_from_positions", spy)
     cfg = Config(**SMALL)
     pos, mass = make_particles(cfg, torch.device("cpu"))
     vel = torch.zeros_like(pos)

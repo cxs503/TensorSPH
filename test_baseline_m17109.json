@@ -1,0 +1,75 @@
+{
+ "mission": "m17109",
+ "task": "\u751f\u6001\u5de1\u66f4\u00b7TensorSPH\u00b7\u6d4b\u8bd5\u57fa\u7ebf\u6f02\u79fb",
+ "date": "2026-11-13",
+ "head_sha": "6ceb4e9",
+ "environment": {
+  "python": "3.11.6",
+  "torch": "2.7.1",
+  "pytest": "9.2.0",
+  "platform": "linux"
+ },
+ "baseline_comparison": {
+  "m1833_tests": 114,
+  "m1833_passed": 114,
+  "m1833_failed": 0,
+  "m17109_collected": 2112,
+  "commits_since_baseline": 509,
+  "core_suite_9_files": {
+   "total": 120,
+   "passed_initial": 119,
+   "failed_initial": 1,
+   "failed_nodeid": "tests/test_free_surface.py::test_the_term_is_not_evaluated_when_it_is_off",
+   "after_fix": "120/120",
+   "wall_clock_s": 91.36
+  },
+  "slow_suite": {
+   "total": 41,
+   "passed": 40,
+   "failed": 1,
+   "failed_nodeid": "tests/test_wave_tank.py::test_still_water_reaches_hydrostatic_pressure",
+   "wall_clock_s": 789.86
+  },
+  "full_fast_suite": "in progress at report time (33+ min, buffered log runs/m17109/fast.log); partial: 3F+5E visible at 6% mark"
+ },
+ "true_reds": [
+  {
+   "id": "R1",
+   "nodeid": "COLLECTION: tests/test_wedge_entry_resolved.py",
+   "symptom": "AttributeError: module 'run' has no attribute 'BETAS' -> whole suite aborted (0 tests runnable)",
+   "root_cause": "bare `import run` in benchmarks/case_sph_wedge_entry_2d/c0_ladder.py cached the wrong run.py in sys.modules; wagner_resolved.py then imported the cached module",
+   "classification": "\u771f\u7ea2 (code-level, order-dependent)",
+   "fix": "path-anchored importlib load in both c0_ladder.py and wagner_resolved.py",
+   "status": "FIXED, verified: 2112 collected, core 120/120"
+  },
+  {
+   "id": "R2",
+   "nodeid": "tests/test_free_surface.py::test_the_term_is_not_evaluated_when_it_is_off",
+   "symptom": "spy on density_diffusion_rate never fires: rhs was refactored (post-m1833) to call rate_from_positions directly",
+   "classification": "\u771f\u7ea2 (stale test vs refactored source)",
+   "fix": "spy retargeted to module.rate_from_positions",
+   "status": "FIXED, verified: test_free_surface.py 8/8"
+  },
+  {
+   "id": "R3",
+   "nodeid": "tests/test_wave_tank.py::test_still_water_reaches_hydrostatic_pressure",
+   "symptom": "assert run.max_compression < 0.02 -> got 0.04417 (deterministic, reproduced 2x)",
+   "root_cause": "still-water run compresses 4.4% vs 2% gate; src/tensorsph/wave_tank.py changed post-baseline (m5511, m6307); test file unchanged since m5511",
+   "classification": "\u771f\u7ea2 (numerical, new vs baseline record)",
+   "fix": "NOT FIXED within budget - needs solver-level investigation (documented, signature recorded)",
+   "status": "OPEN"
+  }
+ ],
+ "environment_red": [],
+ "environment_red_note": "environment identical to m1833 (py3.11.6/torch2.7.1/pytest9.2.0); no timeout-class failures observed in core+slow runs",
+ "verdict": "2/3 true reds fixed; 1 open (R3 wave_tank compression); full fast suite signature pending (log kept)",
+ "artifacts": [
+  "runs/m17109/core.log",
+  "runs/m17109/slow.log",
+  "runs/m17109/slow_sig.json",
+  "runs/m17109/fig_signature.png",
+  "runs/m17109/parse_signature.py",
+  "runs/m17109/compare_baseline.py",
+  "runs/m17109/make_fig.py"
+ ]
+}

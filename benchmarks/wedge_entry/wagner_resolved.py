@@ -73,7 +73,15 @@ from tensorsph.wedge_entry import (  # noqa: E402
     write_json,
 )
 
-import run as wedge_run  # noqa: E402  (same directory; the campaign driver)
+# Load the campaign driver by path: a bare ``import run`` resolves to
+# whichever ``run.py`` an earlier import cached in ``sys.modules`` (e.g.
+# benchmarks/case_sph_wedge_entry_2d/run.py via c0_ladder), which breaks
+# suite-wide collection (m17109).
+import importlib.util as _ilu  # noqa: E402
+
+_spec = _ilu.spec_from_file_location("wedge_entry_campaign_run", HERE / "run.py")
+wedge_run = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(wedge_run)
 
 ART = ROOT / "artifacts" / "wedge_entry"
 OUT = ROOT / "runs" / "wedge_entry_wagner"
