@@ -1,0 +1,13 @@
+{
+ "numeric_identity_excluding_timing_and_figure": true,
+ "committed_sha256": "becbaacfa9706a4219a637f8f13e5795407f12e18b15193fb8aa812d4006f3b1",
+ "rerun_sha256": "02f44979373135578b56899c0c4eefbfd3ac8ef78678afe43aa3379053c36d1d",
+ "keys_compared": [
+  "case",
+  "params",
+  "reference",
+  "runs",
+  "sensitivity",
+  "verdict"
+ ]
+}
