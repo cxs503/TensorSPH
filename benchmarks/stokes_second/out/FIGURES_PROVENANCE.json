@@ -1,0 +1,36 @@
+{
+ "case": "stokes_second_oscillating_plate",
+ "anchor": "CASE-SPH-STOKES-2ND-PROBLEM",
+ "reason": "PNGs were absent from the published bundle while results_ladder.json declared them; regenerated here from the persisted rows/field only, no new simulation",
+ "source": {
+  "path": "benchmarks/stokes_second/out/results_ladder.json",
+  "sha256": "bd6cc05cacab5801a378a1b9cf0bfd6c2585261d8fe74788c8731efaee2cbc1b"
+ },
+ "script": {
+  "path": "scripts/regen_stokes_second_figures.py",
+  "sha256": "9bfffd1d407677f5dbddebfdf91fc52bc0e9947586efec51a3e09136d7680a3d"
+ },
+ "figures": {
+  "amplitude_decay.png": {
+   "sha256": "00b98bb4bcca2b2885e61d1c9c4aaf65f4bb0423d3c2b341c492222e20d71d13",
+   "bytes": 109140
+  },
+  "field_snapshot.png": {
+   "sha256": "9ae47cec191e5ba96e7e7865fdb3e9647bdd947dac6c589746f5b5e6caa3e176",
+   "bytes": 102054
+  }
+ },
+ "fields_retained": [
+  18
+ ],
+ "resolutions": [
+  8,
+  12,
+  18
+ ],
+ "environment": {
+  "matplotlib": "3.10.8",
+  "numpy": "2.4.6",
+  "python": "3.11.6"
+ }
+}

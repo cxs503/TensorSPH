@@ -165,5 +165,44 @@ Reading: halving $U_0$ leaves $A/U_0$ unchanged to the printed digits (the case 
 * **Residual start-up transient.** The measurement window starts at 4 periods since the slowest channel mode decays like $e^{-t/1.16T}$; the window-to-window amplitude change is +0.005 %, i.e. part of the error budget at the sub-percent level.
 * **Domain truncation is not discretisation error.** $H = 6\delta$ contributes +0.0043 % at $y=\delta$ (G4 vs G1 quantifies it).
 * **Scope.** A pass qualifies wall-driven solenoidal shear at Ma ≈ 3e-03, regular lattice, $\delta/dx \ge 8$, $h/dx \in [1.3, 1.9]$, $H/\delta = 6$. It says nothing about free-surface flows, high-Ma impact, pressure-gradient boundary layers, or the `wall_friction`-only (static-particle) wall model.
-* **Reproducibility.** Deterministic: fixed $dt$, lattice initial state, no random numbers; `PYTHONPATH=.:src python benchmarks/stokes_second/run.py --ladder --sweep --c0 4 --periods 5 --measure-periods 2` regenerates the artifacts (1261 s ladder, 569 s sensitivity; torch 2.7.1 / numpy 2.4.6, threads 1).
+* **Reproducibility.** Deterministic: fixed $dt$, lattice initial state, no random numbers; `PYTHONPATH=.:src python benchmarks/stokes_second/run.py --ladder --sweep --c0 4 --periods 6 --measure-periods 2` regenerates the artifacts (1261 s ladder, 569 s sensitivity; torch 2.7.1 / numpy 2.4.6, threads 1). This line said `--periods 5` while the published `repro_cmd` in `out/results_ladder.json`, `out/benchmark.json` and `out/MANIFEST.json` all say `--periods 6`; the measurement window (last two periods) is identical in both, but the command has to be the one the bundle records.
 
+
+## 7. Artefact integrity (`out/` is checkable as shipped)
+
+The numbers above live in `benchmarks/stokes_second/out/`, so the bundle has to
+be verifiable *without* re-running a 21-minute ladder. Two scripts do that, both
+fail-closed, plus `tests/test_stokes_second_bundle.py` (12 tests) which pins the
+passing direction **and** every defect class below:
+
+```
+PYTHONPATH=.:src python scripts/verify_stokes_second_bundle.py   # exit 0 = bundle self-consistent
+PYTHONPATH=.:src python scripts/regen_stokes_second_figures.py   # redraw figures from the bundle only
+PYTHONPATH=.:src python -m pytest tests/test_stokes_second_bundle.py -q
+```
+
+`verify_stokes_second_bundle.py` checks: V1 every artefact's sha256/bytes match
+`MANIFEST.json`; V2 no un-hashed file sits in `out/`; V3 every figure declared by
+`results_ladder.json` exists and is hashed; V4 the ladder is complete and its
+`G6`/`all_gates` flags agree with the L2 series and the per-run gates; V5 the
+graded metrics of each rung are **recomputed from that rung's own persisted
+rows** (rms and worst-row relative error over `y <= delta`, least-squares decay
+rate, `delta_ratio`) to the 6-significant-digit precision of the file; V6
+`benchmark.json` quotes the same number, rows, verdicts and command as the
+ladder; V7 the rungs share one case configuration; V8 `MANIFEST.runs` describes
+every `results_*.json` it hashes.
+
+What this round repaired in the published bundle (no graded number changed —
+`results_ladder.json` and `benchmark.json` are byte-identical):
+
+| defect | how it was found | repair |
+|---|---|---|
+| the ladder declared `amplitude_decay.png` / `field_snapshot.png`, the doc embedded them, **and neither file was in the repository** (binary artefacts were filtered on the way in) | V3 of the new verifier | both figures regenerated from the persisted rows/field by `scripts/regen_stokes_second_figures.py`; source + script + figure sha256 recorded in `out/FIGURES_PROVENANCE.json`; both hashed in `MANIFEST.json` |
+| `MANIFEST.json` certified the ladder while saying `mode: quick`, quoting the quick run's command and a pre-fix `provenance.case` with `c0 = 10` (the ladder ran at `c0 = 4`) — a later `--quick` run had overwritten the header | V6/V8 | header re-pointed at the bundle's own `results_ladder.json` (`mode: ladder`, its `repro_cmd`, `finished`, `provenance`); the superseded header is kept verbatim under `superseded_headers`, and `run.py::_write_bundle` now keeps a per-results-file `runs` record so a later run of another mode cannot misdescribe the ladder again |
+| raw `figure`/`field` provenance of the PNGs was unrecorded (only the run-time composer had it) | — | `out/FIGURES_PROVENANCE.json` records the sha256 of the source ladder, of the regenerating script, of every figure, which rungs retained a field (`[18]` only) and the matplotlib/numpy versions used |
+
+Limit of this section: it certifies *internal consistency* and hash integrity,
+not physics. The physics evidence is §4–§5 against the analytic solution; the
+figures are a view of the same persisted rows, not an independent measurement.
+Only the finest rung ($\delta/dx=18$) retained its space-time field, so the
+snapshot panel shows that rung alone and the panel title says so.
