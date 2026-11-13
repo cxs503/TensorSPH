@@ -48,6 +48,8 @@ MATRIX = [
      "method A, H/dx = 2.08, t_end 5.5 s"),
     ("D20_h025_xsph", "runs/xval/cell_2.json", "mechanism",
      "method A + XSPH 0.05 in the propagation phase (post-hoc probe)"),
+    ("D20_h025_comp", "runs/xval/cell_3.json", "mechanism",
+     "method A + SPHinXsys compression regularization (post-hoc probe)"),
     ("D20_h020_archive", "docs/reports/artifacts_wave_flume/wf_D20_unstable.json",
      "archive", "m17501 archive record (h = 0.20 m, t_end 3.7 s)"),
 ]
