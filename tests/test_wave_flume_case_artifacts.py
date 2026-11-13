@@ -29,6 +29,12 @@ from tensorsph.wave_flume_grade import grade_regular_record
 
 REPO = Path(__file__).resolve().parents[1]
 RUNS = REPO / "runs"
+# ``runs/`` is *not* carried by the platform's merge pipeline (docs/, tests/,
+# scripts/, src/ and examples/ are; ``runs/`` is dropped), so a record that only
+# exists there disappears from the default branch and the published numbers stop
+# being reproducible.  The archive below is the version-controlled copy.
+RECORDS = REPO / "docs" / "reports" / "records"
+MERGE_SAFE = ("docs/", "tests/", "scripts/", "src/", "examples/")
 REPORT = REPO / "docs" / "reports" / "wave_flume_report.json"
 NUMBERS = REPO / "docs" / "reports" / "wave_flume_numbers.json"
 DOC = REPO / "docs" / "reports" / "wave_flume_case.md"
@@ -36,7 +42,7 @@ TOLERANCE = 0.10
 
 
 def _records():
-    return sorted(RUNS.glob("wf_*.json"))
+    return sorted(set(RUNS.glob("wf_*.json")) | set(RECORDS.glob("wf_*.json")))
 
 
 def _report():
@@ -60,6 +66,24 @@ def test_committed_records_are_completed_solver_runs():
         assert len(record["times"]) == len(record["probe_eta"][0]), path
         finite = [sum(math.isfinite(v) for v in eta) for eta in record["probe_eta"]]
         assert min(finite) > 0.9 * len(record["times"]), (path, finite)
+
+
+def test_published_records_survive_the_merge_pipeline():
+    """A cited record must live where the merge pipeline keeps files.
+
+    ``runs/`` is dropped when a mission branch is merged (CASE-WAVE-FLUME lost
+    ``runs/wf_D20.json`` that way while its report stayed), which silently makes
+    the published numbers unreproducible.  Pin the record to a merge-safe root.
+    """
+    report = _report()
+    assert report["cases"], "report cites no records"
+    for case in report["cases"]:
+        record = case["record"]
+        assert not record.startswith("runs/"), (
+            f"{record} is cited by the report but lives under runs/, which the "
+            "merge pipeline does not carry; archive it under docs/reports/records/")
+        assert any(record.startswith(root) for root in MERGE_SAFE), record
+        assert (REPO / record).exists(), record
 
 
 def test_report_is_a_recomputation_of_the_records():
