@@ -1,0 +1,22 @@
+{
+ "command": "python scripts/run_surface_tension_dispersion.py --norm local_range --threads 4 --out-dir runs/surface_tension_dispersion",
+ "cwd": "/root/tp-agent/work/m14849",
+ "git_revision": "4b0845779ab0e7326487d374649678e683a07575",
+ "git_branch": "agent/m14849",
+ "started_at": "2026-11-11T11:54:58Z",
+ "wall_clock_s": 60.27,
+ "python": "3.11.6",
+ "torch": "2.7.1",
+ "platform": "Linux-6.6.52-1.7.lns23.loongarch64-loongarch64-with-glibc2.38",
+ "threads": 4,
+ "report_sha256": "f96406f9213121bc64cdd668d4f9a67bebf73b4e312cfc3d0b4bc98aad739dde",
+ "benchmark_sha256": "43df5fd45310ee4218fcbfe7e509b0d282212af835bd16c9ba972da3683a041f",
+ "artifacts": [
+  "runs/surface_tension_dispersion/report.json",
+  "runs/surface_tension_dispersion/benchmark.json",
+  "runs/surface_tension_dispersion/figures/capillary_wave_error.png",
+  "runs/surface_tension_dispersion/figures/lamb_stiffness.png",
+  "runs/surface_tension_dispersion/figures/curvature_audit.png",
+  "runs/surface_tension_dispersion/figures/delta_measure.png"
+ ]
+}

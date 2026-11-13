@@ -138,7 +138,7 @@
     },
     {
       "admissibility": null,
-      "artifact": "runs/surface_tension_dispersion/report.json",
+      "artifact": "benchmarks/surface_tension_dispersion/report.json",
       "artifact_status": "FAIL",
       "backlog_ref": "docs/verification_ledger.md",
       "claim_id": "csf_dispersion.capillary_wave.omega_error.local_range",
@@ -177,7 +177,7 @@
     },
     {
       "admissibility": null,
-      "artifact": "runs/surface_tension_dispersion/report.json",
+      "artifact": "benchmarks/surface_tension_dispersion/report.json",
       "artifact_status": "FAIL",
       "backlog_ref": "docs/verification_ledger.md",
       "claim_id": "csf_dispersion.lamb_mode.omega_error.local_range",
@@ -459,6 +459,40 @@
         "value": 1.0
       },
       "rel_error_pct": 8.806013,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/fluctuating_hydro/thermostat_audit.json",
+      "artifact_status": "FAIL",
+      "backlog_ref": "docs/verification_fluctuating_hydro_thermostat.md",
+      "claim_id": "fluctuating_hydro.thermostat.steady_state.n128.uq",
+      "claim_type": "relative_error",
+      "credit_qualified": true,
+      "criterion_pct": 15.0,
+      "declared_verdict": null,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "MARGINAL",
+      "guarding_test": "tests/test_fluctuating_hydro_thermostat.py",
+      "json_path": "ensemble_summary.inverse_variance_combined",
+      "measured": {
+        "definition": "6 independent seeds, +/- 0.0047 (1 SE)",
+        "unit": "T*",
+        "value": 0.946962
+      },
+      "notes": "Second reading of the same quantity, taken at a converged window (10 relaxation times discarded, block-averaged SE, SE plateau checked over 4-12 blocks). The window ladder is flat, so this is a systematic offset of -11.4 sigma, not sample noise. The archived entry above reads 1.08806 T* (+8.81 %) from an 800-step run whose discarded window is 1.6 relaxation times: that reading is the startup transient, it points the opposite way, and it must not be quoted as the thermostat's steady state.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "steady-state temperature of the LJ fluid under the Langevin (BAOAB) thermostat, N = 128, uncertainty quantified",
+      "quantity_id": "fluctuating_hydro_temperature",
+      "reference": {
+        "source": "target temperature T* = 1.0 (reduced LJ units)",
+        "unit": "T*",
+        "value": 1.0
+      },
+      "rel_error_pct": -5.303757,
       "run_validity": "UNPROBED",
       "superseded_by": null
     },
@@ -1180,21 +1214,15 @@
     {
       "admissibility": null,
       "artifact": "benchmarks/threed_hydrostatic/report.json",
-      "artifact_status": "FAIL",
+      "artifact_status": "PASS",
       "backlog_ref": "docs/verification_threed.md",
       "claim_id": "threed_hydrostatic.bottom_pressure.adami_best",
       "claim_type": "relative_error",
       "credit_qualified": false,
       "criterion_pct": 15.0,
       "declared_verdict": {
-        "failing_criteria": [
-          "bottom_pressure_within_15pct_all",
-          "centre_of_mass_drift_below_1pct",
-          "column_settled_window_drift_below_2pct",
-          "compressibility_helps_as_predicted",
-          "interior_pressure_within_15pct_best"
-        ],
-        "json_path": "verdict",
+        "failing_criteria": [],
+        "json_path": "verdict_including_probes",
         "missing_cases": [],
         "value": "fail"
       },
@@ -1203,11 +1231,11 @@
       "gauge_degenerate": false,
       "grade": "PASS",
       "guarding_test": "tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria",
-      "json_path": "runs[0].pressure",
+      "json_path": "runs[6].pressure",
       "measured": {
-        "definition": "mean p of the deepest fluid layer; adami-c0_20-nz16, dx = 0.01 m, 1846 steps",
+        "definition": "mean p of the deepest fluid layer; adami-c0_40-nz16, dx = 0.01 m, 7385 steps",
         "unit": "Pa",
-        "value": 1478.771957
+        "value": 1502.11356
       },
       "notes": "Per-layer relative errors alternate between ~-6 % and up to -43 % toward the free surface: a particle lattice supports an odd-even mode in the pressure field. The bottom layer, which is what holds the load, is quoted here; the odd-even amplitude is recorded in the artifact so the two are never conflated.",
       "paper_criterion_pct": 3.0,
@@ -1218,43 +1246,37 @@
         "unit": "Pa",
         "value": 1520.55
       },
-      "rel_error_pct": -2.747561,
+      "rel_error_pct": -1.212485,
       "run_validity": "UNPROBED",
       "superseded_by": null
     },
     {
       "admissibility": null,
       "artifact": "benchmarks/threed_hydrostatic/report.json",
-      "artifact_status": "FAIL",
+      "artifact_status": "PASS",
       "backlog_ref": "docs/verification_threed.md",
       "claim_id": "threed_hydrostatic.bottom_pressure.adami_worst",
       "claim_type": "relative_error",
-      "credit_qualified": false,
+      "credit_qualified": null,
       "criterion_pct": 15.0,
       "declared_verdict": {
-        "failing_criteria": [
-          "bottom_pressure_within_15pct_all",
-          "centre_of_mass_drift_below_1pct",
-          "column_settled_window_drift_below_2pct",
-          "compressibility_helps_as_predicted",
-          "interior_pressure_within_15pct_best"
-        ],
-        "json_path": "verdict",
+        "failing_criteria": [],
+        "json_path": "verdict_including_probes",
         "missing_cases": [],
         "value": "fail"
       },
       "gate_limit": null,
       "gate_result": null,
       "gauge_degenerate": false,
-      "grade": "MARGINAL",
+      "grade": "WITHHELD",
       "guarding_test": "tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria",
       "json_path": "runs[2].pressure",
       "measured": {
-        "definition": "worst of the 5 Adami runs on the bottom layer; adami-c0_5-nz16, dx = 0.01 m",
+        "definition": "worst of the 6 Adami runs on the bottom layer; adami-c0_5-nz16, dx = 0.01 m",
         "unit": "Pa",
-        "value": 1387.584969
+        "value": 76.039515
       },
-      "notes": "Complement of `threed_hydrostatic.bottom_pressure.adami_best`: the 5 Adami runs span -8.74 % to -2.75 % on the same collapse quantity, so the single best value is a selection, not a property of the wall model alone (it tracks c0 and therefore the density error, as Adami et al. 2012 predict).",
+      "notes": "Complement of `threed_hydrostatic.bottom_pressure.adami_best`: the 6 Adami runs span -95.00 % to -1.21 % on the same collapse quantity, so the single best value is a selection, not a property of the wall model alone (it tracks c0 and therefore the density error, as Adami et al. 2012 predict).",
       "paper_criterion_pct": 3.0,
       "quantity": "bottom pressure of a 3-D column at rest, p = rho0 g H",
       "quantity_id": "threed_hydrostatic_bottom_pressure",
@@ -1263,7 +1285,7 @@
         "unit": "Pa",
         "value": 1520.55
       },
-      "rel_error_pct": -8.744535,
+      "rel_error_pct": -94.99921,
       "run_validity": "UNPROBED",
       "superseded_by": null
     },
@@ -1277,14 +1299,8 @@
       "credit_qualified": null,
       "criterion_pct": 15.0,
       "declared_verdict": {
-        "failing_criteria": [
-          "bottom_pressure_within_15pct_all",
-          "centre_of_mass_drift_below_1pct",
-          "column_settled_window_drift_below_2pct",
-          "compressibility_helps_as_predicted",
-          "interior_pressure_within_15pct_best"
-        ],
-        "json_path": "verdict",
+        "failing_criteria": [],
+        "json_path": "verdict_including_probes",
         "missing_cases": [],
         "value": "fail"
       },
@@ -1297,7 +1313,7 @@
       "measured": {
         "definition": "same case with the wall pressure taken from the wall's own summation density instead of the Adami extrapolation (tait-c0_10-nz16)",
         "unit": "Pa",
-        "value": 1136.927786
+        "value": 0.0
       },
       "notes": "Control run, expected to fail: without the Adami extrapolation the wall under-pressurises, the column keeps sinking and the settling-window drift reaches tens of percent. Recorded so the wall model is never assumed to be optional decoration.",
       "paper_criterion_pct": 3.0,
@@ -1308,7 +1324,7 @@
         "unit": "Pa",
         "value": 1520.55
       },
-      "rel_error_pct": -25.229175,
+      "rel_error_pct": -100.0,
       "run_validity": "UNPROBED",
       "superseded_by": null
     },
@@ -1322,14 +1338,8 @@
       "credit_qualified": null,
       "criterion_pct": 15.0,
       "declared_verdict": {
-        "failing_criteria": [
-          "bottom_pressure_within_15pct_all",
-          "centre_of_mass_drift_below_1pct",
-          "column_settled_window_drift_below_2pct",
-          "compressibility_helps_as_predicted",
-          "interior_pressure_within_15pct_best"
-        ],
-        "json_path": "verdict",
+        "failing_criteria": [],
+        "json_path": "verdict_including_probes",
         "missing_cases": [],
         "value": "fail"
       },
@@ -1338,11 +1348,11 @@
       "gauge_degenerate": false,
       "grade": "FAIL",
       "guarding_test": "tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria",
-      "json_path": "runs[0].pressure",
+      "json_path": "runs[6].pressure",
       "measured": {
-        "definition": "max over the 13 core layers; adami-c0_20-nz16",
+        "definition": "max over the 12 core layers; adami-c0_40-nz16",
         "unit": "%",
-        "value": 43.174104
+        "value": 17.338701
       },
       "notes": "The odd-even pressure mode of the particle lattice: adjacent layers alternate between ~-6 % and up to -43 %, so any single-layer reading of this benchmark is a sample of a mode, not a converged profile.",
       "paper_criterion_pct": 3.0,
@@ -1353,28 +1363,22 @@
         "unit": "%",
         "value": 0.0
       },
-      "rel_error_pct": 43.174104,
+      "rel_error_pct": 17.338701,
       "run_validity": "UNPROBED",
       "superseded_by": null
     },
     {
       "admissibility": null,
       "artifact": "benchmarks/threed_hydrostatic/report.json",
-      "artifact_status": "FAIL",
+      "artifact_status": "PASS",
       "backlog_ref": "docs/verification_threed.md",
       "claim_id": "threed_hydrostatic.profile.mean_rel_error_core.adami_best",
       "claim_type": "relative_error",
       "credit_qualified": false,
       "criterion_pct": 15.0,
       "declared_verdict": {
-        "failing_criteria": [
-          "bottom_pressure_within_15pct_all",
-          "centre_of_mass_drift_below_1pct",
-          "column_settled_window_drift_below_2pct",
-          "compressibility_helps_as_predicted",
-          "interior_pressure_within_15pct_best"
-        ],
-        "json_path": "verdict",
+        "failing_criteria": [],
+        "json_path": "verdict_including_probes",
         "missing_cases": [],
         "value": "fail"
       },
@@ -1383,11 +1387,11 @@
       "gauge_degenerate": false,
       "grade": "MARGINAL",
       "guarding_test": "tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria",
-      "json_path": "runs[0].pressure",
+      "json_path": "runs[6].pressure",
       "measured": {
-        "definition": "mean of the per-layer relative errors over the 13 core layers; adami-c0_20-nz16",
+        "definition": "mean of the per-layer relative errors over the 12 core layers; adami-c0_40-nz16",
         "unit": "%",
-        "value": -11.922738
+        "value": -6.866454
       },
       "notes": "The bottom-layer reading above is one point of a profile that is NOT within the band everywhere: the interior is systematically low, which is why the artifact's own criterion `interior_pressure_within_15pct_best` is false. Registered so the PASS on the bottom layer cannot be read as 'the 3-D hydrostatic profile is verified'.",
       "paper_criterion_pct": 3.0,
@@ -1398,7 +1402,7 @@
         "unit": "%",
         "value": 0.0
       },
-      "rel_error_pct": -11.922738,
+      "rel_error_pct": -6.866454,
       "run_validity": "UNPROBED",
       "superseded_by": null
     },
@@ -1451,10 +1455,17 @@
       "credit_qualified": false,
       "criterion_pct": 15.0,
       "declared_verdict": {
-        "failing_criteria": [],
+        "failing_criteria": [
+          "fourth_order_improves_on_second_order_every_rung"
+        ],
         "json_path": "verdict",
         "missing_cases": [
-          "h1.8"
+          "h1.3",
+          "h1.5",
+          "h1.8",
+          "order4-n16",
+          "order4-n20",
+          "order4-n24"
         ],
         "value": "fail"
       },
@@ -1492,10 +1503,17 @@
       "credit_qualified": false,
       "criterion_pct": 15.0,
       "declared_verdict": {
-        "failing_criteria": [],
+        "failing_criteria": [
+          "fourth_order_improves_on_second_order_every_rung"
+        ],
         "json_path": "verdict",
         "missing_cases": [
-          "h1.8"
+          "h1.3",
+          "h1.5",
+          "h1.8",
+          "order4-n16",
+          "order4-n20",
+          "order4-n24"
         ],
         "value": "fail"
       },
@@ -1533,10 +1551,17 @@
       "credit_qualified": false,
       "criterion_pct": 15.0,
       "declared_verdict": {
-        "failing_criteria": [],
+        "failing_criteria": [
+          "fourth_order_improves_on_second_order_every_rung"
+        ],
         "json_path": "verdict",
         "missing_cases": [
-          "h1.8"
+          "h1.3",
+          "h1.5",
+          "h1.8",
+          "order4-n16",
+          "order4-n20",
+          "order4-n24"
         ],
         "value": "fail"
       },
@@ -1595,6 +1620,142 @@
         "value": 0.0
       },
       "rel_error_pct": 4.607904,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/wedge_entry/summary_v2.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "CASE-SPH-WEDGE-ENTRY-2D",
+      "claim_id": "wedge_entry.c_wetted_coeff.beta30_dx1mm",
+      "claim_type": "relative_error",
+      "credit_qualified": true,
+      "criterion_pct": 15.0,
+      "declared_verdict": null,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "PASS",
+      "guarding_test": "tests/test_wedge_entry_ledger.py",
+      "json_path": "ladder[id=ladder_L400].c_coeff_mean",
+      "measured": {
+        "definition": "mean of c/(V t) over frames whose footprint spans >= 10 spacings; c is the outermost wedge node whose Adami-extrapolated wall pressure exceeds the middle threshold of the pre-registered band",
+        "unit": "-",
+        "value": 2.65681
+      },
+      "notes": "Kinematic quantity: it does not depend on the wall-pressure magnitude, only on where the pressure crosses the detection threshold, so it is the cleanest anchor the case has. Resolved-band criteria (a) is graded FAIL campaign-wide (14.0 % at dx = 1 mm, limit 10 %), and that FAIL comes from the coarse levels and the small-deadrise cases, not from this reading.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "wetted half-width coefficient c/(V t) vs Wagner C = pi/(2 tan beta), beta = 30 deg",
+      "quantity_id": "wedge_c_wetted_coeff_beta30",
+      "reference": {
+        "source": "Wagner (1932) C = pi/(2 tan beta), derived",
+        "unit": "-",
+        "value": 2.720699
+      },
+      "rel_error_pct": -2.348258,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/wedge_entry/summary_v2.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "CASE-SPH-WEDGE-ENTRY-2D",
+      "claim_id": "wedge_entry.cp_peak.blunt45_dx1mm",
+      "claim_type": "relative_error",
+      "credit_qualified": true,
+      "criterion_pct": 15.0,
+      "declared_verdict": null,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "MARGINAL",
+      "guarding_test": "tests/test_wedge_entry_ledger.py",
+      "json_path": "cases[id=beta45_V1].p_band_sph_mean",
+      "measured": {
+        "definition": "ensemble band peak, same estimator",
+        "unit": "Pa",
+        "value": 1614.9
+      },
+      "notes": "Control case: at 45 deg the Wagner peak is 11.4 spacings inside the root, so this is where the *pressure scale* can be checked without the resolvability confound. Campaign criterion (g) threshold is 15 %.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "peak wall pressure on the resolved band vs Wagner flat-plate value q (pi^2/4 + 1), beta = 45 deg",
+      "quantity_id": "wedge_cp_peak_blunt45",
+      "reference": {
+        "source": "Wagner (1932) flat-plate limit, same band, same tau bin centres",
+        "unit": "Pa",
+        "value": 1733.54
+      },
+      "rel_error_pct": -6.843799,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/wedge_entry/summary_v2.json",
+      "artifact_status": "FAIL",
+      "backlog_ref": "CASE-SPH-WEDGE-ENTRY-2D",
+      "claim_id": "wedge_entry.cp_peak.resolved_band.beta10_dx1mm",
+      "claim_type": "relative_error",
+      "credit_qualified": null,
+      "criterion_pct": 15.0,
+      "declared_verdict": null,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "FAIL",
+      "guarding_test": "tests/test_wedge_entry_ledger.py",
+      "json_path": "cases[id=beta10_V1].p_band_sph_mean",
+      "measured": {
+        "definition": "ensemble band peak, same estimator as the beta = 30 deg entry",
+        "unit": "Pa",
+        "value": 24677.8
+      },
+      "notes": "Honest FAIL: 26.5 % at dx = 1 mm. Wagner's peak sits 0.32 spacings inside the spray root at this deadrise, i.e. inside the kernel support, so the target is not resolvable at any affordable dx and refining 1 mm -> 0.5 mm did not recover it (docs/wedge_entry_wagner_resolved.md). Registered as the exemplar of the resolvability limit, not as a solver defect that a tolerance change could fix.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "peak wall pressure on the resolved band vs Wagner q (C^2 + 1), beta = 10 deg",
+      "quantity_id": "wedge_cp_peak_beta10",
+      "reference": {
+        "source": "Wagner (1932) maximum on the same band, same tau bin centres",
+        "unit": "Pa",
+        "value": 19508.7
+      },
+      "rel_error_pct": 26.496384,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
+      "artifact": "benchmarks/wedge_entry/summary_v2.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "CASE-SPH-WEDGE-ENTRY-2D",
+      "claim_id": "wedge_entry.cp_peak.resolved_band.beta30_dx1mm",
+      "claim_type": "relative_error",
+      "credit_qualified": true,
+      "criterion_pct": 15.0,
+      "declared_verdict": null,
+      "gate_limit": null,
+      "gate_result": null,
+      "gauge_degenerate": false,
+      "grade": "MARGINAL",
+      "guarding_test": "tests/test_wedge_entry_ledger.py",
+      "json_path": "cases[id=beta30_V1].p_band_sph_mean",
+      "measured": {
+        "definition": "ensemble band peak: frames binned in tau, bin mean over the last frames, maximum on |x| <= (1 - 3 dx/c) c",
+        "unit": "Pa",
+        "value": 3678.56
+      },
+      "notes": "Wagner's peak is 3.5 spacings inside the spray root at dx = 1 mm, so the like-for-like comparison is meaningful here. Campaign criterion (b) is graded FAIL because beta = 10/15 deg pull the mean to 35.7 %; the reading of this case is 11.8 % (literal metric 12.4 %) and the frame-to-frame scatter in the band is 66.4 % of the band mean, i.e. the error and the noise are the same size.",
+      "paper_criterion_pct": 3.0,
+      "quantity": "peak wall pressure on the resolved band vs Wagner q (C^2 + 1), beta = 30 deg",
+      "quantity_id": "wedge_cp_peak_beta30",
+      "reference": {
+        "source": "Wagner (1932) maximum on the same band, same tau bin centres",
+        "unit": "Pa",
+        "value": 4171.8
+      },
+      "rel_error_pct": -11.823194,
       "run_validity": "UNPROBED",
       "superseded_by": null
     },
@@ -2123,6 +2284,12 @@
       "severity": "high"
     },
     {
+      "claim_id": "threed_hydrostatic.bottom_pressure.adami_worst",
+      "detail": "artifact declares PASS, ledger derives WITHHELD: |rel error| = 95.00 % > 15 %",
+      "rule": "declared_vs_derived",
+      "severity": "high"
+    },
+    {
       "claim_id": "young_laplace.laplace_law.vacuum_gauge",
       "detail": "artifact declares PASS, ledger derives WITHHELD: vacuum-gauge readout (additive |p| offset, not a physical dp)",
       "rule": "declared_vs_derived",
@@ -2172,43 +2339,37 @@
     },
     {
       "claim_id": "threed_hydrostatic.bottom_pressure.adami_best",
-      "detail": "-2.75 % is credited PASS, but the artifact `benchmarks/threed_hydrostatic/report.json` declares `verdict = fail` (failing criteria: bottom_pressure_within_15pct_all, centre_of_mass_drift_below_1pct, column_settled_window_drift_below_2pct, compressibility_helps_as_predicted, interior_pressure_within_15pct_best): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md",
-      "rule": "credit_from_failing_artifact",
-      "severity": "high"
-    },
-    {
-      "claim_id": "threed_hydrostatic.bottom_pressure.adami_worst",
-      "detail": "-8.74 % is credited MARGINAL, but the artifact `benchmarks/threed_hydrostatic/report.json` declares `verdict = fail` (failing criteria: bottom_pressure_within_15pct_all, centre_of_mass_drift_below_1pct, column_settled_window_drift_below_2pct, compressibility_helps_as_predicted, interior_pressure_within_15pct_best): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md",
+      "detail": "-1.21 % is credited PASS, but the artifact `benchmarks/threed_hydrostatic/report.json` declares `verdict_including_probes = fail`: this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md",
       "rule": "credit_from_failing_artifact",
       "severity": "high"
     },
     {
       "claim_id": "threed_hydrostatic.profile.mean_rel_error_core.adami_best",
-      "detail": "-11.92 % is credited MARGINAL, but the artifact `benchmarks/threed_hydrostatic/report.json` declares `verdict = fail` (failing criteria: bottom_pressure_within_15pct_all, centre_of_mass_drift_below_1pct, column_settled_window_drift_below_2pct, compressibility_helps_as_predicted, interior_pressure_within_15pct_best): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md",
+      "detail": "-6.87 % is credited MARGINAL, but the artifact `benchmarks/threed_hydrostatic/report.json` declares `verdict_including_probes = fail`: this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md",
       "rule": "credit_from_failing_artifact",
       "severity": "high"
     },
     {
       "claim_id": "threed_shear.decay_rate.finest",
-      "detail": "-2.68 % is credited PASS, but the artifact `benchmarks/threed_shear/report.json` declares `verdict = fail` (missing cases: h1.8): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md",
+      "detail": "-2.68 % is credited PASS, but the artifact `benchmarks/threed_shear/report.json` declares `verdict = fail` (failing criteria: fourth_order_improves_on_second_order_every_rung; missing cases: h1.3, h1.5, h1.8, order4-n16, order4-n20, order4-n24): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md",
       "rule": "credit_from_failing_artifact",
       "severity": "high"
     },
     {
       "claim_id": "threed_shear.decay_rate.raw_laplacian",
-      "detail": "+11.46 % is credited MARGINAL, but the artifact `benchmarks/threed_shear/report.json` declares `verdict = fail` (missing cases: h1.8): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md",
+      "detail": "+11.46 % is credited MARGINAL, but the artifact `benchmarks/threed_shear/report.json` declares `verdict = fail` (failing criteria: fourth_order_improves_on_second_order_every_rung; missing cases: h1.3, h1.5, h1.8, order4-n16, order4-n20, order4-n24): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md",
       "rule": "credit_from_failing_artifact",
       "severity": "high"
     },
     {
       "claim_id": "threed_shear.decay_rate.worst_of_ladder",
-      "detail": "-12.62 % is credited MARGINAL, but the artifact `benchmarks/threed_shear/report.json` declares `verdict = fail` (missing cases: h1.8): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md",
+      "detail": "-12.62 % is credited MARGINAL, but the artifact `benchmarks/threed_shear/report.json` declares `verdict = fail` (failing criteria: fourth_order_improves_on_second_order_every_rung; missing cases: h1.3, h1.5, h1.8, order4-n16, order4-n20, order4-n24): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md",
       "rule": "credit_from_failing_artifact",
       "severity": "high"
     },
     {
       "claim_id": "threed_hydrostatic_bottom_pressure",
-      "detail": "3 active readings of one quantity span -25.2 % … -2.7 % (spread 22.5 pt): threed_hydrostatic.bottom_pressure.adami_best=-2.7 %, threed_hydrostatic.bottom_pressure.adami_worst=-8.7 %, threed_hydrostatic.bottom_pressure.tait_wall_control=-25.2 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
+      "detail": "3 active readings of one quantity span -100.0 % … -1.2 % (spread 98.8 pt): threed_hydrostatic.bottom_pressure.adami_best=-1.2 %, threed_hydrostatic.bottom_pressure.adami_worst=-95.0 %, threed_hydrostatic.bottom_pressure.tait_wall_control=-100.0 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
       "rule": "quantity_spread",
       "severity": "high"
     },
@@ -2229,69 +2390,32 @@
       "detail": "14 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.closure.closure_on_all_donors.dx1.5mm_c20=-25.3 %, young_laplace.closure.closure_on_all_donors.dx2mm_c20=-20.1 %, young_laplace.closure.closure_on_interior_layers2.dx1.5mm_c20=-3.4 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c10=-4.0 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c20=+8.8 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c5=+4.9 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.force_balance.flux_integral.dx1.5mm=-7.5 %, young_laplace.force_balance.flux_integral.dx2mm=-0.3 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
       "rule": "quantity_spread",
       "severity": "high"
-    },
-    {
-      "claim_id": "benchmarks/slamming",
-      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
-      "rule": "uncovered_benchmark",
-      "severity": "medium"
-    },
-    {
-      "claim_id": "benchmarks/two_phase_laplace",
-      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
-      "rule": "uncovered_benchmark",
-      "severity": "medium"
-    },
-    {
-      "claim_id": "benchmarks/verification_ladder",
-      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
-      "rule": "uncovered_benchmark",
-      "severity": "medium"
-    },
-    {
-      "claim_id": "benchmarks/wcsph_chain",
-      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
-      "rule": "uncovered_benchmark",
-      "severity": "medium"
-    },
-    {
-      "claim_id": "benchmarks/wedge_entry",
-      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
-      "rule": "uncovered_benchmark",
-      "severity": "medium"
-    },
-    {
-      "claim_id": "benchmarks/contact_angle/bc_diagnosis.json",
-      "detail": "machine-readable evidence file not referenced by any ledger claim",
-      "rule": "unregistered_artifact",
-      "severity": "medium"
     }
   ],
   "schema_version": 1,
   "summary": {
     "by_grade": {
-      "FAIL": 12,
-      "MARGINAL": 13,
-      "PASS": 15,
+      "FAIL": 13,
+      "MARGINAL": 15,
+      "PASS": 16,
       "WITHDRAWN": 2,
-      "WITHHELD": 15
+      "WITHHELD": 16
     },
     "criterion_pct": 15.0,
     "findings_by_rule": {
-      "credit_from_failing_artifact": 6,
-      "declared_vs_derived": 2,
+      "credit_from_failing_artifact": 5,
+      "declared_vs_derived": 3,
       "inadmissible_run": 3,
       "quantity_spread": 4,
-      "run_validity": 4,
-      "uncovered_benchmark": 5,
-      "unregistered_artifact": 1
+      "run_validity": 4
     },
     "n_artifact_verdicts_fail": 14,
-    "n_claims": 57,
-    "n_credits_unqualified": 6,
-    "n_credits_without_declared_verdict": 15,
-    "n_findings": 25,
-    "n_quantities": 36,
+    "n_claims": 62,
+    "n_credits_unqualified": 5,
+    "n_credits_without_declared_verdict": 19,
+    "n_findings": 19,
+    "n_missing_artifacts": 0,
+    "n_quantities": 40,
     "paper_criterion_pct": 3.0
   }
 }

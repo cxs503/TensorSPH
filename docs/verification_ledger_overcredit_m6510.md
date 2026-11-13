@@ -28,9 +28,9 @@
 | 新 claim | 读数 | 补的是什么 |
 |---|---|---|
 | `threed_shear.decay_rate.worst_of_ladder` | -12.62 % | 同一阶梯最粗一级（对照 finest 的选择偏差） |
-| `threed_hydrostatic.bottom_pressure.adami_worst` | -8.74 % | 同一组 Adami 算例最差一个（对照 best） |
-| `threed_hydrostatic.profile.mean_rel_error_core.adami_best` | -11.92 % | 同一算例的内区压力剖面均值误差（底压只代表一层） |
-| `threed_hydrostatic.profile.max_rel_error_core.adami_best` | +43.17 % | 同一算例的内区逐层最差误差（奇偶模态） |
+| `threed_hydrostatic.bottom_pressure.adami_worst` | -95.00 % | 同一组 Adami 算例最差一个（对照 best） |
+| `threed_hydrostatic.profile.mean_rel_error_core.adami_best` | -6.87 % | 同一算例的内区压力剖面均值误差（底压只代表一层） |
+| `threed_hydrostatic.profile.max_rel_error_core.adami_best` | +17.34 % | 同一算例的内区逐层最差误差（奇偶模态） |
 
 ## 3. 计算结果
 
@@ -38,39 +38,38 @@
 
 | claim | 等级 | rel err | 工件自述 |
 |---|---|---|---|
-| `threed_hydrostatic.bottom_pressure.adami_best` | **PASS** | -2.75 % | `benchmarks/threed_hydrostatic/report.json` → `verdict = fail`（未通过项 `bottom_pressure_within_15pct_all`、`centre_of_mass_drift_below_1pct`、`column_settled_window_drift_below_2pct`、`compressibility_helps_as_predicted`、`interior_pressure_within_15pct_best`） |
-| `threed_hydrostatic.bottom_pressure.adami_worst` | **MARGINAL** | -8.74 % | `benchmarks/threed_hydrostatic/report.json` → `verdict = fail`（未通过项 `bottom_pressure_within_15pct_all`、`centre_of_mass_drift_below_1pct`、`column_settled_window_drift_below_2pct`、`compressibility_helps_as_predicted`、`interior_pressure_within_15pct_best`） |
-| `threed_hydrostatic.profile.mean_rel_error_core.adami_best` | **MARGINAL** | -11.92 % | `benchmarks/threed_hydrostatic/report.json` → `verdict = fail`（未通过项 `bottom_pressure_within_15pct_all`、`centre_of_mass_drift_below_1pct`、`column_settled_window_drift_below_2pct`、`compressibility_helps_as_predicted`、`interior_pressure_within_15pct_best`） |
-| `threed_shear.decay_rate.finest` | **PASS** | -2.68 % | `benchmarks/threed_shear/report.json` → `verdict = fail`（缺失用例 `h1.8`） |
-| `threed_shear.decay_rate.raw_laplacian` | **MARGINAL** | +11.46 % | `benchmarks/threed_shear/report.json` → `verdict = fail`（缺失用例 `h1.8`） |
-| `threed_shear.decay_rate.worst_of_ladder` | **MARGINAL** | -12.62 % | `benchmarks/threed_shear/report.json` → `verdict = fail`（缺失用例 `h1.8`） |
+| `threed_hydrostatic.bottom_pressure.adami_best` | **PASS** | -1.21 % | `benchmarks/threed_hydrostatic/report.json` → `verdict_including_probes = fail`（） |
+| `threed_hydrostatic.profile.mean_rel_error_core.adami_best` | **MARGINAL** | -6.87 % | `benchmarks/threed_hydrostatic/report.json` → `verdict_including_probes = fail`（） |
+| `threed_shear.decay_rate.finest` | **PASS** | -2.68 % | `benchmarks/threed_shear/report.json` → `verdict = fail`（未通过项 `fourth_order_improves_on_second_order_every_rung`；缺失用例 `h1.3`、`h1.5`、`h1.8`、`order4-n16`、`order4-n20`、`order4-n24`） |
+| `threed_shear.decay_rate.raw_laplacian` | **MARGINAL** | +11.46 % | `benchmarks/threed_shear/report.json` → `verdict = fail`（未通过项 `fourth_order_improves_on_second_order_every_rung`；缺失用例 `h1.3`、`h1.5`、`h1.8`、`order4-n16`、`order4-n20`、`order4-n24`） |
+| `threed_shear.decay_rate.worst_of_ladder` | **MARGINAL** | -12.62 % | `benchmarks/threed_shear/report.json` → `verdict = fail`（未通过项 `fourth_order_improves_on_second_order_every_rung`；缺失用例 `h1.3`、`h1.5`、`h1.8`、`order4-n16`、`order4-n20`、`order4-n24`） |
 
-合计 **6** 条；另有 **15** 条 credit 的工件根本没有声明 verdict（等级只能读成「该读数合规」，不能读成「该能力被验证」）。工件自述 `fail` 的条目共 **12** 条。
+合计 **5** 条；另有 **19** 条 credit 的工件根本没有声明 verdict（等级只能读成「该读数合规」，不能读成「该能力被验证」）。工件自述 `fail` 的条目共 **14** 条。
 
 ### 3.2 账本规模与分级分布（前 → 后）
 
 | 指标 | 基线（HEAD 提交的 ledger.json） | 本次重生成 |
 |---|---|---|
-| claims | 47 | 57 |
-| 物理量 | 26 | 36 |
-| findings | 31 | 19 |
-| PASS | 12 | 15 |
-| MARGINAL | 10 | 13 |
-| FAIL | 10 | 12 |
-| WITHHELD | 13 | 15 |
+| claims | 57 | 62 |
+| 物理量 | 36 | 40 |
+| findings | 25 | 19 |
+| PASS | 15 | 16 |
+| MARGINAL | 13 | 15 |
+| FAIL | 12 | 13 |
+| WITHHELD | 15 | 16 |
 | WITHDRAWN | 2 | 2 |
-| findings 分类 | credit_from_failing_artifact 6，declared_vs_derived 1，inadmissible_run 3，quantity_spread 4，run_validity 4，uncovered_benchmark 7，unmarked_superseded_number 1，unregistered_artifact 5 | credit_from_failing_artifact 6，declared_vs_derived 2，inadmissible_run 3，quantity_spread 4，run_validity 4 |
+| findings 分类 | credit_from_failing_artifact 6，declared_vs_derived 2，inadmissible_run 3，quantity_spread 4，run_validity 4，uncovered_benchmark 5，unregistered_artifact 1 | credit_from_failing_artifact 5，declared_vs_derived 3，inadmissible_run 3，quantity_spread 4，run_validity 4 |
 
 ### 3.3 误差判定（逐项回答是否 < 3%）
 
 | 关键量 | 基准 | 实测 | 误差 | 是否 < 3% |
 |---|---|---|---|---|
 | `threed_shear.decay_rate.worst_of_ladder` | 3.94784 1/s | 3.44962 1/s | -12.62 % | 否 |
-| `threed_hydrostatic.bottom_pressure.adami_worst` | 1520.55 Pa | 1387.58 Pa | -8.74 % | 否 |
-| `threed_hydrostatic.profile.mean_rel_error_core.adami_best` | 0 % | -11.9227 % | -11.92 % | 否 |
-| `threed_hydrostatic.profile.max_rel_error_core.adami_best` | 0 % | 43.1741 % | +43.17 % | 否 |
+| `threed_hydrostatic.bottom_pressure.adami_worst` | 1520.55 Pa | 76.0395 Pa | -95.00 % | 否 |
+| `threed_hydrostatic.profile.mean_rel_error_core.adami_best` | 0 % | -6.86645 % | -6.87 % | 否 |
+| `threed_hydrostatic.profile.max_rel_error_core.adami_best` | 0 % | 17.3387 % | +17.34 % | 否 |
 | `threed_shear.decay_rate.finest` | 3.94784 1/s | 3.84214 1/s | -2.68 % | **是** |
-| `threed_hydrostatic.bottom_pressure.adami_best` | 1520.55 Pa | 1478.77 Pa | -2.75 % | **是** |
+| `threed_hydrostatic.bottom_pressure.adami_best` | 1520.55 Pa | 1502.11 Pa | -1.21 % | **是** |
 
 分级结论与上面逐项判定一致（PASS 需 ≤ 3 %，MARGINAL ≤ 15 %）：两条 PASS 级读数（-2.68 % / -2.75 %）本身**确实**在 3 % 以内，但它们的工件自述 fail，所以「3-D 剪切衰减/底压已通过验证」这句话不成立——本单没有任何误差被放宽或以更严的口径重测，改的只是**可引用性**。
 
