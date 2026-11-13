@@ -1,0 +1,57 @@
+{
+ "tree": "/root/tp-agent/work/m17452",
+ "anchor": "XVAL-SPH-FSI2-BENCHMARK-AND-FORCE-FROM-FLUID",
+ "files": {
+  "src/tensorsph/fsi_force_from_fluid.py": {
+   "exists": true,
+   "bytes": 15546,
+   "sha256": "e97df2418671b854d974aab251db3af201f2e446a3cd90f517cc84ddaa056960"
+  },
+  "tests/test_fsi_force_from_fluid.py": {
+   "exists": true,
+   "bytes": 6133,
+   "sha256": "3c622ff1f614999458b8dde020931628fb3c69b865509c2d047327e92866dc4e"
+  },
+  "benchmarks/xval_fsi2/cases.py": {
+   "exists": true,
+   "bytes": 14818,
+   "sha256": "0f7f61821015bd0d5bb91edf8437d5af5a8e3a46dbf8104076c1116b66fd9b66"
+  },
+  "benchmarks/xval_fsi2/run.py": {
+   "exists": true,
+   "bytes": 9469,
+   "sha256": "cda160848d0c6358077d2fc6e0aee5770cdb517860c0619c8e01f2b649eba9ac"
+  },
+  "benchmarks/xval_fsi2/make_doc.py": {
+   "exists": true,
+   "bytes": 18865,
+   "sha256": "8a4ef529b995477957c3463f69689a4f17b04a1cc43e1c987c07e18af69107bd"
+  },
+  "docs/xval_fsi2/GAP-SPH-FSI-BENCHMARK_xval.md": {
+   "exists": true,
+   "bytes": 16679,
+   "sha256": "f968ca66621e275f43533477868c6656620b5f4ed0e3cbd98c9630b1880edafa"
+  },
+  "artifacts/xval_fsi2/results.json": {
+   "exists": true,
+   "bytes": 24112,
+   "sha256": "7ff7c32e981e4cd6fc5837fabc12e1e4d6b8445862a056e7a7afc8bb07ca85fb"
+  },
+  "artifacts/xval_fsi2/fig_error_vs_dx.png": {
+   "exists": true,
+   "bytes": 109338,
+   "sha256": "2dd2f51356f98071bd1adcc1f2c286121ccbf89293b9aacdd6dcdcb6ccf11837"
+  },
+  "artifacts/xval_fsi2/fig_thickness.png": {
+   "exists": true,
+   "bytes": 32922,
+   "sha256": "fb03eacf90e992cf40993cc17efdbc83de0616b5df513e8ae6515345fce4fa81"
+  }
+ },
+ "oss_src_archived": [
+  "BeamObserver_Position_Run_0_result.xml",
+  "BeamObserver_Position_Run_9_result.xml",
+  "InsertedBody_TotalViscousForceFromFluid_time_averaged_mean_variance.xml",
+  "hydrostatic_fsi.cpp"
+ ]
+}
