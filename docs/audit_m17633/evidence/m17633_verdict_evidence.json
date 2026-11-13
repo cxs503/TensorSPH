@@ -1,0 +1,72 @@
+{
+ "impl_files": [
+  "src/tensorsph/laplace_isph.py:259 laplace_isph_case() (+ :199 pressure_poisson, :250 spurious_acceleration, :126 smooth_indicator, :378 relax_projection) — 467 lines, branch agent/m17594 @cc48564",
+  "scripts/xval_projection_laplace/oss_ports.py:1-498 PySPH source-derived operator port + pysph_parity_check()",
+  "scripts/xval_projection_laplace/run.py:1-248 two-arm ladder harness (ladder + sensitivity + figure)"
+ ],
+ "entry": [
+  "PYTHONPATH=src python3 scripts/xval_projection_laplace/run.py — auditor re-ran: exit 0, wall 14.5 s, 3-level ladder + sensitivity + fig",
+  "PYTHONPATH=src python3 scripts/xval_projection_laplace/oss_ports.py — auditor re-ran: exit 0, 9 parity keys"
+ ],
+ "run_artifacts": [
+  "scripts/xval_projection_laplace/results/xval_projection_laplace.json sha256=becbaacfa9706a4219a637f8f13e5795407f12e18b15193fb8aa812d4006f3b1 (committed at cc48564)",
+  "scripts/xval_projection_laplace/results/xval_projection_laplace.png 105174 B sha256=dd0586d824d597f573810f6f3527a942794de0a524160f82611b74712e6b720f",
+  "docs/audit_m17633/evidence/results_committed_cc48564.json (audit snapshot)",
+  "docs/audit_m17633/evidence/repro_identity_check.json (numeric_identity_excluding_timing_and_figure=true)",
+  "docs/audit_m17633/evidence/auditor_rerun_run_py.log, auditor_rerun_oss_ports_parity.log, probe_default_kwargs.log, probe_band_sensitivity.log",
+  "docs/audit_m17633/AUDIT_m17594_error_ladder.png (audit figure from the committed bundle)"
+ ],
+ "tests": [
+  "tests/test_xval_projection_laplace.py — 9 passed in 4.61 s (auditor re-ran 2026-11-13); gates: 15 % ladder, arm-to-arm, kappa R=1±5 %, form=\"code\" regression, sigma=0 negative control"
+ ],
+ "integration_callers": [
+  "benchmarks/laplace_sph/run.py:46 from tensorsph.laplace_isph import laplace_isph_case, relax_projection",
+  "benchmarks/laplace_sph/make_doc.py:119,271 and benchmarks/laplace_sph/publish_report.py:72,144 (docs pipeline)",
+  "NO time-stepping solver caller: grep -rn laplace_isph src/ hits only the module itself; relax_projection still diverges (self-declared report §6) => L3 held at harness/library level only"
+ ],
+ "benchmark": {
+  "tensor_benchmark_cases_rows": 0,
+  "query": "SELECT case_name,metric,tolerance FROM tensor_benchmark_cases WHERE anchor_slug='XVAL-SPH-PROJECTION-SPH-YOUNG-LAPLACE' -> 0 rows (psql -d tensorplatform, 2026-11-13)",
+  "referee": "analytic 2-D Young-Laplace dp=sigma(1/R1+1/R2)=sigma/R=3.6000 Pa (sigma=0.072 N/m, R=0.02 m); owner 15 % gate predeclared in tests/test_xval_projection_laplace.py",
+  "got_vs_ref": "R/dx=10: ours 3.6350 Pa +0.97 %, oss 3.7440 +4.00 % | 13.33: ours 3.6218 +0.61 %, oss 3.7240 +3.44 % | 20: ours 3.5923 -0.21 %, oss 3.7019 +2.83 % — all PASS 15 %, ours PASS 3 % at all levels",
+  "secondary": "kappa R=1.004 (ours)/1.003 (oss) at R/dx=20; int delta dn=0.993; independent dp_flux route (CSF traction integral, no pressure solve) -0.60 % vs pressure route -0.21 %",
+  "verdict": "PASS"
+ },
+ "repro_cmd": [
+  "PYTHONPATH=src python3 scripts/xval_projection_laplace/run.py",
+  "PYTHONPATH=src python3 scripts/xval_projection_laplace/oss_ports.py",
+  "PYTHONPATH=src python3 -m pytest tests/test_xval_projection_laplace.py -q",
+  "auditor: re-run reproduced every numeric field bit-identically; only timing + figure path differ"
+ ],
+ "external_anchor": [
+  "analytic dp=sigma/R (2-D circular drop) — independent of the code under test",
+  "PySPH 1.0b3.dev0 (pypr/pysph) source citations pysph/sph/isph/isph.py:121,157,190 and pysph/sph/surface_tension.py:314,336,565,620,708 — cited and ported, NOT run end-to-end (5/9 loop-level parity)",
+  "Cummins & Rudman 1999, Brackbill JM00, SY11, Morris — cited in module docstrings/report"
+ ],
+ "findings": {
+  "F1_high_default_kwargs_fail_gate": "laplace_isph.py:262 defaults curvature_method='fit_quadratic' -> auditor probe -23.01/-23.69/-24.46 % at R/dx=10/13.3/20 (15 % gate FAIL); validated path needs explicit mls (-0.21 %). Deliverable numbers unaffected and §5.3 discloses it; remediate by flipping the default",
+  "F2_medium_oss_arm_is_source_port": "pysph_parity_check 5/9 reproduce (SmoothedColor 2.2e-16, normal 2.2e-16, gradc 4.8e-7, SY11 delta 2.4e-7, CSF 0.0); Curvature_kappa 1.3e9, wij_sum 0.543, PressureCoeff_diag 1.75e4, delta_1_over_gradC 2.1e9 disagree -> 3.03 % arm-to-arm is consistency, not agreement-with-PySPH; disclosed in report §6",
+  "F3_medium_no_benchmark_row": "0 rows in tensor_benchmark_cases for the anchor; tolerance lives only in pytest + prose -> register CASE-LAPLACE-SPH row",
+  "F4_medium_not_in_main": "git branch -a --contains cc48564 -> agent/m17594 only; audit branch @79fc925 has no scripts/xval_projection_laplace/ -> deliverables not runnable from main checkout; merge pending",
+  "F5_low_band_insensitive_refuted": "adversary hypothesis (dp is a banding artefact) refuted: band 1.15-1.35 R vs 1.25-1.45 R -> -0.199 % vs -0.213 % (0.014 pp)",
+  "F6_low_local_balance_floor": "residual_acc_median/mean_csf_acc = 0.26/0.28/0.36 (ours) and 0.42/0.46/0.52 (oss) -> integral equilibrium, not pointwise; 'static equilibrium' over-stated in prose",
+  "F7_low_env_bound": "PySPH only in leftover /tmp/xv2 venv (github:443 unreachable at mission time) -> parity leg host-bound",
+  "F8_info_report_complete": "tensor_reports id 16542, 14919 chars, 1 embedded figure; docs/xval_projection_laplace_oss.md has sections 1-6 + explicit Error statement (<3 %: ours yes all levels, oss only at R/dx=20) + Reproduction block"
+ },
+ "not_run": [
+  "independent projection-SPH reimplementation by the auditor (numbers re-executed, physics not re-derived)",
+  "PySPH end-to-end (no time-stepping ISPHStep)",
+  "relax_projection time-dependent loop (diverges, self-declared)",
+  "cross-architecture (loongarch64 host only)",
+  "band probe: 2 of 4 planned bands, core_frac variation not completed",
+  "full-repository pytest (only tests/test_xval_projection_laplace.py)",
+  "maturity gate source not present in audit worktree (not executed locally)"
+ ],
+ "level_basis": "L1 tests, L2 real module (auditor executed: input->lattice->CSF->Poisson->dp), L3 harness/library callers only (no main-solver caller), L4 complete case + 3-level error analysis + 6 sensitivity probes + bit-identical auditor reproduction; L5 not claimed",
+ "audit_artifacts": [
+  "docs/audit_m17633/AUDIT_m17594_XVAL_SPH_PROJECTION_YOUNG_LAPLACE.md",
+  "docs/audit_m17633/gen_audit_doc.py",
+  "docs/audit_m17633/make_figure.py",
+  "docs/audit_m17633/verdict_m17633.sql"
+ ]
+}
