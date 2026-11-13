@@ -20,9 +20,11 @@ sys.path.insert(0, str(ROOT / "benchmarks" / "xval_fsi2"))
 import cases as C  # noqa: E402
 from tensorsph.fsi_force_from_fluid import (ForceFromFluidConfig,  # noqa: E402
                                             OSS_PROVENANCE, cross_pairs,
+                                            one_sided_viscous_truncation_factor,
                                             panel_pressure_force,
                                             pressure_force_from_fluid,
-                                            viscous_force_from_fluid)
+                                            viscous_force_from_fluid,
+                                            wall_shear_from_gradient)
 
 
 def _cfg(case, riemann=False):
@@ -141,3 +143,98 @@ def test_no_neighbours_is_a_zero_load():
                              case.pos_fluid, case.vol_fluid, case.pressure_fluid,
                              _cfg(case))
     assert float(f.abs().sum()) == 0.0
+
+
+# --------------------------------------------------------------------------- #
+# Viscous branch: the OSS truncation deficit and its kernel-corrected repair
+# --------------------------------------------------------------------------- #
+def _viscous_oss(case):
+    return viscous_force_from_fluid(case.pos_solid, case.vol_solid, case.vel_solid,
+                                    case.pos_fluid, case.vol_fluid, case.vel_fluid,
+                                    case.mu_fluid, _cfg(case))
+
+
+def _viscous_corrected(case):
+    return wall_shear_from_gradient(case.pos_solid, case.vol_solid,
+                                    case.normal_solid, case.pos_fluid,
+                                    case.vol_fluid, case.vel_fluid, case.mu_fluid,
+                                    case.vel_solid, _cfg(case))
+
+
+def test_continuum_truncation_factor_is_the_wendland_closed_form():
+    """One-sided half-space sum on a linear shear returns 7/(3 pi) of mu*gamma.
+
+    ``-2 int_0^R (dW/dr) r dr = -2 alpha_2 int f'(q) q dq = 7/(3 pi)`` for
+    Wendland C2, independent of h and of dx -- which is exactly why the measured
+    OSS deficit does not shrink under refinement.
+    """
+    for h in (0.0325, 1.0):
+        got = one_sided_viscous_truncation_factor(h, 2, "wendland", spacing=h)
+        assert got == pytest.approx(7.0 / (3.0 * math.pi), rel=1e-9)
+    # with the lattice spacing s = dx and h = 1.3 dx the prediction is 7/(3 pi 1.3)
+    got = one_sided_viscous_truncation_factor(1.3, 2, "wendland", spacing=1.0)
+    assert got == pytest.approx(7.0 / (3.0 * math.pi * 1.3), rel=1e-9)
+
+
+def test_oss_viscous_deficit_is_dx_independent():
+    """Pinned: the OSS branch keeps ~62 % of mu U/h at every resolution."""
+    ratios = []
+    for dx in (0.025, 0.0125):
+        case = C.couette_shear(dx=dx)
+        got, ref = _along(_viscous_oss(case), case.reference_force)
+        ratios.append(got / ref)
+    assert abs(ratios[1] - ratios[0]) < 0.006, ratios
+    # lattice ratio sits below the continuum 7/(3 pi) because the near-wall
+    # shell r < dx/2 carries no particle; the band pins that offset
+    case = C.couette_shear(dx=0.025)
+    continuum = one_sided_viscous_truncation_factor(case.h, 2, "wendland",
+                                                    spacing=case.dx)
+    assert 1.00 < ratios[0] / continuum < 1.15, (ratios[0], continuum)
+
+
+def test_gradient_corrected_arm_is_exact_on_plane_couette():
+    """The kernel-corrected reconstruction transfers a linear shear to machine
+    precision at every resolution (the 15 % gate is passed by ~12 orders)."""
+    for dx in (0.025, 0.0125, 0.00625):
+        case = C.couette_shear(dx=dx)
+        got, ref = _along(_viscous_corrected(case), case.reference_force)
+        assert abs(got - ref) / ref < 1.0e-9, (dx, got, ref)
+
+
+def test_gradient_corrected_arm_is_zero_for_a_rigid_body_flow():
+    case = C.couette_shear(dx=0.025)
+    vel = torch.full_like(case.pos_fluid, 0.4)
+    f = wall_shear_from_gradient(case.pos_solid, case.vol_solid, case.normal_solid,
+                                 case.pos_fluid, case.vol_fluid, vel,
+                                 case.mu_fluid, torch.full_like(case.pos_solid, 0.4),
+                                 _cfg(case))
+    assert float(f.abs().max()) < 1.0e-12
+
+
+def test_gradient_corrected_arm_converges_on_a_curved_wall():
+    """Closed disk in a quadratic shear field: exact load = mu beta A.
+
+    The arm is first-order on a curved one-sided support; require monotone
+    convergence and the gate at the resolutions the bundle reports.
+    """
+    errs = []
+    for dx in (0.1, 0.05, 0.025):
+        case = C.curved_disk_shear(dx=dx)
+        got, ref = _along(_viscous_corrected(case), case.reference_force)
+        errs.append(abs(got - ref) / ref)
+    assert errs[0] < 0.15 and errs[1] < 0.10 and errs[2] < 0.05, errs
+    assert errs[0] > errs[1] > errs[2], errs
+
+
+def test_gradient_corrected_arm_needs_no_slip_consistent_solid_velocity():
+    """Documented pitfall, pinned as a guard: the reconstruction reads
+    ``u_fluid - u_solid``, so a solid velocity that is *not* the no-slip value of
+    the same field makes the arm return nonsense (the OSS sum degrades too, but
+    far less).  This is invalid input, not a variant case."""
+    case = C.curved_disk_shear(dx=0.05)
+    bad = wall_shear_from_gradient(
+        case.pos_solid, case.vol_solid, case.normal_solid, case.pos_fluid,
+        case.vol_fluid, case.vel_fluid, case.mu_fluid,
+        torch.zeros_like(case.pos_solid), _cfg(case))
+    got, ref = _along(bad, case.reference_force)
+    assert abs(got - ref) / ref > 1.0, got / ref

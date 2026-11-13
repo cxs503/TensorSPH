@@ -26,6 +26,7 @@ Environment  torch CPU float64, deterministic lattices, no solver in the loop.
 from __future__ import annotations
 
 import json
+import math
 import sys
 import time
 from pathlib import Path
@@ -42,7 +43,9 @@ from tensorsph.fsi_force_from_fluid import (ForceFromFluidConfig,  # noqa: E402
                                             panel_pressure_force,
                                             pairwise_pressure_force,
                                             pressure_force_from_fluid,
-                                            viscous_force_from_fluid)
+                                            one_sided_viscous_truncation_factor,
+                                            viscous_force_from_fluid,
+                                            wall_shear_from_gradient)
 import cases as C  # noqa: E402
 
 ART = ROOT / "artifacts" / "xval_fsi2"
@@ -72,12 +75,20 @@ def evaluate(case: C.LoadCase) -> dict:
            "n_solid": int(case.pos_solid.shape[0]),
            "n_fluid": int(case.pos_fluid.shape[0]), "operators": {}}
 
-    if case.name == "couette_shear":
+    if case.name in ("couette_shear", "curved_disk_shear"):
         f = viscous_force_from_fluid(
             case.pos_solid, case.vol_solid, case.vel_solid,
             case.pos_fluid, case.vol_fluid, case.vel_fluid, case.mu_fluid,
             _cfg(case.dx, case, riemann=False))
         row["operators"]["oss_viscous"] = _score(f, case.reference_force)
+        f = wall_shear_from_gradient(
+            case.pos_solid, case.vol_solid, case.normal_solid,
+            case.pos_fluid, case.vol_fluid, case.vel_fluid, case.mu_fluid,
+            case.vel_solid, _cfg(case.dx, case, riemann=False))
+        row["operators"]["gradient_corrected"] = _score(f, case.reference_force)
+        # independent continuum prediction of the OSS deficit for this kernel
+        row["oss_viscous_continuum_factor"] = one_sided_viscous_truncation_factor(
+            case.h, 2, "wendland", regularisation=0.01, spacing=case.dx)
         return row
 
     for name, kwargs in (("oss", dict(riemann=False)),
@@ -138,7 +149,7 @@ def main() -> dict:
     DOCS.mkdir(parents=True, exist_ok=True)
     rows, timings = [], {}
     for name in ("vertical_wall", "horizontal_gate", "couette_shear",
-                 "fsi2_insert_linear"):
+                 "fsi2_insert_linear", "curved_disk_shear"):
         build = C.CASE_BUILDERS[name]
         for dx in C.dx_ladder(name):
             t0 = time.time()
@@ -177,7 +188,8 @@ def main() -> dict:
                                   case.reference_force)["error"]})
             print(f"thickness {name:16s} layers={layers} oss={s_oss['error']*100:+7.2f}% "
                   f"panel={s_pan['error']*100:+7.2f}%", flush=True)
-    payload = {"provenance": OSS_PROVENANCE, "rows": rows, "sensitivity": sens, "thickness": thickness,
+    payload = {"provenance": OSS_PROVENANCE, "rows": rows, "sensitivity": sens,
+               "thickness": thickness,
                "timings_s": timings,
                "parameters": {"kernel_default": "wendland", "h_factor": 1.3,
                               "c2_oss": "fsi2: NoRiemann, NoKernelCorrection, "
