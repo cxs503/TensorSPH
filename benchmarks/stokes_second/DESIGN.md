@@ -166,6 +166,28 @@ differently-configured "ladder" cannot be published: the first delivery of this
 case was assembled by a script that waited 2 s for a 5 s sleep and shipped
 `resolutions = [8]` with `all_gates: true` (audit F1).
 
+## 7b. Where the verdict lives (revision note, m17420; no threshold moved)
+
+This document predeclares six gates plus the five-rows-in-the-layer requirement.
+They are graded in three different artefacts (per-rung gates in
+`results_ladder.json`, the free-slip control in `results_sensitivity.json`,
+convergence in its own block), and `benchmark.json` carries only the finest
+rung's ref-vs-got rows. The single machine-readable **case verdict** over all
+six gates, including the fail-closed rule that a control which was not run (or
+was run under a different case configuration) is `WITHHELD` rather than passed,
+is emitted by
+
+```
+PYTHONPATH=.:src python benchmarks/stokes_second/case_verdict.py --write --check
+```
+
+to `benchmarks/stokes_second/case_verdict.json` (generated page:
+`docs/stokes_second_case_verdict.md`; exit code 0 = PASS, 1 = FAIL,
+2 = WITHHELD). It recomputes G1–G4 from each rung's persisted rows on top of the
+stored metrics, so a hand-edited metric is detected. Adding the artefact does
+not change any threshold; G6 remains "complete ladder AND not growing", and
+`benchmark.json` is left as the per-run table it always was.
+
 ## 8. Interpretation limits
 
 A pass qualifies the *viscous operator and the moving no-slip mirror wall for
