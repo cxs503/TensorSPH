@@ -12,6 +12,9 @@ sod          : Sod (1978) shock tube — SPH solver, exact Riemann reference, me
 fv_reference : independent HLLC finite-volume solution, used to cross-check the
                analytic profile that all of the case's error numbers are measured
                against (docs/audit/audit_verdict_compressible_sod.md, F5).
+riemann_dissipation : Mach-limited Riemann dissipation for SPH — replaces
+               Monaghan artificial viscosity with a genuine Riemann solver
+               at particle interfaces, scaled by local Mach number.
 """
 from .sod import (  # noqa: F401
     SodSPHConfig,
@@ -22,6 +25,13 @@ from .sod import (  # noqa: F401
     plateau_windows,
 )
 from . import fv_reference  # noqa: F401
+from .riemann_dissipation import (  # noqa: F401
+    RiemannDissipationConfig,
+    run_sod_riemann,
+    hllc_star_pressure,
+    roe_average,
+    evaluate_metrics as evaluate_metrics_riemann,
+)
 
 __all__ = [
     "SodSPHConfig",
@@ -31,4 +41,9 @@ __all__ = [
     "evaluate_metrics",
     "plateau_windows",
     "fv_reference",
+    "RiemannDissipationConfig",
+    "run_sod_riemann",
+    "hllc_star_pressure",
+    "roe_average",
+    "evaluate_metrics_riemann",
 ]
