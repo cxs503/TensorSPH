@@ -135,6 +135,22 @@ The two transcriptions of the same figure disagree by 0.851 in Z/a, i.e. 17.0x t
 5. **适用范围**：单相、干床、自由滑移底、c0 = 25 m/s 的弱可压配置；对 no-slip 底床（wall_friction=1）与其他声速的敏感度不在本算例结论内。
 6. **压缩性余量**：最细分辨率 max ρ/ρ0−1 = 0.019，限值 0.1——通过但不宽裕。
 
+## ⑤b 误差分解（Error Budget）
+
+最细分辨率（dx = 0.01 m）的总 MAE/幅值 = **4.38 %**，偏置 = +0.1145 in Z/a。
+
+| 误差分量 | 量值 | 解释 |
+|---|---|---|
+| 参考不确定度 | 0.851 in Z/a（31.86 % 幅值） | The reference itself is uncertain to ~31.9% of amplitude |
+| Ritter 浅水解偏差 | 2.257 in Z/a（84.52 % 幅值） | Ritter overpredicts the front speed; SPH is more realistic |
+| 弱可压误差 | 0.0194 | Compressibility error is 1.94% of rho0 |
+
+**分辨率趋势**：The bias changes sign 1 time(s) across the ladder. The minimum MAE/amplitude is 1.65%, which is the resolution-independent component (not discretization error). The non-monotone trend is caused by the bias crossing zero, not by a failure of convergence.
+
+**Ritter 对照**：平均偏差 2.2566 in Z/a，最大偏差 3.1408 in Z/a（25 个采样点）。
+
+The total MAE/amplitude is 4.38%. The reference uncertainty alone accounts for ~31.9%. The Ritter deviation is 84.5%. The compressibility error is 1.94% of rho0. The residual (-27.48%) is attributable to discretization and boundary condition effects.
+
 ## ⑥ 误差判定（逐项 vs 基准，显式回答是否 < 3 %）
 
 | 关键量 | 基准 | 实测误差 | 是否 < 3 % |

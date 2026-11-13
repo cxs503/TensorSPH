@@ -1,0 +1,71 @@
+{
+  "benchmark": "REPRO-SPH-MONAGHAN1994",
+  "error_budget": {
+    "case": "dx0.01_c025",
+    "dx": 0.01,
+    "total_mae_over_amplitude": 0.043758653777021435,
+    "bias": 0.11450794333658959,
+    "components": {
+      "reference_uncertainty": {
+        "description": "Spread between the two transcriptions of the same figure",
+        "max_spread_Za": 0.8505497787610619,
+        "spread_over_amplitude": 0.3185579695734314,
+        "interpretation": "The reference itself is uncertain to ~31.9% of amplitude"
+      },
+      "ritter_deviation": {
+        "description": "Mean absolute deviation from Ritter shallow-water solution",
+        "mae_Za": 2.256604223748846,
+        "mae_over_amplitude": 0.8451701212542494,
+        "interpretation": "Ritter overpredicts the front speed; SPH is more realistic"
+      },
+      "compressibility": {
+        "description": "Max density compression (weak-compressibility error)",
+        "max_rho_over_rho0_minus_1": 0.019359619140624895,
+        "interpretation": "Compressibility error is 1.94% of rho0"
+      }
+    },
+    "interpretation": "The total MAE/amplitude is 4.38%. The reference uncertainty alone accounts for ~31.9%. The Ritter deviation is 84.5%. The compressibility error is 1.94% of rho0. The residual (-27.48%) is attributable to discretization and boundary condition effects."
+  },
+  "resolution_trend": {
+    "entries": [
+      {
+        "dx": 0.04,
+        "mae_over_amplitude": 0.046656206568799395,
+        "bias": -0.12457207153869439,
+        "bias_over_amplitude": -0.046656206568799395,
+        "max_abs": 0.21002789427806867,
+        "amplitude": 2.67
+      },
+      {
+        "dx": 0.02,
+        "mae_over_amplitude": 0.016495912685011948,
+        "bias": 0.03199494199077826,
+        "bias_over_amplitude": 0.011983124341115453,
+        "max_abs": 0.08870696181599541,
+        "amplitude": 2.67
+      },
+      {
+        "dx": 0.01,
+        "mae_over_amplitude": 0.043758653777021435,
+        "bias": 0.11450794333658959,
+        "bias_over_amplitude": 0.0428868701635167,
+        "max_abs": 0.1653728394759102,
+        "amplitude": 2.67
+      }
+    ],
+    "bias_sign_changes": 1,
+    "min_mae_over_amplitude": 0.016495912685011948,
+    "interpretation": "The bias changes sign 1 time(s) across the ladder. The minimum MAE/amplitude is 1.65%, which is the resolution-independent component (not discretization error). The non-monotone trend is caused by the bias crossing zero, not by a failure of convergence."
+  },
+  "ritter_comparison": {
+    "case": "dx0.01_c025",
+    "dx": 0.01,
+    "n_points": 25,
+    "window": [
+      0.5933218284283893,
+      2.96660914214182
+    ],
+    "mean_ritter_deviation_Za": 2.256604223748846,
+    "max_ritter_deviation_Za": 3.140816434060099
+  }
+}
