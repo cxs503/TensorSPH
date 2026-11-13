@@ -39,8 +39,24 @@ from tensorsph.wave_flume_grade import (  # noqa: E402
     laminar_boundary_layer_damping,
 )
 
-# The matrix: (label, file, variant group, changing knob) -- see protocol.md §1/§4.
+# Rows of the published matrix: (label, record, variant group, changing knob).
+# Paths are repository-relative, so the row a reader sees is the row that exists.
 MATRIX = [
+    ("D20_h025_A", "runs/xval/cell_0.json", "ladder",
+     "method A, H/dx = 3.20, t_end 5.5 s"),
+    ("D13_h025_A", "runs/xval/cell_1.json", "ladder",
+     "method A, H/dx = 2.08, t_end 5.5 s"),
+    ("D20_h025_xsph", "runs/xval/cell_2.json", "mechanism",
+     "method A + XSPH 0.05 in the propagation phase (post-hoc probe)"),
+    ("D20_h020_archive", "docs/reports/artifacts_wave_flume/wf_D20_unstable.json",
+     "archive", "m17501 archive record (h = 0.20 m, t_end 3.7 s)"),
+]
+
+# The seven cells the pre-registered protocol asked for.  They are *not* re-run
+# blindly: a cell whose record is absent is listed as an explicit gap (the repair
+# run answers the same questions with three decision-focused cells), and a cell
+# whose record exists is graded like any other row.
+PREDECLARED = [
     ("D13_hn016_d010_settle", "wf_D13_settle_d010.json", "ladder", "ref A, H/dx=2.08"),
     ("D16_hn016_d010_settle", "wf_D16_settle_d010.json", "ladder", "ref A, H/dx=2.56"),
     ("D20_hn016_d010_settle", "wf_D20_settle_d010.json", "ladder", "ref A, H/dx=3.20"),
@@ -50,9 +66,76 @@ MATRIX = [
     ("D13_hn016_d010_nosettle", "wf_D13_nosettle_d010.json", "settle", "no settle window"),
 ]
 
+PREDECLARED_DIR = Path("runs/local")
+
+
+def locate(run_dir: Path, name: str) -> Path:
+    """Resolve a matrix record: bare names live in ``run_dir``, paths stand alone."""
+    path = Path(name)
+    if path.is_absolute() or path.parent != Path("."):
+        return path
+    return run_dir / path
+
 WINDOWS = (4.0, 5.0)
 TOLERANCE = 0.10      # the case-pool gate (CASE-WAVE-FLUME)
 OWNER_TOL = 0.15      # owner precision standard for the XVAL anchor
+
+# Stability gate.  Both thresholds are copied from the pre-registered protocol
+# (docs/xval_method_selection_m17501/protocol.md §3 "稳定性": ``max|v| < c0`` and
+# density compression < 10 %), which was written before any record existed, so
+# they are *not* tuned to the data.  ``escaped`` is recorded as a diagnostic but
+# is not a gate: the protocol only asks for the number (there is no physical
+# reason a wave flume cannot lose a few particles into the sponge).
+SPEED_RATIO_MAX = 1.0     # max|v| / c0
+COMPRESSION_MAX = 0.10    # max density compression
+
+
+def stability(diag: dict, sound_speed) -> dict:
+    """Judge a record's *numerical stability* from its own diagnostics.
+
+    A diverged run still writes finite gauge samples for a while, so the wave
+    height it yields can look plausible while the field is exploding.  The audit
+    of mission 17501 found exactly this: a record with ``max|v|/c0 = 3.6`` and
+    45 % compression was scored as a normal row.  The gate below is the fix --
+    an unstable record can never be counted as a pass, whatever its gauge error.
+    """
+    speed = diag.get("max_speed")
+    comp = diag.get("max_density_compression")
+    ratio = None
+    if speed is not None and sound_speed:
+        ratio = float(speed) / float(sound_speed)
+    violations = []
+    if ratio is None or not math.isfinite(ratio):
+        violations.append("acoustic Mach number unavailable")
+    elif ratio >= SPEED_RATIO_MAX:
+        violations.append(f"max|v|/c0 = {ratio:.3f} >= {SPEED_RATIO_MAX:g}")
+    if comp is None or not math.isfinite(float(comp)):
+        violations.append("density compression unavailable")
+    elif float(comp) >= COMPRESSION_MAX:
+        violations.append(f"compression {100 * float(comp):.2f} % >= "
+                          f"{100 * COMPRESSION_MAX:g} %")
+    return {
+        "sound_speed": sound_speed,
+        "speed_ratio": ratio,
+        "speed_ratio_max": SPEED_RATIO_MAX,
+        "max_density_compression": (float(comp) if comp is not None
+                                    and math.isfinite(float(comp)) else None),
+        "compression_max": COMPRESSION_MAX,
+        "escaped": diag.get("escaped"),
+        "stable": not violations,
+        "violations": violations,
+    }
+
+
+def verdict(stable: bool, within_tolerance: bool) -> str:
+    """One word for the row: the gate is *stability AND accuracy*."""
+    if not stable and not within_tolerance:
+        return "fail_stability+tolerance"
+    if not stable:
+        return "fail_stability"
+    if not within_tolerance:
+        return "fail_tolerance"
+    return "pass"
 
 
 def _sanitize(obj):
@@ -89,6 +172,29 @@ def summarise(label: str, knob: str, group: str, path: Path) -> dict:
     primary = graded[f"start_{WINDOWS[0]:g}"]
     cfg = record.get("config", {})
     diag = record.get("diagnostics", {})
+    if primary.get("failed"):
+        # The grader refused the series (the analysis window holds no usable
+        # samples, e.g. the record stopped before 4 s).  That is a *gap in the
+        # evidence*, never a measurement of zero: keep it out of every count
+        # that could be mistaken for a score.
+        row.update({
+            "present": True,
+            "failed": False,
+            "gradeable": False,
+            "error": primary.get("error"),
+            "gauge_errors": [gg.get("error") for gg in primary.get("gauges", [])],
+            "gauges": [{"x": gg.get("x"), "error": gg.get("error"),
+                        "dry_fraction": gg.get("dry_fraction")}
+                       for gg in primary.get("gauges", [])],
+            "target_height": primary.get("target_height"),
+            "stability": stability(diag, cfg.get("sound_speed")),
+            "within_owner_tol": False,
+            "within_case_tol": False,
+            "passed": False,
+            "verdict": "ungradeable",
+            "windows": graded,
+        })
+        return row
     gauges = [
         {"x": g["x"], "height": g.get("height"),
          "error_vs_target": g.get("error_vs_target"),
@@ -97,9 +203,15 @@ def summarise(label: str, knob: str, group: str, path: Path) -> dict:
         for g in primary.get("gauges", [])
     ]
     worst = primary.get("worst_error_vs_target")
+    stable_block = stability(diag, cfg.get("sound_speed"))
+    within_owner = bool(worst is not None and abs(worst) <= OWNER_TOL)
     row.update({
         "present": True,
         "failed": False,
+        "gradeable": True,
+        "stability": stable_block,
+        "passed": bool(stable_block["stable"] and within_owner),
+        "verdict": verdict(stable_block["stable"], within_owner),
         "depth_cells": cfg.get("depth_cells"),
         "height_cells": cfg.get("height_cells"),
         "dx": cfg.get("dx"),
@@ -137,9 +249,18 @@ def summarise(label: str, knob: str, group: str, path: Path) -> dict:
     return row
 
 
+def measurable(row: dict) -> bool:
+    """True only for a row that is a *measurement*: present, graded and stable.
+
+    Figures and error statistics must never be built on a missing record, on a
+    record the grader refused, or on a diverged field.
+    """
+    return bool(row.get("present") and not row.get("failed")
+                and row.get("gradeable", True) and row["stability"]["stable"])
+
+
 def fig_ladder(rows, path: Path) -> bool:
-    pts = [r for r in rows if r["group"] == "ladder" and r.get("present")
-           and not r.get("failed")]
+    pts = [r for r in rows if r["group"] == "ladder" and measurable(r)]
     if not pts:
         return False
     pts.sort(key=lambda r: r["height_cells"])
@@ -167,8 +288,7 @@ def fig_ladder(rows, path: Path) -> bool:
 
 def fig_series(rows, run_dir: Path, path: Path) -> bool:
     """Gauge record + harmonic fit at the gauge of the finest ladder point."""
-    pts = [r for r in rows if r["group"] == "ladder" and r.get("present")
-           and not r.get("failed")]
+    pts = [r for r in rows if r["group"] == "ladder" and measurable(r)]
     if not pts:
         return False
     best = max(pts, key=lambda r: r["height_cells"])
@@ -210,11 +330,13 @@ def fig_series(rows, run_dir: Path, path: Path) -> bool:
 
 
 def fig_attenuation(rows, path: Path) -> bool:
-    pts = [r for r in rows if r.get("present") and not r.get("failed")]
+    pts = [r for r in rows if measurable(r)]
     if not pts:
         return False
     best = max((r for r in pts if r["group"] == "ladder"),
                key=lambda r: r["height_cells"], default=None)
+    if best is None:
+        return False
     if best is None:
         return False
     xs = [g["x"] for g in best["gauges"]]
@@ -245,7 +367,7 @@ def fig_attenuation(rows, path: Path) -> bool:
 def fig_sensitivity(rows, path: Path) -> bool:
     groups = {}
     for r in rows:
-        if not r.get("present") or r.get("failed"):
+        if not measurable(r):
             continue
         groups.setdefault(r["group"], []).append(r)
     if not groups:
@@ -255,7 +377,10 @@ def fig_sensitivity(rows, path: Path) -> bool:
         for r in members:
             labels.append(f"{group}\n{r['knob']}")
             values.append(100.0 * r["worst_error_vs_target"])
-            colours.append("C0" if abs(r["worst_error_vs_target"]) <= OWNER_TOL else "C3")
+            if abs(r["worst_error_vs_target"]) <= OWNER_TOL:
+                colours.append("C0")
+            else:
+                colours.append("C3")
     fig, ax = plt.subplots(figsize=(max(6.0, 1.05 * len(labels)), 4.2))
     ax.bar(range(len(labels)), values, color=colours)
     for i, v in enumerate(values):
@@ -285,12 +410,28 @@ def main(argv=None) -> int:
                         help="JSON file with an alternative [[label,file,group,knob],...]")
     args = parser.parse_args(argv)
 
-    matrix = MATRIX
+    run_dir = Path(args.run_dir)
     if args.matrix:
         matrix = [tuple(row) for row in json.loads(Path(args.matrix).read_text())]
-    run_dir = Path(args.run_dir)
-    rows = [summarise(label, knob, group, run_dir / name)
-            for label, name, group, knob in matrix]
+        rows = [summarise(label, knob, group, locate(run_dir, name))
+                for label, name, group, knob in matrix]
+        unexecuted = []
+    else:
+        rows = [summarise(label, knob, group, locate(run_dir, name))
+                for label, name, group, knob in MATRIX]
+        unexecuted = []
+        for label, name, group, knob in PREDECLARED:
+            path = PREDECLARED_DIR / name
+            if path.exists():
+                rows.append(summarise(label, knob, group, path))
+            else:
+                unexecuted.append({
+                    "label": label, "record": str(path), "group": group,
+                    "knob": knob, "status": "not_executed",
+                    "reason": "record absent: the 7-cell grid was not re-run; the "
+                              "repair run answered the same questions with three "
+                              "decision-focused cells (group 'ladder'/'mechanism')",
+                })
 
     fig_dir = Path(args.figures)
     fig_dir.mkdir(parents=True, exist_ok=True)
@@ -305,9 +446,14 @@ def main(argv=None) -> int:
 
     present = [r for r in rows if r.get("present")]
     graded = [r for r in present if not r.get("failed")]
-    theory = graded[0]["theory"] if graded else {}
+    measured = [r for r in rows if measurable(r)]
+    theory = measured[0]["theory"] if measured else {}
     payload = {
-        "mission": 17501,
+        "mission": 17906,
+        "mission_history": [17501, 17906],
+        "repair_of": {"mission": 17501,
+                      "audit": "verdict_m17501.md (reopened: stale report, no "
+                               "stability gate, deliverables uncommitted)"},
         "anchor": "XVAL-SPH-METHOD-SELECTION-2026-11-12",
         "reference": "oss_solutions id=408 (TensorSPH CASE-WAVE-FLUME method-selection-2026-11-12)",
         "oss_counterparts": {
@@ -320,12 +466,25 @@ def main(argv=None) -> int:
         "windows": list(WINDOWS),
         "physics_reference": theory,
         "rows": rows,
+        "predeclared_unexecuted": unexecuted,
         "figures": figures,
+        "verdict_rule": (
+            "a row passes only when its own diagnostics satisfy the pre-registered "
+            "stability gate (max|v|/c0 < 1, max density compression < 10 %) AND its "
+            "worst gauge wave-height error is within the owner 15 % gate; "
+            "'ungradeable' means the record exists but the analysis window holds no "
+            "usable samples, and is reported as a gap, never as a zero"),
         "counts": {
             "matrix": len(rows),
             "present": len(present),
+            "missing": len(rows) - len(present),
             "failed": len(present) - len(graded),
+            "ungradeable": sum(1 for r in graded if not r.get("gradeable", True)),
+            "unstable": sum(1 for r in graded
+                            if r.get("gradeable", True)
+                            and not r["stability"]["stable"]),
             "within_owner_tol": sum(1 for r in graded if r["within_owner_tol"]),
+            "passed": sum(1 for r in graded if r.get("passed")),
         },
     }
     # A diverged record can carry NaN/inf: JSON cannot, so write them as null.
@@ -341,9 +500,13 @@ def main(argv=None) -> int:
             print(f"  MISSING  {r['label']}: {r['note']}")
         elif r.get("failed"):
             print(f"  FAILED   {r['label']}: {r['error']}")
+        elif not r.get("gradeable", True):
+            print(f"  NOGRADE  {r['label']}: {r['error']}  "
+                  f"(stable={r['stability']['stable']})")
         else:
             print(f"  {r['label']:26s} worst {100 * r['worst_error_vs_target']:+7.2f}%  "
-                  f"max|v|/c0 {r['speed_ratio']:.3f}  comp {r['max_density_compression']:.2e}")
+                  f"max|v|/c0 {r['speed_ratio']:.3f}  comp {r['max_density_compression']:.2e}"
+                  f"  -> {r['verdict']}")
     return 0
 
 
