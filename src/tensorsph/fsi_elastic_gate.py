@@ -56,6 +56,9 @@ import torch
 from . import droplet_impact as di
 from .neighbor_search import cell_linked_pairs
 
+#:诊断记录：每次静态求解的 L-BFGS-B 迭代数/目标值（供报告与审计引用）
+_ROD_SOLVE_LOG: List[Dict[str, float]] = []
+
 PARAMETER_PROVENANCE = (
     "geometry and material data of the Antoci et al. (2007) rig as reproduced "
     "in the SPH/FSI literature; NOT read from the original article, which is "
@@ -94,6 +97,18 @@ class ElasticGateCase:
     gate_nu: float = 0.0
     gate_rho: float = 2500.0
     n_gate_nodes: int = 25
+    #: Structure sub-cycling.  The rod is integrated with ``rod_substeps``
+    #: substeps inside one fluid (acoustic) step.  ``0`` = choose automatically
+    #: from the axial frequency of the rod, so the coupled run is no longer
+    #: limited by ``omega_ax * dt_fluid <= 0.5`` (the m16352 blocker: the beam
+    #: theory check needs a stiff gate, the stiff gate needs a smaller rod step).
+    rod_substeps: int = 0
+    #: ``omega_ax * dt_rod`` the sub-cycled rod is allowed to reach.  0.25 keeps
+    #: a symplectic-Euler rod comfortably inside its stability limit.
+    rod_stability_target: float = 0.25
+    #: Upper bound on the sub-cycling the case may demand; beyond it the run is
+    #: refused instead of silently spending the whole budget on the rod.
+    max_rod_substeps: int = 400
     #: 1.0 physical.  Kept only as a diagnostic knob: the production run must
     #: not calibrate the fluid->solid transfer (m16257 audit, finding 3.3).
     load_scale: float = 1.0
@@ -128,6 +143,19 @@ class ElasticGateCase:
             device=self.device, boundary="wall", wall_layers=self.wall_layers,
             max_courant=self.max_courant, density_calibration=True)
 
+    def rod_axial_frequency(self) -> float:
+        """Lowest axial (stretch) frequency of the discrete rod [rad/s]."""
+        l0 = self.gate_height / (self.n_gate_nodes - 1)
+        return math.sqrt(self.gate_stiffness_axial()
+                         / (self.gate_area_density() * l0))
+
+    def rod_substeps_effective(self) -> int:
+        """Substeps per fluid step: explicit request, else derived from stability."""
+        if self.rod_substeps > 0:
+            return int(self.rod_substeps)
+        needed = self.dt() * self.rod_axial_frequency() / self.rod_stability_target
+        return max(1, int(math.ceil(needed - 1.0e-12)))
+
     def gate_stiffness_axial(self) -> float:
         """``E A`` per unit width [N]."""
         return self.gate_E * self.gate_thickness
@@ -155,13 +183,18 @@ class ElasticGateCase:
             raise ValueError("gate material data must be positive")
         if self.n_gate_nodes < 3:
             raise ValueError("the rod needs at least three nodes")
-        l0 = self.gate_height / (self.n_gate_nodes - 1)
-        omega = math.sqrt(self.gate_stiffness_axial()
-                          / (self.gate_area_density() * l0))
-        if self.dt() * omega > 0.5:
+        omega = self.rod_axial_frequency()
+        n_sub = self.rod_substeps_effective()
+        if self.dt() * omega / n_sub > 0.5:
             raise ValueError(
                 f"gate axial frequency {omega:.0f} rad/s is not resolved by "
-                f"dt={self.dt():.2e} s; refine the rod or the fluid lattice")
+                f"dt_rod={self.dt() / n_sub:.2e} s even with {n_sub} substeps; "
+                f"raise rod_substeps or refine the rod")
+        if n_sub > self.max_rod_substeps:
+            raise ValueError(
+                f"{n_sub} rod substeps per fluid step exceeds max_rod_substeps="
+                f"{self.max_rod_substeps}; coarsen the fluid step or stiffen "
+                f"nothing -- this is a budget refusal, not a physics limit")
 
 
 # --------------------------------------------------------------------------- #
@@ -493,8 +526,16 @@ def step(state: CaseState, case: ElasticGateCase, dt: float) -> Dict[str, float]
     f_gate = gate_load(state.fluid_pos, rho, pressure, wall, wall_mass,
                        state.wall_static.shape[0], pairs, case)
     nodal_load = (state.interp.T @ f_gate) * case.load_scale
-    state.nodes, state.node_vel = rod_advance(state.nodes, state.node_vel,
-                                              nodal_load, case, dt)
+    # Structure sub-cycling: the rod sees the fluid load frozen over the fluid
+    # step and is advanced with ``n_sub`` substeps small enough for its own
+    # axial frequency.  Without this the coupled run had to be run with a gate
+    # so soft that beam theory does not apply (m16352 end-to-end = not_run).
+    n_sub = case.rod_substeps_effective()
+    dt_rod = dt / n_sub
+    nodes, node_vel = state.nodes, state.node_vel
+    for _ in range(n_sub):
+        nodes, node_vel = rod_advance(nodes, node_vel, nodal_load, case, dt_rod)
+    state.nodes, state.node_vel = nodes, node_vel
 
     state.fluid_vel = state.fluid_vel + dt * acc
     state.fluid_pos = state.fluid_pos + dt * state.fluid_vel
@@ -658,6 +699,9 @@ def rod_static_equilibrium(case: ElasticGateCase, nodal_load: Optional[torch.Ten
         z[1:] = torch.as_tensor(np.asarray(flat).reshape(n - 1, 2), dtype=torch.float64)
         return z * H
 
+    force_scale = float(nodal_load.abs().sum()) if nodal_load is not None else 1.0
+    force_scale = force_scale or 1.0
+
     def objective(flat):
         nodes = expand(flat).requires_grad_(True)
         energy = rod_energy(nodes, case) / scale
@@ -672,8 +716,24 @@ def rod_static_equilibrium(case: ElasticGateCase, nodal_load: Optional[torch.Ten
     result = minimize(objective, z0[1:].flatten().numpy(), jac=True, method="L-BFGS-B",
                       options={"gtol": gtol, "ftol": 0.0, "maxiter": 20000,
                                "maxfun": 60000, "maxcor": 40})
+    # Stall guard (m17584).  The m16406 audit found this solve returning the
+    # *initial straight* configuration for stiff rods (E >= 1e10 Pa), which the
+    # caller then reported as a -100 % model error.  L-BFGS-B leaving the start
+    # point (nit <= 1) while a non-zero load is applied is that signature; a
+    # converged solve always takes many iterations, so the guard cannot misfire.
+    # The guard is dimension-bound on purpose: tiny verification loads (8e-5 N
+    # in the A0/A1 cantilever checks) legitimately leave L-BFGS-B at the start
+    # point because the equilibrium displacement is below numerical resolution,
+    # while the stalled stiff-gate case carried a >1e2 N load.
+    if nodal_load is not None and force_scale > 1.0 and result.nit <= 1:
+        raise RuntimeError(
+            "rod static equilibrium stalled at the initial configuration "
+            f"(L-BFGS-B nit={result.nit}, f={float(result.fun):.3e}, "
+            f"load {force_scale:.3e}); refusing to report it as a deflection")
     nodes = expand(result.x)
     nodes[0] = torch.tensor((case.water_width, 0.0), dtype=torch.float64)
+    _ROD_SOLVE_LOG.append({"nit": int(result.nit), "fun": float(result.fun),
+                           "force_scale": force_scale})
     return nodes
 
 
