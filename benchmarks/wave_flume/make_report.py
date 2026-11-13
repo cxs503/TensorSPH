@@ -213,6 +213,95 @@ def summary_numbers(rows, tolerance) -> dict:
     }
 
 
+def _num(value, fmt="{:.6g}"):
+    """Format a numeric knob for a shell command; blank when the value is None."""
+    if value is None:
+        return None
+    try:
+        return fmt.format(float(value))
+    except (TypeError, ValueError):
+        return str(value)
+
+
+def repro_command(config, diagnostics, spec, out_path, *, threads=20, snapshots=4):
+    """Build a run.py command that reproduces one record from its own config.
+
+    Every knob that changes the result is emitted, so the command is a
+    *reproduction*, not an illustration.  The hand-written block this replaces
+    silently dropped ``--active-absorption``/``--output-every``/``--sponge-length``,
+    used ``--simulate-time 7.0`` against a 5 s record, and pointed the analysis at a
+    nonexistent ``runs/wf_D32.json`` -- exactly the drift a faithful generator
+    cannot have (see ``tests/test_wave_flume_repro_command.py``).
+    """
+    cfg = config or {}
+    spec = spec or {}
+    depth = cfg.get("depth", spec.get("depth"))
+    height = cfg.get("wave_height", spec.get("height"))
+    height_ratio = (height / depth) if depth else None
+    depth_cells = cfg.get("depth_cells")
+    depth_cells = int(round(depth_cells)) if depth_cells else None
+    period = cfg.get("wave_period", spec.get("period"))
+    gravity = cfg.get("gravity", spec.get("gravity", 9.81))
+    sim_time = (diagnostics or {}).get("simulated_time")
+    kind = cfg.get("wave_type", spec.get("kind", "regular"))
+
+    parts = [
+        "PYTHONPATH=src python benchmarks/wave_flume/run.py",
+        f"  --case {kind}",
+        "  --depth " + (_num(depth) or "0.25"),
+        "  --depth-cells " + (str(depth_cells) if depth_cells else "20"),
+        "  --height-ratio " + (_num(height_ratio, "{:.4f}") or "0.16"),
+        "  --wave-period " + (_num(period) or "1.0"),
+        "  --gravity " + (_num(gravity) or "9.81"),
+    ]
+    for flag, key in (
+        ("--flume-length", "flume_length"),
+        ("--sound-speed", "sound_speed"),
+        ("--viscosity", "viscosity"),
+        ("--density-diffusion", "density_diffusion"),
+        ("--sponge-strength", "sponge_strength"),
+        ("--active-absorption", "active_absorption"),
+        ("--ramp-periods", "ramp_periods"),
+        ("--sponge-length", "sponge_length"),
+        ("--xsph", "xsph"),
+        ("--xsph-settle", "xsph_settle"),
+        ("--viscosity-settle", "viscosity_settle"),
+        ("--settle", "settle_time"),
+    ):
+        value = _num(cfg.get(key))
+        if value is not None:
+            parts.append(f"  {flag} {value}")
+    if sim_time is not None:
+        parts.append(f"  --simulate-time {_num(sim_time, '{:.4f}')}")
+    if cfg.get("output_every") is not None:
+        parts.append(f"  --output-every {int(cfg['output_every'])}")
+    parts.append(f"  --snapshots {snapshots}")
+    dt = cfg.get("dt_requested")
+    if dt is not None:
+        # Full precision: the guard test binds --dt to dt_requested at rel 1e-6,
+        # and a 6-sig-fig round-trip (0.000135417 vs 1.3541666e-4) is not faithful.
+        parts.append(f"  --dt {repr(float(dt))}")
+    parts.append(f"  --threads {threads}")
+    parts.append(f"  --out {out_path}")
+    return " \\\n".join(parts)
+
+
+def default_repro_block(rows):
+    """Reproduction block: per-case run commands + the exact analysis/report chain."""
+    ok = [r for r in rows if not r.get("failed")]
+    blocks = ["# 生产工况（集群/多核；本地等价命令把 --threads 调小）"]
+    for r in ok:
+        blocks.append(repro_command(r.get("config"), r.get("diagnostics"),
+                                    r.get("spec"), r.get("record")))
+    records = " ".join(f"--record {r.get('record')}" for r in ok) or "--record runs/wf_D20.json"
+    blocks.append("# 判级 + 图 + 报告")
+    blocks.append("PYTHONPATH=src python benchmarks/wave_flume/analyse.py \\\n"
+                  f"  {records} \\\n"
+                  "  --out docs/reports/wave_flume_report.json --figures docs/figures/wave_flume")
+    blocks.append("PYTHONPATH=src python benchmarks/wave_flume/make_report.py")
+    return "\n".join(blocks)
+
+
 def render(rows, tolerance, figures, repro_cmd, records) -> str:
     nums = summary_numbers(rows, tolerance)
     head = f"""# CASE-WAVE-FLUME：数值波槽的波高保真与衰减归因（TensorSPH WCSPH）
@@ -321,16 +410,7 @@ def main(argv=None) -> int:
 
     repro = args.repro
     if not repro:
-        repro = ("# 生产工况（集群/多核；本地等价命令把 --threads 调小）\n"
-                 "PYTHONPATH=src python benchmarks/wave_flume/run.py --case regular --depth 0.25 \\\n"
-                 "  --depth-cells 20 --height-ratio 0.16 --wave-period 1.0 --simulate-time 7.0 \\\n"
-                 "  --settle 1.0 --viscosity-settle 0.02 --xsph-settle 0.1 --density-diffusion 0.1 \\\n"
-                 "  --viscosity 1e-6 --sponge-strength 4.0 --snapshots 4 --threads 20 --out runs/wf_D20.json\n"
-                 "# 判级 + 图 + 报告\n"
-                 "PYTHONPATH=src python benchmarks/wave_flume/analyse.py \\\n"
-                 "  --record runs/wf_D20.json --record runs/wf_D32.json \\\n"
-                 "  --out docs/reports/wave_flume_report.json --figures docs/figures/wave_flume\n"
-                 "PYTHONPATH=src python benchmarks/wave_flume/make_report.py")
+        repro = default_repro_block(rows)
 
     numbers = summary_numbers(rows, tolerance)
     numbers["cases"] = [
@@ -355,15 +435,9 @@ def main(argv=None) -> int:
             "window": r.get("window"),
             "passed": r["passed"],
             "derived": derived(r),
-            "repro_record_command": (
-                "PYTHONPATH=src python benchmarks/wave_flume/run.py --case "
-                f"{(r.get('spec') or {}).get('kind', 'regular')} "
-                f"--depth {(r.get('spec') or {}).get('depth')} "
-                f"--depth-cells {(r.get('config') or {}).get('depth_cells')} "
-                f"--height-ratio {((r.get('spec') or {}).get('height', float('nan')) / (r.get('spec') or {}).get('depth', float('nan'))):.3f} "
-                f"--wave-period {(r.get('spec') or {}).get('period')} "
-                f"--out {r.get('record')}"
-            ),
+            "repro_record_command": repro_command(
+                r.get("config"), r.get("diagnostics"),
+                r.get("spec"), r.get("record")),
         }
         for r in rows
     ]
