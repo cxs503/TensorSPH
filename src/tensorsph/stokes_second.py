@@ -69,6 +69,9 @@ from typing import Iterable
 
 import numpy as np
 
+#: Case identifier for the case pool.
+CASE_KEY = "CASE-SPH-STOKES-2ND-PROBLEM"
+
 __all__ = [
     "penetration_depth",
     "semi_infinite",
