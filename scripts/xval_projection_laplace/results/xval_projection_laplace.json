@@ -1,0 +1,305 @@
+{
+  "figure": "/root/tp-agent/work/m17594/scripts/xval_projection_laplace/results/xval_projection_laplace.png",
+  "case": "XVAL-SPH-PROJECTION-SPH-YOUNG-LAPLACE",
+  "reference": "PySPH 1.0b3.dev0 (pypr/pysph), analytic dp=sigma/R",
+  "params": {
+    "radius_m": 0.02,
+    "sigma_N_per_m": 0.072,
+    "rho0_kg_per_m3": 1000.0,
+    "outer_m": 0.012,
+    "levels_m": [
+      0.002,
+      0.0015,
+      0.001
+    ]
+  },
+  "runs": [
+    {
+      "variant": "model",
+      "dx_m": 0.002,
+      "h_m": 0.0026000000000000003,
+      "R_over_h": 7.692307692307692,
+      "R_over_dx": 10.0,
+      "n_particles": 1203,
+      "n_liquid": 362,
+      "curvature_method": "mls",
+      "delta_s_integral_dn": 0.9948067879524698,
+      "kappa_interface_mean": 50.55170129650784,
+      "kappa_analytic": 50.0,
+      "kappa_error_pct": 1.1034025930156677,
+      "kappa_delta_weighted": 50.55419471895041,
+      "kappaR_delta_weighted": 1.0110838943790084,
+      "p_core_Pa": 3.636165650215871,
+      "p_vapour_Pa": 0.0011950096830138227,
+      "dp_measured_Pa": 3.634970640532857,
+      "dp_theory_Pa": 3.5999999999999996,
+      "dp_over_theory": 1.0097140668146827,
+      "dp_error_pct": 0.9714066814682676,
+      "dp_flux_Pa": 3.5826478692857786,
+      "dp_flux_over_theory": 0.9951799636904941,
+      "residual_acc_over_mean_csf_acc": 0.3083041636918511,
+      "residual_acc_median_over_mean_csf_acc": 0.2556571465333983,
+      "residual_bulk_median_over_mean_csf_acc": 0.011398569043487268,
+      "residual_acc_max": 0.47719159183021104,
+      "v_ref_m_per_s": 0.06,
+      "cg_iterations": 78,
+      "arm": "ours[mls,h=1.3]"
+    },
+    {
+      "arm": "oss[paper,sy11,morris=1,h=1.3]",
+      "dx_m": 0.002,
+      "R_over_dx": 10.0,
+      "h_factor": 1.3,
+      "n_particles": 1203,
+      "n_pairs": 10175,
+      "kappa_signed_weighted": 50.85416424919511,
+      "kappa_times_R": 1.0170832849839022,
+      "kappa_analytic": 50.0,
+      "delta_integral_dn": 1.0179071854585566,
+      "dp_measured_Pa": 3.743960848212517,
+      "dp_theory_Pa": 3.5999999999999996,
+      "dp_error_pct": 3.9989124503477136,
+      "residual_median_over_mean_csf_acc": 0.419455307236677,
+      "cg_iterations": 65
+    },
+    {
+      "arm": "oss[code,sy11,morris=1,h=1.3]",
+      "dx_m": 0.002,
+      "R_over_dx": 10.0,
+      "h_factor": 1.3,
+      "n_particles": 1203,
+      "n_pairs": 10175,
+      "kappa_signed_weighted": 4374329161812.515,
+      "kappa_times_R": 87486583236.2503,
+      "kappa_analytic": 50.0,
+      "delta_integral_dn": 84825598788.21335,
+      "dp_measured_Pa": 2.683593056981561e+22,
+      "dp_theory_Pa": 3.5999999999999996,
+      "dp_error_pct": 7.454425158282113e+23,
+      "residual_median_over_mean_csf_acc": 0.396515913253757,
+      "cg_iterations": 71
+    },
+    {
+      "variant": "model",
+      "dx_m": 0.0015,
+      "h_m": 0.0019500000000000001,
+      "R_over_h": 10.256410256410255,
+      "R_over_dx": 13.333333333333334,
+      "n_particles": 2150,
+      "n_liquid": 644,
+      "curvature_method": "mls",
+      "delta_s_integral_dn": 0.9944099701445821,
+      "kappa_interface_mean": 50.65560423863182,
+      "kappa_analytic": 50.0,
+      "kappa_error_pct": 1.3112084772636257,
+      "kappa_delta_weighted": 50.39475935621388,
+      "kappaR_delta_weighted": 1.0078951871242776,
+      "p_core_Pa": 3.619388663404366,
+      "p_vapour_Pa": -0.0024338713295827727,
+      "dp_measured_Pa": 3.6218225347339486,
+      "dp_theory_Pa": 3.5999999999999996,
+      "dp_over_theory": 1.0060618152038747,
+      "dp_error_pct": 0.6061815203874721,
+      "dp_flux_Pa": 3.585267959499151,
+      "dp_flux_over_theory": 0.995907766527542,
+      "residual_acc_over_mean_csf_acc": 0.33682563734633697,
+      "residual_acc_median_over_mean_csf_acc": 0.2762277259309496,
+      "residual_bulk_median_over_mean_csf_acc": 0.011903618194251392,
+      "residual_acc_max": 0.770648054157979,
+      "v_ref_m_per_s": 0.06,
+      "cg_iterations": 104,
+      "arm": "ours[mls,h=1.3]"
+    },
+    {
+      "arm": "oss[paper,sy11,morris=1,h=1.3]",
+      "dx_m": 0.0015,
+      "R_over_dx": 13.333333333333334,
+      "h_factor": 1.3,
+      "n_particles": 2150,
+      "n_pairs": 18478,
+      "kappa_signed_weighted": 50.43455642129098,
+      "kappa_times_R": 1.0086911284258195,
+      "kappa_analytic": 50.0,
+      "delta_integral_dn": 1.017952187861548,
+      "dp_measured_Pa": 3.723992013172714,
+      "dp_theory_Pa": 3.5999999999999996,
+      "dp_error_pct": 3.444222588130952,
+      "residual_median_over_mean_csf_acc": 0.4640952018509144,
+      "cg_iterations": 103
+    },
+    {
+      "arm": "oss[code,sy11,morris=1,h=1.3]",
+      "dx_m": 0.0015,
+      "R_over_dx": 13.333333333333334,
+      "h_factor": 1.3,
+      "n_particles": 2150,
+      "n_pairs": 18478,
+      "kappa_signed_weighted": 13584653614126.287,
+      "kappa_times_R": 271693072282.52576,
+      "kappa_analytic": 50.0,
+      "delta_integral_dn": 268102633840.0803,
+      "dp_measured_Pa": 2.6418069857677786e+23,
+      "dp_theory_Pa": 3.5999999999999996,
+      "dp_error_pct": 7.338352738243831e+24,
+      "residual_median_over_mean_csf_acc": 0.4576144449767887,
+      "cg_iterations": 103
+    },
+    {
+      "variant": "model",
+      "dx_m": 0.001,
+      "h_m": 0.0013000000000000002,
+      "R_over_h": 15.384615384615383,
+      "R_over_dx": 20.0,
+      "n_particles": 4773,
+      "n_liquid": 1452,
+      "curvature_method": "mls",
+      "delta_s_integral_dn": 0.9932005695562762,
+      "kappa_interface_mean": 50.13537652314203,
+      "kappa_analytic": 50.0,
+      "kappa_error_pct": 0.2707530462840557,
+      "kappa_delta_weighted": 50.17715373091861,
+      "kappaR_delta_weighted": 1.0035430746183722,
+      "p_core_Pa": 3.5932062418394985,
+      "p_vapour_Pa": 0.0008837031772589095,
+      "dp_measured_Pa": 3.5923225386622395,
+      "dp_theory_Pa": 3.5999999999999996,
+      "dp_over_theory": 0.9978673718506221,
+      "dp_error_pct": -0.21326281493778687,
+      "dp_flux_Pa": 3.5784965213368314,
+      "dp_flux_over_theory": 0.9940268114824533,
+      "residual_acc_over_mean_csf_acc": 0.4558633078019965,
+      "residual_acc_median_over_mean_csf_acc": 0.3624740696611366,
+      "residual_bulk_median_over_mean_csf_acc": 0.00582913613495103,
+      "residual_acc_max": 2.308763142401042,
+      "v_ref_m_per_s": 0.06,
+      "cg_iterations": 156,
+      "arm": "ours[mls,h=1.3]"
+    },
+    {
+      "arm": "oss[paper,sy11,morris=1,h=1.3]",
+      "dx_m": 0.001,
+      "R_over_dx": 20.0,
+      "h_factor": 1.3,
+      "n_particles": 4773,
+      "n_pairs": 41654,
+      "kappa_signed_weighted": 50.12909762423715,
+      "kappa_times_R": 1.002581952484743,
+      "kappa_analytic": 50.0,
+      "delta_integral_dn": 1.0176614548799094,
+      "dp_measured_Pa": 3.7018633906226803,
+      "dp_theory_Pa": 3.5999999999999996,
+      "dp_error_pct": 2.8295386284078017,
+      "residual_median_over_mean_csf_acc": 0.5243902736291305,
+      "cg_iterations": 131
+    },
+    {
+      "arm": "oss[code,sy11,morris=1,h=1.3]",
+      "dx_m": 0.001,
+      "R_over_dx": 20.0,
+      "h_factor": 1.3,
+      "n_particles": 4773,
+      "n_pairs": 41654,
+      "kappa_signed_weighted": 69068834388995.414,
+      "kappa_times_R": 1381376687779.9082,
+      "kappa_analytic": 50.0,
+      "delta_integral_dn": 1356881939839.898,
+      "dp_measured_Pa": 6.800352477161937e+24,
+      "dp_theory_Pa": 3.5999999999999996,
+      "dp_error_pct": 1.8889867992116492e+26,
+      "residual_median_over_mean_csf_acc": 0.5298910953348028,
+      "cg_iterations": 152
+    }
+  ],
+  "sensitivity": [
+    {
+      "vary": "h_factor",
+      "value": 1.2,
+      "ours_pct": -2.389537300088096,
+      "oss_pct": 7.045364793236764
+    },
+    {
+      "vary": "h_factor",
+      "value": 1.3,
+      "ours_pct": -0.21326281493778687,
+      "oss_pct": 2.8295386284078017
+    },
+    {
+      "vary": "h_factor",
+      "value": 1.5,
+      "ours_pct": 1.6561733560421121,
+      "oss_pct": -1.3607443900127913
+    },
+    {
+      "vary": "ours_curvature",
+      "value": "fit_quadratic",
+      "ours_pct": -24.456987691186328,
+      "kappaR": 0.7397249744727656
+    },
+    {
+      "vary": "ours_curvature",
+      "value": "mls",
+      "ours_pct": -0.21326281493778687,
+      "kappaR": 1.0035430746183722
+    },
+    {
+      "vary": "oss_morris_correction",
+      "value": true,
+      "oss_pct": 2.8295386284078017,
+      "kappaR": 1.002581952484743
+    },
+    {
+      "vary": "oss_morris_correction",
+      "value": false,
+      "oss_pct": 2.7280705601099964,
+      "kappaR": 1.0015453099976563
+    },
+    {
+      "vary": "oss_delta_variant",
+      "value": "sy11",
+      "oss_pct": 2.8295386284078017
+    },
+    {
+      "vary": "oss_delta_variant",
+      "value": "alt",
+      "oss_pct": 2.8295386284078017
+    },
+    {
+      "vary": "oss_number_density_form",
+      "value": "paper",
+      "oss_pct": 2.8295386284078017,
+      "kappaR": 1.002581952484743
+    },
+    {
+      "vary": "oss_number_density_form",
+      "value": "code",
+      "oss_pct": 1.8889867992116492e+26,
+      "kappaR": 1381376687779.9082
+    }
+  ],
+  "timing": {
+    "0.002": {
+      "ours_s": 0.10626220703125,
+      "oss_paper_s": 0.08181953430175781,
+      "oss_code_s": 0.08298635482788086
+    },
+    "0.0015": {
+      "ours_s": 0.18522906303405762,
+      "oss_paper_s": 0.17213129997253418,
+      "oss_code_s": 0.19105768203735352
+    },
+    "0.001": {
+      "ours_s": 0.46186304092407227,
+      "oss_paper_s": 0.3687281608581543,
+      "oss_code_s": 0.28493261337280273
+    }
+  },
+  "verdict": {
+    "tolerance_pct": 15.0,
+    "ours_finest_pct": -0.21326281493778687,
+    "oss_finest_pct": 2.8295386284078017,
+    "ours_pass": true,
+    "oss_pass": true,
+    "parity": "see oss_ports.pysph_parity_check()",
+    "poisson_manufactured_rel_err": 1.4457757525971557
+  }
+}
