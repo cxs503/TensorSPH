@@ -67,10 +67,27 @@ LEDGER_DIR = "benchmarks/verification_ledger"
 # ---------------------------------------------------------------------------
 # helpers
 # ---------------------------------------------------------------------------
+class MissingArtifact(FileNotFoundError):
+    """A claim producer reads an artifact this checkout does not carry.
+
+    Delivery filters drop scratch trees (``runs/**``), so a claim written against
+    a campaign output can outlive the artifact it reads.  Before m17086 that
+    surfaced as a bare ``FileNotFoundError`` raised *inside* ``build()``: the
+    whole ledger, its markdown and every test using the ledger fixture died, so
+    one missing file hid the evidence defects of the other 55 claims.  The
+    builder now degrades the offending producer into a ``missing_artifact``
+    finding (severity ``high``) and keeps grading the rest.
+    """
+
+    def __init__(self, rel: str):
+        self.rel = rel
+        super().__init__(f"ledger artifact missing: {rel}")
+
+
 def _load(rel: str) -> dict:
     path = REPO / rel
     if not path.is_file():
-        raise FileNotFoundError(f"ledger artifact missing: {rel}")
+        raise MissingArtifact(rel)
     with path.open() as fh:
         return json.load(fh)
 
@@ -163,8 +180,14 @@ def _entry(
 
 
 def resolve(obj, path: str):
-    """Resolve ``a.b[0].c`` and also tolerate keys that contain dots themselves
-    (e.g. ``criteria.error_at_dx_0.0025_lt_15pct``)."""
+    """Resolve ``a.b[0].c``, ``a.ladder[id=L400].c`` and keys that contain dots
+    themselves (e.g. ``criteria.error_at_dx_0.0025_lt_15pct``).
+
+    The ``[field=value]`` selector (m17086) addresses an element of a list of
+    records by a field instead of by position: campaign summaries order their
+    ``cases``/``ladder`` entries by run order, which is not stable across
+    re-runs, so a positional index would silently point at a different case.
+    """
     toks = path.split(".")
 
     def rec(cur, toks):
@@ -182,8 +205,15 @@ def resolve(obj, path: str):
             if ok:
                 try:
                     for i in idx:
-                        target = target[int(i.rstrip("]"))]
-                except (KeyError, IndexError, TypeError, ValueError):
+                        sel = i.rstrip("]")
+                        if "=" in sel:
+                            field, want = sel.split("=", 1)
+                            target = next(
+                                x for x in target if str(x.get(field)) == want
+                            )
+                        else:
+                            target = target[int(sel)]
+                except (KeyError, IndexError, StopIteration, TypeError, ValueError):
                     ok = False
             if ok:
                 return rec(target, toks[k:])
@@ -1824,7 +1854,18 @@ def _load_waivers() -> set[str]:
 # ---------------------------------------------------------------------------
 # declared verdicts: what the artifact itself says about the run it came from
 # ---------------------------------------------------------------------------
-VERDICT_KEYS = ("verdict", "status", "evidence_grade")
+#: Verdict flavours an artifact may carry.  ``verdict_including_probes`` matters
+#: for a reading taken from a probe/control case: an artifact whose gated verdict
+#: passes while its probe-inclusive verdict fails does **not** self-declare a pass
+#: (m17086 -- ``benchmarks/threed_hydrostatic/report.json`` is exactly that shape,
+#: and reading only ``verdict`` silently upgraded six selection credits).
+VERDICT_KEYS = (
+    "verdict",
+    "verdict_including_probes",
+    "verdict_including_controls",
+    "status",
+    "evidence_grade",
+)
 _FAIL_TOKENS = {"fail", "failed", "false", "withheld", "invalid", "incomplete"}
 _PASS_TOKENS = {"pass", "passed", "ok", "true", "valid"}
 
@@ -1870,19 +1911,24 @@ def declared_verdict(artifact: str, _cache: dict = {}) -> dict | None:
         return None
     found = None
     if isinstance(d, dict):
+        criteria = d.get("criteria") if isinstance(d.get("criteria"), dict) else {}
+        missing = d.get("missing_cases") or []
         for key in VERDICT_KEYS:
             if key not in d:
                 continue
             norm = normalise_verdict(d[key])
-            if norm:
-                criteria = d.get("criteria") if isinstance(d.get("criteria"), dict) else {}
-                missing = d.get("missing_cases") or []
+            if not norm:
+                continue
+            # the worst flavour wins: an artifact only *self-declares* a pass if
+            # every verdict it carries says pass
+            if found is None or norm == "fail":
                 found = {
                     "value": norm,
                     "json_path": key,
                     "failing_criteria": sorted(k for k, v in criteria.items() if v is False),
                     "missing_cases": [str(m) for m in missing],
                 }
+            if found["value"] == "fail":
                 break
     _cache[artifact] = found
     return found
@@ -2218,12 +2264,16 @@ def coverage_closure_claims() -> list[dict]:
 
     # ---- CSF dispersion ladder (capillary wave + Lamb modes) ----
     # The measurement moved into ``tensorsph.surface_tension_dispersion`` +
-    # ``scripts/run_surface_tension_dispersion.py`` (m13895); the committed artifact
-    # is ``validation_report.json``, next to this harness.  m14729 wired these two
+    # ``scripts/run_surface_tension_dispersion.py`` (m13895); m14729 wired these two
     # claims to the pre-move path and the pre-move schema, so ``build()`` raised
-    # FileNotFoundError at HEAD and took every other claim down with it.  The paths
-    # below are the ones the current runner actually writes (m14849).
-    rel = "runs/surface_tension_dispersion/report.json"
+    # FileNotFoundError at HEAD and took every other claim down with it (m14849
+    # repointed them).  m17086: the campaign artifact was still read from
+    # ``runs/surface_tension_dispersion/``, a scratch tree the delivery filter
+    # strips -- the readings survived in ``ledger.json`` while the artifact they
+    # point at did not, i.e. the ledger was unreproducible and ``--check`` dead.
+    # The artifact of record now lives next to its harness, byte-identical to the
+    # committed campaign (``meta.json`` carries its sha256).
+    rel = "benchmarks/surface_tension_dispersion/report.json"
     d = _load(rel)
     g = d["gates"]
     c1, c2, c3 = g["C1_capillary_wave"], g["C2_lamb_modes"], g["C3_convergence"]
@@ -2330,12 +2380,13 @@ def coverage_closure_claims() -> list[dict]:
     )
 
     # ---- same quantity, steady state, uncertainty-quantified (m16346 audit) ----
+    # m17086: this block used ``pathlib.Path(audit_rel)`` without importing
+    # ``pathlib`` *and* resolved the path against the CWD, so the block raised
+    # NameError and the m16346 steady-state UQ reading never reached a ledger at
+    # all -- it was invisible, not WITHHELD.  Read it through ``_load`` like every
+    # other claim (a missing artifact is now a finding, not a silent skip).
     audit_rel = "benchmarks/fluctuating_hydro/thermostat_audit.json"
-    audit_path = REPO / audit_rel if "REPO" in globals() else None
-    try:
-        audit = json.loads(pathlib.Path(audit_rel).read_text())
-    except (OSError, ValueError):
-        audit = None
+    audit = _load(audit_rel)
     if audit:
         ens = audit["ensemble_summary"]
         replay = audit["replay"]
@@ -2401,7 +2452,11 @@ def wedge_entry_claims() -> list[dict]:
     """
     import math
 
-    rel = "runs/wedge_entry_wagner/summary_v2.json"
+    # m17086: same defect class as the dispersion claims above -- the summary
+    # used to be read from the scratch tree ``runs/wedge_entry_wagner/``, which
+    # the delivery filter strips, so the claims were ungradeable at HEAD.  The
+    # committed copy sits next to the harness that produces it.
+    rel = "benchmarks/wedge_entry/summary_v2.json"
     d = _load(rel)
     crit = d["criteria"]
     runs = {e["id"]: e for e in d["cases"] + d["ladder"] + d.get("extra", [])}
@@ -2558,23 +2613,62 @@ def wedge_entry_claims() -> list[dict]:
     return out
 
 
-def build() -> dict:
-    entries = (
-        young_laplace_claims()
-        + force_path_claims()
-        + operator_level_claims()
-        + model_level_claims()
-        + other_physics_claims()
-        + kernel_claims()
-        + threed_claims()
-        + closure_claims()
-        + quiescence_claims()
-        + orphan_evidence_claims()
-        + ice_floe_added_mass_claims()
-        + ice_thermal_claims()
-        + coverage_closure_claims()
-        + wedge_entry_claims()
-    )
+#: Claim producers in ledger order.  Each one owns one artifact family.  A
+#: producer whose artifact is absent is degraded into a finding instead of
+#: aborting the build -- see :class:`MissingArtifact`.
+PRODUCERS = (
+    young_laplace_claims,
+    force_path_claims,
+    operator_level_claims,
+    model_level_claims,
+    other_physics_claims,
+    kernel_claims,
+    threed_claims,
+    closure_claims,
+    quiescence_claims,
+    orphan_evidence_claims,
+    ice_floe_added_mass_claims,
+    ice_thermal_claims,
+    coverage_closure_claims,
+    wedge_entry_claims,
+)
+
+
+def _collect(producers=None) -> tuple[list[dict], list[dict]]:
+    """Run every claim producer; turn a missing artifact into a finding.
+
+    Returns ``(entries, missing_findings)``.  A producer that raises
+    :class:`MissingArtifact` contributes *no* claims -- the family is ungraded,
+    which is worse than a low grade and must therefore be visible as a
+    high-severity finding rather than silently absent from the table.
+    """
+    entries: list[dict] = []
+    missing: list[dict] = []
+    for produce in (PRODUCERS if producers is None else producers):
+        try:
+            entries.extend(produce())
+        except MissingArtifact as exc:
+            missing.append(
+                {
+                    "claim_id": exc.rel,
+                    "detail": (
+                        f"claim producer `{produce.__name__}()` reads `{exc.rel}`, which "
+                        "this checkout does not carry, so its claims are **ungraded** "
+                        "(not waived, not PASS). Committing the artifact under a path the "
+                        "delivery filter keeps (`benchmarks/<harness>/<name>.json`; "
+                        "`runs/` is scratch and gets stripped) restores the readings; "
+                        "otherwise waive the harness in waivers.json with a reason."
+                    ),
+                    "producer": produce.__name__,
+                    "rule": "missing_artifact",
+                    "severity": "high",
+                }
+            )
+    return entries, missing
+
+
+def build(producers=None) -> dict:
+    entries, missing = _collect(producers)
     V = _claim_validity()
     for e in entries:
         e["run_validity"] = V.evaluate(e["claim_id"])["status"]
@@ -2593,12 +2687,14 @@ def build() -> dict:
             raise FileNotFoundError(f"{e['claim_id']}: artifact gone: {e['artifact']}")
         resolve(_load(e["artifact"]), e["json_path"])
     entries.sort(key=lambda e: e["claim_id"])
-    found = findings(entries)
+    found = findings(entries) + missing
     summary = {
         "n_claims": len(entries),
         "n_quantities": len({e["quantity_id"] for e in entries}),
         "by_grade": {g: sum(1 for e in entries if e["grade"] == g) for g in GRADES},
         "n_findings": len(found),
+        # artifact families whose producer could not run at all
+        "n_missing_artifacts": len(missing),
         "findings_by_rule": {
             r: sum(1 for f in found if f["rule"] == r)
             for r in sorted({f["rule"] for f in found})
@@ -2752,6 +2848,9 @@ def render_markdown(ledger: dict) -> str:
         "3. 引用任何验证数字必须写明口径（本表 §6 的 `definition` 字段）；"
         "`WITHHELD`/`FAIL`/`WITHDRAWN` 的数字不得作为当前精度引用。",
         "4. 散文里出现 `SUPERSEDED_NUMBERS` 中的作废数字必须带历史标记，否则 finding。",
+        "5. claim 的工件必须在 `benchmarks/**` 下（随交付保留）；指向 `runs/**` 的"
+        "读不到工件时不再让整本账崩掉，而是逐条记 `missing_artifact`（high）——"
+        "工件名字换成能交付的路径，不要放宽规则。",
         "",
     ]
     return "\n".join(L)

@@ -124,14 +124,37 @@ def test_vacuum_gauge_claim_is_withheld(by_id, ledger):
     )
 
 
-def test_non_degenerate_claims_are_not_flagged_as_gauge_defects(ledger):
-    """Every `declared_vs_derived` finding must land on a degenerate-gauge claim."""
+def test_declared_vs_derived_offenders_are_withheld_for_a_stated_reason(ledger):
+    """An artifact may not self-declare PASS while the ledger refuses the reading.
+
+    The ledger refuses a reading through exactly three channels, and every
+    ``declared_vs_derived`` offender has to name one of them (m17086 widened this
+    from "must be a degenerate gauge": the rebuild surfaced
+    ``threed_hydrostatic.bottom_pressure.adami_worst``, where the artifact's
+    report-level ``verdict = pass`` covers a run 95 % off the collapse value --
+    the refusal is about the reading's selection, not about the gauge):
+
+    1. ``gauge_degenerate`` -- the number cannot carry the physics;
+    2. ``run_validity == INVALID`` -- the trajectory was no longer a simulation;
+    3. the reading is one of several spreads on the same quantity
+       (``quantity_spread``), i.e. it is a selection, not a property.
+    """
     by_id = {e["claim_id"]: e for e in ledger["entries"]}
+    spread_q = {
+        f["claim_id"]: f["detail"] for f in ledger["findings"] if f["rule"] == "quantity_spread"
+    }
     offenders = [f["claim_id"] for f in ledger["findings"] if f["rule"] == "declared_vs_derived"]
     assert "young_laplace.laplace_law.vacuum_gauge" in offenders
     for cid in offenders:
-        assert by_id[cid]["gauge_degenerate"] is True, cid
-        assert by_id[cid]["artifact_status"].upper() == "PASS", cid
+        e = by_id[cid]
+        assert e["artifact_status"].upper() == "PASS", cid
+        assert e["grade"] == "WITHHELD", f"{cid}: a PASS-declaring artifact may only be refused, not failed"
+        explained = (
+            e["gauge_degenerate"]
+            or e.get("run_validity") == "INVALID"
+            or e["quantity_id"] in spread_q
+        )
+        assert explained, f"{cid}: refused without a stated reason"
 
 
 # ---------------------------------------------------------------------------
@@ -345,3 +368,65 @@ def test_every_referenced_artifact_path_exists():
     assert not missing, (
         f"ledger claims reference artifacts that do not exist in the repo: {missing}"
     )
+    # m17086: the root cause of the m14849 break was the *location class*, not a
+    # typo -- ``runs/`` is scratch and the delivery filter strips it, so a claim
+    # there is dead the moment it is committed.  Forbid the class, not just the
+    # two paths that happened to be wrong.
+    scratch = sorted(p for p in paths if p.split("/", 1)[0] == "runs")
+    assert not scratch, (
+        "ledger claims point into the scratch tree runs/, which the delivery "
+        f"filter does not keep (commit the artifact under benchmarks/<harness>/): {scratch}"
+    )
+
+
+def test_missing_artifact_is_a_finding_not_a_crash():
+    """One absent artifact may not blind the rest of the ledger (m17086).
+
+    At HEAD every ledger test died in the module fixture because a single claim
+    read a stripped artifact, so 55 correct claims and their evidence defects
+    were unreachable.  The builder now turns the offending producer into a
+    high-severity ``missing_artifact`` finding and keeps grading the rest.
+    """
+    mod = _load_builder()
+
+    def ghost_producer():
+        raise mod.MissingArtifact("runs/ghost/report.json")
+
+    ledger = mod.build(producers=[ghost_producer])
+    rules = [f["rule"] for f in ledger["findings"]]
+    assert "missing_artifact" in rules
+    assert ledger["summary"]["n_missing_artifacts"] == 1
+    finding = next(f for f in ledger["findings"] if f["rule"] == "missing_artifact")
+    assert finding["severity"] == "high"
+    assert finding["claim_id"] == "runs/ghost/report.json"
+    assert "ungraded" in finding["detail"]
+    assert ledger["entries"] == [], "a producer without an artifact must not invent claims"
+
+
+def test_resolve_selects_list_records_by_field():
+    """``ladder[id=L400].c`` must address a record, not a position (m17086).
+
+    Campaign summaries order ``cases``/``ladder`` by run order, which is not
+    stable across re-runs; a positional index would silently grade a different
+    case after a re-ordering.  The selector is what the wedge-entry claims use.
+    """
+    mod = _load_builder()
+    obj = {"ladder": [{"id": "L100", "c": 1.0}, {"id": "L400", "c": 2.0}]}
+    assert mod.resolve(obj, "ladder[id=L400].c") == 2.0
+    with pytest.raises(KeyError):
+        mod.resolve(obj, "ladder[id=L999].c")
+
+
+def test_relocated_campaign_artifact_matches_its_provenance():
+    """The dispersion artifact of record is the campaign the ledger grades.
+
+    ``meta.json`` carries the sha256 of the report the campaign wrote; the file
+    committed under ``benchmarks/surface_tension_dispersion/`` must hash to it,
+    otherwise the ledger would be grading a number that no artifact supports.
+    """
+    import hashlib
+
+    base = REPO / "benchmarks" / "surface_tension_dispersion"
+    meta = json.loads((base / "meta.json").read_text())
+    digest = hashlib.sha256((base / "report.json").read_bytes()).hexdigest()
+    assert digest == meta["report_sha256"]
