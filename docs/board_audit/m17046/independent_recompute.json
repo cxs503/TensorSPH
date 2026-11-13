@@ -1,0 +1,258 @@
+{
+  "window": [
+    0.5,
+    3.0
+  ],
+  "n_samples": 161,
+  "tolerance": 0.15,
+  "ladder_rederived": [
+    {
+      "case": "dx0.04_c025",
+      "dx": 0.04,
+      "particles": 50,
+      "steps": 545,
+      "wall_clock_s": 8.436465840786695,
+      "max_density_compression": 0.01923315429687511,
+      "crosscheck": {
+        "reference": "crosscheck",
+        "n_samples": 161,
+        "window": [
+          0.5,
+          2.96
+        ],
+        "amplitude": 2.67,
+        "mae": 0.12457207153869439,
+        "mae_over_amplitude": 0.046656206568799395,
+        "bias": -0.12457207153869439,
+        "bias_over_amplitude": -0.046656206568799395,
+        "max_abs": 0.21002789427806867,
+        "worst_sample": {
+          "tau": 2.96,
+          "sim": 2.4599721057219313,
+          "reference": 2.67
+        }
+      },
+      "bundled": {
+        "reference": "bundled",
+        "n_samples": 161,
+        "window": [
+          0.5,
+          3.0
+        ],
+        "amplitude": 2.677433628318584,
+        "mae": 0.6902357500944059,
+        "mae_over_amplitude": 0.2577975202798475,
+        "bias": -0.6902357500944059,
+        "bias_over_amplitude": -0.2577975202798475,
+        "max_abs": 0.9265231336148998,
+        "worst_sample": {
+          "tau": 1.359375,
+          "sim": 0.526463592048817,
+          "reference": 1.4529867256637168
+        }
+      }
+    },
+    {
+      "case": "dx0.02_c025",
+      "dx": 0.02,
+      "particles": 200,
+      "steps": 1090,
+      "wall_clock_s": 57.37549343146384,
+      "max_density_compression": 0.02632348632812498,
+      "crosscheck": {
+        "reference": "crosscheck",
+        "n_samples": 161,
+        "window": [
+          0.5,
+          2.96
+        ],
+        "amplitude": 2.67,
+        "mae": 0.0440440868689819,
+        "mae_over_amplitude": 0.016495912685011948,
+        "bias": 0.03199494199077826,
+        "bias_over_amplitude": 0.011983124341115453,
+        "max_abs": 0.08870696181599541,
+        "worst_sample": {
+          "tau": 1.191875,
+          "sim": 0.5305038368159954,
+          "reference": 0.44179687500000003
+        }
+      },
+      "bundled": {
+        "reference": "bundled",
+        "n_samples": 161,
+        "window": [
+          0.5,
+          3.0
+        ],
+        "amplitude": 2.677433628318584,
+        "mae": 0.5342315166014132,
+        "mae_over_amplitude": 0.19953118947598644,
+        "bias": -0.5327478140011873,
+        "bias_over_amplitude": -0.19897703844698122,
+        "max_abs": 0.7684262651933994,
+        "worst_sample": {
+          "tau": 1.359375,
+          "sim": 0.6845604604703174,
+          "reference": 1.4529867256637168
+        }
+      }
+    },
+    {
+      "case": "dx0.01_c025",
+      "dx": 0.01,
+      "particles": 800,
+      "steps": 2179,
+      "wall_clock_s": 299.4046345613897,
+      "max_density_compression": 0.019359619140624895,
+      "crosscheck": {
+        "reference": "crosscheck",
+        "n_samples": 161,
+        "window": [
+          0.5,
+          2.96
+        ],
+        "amplitude": 2.67,
+        "mae": 0.11683560558464723,
+        "mae_over_amplitude": 0.043758653777021435,
+        "bias": 0.11450794333658959,
+        "bias_over_amplitude": 0.0428868701635167,
+        "max_abs": 0.1653728394759102,
+        "worst_sample": {
+          "tau": 2.19125,
+          "sim": 1.7166228394759102,
+          "reference": 1.55125
+        }
+      },
+      "bundled": {
+        "reference": "bundled",
+        "n_samples": 161,
+        "window": [
+          0.5,
+          3.0
+        ],
+        "amplitude": 2.677433628318584,
+        "mae": 0.46243028116163515,
+        "mae_over_amplitude": 0.1727140035407859,
+        "bias": -0.4497905806579043,
+        "bias_over_amplitude": -0.1679931767124217,
+        "max_abs": 0.6955130176780909,
+        "worst_sample": {
+          "tau": 1.359375,
+          "sim": 0.7574737079856259,
+          "reference": 1.4529867256637168
+        }
+      }
+    }
+  ],
+  "stored_vs_rederived": [
+    {
+      "case": "dx0.04_c025",
+      "reference": "crosscheck",
+      "stored_mae": 0.12457207153869439,
+      "rederived_mae": 0.12457207153869439,
+      "abs_diff": 0.0,
+      "stored_mae_over_amplitude": 0.046656206568799395,
+      "rederived_mae_over_amplitude": 0.046656206568799395,
+      "pass_at_15pct": true
+    },
+    {
+      "case": "dx0.04_c025",
+      "reference": "bundled",
+      "stored_mae": 0.6902357500944059,
+      "rederived_mae": 0.6902357500944059,
+      "abs_diff": 0.0,
+      "stored_mae_over_amplitude": 0.2577975202798475,
+      "rederived_mae_over_amplitude": 0.2577975202798475,
+      "pass_at_15pct": false
+    },
+    {
+      "case": "dx0.02_c025",
+      "reference": "crosscheck",
+      "stored_mae": 0.0440440868689819,
+      "rederived_mae": 0.0440440868689819,
+      "abs_diff": 0.0,
+      "stored_mae_over_amplitude": 0.016495912685011948,
+      "rederived_mae_over_amplitude": 0.016495912685011948,
+      "pass_at_15pct": true
+    },
+    {
+      "case": "dx0.02_c025",
+      "reference": "bundled",
+      "stored_mae": 0.5342315166014132,
+      "rederived_mae": 0.5342315166014132,
+      "abs_diff": 0.0,
+      "stored_mae_over_amplitude": 0.19953118947598644,
+      "rederived_mae_over_amplitude": 0.19953118947598644,
+      "pass_at_15pct": false
+    },
+    {
+      "case": "dx0.01_c025",
+      "reference": "crosscheck",
+      "stored_mae": 0.11683560558464723,
+      "rederived_mae": 0.11683560558464723,
+      "abs_diff": 0.0,
+      "stored_mae_over_amplitude": 0.043758653777021435,
+      "rederived_mae_over_amplitude": 0.043758653777021435,
+      "pass_at_15pct": true
+    },
+    {
+      "case": "dx0.01_c025",
+      "reference": "bundled",
+      "stored_mae": 0.46243028116163515,
+      "rederived_mae": 0.46243028116163515,
+      "abs_diff": 0.0,
+      "stored_mae_over_amplitude": 0.1727140035407859,
+      "rederived_mae_over_amplitude": 0.1727140035407859,
+      "pass_at_15pct": false
+    }
+  ],
+  "reference_self_consistency": {
+    "max_spread_Za": 0.8505497787610619,
+    "mean_spread_Za": 0.5741745754254364,
+    "claimed_uncertainty": 0.05,
+    "ratio": 17.010995575221237,
+    "stored_max_spread": 0.8505497787610619,
+    "stored_ratio": 17.010995575221237
+  },
+  "m17020_error_budget_audit": {
+    "found": true,
+    "total_mae_over_amplitude": 0.043758653777021435,
+    "components": {
+      "reference_spread_over_amplitude": 0.3185579695734314,
+      "ritter_mae_over_amplitude": 0.8451701212542494,
+      "compressibility_max_rho": 0.019359619140624895
+    },
+    "sum_of_components": 1.1830877099683057,
+    "sum_over_total": 27.036656931835715,
+    "residual_claimed_in_doc": -0.27479931579641,
+    "additive": false,
+    "source": "/root/tp-agent/work/m17020/benchmarks/repro_monaghan_1994/results/error_budget.json"
+  },
+  "ritter_validity_audit": {
+    "validity_limit_tau": 1.4142135623730951,
+    "full_pre_registered_window": {
+      "n": 25,
+      "tau_range": [
+        0.5933218284283893,
+        2.96660914214182
+      ],
+      "mean_abs_delta_Za": 2.256604223748846,
+      "mean_abs_delta_over_amplitude": 0.8451701212542494,
+      "max_ritter_za": 5.93321828428364,
+      "max_abs_delta_Za": 3.140816434060099
+    },
+    "inside_ritter_validity": {
+      "n": 9,
+      "tau_range": [
+        0.5933218284283893,
+        1.384417599666238
+      ],
+      "mean_abs_delta_Za": 1.5382154745641128,
+      "mean_abs_delta_over_amplitude": 0.5761106646307539,
+      "max_ritter_za": 2.768835199332476,
+      "max_abs_delta_Za": 1.9869369094135765
+    },
+    "note": "Ritter (shallow water, 2:1 column) gives Z/a = 2*tau; at the top of the pre-registered window tau=2.97 it predicts Z/a=5.93 against a measured front that saturates near 2.6, i.e. the deviation there measures Ritter's breakdown, not the SPH error."
+  }
+}
