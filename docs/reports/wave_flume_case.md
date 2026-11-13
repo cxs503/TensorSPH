@@ -2,7 +2,7 @@
 
 本报告由 `benchmarks/wave_flume/make_report.py` 从 `docs/reports/wave_flume_report.json`
 程序化生成，判据数字零手抄（JSON ← `grade_regular_record` ← `benchmarks/wave_flume/run.py`
-的探头原始时序）。工件：`runs/wf_D20.json`；图：1 张。
+的探头原始时序）。工件：`docs/reports/records/wf_D20.json`；图：1 张。
 
 ## ① 问题设定与基准出处
 
@@ -13,7 +13,7 @@
   一阶传递函数给出（Dean & Dalrymple 1991, *Water Wave Mechanics for Engineers and Scientists*, World Scientific, eq. 6.38 (piston transfer function `H/S = 2(cosh 2kh - 1)/(sinh 2kh + 2kh)`, after Biesel & Suquet 1951)）。这是"数值水槽有没有把造波板行程变成正确波高"的直接检验。
 * **G2 衰减归因**：试验段沿程拟合 `H(x) = H0 exp(-μ x)`，与层流底边界层文献值
   `μ = σ²√(νσ)/(4 g c_g sinh²kh)` 对照（Putnam & Johnson 1949, *Trans. AGU* 30:295; Hunt 1952, *Houille Blanche* 7:838; Mei 1983 §4.2; Dean & Dalrymple 1991 §5.4 — laminar bottom-boundary-layer decay `mu = sigma^2 sqrt(nu sigma) / (4 g c_g sinh^2 kh)`）。本工况该值给出的物理损失
-  `0.057 %`（探头阵列跨距内）
+  `0.081 %`（探头阵列跨距内）
   远小于 10 % 门，所以超出门的部分只能归因于数值耗散（分辨率/粘性/海绵），
   报告把两个数并列，不假设哪一个主导。
 * **判据打勾/打叉**：机器裁在 `tensorsph.wave_flume_grade.grade_regular_record`，
@@ -41,7 +41,7 @@
 
 | 工况 | dx [m] | H/dx | h/dx | dt [s] | 步数 | kh | H/h | H/λ | Ursell | Ma = c/c0 | gh/c0² | Re = ch/ν | Δx_gauge/λ |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| wf_D20.json | 0.01250 | 3.20 | 20.0 | — | 37000 | 1.2047 | 0.160 | 0.0307 | 4.35 | 0.0435 | 2.72e-03 | 3.26e+05 | 0.37 |
+| wf_D20 | 0.01250 | 3.20 | 20.0 | — | 37000 | 1.2047 | 0.160 | 0.0307 | 4.35 | 0.0435 | 2.72e-03 | 3.26e+05 | 0.37 |
 
 `Δx_gauge/λ` 是探头阵列跨距与波长之比（沿程衰减拟合的基线长度）；`Ma = c/c0` 与 `gh/c0²` 是弱可压性控制量（δ = ρ/ρ0 - 1 的
 期望量级）。Re = c h / ν 用波速与水深，仅作量级提示（层流底边界层由 G2 的解析式承担）。
@@ -52,22 +52,22 @@
 
 | 工况 | 探头 x [m] | H_ref = H_target [m] | H_got [m] | 误差 [%] | 穿越法 H [m] | 干点比例 | 误差 ≤ 10 % ？ |
 |---|---|---|---|---|---|---|---|
-| wf_D20.json | 1.035 | 0.0400 | 0.04000 | 0.01 | 0.03994 | 0.0000 | ✅ 打勾 |
-| wf_D20.json | 1.198 | 0.0400 | 0.03962 | -0.94 | 0.03939 | 0.0000 | ✅ 打勾 |
-| wf_D20.json | 1.361 | 0.0400 | 0.03922 | -1.94 | 0.03904 | 0.0000 | ✅ 打勾 |
-| wf_D20.json | 1.524 | 0.0400 | 0.03881 | -2.97 | 0.03872 | 0.0000 | ✅ 打勾 |
+| wf_D20 | 1.035 | 0.0400 | 0.04000 | 0.01 | 0.03994 | 0.0000 | ✅ 打勾 |
+| wf_D20 | 1.198 | 0.0400 | 0.03962 | -0.94 | 0.03939 | 0.0000 | ✅ 打勾 |
+| wf_D20 | 1.361 | 0.0400 | 0.03922 | -1.94 | 0.03904 | 0.0000 | ✅ 打勾 |
+| wf_D20 | 1.524 | 0.0400 | 0.03881 | -2.97 | 0.03872 | 0.0000 | ✅ 打勾 |
 
 ### G2 衰减（μ_theory = 层流底边界层文献值）
 
 | 工况 | μ_meas [1/m] | μ_theory [1/m] | 试验段跨距 [m] | 实测损失 [%] | 文献损失 [%] | 超出文献 [百分点] | 逐对速率 [1/m] |
 |---|---|---|---|---|---|---|---|
-| wf_D20.json | 6.183e-02 | 1.168e-03 | 0.489 | 2.978 | 0.057 | 2.921 | 5.846e-02, 6.239e-02, 6.446e-02 |
+| wf_D20 | 6.183e-02 | 1.652e-03 | 0.489 | 2.978 | 0.081 | 2.897 | 5.846e-02, 6.239e-02, 6.446e-02 |
 
 ### 色散与反射（自洽性检查，非独立基准）
 
 | 工况 | T_target [s] | T_spectral [s] | T_zero-cross [s] | λ 双探头 [m] | λ 解析 [m] | λ 误差 [%] | k 双探头 [1/m] | 反射系数 |
 |---|---|---|---|---|---|---|---|---|
-| wf_D20.json | 1.000 | 0.999 | 0.999 | 1.3052 | 1.3038 | 0.10 | 4.8140 | 0.0073 |
+| wf_D20 | 1.000 | 0.999 | 0.999 | 1.3052 | 1.3038 | 0.10 | 4.8140 | 0.0073 |
 
 **汇总**：判据 `CASE-WAVE-FLUME: |H_got - H_ref| / H_ref <= 10 %`，逐工况最差误差
 2.97 %，全部通过 = **True**。
@@ -81,16 +81,22 @@
 ## ⑥ 失败模式与工件（repro_cmd + 工件路径）
 
 ```
-# 生产工况（集群/多核；本地等价命令把 --threads 调小）
+# 生产工况（与 docs/reports/records/wf_D20.json 的 config 逐项一致；集群多核）
 PYTHONPATH=src python benchmarks/wave_flume/run.py --case regular --depth 0.25 \
-  --depth-cells 20 --height-ratio 0.16 --wave-period 1.0 --simulate-time 7.0 \
-  --settle 1.0 --viscosity-settle 0.02 --xsph-settle 0.1 --density-diffusion 0.1 \
-  --viscosity 1e-6 --sponge-strength 4.0 --snapshots 4 --threads 20 --out runs/wf_D20.json
-# 判级 + 图 + 报告
+  --depth-cells 20 --height-ratio 0.16 --wave-period 1.0 --simulate-time 5.0 \
+  --settle 1.0 --viscosity-settle 0.02 --xsph-settle 0.1 --xsph 0.0 \
+  --active-absorption 0.5 --ramp-periods 2.0 --sponge-length 0.9 \
+  --sponge-strength 4.0 --sponge-exponent 3.0 --density-diffusion 0.1 \
+  --viscosity 1e-6 --sound-speed 30.0 --output-every 100 --snapshots 4 \
+  --threads 20 --out docs/reports/records/wf_D20.json
+# 判级 + 图 + 报告（判据：逐探头 |H_got - H_ref| / H_ref <= 10%）
 PYTHONPATH=src python benchmarks/wave_flume/analyse.py \
-  --record runs/wf_D20.json --record runs/wf_D32.json \
+  --record docs/reports/records/wf_D20.json --start 2.5 \
   --out docs/reports/wave_flume_report.json --figures docs/figures/wave_flume
-PYTHONPATH=src python benchmarks/wave_flume/make_report.py
+PYTHONPATH=src python benchmarks/wave_flume/make_report.py \
+  --report docs/reports/wave_flume_report.json \
+  --numbers docs/reports/wave_flume_numbers.json \
+  --out docs/reports/wave_flume_case.md --repro "$(cat /tmp/repro_block.txt)"
 ```
 
 * 工件：`docs/reports/wave_flume_report.json`（判级原始数字）、

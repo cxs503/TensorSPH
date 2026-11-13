@@ -15,18 +15,26 @@ Three references, each with a source
    faithful must deliver that ``H`` in the test section; the deficit is what
    ``CASE-WAVE-FLUME`` calls "wave-height attenuation" and its tolerance is 10 %.
 2. **Physical attenuation over a flat bed.**  Even a perfect flume loses height
-   to the laminar bottom boundary layer.  With the time-averaged dissipation per
-   unit bed area ``D = (1/4) rho u_b^2 sqrt(nu sigma)`` (Mei 1983, *The Applied
-   Dynamics of Ocean Surface Waves*, Wiley, §4.2 / Dean & Dalrymple 1991 §5.4,
-   from Putnam & Johnson 1949) the amplitude decays as ``a = a0 exp(-mu x)``
-   with
+   to the laminar bottom boundary layer.  The time-averaged dissipation per unit
+   bed area is ``D = (1/2) rho u_b^2 sqrt(nu sigma / 2) = (1/4) rho u_b^2
+   sqrt(2 nu sigma)`` (Mei 1983, *The Applied Dynamics of Ocean Surface Waves*,
+   Wiley, §4.2 / Dean & Dalrymple 1991 §5.4, from Putnam & Johnson 1949; the
+   ``sqrt(2)`` is the difference between the dissipation-integral form
+   ``(1/2) rho u_b^2 sqrt(nu sigma / 2)`` and the ``(1/4) rho u_b^2 sqrt(2 nu
+   sigma)`` wall-work form -- the two are the same number), so the amplitude
+   decays as ``a = a0 exp(-mu x)`` with
 
-       mu = sigma^2 sqrt(nu sigma) / (4 g c_g sinh^2(kh)),
+       mu = sigma^2 sqrt(2 nu sigma) / (4 g c_g sinh^2(kh)),
 
-   where ``c_g`` is the group velocity.  For a 1 s wave in 0.25 m of water this
-   is ~1.4e-3 1/m, i.e. 0.3 % over a 2 m test section: the *physical* budget of
-   a laboratory flume is far below the 10 % tolerance, so any larger measured
-   attenuation is numerical.
+   where ``c_g`` is the group velocity and ``u_b = a sigma / sinh(kh)`` the
+   near-bed velocity of the first-order wave.  For a 1 s wave in 0.25 m of water
+   this is ~1.7e-3 1/m, i.e. 0.3 % over a 2 m test section: the *physical*
+   budget of a laboratory flume is far below the 10 % tolerance, so any larger
+   measured attenuation is numerical.  The closed form is re-derived from the
+   Stokes boundary layer by numerical integration of ``rho nu <(du/dz)^2>`` in
+   ``tests/test_wave_flume_damping_literature.py``: writing ``D`` with
+   ``sqrt(nu sigma)`` instead of ``sqrt(2 nu sigma)`` understates ``mu`` by
+   ``sqrt(2)`` (41 %), which is exactly the slip this test is here to catch.
 3. **Which of the two dominates** is the diagnostic question; the report answers
    it with the two numbers side by side rather than assuming.
 
@@ -96,9 +104,15 @@ def laminar_boundary_layer_damping(period, depth, gravity: float = GRAVITY,
     module docstring.  Returns the coefficient together with the intermediate
     quantities so a report can show them without recomputing:
 
-    ``D = (1/4) rho u_b^2 sqrt(nu sigma)`` per unit bed area,
+    ``D = (1/4) rho u_b^2 sqrt(2 nu sigma)`` per unit bed area,
     ``u_b = a sigma / sinh(kh)``, flux ``= (1/2) rho g a^2 c_g``,
-    ``mu = sigma^2 sqrt(nu sigma) / (4 g c_g sinh^2(kh))``.
+    ``mu = sigma^2 sqrt(2 nu sigma) / (4 g c_g sinh^2(kh))``.
+
+    The ``sqrt(2)`` is not decoration: ``(1/2) rho u_b^2 sqrt(nu sigma / 2)``
+    and ``(1/4) rho u_b^2 sqrt(2 nu sigma)`` are the same dissipation written
+    two ways, and dropping it understates the physical damping by 41 %
+    (see ``tests/test_wave_flume_damping_literature.py``, which obtains ``mu``
+    from a numerical quadrature of the Stokes boundary layer instead).
     """
     period = float(period)
     depth = float(depth)
@@ -110,7 +124,7 @@ def laminar_boundary_layer_damping(period, depth, gravity: float = GRAVITY,
     kh = k * depth
     sinh_kh = math.sinh(kh)
     cg = 0.5 * c * (1.0 + 2.0 * kh / math.sinh(2.0 * kh))
-    mu = (sigma ** 2 * math.sqrt(kinematic_viscosity * sigma)
+    mu = (sigma ** 2 * math.sqrt(2.0 * kinematic_viscosity * sigma)
           / (4.0 * gravity * cg * sinh_kh ** 2))
     return {
         "mu_per_m": mu,

@@ -8,13 +8,13 @@
   "passed": true,
   "per_case": [
     {
-      "tag": "wf_D20.json",
+      "tag": "wf_D20",
       "target_height": 0.04,
       "height_cells": 3.1999999999999997,
       "mu_measured": 0.06183146361530329,
-      "mu_theory": 0.0011684718299723323,
+      "mu_theory": 0.0016524687091977817,
       "measured_loss": 0.0297795359459474,
-      "theory_loss": 0.0005711508643199137,
+      "theory_loss": 0.000807633742157976,
       "wavelength_error": 0.0010249172172562826,
       "reflection_ratio": 0.007323690822661432,
       "passed": true
@@ -22,7 +22,7 @@
   ],
   "cases": [
     {
-      "record": "runs/wf_D20.json",
+      "record": "docs/reports/records/wf_D20.json",
       "label": "dx=0.01250 (H/dx=3.2)",
       "height_cells": 3.1999999999999997,
       "target_height": 0.04,
@@ -82,7 +82,7 @@
         "h0": 0.04265769550012704
       },
       "theory": {
-        "mu_per_m": 0.0011684718299723323,
+        "mu_per_m": 0.0016524687091977817,
         "k": 4.818972978402874,
         "omega": 6.283185307179586,
         "celerity": 1.303843232850413,
@@ -92,7 +92,7 @@
         "source": "Mei 1983 The Applied Dynamics of Ocean Surface Waves \u00a74.2; Dean & Dalrymple 1991 \u00a75.4 (Putnam & Johnson 1949)"
       },
       "measured_loss_over_span": 0.0297795359459474,
-      "theory_loss_over_span": 0.0005711508643199137,
+      "theory_loss_over_span": 0.000807633742157976,
       "worst_error_vs_target": 0.029679295205491986,
       "dispersion": {
         "period_spectral": 0.9991320866209494,
@@ -128,9 +128,9 @@
         "reynolds": 325960.80821260327,
         "wavelength_over_depth": 5.215372931401652,
         "span_per_wavelength": 0.3749999999999999,
-        "mu_times_span": 0.0005713140331071613
+        "mu_times_span": 0.0008079600539942191
       },
-      "repro_record_command": "PYTHONPATH=src python benchmarks/wave_flume/run.py --case regular --depth 0.25 --depth-cells 20.0 --height-ratio 0.160 --wave-period 1.0 --out runs/wf_D20.json"
+      "repro_record_command": "PYTHONPATH=src python benchmarks/wave_flume/run.py --case regular --depth 0.25 --depth-cells 20.0 --height-ratio 0.160 --wave-period 1.0 --out docs/reports/records/wf_D20.json"
     }
   ],
   "references": {
