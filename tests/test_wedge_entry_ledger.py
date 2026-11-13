@@ -25,7 +25,10 @@ import math
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-SUMMARY = REPO / "runs" / "wedge_entry_wagner" / "summary_v2.json"
+# The campaign writes its summary into the scratch tree ``runs/wedge_entry_wagner/``,
+# which the delivery filter strips; the artifact of record is the copy committed next
+# to the harness (m17086, byte-identical to the campaign output).
+SUMMARY = REPO / "benchmarks" / "wedge_entry" / "summary_v2.json"
 
 GRADED_CASES = ("beta10_V1", "beta15_V1", "beta20_V1", "beta45_V1")
 GRADED_LADDER = ("ladder_L100", "ladder_L200", "ladder_L400")

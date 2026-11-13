@@ -14,10 +14,10 @@
     "paper_pct": 3.0
   },
   "summary": {
-    "n_claims": 57,
+    "n_claims": 62,
     "n_probed": 8,
     "by_status": {
-      "UNPROBED": 49,
+      "UNPROBED": 54,
       "INVALID": 4,
       "VALID": 4
     },
@@ -103,6 +103,12 @@
     },
     {
       "claim_id": "fluctuating_hydro.thermostat.mean_temperature.n128",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "fluctuating_hydro.thermostat.steady_state.n128.uq",
       "status": "UNPROBED",
       "checks": [],
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
@@ -339,6 +345,30 @@
     },
     {
       "claim_id": "two_phase_laplace.smoothed_colour.dx2.5mm",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "wedge_entry.c_wetted_coeff.beta30_dx1mm",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "wedge_entry.cp_peak.blunt45_dx1mm",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "wedge_entry.cp_peak.resolved_band.beta10_dx1mm",
+      "status": "UNPROBED",
+      "checks": [],
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "wedge_entry.cp_peak.resolved_band.beta30_dx1mm",
       "status": "UNPROBED",
       "checks": [],
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
@@ -786,6 +816,10 @@
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
     {
+      "claim_id": "fluctuating_hydro.thermostat.steady_state.n128.uq",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
       "claim_id": "ice_floe_added_mass.anchor.c_m_richardson",
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
@@ -899,6 +933,22 @@
     },
     {
       "claim_id": "two_phase_laplace.smoothed_colour.dx2.5mm",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "wedge_entry.c_wetted_coeff.beta30_dx1mm",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "wedge_entry.cp_peak.blunt45_dx1mm",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "wedge_entry.cp_peak.resolved_band.beta10_dx1mm",
+      "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
+    },
+    {
+      "claim_id": "wedge_entry.cp_peak.resolved_band.beta30_dx1mm",
       "reason": "no validity probe: the artifact carries no containment / liveness / estimator telemetry, so run validity cannot be asserted from it"
     },
     {

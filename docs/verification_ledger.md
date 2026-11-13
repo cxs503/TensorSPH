@@ -24,10 +24,10 @@
 
 ## 3. 汇总
 
-- claims **57** ／ 物理量 **36** ／ findings **25**
-- 分级分布：PASS 15，MARGINAL 13，WITHHELD 15，FAIL 12，WITHDRAWN 2
-- findings 分类：credit_from_failing_artifact 6，declared_vs_derived 2，inadmissible_run 3，quantity_spread 4，run_validity 4，uncovered_benchmark 5，unregistered_artifact 1
-- **credit 资格**：15 条 PASS / 13 条 MARGINAL，其中 **6** 条取自「工件自述 verdict = fail」的运行集（best-of-N / 阶梯不全，不可作为能力验证引用）；另有 15 条 credit 的工件根本没有声明 verdict（等级只能被读成「该读数自身合规」，不是「该能力被验证」）。
+- claims **62** ／ 物理量 **40** ／ findings **19**
+- 分级分布：PASS 16，MARGINAL 15，WITHHELD 16，FAIL 13，WITHDRAWN 2
+- findings 分类：credit_from_failing_artifact 5，declared_vs_derived 3，inadmissible_run 3，quantity_spread 4，run_validity 4
+- **credit 资格**：16 条 PASS / 15 条 MARGINAL，其中 **5** 条取自「工件自述 verdict = fail」的运行集（best-of-N / 阶梯不全，不可作为能力验证引用）；另有 19 条 credit 的工件根本没有声明 verdict（等级只能被读成「该读数自身合规」，不是「该能力被验证」）。
 
 ## 4. 断言表
 
@@ -37,8 +37,8 @@
 | `aeration.inception_constant.self_referential` | inception Froude constant of air entrainment vs Chanson | 1 - | 1 - | +0.00 % | **WITHHELD** | `benchmarks/aeration/report.json` → `inception.constant_rel_error` | `tests/test_aeration.py` |
 | `aeration.void_fraction.erf_anchor_l2` | steady void-fraction profile of the aerated hydraulic jump vs the erf anchor | limit 0.15 | 0.095382 | — | **MARGINAL** | `benchmarks/aeration/report.json` → `criteria.C2.measured` | `tests/test_aeration.py` |
 | `colour_surface.delta_s_integral` | colour-surface normalisation, integral |grad c| dr (exact: 1) | 1 - | 0.754545 - | -24.55 % | **WITHHELD** | `benchmarks/csf_consistent/curvature_audit.json` → `verdicts.delta_s_integral_dn` | `tests/test_csf_consistent.py` |
-| `csf_dispersion.capillary_wave.omega_error.local_range` | capillary-wave frequency error of the local-range CSF operator, k = 1..3 | limit 0.05 | 2.45924 | — | **FAIL** | `runs/surface_tension_dispersion/report.json` → `gates.C1_capillary_wave.max_abs_error_pct` | `tests/test_csf_dispersion.py` |
-| `csf_dispersion.lamb_mode.omega_error.local_range` | Lamb-mode frequency error of the local-range CSF operator, n = 2..4 | limit 0.03 | 0.094841 | — | **FAIL** | `runs/surface_tension_dispersion/report.json` → `gates.C2_lamb_modes.max_abs_error_pct` | `tests/test_csf_dispersion.py` |
+| `csf_dispersion.capillary_wave.omega_error.local_range` | capillary-wave frequency error of the local-range CSF operator, k = 1..3 | limit 0.05 | 2.45924 | — | **FAIL** | `benchmarks/surface_tension_dispersion/report.json` → `gates.C1_capillary_wave.max_abs_error_pct` | `tests/test_csf_dispersion.py` |
+| `csf_dispersion.lamb_mode.omega_error.local_range` | Lamb-mode frequency error of the local-range CSF operator, n = 2..4 | limit 0.03 | 0.094841 | — | **FAIL** | `benchmarks/surface_tension_dispersion/report.json` → `gates.C2_lamb_modes.max_abs_error_pct` | `tests/test_csf_dispersion.py` |
 | `csf_force.sigma_eff_over_sigma.dx5mm` | effective surface tension from the half-droplet force integral, sigma_eff/sigma | 1 - | 0.704004 - | -29.60 % | **FAIL** | `benchmarks/laplace_pressure/validation_report.json` → `cases[0]` | `tests/test_laplace_pressure.py` |
 | `curvature_operator.delta_s_weighted.dx3mm` | delta_s-weighted curvature kappa vs analytic 1/R (R = 20 mm) | 50 1/m | 64.1315 1/m | +28.26 % | **WITHHELD** | `benchmarks/csf_consistent/curvature_audit.json` → `rows[0].variants[0]` | `tests/test_csf_curvature_audit.py` |
 | `dam_break.martin_moyce.mae` | dam-break front position vs Martin & Moyce (1952), mean abs error in Z/a | limit 0.15 | 0.572757 | — | **FAIL** | `benchmarks/dam_break/resolution_ladder.json` → `gates.experimental_comparison` | `tests/test_dam_break_experimental.py` |
@@ -46,6 +46,7 @@
 | `density_diffusion.finite_time.amplitude` | mode amplitude after a finite integration time vs rho0 A exp(-gamma t) | limit 0.035 | 0.00482 | — | **PASS** | `benchmarks/density_diffusion_decay/decay_rate.json` → `finite_time` | `tests/test_density_diffusion_decay.py::test_the_mode_amplitude_follows_the_exponential_over_a_finite_time` |
 | `effective_sigma.sigma_eff_over_sigma.dx5mm` | effective surface tension from the half-droplet force integral, sigma_eff/sigma (R = 40 mm, curvature estimator: quadratic interface fit) | 1 - | 0.710625 - | -28.94 % | **FAIL** | `benchmarks/effective_sigma/out/report.json` → `rows[0].ratio` | `tests/test_effective_sigma.py::test_current_default_delivers_the_documented_ratio` |
 | `fluctuating_hydro.thermostat.mean_temperature.n128` | mean temperature of the LJ fluid under the Langevin (BAOAB) thermostat, N = 128 | 1 T* | 1.08806 T* | +8.81 % | **MARGINAL** | `benchmarks/fluctuating_hydro/report.json` → `case.runs[0].mean_temperature` | `tests/test_fluctuating_hydro.py` |
+| `fluctuating_hydro.thermostat.steady_state.n128.uq` | steady-state temperature of the LJ fluid under the Langevin (BAOAB) thermostat, N = 128, uncertainty quantified | 1 T* | 0.946962 T* | -5.30 % | **MARGINAL** | `benchmarks/fluctuating_hydro/thermostat_audit.json` → `ensemble_summary.inverse_variance_combined` | `tests/test_fluctuating_hydro_thermostat.py` |
 | `ice_floe_added_mass.anchor.c_m_richardson` | added-mass coefficient of a 2-D circular section in an unbounded fluid | 1 - | 0.988634 - | -1.14 % | **PASS** | `benchmarks/ice_floe_added_mass/report.json` → `richardson_extrapolation` | `tests/test_ice_floe_added_mass.py` |
 | `ice_floe_added_mass.anchor.c_m_unbounded` | added-mass coefficient of a 2-D circular section in an unbounded fluid | 1 - | 0.9479 - | -5.21 % | **MARGINAL** | `benchmarks/ice_floe_added_mass/report.json` → `anchor_ladder[3]` | `tests/test_ice_floe_added_mass.py` |
 | `ice_floe_added_mass.launch.speed_ratio` | floe launch speed ratio v_wet/v_dry vs the algebraic identity rho_ice/(rho_ice + C_m rho_w) | 0.478352 - | 0.478352 - | +0.00 % | **PASS** | `benchmarks/ice_floe_added_mass/report.json` → `launch_bias.speed_ratio_mean` | `tests/test_ice_floe_added_mass.py` |
@@ -66,16 +67,20 @@
 | `rayleigh_plateau.dynamic.volume_drift` | volume drift of the 3-D Rayleigh-Plateau column run (80 steps, 864 particles) | 0 - | -0.139239 - | -13.92 % | **MARGINAL** | `benchmarks/rayleigh_plateau/report.json` → `column_run.final_volume_error` | `tests/test_rayleigh_plateau.py` |
 | `static_droplet.force_direction.WITHDRAWN` | sign/shape of the CSF force on a static droplet (not a physical gate) | 1 - | 0.173549 - | -82.65 % | **WITHDRAWN** | `benchmarks/static_droplet/validation_report.json` → `validation` | `tests/test_laplace_validation.py` |
 | `surface_tension_ladder.laplace_error_finest` | Laplace error of the surface-tension-only ladder, finest level | 0.15 fraction | 2.51981 fraction | +251.98 % | **FAIL** | `benchmarks/surface_tension/laplace_ladder.json` → `gates.laplace_error_finest` | `tests/test_surface_tension_laplace.py` |
-| `threed_hydrostatic.bottom_pressure.adami_best` | bottom pressure of a 3-D column at rest, p = rho0 g H | 1520.55 Pa | 1478.77 Pa | -2.75 % | **PASS** | `benchmarks/threed_hydrostatic/report.json` → `runs[0].pressure` | `tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria` |
-| `threed_hydrostatic.bottom_pressure.adami_worst` | bottom pressure of a 3-D column at rest, p = rho0 g H | 1520.55 Pa | 1387.58 Pa | -8.74 % | **MARGINAL** | `benchmarks/threed_hydrostatic/report.json` → `runs[2].pressure` | `tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria` |
-| `threed_hydrostatic.bottom_pressure.tait_wall_control` | bottom pressure of a 3-D column at rest, p = rho0 g H | 1520.55 Pa | 1136.93 Pa | -25.23 % | **WITHHELD** | `benchmarks/threed_hydrostatic/report.json` → `runs[3].pressure` | `tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria` |
-| `threed_hydrostatic.profile.max_rel_error_core.adami_best` | worst per-layer relative error over the interior pressure profile of a 3-D column at rest | 0 % | 43.1741 % | +43.17 % | **FAIL** | `benchmarks/threed_hydrostatic/report.json` → `runs[0].pressure` | `tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria` |
-| `threed_hydrostatic.profile.mean_rel_error_core.adami_best` | mean relative error of the interior (non-bottom, non-surface) pressure profile of a 3-D column at rest | 0 % | -11.9227 % | -11.92 % | **MARGINAL** | `benchmarks/threed_hydrostatic/report.json` → `runs[0].pressure` | `tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria` |
+| `threed_hydrostatic.bottom_pressure.adami_best` | bottom pressure of a 3-D column at rest, p = rho0 g H | 1520.55 Pa | 1502.11 Pa | -1.21 % | **PASS** | `benchmarks/threed_hydrostatic/report.json` → `runs[6].pressure` | `tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria` |
+| `threed_hydrostatic.bottom_pressure.adami_worst` | bottom pressure of a 3-D column at rest, p = rho0 g H | 1520.55 Pa | 76.0395 Pa | -95.00 % | **WITHHELD** | `benchmarks/threed_hydrostatic/report.json` → `runs[2].pressure` | `tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria` |
+| `threed_hydrostatic.bottom_pressure.tait_wall_control` | bottom pressure of a 3-D column at rest, p = rho0 g H | 1520.55 Pa | 0 Pa | -100.00 % | **WITHHELD** | `benchmarks/threed_hydrostatic/report.json` → `runs[3].pressure` | `tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria` |
+| `threed_hydrostatic.profile.max_rel_error_core.adami_best` | worst per-layer relative error over the interior pressure profile of a 3-D column at rest | 0 % | 17.3387 % | +17.34 % | **FAIL** | `benchmarks/threed_hydrostatic/report.json` → `runs[6].pressure` | `tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria` |
+| `threed_hydrostatic.profile.mean_rel_error_core.adami_best` | mean relative error of the interior (non-bottom, non-surface) pressure profile of a 3-D column at rest | 0 % | -6.86645 % | -6.87 % | **MARGINAL** | `benchmarks/threed_hydrostatic/report.json` → `runs[6].pressure` | `tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria` |
 | `threed_kernel.integral_of_W` | volume integral of the 3-D cubic-spline kernel over its support | 1 - | 1 - | +0.00 % | **PASS** | `benchmarks/threed_kernel/report.json` → `quadrature.kernel_integral` | `tests/test_threed_kernel.py::test_kernel_integrates_to_one` |
 | `threed_shear.decay_rate.finest` | decay exponent of u = A sin(ky) sin(kz) exp(-2 nu k^2 t), periodic 3-D cube, nu = 0.05 m^2/s, k = 2 pi / m | 3.94784 1/s | 3.84214 1/s | -2.68 % | **PASS** | `benchmarks/threed_shear/report.json` → `resolution_ladder[3].decay` | `tests/test_threed_artifacts.py::test_shear_report_meets_its_criteria` |
 | `threed_shear.decay_rate.raw_laplacian` | decay exponent of u = A sin(ky) sin(kz) exp(-2 nu k^2 t), periodic 3-D cube, nu = 0.05 m^2/s, k = 2 pi / m | 3.94784 1/s | 4.40032 1/s | +11.46 % | **MARGINAL** | `benchmarks/threed_shear/report.json` → `raw_vs_renormalised.raw.decay` | `tests/test_threed_artifacts.py::test_shear_report_meets_its_criteria` |
 | `threed_shear.decay_rate.worst_of_ladder` | decay exponent of u = A sin(ky) sin(kz) exp(-2 nu k^2 t), periodic 3-D cube, nu = 0.05 m^2/s, k = 2 pi / m | 3.94784 1/s | 3.44962 1/s | -12.62 % | **MARGINAL** | `benchmarks/threed_shear/report.json` → `resolution_ladder[0].decay` | `tests/test_threed_artifacts.py::test_shear_report_meets_its_criteria` |
 | `two_phase_laplace.smoothed_colour.dx2.5mm` | Laplace error on a closed two-phase interface (periodic, no free surface) | limit 0.15 | 0.046079 | — | **MARGINAL** | `benchmarks/surface_tension_laplace/validation_report.json` → `criteria.two_phase_laplace_error_at_dx_0.0025_lt_15pct` | `tests/test_surface_tension_laplace.py` |
+| `wedge_entry.c_wetted_coeff.beta30_dx1mm` | wetted half-width coefficient c/(V t) vs Wagner C = pi/(2 tan beta), beta = 30 deg | 2.7207 - | 2.65681 - | -2.35 % | **PASS** | `benchmarks/wedge_entry/summary_v2.json` → `ladder[id=ladder_L400].c_coeff_mean` | `tests/test_wedge_entry_ledger.py` |
+| `wedge_entry.cp_peak.blunt45_dx1mm` | peak wall pressure on the resolved band vs Wagner flat-plate value q (pi^2/4 + 1), beta = 45 deg | 1733.54 Pa | 1614.9 Pa | -6.84 % | **MARGINAL** | `benchmarks/wedge_entry/summary_v2.json` → `cases[id=beta45_V1].p_band_sph_mean` | `tests/test_wedge_entry_ledger.py` |
+| `wedge_entry.cp_peak.resolved_band.beta10_dx1mm` | peak wall pressure on the resolved band vs Wagner q (C^2 + 1), beta = 10 deg | 19508.7 Pa | 24677.8 Pa | +26.50 % | **FAIL** | `benchmarks/wedge_entry/summary_v2.json` → `cases[id=beta10_V1].p_band_sph_mean` | `tests/test_wedge_entry_ledger.py` |
+| `wedge_entry.cp_peak.resolved_band.beta30_dx1mm` | peak wall pressure on the resolved band vs Wagner q (C^2 + 1), beta = 30 deg | 4171.8 Pa | 3678.56 Pa | -11.82 % | **MARGINAL** | `benchmarks/wedge_entry/summary_v2.json` → `cases[id=beta30_V1].p_band_sph_mean` | `tests/test_wedge_entry_ledger.py` |
 | `young_laplace.absolute_tail.best_of_6` | dp = sigma/R (2-D), sigma=7.2 N/m, R=0.020 m -> 360 Pa | 360 Pa | 237.636 Pa | -33.99 % | **WITHHELD** | `benchmarks/laplace_pressure_floor/report.json` → `runs[2].absolute_time_average_tail` | `tests/test_laplace_pressure_floor.py::test_laplace_jump_within_15pct` |
 | `young_laplace.closure.closure_on_all_donors.dx1.5mm_c20` | Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m | 360 Pa | 269.069 Pa | -25.26 % | **FAIL** | `benchmarks/laplace_pressure_closure/raw/relax_ladder_dx1.5mm_c20.json` → `cases[1]` | `tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder` |
 | `young_laplace.closure.closure_on_all_donors.dx2mm_c20` | Young-Laplace pressure jump dp = sigma/R, sigma = 7.2 N/m, R = 0.020 m | 360 Pa | 287.473 Pa | -20.15 % | **FAIL** | `benchmarks/laplace_pressure_closure/raw/relax_ladder.json` → `cases[1]` | `tests/test_young_laplace_closure_ledger.py::test_closure_claim_tracks_the_raw_ladder` |
@@ -94,6 +99,7 @@
 ## 5. findings（证据缺陷清单）
 
 - **declared_vs_derived**（`high`）`aeration.inception_constant.self_referential` — artifact declares PASS, ledger derives WITHHELD: vacuum-gauge readout (additive |p| offset, not a physical dp)
+- **declared_vs_derived**（`high`）`threed_hydrostatic.bottom_pressure.adami_worst` — artifact declares PASS, ledger derives WITHHELD: |rel error| = 95.00 % > 15 %
 - **declared_vs_derived**（`high`）`young_laplace.laplace_law.vacuum_gauge` — artifact declares PASS, ledger derives WITHHELD: vacuum-gauge readout (additive |p| offset, not a physical dp)
 - **run_validity**（`high`）`oscillating_droplet.frequency.lamb` — validity gate says INVALID (containment / Mach / estimator / fit / null-control): the run had stopped being a liquid before the reading was taken, so the reading is graded WITHHELD instead of FAIL — see docs/verification_claim_validity.md
 - **run_validity**（`high`）`young_laplace.closure.closure_on_interior_layers2.dx2mm_c20` — validity gate says INVALID (containment / Mach / estimator / fit / null-control): the run had stopped being a liquid before the reading was taken, so the reading is graded WITHHELD instead of FAIL — see docs/verification_claim_validity.md
@@ -102,22 +108,15 @@
 - **inadmissible_run**（`high`）`young_laplace.closure.closure_on_interior_layers2.dx2mm_c20` — +8.83 % is inside the 15 % band, but the run violates the admissibility gate (v_max/v_ref < 0.1 (Adami, Ihmsen & Adams 2012): 0.388129 >= 0.1): the residual spurious current, not the physics, sets the agreement, so the reading is graded WITHHELD and may not be quoted as a pass
 - **inadmissible_run**（`high`）`young_laplace.closure.closure_on_interior_layers2.dx2mm_c5` — +4.86 % is inside the 15 % band, but the run violates the admissibility gate (v_max/v_ref < 0.1 (Adami, Ihmsen & Adams 2012): 0.103857 >= 0.1): the residual spurious current, not the physics, sets the agreement, so the reading is graded WITHHELD and may not be quoted as a pass
 - **inadmissible_run**（`high`）`young_laplace.closure.closure_on_interior_layers4.dx2mm_c20` — +8.83 % is inside the 15 % band, but the run violates the admissibility gate (v_max/v_ref < 0.1 (Adami, Ihmsen & Adams 2012): 0.388129 >= 0.1): the residual spurious current, not the physics, sets the agreement, so the reading is graded WITHHELD and may not be quoted as a pass
-- **credit_from_failing_artifact**（`high`）`threed_hydrostatic.bottom_pressure.adami_best` — -2.75 % is credited PASS, but the artifact `benchmarks/threed_hydrostatic/report.json` declares `verdict = fail` (failing criteria: bottom_pressure_within_15pct_all, centre_of_mass_drift_below_1pct, column_settled_window_drift_below_2pct, compressibility_helps_as_predicted, interior_pressure_within_15pct_best): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md
-- **credit_from_failing_artifact**（`high`）`threed_hydrostatic.bottom_pressure.adami_worst` — -8.74 % is credited MARGINAL, but the artifact `benchmarks/threed_hydrostatic/report.json` declares `verdict = fail` (failing criteria: bottom_pressure_within_15pct_all, centre_of_mass_drift_below_1pct, column_settled_window_drift_below_2pct, compressibility_helps_as_predicted, interior_pressure_within_15pct_best): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md
-- **credit_from_failing_artifact**（`high`）`threed_hydrostatic.profile.mean_rel_error_core.adami_best` — -11.92 % is credited MARGINAL, but the artifact `benchmarks/threed_hydrostatic/report.json` declares `verdict = fail` (failing criteria: bottom_pressure_within_15pct_all, centre_of_mass_drift_below_1pct, column_settled_window_drift_below_2pct, compressibility_helps_as_predicted, interior_pressure_within_15pct_best): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md
-- **credit_from_failing_artifact**（`high`）`threed_shear.decay_rate.finest` — -2.68 % is credited PASS, but the artifact `benchmarks/threed_shear/report.json` declares `verdict = fail` (missing cases: h1.8): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md
-- **credit_from_failing_artifact**（`high`）`threed_shear.decay_rate.raw_laplacian` — +11.46 % is credited MARGINAL, but the artifact `benchmarks/threed_shear/report.json` declares `verdict = fail` (missing cases: h1.8): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md
-- **credit_from_failing_artifact**（`high`）`threed_shear.decay_rate.worst_of_ladder` — -12.62 % is credited MARGINAL, but the artifact `benchmarks/threed_shear/report.json` declares `verdict = fail` (missing cases: h1.8): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md
-- **quantity_spread**（`high`）`threed_hydrostatic_bottom_pressure` — 3 active readings of one quantity span -25.2 % … -2.7 % (spread 22.5 pt): threed_hydrostatic.bottom_pressure.adami_best=-2.7 %, threed_hydrostatic.bottom_pressure.adami_worst=-8.7 %, threed_hydrostatic.bottom_pressure.tait_wall_control=-25.2 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
+- **credit_from_failing_artifact**（`high`）`threed_hydrostatic.bottom_pressure.adami_best` — -1.21 % is credited PASS, but the artifact `benchmarks/threed_hydrostatic/report.json` declares `verdict_including_probes = fail`: this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md
+- **credit_from_failing_artifact**（`high`）`threed_hydrostatic.profile.mean_rel_error_core.adami_best` — -6.87 % is credited MARGINAL, but the artifact `benchmarks/threed_hydrostatic/report.json` declares `verdict_including_probes = fail`: this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md
+- **credit_from_failing_artifact**（`high`）`threed_shear.decay_rate.finest` — -2.68 % is credited PASS, but the artifact `benchmarks/threed_shear/report.json` declares `verdict = fail` (failing criteria: fourth_order_improves_on_second_order_every_rung; missing cases: h1.3, h1.5, h1.8, order4-n16, order4-n20, order4-n24): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md
+- **credit_from_failing_artifact**（`high`）`threed_shear.decay_rate.raw_laplacian` — +11.46 % is credited MARGINAL, but the artifact `benchmarks/threed_shear/report.json` declares `verdict = fail` (failing criteria: fourth_order_improves_on_second_order_every_rung; missing cases: h1.3, h1.5, h1.8, order4-n16, order4-n20, order4-n24): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md
+- **credit_from_failing_artifact**（`high`）`threed_shear.decay_rate.worst_of_ladder` — -12.62 % is credited MARGINAL, but the artifact `benchmarks/threed_shear/report.json` declares `verdict = fail` (failing criteria: fourth_order_improves_on_second_order_every_rung; missing cases: h1.3, h1.5, h1.8, order4-n16, order4-n20, order4-n24): this is a best-of-N / finest-rung selection out of a run set that does not pass, so it may not be quoted as verification of the capability -- see docs/verification_ledger_overcredit_m6510.md
+- **quantity_spread**（`high`）`threed_hydrostatic_bottom_pressure` — 3 active readings of one quantity span -100.0 % … -1.2 % (spread 98.8 pt): threed_hydrostatic.bottom_pressure.adami_best=-1.2 %, threed_hydrostatic.bottom_pressure.adami_worst=-95.0 %, threed_hydrostatic.bottom_pressure.tait_wall_control=-100.0 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
 - **quantity_spread**（`high`）`threed_shear_decay_rate_2nuk2` — 3 active readings of one quantity span -12.6 % … +11.5 % (spread 24.1 pt): threed_shear.decay_rate.finest=-2.7 %, threed_shear.decay_rate.raw_laplacian=+11.5 %, threed_shear.decay_rate.worst_of_ladder=-12.6 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
 - **quantity_spread**（`high`）`young_laplace_jump_sigma0.072_R0.1` — 2 active readings of one quantity span +219.7 % … +252.0 % (spread 32.3 pt): laplace_droplet.merged_csf.8cases=+219.7 %, surface_tension_ladder.laplace_error_finest=+252.0 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
 - **quantity_spread**（`high`）`young_laplace_jump_sigma7.2_R0.02` — 14 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.closure.closure_on_all_donors.dx1.5mm_c20=-25.3 %, young_laplace.closure.closure_on_all_donors.dx2mm_c20=-20.1 %, young_laplace.closure.closure_on_interior_layers2.dx1.5mm_c20=-3.4 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c10=-4.0 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c20=+8.8 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c5=+4.9 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.force_balance.flux_integral.dx1.5mm=-7.5 %, young_laplace.force_balance.flux_integral.dx2mm=-0.3 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
-- **uncovered_benchmark**（`medium`）`benchmarks/slamming` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
-- **uncovered_benchmark**（`medium`）`benchmarks/two_phase_laplace` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
-- **uncovered_benchmark**（`medium`）`benchmarks/verification_ladder` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
-- **uncovered_benchmark**（`medium`）`benchmarks/wcsph_chain` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
-- **uncovered_benchmark**（`medium`）`benchmarks/wedge_entry` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
-- **unregistered_artifact**（`medium`）`benchmarks/contact_angle/bc_diagnosis.json` — machine-readable evidence file not referenced by any ledger claim
 
 ## 6. 读数明细（口径决定数字）
 
@@ -186,7 +185,7 @@
 - 相对误差：—（平台线 ±15%，论文级 ±3%）
 - 工件自述状态：`FAIL`；本账等级：**FAIL**
 - 工件自身 verdict：**fail**（`status`）
-- 溯源：`runs/surface_tension_dispersion/report.json` → `gates.C1_capillary_wave.max_abs_error_pct`
+- 溯源：`benchmarks/surface_tension_dispersion/report.json` → `gates.C1_capillary_wave.max_abs_error_pct`
   - 守护测试：`tests/test_csf_dispersion.py`
 - 欠账指针：`docs/verification_ledger.md`
 - 注：Registered because the harness was uncovered; the reading is the harness's own failed gate, not an averaged score. It misses the 5 % criterion by 49.2x (|error| = 245.9 %). The option screen over delta normalisation x curvature scheme says no shipped combination passes it (best |omega| error 93.2 % over 4 combinations), and the C3 refinement orders of the same run are -0.87 (required 2.0), so the error does not shrink under refinement: an operator-consistency defect, not a resolution problem.
@@ -200,7 +199,7 @@
 - 相对误差：—（平台线 ±15%，论文级 ±3%）
 - 工件自述状态：`FAIL`；本账等级：**FAIL**
 - 工件自身 verdict：**fail**（`status`）
-- 溯源：`runs/surface_tension_dispersion/report.json` → `gates.C2_lamb_modes.max_abs_error_pct`
+- 溯源：`benchmarks/surface_tension_dispersion/report.json` → `gates.C2_lamb_modes.max_abs_error_pct`
   - 守护测试：`tests/test_csf_dispersion.py`
 - 欠账指针：`docs/verification_ledger.md`
 - 注：|error| = 9.48 % against a 3 % gate: better than C1 by two orders of magnitude but still a FAIL, so it is not averaged into a PASS. The best screened combination reaches 4.85 % and still misses the gate (any_pass = False), i.e. the drop family is close to acceptable while the wave family is not.
@@ -301,6 +300,20 @@
   - 守护测试：`tests/test_fluctuating_hydro.py`
 - 欠账指针：`docs/verified/fluctuating_hydrodynamics_verification.md`
 - 注：Supersedes the legacy reading T = 0.0152 (error -98.5 %) quoted in docs/verified/fluctuating_hydrodynamics_verification.md: the legacy lattice overlapped particles (up to 81 overlapping pairs at N = 256), which is what collapsed the temperature. Registered here so the old number cannot be quoted as current.
+
+### `fluctuating_hydro.thermostat.steady_state.n128.uq` — MARGINAL
+
+- 物理量：steady-state temperature of the LJ fluid under the Langevin (BAOAB) thermostat, N = 128, uncertainty quantified
+- 参考：1 T*（target temperature T* = 1.0 (reduced LJ units)）
+- 实测：0.946962 T*
+  - 口径：6 independent seeds, +/- 0.0047 (1 SE)
+- 相对误差：-5.30 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`FAIL`；本账等级：**MARGINAL**
+- 工件自身 verdict：未声明
+- 溯源：`benchmarks/fluctuating_hydro/thermostat_audit.json` → `ensemble_summary.inverse_variance_combined`
+  - 守护测试：`tests/test_fluctuating_hydro_thermostat.py`
+- 欠账指针：`docs/verification_fluctuating_hydro_thermostat.md`
+- 注：Second reading of the same quantity, taken at a converged window (10 relaxation times discarded, block-averaged SE, SE plateau checked over 4-12 blocks). The window ladder is flat, so this is a systematic offset of -11.4 sigma, not sample noise. The archived entry above reads 1.08806 T* (+8.81 %) from an 800-step run whose discarded window is 1.6 relaxation times: that reading is the startup transient, it points the opposite way, and it must not be quoted as the thermostat's steady state.
 
 ### `ice_floe_added_mass.anchor.c_m_richardson` — PASS
 
@@ -584,39 +597,39 @@
 
 - 物理量：bottom pressure of a 3-D column at rest, p = rho0 g H
 - 参考：1520.55 Pa（rho0 g H, H = nz dx）
-- 实测：1478.77 Pa
-  - 口径：mean p of the deepest fluid layer; adami-c0_20-nz16, dx = 0.01 m, 1846 steps
-- 相对误差：-2.75 %（平台线 ±15%，论文级 ±3%）
-- 工件自述状态：`FAIL`；本账等级：**PASS**
-- 工件自身 verdict：**fail**（`verdict`；未通过项：bottom_pressure_within_15pct_all、centre_of_mass_drift_below_1pct、column_settled_window_drift_below_2pct、compressibility_helps_as_predicted、interior_pressure_within_15pct_best）
-- 溯源：`benchmarks/threed_hydrostatic/report.json` → `runs[0].pressure`
+- 实测：1502.11 Pa
+  - 口径：mean p of the deepest fluid layer; adami-c0_40-nz16, dx = 0.01 m, 7385 steps
+- 相对误差：-1.21 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**PASS**
+- 工件自身 verdict：**fail**（`verdict_including_probes`）
+- 溯源：`benchmarks/threed_hydrostatic/report.json` → `runs[6].pressure`
   - 守护测试：`tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria`
 - 欠账指针：`docs/verification_threed.md`
 - 注：Per-layer relative errors alternate between ~-6 % and up to -43 % toward the free surface: a particle lattice supports an odd-even mode in the pressure field. The bottom layer, which is what holds the load, is quoted here; the odd-even amplitude is recorded in the artifact so the two are never conflated.
 
-### `threed_hydrostatic.bottom_pressure.adami_worst` — MARGINAL
+### `threed_hydrostatic.bottom_pressure.adami_worst` — WITHHELD
 
 - 物理量：bottom pressure of a 3-D column at rest, p = rho0 g H
 - 参考：1520.55 Pa（rho0 g H, H = nz dx）
-- 实测：1387.58 Pa
-  - 口径：worst of the 5 Adami runs on the bottom layer; adami-c0_5-nz16, dx = 0.01 m
-- 相对误差：-8.74 %（平台线 ±15%，论文级 ±3%）
-- 工件自述状态：`FAIL`；本账等级：**MARGINAL**
-- 工件自身 verdict：**fail**（`verdict`；未通过项：bottom_pressure_within_15pct_all、centre_of_mass_drift_below_1pct、column_settled_window_drift_below_2pct、compressibility_helps_as_predicted、interior_pressure_within_15pct_best）
+- 实测：76.0395 Pa
+  - 口径：worst of the 6 Adami runs on the bottom layer; adami-c0_5-nz16, dx = 0.01 m
+- 相对误差：-95.00 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**WITHHELD**
+- 工件自身 verdict：**fail**（`verdict_including_probes`）
 - 溯源：`benchmarks/threed_hydrostatic/report.json` → `runs[2].pressure`
   - 守护测试：`tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria`
 - 欠账指针：`docs/verification_threed.md`
-- 注：Complement of `threed_hydrostatic.bottom_pressure.adami_best`: the 5 Adami runs span -8.74 % to -2.75 % on the same collapse quantity, so the single best value is a selection, not a property of the wall model alone (it tracks c0 and therefore the density error, as Adami et al. 2012 predict).
+- 注：Complement of `threed_hydrostatic.bottom_pressure.adami_best`: the 6 Adami runs span -95.00 % to -1.21 % on the same collapse quantity, so the single best value is a selection, not a property of the wall model alone (it tracks c0 and therefore the density error, as Adami et al. 2012 predict).
 
 ### `threed_hydrostatic.bottom_pressure.tait_wall_control` — WITHHELD
 
 - 物理量：bottom pressure of a 3-D column at rest, p = rho0 g H
 - 参考：1520.55 Pa（rho0 g H, H = nz dx）
-- 实测：1136.93 Pa
+- 实测：0 Pa
   - 口径：same case with the wall pressure taken from the wall's own summation density instead of the Adami extrapolation (tait-c0_10-nz16)
-- 相对误差：-25.23 %（平台线 ±15%，论文级 ±3%）
+- 相对误差：-100.00 %（平台线 ±15%，论文级 ±3%）
 - 工件自述状态：`WITHHELD`；本账等级：**WITHHELD**
-- 工件自身 verdict：**fail**（`verdict`；未通过项：bottom_pressure_within_15pct_all、centre_of_mass_drift_below_1pct、column_settled_window_drift_below_2pct、compressibility_helps_as_predicted、interior_pressure_within_15pct_best）
+- 工件自身 verdict：**fail**（`verdict_including_probes`）
 - 溯源：`benchmarks/threed_hydrostatic/report.json` → `runs[3].pressure`
   - 守护测试：`tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria`
 - 欠账指针：`docs/verification_threed.md`
@@ -626,12 +639,12 @@
 
 - 物理量：worst per-layer relative error over the interior pressure profile of a 3-D column at rest
 - 参考：0 %（exact profile p = rho0 g (H - z): target error 0 %）
-- 实测：43.1741 %
-  - 口径：max over the 13 core layers; adami-c0_20-nz16
-- 相对误差：+43.17 %（平台线 ±15%，论文级 ±3%）
+- 实测：17.3387 %
+  - 口径：max over the 12 core layers; adami-c0_40-nz16
+- 相对误差：+17.34 %（平台线 ±15%，论文级 ±3%）
 - 工件自述状态：`FAIL`；本账等级：**FAIL**
-- 工件自身 verdict：**fail**（`verdict`；未通过项：bottom_pressure_within_15pct_all、centre_of_mass_drift_below_1pct、column_settled_window_drift_below_2pct、compressibility_helps_as_predicted、interior_pressure_within_15pct_best）
-- 溯源：`benchmarks/threed_hydrostatic/report.json` → `runs[0].pressure`
+- 工件自身 verdict：**fail**（`verdict_including_probes`）
+- 溯源：`benchmarks/threed_hydrostatic/report.json` → `runs[6].pressure`
   - 守护测试：`tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria`
 - 欠账指针：`docs/verification_threed.md`
 - 注：The odd-even pressure mode of the particle lattice: adjacent layers alternate between ~-6 % and up to -43 %, so any single-layer reading of this benchmark is a sample of a mode, not a converged profile.
@@ -640,12 +653,12 @@
 
 - 物理量：mean relative error of the interior (non-bottom, non-surface) pressure profile of a 3-D column at rest
 - 参考：0 %（exact profile p = rho0 g (H - z): target error 0 %）
-- 实测：-11.9227 %
-  - 口径：mean of the per-layer relative errors over the 13 core layers; adami-c0_20-nz16
-- 相对误差：-11.92 %（平台线 ±15%，论文级 ±3%）
-- 工件自述状态：`FAIL`；本账等级：**MARGINAL**
-- 工件自身 verdict：**fail**（`verdict`；未通过项：bottom_pressure_within_15pct_all、centre_of_mass_drift_below_1pct、column_settled_window_drift_below_2pct、compressibility_helps_as_predicted、interior_pressure_within_15pct_best）
-- 溯源：`benchmarks/threed_hydrostatic/report.json` → `runs[0].pressure`
+- 实测：-6.86645 %
+  - 口径：mean of the per-layer relative errors over the 12 core layers; adami-c0_40-nz16
+- 相对误差：-6.87 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**MARGINAL**
+- 工件自身 verdict：**fail**（`verdict_including_probes`）
+- 溯源：`benchmarks/threed_hydrostatic/report.json` → `runs[6].pressure`
   - 守护测试：`tests/test_threed_artifacts.py::test_hydrostatic_report_meets_its_criteria`
 - 欠账指针：`docs/verification_threed.md`
 - 注：The bottom-layer reading above is one point of a profile that is NOT within the band everywhere: the interior is systematically low, which is why the artifact's own criterion `interior_pressure_within_15pct_best` is false. Registered so the PASS on the bottom layer cannot be read as 'the 3-D hydrostatic profile is verified'.
@@ -672,7 +685,7 @@
   - 口径：least-squares slope of ln a(t), a = 4 <u_x sin(ky) sin(kz)>; n = 24^3 particles, k h = 0.340, second-moment renormalised viscous operator
 - 相对误差：-2.68 %（平台线 ±15%，论文级 ±3%）
 - 工件自述状态：`FAIL`；本账等级：**PASS**
-- 工件自身 verdict：**fail**（`verdict`；缺失用例：h1.8）
+- 工件自身 verdict：**fail**（`verdict`；未通过项：fourth_order_improves_on_second_order_every_rung；缺失用例：h1.3、h1.5、h1.8、order4-n16、order4-n20、order4-n24）
 - 溯源：`benchmarks/threed_shear/report.json` → `resolution_ladder[3].decay`
   - 守护测试：`tests/test_threed_artifacts.py::test_shear_report_meets_its_criteria`
 - 欠账指针：`docs/verification_threed.md`
@@ -686,7 +699,7 @@
   - 口径：same run with the raw second-derivative Laplacian (n = 20^3, k h = 0.408)
 - 相对误差：+11.46 %（平台线 ±15%，论文级 ±3%）
 - 工件自述状态：`FAIL`；本账等级：**MARGINAL**
-- 工件自身 verdict：**fail**（`verdict`；缺失用例：h1.8）
+- 工件自身 verdict：**fail**（`verdict`；未通过项：fourth_order_improves_on_second_order_every_rung；缺失用例：h1.3、h1.5、h1.8、order4-n16、order4-n20、order4-n24）
 - 溯源：`benchmarks/threed_shear/report.json` → `raw_vs_renormalised.raw.decay`
   - 守护测试：`tests/test_threed_artifacts.py::test_shear_report_meets_its_criteria`
 - 欠账指针：`docs/verification_threed.md`
@@ -700,7 +713,7 @@
   - 口径：coarsest rung of the same ladder, n = 12^3 particles, k h = 0.681, second-moment renormalised viscous operator
 - 相对误差：-12.62 %（平台线 ±15%，论文级 ±3%）
 - 工件自述状态：`FAIL`；本账等级：**MARGINAL**
-- 工件自身 verdict：**fail**（`verdict`；缺失用例：h1.8）
+- 工件自身 verdict：**fail**（`verdict`；未通过项：fourth_order_improves_on_second_order_every_rung；缺失用例：h1.3、h1.5、h1.8、order4-n16、order4-n20、order4-n24）
 - 溯源：`benchmarks/threed_shear/report.json` → `resolution_ladder[0].decay`
   - 守护测试：`tests/test_threed_artifacts.py::test_shear_report_meets_its_criteria`
 - 欠账指针：`docs/verification_threed.md`
@@ -719,6 +732,62 @@
   - 守护测试：`tests/test_surface_tension_laplace.py`
 - 欠账指针：`backlog_update_m2971.md#P0`
 - 注：Decisive control: with a resolved closed interface the very same CSF chain is 4-5 % accurate at both dx = 2.5 and 5 mm and the error shrinks under refinement, so the operator is not the defect. The one-sided free-surface readings above are.
+
+### `wedge_entry.c_wetted_coeff.beta30_dx1mm` — PASS
+
+- 物理量：wetted half-width coefficient c/(V t) vs Wagner C = pi/(2 tan beta), beta = 30 deg
+- 参考：2.7207 -（Wagner (1932) C = pi/(2 tan beta), derived）
+- 实测：2.65681 -
+  - 口径：mean of c/(V t) over frames whose footprint spans >= 10 spacings; c is the outermost wedge node whose Adami-extrapolated wall pressure exceeds the middle threshold of the pre-registered band
+- 相对误差：-2.35 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**PASS**
+- 工件自身 verdict：未声明
+- 溯源：`benchmarks/wedge_entry/summary_v2.json` → `ladder[id=ladder_L400].c_coeff_mean`
+  - 守护测试：`tests/test_wedge_entry_ledger.py`
+- 欠账指针：`CASE-SPH-WEDGE-ENTRY-2D`
+- 注：Kinematic quantity: it does not depend on the wall-pressure magnitude, only on where the pressure crosses the detection threshold, so it is the cleanest anchor the case has. Resolved-band criteria (a) is graded FAIL campaign-wide (14.0 % at dx = 1 mm, limit 10 %), and that FAIL comes from the coarse levels and the small-deadrise cases, not from this reading.
+
+### `wedge_entry.cp_peak.blunt45_dx1mm` — MARGINAL
+
+- 物理量：peak wall pressure on the resolved band vs Wagner flat-plate value q (pi^2/4 + 1), beta = 45 deg
+- 参考：1733.54 Pa（Wagner (1932) flat-plate limit, same band, same tau bin centres）
+- 实测：1614.9 Pa
+  - 口径：ensemble band peak, same estimator
+- 相对误差：-6.84 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**MARGINAL**
+- 工件自身 verdict：未声明
+- 溯源：`benchmarks/wedge_entry/summary_v2.json` → `cases[id=beta45_V1].p_band_sph_mean`
+  - 守护测试：`tests/test_wedge_entry_ledger.py`
+- 欠账指针：`CASE-SPH-WEDGE-ENTRY-2D`
+- 注：Control case: at 45 deg the Wagner peak is 11.4 spacings inside the root, so this is where the *pressure scale* can be checked without the resolvability confound. Campaign criterion (g) threshold is 15 %.
+
+### `wedge_entry.cp_peak.resolved_band.beta10_dx1mm` — FAIL
+
+- 物理量：peak wall pressure on the resolved band vs Wagner q (C^2 + 1), beta = 10 deg
+- 参考：19508.7 Pa（Wagner (1932) maximum on the same band, same tau bin centres）
+- 实测：24677.8 Pa
+  - 口径：ensemble band peak, same estimator as the beta = 30 deg entry
+- 相对误差：+26.50 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`FAIL`；本账等级：**FAIL**
+- 工件自身 verdict：未声明
+- 溯源：`benchmarks/wedge_entry/summary_v2.json` → `cases[id=beta10_V1].p_band_sph_mean`
+  - 守护测试：`tests/test_wedge_entry_ledger.py`
+- 欠账指针：`CASE-SPH-WEDGE-ENTRY-2D`
+- 注：Honest FAIL: 26.5 % at dx = 1 mm. Wagner's peak sits 0.32 spacings inside the spray root at this deadrise, i.e. inside the kernel support, so the target is not resolvable at any affordable dx and refining 1 mm -> 0.5 mm did not recover it (docs/wedge_entry_wagner_resolved.md). Registered as the exemplar of the resolvability limit, not as a solver defect that a tolerance change could fix.
+
+### `wedge_entry.cp_peak.resolved_band.beta30_dx1mm` — MARGINAL
+
+- 物理量：peak wall pressure on the resolved band vs Wagner q (C^2 + 1), beta = 30 deg
+- 参考：4171.8 Pa（Wagner (1932) maximum on the same band, same tau bin centres）
+- 实测：3678.56 Pa
+  - 口径：ensemble band peak: frames binned in tau, bin mean over the last frames, maximum on |x| <= (1 - 3 dx/c) c
+- 相对误差：-11.82 %（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**MARGINAL**
+- 工件自身 verdict：未声明
+- 溯源：`benchmarks/wedge_entry/summary_v2.json` → `cases[id=beta30_V1].p_band_sph_mean`
+  - 守护测试：`tests/test_wedge_entry_ledger.py`
+- 欠账指针：`CASE-SPH-WEDGE-ENTRY-2D`
+- 注：Wagner's peak is 3.5 spacings inside the spray root at dx = 1 mm, so the like-for-like comparison is meaningful here. Campaign criterion (b) is graded FAIL because beta = 10/15 deg pull the mean to 35.7 %; the reading of this case is 11.8 % (literal metric 12.4 %) and the frame-to-frame scatter in the band is 66.4 % of the band mean, i.e. the error and the noise are the same size.
 
 ### `young_laplace.absolute_tail.best_of_6` — WITHHELD
 
@@ -931,3 +1000,4 @@ python benchmarks/verification_ledger/build_ledger.py --check
 2. 新增 benchmark 工具必须登记 claim（否则 `unregistered_artifact` finding），或在 `benchmarks/verification_ledger/waivers.json` 里显式豁免并写理由。
 3. 引用任何验证数字必须写明口径（本表 §6 的 `definition` 字段）；`WITHHELD`/`FAIL`/`WITHDRAWN` 的数字不得作为当前精度引用。
 4. 散文里出现 `SUPERSEDED_NUMBERS` 中的作废数字必须带历史标记，否则 finding。
+5. claim 的工件必须在 `benchmarks/**` 下（随交付保留）；指向 `runs/**` 的读不到工件时不再让整本账崩掉，而是逐条记 `missing_artifact`（high）——工件名字换成能交付的路径，不要放宽规则。
