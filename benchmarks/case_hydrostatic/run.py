@@ -29,6 +29,12 @@ Usage
     python benchmarks/case_hydrostatic/run.py --config all
     python benchmarks/case_hydrostatic/run.py --config all --static
     python benchmarks/case_hydrostatic/run.py --aggregate --figure
+
+``--config all --static`` is the *whole* declared grid: the time-stepped ladder
+first, then the deterministic ``t = 0`` layer (until 2026-11-12 it silently ran
+the static layer only, and the following ``--aggregate`` then died with a
+``TypeError`` on the missing gate record).  ``--aggregate --figure`` also mirrors
+the bundle into :file:`outputs/case_hydrostatic` with a sha256 manifest.
 """
 from __future__ import annotations
 
@@ -48,6 +54,15 @@ from tensorsph.case_hydrostatic import (CASE_ID, DEPTH, G, RHO0,  # noqa: E402
 ARTIFACTS = REPO / "runs" / "case_hydrostatic"
 RUNS = ARTIFACTS / "runs"
 FIGURES = ARTIFACTS / "figures"
+
+#: Shipped copy of the evidence bundle.  ``runs/`` lives outside the delivery
+#: whitelist of the platform (``docs/ src/ tests/ examples/ outputs/``), so a
+#: bundle left in ``runs/`` never reaches a fresh checkout -- the shipped-evidence
+#: tests then red out on every clean tree.  The case therefore ships a copy here
+#: under ``outputs/`` plus a sha256 manifest, so the evidence is decidable (and
+#: tamper-evident) without re-running the case.
+SHIPPED = REPO / "outputs" / "case_hydrostatic"
+MANIFEST = "MANIFEST.sha256"
 
 #: One knob moves per entry.  ``window_8s`` is the gate configuration (declared
 #: before any result was read): the time mean of a sloshing inviscid pool needs
@@ -111,6 +126,14 @@ def aggregate() -> dict:
     gate = by.get(GATED)
     control = by.get("control_g0")
 
+    if gate is None:
+        missing = [n for n in CONFIGS if not (RUNS / f"{n}.json").exists()]
+        raise SystemExit(
+            f"aggregate: the gate config {GATED!r} has no run file under {RUNS}; "
+            f"missing configs {missing}. Run "
+            "`python benchmarks/case_hydrostatic/run.py --config all --static` "
+            "first (time-stepped ladder + t=0 layer).")
+
     verdict = {
         "case_id": CASE_ID,
         "gate_config": GATED,
@@ -163,6 +186,8 @@ def aggregate() -> dict:
             "grid": "python benchmarks/case_hydrostatic/run.py --config all --static",
             "figures": "python benchmarks/case_hydrostatic/run.py --aggregate --figure",
             "tests": "python -m pytest -q tests/test_case_hydrostatic.py",
+            "shipped": "outputs/case_hydrostatic (mirror of runs/case_hydrostatic"
+                       " + MANIFEST.sha256, copied by --aggregate)",
         },
     }
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
@@ -247,6 +272,36 @@ def figure(report: dict) -> dict:
     return made
 
 
+def ship(artifacts: Path = ARTIFACTS, dest: Path = SHIPPED) -> dict:
+    """Mirror the evidence bundle into the delivery whitelist + sha256 manifest.
+
+    The manifest is ``<sha256>  <bytes>  <relative path>`` per file, sorted, so
+    a reader can verify that the shipped numbers are the ones the run produced:
+    a hand-edited report, a truncated run file or a half-copied bundle all fail
+    the integrity check in ``tests/test_case_hydrostatic.py``.
+    """
+    import hashlib
+    import shutil
+
+    files = sorted(p for p in artifacts.rglob("*") if p.is_file())
+    if not files:
+        raise SystemExit(f"ship: nothing to ship under {artifacts}")
+    dest.mkdir(parents=True, exist_ok=True)
+    lines = []
+    for path in files:
+        rel = path.relative_to(artifacts)
+        data = path.read_bytes()
+        target = dest / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(path, target)
+        lines.append(f"{hashlib.sha256(data).hexdigest()}  {len(data)}  {rel.as_posix()}")
+    manifest = dest / MANIFEST
+    manifest.write_text("\n".join(lines) + "\n")
+    return {"dest": dest.relative_to(REPO).as_posix(),
+            "manifest": manifest.relative_to(REPO).as_posix(),
+            "files": len(files)}
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", default=None,
@@ -264,12 +319,17 @@ def main(argv: list[str] | None = None) -> int:
             names = list(CONFIGS)
         else:
             names = [args.config]
-        for name in names:
-            record = run_one(name, static=args.static)
-            if not record:
-                continue
-            if not args.static and not name.startswith("control") and not record["gate"]["pass"]:
-                rc = 1
+        # ``--config all --static`` selects the whole declared grid (time-stepped
+        # ladder, then the t = 0 layer); a single named config keeps the old
+        # meaning (``--static`` = that config's static record only).
+        layers = (False, True) if (args.static and args.config == "all") else (args.static,)
+        for static in layers:
+            for name in names:
+                record = run_one(name, static=static)
+                if not record:
+                    continue
+                if not static and not name.startswith("control") and not record["gate"]["pass"]:
+                    rc = 1
     if args.aggregate or args.figure:
         report = aggregate()
         print(f"gate: {report['verdict']['gate_value_pct']:.4f} % "
@@ -277,6 +337,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.figure:
             for name, path in figure(report).items():
                 print(f"figure {name}: {path}")
+        shipped = ship()
+        print(f"shipped {shipped['files']} files -> {shipped['dest']} "
+              f"(manifest {shipped['manifest']})")
     return rc
 
 
