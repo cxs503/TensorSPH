@@ -61,6 +61,14 @@ def load_estimator_probe() -> dict | None:
     return {"cases": [cases[k] for k in sorted(cases, key=lambda k: -cases[k]["dx"])]}
 
 
+def load_error_budget() -> dict | None:
+    """Load the committed error budget analysis, if present."""
+    eb_path = RESULTS / "error_budget.json"
+    if not eb_path.exists():
+        return None
+    return json.loads(eb_path.read_text())
+
+
 def write_refs_declaration(summary: dict, verified: dict) -> dict:
     """The reference/protocol declaration, built from the audit and the DOI resolution."""
     audit = structural_audit()
@@ -230,7 +238,8 @@ def num(value, digits: int = 3) -> str:
 
 
 def make_doc(summary: dict, runs: list[dict], refs_payload: dict,
-             figures: list[dict], verified: dict) -> Path:
+             figures: list[dict], verified: dict,
+             error_budget: dict | None = None) -> Path:
     finest = min(runs, key=lambda r: r["dx"])
     gates = summary["gates"]
     bracket = summary["bracket"]
@@ -452,6 +461,37 @@ def make_doc(summary: dict, runs: list[dict], refs_payload: dict,
     add(f"6. **压缩性余量**：最细分辨率 max ρ/ρ0−1 = {finest['max_density_compression']:.3f}，"
         f"限值 {COMPRESSION_LIMIT}——通过但不宽裕。")
     add("")
+
+    # ---- ⑤b 误差分解（error budget） ----------------------------------------
+    if error_budget:
+        add("## ⑤b 误差分解（Error Budget）")
+        add("")
+        eb = error_budget["error_budget"]
+        add(f"最细分辨率（dx = {eb['dx']} m）的总 MAE/幅值 = **{pct(eb['total_mae_over_amplitude'])}**，"
+            f"偏置 = {eb['bias']:+.4f} in Z/a。")
+        add("")
+        add("| 误差分量 | 量值 | 解释 |")
+        add("|---|---|---|")
+        ref = eb["components"]["reference_uncertainty"]
+        add(f"| 参考不确定度 | {num(ref['max_spread_Za'])} in Z/a（{pct(ref['spread_over_amplitude'])} 幅值） | "
+            f"{ref['interpretation']} |")
+        ritter = eb["components"]["ritter_deviation"]
+        add(f"| Ritter 浅水解偏差 | {num(ritter['mae_Za'])} in Z/a（{pct(ritter['mae_over_amplitude'])} 幅值） | "
+            f"{ritter['interpretation']} |")
+        comp = eb["components"]["compressibility"]
+        add(f"| 弱可压误差 | {num(comp['max_rho_over_rho0_minus_1'], 4)} | "
+            f"{comp['interpretation']} |")
+        add("")
+        trend = error_budget["resolution_trend"]
+        add(f"**分辨率趋势**：{trend['interpretation']}")
+        add("")
+        ritter_comp = error_budget["ritter_comparison"]
+        add(f"**Ritter 对照**：平均偏差 {ritter_comp['mean_ritter_deviation_Za']:.4f} in Z/a，"
+            f"最大偏差 {ritter_comp['max_ritter_deviation_Za']:.4f} in Z/a（{ritter_comp['n_points']} 个采样点）。")
+        add("")
+        add(f"{eb['interpretation']}")
+        add("")
+
     add("## ⑥ 误差判定（逐项 vs 基准，显式回答是否 < 3 %）")
     add("")
     add("| 关键量 | 基准 | 实测误差 | 是否 < 3 % |")
@@ -478,15 +518,21 @@ def make_doc(summary: dict, runs: list[dict], refs_payload: dict,
     return DOC_PATH
 
 
+
 def main() -> int:
     summary, runs, verified = load()
     refs_payload = write_refs_declaration(summary, verified)
     figures = make_figures(summary, runs)
-    doc = make_doc(summary, runs, refs_payload, figures, verified)
-    print(f"wrote {REFS_PATH}")
+    probe = load_estimator_probe()
+    error_budget = load_error_budget()
+    make_doc(summary, runs, refs_payload, figures, verified, error_budget)
+    print(f"written {DOC_PATH}")
     for fig in figures:
-        print(f"wrote {fig['path']}")
-    print(f"wrote {doc}")
+        print(f"  figure: {fig['name']}")
+    if probe:
+        print(f"  probe: {len(probe['cases'])} cases")
+    if error_budget:
+        print(f"  error budget: {error_budget['error_budget']['case']}")
     return 0
 
 
