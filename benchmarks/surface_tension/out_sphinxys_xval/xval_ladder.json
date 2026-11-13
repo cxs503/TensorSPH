@@ -228,7 +228,7 @@
   "sphinxys_cfl0.6": 0.0025824988421224047,
   "tensorsph_cfl0.25": 0.0026972352570274337
  },
- "wall_clock_s": 5.6756157875061035,
+ "wall_clock_s": 15.147846698760986,
  "gate": {
   "criterion": "xval error vs sigma/R must be < 15%",
   "stress_reading_max_abs_err_pct": 3.954611401258521,
