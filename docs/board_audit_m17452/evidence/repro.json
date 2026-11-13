@@ -1,0 +1,38 @@
+{
+ "temp_dir": "/tmp/audit17452_ho4y9ay3",
+ "pytest": {
+  "returncode": 0,
+  "tail": [
+   "10 passed, 1 warning in 6.08s"
+  ]
+ },
+ "run": {
+  "returncode": 0,
+  "tail": [
+   "thickness vertical_wall    layers=3 oss= +66.48% panel=+198.46%",
+   "thickness horizontal_gate  layers=1 oss= +24.23% panel=  -0.00%",
+   "thickness horizontal_gate  layers=3 oss= +62.73% panel=+199.73%",
+   "wrote /tmp/audit17452_ho4y9ay3/artifacts/xval_fsi2/results.json"
+  ]
+ },
+ "leaves_audited": 554,
+ "leaves_replayed": 554,
+ "leaf_keys_equal": true,
+ "leaves_differing": 12,
+ "leaves_compared_excluding_timings": 542,
+ "nondeterministic_leaves": [
+  "/timings_s/vertical_wall@0.05",
+  "/timings_s/vertical_wall@0.025",
+  "/timings_s/vertical_wall@0.0125",
+  "/timings_s/horizontal_gate@0.05",
+  "/timings_s/horizontal_gate@0.025",
+  "/timings_s/horizontal_gate@0.0125",
+  "/timings_s/couette_shear@0.025",
+  "/timings_s/couette_shear@0.0125",
+  "/timings_s/couette_shear@0.00625",
+  "/timings_s/fsi2_insert_linear@0.1",
+  "/timings_s/fsi2_insert_linear@0.05",
+  "/timings_s/fsi2_insert_linear@0.025"
+ ],
+ "ignored_timing_leaves": 12
+}

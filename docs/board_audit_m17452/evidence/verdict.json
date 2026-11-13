@@ -1,0 +1,73 @@
+{
+ "verdict_id": 573,
+ "evidence": {
+  "impl_files": [
+   "src/tensorsph/fsi_force_from_fluid.py:1-352 (ported ForceFromFluid + panel + legacy arms)",
+   "benchmarks/xval_fsi2/run.py:1-192 (driver, predeclared 15 %/3 %)",
+   "benchmarks/xval_fsi2/cases.py:1-314 (4 case families, analytic fields)",
+   "artifacts/xval_fsi2/results.json (12 scored rows + sensitivity + thickness)"
+  ],
+  "entry": "python benchmarks/xval_fsi2/run.py",
+  "run_artifacts": [
+   "work/m17452/artifacts/xval_fsi2/results.json sha256=7ff7c32e981e4cd6",
+   "work/m17452/artifacts/xval_fsi2/fig_error_vs_dx.png",
+   "work/m17452/artifacts/xval_fsi2/fig_thickness.png",
+   "work/m17452/docs/xval_fsi2/GAP-SPH-FSI-BENCHMARK_xval.md (167 lines)",
+   "audit replay copy: artifacts/audit_m17452/repro.json"
+  ],
+  "tests": [
+   "tests/test_fsi_force_from_fluid.py (10 tests, 10 passed on replay; invariant tests: sign, dx-insensitivity, linear-exactness, zero-neighbour)"
+  ],
+  "integration_callers": [
+   "none outside tests/ and benchmarks/ (grep -rIl fsi_force_from_fluid src/ examples/ -> only the module itself); src/tensorsph/__init__.py does not export it; docs porting decision = do not adopt"
+  ],
+  "benchmark": {
+   "registered_cases": 0,
+   "criterion": "predeclared 15 % required / 3 % target (run.py docstring) == owner standard",
+   "primary_rows": 21,
+   "primary_pass15": 0,
+   "oss_pressure_error_pct": [
+    24.23,
+    107.54
+   ],
+   "oss_viscous_error_pct": [
+    -38.54,
+    -38.01
+   ],
+   "panel_pass15": "7/9",
+   "panel_error_pct": [
+    -0.7,
+    32.26
+   ],
+   "verdict": "FAIL (all ported-operator rows > 15 %)"
+  },
+  "repro_cmd": "python benchmarks/xval_fsi2/run.py && python -m pytest tests/test_fsi_force_from_fluid.py",
+  "repro_result": {
+   "pytest": [
+    "10 passed, 1 warning in 6.08s"
+   ],
+   "run_rc": 0,
+   "leaves_compared": 542,
+   "leaves_differing_outside_timings": 0
+  },
+  "external_anchor": [
+   "Xiangyu-Hu/SPHinXsys master: src/shared/shared_ck/particle_dynamics/fluid_structure_interaction/force_on_structure.hpp:55-72,103-124 (algebra ported; file NOT archived under oss_src/ — only hydrostatic_fsi.cpp)",
+   "analytic references: 1/2 rho g H^2 (hydrostatic_fsi.cpp:14-19), mu U / h (Couette), displaced area pi r^2 + bh*bl (fsi2 insert)"
+  ],
+  "level_reason": "L2: real transfer operator (input particles -> per-particle load) with invariant unit tests and a reproducing driver, but 0/12 ported-operator rows inside 15 % (so no L4) and no production caller / package export (so no L3). Report honesty and bitwise reproducibility do not raise the level.",
+  "findings": [
+   "F1 benchmark FAIL: oss +24.2..+108 %; oss_viscous -38.0..-38.5 %",
+   "F2 not integrated: no caller, no __init__ export, doc advises against adoption",
+   "F3 provenance gap: force_on_structure.hpp/fsi2.cpp cited but not archived in oss_src/",
+   "F4 overstatement: run.py design promises a solved-WCSPH case; 0/12 rows are 'solved'",
+   "F5 panel -0.00 % on flat walls is tautological (WLS exact on linear field); panel diverges on the closed body (+20 %/+32 % under refinement)",
+   "F6 tests pin the failing bands (0.20<err<0.32) as expected — change detector, not validation",
+   "F7 deliverables uncommitted (git status '??'), mission ended budget_exhausted+forced_finish at 80/80 calls"
+  ],
+  "audit_evidence": [
+   "docs/board_audit_m17452/M17452_BOARD_AUDIT.md",
+   "artifacts/audit_m17452/{manifest,git_state,referee,judge,repro,finding}.json",
+   "artifacts/audit_m17452/fig_error_vs_threshold.png"
+  ]
+ }
+}

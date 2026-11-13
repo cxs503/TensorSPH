@@ -1,0 +1,30 @@
+{
+ "mission": 17452,
+ "anchor": "XVAL-SPH-FSI2-BENCHMARK-AND-FORCE-FROM-FLUID",
+ "repo": "TensorSPH",
+ "level": 2,
+ "referee_rows": 0,
+ "primary_rows": 21,
+ "primary_pass15": 0,
+ "oss_pressure_err_range_pct": [
+  24.23,
+  107.54
+ ],
+ "oss_viscous_err_range_pct": [
+  -38.54,
+  -38.01
+ ],
+ "panel_pass15": "7/9",
+ "panel_err_range_pct": [
+  -0.7,
+  32.26
+ ],
+ "deliverables_uncommitted": [
+  "?? benchmarks/xval_fsi2/",
+  "?? docs/xval_fsi2/",
+  "?? src/tensorsph/fsi_force_from_fluid.py",
+  "?? tests/test_fsi_force_from_fluid.py"
+ ],
+ "reproducible": true,
+ "disposition": "request changes \u2014 benchmark FAIL, not L3/L4"
+}
