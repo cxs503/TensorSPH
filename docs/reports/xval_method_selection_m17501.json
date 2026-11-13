@@ -1,5 +1,13 @@
 {
-  "mission": 17501,
+  "mission": 17906,
+  "mission_history": [
+    17501,
+    17906
+  ],
+  "repair_of": {
+    "mission": 17501,
+    "audit": "verdict_m17501.md (reopened: stale report, no stability gate, deliverables uncommitted)"
+  },
   "anchor": "XVAL-SPH-METHOD-SELECTION-2026-11-12",
   "reference": "oss_solutions id=408 (TensorSPH CASE-WAVE-FLUME method-selection-2026-11-12)",
   "oss_counterparts": {
@@ -16,60 +24,208 @@
   "physics_reference": {},
   "rows": [
     {
-      "label": "D13_hn016_d010_settle",
+      "label": "D20_h025_A",
       "group": "ladder",
-      "knob": "ref A, H/dx=2.08",
-      "record": "runs/local/wf_D13_settle_d010.json",
+      "knob": "method A, H/dx = 3.20, t_end 5.5 s",
+      "record": "runs/xval/cell_0.json",
       "present": false,
       "note": "record missing (job not dispatched)"
+    },
+    {
+      "label": "D13_h025_A",
+      "group": "ladder",
+      "knob": "method A, H/dx = 2.08, t_end 5.5 s",
+      "record": "runs/xval/cell_1.json",
+      "present": false,
+      "note": "record missing (job not dispatched)"
+    },
+    {
+      "label": "D20_h025_xsph",
+      "group": "mechanism",
+      "knob": "method A + XSPH 0.05 in the propagation phase (post-hoc probe)",
+      "record": "runs/xval/cell_2.json",
+      "present": false,
+      "note": "record missing (job not dispatched)"
+    },
+    {
+      "label": "D20_h020_archive",
+      "group": "archive",
+      "knob": "m17501 archive record (h = 0.20 m, t_end 3.7 s)",
+      "record": "docs/reports/artifacts_wave_flume/wf_D20_unstable.json",
+      "present": true,
+      "failed": false,
+      "gradeable": false,
+      "error": "fewer than two usable gauges",
+      "gauge_errors": [
+        "window holds too few finite samples for a wave height",
+        "window holds too few finite samples for a wave height",
+        "window holds too few finite samples for a wave height",
+        "window holds too few finite samples for a wave height"
+      ],
+      "gauges": [
+        {
+          "x": 1.0308254400261745,
+          "error": "window holds too few finite samples for a wave height",
+          "dry_fraction": 0.0
+        },
+        {
+          "x": 1.1823715733498137,
+          "error": "window holds too few finite samples for a wave height",
+          "dry_fraction": 0.0
+        },
+        {
+          "x": 1.3339177066734529,
+          "error": "window holds too few finite samples for a wave height",
+          "dry_fraction": 0.0
+        },
+        {
+          "x": 1.485463839997092,
+          "error": "window holds too few finite samples for a wave height",
+          "dry_fraction": 0.0
+        }
+      ],
+      "target_height": 0.03,
+      "stability": {
+        "sound_speed": 30.0,
+        "speed_ratio": 3.6425183614095054,
+        "speed_ratio_max": 1.0,
+        "max_density_compression": 0.4494273681640626,
+        "compression_max": 0.1,
+        "escaped": 144,
+        "stable": false,
+        "violations": [
+          "max|v|/c0 = 3.643 >= 1",
+          "compression 44.94 % >= 10 %"
+        ]
+      },
+      "within_owner_tol": false,
+      "within_case_tol": false,
+      "passed": false,
+      "verdict": "ungradeable",
+      "windows": {
+        "start_4": {
+          "failed": true,
+          "error": "fewer than two usable gauges",
+          "gauges": [
+            {
+              "x": 1.0308254400261745,
+              "height": null,
+              "error": "window holds too few finite samples for a wave height",
+              "dry_fraction": 0.0
+            },
+            {
+              "x": 1.1823715733498137,
+              "height": null,
+              "error": "window holds too few finite samples for a wave height",
+              "dry_fraction": 0.0
+            },
+            {
+              "x": 1.3339177066734529,
+              "height": null,
+              "error": "window holds too few finite samples for a wave height",
+              "dry_fraction": 0.0
+            },
+            {
+              "x": 1.485463839997092,
+              "height": null,
+              "error": "window holds too few finite samples for a wave height",
+              "dry_fraction": 0.0
+            }
+          ],
+          "passed": false,
+          "target_height": 0.03
+        },
+        "start_5": {
+          "failed": true,
+          "error": "fewer than two usable gauges",
+          "gauges": [
+            {
+              "x": 1.0308254400261745,
+              "height": null,
+              "error": "window holds too few finite samples for a wave height",
+              "dry_fraction": 0.0
+            },
+            {
+              "x": 1.1823715733498137,
+              "height": null,
+              "error": "window holds too few finite samples for a wave height",
+              "dry_fraction": 0.0
+            },
+            {
+              "x": 1.3339177066734529,
+              "height": null,
+              "error": "window holds too few finite samples for a wave height",
+              "dry_fraction": 0.0
+            },
+            {
+              "x": 1.485463839997092,
+              "height": null,
+              "error": "window holds too few finite samples for a wave height",
+              "dry_fraction": 0.0
+            }
+          ],
+          "passed": false,
+          "target_height": 0.03
+        }
+      }
+    }
+  ],
+  "predeclared_unexecuted": [
+    {
+      "label": "D13_hn016_d010_settle",
+      "record": "runs/local/wf_D13_settle_d010.json",
+      "group": "ladder",
+      "knob": "ref A, H/dx=2.08",
+      "status": "not_executed",
+      "reason": "record absent: the 7-cell grid was not re-run; the repair run answered the same questions with three decision-focused cells (group 'ladder'/'mechanism')"
     },
     {
       "label": "D16_hn016_d010_settle",
+      "record": "runs/local/wf_D16_settle_d010.json",
       "group": "ladder",
       "knob": "ref A, H/dx=2.56",
-      "record": "runs/local/wf_D16_settle_d010.json",
-      "present": false,
-      "note": "record missing (job not dispatched)"
+      "status": "not_executed",
+      "reason": "record absent: the 7-cell grid was not re-run; the repair run answered the same questions with three decision-focused cells (group 'ladder'/'mechanism')"
     },
     {
       "label": "D20_hn016_d010_settle",
+      "record": "runs/local/wf_D20_settle_d010.json",
       "group": "ladder",
       "knob": "ref A, H/dx=3.20",
-      "record": "runs/local/wf_D20_settle_d010.json",
-      "present": false,
-      "note": "record missing (job not dispatched)"
+      "status": "not_executed",
+      "reason": "record absent: the 7-cell grid was not re-run; the repair run answered the same questions with three decision-focused cells (group 'ladder'/'mechanism')"
     },
     {
       "label": "D13_hn016_d000_settle",
+      "record": "runs/local/wf_D13_settle_d000.json",
       "group": "delta",
       "knob": "delta-SPH = 0.0",
-      "record": "runs/local/wf_D13_settle_d000.json",
-      "present": false,
-      "note": "record missing (job not dispatched)"
+      "status": "not_executed",
+      "reason": "record absent: the 7-cell grid was not re-run; the repair run answered the same questions with three decision-focused cells (group 'ladder'/'mechanism')"
     },
     {
       "label": "D13_hn016_d020_settle",
+      "record": "runs/local/wf_D13_settle_d020.json",
       "group": "delta",
       "knob": "delta-SPH = 0.2",
-      "record": "runs/local/wf_D13_settle_d020.json",
-      "present": false,
-      "note": "record missing (job not dispatched)"
+      "status": "not_executed",
+      "reason": "record absent: the 7-cell grid was not re-run; the repair run answered the same questions with three decision-focused cells (group 'ladder'/'mechanism')"
     },
     {
       "label": "D13_hn010_d010_settle",
+      "record": "runs/local/wf_D13_hr010_settle_d010.json",
       "group": "height",
       "knob": "H/h = 0.10",
-      "record": "runs/local/wf_D13_hr010_settle_d010.json",
-      "present": false,
-      "note": "record missing (job not dispatched)"
+      "status": "not_executed",
+      "reason": "record absent: the 7-cell grid was not re-run; the repair run answered the same questions with three decision-focused cells (group 'ladder'/'mechanism')"
     },
     {
       "label": "D13_hn016_d010_nosettle",
+      "record": "runs/local/wf_D13_nosettle_d010.json",
       "group": "settle",
       "knob": "no settle window",
-      "record": "runs/local/wf_D13_nosettle_d010.json",
-      "present": false,
-      "note": "record missing (job not dispatched)"
+      "status": "not_executed",
+      "reason": "record absent: the 7-cell grid was not re-run; the repair run answered the same questions with three decision-focused cells (group 'ladder'/'mechanism')"
     }
   ],
   "figures": [
@@ -94,10 +250,15 @@
       "made": false
     }
   ],
+  "verdict_rule": "a row passes only when its own diagnostics satisfy the pre-registered stability gate (max|v|/c0 < 1, max density compression < 10 %) AND its worst gauge wave-height error is within the owner 15 % gate; 'ungradeable' means the record exists but the analysis window holds no usable samples, and is reported as a gap, never as a zero",
   "counts": {
-    "matrix": 7,
-    "present": 0,
+    "matrix": 4,
+    "present": 1,
+    "missing": 3,
     "failed": 0,
-    "within_owner_tol": 0
+    "ungradeable": 1,
+    "unstable": 0,
+    "within_owner_tol": 0,
+    "passed": 0
   }
 }
