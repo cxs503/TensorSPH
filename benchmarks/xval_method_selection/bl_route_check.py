@@ -82,14 +82,23 @@ def dissipation_numeric(u_b: float, nu: float, omega: float,
 
 def closed_form_dissipation(u_b: float, nu: float, omega: float) -> float:
     """``D = (1/4) rho u_b^2 sqrt(nu omega)`` (per unit density) as shipped."""
-    return 0.25 * u_b * u_b * math.sqrt(nu * omega)
+    return 0.25 * u_b * u_b * math.sqrt(2.0 * nu * omega)  # sqrt(2) from Stokes BL integral, not sqrt(nu omega)
 
 
 def mu_from_dissipation(dissipation_per_area: float, height: float,
                         group_velocity: float) -> float:
-    """``mu = D / (E c_g)`` with ``E = (1/8) rho g H^2`` (per unit density)."""
-    energy = 0.125 * GRAVITY * height * height
-    return dissipation_per_area / (energy * group_velocity)
+    """``mu = D / (g a^2 c_g)`` with ``a = H/2``.
+
+    The energy flux is ``F = (1/2) rho g a^2 c_g``.  With ``a = a0 exp(-mu x)``,
+    ``dF/dx = -rho g a^2 c_g mu = -D``, so ``mu = D / (rho g a^2 c_g)``.
+    Per unit density and with ``a = H/2``: ``mu = D / (g (H/2)^2 c_g)
+    = 4 D / (g H^2 c_g)``.  The previous version used ``E = (1/8) g H^2``
+    (the wave energy) without the factor of 2 from ``d(a^2)/dx = -2 mu a^2``,
+    understating mu by 2x.
+    """
+    # g * a^2 = g * (H/2)^2 = (1/4) g H^2
+    energy_equiv = 0.25 * GRAVITY * height * height
+    return dissipation_per_area / (energy_equiv * group_velocity)
 
 
 def route_check(period: float = 1.0, depth: float = 0.25, height: float = 0.04,
