@@ -140,6 +140,32 @@ finest mesh, decimated in time by 2 — the previous 4.2 MB / 10.4 MB result fil
 were dropped by the artefact filter, i.e. the numbers survived but the raw
 evidence did not.
 
+### Sharded production of the ladder (fail-closed assembly)
+
+The three rungs cost 132 s + 271 s + 853 s serially, so production runs them as
+independent shards and assembles the published ladder:
+
+```
+PYTHONPATH=.:src python benchmarks/stokes_second/run.py --probe 8  --c0 4 \
+    --periods 6 --measure-periods 2 --out runs/ladder/dx8
+...                                                       (one per rung)
+PYTHONPATH=.:src python scripts/finalize_stokes_second.py \
+    --shard runs/ladder/dx8 runs/ladder/dx12 runs/ladder/dx18 \
+    --out benchmarks/stokes_second/out \
+    --compare benchmarks/stokes_second/out/results_ladder.json
+```
+
+`scripts/finalize_stokes_second.py` is **fail-closed**: every predeclared rung
+must be present exactly once and carry the same `provenance.case` fingerprint,
+otherwise nothing is published (`results_ladder.json`, `benchmark.json` and
+`MANIFEST.json` are left untouched) and `ladder_assembly_refused.json` records
+why. It waits for a shard that is still being written — bounded by `--timeout`,
+polling `min(--poll, remaining)` — and it grades the assembled ladder with the
+same `ladder_convergence()` that `--ladder` uses. A single-rung or
+differently-configured "ladder" cannot be published: the first delivery of this
+case was assembled by a script that waited 2 s for a 5 s sleep and shipped
+`resolutions = [8]` with `all_gates: true` (audit F1).
+
 ## 8. Interpretation limits
 
 A pass qualifies the *viscous operator and the moving no-slip mirror wall for
