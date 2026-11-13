@@ -68,6 +68,8 @@ __all__ = [
     "cross_pairs",
     "pressure_force_from_fluid",
     "viscous_force_from_fluid",
+    "wall_shear_from_gradient",
+    "one_sided_viscous_truncation_factor",
     "panel_pressure_force",
     "pairwise_pressure_force",
     "wall_traction",
@@ -247,7 +249,113 @@ def viscous_force_from_fluid(
     return out * vol_solid[:, None]
 
 
+def one_sided_viscous_truncation_factor(h: float, dim: int = 2,
+                                       kernel: str = "quintic",
+                                       regularisation: float = 0.0,
+                                       spacing: Optional[float] = None,
+                                       n_quad: int = 400001) -> float:
+    """Continuum response of the one-sided viscous sum to a linear wall shear.
+
+    For a wall at ``y = 0`` wetted by a linear profile ``u_x = gamma y`` the OSS
+    branch, summed over a surface layer of spacing ``s``, is
+
+        F_x/L = s * mu gamma * (-2) int_0^R (dW/dr) r / (1 + eps h^2/r^2) dr
+
+    so the *ratio to the exact traction* ``mu gamma`` is
+
+        ratio = eps=0:   -2 s int_0^R (dW/dr) r dr = (7/(3 pi)) (s/h)
+                 (Wendland C2: int_0^2 f'(q) q dq = -2/3, alpha_2 = 7/(4 pi)),
+
+    i.e. a *fixed fraction* that carries no ``dx`` beyond the ``s/h`` ratio.  That
+    is why the measured deficit of the OSS branch is dx independent
+    (``docs/xval_fsi2/X3_VISCOUS_DEFICIT.md``) -- it is a truncation moment, not
+    a discretisation error.  ``s`` defaults to ``h`` (so the closed form above
+    applies); pass the lattice spacing to get the value of an actual case.
+
+    The number is an independent *prediction* from kernel quadrature (trapezoid
+    on ``n_quad`` points), not a fitted constant.  It over-estimates the lattice
+    case by ~7 % because the first fluid layer sits at ``s/2`` from the wall and
+    the near-wall shell of the integral carries no particle.
+    """
+    s = h if spacing is None else spacing
+    r = torch.linspace(1.0e-9, kernels.SUPPORT_FACTOR[kernel] * h, n_quad,
+                       dtype=torch.float64)
+    _, df = kernels.shape(r / h, kernel)
+    dwdr = kernels.normalisation(dim, kernel) / h ** (dim + 1) * df
+    integrand = dwdr * r / (1.0 + regularisation * (h / r) ** 2)
+    return float(-2.0 * s * torch.trapezoid(integrand, r))
+
+
+def wall_shear_from_gradient(
+    pos_solid: torch.Tensor,
+    vol_solid: torch.Tensor,
+    normal_solid: torch.Tensor,
+    pos_fluid: torch.Tensor,
+    vol_fluid: torch.Tensor,
+    vel_fluid: torch.Tensor,
+    mu_fluid: torch.Tensor,
+    vel_solid: torch.Tensor,
+    cfg: ForceFromFluidConfig,
+) -> torch.Tensor:
+    """Viscous wall load from a *kernel-corrected* velocity-gradient reconstruction.
+
+    The OSS one-sided sum (``viscous_force_from_fluid``) is a truncated
+    quadrature: with a support cut by the wall it returns a fixed fraction of
+    ``mu * du_t/dn`` (``one_sided_viscous_truncation_factor``, -38 % measured on
+    the X3 Couette case) and the deficit does not vanish under refinement.
+
+    This arm instead reconstructs the velocity-gradient tensor at the wall from
+    the fluid neighbours and evaluates the traction directly::
+
+        G_km = sum_j V_j (u_j - u_i)_k (dW/dr) e_m             (raw gradient sum)
+        B_pm = -sum_j V_j (dW/dr) r_p r_m / r                 (first moment)
+        a    = G B^-1                                         (corrected grad u)
+        F_i  = A_i mu_i (a . n_i)
+
+    ``B`` is the *measured* first moment of the truncated neighbour set, so the
+    correction absorbs both the cut support and the wall curvature; for a linear
+    velocity field the reconstruction is exact whatever the truncation, which is
+    the property X3 tests.  ``mu_i`` is the kernel-weighted mean of ``mu_fluid``
+    over the neighbours, and the tributary face length is
+    ``V_i**((dim-1)/dim)`` (= ``dx`` for a lattice particle), the same area
+    convention as ``panel_pressure_force``.
+    """
+    n_s = pos_solid.shape[0]
+    dim = cfg.dim
+    out = torch.zeros((n_s, dim), dtype=pos_solid.dtype, device=pos_solid.device)
+    i_s, j_f = cross_pairs(pos_solid, pos_fluid, cfg.support)
+    if i_s.numel() == 0:
+        return out
+    i_s, j_f, r, e, dwdr = _pair_geometry(pos_solid, pos_fluid, i_s, j_f,
+                                          cfg.support, cfg.kernel)
+    vol_f = vol_fluid[j_f]
+    w = kernels.kernel_pairs(pos_solid[i_s] - pos_fluid[j_f], cfg.h, dim,
+                             cfg.kernel)[0] * vol_f
+    # first moment of the actual (truncated) neighbour set
+    moment = (dwdr * vol_f * r)[:, None, None] * (e[:, :, None] * e[:, None, :])
+    b_mat = torch.zeros((n_s, dim, dim), dtype=pos_solid.dtype,
+                        device=pos_solid.device).index_add(0, i_s, -moment)
+    # raw gradient sum
+    du = vel_fluid[j_f] - vel_solid[i_s]
+    raw = (dwdr * vol_f)[:, None, None] * (du[:, :, None] * e[:, None, :])
+    g_mat = torch.zeros((n_s, dim, dim), dtype=pos_solid.dtype,
+                        device=pos_solid.device).index_add(0, i_s, raw)
+    trace = b_mat.diagonal(dim1=-2, dim2=-1).sum(dim=1).clamp_min(1.0e-30)
+    eye = torch.eye(dim, dtype=pos_solid.dtype,
+                    device=pos_solid.device).expand_as(b_mat)
+    b_inv = torch.linalg.inv(b_mat + 1.0e-12 * trace[:, None, None] * eye)
+    grad_u = torch.bmm(g_mat, b_inv)
+    mu_wall = (torch.zeros(n_s, dtype=pos_solid.dtype, device=pos_solid.device)
+               .index_add(0, i_s, w * mu_fluid[j_f])
+               / torch.zeros(n_s, dtype=pos_solid.dtype, device=pos_solid.device)
+               .index_add(0, i_s, w).clamp_min(1.0e-30))
+    shear = torch.bmm(grad_u, normal_solid.unsqueeze(-1)).squeeze(-1)
+    face_area = vol_solid.pow((dim - 1.0) / dim)
+    return face_area[:, None] * mu_wall[:, None] * shear
+
+
 def panel_pressure_force(
+
     pos_solid: torch.Tensor,
     vol_solid: torch.Tensor,
     normal_solid: torch.Tensor,
