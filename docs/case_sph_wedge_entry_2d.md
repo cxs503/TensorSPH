@@ -125,3 +125,19 @@ Zhao & Faltinsen (1993) 仍为 **WITHHELD**，本次审计未产生任何替代�
 （估计量不确定度 >30 % > 容差），Z&F (1993) 仍 **WITHHELD**。
 全文与数据：`docs/case_sph_wedge_entry_2d_metric_resolution_m17548.md`；
 工件：`artifacts/case_sph_wedge_entry_2d_metric/`；复现脚本 `benchmarks/case_sph_wedge_entry_2d/metric_resolution.py`。
+
+## ⑨ 同算子复核（m18382，2026-11-13）
+
+历轮把**离散化后的测量值**直接比 Wagner 的**点值**。本单把 Wagner 场推过**同一测量算子**（壁面节点采样 + Adami 核外推 h=1.3dx + 分箱峰值 + 样本门），在同算子上重做比较（未改求解器/算例/阈值，未重跑 SPH；输入仅已入仓的 `docs/artifacts/case_sph_wedge_entry_2d_ensemble/`）：
+
+| 量（61 帧池化） | dx = 2 mm | dx = 4 mm |
+|---|---|---|
+| 实测峰值 Cp | 5.850 | 10.360 |
+| 实测 vs 点值 8.4022（历轮口径） | −30.4 % | +23.3 % |
+| 算子真值（Wagner 经同一算子） | 7.494 | 6.870 |
+| **同算子残差** | **−21.9 %** | **+50.8 %** |
+
+结论：①测量链的固定偏置（核外推把峰值附近 ~2h 场平均）在 dx = 2 mm 吃掉 **−10.8 %**、dx = 4 mm **−18.2 %**，是负数常数项而非解的误差；②扣掉后最细网格仍 **−21.9 %** 且跨网格**变号**，故**峰值 Cp 仍不可裁决**（预声明的网格一致性判据未过），验收结论不变；③前向模型经两次对表（逐帧湿节点数偏差 ~1–2 个节点、顶点 τ→0 处算子无偏到 0.04 %）后才允许使用；④**更正 m17899 ⑤.2**：“湿面节点随入水加深下降/接触判据失效”被其自身工件否定（`n_wet` 逐帧单调增）；
+⑤Zhao & Faltinsen (1993) 仍 **WITHHELD**；残差为负的方向与“线性理论在 β = 30° 高估峰值”一致，但这是**假说**，不作为修正因子。
+
+全文：`docs/case_sph_wedge_entry_2d_operator_bias_m18382.md`；工件：`docs/artifacts/case_sph_wedge_entry_2d_bias/bias_report.json`；脚本：`benchmarks/case_sph_wedge_entry_2d/{estimator_bias,make_operator_bias_figure,make_operator_bias_doc}.py`；测试：`tests/test_wedge_estimator_bias.py`。
