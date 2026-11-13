@@ -1,0 +1,1260 @@
+{
+ "case_id": "CASE-HYDROSTATIC",
+ "dx": 0.03,
+ "seconds": 2.0,
+ "gate_limit_pct": 1.0,
+ "cases": {
+  "w_lat_d_lat": {
+   "label": "W lattice, D lattice",
+   "geometry": {
+    "dx": 0.03,
+    "tank_width": 0.99,
+    "depth": 0.39,
+    "bands": 8,
+    "columns": 33,
+    "rows": 13,
+    "lattice_width": 0.99,
+    "lattice_depth": 0.39,
+    "support": 0.078,
+    "band_thickness": 0.04875,
+    "band_thickness_cells": 1.6250000000000002,
+    "gated_bands": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "reference_bias_pct": 0.0,
+    "aligned": true,
+    "allow_misaligned": false,
+    "problems": []
+   },
+   "record": {
+    "case_id": "CASE-HYDROSTATIC",
+    "kind": "dynamic_time_mean",
+    "config": {
+     "dx": 0.03,
+     "tank_width": 0.99,
+     "depth": 0.39,
+     "fluid_particles": 429,
+     "min_particles": 1000,
+     "particle_requirement_met": false,
+     "columns": 33,
+     "sound_speed": 20.0,
+     "gravity_solver": 9.81,
+     "gravity_reference": 9.81,
+     "seconds": 2.0,
+     "dt": 0.000584966364434045,
+     "steps": 3419,
+     "samples": 342,
+     "sample_every": 5,
+     "average_from": 0.5,
+     "bands": 8,
+     "h": 0.039,
+     "support": 0.078,
+     "device": "cpu"
+    },
+    "reference": {
+     "kind": "analytic",
+     "formula": "p(y) = rho0 * g * (H - y)",
+     "derivation": "hydrostatic equilibrium dp/dy = -rho0 g integrated from p(H)=0",
+     "provenance": "closed form; the same hydrostatic-tank reference is used by Adami, Hu & Adams, J. Comput. Phys. 231 (2012) 7057-7075 and by this repository's benchmarks/hydrostatic/run.py. Reference values are evaluated from the closed form at the measured band centres (no table transcription).",
+     "rho0": 1000.0,
+     "g": 9.81,
+     "H": 0.39,
+     "H_lattice": 0.39
+    },
+    "geometry": {
+     "dx": 0.03,
+     "tank_width": 0.99,
+     "depth": 0.39,
+     "bands": 8,
+     "columns": 33,
+     "rows": 13,
+     "lattice_width": 0.99,
+     "lattice_depth": 0.39,
+     "support": 0.078,
+     "band_thickness": 0.04875,
+     "band_thickness_cells": 1.6250000000000002,
+     "gated_bands": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "reference_bias_pct": 0.0,
+     "aligned": true,
+     "allow_misaligned": false,
+     "problems": []
+    },
+    "nondimensional": {
+     "mach_acoustic": 0.13830943568679616,
+     "gravity_wave_courant": 0.38997757628936336,
+     "H_over_dx": 13.000000000000002,
+     "W_over_H": 2.5384615384615383,
+     "acoustic_period_fraction": 0.0195
+    },
+    "gate": {
+     "quantity": "max interior-band |p_SPH - p_ref| / p_ref",
+     "limit_pct": 1.0,
+     "max_band_error_pct": 0.9378797317378893,
+     "mean_band_error_pct": 0.5971722974304198,
+     "worst_band": 2,
+     "worst_band_y": 0.11976557970046997,
+     "gated_bands": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "free_surface_bands": [
+      6,
+      7
+     ],
+     "pass": true
+    },
+    "benchmark": [
+     {
+      "band": 0,
+      "y_m": 0.02978912554681301,
+      "ref_Pa": 3533.6686783857645,
+      "got_Pa": 3507.024169921875,
+      "rel_error_pct": -0.7540182990800678,
+      "within_tolerance": true
+     },
+     {
+      "band": 1,
+      "y_m": 0.07477468997240067,
+      "ref_Pa": 3092.3602913707496,
+      "got_Pa": 3064.018310546875,
+      "rel_error_pct": -0.9165161285689458,
+      "within_tolerance": true
+     },
+     {
+      "band": 2,
+      "y_m": 0.11976557970046997,
+      "ref_Pa": 2650.9996631383897,
+      "got_Pa": 2626.136474609375,
+      "rel_error_pct": -0.9378797317378893,
+      "within_tolerance": true
+     },
+     {
+      "band": 3,
+      "y_m": 0.17377278208732605,
+      "ref_Pa": 2121.1890077233315,
+      "got_Pa": 2114.8603515625,
+      "rel_error_pct": -0.29835418427064536,
+      "within_tolerance": true
+     },
+     {
+      "band": 4,
+      "y_m": 0.21451619267463684,
+      "ref_Pa": 1721.4961498618127,
+      "got_Pa": 1714.7197265625,
+      "rel_error_pct": -0.39363569299046286,
+      "within_tolerance": true
+     },
+     {
+      "band": 5,
+      "y_m": 0.2697647511959076,
+      "ref_Pa": 1179.5077907681466,
+      "got_Pa": 1182.8414306640625,
+      "rel_error_pct": 0.2826297479345078,
+      "within_tolerance": true
+     }
+    ],
+    "profile": [
+     {
+      "band": 0,
+      "y": 0.02978912554681301,
+      "y_low": 0.0,
+      "y_high": 0.04875,
+      "particles": 66,
+      "pressure": 3507.024169921875,
+      "pressure_analytic": 3533.6686783857645,
+      "rel_error_pct": -0.7540182990800678,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 0.7540182990800678,
+      "fluctuation_pct": 8.641397476196289
+     },
+     {
+      "band": 1,
+      "y": 0.07477468997240067,
+      "y_low": 0.04875,
+      "y_high": 0.0975,
+      "particles": 33,
+      "pressure": 3064.018310546875,
+      "pressure_analytic": 3092.3602913707496,
+      "rel_error_pct": -0.9165161285689458,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 0.9165161285689458,
+      "fluctuation_pct": 6.892366886138916
+     },
+     {
+      "band": 2,
+      "y": 0.11976557970046997,
+      "y_low": 0.0975,
+      "y_high": 0.14625,
+      "particles": 66,
+      "pressure": 2626.136474609375,
+      "pressure_analytic": 2650.9996631383897,
+      "rel_error_pct": -0.9378797317378893,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 0.9378797317378893,
+      "fluctuation_pct": 5.9841132164001465
+     },
+     {
+      "band": 3,
+      "y": 0.17377278208732605,
+      "y_low": 0.14625,
+      "y_high": 0.195,
+      "particles": 48,
+      "pressure": 2114.8603515625,
+      "pressure_analytic": 2121.1890077233315,
+      "rel_error_pct": -0.29835418427064536,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 0.29835418427064536,
+      "fluctuation_pct": 14.267404556274414
+     },
+     {
+      "band": 4,
+      "y": 0.21451619267463684,
+      "y_low": 0.195,
+      "y_high": 0.24375000000000002,
+      "particles": 51,
+      "pressure": 1714.7197265625,
+      "pressure_analytic": 1721.4961498618127,
+      "rel_error_pct": -0.39363569299046286,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 0.39363569299046286,
+      "fluctuation_pct": 19.950607299804688
+     },
+     {
+      "band": 5,
+      "y": 0.2697647511959076,
+      "y_low": 0.24375000000000002,
+      "y_high": 0.2925,
+      "particles": 66,
+      "pressure": 1182.8414306640625,
+      "pressure_analytic": 1179.5077907681466,
+      "rel_error_pct": 0.2826297479345078,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 0.2826297479345078,
+      "fluctuation_pct": 34.638458251953125
+     },
+     {
+      "band": 6,
+      "y": 0.3192635476589203,
+      "y_low": 0.2925,
+      "y_high": 0.34125,
+      "particles": 43,
+      "pressure": 663.1382446289062,
+      "pressure_analytic": 693.9245974659921,
+      "rel_error_pct": -4.4365559240165995,
+      "free_surface": true,
+      "gated": false,
+      "abs_error_pct": null,
+      "fluctuation_pct": 68.74639892578125
+     },
+     {
+      "band": 7,
+      "y": 0.36210960149765015,
+      "y_low": 0.34125,
+      "y_high": 0.39,
+      "particles": 56,
+      "pressure": 210.89752197265625,
+      "pressure_analytic": 273.6048093080522,
+      "rel_error_pct": -22.918927300285024,
+      "free_surface": true,
+      "gated": false,
+      "abs_error_pct": null,
+      "fluctuation_pct": 499.6178283691406
+     }
+    ],
+    "max_fluctuation_pct": 499.6178283691406,
+    "wall_seconds": 17.043
+   }
+  },
+  "w_dec_d_lat": {
+   "label": "W declared, D lattice",
+   "geometry": {
+    "dx": 0.03,
+    "tank_width": 1.0,
+    "depth": 0.39,
+    "bands": 8,
+    "columns": 33,
+    "rows": 13,
+    "lattice_width": 0.99,
+    "lattice_depth": 0.39,
+    "support": 0.078,
+    "band_thickness": 0.04875,
+    "band_thickness_cells": 1.6250000000000002,
+    "gated_bands": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "reference_bias_pct": 0.0,
+    "aligned": false,
+    "allow_misaligned": true,
+    "problems": [
+     "tank_width=1 m is not an integer number of cells at dx=0.03 m (tank_width/dx = 33.3333): the lattice is 0.99 m wide, so the fluid/wall gap differs from the declared 1 m by +0.01 m"
+    ]
+   },
+   "record": {
+    "case_id": "CASE-HYDROSTATIC",
+    "kind": "dynamic_time_mean",
+    "config": {
+     "dx": 0.03,
+     "tank_width": 1.0,
+     "depth": 0.39,
+     "fluid_particles": 429,
+     "min_particles": 1000,
+     "particle_requirement_met": false,
+     "columns": 33,
+     "sound_speed": 20.0,
+     "gravity_solver": 9.81,
+     "gravity_reference": 9.81,
+     "seconds": 2.0,
+     "dt": 0.000584966364434045,
+     "steps": 3419,
+     "samples": 342,
+     "sample_every": 5,
+     "average_from": 0.5,
+     "bands": 8,
+     "h": 0.039,
+     "support": 0.078,
+     "device": "cpu"
+    },
+    "reference": {
+     "kind": "analytic",
+     "formula": "p(y) = rho0 * g * (H - y)",
+     "derivation": "hydrostatic equilibrium dp/dy = -rho0 g integrated from p(H)=0",
+     "provenance": "closed form; the same hydrostatic-tank reference is used by Adami, Hu & Adams, J. Comput. Phys. 231 (2012) 7057-7075 and by this repository's benchmarks/hydrostatic/run.py. Reference values are evaluated from the closed form at the measured band centres (no table transcription).",
+     "rho0": 1000.0,
+     "g": 9.81,
+     "H": 0.39,
+     "H_lattice": 0.39
+    },
+    "geometry": {
+     "dx": 0.03,
+     "tank_width": 1.0,
+     "depth": 0.39,
+     "bands": 8,
+     "columns": 33,
+     "rows": 13,
+     "lattice_width": 0.99,
+     "lattice_depth": 0.39,
+     "support": 0.078,
+     "band_thickness": 0.04875,
+     "band_thickness_cells": 1.6250000000000002,
+     "gated_bands": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "reference_bias_pct": 0.0,
+     "aligned": false,
+     "allow_misaligned": true,
+     "problems": [
+      "tank_width=1 m is not an integer number of cells at dx=0.03 m (tank_width/dx = 33.3333): the lattice is 0.99 m wide, so the fluid/wall gap differs from the declared 1 m by +0.01 m"
+     ]
+    },
+    "nondimensional": {
+     "mach_acoustic": 0.13830943568679616,
+     "gravity_wave_courant": 0.38997757628936336,
+     "H_over_dx": 13.000000000000002,
+     "W_over_H": 2.564102564102564,
+     "acoustic_period_fraction": 0.0195
+    },
+    "gate": {
+     "quantity": "max interior-band |p_SPH - p_ref| / p_ref",
+     "limit_pct": 1.0,
+     "max_band_error_pct": 1.625517054127787,
+     "mean_band_error_pct": 1.0139666195807318,
+     "worst_band": 5,
+     "worst_band_y": 0.2678051292896271,
+     "gated_bands": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "free_surface_bands": [
+      6,
+      7
+     ],
+     "pass": false
+    },
+    "benchmark": [
+     {
+      "band": 0,
+      "y_m": 0.029520630836486816,
+      "ref_Pa": 3536.3026114940644,
+      "got_Pa": 3514.013916015625,
+      "rel_error_pct": -0.6302824709060347,
+      "within_tolerance": true
+     },
+     {
+      "band": 1,
+      "y_m": 0.07519106566905975,
+      "ref_Pa": 3088.275645786524,
+      "got_Pa": 3064.9462890625,
+      "rel_error_pct": -0.7554169186890173,
+      "within_tolerance": true
+     },
+     {
+      "band": 2,
+      "y_m": 0.11931498348712921,
+      "ref_Pa": 2655.4200119912625,
+      "got_Pa": 2630.121826171875,
+      "rel_error_pct": -0.9526999760921726,
+      "within_tolerance": true
+     },
+     {
+      "band": 3,
+      "y_m": 0.17432457208633423,
+      "ref_Pa": 2115.7759478330613,
+      "got_Pa": 2100.70703125,
+      "rel_error_pct": -0.712217028390677,
+      "within_tolerance": true
+     },
+     {
+      "band": 4,
+      "y_m": 0.21702459454536438,
+      "ref_Pa": 1696.8887275099755,
+      "got_Pa": 1673.002197265625,
+      "rel_error_pct": -1.4076662692787028,
+      "within_tolerance": false
+     },
+     {
+      "band": 5,
+      "y_m": 0.2678051292896271,
+      "ref_Pa": 1198.7316816687585,
+      "got_Pa": 1179.24609375,
+      "rel_error_pct": -1.625517054127787,
+      "within_tolerance": false
+     }
+    ],
+    "profile": [
+     {
+      "band": 0,
+      "y": 0.029520630836486816,
+      "y_low": 0.0,
+      "y_high": 0.04875,
+      "particles": 66,
+      "pressure": 3514.013916015625,
+      "pressure_analytic": 3536.3026114940644,
+      "rel_error_pct": -0.6302824709060347,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 0.6302824709060347,
+      "fluctuation_pct": 39.58958053588867
+     },
+     {
+      "band": 1,
+      "y": 0.07519106566905975,
+      "y_low": 0.04875,
+      "y_high": 0.0975,
+      "particles": 35,
+      "pressure": 3064.9462890625,
+      "pressure_analytic": 3088.275645786524,
+      "rel_error_pct": -0.7554169186890173,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 0.7554169186890173,
+      "fluctuation_pct": 42.023956298828125
+     },
+     {
+      "band": 2,
+      "y": 0.11931498348712921,
+      "y_low": 0.0975,
+      "y_high": 0.14625,
+      "particles": 64,
+      "pressure": 2630.121826171875,
+      "pressure_analytic": 2655.4200119912625,
+      "rel_error_pct": -0.9526999760921726,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 0.9526999760921726,
+      "fluctuation_pct": 48.80980682373047
+     },
+     {
+      "band": 3,
+      "y": 0.17432457208633423,
+      "y_low": 0.14625,
+      "y_high": 0.195,
+      "particles": 55,
+      "pressure": 2100.70703125,
+      "pressure_analytic": 2115.7759478330613,
+      "rel_error_pct": -0.712217028390677,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 0.712217028390677,
+      "fluctuation_pct": 53.74629592895508
+     },
+     {
+      "band": 4,
+      "y": 0.21702459454536438,
+      "y_low": 0.195,
+      "y_high": 0.24375000000000002,
+      "particles": 46,
+      "pressure": 1673.002197265625,
+      "pressure_analytic": 1696.8887275099755,
+      "rel_error_pct": -1.4076662692787028,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 1.4076662692787028,
+      "fluctuation_pct": 56.4716796875
+     },
+     {
+      "band": 5,
+      "y": 0.2678051292896271,
+      "y_low": 0.24375000000000002,
+      "y_high": 0.2925,
+      "particles": 64,
+      "pressure": 1179.24609375,
+      "pressure_analytic": 1198.7316816687585,
+      "rel_error_pct": -1.625517054127787,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 1.625517054127787,
+      "fluctuation_pct": 62.717445373535156
+     },
+     {
+      "band": 6,
+      "y": 0.3158119320869446,
+      "y_low": 0.2925,
+      "y_high": 0.34125,
+      "particles": 43,
+      "pressure": 669.5072021484375,
+      "pressure_analytic": 727.7849462270738,
+      "rel_error_pct": -8.007550084781942,
+      "free_surface": true,
+      "gated": false,
+      "abs_error_pct": null,
+      "fluctuation_pct": 84.55038452148438
+     },
+     {
+      "band": 7,
+      "y": 0.35856127738952637,
+      "y_low": 0.34125,
+      "y_high": 0.39,
+      "particles": 56,
+      "pressure": 219.708740234375,
+      "pressure_analytic": 308.4138688087465,
+      "rel_error_pct": -28.76171843925063,
+      "free_surface": true,
+      "gated": false,
+      "abs_error_pct": null,
+      "fluctuation_pct": 543.285400390625
+     }
+    ],
+    "max_fluctuation_pct": 543.285400390625,
+    "wall_seconds": 17.572
+   }
+  },
+  "w_lat_d_dec": {
+   "label": "W lattice, D declared",
+   "geometry": {
+    "dx": 0.03,
+    "tank_width": 0.99,
+    "depth": 0.4,
+    "bands": 8,
+    "columns": 33,
+    "rows": 13,
+    "lattice_width": 0.99,
+    "lattice_depth": 0.39,
+    "support": 0.078,
+    "band_thickness": 0.05,
+    "band_thickness_cells": 1.6666666666666667,
+    "gated_bands": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "reference_bias_pct": -2.500000000000002,
+    "aligned": false,
+    "allow_misaligned": true,
+    "problems": [
+     "depth=0.4 m is not an integer number of cells at dx=0.03 m (depth/dx = 13.3333): the lattice tops out at 0.39 m while the reference keeps H=0.4 m, which reads every band low by 2.50 %; use depth=0.39 m (or the next cell top 0.42 m)"
+    ]
+   },
+   "record": {
+    "case_id": "CASE-HYDROSTATIC",
+    "kind": "dynamic_time_mean",
+    "config": {
+     "dx": 0.03,
+     "tank_width": 0.99,
+     "depth": 0.4,
+     "fluid_particles": 429,
+     "min_particles": 1000,
+     "particle_requirement_met": false,
+     "columns": 33,
+     "sound_speed": 20.0,
+     "gravity_solver": 9.81,
+     "gravity_reference": 9.81,
+     "seconds": 2.0,
+     "dt": 0.000584966364434045,
+     "steps": 3419,
+     "samples": 342,
+     "sample_every": 5,
+     "average_from": 0.5,
+     "bands": 8,
+     "h": 0.039,
+     "support": 0.078,
+     "device": "cpu"
+    },
+    "reference": {
+     "kind": "analytic",
+     "formula": "p(y) = rho0 * g * (H - y)",
+     "derivation": "hydrostatic equilibrium dp/dy = -rho0 g integrated from p(H)=0",
+     "provenance": "closed form; the same hydrostatic-tank reference is used by Adami, Hu & Adams, J. Comput. Phys. 231 (2012) 7057-7075 and by this repository's benchmarks/hydrostatic/run.py. Reference values are evaluated from the closed form at the measured band centres (no table transcription).",
+     "rho0": 1000.0,
+     "g": 9.81,
+     "H": 0.4,
+     "H_lattice": 0.39
+    },
+    "geometry": {
+     "dx": 0.03,
+     "tank_width": 0.99,
+     "depth": 0.4,
+     "bands": 8,
+     "columns": 33,
+     "rows": 13,
+     "lattice_width": 0.99,
+     "lattice_depth": 0.39,
+     "support": 0.078,
+     "band_thickness": 0.05,
+     "band_thickness_cells": 1.6666666666666667,
+     "gated_bands": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "reference_bias_pct": -2.500000000000002,
+     "aligned": false,
+     "allow_misaligned": true,
+     "problems": [
+      "depth=0.4 m is not an integer number of cells at dx=0.03 m (depth/dx = 13.3333): the lattice tops out at 0.39 m while the reference keeps H=0.4 m, which reads every band low by 2.50 %; use depth=0.39 m (or the next cell top 0.42 m)"
+     ]
+    },
+    "nondimensional": {
+     "mach_acoustic": 0.14007141035914503,
+     "gravity_wave_courant": 0.38997757628936336,
+     "H_over_dx": 13.333333333333334,
+     "W_over_H": 2.4749999999999996,
+     "acoustic_period_fraction": 0.02
+    },
+    "gate": {
+     "quantity": "max interior-band |p_SPH - p_ref| / p_ref",
+     "limit_pct": 1.0,
+     "max_band_error_pct": 7.329496683438379,
+     "mean_band_error_pct": 4.79458853407888,
+     "worst_band": 5,
+     "worst_band_y": 0.2698267996311188,
+     "gated_bands": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "free_surface_bands": [
+      6,
+      7
+     ],
+     "pass": false
+    },
+    "benchmark": [
+     {
+      "band": 0,
+      "y_m": 0.029796380549669266,
+      "ref_Pa": 3631.6975068077445,
+      "got_Pa": 3508.921875,
+      "rel_error_pct": -3.380667899173796,
+      "within_tolerance": false
+     },
+     {
+      "band": 1,
+      "y_m": 0.07479206472635269,
+      "ref_Pa": 3190.28984503448,
+      "got_Pa": 3065.871826171875,
+      "rel_error_pct": -3.899897028361083,
+      "within_tolerance": false
+     },
+     {
+      "band": 2,
+      "y_m": 0.11979374289512634,
+      "ref_Pa": 2748.8233821988106,
+      "got_Pa": 2627.6103515625,
+      "rel_error_pct": -4.409633278779486,
+      "within_tolerance": false
+     },
+     {
+      "band": 3,
+      "y_m": 0.17979004979133606,
+      "ref_Pa": 2160.2596115469933,
+      "got_Pa": 2042.3316650390625,
+      "rel_error_pct": -5.458971036517266,
+      "within_tolerance": false
+     },
+     {
+      "band": 4,
+      "y_m": 0.22484511137008667,
+      "ref_Pa": 1718.26945745945,
+      "got_Pa": 1644.5751953125,
+      "rel_error_pct": -4.288865278203266,
+      "within_tolerance": false
+     },
+     {
+      "band": 5,
+      "y_m": 0.2698267996311188,
+      "ref_Pa": 1276.999095618725,
+      "got_Pa": 1183.4014892578125,
+      "rel_error_pct": -7.329496683438379,
+      "within_tolerance": false
+     }
+    ],
+    "profile": [
+     {
+      "band": 0,
+      "y": 0.029796380549669266,
+      "y_low": 0.0,
+      "y_high": 0.05,
+      "particles": 66,
+      "pressure": 3508.921875,
+      "pressure_analytic": 3631.6975068077445,
+      "rel_error_pct": -3.380667899173796,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 3.380667899173796,
+      "fluctuation_pct": 8.374715805053711
+     },
+     {
+      "band": 1,
+      "y": 0.07479206472635269,
+      "y_low": 0.05,
+      "y_high": 0.1,
+      "particles": 33,
+      "pressure": 3065.871826171875,
+      "pressure_analytic": 3190.28984503448,
+      "rel_error_pct": -3.899897028361083,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 3.899897028361083,
+      "fluctuation_pct": 6.490899085998535
+     },
+     {
+      "band": 2,
+      "y": 0.11979374289512634,
+      "y_low": 0.1,
+      "y_high": 0.15000000000000002,
+      "particles": 66,
+      "pressure": 2627.6103515625,
+      "pressure_analytic": 2748.8233821988106,
+      "rel_error_pct": -4.409633278779486,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 4.409633278779486,
+      "fluctuation_pct": 5.267059326171875
+     },
+     {
+      "band": 3,
+      "y": 0.17979004979133606,
+      "y_low": 0.15000000000000002,
+      "y_high": 0.2,
+      "particles": 66,
+      "pressure": 2042.3316650390625,
+      "pressure_analytic": 2160.2596115469933,
+      "rel_error_pct": -5.458971036517266,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 5.458971036517266,
+      "fluctuation_pct": 15.00389289855957
+     },
+     {
+      "band": 4,
+      "y": 0.22484511137008667,
+      "y_low": 0.2,
+      "y_high": 0.25,
+      "particles": 33,
+      "pressure": 1644.5751953125,
+      "pressure_analytic": 1718.26945745945,
+      "rel_error_pct": -4.288865278203266,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 4.288865278203266,
+      "fluctuation_pct": 20.20848274230957
+     },
+     {
+      "band": 5,
+      "y": 0.2698267996311188,
+      "y_low": 0.25,
+      "y_high": 0.30000000000000004,
+      "particles": 66,
+      "pressure": 1183.4014892578125,
+      "pressure_analytic": 1276.999095618725,
+      "rel_error_pct": -7.329496683438379,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 7.329496683438379,
+      "fluctuation_pct": 35.61586380004883
+     },
+     {
+      "band": 6,
+      "y": 0.3220822215080261,
+      "y_low": 0.30000000000000004,
+      "y_high": 0.35000000000000003,
+      "particles": 48,
+      "pressure": 664.3685913085938,
+      "pressure_analytic": 764.373407006264,
+      "rel_error_pct": -13.083241094080956,
+      "free_surface": true,
+      "gated": false,
+      "abs_error_pct": null,
+      "fluctuation_pct": 69.97020721435547
+     },
+     {
+      "band": 7,
+      "y": 0.36381736397743225,
+      "y_low": 0.35000000000000003,
+      "y_high": 0.4,
+      "particles": 51,
+      "pressure": 165.9186248779297,
+      "pressure_analytic": 354.95165938138985,
+      "rel_error_pct": -53.25599402265288,
+      "free_surface": true,
+      "gated": false,
+      "abs_error_pct": null,
+      "fluctuation_pct": 569.9701538085938
+     }
+    ],
+    "max_fluctuation_pct": 569.9701538085938,
+    "wall_seconds": 19.944
+   }
+  },
+  "w_dec_d_dec": {
+   "label": "W declared, D declared",
+   "geometry": {
+    "dx": 0.03,
+    "tank_width": 1.0,
+    "depth": 0.4,
+    "bands": 8,
+    "columns": 33,
+    "rows": 13,
+    "lattice_width": 0.99,
+    "lattice_depth": 0.39,
+    "support": 0.078,
+    "band_thickness": 0.05,
+    "band_thickness_cells": 1.6666666666666667,
+    "gated_bands": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "reference_bias_pct": -2.500000000000002,
+    "aligned": false,
+    "allow_misaligned": true,
+    "problems": [
+     "depth=0.4 m is not an integer number of cells at dx=0.03 m (depth/dx = 13.3333): the lattice tops out at 0.39 m while the reference keeps H=0.4 m, which reads every band low by 2.50 %; use depth=0.39 m (or the next cell top 0.42 m)",
+     "tank_width=1 m is not an integer number of cells at dx=0.03 m (tank_width/dx = 33.3333): the lattice is 0.99 m wide, so the fluid/wall gap differs from the declared 1 m by +0.01 m"
+    ]
+   },
+   "record": {
+    "case_id": "CASE-HYDROSTATIC",
+    "kind": "dynamic_time_mean",
+    "config": {
+     "dx": 0.03,
+     "tank_width": 1.0,
+     "depth": 0.4,
+     "fluid_particles": 429,
+     "min_particles": 1000,
+     "particle_requirement_met": false,
+     "columns": 33,
+     "sound_speed": 20.0,
+     "gravity_solver": 9.81,
+     "gravity_reference": 9.81,
+     "seconds": 2.0,
+     "dt": 0.000584966364434045,
+     "steps": 3419,
+     "samples": 342,
+     "sample_every": 5,
+     "average_from": 0.5,
+     "bands": 8,
+     "h": 0.039,
+     "support": 0.078,
+     "device": "cpu"
+    },
+    "reference": {
+     "kind": "analytic",
+     "formula": "p(y) = rho0 * g * (H - y)",
+     "derivation": "hydrostatic equilibrium dp/dy = -rho0 g integrated from p(H)=0",
+     "provenance": "closed form; the same hydrostatic-tank reference is used by Adami, Hu & Adams, J. Comput. Phys. 231 (2012) 7057-7075 and by this repository's benchmarks/hydrostatic/run.py. Reference values are evaluated from the closed form at the measured band centres (no table transcription).",
+     "rho0": 1000.0,
+     "g": 9.81,
+     "H": 0.4,
+     "H_lattice": 0.39
+    },
+    "geometry": {
+     "dx": 0.03,
+     "tank_width": 1.0,
+     "depth": 0.4,
+     "bands": 8,
+     "columns": 33,
+     "rows": 13,
+     "lattice_width": 0.99,
+     "lattice_depth": 0.39,
+     "support": 0.078,
+     "band_thickness": 0.05,
+     "band_thickness_cells": 1.6666666666666667,
+     "gated_bands": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "reference_bias_pct": -2.500000000000002,
+     "aligned": false,
+     "allow_misaligned": true,
+     "problems": [
+      "depth=0.4 m is not an integer number of cells at dx=0.03 m (depth/dx = 13.3333): the lattice tops out at 0.39 m while the reference keeps H=0.4 m, which reads every band low by 2.50 %; use depth=0.39 m (or the next cell top 0.42 m)",
+      "tank_width=1 m is not an integer number of cells at dx=0.03 m (tank_width/dx = 33.3333): the lattice is 0.99 m wide, so the fluid/wall gap differs from the declared 1 m by +0.01 m"
+     ]
+    },
+    "nondimensional": {
+     "mach_acoustic": 0.14007141035914503,
+     "gravity_wave_courant": 0.38997757628936336,
+     "H_over_dx": 13.333333333333334,
+     "W_over_H": 2.5,
+     "acoustic_period_fraction": 0.02
+    },
+    "gate": {
+     "quantity": "max interior-band |p_SPH - p_ref| / p_ref",
+     "limit_pct": 1.0,
+     "max_band_error_pct": 8.671192381802642,
+     "mean_band_error_pct": 5.455968940337653,
+     "worst_band": 5,
+     "worst_band_y": 0.27029478549957275,
+     "gated_bands": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "free_surface_bands": [
+      6,
+      7
+     ],
+     "pass": false
+    },
+    "benchmark": [
+     {
+      "band": 0,
+      "y_m": 0.029527921229600906,
+      "ref_Pa": 3634.331092737615,
+      "got_Pa": 3513.46533203125,
+      "rel_error_pct": -3.3256672994897976,
+      "within_tolerance": false
+     },
+     {
+      "band": 1,
+      "y_m": 0.07653182744979858,
+      "ref_Pa": 3173.222772717476,
+      "got_Pa": 3052.2705078125,
+      "rel_error_pct": -3.8116537529256136,
+      "within_tolerance": false
+     },
+     {
+      "band": 2,
+      "y_m": 0.11997605860233307,
+      "ref_Pa": 2747.0348651111126,
+      "got_Pa": 2622.82275390625,
+      "rel_error_pct": -4.5216794581833035,
+      "within_tolerance": false
+     },
+     {
+      "band": 3,
+      "y_m": 0.1779574304819107,
+      "ref_Pa": 2178.237606972456,
+      "got_Pa": 2047.888671875,
+      "rel_error_pct": -5.984146756084551,
+      "within_tolerance": false
+     },
+     {
+      "band": 4,
+      "y_m": 0.22777780890464783,
+      "ref_Pa": 1689.499694645405,
+      "got_Pa": 1581.0089111328125,
+      "rel_error_pct": -6.421473993540008,
+      "within_tolerance": false
+     },
+     {
+      "band": 5,
+      "y_m": 0.27029478549957275,
+      "ref_Pa": 1272.4081542491915,
+      "got_Pa": 1162.0751953125,
+      "rel_error_pct": -8.671192381802642,
+      "within_tolerance": false
+     }
+    ],
+    "profile": [
+     {
+      "band": 0,
+      "y": 0.029527921229600906,
+      "y_low": 0.0,
+      "y_high": 0.05,
+      "particles": 66,
+      "pressure": 3513.46533203125,
+      "pressure_analytic": 3634.331092737615,
+      "rel_error_pct": -3.3256672994897976,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 3.3256672994897976,
+      "fluctuation_pct": 39.6227912902832
+     },
+     {
+      "band": 1,
+      "y": 0.07653182744979858,
+      "y_low": 0.05,
+      "y_high": 0.1,
+      "particles": 37,
+      "pressure": 3052.2705078125,
+      "pressure_analytic": 3173.222772717476,
+      "rel_error_pct": -3.8116537529256136,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 3.8116537529256136,
+      "fluctuation_pct": 41.745338439941406
+     },
+     {
+      "band": 2,
+      "y": 0.11997605860233307,
+      "y_low": 0.1,
+      "y_high": 0.15000000000000002,
+      "particles": 62,
+      "pressure": 2622.82275390625,
+      "pressure_analytic": 2747.0348651111126,
+      "rel_error_pct": -4.5216794581833035,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 4.5216794581833035,
+      "fluctuation_pct": 48.44174575805664
+     },
+     {
+      "band": 3,
+      "y": 0.1779574304819107,
+      "y_low": 0.15000000000000002,
+      "y_high": 0.2,
+      "particles": 66,
+      "pressure": 2047.888671875,
+      "pressure_analytic": 2178.237606972456,
+      "rel_error_pct": -5.984146756084551,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 5.984146756084551,
+      "fluctuation_pct": 53.87141799926758
+     },
+     {
+      "band": 4,
+      "y": 0.22777780890464783,
+      "y_low": 0.2,
+      "y_high": 0.25,
+      "particles": 42,
+      "pressure": 1581.0089111328125,
+      "pressure_analytic": 1689.499694645405,
+      "rel_error_pct": -6.421473993540008,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 6.421473993540008,
+      "fluctuation_pct": 61.11273193359375
+     },
+     {
+      "band": 5,
+      "y": 0.27029478549957275,
+      "y_low": 0.25,
+      "y_high": 0.30000000000000004,
+      "particles": 57,
+      "pressure": 1162.0751953125,
+      "pressure_analytic": 1272.4081542491915,
+      "rel_error_pct": -8.671192381802642,
+      "free_surface": false,
+      "gated": true,
+      "abs_error_pct": 8.671192381802642,
+      "fluctuation_pct": 62.497467041015625
+     },
+     {
+      "band": 6,
+      "y": 0.3199702799320221,
+      "y_low": 0.30000000000000004,
+      "y_high": 0.35000000000000003,
+      "particles": 50,
+      "pressure": 663.7426147460938,
+      "pressure_analytic": 785.0915538668635,
+      "rel_error_pct": -15.45666088535557,
+      "free_surface": true,
+      "gated": false,
+      "abs_error_pct": null,
+      "fluctuation_pct": 77.0443115234375
+     },
+     {
+      "band": 7,
+      "y": 0.3605968952178955,
+      "y_low": 0.35000000000000003,
+      "y_high": 0.4,
+      "particles": 49,
+      "pressure": 164.65896606445312,
+      "pressure_analytic": 386.5444579124453,
+      "rel_error_pct": -57.402321338739924,
+      "free_surface": true,
+      "gated": false,
+      "abs_error_pct": null,
+      "fluctuation_pct": 554.410888671875
+     }
+    ],
+    "max_fluctuation_pct": 554.410888671875,
+    "wall_seconds": 19.182
+   }
+  }
+ },
+ "table": [
+  {
+   "name": "w_lat_d_lat",
+   "label": "W lattice, D lattice",
+   "tank_width": 0.99,
+   "depth": 0.39,
+   "lattice_width": 0.99,
+   "lattice_depth": 0.39,
+   "columns": 33,
+   "rows": 13,
+   "fluid_particles": 429,
+   "aligned": true,
+   "reference_bias_pct": 0.0,
+   "max_band_error_pct": 0.9378797317378893,
+   "mean_band_error_pct": 0.5971722974304198,
+   "worst_band": 2,
+   "max_fluctuation_pct": 499.6178283691406,
+   "pass": true,
+   "gated_bands": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "name": "w_dec_d_lat",
+   "label": "W declared, D lattice",
+   "tank_width": 1.0,
+   "depth": 0.39,
+   "lattice_width": 0.99,
+   "lattice_depth": 0.39,
+   "columns": 33,
+   "rows": 13,
+   "fluid_particles": 429,
+   "aligned": false,
+   "reference_bias_pct": 0.0,
+   "max_band_error_pct": 1.625517054127787,
+   "mean_band_error_pct": 1.0139666195807318,
+   "worst_band": 5,
+   "max_fluctuation_pct": 543.285400390625,
+   "pass": false,
+   "gated_bands": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "name": "w_lat_d_dec",
+   "label": "W lattice, D declared",
+   "tank_width": 0.99,
+   "depth": 0.4,
+   "lattice_width": 0.99,
+   "lattice_depth": 0.39,
+   "columns": 33,
+   "rows": 13,
+   "fluid_particles": 429,
+   "aligned": false,
+   "reference_bias_pct": -2.500000000000002,
+   "max_band_error_pct": 7.329496683438379,
+   "mean_band_error_pct": 4.79458853407888,
+   "worst_band": 5,
+   "max_fluctuation_pct": 569.9701538085938,
+   "pass": false,
+   "gated_bands": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "name": "w_dec_d_dec",
+   "label": "W declared, D declared",
+   "tank_width": 1.0,
+   "depth": 0.4,
+   "lattice_width": 0.99,
+   "lattice_depth": 0.39,
+   "columns": 33,
+   "rows": 13,
+   "fluid_particles": 429,
+   "aligned": false,
+   "reference_bias_pct": -2.500000000000002,
+   "max_band_error_pct": 8.671192381802642,
+   "mean_band_error_pct": 5.455968940337653,
+   "worst_band": 5,
+   "max_fluctuation_pct": 554.410888671875,
+   "pass": false,
+   "gated_bands": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ]
+  }
+ ]
+}
