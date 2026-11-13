@@ -107,6 +107,7 @@ class KleefsmanConfig(Config):
 class KleefsmanRun:
     times: list[float] = field(default_factory=list)
     height: list[float] = field(default_factory=list)      # at the probe
+    column: list[float] = field(default_factory=list)      # mass-based slab level
     front: list[float] = field(default_factory=list)       # max fluid x
     mass_error: float = 0.0
     peak_height: float = float("nan")
@@ -218,6 +219,32 @@ def water_height_at(pos: torch.Tensor, cfg: KleefsmanConfig,
     return float(ys[-k:].mean())
 
 
+def column_level(positions: torch.Tensor, cfg: "KleefsmanConfig",
+                 x: float | None = None,
+                 halfwidth: float | None = None) -> float:
+    """Mass-based water depth over a vertical slab at the probe station [m].
+
+    ``h = sum(V_p) / (2 * halfwidth)`` with the 2-D particle volume ``V_p =
+    dx^2`` (unit depth).  This is the *mean water depth* of the slab, i.e. the
+    quantity a conductivity/capacitance wave probe approximates, and it is
+    **invariant to how the fluid inside the slab is redistributed vertically**:
+    a ballistic droplet lifted out of the surge changes the top-particle
+    estimator by tens of percent but leaves this number unchanged.  That is why
+    it is the estimator to use when a *level* (not a spray envelope) is wanted;
+    ``water_height_at`` remains the free-surface position and is kept for
+    regression against earlier rounds.
+    """
+    if positions.numel() == 0:
+        return 0.0
+    x = cfg.probe_x() if x is None else x
+    halfwidth = (cfg.probe_halfwidth * cfg.dx) if halfwidth is None else halfwidth
+    if halfwidth <= 0.0:
+        return 0.0
+    slab = (positions[:, 0] - x).abs() <= halfwidth
+    count = float(slab.sum().item())
+    return count * cfg.dx * cfg.dx / (2.0 * halfwidth)
+
+
 def _peak_metrics(times: list[float], height: list[float],
                   threshold: float) -> tuple[float, float, float]:
     """Return ``(peak_height, peak_time, arrival_time)``.
@@ -259,7 +286,7 @@ def run_case(cfg: KleefsmanConfig, resume: dict | None = None,
         positions, mass = make_water(cfg, device)
         velocity = torch.zeros_like(positions)
         initial_mass = float(mass.sum())
-        carried = {"times": [], "height": [], "front": [], "max_speed": 0.0,
+        carried = {"times": [], "height": [], "column": [], "front": [], "max_speed": 0.0,
                    "compression": 0.0, "escaped": 0, "dt": cfg.dt, "elapsed": 0.0}
     else:
         positions = resume["positions"].clone()
@@ -267,7 +294,7 @@ def run_case(cfg: KleefsmanConfig, resume: dict | None = None,
         mass = resume["mass"]
         initial_mass = float(resume["initial_mass"])
         carried = {k: (list(resume[k]) if isinstance(resume[k], list) else resume[k])
-                   for k in ("times", "height", "front", "max_speed", "compression",
+                   for k in ("times", "height", "column", "front", "max_speed", "compression",
                              "escaped", "dt", "elapsed")}
     wall = torch.cat((wall_lattice(cfg, device, top=top),
                       obstacle_lattice(cfg, device)), dim=0)
@@ -281,6 +308,7 @@ def run_case(cfg: KleefsmanConfig, resume: dict | None = None,
     elapsed = carried["elapsed"]
     run.times = list(carried["times"])
     run.height = list(carried["height"])
+    run.column = list(carried["column"] if isinstance(carried["column"], list) else [])
     run.front = list(carried["front"])
     run.max_speed = carried["max_speed"]
     run.dt_min = run.dt_max = dt
@@ -304,6 +332,7 @@ def run_case(cfg: KleefsmanConfig, resume: dict | None = None,
         if (step % cfg.output_every == 0 and not resume_first) or elapsed >= cfg.t_end:
             run.times.append(elapsed)
             run.height.append(water_height_at(positions, cfg))
+            run.column.append(column_level(positions, cfg))
             run.front.append(float(positions[:, 0].max()) if positions.numel() else 0.0)
         if elapsed >= cfg.t_end:
             break
@@ -330,7 +359,8 @@ def run_case(cfg: KleefsmanConfig, resume: dict | None = None,
     run.state = {
         "positions": positions.detach().clone(), "velocity": velocity.detach().clone(),
         "mass": mass, "initial_mass": initial_mass, "dt": dt, "elapsed": elapsed,
-        "times": run.times, "height": run.height, "front": run.front,
+        "times": run.times, "height": run.height, "column": run.column,
+        "front": run.front,
         "max_speed": run.max_speed, "compression": float(compression),
         "escaped": escaped, "steps_done": run.steps_taken,
         "finished": run.finished,
@@ -339,6 +369,7 @@ def run_case(cfg: KleefsmanConfig, resume: dict | None = None,
 
 
 __all__ = [
-    "KleefsmanConfig", "KleefsmanRun", "make_water", "obstacle_lattice",
+    "KleefsmanConfig", "KleefsmanRun", "column_level", "make_water",
+    "obstacle_lattice",
     "run_case", "validate_case", "water_height_at",
 ]
