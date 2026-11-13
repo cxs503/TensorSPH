@@ -1,0 +1,37 @@
+{
+ "src/tensorsph/oss_projection.py": {
+  "sha256": "fec438dcd1ccf02bc296c97ca67e5701a5c2a925355ba7dd51513d818c1aea0e",
+  "bytes": 23115,
+  "tracked_in_subject": false
+ },
+ "benchmarks/xval_projection_laplace/run.py": {
+  "sha256": "04b36ff829c82d8dddab0eea4d36bd2222c0200b75333baf1be6535546beaabc",
+  "bytes": 10535,
+  "tracked_in_subject": false
+ },
+ "benchmarks/xval_projection_laplace/results/xval_projection_laplace.json": {
+  "sha256": "74a816cc3c0f5696a864c56afc8d9e54899161cad17df896d405a8a3aaf619e8",
+  "bytes": 9722,
+  "tracked_in_subject": false
+ },
+ "benchmarks/xval_projection_laplace/results/xval_projection_laplace.png": {
+  "sha256": "dd0586d824d597f573810f6f3527a942794de0a524160f82611b74712e6b720f",
+  "bytes": 105174,
+  "tracked_in_subject": false
+ },
+ "tests/test_xval_projection_laplace.py": {
+  "sha256": "7407d77ed5b9390b1d6e159023f603e3b79b62f4154affdcc90bd46e1a231262",
+  "bytes": 4466,
+  "tracked_in_subject": false
+ },
+ "docs/xval_projection_laplace_oss.md": {
+  "sha256": "a57d0eae91e9930c85fd530c7f0dbed0a8b5ec7bfa6df9b7f94df0744fe77577",
+  "bytes": 11330,
+  "tracked_in_subject": false
+ },
+ "src/tensorsph/__main__.py": {
+  "sha256": "7f1a51719588d430cd26d9e8b587211b236c16b173cd56cd057c985937cbeab9",
+  "bytes": 6067,
+  "tracked_in_subject": true
+ }
+}
