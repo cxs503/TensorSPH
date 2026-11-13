@@ -1,0 +1,8 @@
+{
+ "anchor_slug": "XVAL-SPH-FSI2-BENCHMARK-AND-FORCE-FROM-FLUID",
+ "rows": [],
+ "n_rows": 0,
+ "cases_table_total": 54,
+ "fsi_like_rows": 0,
+ "note": "no registered referee case for this anchor; criterion is the mission's own predeclared 15 %/3 % (run.py docstring) == owner accuracy standard"
+}
