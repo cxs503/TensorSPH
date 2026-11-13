@@ -1,19 +1,42 @@
 """Mach-limited Riemann dissipation for compressible SPH.
 
-This module implements a Mach-limited artificial viscosity for SPH,
-following the approach of Ji et al. (2019) MNRAS 489:1052.
+Physical idea (Ji et al. 2019, MNRAS 489:1052; Godunov-SPH after Parshikov et
+al. 2000 / Inutsuka 2002): the numerical dissipation that an SPH pair receives
+should scale with the *local Mach number of that pair*, not be a fixed
+fraction of the acoustic scale everywhere.  Then
 
-The key idea: scale the artificial viscosity coefficient by the local
-Mach number, so that:
-- Full viscosity at shocks (M >= 1)
-- Reduced viscosity in smooth subsonic regions (M << 1)
+- a shock (M_ij = O(1)) gets the full acoustic dissipation it needs, and
+- a smooth subsonic field (M_ij << 1) is left essentially undamped,
+- a uniformly translating gas (M_ij = 0) gets no dissipation at all,
 
-This is achieved by blending between the standard Monaghan viscosity
-and a Riemann-based dissipation term, with the blend factor determined
-by the local Mach number.
+whereas classic Monaghan artificial viscosity damps a smooth low-Mach field by
+nu ~ alpha c h / 8 regardless of the flow.
 
-Reference: Sod (1978) JCP 27:1-31, doi:10.1016/0021-9991(78)90023-2
+Two implementation points that this module gets right and round 1 did not (see
+docs/xval_sph_mach_limited_riemann_dissipation.md, section 6):
+
+1. The particles are *advected* (Lagrangian SPH).  Integrating the
+   continuity/momentum pair on frozen positions makes the run collapse within
+   ~16 steps.
+2. The Mach number used by the limiter is the pair *relative* normal Mach
+   number M_ij = max(-(v_i - v_j).e_ij, 0) / c_bar.  A single-particle |v|/c is
+   zero in the Sod initial state, i.e. it switches dissipation off exactly where
+   the shock has to be captured.
+
+Dissipation models available in ``RiemannDissipationConfig``:
+
+- ``scheme="monaghan"`` (default): Pi = (-alpha_eff c_bar mu + beta mu^2)/rho_bar
+- ``scheme="riemann"``: acoustic interface pressure
+  p* = p_bar - rho_bar c_bar u_rel / 2 (Godunov-SPH)
+
+with ``mach_limit_mode`` = "relative" (default) | "absolute" (legacy).
+
+Verification: Sod (1978) shock tube against the exact Riemann solution
+(``run_sod_riemann``), and the damping of a linear standing acoustic wave in a
+closed box (``run_acoustic_pulse``), which is the diagnostic that separates a
+Mach-limited operator from an ordinary artificial viscosity.
 """
+
 from __future__ import annotations
 
 import math
@@ -38,6 +61,7 @@ __all__ = [
     "hllc_star_pressure",
     "roe_average",
     "evaluate_metrics",
+    "run_acoustic_pulse",
 ]
 
 
@@ -48,9 +72,11 @@ class RiemannDissipationConfig:
     h_factor: float = 2.5
     alpha_riemann: float = 1.0
     mach_limit: bool = True
+    mach_limit_mode: str = "relative"   # "relative" (pair: normal rel. Mach) | "absolute" (round-1 legacy)
     mach_floor: float = 0.01
+    scheme: str = "monaghan"            # "monaghan" (alpha AV) | "riemann" (acoustic Godunov-SPH pressure)
     alpha_av: float = 1.0
-    beta_av: float = 0.0
+    beta_av: float = 2.0                # Monaghan quadratic term (required for strong shocks)
     eta2: float = 0.01
     alpha_u: float = 0.0
     cfl: float = 0.15
@@ -181,19 +207,40 @@ def _derivs_riemann(x, rho, v, e, m, cfg):
     cs_bar = 0.5 * (CS[i] + CS[j])
     rho_bar = 0.5 * (RHO[i] + RHO[j])
 
-    # Mach-limited viscosity coefficient
-    if cfg.mach_limit:
-        # Scale alpha by min(M_i, M_j, 1)
+    # --- Mach limiter ---------------------------------------------------
+    # M_ij is the compressive *relative* normal Mach number of the pair:
+    # a uniformly translating gas (any speed) gives M_ij = 0 -> no numerical
+    # dissipation, a shock front gives M_ij = O(1) -> dissipation saturates at
+    # the full acoustic value.  (Round 1 used the single-particle |v|/c, which
+    # is 0 in the Sod initial state and therefore switched viscosity *off*
+    # exactly where the shock has to be captured -- one of the two reasons the
+    # round-1 run died; see the report, section 4.)
+    u_rel = vdotr / np.maximum(r, 1e-30)          # < 0 for an approaching pair
+    mach_pair = np.maximum(-u_rel, 0.0) / np.maximum(cs_bar, 1e-30)
+    if not cfg.mach_limit:
+        mach_factor = np.ones_like(mach_pair)
+    elif cfg.mach_limit_mode == "absolute":
         mach_factor = np.minimum(np.minimum(MACH[i], MACH[j]), 1.0)
         mach_factor = np.maximum(mach_factor, cfg.mach_floor)
-        alpha_eff = cfg.alpha_av * mach_factor
-    else:
-        alpha_eff = cfg.alpha_av
+    else:                                          # "relative"
+        mach_factor = np.minimum(mach_pair, 1.0)
+        mach_factor = np.maximum(mach_factor, cfg.mach_floor)
+    alpha_eff = cfg.alpha_av * mach_factor
 
-    # Monaghan artificial viscosity with Mach-limited alpha
-    Pi = np.where(vdotr < 0.0,
-                  (-alpha_eff * cs_bar * mu + cfg.beta_av * mu * mu) / np.maximum(rho_bar, 1e-12),
-                  0.0)
+    if cfg.scheme == "riemann":
+        # Acoustic (Godunov-SPH) interface pressure, p* = pbar - rho_bar*c_bar*u_rel/2.
+        # The dissipative part is a pressure: 0.5*rho_bar*c_bar*|u_rel|, i.e.
+        # Q-units (-0.5*c_bar*u_rel/rho_bar).  No alpha is involved; the pair
+        # Mach number is the only limiter.
+        Pi = np.where(vdotr < 0.0,
+                      -0.5 * mach_factor * cs_bar * u_rel / np.maximum(rho_bar, 1e-12),
+                      0.0)
+    else:
+        # Monaghan artificial viscosity (linear + quadratic), Mach-limited alpha
+        Pi = np.where(vdotr < 0.0,
+                      (-alpha_eff * cs_bar * mu + cfg.beta_av * mu * mu)
+                      / np.maximum(rho_bar, 1e-12),
+                      0.0)
 
     # Pressure term (arithmetic mean form)
     Q = (P[i] + P[j]) / (np.maximum(RHO[i], 1e-12) * np.maximum(RHO[j], 1e-12)) + Pi
@@ -253,44 +300,53 @@ def run_sod_riemann(cfg, output_times=None):
     total_energy_0 = np.sum(m * (e + 0.5 * u ** 2))
     dissipation_stats = []
 
+    dt_min = float("inf")
+    mach_pair_max = 0.0
     while t < cfg.t_end * (1.0 - 1e-12) and step < cfg.max_steps:
-        drho, acc, de, p, cs = _derivs_riemann(x, rho, u, e, m, cfg)
-
-        dt = _timestep_riemann(cfg, rho, u, e)
-        dt = min(dt, cfg.t_end - t)
+        dt = min(_timestep_riemann(cfg, rho, u, e), cfg.t_end - t)
         if dt < 1e-14:
             break
+        dt_min = min(dt_min, dt)
 
-        # RK2
-        rho_half = rho + 0.5 * dt * drho
+        # RK2 (midpoint).  The particles are advected with the flow: SPH is a
+        # Lagrangian method, so freezing x makes the continuity/momentum pair
+        # non-conservative and the run collapses within ~16 steps (round-1
+        # honest-FAIL, reproduced in the report).
+        drho, acc, de, _, _ = _derivs_riemann(x, rho, u, e, m, cfg)
+        rho_half = np.maximum(rho + 0.5 * dt * drho, 1e-10)
         u_half = u + 0.5 * dt * acc
-        e_half = e + 0.5 * dt * de
-        rho_half = np.maximum(rho_half, 1e-10)
-        e_half = np.maximum(e_half, 1e-12)
+        e_half = np.maximum(e + 0.5 * dt * de, 1e-12)
+        x_half = x + 0.5 * dt * u_half
 
-        drho2, acc2, de2, _, _ = _derivs_riemann(x, rho_half, u_half, e_half, m, cfg)
-        rho = rho + dt * drho2
+        drho2, acc2, de2, _, _ = _derivs_riemann(x_half, rho_half, u_half, e_half, m, cfg)
+        rho = np.maximum(rho + dt * drho2, 1e-10)
         u = u + dt * acc2
-        e = e + dt * de2
-        rho = np.maximum(rho, 1e-10)
-        e = np.maximum(e, 1e-12)
+        e = np.maximum(e + dt * de2, 1e-12)
+        x = x + dt * u_half
+
+        cs_now = np.sqrt(gamma * np.maximum((gamma - 1.0) * rho * e, 1e-12)
+                         / np.maximum(rho, 1e-12))
+        mach_pair_max = max(mach_pair_max, float(np.max(np.abs(u) / cs_now)))
 
         t += dt
         step += 1
 
         if step % 100 == 0:
-            mach = np.abs(u) / np.maximum(cs, 1e-12)
+            mach = np.abs(u) / np.maximum(cs_now, 1e-12)
             dissipation_stats.append({
                 "t": t, "step": step,
                 "max_mach": float(np.max(mach)),
                 "mean_mach": float(np.mean(mach)),
+                "min_rho": float(np.min(rho)),
             })
 
         while output_idx < len(output_times) and t >= output_times[output_idx] - 1e-12:
             t_out = output_times[output_idx]
             snapshots.append({
                 "t": t_out, "x": x.copy(), "rho": rho.copy(),
-                "u": u.copy(), "p": p.copy(), "e": e.copy(),
+                "u": u.copy(),
+                "p": np.maximum((gamma - 1.0) * rho * e, 1e-12),
+                "e": e.copy(),
             })
             output_idx += 1
 
@@ -318,6 +374,130 @@ def run_sod_riemann(cfg, output_times=None):
         "energy_rel_change": float((total_energy_final - total_energy_0) / total_energy_0),
         "neighbours": {"min": min_neighbours, "mean": mean_neighbours},
         "dissipation_stats": dissipation_stats,
+        "dt_min": dt_min,
+        "mach_max": mach_pair_max,
+        "x_span_final": float(np.max(x) - np.min(x)),
+        "config": cfg.as_dict(),
+    }
+
+
+def run_acoustic_pulse(cfg, amplitude: float = 0.02, n_periods: float = 6.0,
+                       mode: int = 1):
+    """Damping of a linear standing acoustic wave in a closed 1-D box.
+
+    This diagnostic separates a *Mach-limited* dissipation from an ordinary
+    artificial viscosity: both capture the Sod shock (Sod is dominated by
+    compressive motion, M_ij = O(1)), but only the Mach-limited operator leaves
+    a smooth, low-Mach acoustic field nearly undamped.
+
+    Initial condition: the linear standing-wave eigenfunction of the closed box
+    (reflecting walls at x_left / x_right),
+
+        u = A c0 cos(k pi s),  rho = rho0 (1 + A cos(k pi s)),
+        p = p0 (1 + gamma A cos(k pi s)),   s = (x - x_left) / L,
+
+    with c0 = sqrt(gamma p0 / rho0), k = mode*pi/L.  The mode amplitude is
+    obtained by projecting u and (rho - rho0) on the eigenfunction, and the
+    measured decay rate is converted to an effective viscosity
+    nu = -2 * slope / k^2, to be compared with the artificial-viscosity estimate
+    nu ~ alpha c h / 8.
+    """
+    gamma = cfg.gamma
+    rho0, p0 = 1.0, 1.0
+    c0 = math.sqrt(gamma * p0 / rho0)
+    L = cfg.x_right - cfg.x_left
+    k = mode * math.pi / L
+
+    N = cfg.n_particles
+    dx = cfg.dx
+    x = cfg.x_left + (np.arange(N) + 0.5) * dx
+    shape = np.cos(k * (x - cfg.x_left))
+    # t = 0 slice of the standing-wave eigenmode: pure cos quadrature in u,
+    # rho = rho0.  (u and rho in phase at t=0 would be a *superposition* of two
+    # quadratures and the modal energy would then oscillate instead of decay.)
+    u = amplitude * c0 * shape
+    rho = np.full(N, rho0)
+    p = np.full(N, p0)
+    e = p / ((gamma - 1.0) * rho)
+    m = (rho0 * dx) * np.ones(N)          # frozen Lagrangian masses
+
+    period = 2.0 * L / c0
+    t_end = n_periods * period
+    out_times = np.linspace(0.0, t_end, 401)[1:]
+    out_idx = 0
+    series = {"t": [], "amp_u": [], "amp_rho": [], "energy": [], "mach_max": [],
+              "e_acoustic": [], "e_kin": []}
+
+    t = 0.0
+    step = 0
+    dt_min = float("inf")
+    while t < t_end * (1.0 - 1e-12) and step < cfg.max_steps:
+        dt = min(_timestep_riemann(cfg, rho, u, e), t_end - t)
+        if dt < 1e-14:
+            break
+        dt_min = min(dt_min, dt)
+
+        drho, acc, de, _, _ = _derivs_riemann(x, rho, u, e, m, cfg)
+        rho_h = np.maximum(rho + 0.5 * dt * drho, 1e-12)
+        u_h = u + 0.5 * dt * acc
+        e_h = np.maximum(e + 0.5 * dt * de, 1e-14)
+        x_h = x + 0.5 * dt * u_h
+
+        drho2, acc2, de2, _, _ = _derivs_riemann(x_h, rho_h, u_h, e_h, m, cfg)
+        rho = np.maximum(rho + dt * drho2, 1e-12)
+        u = u + dt * acc2
+        e = np.maximum(e + dt * de2, 1e-14)
+        x = x + dt * u_h
+        t += dt
+        step += 1
+
+        while out_idx < len(out_times) and t >= out_times[out_idx] - 1e-15:
+            amp_u = 2.0 * float(np.mean(u * shape)) / (amplitude * c0)
+            amp_rho = 2.0 * float(np.mean((rho - rho0) * shape)) / amplitude
+            series["t"].append(float(out_times[out_idx]))
+            series["amp_u"].append(amp_u)
+            series["amp_rho"].append(amp_rho)
+            p_i = (gamma - 1.0) * rho * e
+            dp = p_i - p0
+            # modal acoustic energy per unit length (kinetic + compressional).
+            # For a single undamped eigenmode this is exactly constant in time,
+            # so its log-slope gives the damping rate without oscillation bias.
+            e_ac = float(np.sum(m * (0.5 * u ** 2 + 0.5 * dp ** 2 / (rho0 * c0 ** 2))) / rho0 / L)
+            series["energy"].append(float(np.sum(m * (0.5 * u ** 2 + e))))
+            series["e_acoustic"].append(e_ac)
+            series["e_kin"].append(float(np.sum(m * 0.5 * u ** 2) / rho0 / L))
+            cs = np.sqrt(gamma * np.maximum((gamma - 1.0) * rho * e, 1e-12) / rho)
+            series["mach_max"].append(float(np.max(np.abs(u) / cs)))
+            out_idx += 1
+
+    S = {key: np.asarray(val) for key, val in series.items()}
+    tt, eac = S["t"], S["e_acoustic"]
+    keep = eac > 0.0
+    if np.count_nonzero(keep) >= 3:
+        slope_e = float(np.polyfit(tt[keep], np.log(eac[keep]), 1)[0])
+    else:
+        slope_e = float("nan")
+    # E_ac ~ exp(-nu k^2 t)  =>  nu = -slope_E / k^2
+    nu_meas = -slope_e / (k ** 2) if np.isfinite(slope_e) else float("nan")
+    slope = 0.5 * slope_e if np.isfinite(slope_e) else float("nan")
+    e_ac0 = float(eac[0]) if len(eac) else float("nan")
+    e_ac_end = float(eac[-1]) if len(eac) else float("nan")
+    nu_theory = cfg.alpha_av * c0 * cfg.h / 8.0
+
+    return {
+        "series": S,
+        "period": period,
+        "t_end": t_end,
+        "steps": step,
+        "dt_min": dt_min,
+        "damping_rate": slope,
+        "nu_measured": nu_meas,
+        "nu_av_theory": nu_theory,
+        "e_acoustic_0": e_ac0,
+        "e_acoustic_end": e_ac_end,
+        "e_acoustic_ratio": (e_ac_end / e_ac0) if e_ac0 else float("nan"),
+        "amp_u_end": float(S["amp_u"][-1]) if len(S["amp_u"]) else float("nan"),
+        "amp_rho_end": float(S["amp_rho"][-1]) if len(S["amp_rho"]) else float("nan"),
         "config": cfg.as_dict(),
     }
 

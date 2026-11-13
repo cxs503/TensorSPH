@@ -8,13 +8,16 @@ Reference: G. A. Sod, J. Comput. Phys. 27(1):1-31 (1978),
 doi:10.1016/0021-9991(78)90023-2
 
 Scheme: Mach-limited Riemann dissipation (Ji et al. 2019 MNRAS 489:1052)
-with HLLC star pressure (Toro 1999).
+with HLLC star pressure (Toro 1999).  The Mach limiter uses the pair *relative*
+normal Mach number (see the module docstring and
+docs/xval_sph_mach_limited_riemann_dissipation.md).
 """
 import numpy as np
 import pytest
 
 from tensorsph.compressible.riemann_dissipation import (
     RiemannDissipationConfig,
+    run_acoustic_pulse,
     run_sod_riemann,
     hllc_star_pressure,
     roe_average,
@@ -157,22 +160,111 @@ def test_energy_budget_dissipative_only(production):
 # ---------------------------------------------------------------------------
 # Mach limiting effect
 # ---------------------------------------------------------------------------
-def test_mach_limiting_reduces_dissipation():
-    """Mach-limited version should have less energy loss than full Riemann."""
-    cfg_limited = RiemannDissipationConfig(n_particles=400, mach_limit=True)
-    cfg_full = RiemannDissipationConfig(n_particles=400, mach_limit=False)
+# ---------------------------------------------------------------------------
+# Round-1 regression: Lagrangian advection
+# ---------------------------------------------------------------------------
+def test_lagrangian_advection_active():
+    """SPH is Lagrangian: the particles must be advected with the flow.
 
-    res_limited = run_sod_riemann(cfg_limited, output_times=[0.2])
-    res_full = run_sod_riemann(cfg_full, output_times=[0.2])
+    Round 1 of this feature froze the particle positions while integrating the
+    continuity/momentum pair.  The run then collapsed after ~16 steps (dt -> 0,
+    no snapshot at t_end).  This test pins the fix: the run reaches t_end *and*
+    the particle set has actually moved.
+    """
+    cfg = RiemannDissipationConfig(n_particles=200)
+    res = run_sod_riemann(cfg, output_times=[cfg.t_end])
+    x0 = cfg.x_left + (np.arange(cfg.n_particles) + 0.5) * cfg.dx
+    assert abs(res["t_final"] - cfg.t_end) < 1e-9
+    assert res["steps"] > 100
+    assert len(res["snapshots"]) == 1
+    xf = res["snapshots"][-1]["x"]
+    # post-shock material speed ~0.9; the star region must have been advected
+    assert np.max(np.abs(xf - x0)) > 0.01, \
+        f"max particle displacement = {np.max(np.abs(xf - x0)):.4f}"
+    # ... and the Lagrangian mass (frozen m = rho0 dx) is untouched
+    assert abs(res["mass_final"] - res["mass_initial"]) / res["mass_initial"] < 1e-12
 
-    # Both should be dissipative (energy decreases)
-    assert res_limited["energy_rel_change"] <= 1e-9
-    assert res_full["energy_rel_change"] <= 1e-9
 
-    # Mach-limited should lose less energy (less dissipation in smooth regions)
-    # Note: this is a soft check — the difference may be small for Sod tube
-    # where most of the flow is either shocked or uniform
-    assert res_limited["energy_rel_change"] >= res_full["energy_rel_change"] - 0.01
+@pytest.mark.parametrize("model", ["av-full", "av-mach-abs", "av-mach-rel", "riemann-rel"])
+def test_every_dissipation_model_completes(model):
+    """No dissipation model may collapse before t_end (round-1 failure mode)."""
+    kw = dict(mach_limit=False) if model == "av-full" else dict(mach_limit=True)
+    if model == "av-mach-abs":
+        kw["mach_limit_mode"] = "absolute"
+    elif model == "av-mach-rel":
+        kw["mach_limit_mode"] = "relative"
+    elif model == "riemann-rel":
+        kw.update(scheme="riemann", mach_limit_mode="relative")
+    cfg = RiemannDissipationConfig(n_particles=200, **kw)
+    res = run_sod_riemann(cfg, output_times=[cfg.t_end])
+    assert abs(res["t_final"] - cfg.t_end) < 1e-9, f"{model} stopped at t={res['t_final']}"
+
+
+def test_relative_mach_limiter_is_not_stiff():
+    """The single-particle (absolute) Mach limiter goes nearly singular.
+
+    It switches viscosity off in the still gas *at* the diaphragm, so the
+    pressure discontinuity is resolved with a transient that drives dt_min down
+    by more than an order of magnitude.  The pair-relative limiter keeps the
+    step close to the acoustic CFL limit.
+    """
+    cfg_rel = RiemannDissipationConfig(n_particles=400, mach_limit_mode="relative")
+    cfg_abs = RiemannDissipationConfig(n_particles=400, mach_limit_mode="absolute")
+    res_rel = run_sod_riemann(cfg_rel, output_times=[cfg_rel.t_end])
+    res_abs = run_sod_riemann(cfg_abs, output_times=[cfg_abs.t_end])
+    ratio = res_rel["dt_min"] / res_abs["dt_min"]
+    assert ratio > 3.0, f"dt_min ratio relative/absolute = {ratio:.2f}"
+
+
+# ---------------------------------------------------------------------------
+# Mach limiter benefit: smooth low-Mach flow must stay almost undamped
+# ---------------------------------------------------------------------------
+def test_mach_limit_suppresses_spurious_acoustic_damping():
+    """A linear acoustic wave (M=0.02) discriminates the dissipation models.
+
+    Sod alone cannot: it is compression dominated, so every model captures it
+    with the same accuracy.  The measurable benefit of Mach limiting is that a
+    *smooth subsonic* field is not damped: nu (full AV) must be far above nu
+    (Mach-limited), and the Mach-limited result must stay close to the
+    intrinsic (alpha = 0) floor of the discretisation.
+    """
+    floor = run_acoustic_pulse(
+        RiemannDissipationConfig(n_particles=200, alpha_av=0.0, beta_av=0.0,
+                                 mach_limit=False),
+        amplitude=0.02, n_periods=2.0)
+    full = run_acoustic_pulse(
+        RiemannDissipationConfig(n_particles=200, mach_limit=False),
+        amplitude=0.02, n_periods=2.0)
+    limited = run_acoustic_pulse(
+        RiemannDissipationConfig(n_particles=200, mach_limit_mode="relative"),
+        amplitude=0.02, n_periods=2.0)
+
+    nu_floor = floor["nu_measured"]
+    nu_full = full["nu_measured"]
+    nu_lim = limited["nu_measured"]
+    assert nu_full > 5.0 * nu_lim, f"nu_full={nu_full:.3e} nu_lim={nu_lim:.3e}"
+    assert nu_lim < 5.0 * nu_floor, f"nu_lim={nu_lim:.3e} nu_floor={nu_floor:.3e}"
+    # the acoustic energy of the limited run survives several periods
+    assert limited["e_acoustic_ratio"] > 0.7
+
+
+# ---------------------------------------------------------------------------
+# Plateau values against the published Sod numbers
+# ---------------------------------------------------------------------------
+def test_plateau_matches_literature_under_3pct(production):
+    """Star-region values vs Sod (1978)/Toro (1999): all within 3 %."""
+    cfg, res, met = production
+    snap = res["snapshots"][-1]
+    x, rho, u, p = snap["x"], snap["rho"], snap["u"], snap["p"]
+    got = {
+        "rho_star_L": float(np.mean(rho[np.abs(x - cfg.x_diaphragm - 0.02) < 0.02])),
+        "rho_star_R": float(np.mean(rho[np.abs(x - 0.70) < 0.02])),
+        "u_star": float(np.mean(u[np.abs(x - 0.65) < 0.02])),
+        "p_star": float(np.mean(p[np.abs(x - 0.65) < 0.02])),
+    }
+    for key, ref in LIT.items():
+        rel = (got[key] - ref) / ref
+        assert abs(rel) < 0.03, f"{key}: got {got[key]:.5f}, ref {ref:.5f}, rel {rel:+.4f}"
 
 
 # ---------------------------------------------------------------------------
