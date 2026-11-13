@@ -126,7 +126,8 @@ def make_config(spec: dict) -> WedgeConfig:
     kw = dict(BASE)
     kw.update(beta_deg=spec["beta_deg"], velocity=spec["velocity"], dx=spec["dx"])
     for key in ("sound_speed_factor", "alpha_visc", "c_end", "frames",
-                "max_courant", "profile_bins"):
+                "max_courant", "profile_bins", "density_diffusion",
+                "density_diffusion_form"):
         if key in spec:
             kw[key] = spec[key]
     return WedgeConfig(**kw)
@@ -188,7 +189,8 @@ def run_spec(spec: dict, out_dir: Path) -> dict:
                    ("beta_deg", "velocity", "rho0", "gamma", "dx", "h_factor",
                     "sound_speed_factor", "alpha_visc", "half_width", "depth",
                     "c_end", "frames", "max_courant", "cell_offset",
-                    "initial_gap_dx", "profile_bins", "contact_support")},
+                    "initial_gap_dx", "profile_bins", "contact_support",
+                    "density_diffusion", "density_diffusion_form")},
         "derived": {"h": cfg.h(), "sound_speed": cfg.sound_speed(),
                     "dt_hint": cfg.dt_hint(), "t_end": cfg.resolved_t_end(),
                     "q": q, "c_coeff_wagner": wagner_c_coeff(beta),
@@ -496,15 +498,24 @@ def main(argv=None) -> int:
     ap.add_argument("--velocity", type=float, default=1.0)
     ap.add_argument("--beta", type=float, default=BETA_DEG)
     ap.add_argument("--frames", type=int, default=None)
+    ap.add_argument("--density-diffusion", type=float, default=0.0,
+                    help="coefficient delta of the diffusive density term "
+                         "(0 = off, the shipped path)")
+    ap.add_argument("--density-diffusion-form", default="molteni",
+                    choices=("molteni", "antuono"))
     ap.add_argument("--shard", default=None, help="i/n, i counted from 0")
     ap.add_argument("--out-dir", default=str(ART))
     args = ap.parse_args(argv)
     out_dir = Path(args.out_dir)
 
     if args.stage == "run":
-        spec = {"id": f"beta{args.beta:g}_V{args.velocity:g}_dx{args.dx * 1e3:g}mm",
+        suffix = ("" if args.density_diffusion == 0.0
+                  else f"_dd{args.density_diffusion:g}{args.density_diffusion_form}")
+        spec = {"id": f"beta{args.beta:g}_V{args.velocity:g}_dx{args.dx * 1e3:g}mm{suffix}",
                 "beta_deg": args.beta, "velocity": args.velocity, "dx": args.dx,
-                "kind": "adhoc"}
+                "kind": "adhoc",
+                "density_diffusion": args.density_diffusion,
+                "density_diffusion_form": args.density_diffusion_form}
         if args.frames:
             spec["frames"] = args.frames
         art = run_spec(spec, out_dir)
