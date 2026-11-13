@@ -210,3 +210,9 @@ a leftover venv at `/tmp/xv2` from an earlier mission, and the cluster/GitHub ne
 is unreachable (`git clone https://github.com/pypr/pysph` -> "Failed to connect to
 github.com port 443"). A future round should pin PySPH into the image, otherwise this
 cross-validation cannot be re-run from a clean checkout.
+## Round 2 (m18632): the error budget of this claim
+
+The −0.21 % above is the value at one set-up. `docs/xval_projection_laplace_robustness.md`
+varies, one at a time, every knob the physics cannot see (lattice translation 0.47 %,
+orientation 0.08 %, readout 0.05 %, gauge pad 3.04 %, h/dx 4.17 %) over 51 equilibria:
+the honest quote is −0.2 % at `h/dx = 1.3`, pad ≥ 4 dx, ±3.2 % over the knob envelope.
