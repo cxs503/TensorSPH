@@ -1,0 +1,58 @@
+{
+  "dx_m": 0.0025,
+  "R_over_dx": 16.0,
+  "R_over_h": 12.307692307692307,
+  "n_particles": 3128,
+  "kappa_theory": 25.0,
+  "rows": [
+    {
+      "method": "div n (mls)",
+      "stencil_h": null,
+      "kappa_shell_mean": 24.657542196319955,
+      "kappa_error_pct": -1.369831214720174,
+      "sigma_eff_over_sigma": 0.9735482158075806
+    },
+    {
+      "method": "fit_circle",
+      "stencil_h": 2.0,
+      "kappa_shell_mean": 20.55279192342289,
+      "kappa_error_pct": -17.788832306308432,
+      "sigma_eff_over_sigma": 0.3268811497724095
+    },
+    {
+      "method": "fit_circle",
+      "stencil_h": 3.0,
+      "kappa_shell_mean": 60.33172975235826,
+      "kappa_error_pct": 141.32691900943303,
+      "sigma_eff_over_sigma": 3.044223047844074
+    },
+    {
+      "method": "fit_circle",
+      "stencil_h": 4.0,
+      "kappa_shell_mean": 93.83364927318543,
+      "kappa_error_pct": 275.3345970927417,
+      "sigma_eff_over_sigma": 4.165254264653296
+    },
+    {
+      "method": "fit_quadratic",
+      "stencil_h": 2.0,
+      "kappa_shell_mean": -1.17313070144601,
+      "kappa_error_pct": -104.69252280578405,
+      "sigma_eff_over_sigma": 0.15664536894018383
+    },
+    {
+      "method": "fit_quadratic",
+      "stencil_h": 3.0,
+      "kappa_shell_mean": 9.966687651107804,
+      "kappa_error_pct": -60.13324939556879,
+      "sigma_eff_over_sigma": 0.48157519633516227
+    },
+    {
+      "method": "fit_quadratic",
+      "stencil_h": 4.0,
+      "kappa_shell_mean": 17.268965667323418,
+      "kappa_error_pct": -30.924137330706326,
+      "sigma_eff_over_sigma": 0.7231321790836825
+    }
+  ]
+}
