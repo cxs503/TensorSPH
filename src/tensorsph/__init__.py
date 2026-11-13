@@ -139,6 +139,21 @@ from .surface_tension import (
     capillary_dt_limit,
 )
 
+from .sphinxys_css import (
+    SPHINXSYS_H_SPACING_RATIO,
+    SPHINXSYS_HOURGLASS_COEFF,
+    SPHINXSYS_CAPILLARY_CFL,
+    StressFields,
+    contact_fraction,
+    contact_colour_gradient,
+    single_phase_colour_gradient,
+    surface_stress,
+    inner_stress_force,
+    contact_stress_force,
+    surface_tension_acceleration,
+    capillary_dt_limit as sphinxys_capillary_dt_limit,
+)
+
 __all__ = [
     "Config", "SimulationUnstableError", "__version__", "acoustic_courant",
     "apply_boundary", "boundary_box", "cubic_spline_gradient",
@@ -177,6 +192,19 @@ __all__ = [
     "ThreeFieldConfig", "ThreeFieldResult", "crack_assessment",
     "critical_temperature_drop", "flexural_strength", "restrained_stress",
     "run_stefan_sph", "run_three_field", "strength_band",
+    "sphinxys_css",
+    "SPHINXSYS_H_SPACING_RATIO",
+    "SPHINXSYS_HOURGLASS_COEFF",
+    "SPHINXSYS_CAPILLARY_CFL",
+    "StressFields",
+    "contact_fraction",
+    "contact_colour_gradient",
+    "single_phase_colour_gradient",
+    "surface_stress",
+    "inner_stress_force",
+    "contact_stress_force",
+    "surface_tension_acceleration",
+    "sphinxys_capillary_dt_limit",
     "STOKES_SECOND_CASE_KEY", "penetration_depth", "semi_infinite",
     "semi_infinite_amplitude", "finite_depth", "finite_depth_amplitude",
     "harmonic_fit", "verify_stokes_second_numeric", "verify_stokes_second_symbolic",
