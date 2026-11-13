@@ -1,0 +1,102 @@
+{
+ "criterion": "CASE-WAVE-FLUME: |H_got - H_ref|/H_ref <= 10 %",
+ "verdict": "FAIL - no operating point measured; see docs/verification_wave_flume_stability.md",
+ "published_d16": {
+  "worst_error_percent": 65.47286897508499,
+  "height_cells": 2.56,
+  "source": "docs/reports/wave_flume_numbers.json",
+  "note": "raw record runs/wf_D16.json is not in the repository; the published numbers cannot be recomputed from the tree"
+ },
+ "reference_configuration_record": {
+  "artifact": "docs/reports/artifacts_wave_flume/wf_D20_unstable.json",
+  "origin_worktree": "/root/tp-agent/work/m15493/runs/wf_local_D20.json",
+  "depth": 0.2,
+  "dx": 0.01,
+  "wave_height": 0.03,
+  "wave_period": 1.0,
+  "wavelength": 1.2123690665891134,
+  "flume_length": 3.2,
+  "sponge_length": 0.909276799941835,
+  "sound_speed": 30.0,
+  "particles": 6400,
+  "steps": 38770,
+  "dt": 5.6893384337482154e-05,
+  "max_speed": 109.27555084228516,
+  "mach": 3.6425183614095054,
+  "max_compression": 0.4494273681640626,
+  "min_density_ratio": 0.26909906005859374,
+  "escaped": 144,
+  "gauge0_eta_max": 0.12499999284744262,
+  "gauge0_eta_max_over_H": 4.166666428248088,
+  "note": "eta_max coincides with the clamping height free_surface_top - depth = 0.12 m, i.e. fluid is thrown against the box ceiling"
+ },
+ "xsph_ladder": {
+  "xsph": {
+   "xsph": 0.05,
+   "dt": 0.00013541666666666666,
+   "steps": 14770,
+   "simulated_time": 2.3982873035485195,
+   "max_mach": 0.0033600387473901113,
+   "max_compression": 0.0030383911132811914,
+   "escaped": 0,
+   "ceiling_hits": 0,
+   "probe_top": [
+    5.960464455334602e-09,
+    5.960464455334602e-09,
+    5.960464455334602e-09,
+    5.960464455334602e-09
+   ],
+   "probe_mean": [
+    -0.0008402410189847753,
+    -0.0008045571428295792,
+    -0.0007755272895903266,
+    -0.0007575169457374457
+   ],
+   "graded_error": [
+    -0.9845982175831822,
+    -0.9900808247803394,
+    -0.994052330926266,
+    -0.9967983080704387
+   ],
+   "xsph_rate_per_s": 369.2307692307693
+  },
+  "xsph10": {
+   "xsph": 0.1,
+   "dt": 0.00013541666666666666,
+   "steps": 14770,
+   "simulated_time": 2.398378379342844,
+   "max_mach": 0.003356006493171056,
+   "max_compression": 0.0030383911132811914,
+   "escaped": 0,
+   "ceiling_hits": 0,
+   "probe_top": [
+    5.960464455334602e-09,
+    5.960464455334602e-09,
+    5.960464455334602e-09,
+    5.960464455334602e-09
+   ],
+   "probe_mean": [
+    -0.0008201390001419493,
+    -0.0008000621270086379,
+    -0.0007792210911174143,
+    -0.0007631563052937856
+   ],
+   "graded_error": [
+    -0.9855670462169311,
+    -0.9907229289903641,
+    -0.9941461610912845,
+    -0.9967267370312753
+   ],
+   "xsph_rate_per_s": 738.4615384615386
+  }
+ },
+ "wave_angular_frequency": 6.283185307179586,
+ "xsph_rate_exceeds_wave_rate_by": {
+  "xsph": 58.8,
+  "xsph10": 117.5
+ },
+ "required_xsph_for_rate_below_wave": {
+  "coefficient_max": 0.000851,
+  "formula": "chi <= omega * dt (per-step XSPH is a smoothing of rate chi/dt)"
+ }
+}
