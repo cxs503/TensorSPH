@@ -38,6 +38,7 @@ Shared machinery:
 
 - cubic-spline kernel, density summation, Tait equation of state, symmetric pressure forces, regularized laminar viscosity;
 - **surface tension model** (CSF method, Brackbill et al. 1992) with neighbor-count-based surface detection, configurable via `Config.surface_tension_coefficient`;
+- **mixture-material surface tension** (`tensorsph.csf_mixture`): normalised phase-indicator colour `c^A = sum_{j in A} V_j W / sum_j V_j W` with per-phase volumes and a force-assembled-as-volume-density CSF chain, so the colour jump and the surface-tension force are independent of the rest-density ratio; Young-Laplace verified to **1.4 %** at `R/dx = 32` for density contrasts 1:1, 1000:1.2 and 1.2:1000, against -28 %..+174 % for the single-`rho0` colour (see [`docs/verification_mixture_surface_tension.md`](docs/verification_mixture_surface_tension.md));
 - **non-negative pressure** at free surfaces (no tensile instability), plus an optional diffusive density term (`Config.density_diffusion`, Antuono et al. 2012) measured against it in [`docs/benchmarks/free-surface-treatment.md`](docs/benchmarks/free-surface-treatment.md);
 - **static wall particles** using the full Adami et al. (2012) eq. (11) pressure extrapolation (kernel-weighted average plus body-force term) and a Tait-consistent wall density;
 - **device-resident linked-cell neighbour search** plus a Verlet skin cache: no host round-trip, no Python loop over particles;
