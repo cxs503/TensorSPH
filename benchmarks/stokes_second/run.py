@@ -676,6 +676,45 @@ def _benchmark_rows(run: dict) -> list[dict]:
     return out
 
 
+def ladder_convergence(runs: list[dict], required) -> dict:
+    """Convergence block (G6 + completeness) for a set of ladder rungs.
+
+    ``required`` is the *predeclared* rung list; a run set that does not equal it
+    is not a convergence study, so ``complete`` is false and ``all_gates`` can
+    never be true.  Fewer than two rungs cannot test convergence at all: G6
+    stays false with a reason instead of being vacuously true (that is how the
+    first delivery of this case shipped a one-rung "ladder").
+
+    ``scripts/finalize_stokes_second.py`` calls this same function when it
+    assembles a ladder from per-rung shard files, so an assembled ladder and a
+    serially-run ladder are graded by one implementation.
+    """
+    required = [int(r) for r in required]
+    res = [r["resolution_delta_over_dx"] for r in runs]
+    l2s = [abs(r["metrics"]["amplitude_l2_half_space_pct"]) for r in runs]
+    conv = {
+        "resolutions": res,
+        "required_resolutions": required,
+        "l2_by_resolution": l2s,
+        "l2_finite_depth_by_resolution": [
+            abs(r["metrics"]["amplitude_l2_finite_depth_pct"]) for r in runs],
+        "complete": res == required,
+    }
+    if len(runs) >= 2:
+        conv["observed_order_l2_half_space"] = [
+            math.log(l2s[i - 1] / l2s[i]) / math.log(res[i] / res[i - 1])
+            for i in range(1, len(runs)) if l2s[i] > 0 and l2s[i - 1] > 0]
+        conv["G6_not_growing"] = l2s[-1] <= l2s[0] + 0.5
+    else:
+        conv["observed_order_l2_half_space"] = []
+        conv["G6_not_growing"] = False
+        conv["G6_reason"] = ("fewer than two rungs were run: convergence "
+                             "cannot be claimed")
+    conv["all_gates"] = bool(conv["complete"] and conv["G6_not_growing"]
+                             and all(all(r["gates"].values()) for r in runs))
+    return conv
+
+
 def _write_bundle(out_dir: Path, payload: dict, repro_cmd: str) -> None:
     """benchmark.json (ref vs got) + MANIFEST.json (sha256 of every artefact)."""
     if payload["mode"] == "ladder":
@@ -824,31 +863,8 @@ def main(argv=None) -> int:
     # the predeclared ones, and a missing rung fails the run instead of being
     # silently skipped (that is how the first delivery shipped n=1).
     if payload["mode"] == "ladder":
-        runs = payload["runs"]
-        res = [r["resolution_delta_over_dx"] for r in runs]
-        l2s = [abs(r["metrics"]["amplitude_l2_half_space_pct"]) for r in runs]
         required = list(LADDER) if (args.ladder or args.sweep) else [LADDER[1]]
-        conv = {
-            "resolutions": res,
-            "required_resolutions": required,
-            "l2_by_resolution": l2s,
-            "l2_finite_depth_by_resolution": [
-                abs(r["metrics"]["amplitude_l2_finite_depth_pct"]) for r in runs],
-            "complete": res == required,
-        }
-        if len(runs) >= 2:
-            conv["observed_order_l2_half_space"] = [
-                math.log(l2s[i - 1] / l2s[i]) / math.log(res[i] / res[i - 1])
-                for i in range(1, len(runs)) if l2s[i] > 0 and l2s[i - 1] > 0]
-            conv["G6_not_growing"] = l2s[-1] <= l2s[0] + 0.5
-        else:
-            conv["observed_order_l2_half_space"] = []
-            conv["G6_not_growing"] = False
-            conv["G6_reason"] = ("fewer than two rungs were run: convergence "
-                                 "cannot be claimed")
-        conv["all_gates"] = bool(conv["complete"] and conv["G6_not_growing"]
-                                 and all(all(r["gates"].values()) for r in runs))
-        payload["convergence"] = conv
+        payload["convergence"] = ladder_convergence(payload["runs"], required)
 
     if payload["mode"] == "ladder" and len(payload["runs"]) >= 1:
         try:
