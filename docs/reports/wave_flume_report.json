@@ -131,7 +131,7 @@
         "h0": 0.04265769550012704
       },
       "theory": {
-        "mu_per_m": 0.0011684718299723323,
+        "mu_per_m": 0.0016524687091977817,
         "k": 4.818972978402874,
         "omega": 6.283185307179586,
         "celerity": 1.303843232850413,
@@ -141,8 +141,8 @@
         "source": "Mei 1983 The Applied Dynamics of Ocean Surface Waves \u00a74.2; Dean & Dalrymple 1991 \u00a75.4 (Putnam & Johnson 1949)"
       },
       "measured_loss_over_span": 0.0297795359459474,
-      "theory_loss_over_span": 0.0005711508643199137,
-      "excess_loss_over_span": 0.029208385081627486,
+      "theory_loss_over_span": 0.000807633742157976,
+      "excess_loss_over_span": 0.028971902203789424,
       "dispersion": {
         "period_spectral": 0.9991320866209494,
         "period_zero_crossing": 0.9986933692562565,
@@ -167,7 +167,7 @@
         5.0
       ],
       "passed": true,
-      "record": "runs/wf_D20.json",
+      "record": "docs/reports/records/wf_D20.json",
       "label": "dx=0.01250 (H/dx=3.2)",
       "config": {
         "dx": 0.0125,
