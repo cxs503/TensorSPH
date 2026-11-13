@@ -1,7 +1,7 @@
 {
  "case": "stokes_second_oscillating_plate",
  "anchor": "CASE-SPH-STOKES-2ND-PROBLEM",
- "mode": "quick",
+ "mode": "ladder",
  "provenance": {
   "symbolic": {
    "available": true,
@@ -25,30 +25,30 @@
   },
   "numeric": {
    "viscosity": 0.01,
-   "omega": 6.283185307179586,
-   "delta": 0.05641895835477563,
+   "omega": 6.28319,
+   "delta": 0.056419,
    "grid_points": 4001,
-   "pde_relative_residual": 6.21394047328921e-07,
+   "pde_relative_residual": 6.21394e-07,
    "pde_residual_tolerance": 0.005,
    "plate_bc_relative_error": 0.0,
-   "amplitude_at_delta": 0.36787944117144233,
-   "amplitude_at_delta_target": 0.36787944117144233,
+   "amplitude_at_delta": 0.367879,
+   "amplitude_at_delta_target": 0.367879,
    "amplitude_at_delta_error": 0.0,
    "finite_depth_plate_bc_relative_error": 0.0,
    "finite_depth_far_wall_relative_error": 0.0,
-   "finite_depth_vs_half_space_max_diff": 0.0019685061438677706,
-   "finite_depth_expected_truncation": 0.006737946999085467,
+   "finite_depth_vs_half_space_max_diff": 0.00196851,
+   "finite_depth_expected_truncation": 0.00673795,
    "finite_depth_comparison_domain": "0 <= y <= H (channel interior)",
    "all_checks_pass": true
   },
   "case": {
    "nu": 0.01,
-   "omega": 6.283185307179586,
+   "omega": 6.28319,
    "U0": 0.01,
    "H_over_delta": 6.0,
    "columns": 6,
    "rho0": 1000.0,
-   "c0": 10.0,
+   "c0": 4.0,
    "periods": 6.0,
    "measure_periods": 2.0,
    "ladder": [
@@ -59,8 +59,8 @@
    "gamma": 7.0,
    "h_factor": 1.3,
    "wall_friction": 1.0,
-   "mach_number": 0.001,
-   "reynolds_u0_delta_over_nu": 0.05641895835477563,
+   "mach_number": 0.0025,
+   "reynolds_u0_delta_over_nu": 0.056419,
    "solvers": {
     "rhs": "tensorsph.droplet_impact.rhs",
     "wall": "tensorsph.wall_mirror.plane_walls",
@@ -78,7 +78,7 @@
   "torch_threads": 1,
   "torch": "2.7.1",
   "numpy": "2.4.6",
-  "started": "2026-11-13T02:33:26Z"
+  "started": "2026-11-12T12:31:46Z"
  },
  "gates": {
   "G1_amplitude_l2_pct": 5.0,
@@ -88,9 +88,21 @@
   "G5_control_amp_pct": 5.0
  },
  "artifacts": {
+  "FIGURES_PROVENANCE.json": {
+   "sha256": "731da86aa3e6bfefdd89c2685f0640374d65f451a4aaf8b0d03c209c2cda9666",
+   "bytes": 1001
+  },
+  "amplitude_decay.png": {
+   "sha256": "00b98bb4bcca2b2885e61d1c9c4aaf65f4bb0423d3c2b341c492222e20d71d13",
+   "bytes": 109140
+  },
   "benchmark.json": {
    "sha256": "d649c3a3dc149882ee64a5bbb0f7b2468a652616fa12c97bef7c467f0025662e",
    "bytes": 2244
+  },
+  "field_snapshot.png": {
+   "sha256": "9ae47cec191e5ba96e7e7865fdb3e9647bdd947dac6c589746f5b5e6caa3e176",
+   "bytes": 102054
   },
   "results_ladder.json": {
    "sha256": "bd6cc05cacab5801a378a1b9cf0bfd6c2585261d8fe74788c8731efaee2cbc1b",
@@ -105,5 +117,111 @@
    "bytes": 101211
   }
  },
- "command": "PYTHONPATH=.:src python benchmarks/stokes_second/run.py --quick"
+ "command": "PYTHONPATH=.:src python benchmarks/stokes_second/run.py --ladder --c0 4 --periods 6 --measure-periods 2 --out benchmarks/stokes_second/out",
+ "superseded_headers": [
+  {
+   "mode": "quick",
+   "command": "PYTHONPATH=.:src python benchmarks/stokes_second/run.py --quick",
+   "provenance": {
+    "symbolic": {
+     "available": true,
+     "source": "Landau & Lifshitz, Fluid Mechanics, 2nd English ed., \u00a724 (oscillations of a viscous fluid); re-derived here, not transcribed",
+     "half_space_profile": "u = U0 exp(-y/delta) cos(omega t - y/delta)",
+     "delta": "sqrt(2 nu / omega)",
+     "pde_residual_u_t_minus_nu_u_yy": "0",
+     "pde_residual_is_zero": true,
+     "plate_bc_residual": "0",
+     "plate_bc_is_satisfied": true,
+     "amplitude_at_delta_over_U0": "exp(-1)",
+     "amplitude_at_delta_is_one_over_e": true,
+     "delta_identity_is_zero": true,
+     "finite_depth_profile": "u = Re{U0 sinh(m(H-y))/sinh(mH) exp(i omega t)}, m = (1+i)/delta",
+     "finite_depth_pde_residual": "0",
+     "finite_depth_pde_residual_is_zero": true,
+     "finite_depth_bc_y0_residual": "0",
+     "finite_depth_bc_y0_satisfied": true,
+     "finite_depth_bc_yH_residual": "0",
+     "finite_depth_bc_yH_satisfied": true
+    },
+    "numeric": {
+     "viscosity": 0.01,
+     "omega": 6.283185307179586,
+     "delta": 0.05641895835477563,
+     "grid_points": 4001,
+     "pde_relative_residual": 6.21394047328921e-07,
+     "pde_residual_tolerance": 0.005,
+     "plate_bc_relative_error": 0.0,
+     "amplitude_at_delta": 0.36787944117144233,
+     "amplitude_at_delta_target": 0.36787944117144233,
+     "amplitude_at_delta_error": 0.0,
+     "finite_depth_plate_bc_relative_error": 0.0,
+     "finite_depth_far_wall_relative_error": 0.0,
+     "finite_depth_vs_half_space_max_diff": 0.0019685061438677706,
+     "finite_depth_expected_truncation": 0.006737946999085467,
+     "finite_depth_comparison_domain": "0 <= y <= H (channel interior)",
+     "all_checks_pass": true
+    },
+    "case": {
+     "nu": 0.01,
+     "omega": 6.283185307179586,
+     "U0": 0.01,
+     "H_over_delta": 6.0,
+     "columns": 6,
+     "rho0": 1000.0,
+     "c0": 10.0,
+     "periods": 6.0,
+     "measure_periods": 2.0,
+     "ladder": [
+      8,
+      12,
+      18
+     ],
+     "gamma": 7.0,
+     "h_factor": 1.3,
+     "wall_friction": 1.0,
+     "mach_number": 0.001,
+     "reynolds_u0_delta_over_nu": 0.05641895835477563,
+     "solvers": {
+      "rhs": "tensorsph.droplet_impact.rhs",
+      "wall": "tensorsph.wall_mirror.plane_walls",
+      "mesh": "benchmarks.poiseuille.run.build_fluid"
+     }
+    },
+    "gates": {
+     "G1_amplitude_l2_pct": 5.0,
+     "G2_worst_row_pct": 10.0,
+     "G3_decay_rate_pct": 5.0,
+     "G4_finite_depth_l2_pct": 5.0,
+     "G5_control_amp_pct": 5.0
+    },
+    "device": "cpu",
+    "torch_threads": 1,
+    "torch": "2.7.1",
+    "numpy": "2.4.6",
+    "started": "2026-11-13T02:33:26Z"
+   }
+  }
+ ],
+ "finished": "2026-11-12T12:52:47Z",
+ "header_repaired": "header re-pointed at results_ladder.json: the superseded entry described a later --quick run (stale mode/command/c0)",
+ "runs": {
+  "results_ladder.json": {
+   "mode": "ladder",
+   "command": "PYTHONPATH=.:src python benchmarks/stokes_second/run.py --ladder --c0 4 --periods 6 --measure-periods 2 --out benchmarks/stokes_second/out",
+   "finished": "2026-11-12T12:52:47Z",
+   "recovered_from_artifact": true
+  },
+  "results_quick.json": {
+   "mode": "quick",
+   "command": "PYTHONPATH=.:src python benchmarks/stokes_second/run.py --quick",
+   "finished": "2026-11-13T02:34:38Z",
+   "recovered_from_artifact": true
+  },
+  "results_sensitivity.json": {
+   "mode": "sensitivity",
+   "command": "PYTHONPATH=.:src python benchmarks/stokes_second/run.py --sensitivity-only --c0 4 --periods 6 --measure-periods 2 --sensitivity-resolution 8 --out /tmp/stokes_sens",
+   "finished": null,
+   "recovered_from_artifact": true
+  }
+ }
 }
