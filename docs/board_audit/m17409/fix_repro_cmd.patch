@@ -1,0 +1,13 @@
+--- a/benchmarks/xval_sphinxsys_compression/run.py
++++ b/benchmarks/xval_sphinxsys_compression/run.py
+@@ -1,3 +1,4 @@
++# m17409 board audit: the delivered argparse default was str("a" / "b" / "c"),
++# i.e. str.__truediv__ -> TypeError on every invocation (see AUDIT_m17364.md F1).
+@@ -219,9 +220,7 @@
+     ap.add_argument("--arms", default=",".join(a[0] for a in ARMS))
+-    ap.add_argument("--out", default=str("xval_output" /
+-                                         "xval_sphinxsys_compression" /
+-                                         "records.json"))
++    ap.add_argument("--out", default="xval_output/xval_sphinxsys_compression/records.json")
+     ap.add_argument("--quick", action="store_true",
+                     help="CI-sized smoke configuration (coarse, short)")
