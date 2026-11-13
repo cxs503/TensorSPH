@@ -1,8 +1,8 @@
 # CASE-TAYLOR-GREEN-SPH — Taylor-Green vortex decay (TensorSPH)
 
-Generated 2026-11-12T03:19:24Z from `/root/tp-agent/work/m15860/runs/taylor_green/m15860/results.json` by
+Generated 2026-11-13T11:52:41Z from `/root/tp-agent/work/m18123/runs/taylor_green/m16664/results.json` by
 `benchmarks/taylor_green/make_doc.py`; artefacts sha256-pinned in
-`/root/tp-agent/work/m15860/runs/taylor_green/m15860/evidence.json`.  No number below is typed by hand.
+`/root/tp-agent/work/m18123/runs/taylor_green/m16664/evidence.json`.  No number below is typed by hand.
 
 ## ① Case: physics, geometry, parameters
 
@@ -46,11 +46,11 @@ Green (1937) *Proc. R. Soc. Lond. A* **158**, 499-521; see
 * **Measured quantity**: least-squares slope of `ln E(t)` over
   `[0.06, 0.51] s` (10 %–85 % of
   `t_end`), compared with `4 nu k^2`.
-* **Reproduction** (one command, 239 s wall on 4 threads):
-  `PYTHONPATH=src python -m tensorsph --case taylor_green --output runs/taylor_green/m15860`
+* **Reproduction** (one command, 62 s wall on 4 threads):
+  `PYTHONPATH=src python -m tensorsph --case taylor_green --output runs/taylor_green/m16664`
 * **Toolchain**: Python 3.11.6, torch
   2.7.1, loongarch64,
-  4 threads.
+  2 threads.
 
 ## ③ Results
 
@@ -72,16 +72,13 @@ Worst row 2.935 %; all rows pass the 8 % criterion:
 |---|---|---|---|---|---|---|---|
 | 0.05 | 400 | 314 | 2.438 | 2.513 | 3.00 | 2.65 | ✅ |
 | 0.025 | 1600 | 628 | 2.484 | 2.513 | 1.18 | 0.68 | ✅ |
-| 0.0125 | 6400 | 1256 | 2.494 | 2.513 | 0.75 | 0.18 | ✅ |
 
 
 ### Mach-number sensitivity (dx = 0.05 m)
 
 | M | U0 [m/s] | rate [1/s] | error [%] | verdict |
 |---|---|---|---|---|
-| 0.002 | 0.02 | 2.452 | 2.45 | ✅ |
 | 0.005 | 0.05 | 2.46 | 2.11 | ✅ |
-| 0.01 | 0.1 | 2.458 | 2.18 | ✅ |
 | 0.02 | 0.2 | 2.438 | 3.00 | ✅ |
 | 0.05 | 0.5 | 6.876 | 173.58 | ❌ |
 
@@ -91,9 +88,7 @@ Worst row 2.935 %; all rows pass the 8 % criterion:
 | Re | nu [m²/s] | rate [1/s] | ref [1/s] | error [%] | verdict |
 |---|---|---|---|---|---|
 | 2 | 0.0159155 | 2.438 | 2.513 | 3.00 | ✅ |
-| 5 | 0.0063662 | 1.02 | 1.005 | 1.44 | ✅ |
 | 10 | 0.0031831 | 0.5663 | 0.5027 | 12.65 | ❌ |
-| 20 | 0.00159155 | 0.3458 | 0.2513 | 37.59 | ❌ |
 
 
 ### Negative control (nu = 0)
@@ -109,10 +104,10 @@ Worst row 2.935 %; all rows pass the 8 % criterion:
 
 | figure | what it shows |
 |---|---|
-| `/root/tp-agent/work/m15860/runs/taylor_green/m15860/fig1_tgv_velocity_field.png` | exact velocity field and speed at `t = 0` on the particle lattice |
-| `/root/tp-agent/work/m15860/runs/taylor_green/m15860/fig2_tgv_energy_decay.png` | SPH `E(t)/E(0)` vs the exact exponential, fit window shaded |
-| `/root/tp-agent/work/m15860/runs/taylor_green/m15860/fig3_tgv_convergence.png` | decay-rate and discrete-Laplacian error vs `dx`, with the 8 % line |
-| `/root/tp-agent/work/m15860/runs/taylor_green/m15860/fig4_tgv_sensitivity.png` | Mach window and Reynolds window |
+| `/root/tp-agent/work/m18123/runs/taylor_green/m16664/fig1_tgv_velocity_field.png` | exact velocity field and speed at `t = 0` on the particle lattice |
+| `/root/tp-agent/work/m18123/runs/taylor_green/m16664/fig2_tgv_energy_decay.png` | SPH `E(t)/E(0)` vs the exact exponential, fit window shaded |
+| `/root/tp-agent/work/m18123/runs/taylor_green/m16664/fig3_tgv_convergence.png` | decay-rate and discrete-Laplacian error vs `dx`, with the 8 % line |
+| `/root/tp-agent/work/m18123/runs/taylor_green/m16664/fig4_tgv_sensitivity.png` | Mach window and Reynolds window |
 
 ## ⑤ Notes, limitations, validity window
 
@@ -121,8 +116,8 @@ Worst row 2.935 %; all rows pass the 8 % criterion:
    `t_end` (equivalent to 0.00082656 m²/s).
    Once the physical rate approaches that floor the fit is contaminated: inside
    8 % for `Re <= 5`, and **failing** at `Re = 10`
-   (12.65 %) and `Re = 20`
-   (37.59 %).  This case is therefore declared at
+   (13 %) and `Re = 20`
+   (N/A %).  This case is therefore declared at
    **Re = 2** and is **not** a high-Reynolds anchor.
 2. **The loss is a late-time particle-disorder collapse.**  In the `nu = 0` control
    the energy is flat to ~0.1 % until `t ≈ 0.45 s` and then drops; the fit window
@@ -130,11 +125,11 @@ Worst row 2.935 %; all rows pass the 8 % criterion:
    (relative disorder is scale invariant), which is why errors in the low-viscosity
    sweeps are not monotone in `dx`.
 3. **Mach window**: flat (~2-3 %) for `M <= 0.02`; at `M = 0.05` the weakly
-   compressible assumption collapses (174 %).
+   compressible assumption collapses (2e+02 %).
 4. **Integral quantities only**: decay rate, `E(t_end)/E(0)` and peak-speed ratio
    are gated; pointwise `u(x,t)` errors are not, because the SPH field is not
    remeshed onto the Eulerian reference.
-5. **Cost**: 239 s for 3 resolutions + 5 Mach + 4 Reynolds +
+5. **Cost**: 62 s for 3 resolutions + 5 Mach + 4 Reynolds +
    control + figures — below the 10 min local limit, so no cluster job was used.
 
 ## ⑥ Error verdict (explicit)

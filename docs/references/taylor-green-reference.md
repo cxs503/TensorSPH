@@ -1,7 +1,7 @@
 # Taylor-Green reference: what exactly is being compared against
 
 **Case**: `CASE-TAYLOR-GREEN-SPH` · **Repo**: TensorSPH · generated
-2026-11-12T03:19:24Z from `/root/tp-agent/work/m15860/runs/taylor_green/m15860/results.json`.
+2026-11-13T11:52:41Z from `/root/tp-agent/work/m18123/runs/taylor_green/m16664/results.json`.
 
 ## 1. Citation
 
