@@ -85,6 +85,8 @@ from pathlib import Path
 import torch
 
 from .droplet_impact import cubic_spline_kernel, lattice_kernel_sum, pair_kernels
+from .density_diffusion import FORMS as DENSITY_DIFFUSION_FORMS
+from .density_diffusion import rate_from_positions
 from .neighbor_search import cell_linked_pairs
 
 __all__ = [
@@ -430,6 +432,23 @@ class WedgeConfig:
     # one).  0 disables the profile.  Bins span tau in [0, 1.2] so the SPH
     # overshoot beyond the analytic footprint is visible instead of clipped.
     profile_bins: int = 40
+    # Coefficient ``delta`` of the diffusive density term of Antuono,
+    # Colagrossi & Marrone (2012).  Zero (default) disables it and reproduces
+    # the shipped solver bit for bit.  It is *not* delta-SPH proper: this
+    # solver obtains density by kernel summation every step, so the term acts
+    # as a rate applied to the summation density over the step (the same
+    # treatment as ``tensorsph.droplet_impact``, see
+    # docs/verification_density_diffusion.md).  Motivation here is measured,
+    # not assumed: the wall-pressure peak of the beta = 30 deg wedge case is
+    # noise limited by the density excursion of the impact flow -- see
+    # docs/case_sph_wedge_entry_2d.md and
+    # docs/case_sph_wedge_entry_2d_density_diffusion.md.
+    density_diffusion: float = 0.0
+    # ``"molteni"`` (Molteni & Colagrossi) or ``"antuono"`` (local
+    # density-gradient corrected form, which vanishes on a linear density
+    # field even where the support is truncated by the free surface).
+    density_diffusion_form: str = "molteni"
+    density_diffusion_eigenvalue_floor: float = 0.1
     device: str = "cpu"
 
     # ---- derived ---------------------------------------------------------- #
@@ -469,6 +488,12 @@ class WedgeConfig:
             raise ValueError("alpha_visc must be in [0, 1]")
         if self.wall_layers < 1:
             raise ValueError("wall_layers must be positive")
+        if not 0.0 <= self.density_diffusion <= 1.0:
+            raise ValueError("density_diffusion must be in [0, 1]")
+        if self.density_diffusion_form not in DENSITY_DIFFUSION_FORMS:
+            raise ValueError(
+                f"unknown density_diffusion_form {self.density_diffusion_form!r}"
+                f"; expected one of {DENSITY_DIFFUSION_FORMS}")
         if self.half_width <= 0 or self.depth <= 0:
             raise ValueError("half_width and depth must be positive")
         if self.body_span() > self.half_width:
@@ -637,6 +662,9 @@ class WedgeImpact:
         self.wall_pos = torch.cat((self.wedge_world, self.tank_local), dim=0)
         self.max_rho_ratio = 0.0
         self.max_speed = 0.0
+        # Step size of the last advance(); the diffusive density term is a
+        # rate, so diagnostics must be evaluated with the step that was used.
+        self._last_dt: float | None = None
 
     # ---- initial state ---------------------------------------------------- #
     def _initial_fluid(self):
@@ -672,7 +700,7 @@ class WedgeImpact:
         return pairs[keep]
 
     # ---- right-hand side -------------------------------------------------- #
-    def _evaluate(self):
+    def _evaluate(self, dt: float | None = None):
         """Density, pressure, acceleration and wall state for the current state."""
         cfg = self.cfg
         h = self.h
@@ -695,6 +723,17 @@ class WedgeImpact:
         fw = ~ff
         rho_fluid = rho_fluid.index_add(0, i[fw], m * w[fw])
         rho_fluid = rho_fluid.clamp_min(0.1 * self.rho0)
+
+        # ---- diffusive density term (optional, delta = 0 keeps the old path) - #
+        if cfg.density_diffusion > 0.0 and dt is not None and bool(ff.any()):
+            scale = 2.0 * cfg.density_diffusion * self.c0 * self.h
+            radial = -(delta[ff] * gw[ff]).sum(dim=-1)
+            rate = rate_from_positions(
+                pos_all, rho_fluid, self.fluid_mass, delta[ff], gw[ff], radial,
+                delta[ff].square().sum(dim=-1), (i[ff], j[ff]), scale,
+                form=cfg.density_diffusion_form,
+                eigenvalue_floor=cfg.density_diffusion_eigenvalue_floor)
+            rho_fluid = (rho_fluid + dt * rate).clamp_min(0.1 * self.rho0)
 
         pressure = self.B * ((rho_fluid / self.rho0) ** cfg.gamma - 1.0)
         pressure = pressure.clamp_min(0.0)
@@ -745,7 +784,8 @@ class WedgeImpact:
         return self.cfg.max_courant * self.h / (self.c0 + speed)
 
     def advance(self, dt: float) -> None:
-        state = self._evaluate()
+        self._last_dt = float(dt)
+        state = self._evaluate(self._last_dt)
         self.fluid_vel = self.fluid_vel + dt * state["acc"]
         self.fluid_pos = self.fluid_pos + dt * self.fluid_vel
         self.time += dt
@@ -786,7 +826,7 @@ class WedgeImpact:
 
     def diagnostics(self, state=None, thresholds=(0.005, 0.02, 0.10)) -> dict:
         if state is None:
-            state = self._evaluate()
+            state = self._evaluate(self._last_dt)
         cfg = self.cfg
         p_wall = state["p_wall"][: self.n_wedge]
         den = state["den"][: self.n_wedge]
