@@ -100,3 +100,17 @@ python benchmarks/case_sph_wedge_entry_2d/make_doc.py
 
 ## ⑥ 失败模式与工件
 见 `docs/case_sph_wedge_entry_2d.md` 的失败模式小节与 `artifacts/case_sph_wedge_entry_2d/summary.json` 的 `missing` 字段。
+
+## ⑦ 参考值审计后的状态（m17079，2026-11-13）
+
+参考侧审计（`docs/audit_wagner_pressure_reference_m17079.md`）发现两处分母问题，本文件 ④.3 / ⑤ 的误差百分比**已过期**：
+
+1. **单位错配（已修）**：实测 `Cp = p/q`（`q = ½ρV²`），但 `refs_derived()['cp_centre']` 曾写成 `C = p/(ρV²)`，
+   比实测小一半。修为 `2C`（= 剖面 τ=0 值 = `wagner_p_centre/q`）。按 §4.2 的实测 `cp_centre_mean = 4.873`
+   重算：旧误差 +79.11 %（FAIL）→ **新误差 −10.45 %（<15 %，PASS）**。
+2. **剖面 +1 q（未改，机器钉住）**：仓内 `wagner_p_over_q = 2Cs−s²+1`；由其自身势做数值欧拉 Bernoulli 得
+   `2Cs−s²`，全足迹差恒为 1 个动压 `q`（0≤τ≤0.95：1.000000 ± 1.2e-7）。故峰值参考可写 `C²+1 = 8.4022`（仓内）
+   或 `C² = 7.4022`（欧拉）。**两种参考下 `cp_band_peak` 均 FAIL**（+233.8 % / +278.9 %），算例峰值结论不变。
+
+重判需重跑（原始工件未入 git）：`python benchmarks/case_sph_wedge_entry_2d/run.py --stage accept && python benchmarks/case_sph_wedge_entry_2d/make_doc.py`。
+Zhao & Faltinsen (1993) 仍为 **WITHHELD**，本次审计未产生任何替代它的数值。

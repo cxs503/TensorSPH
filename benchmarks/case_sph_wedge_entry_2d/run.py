@@ -73,7 +73,8 @@ sys.path.insert(0, str(ROOT / "src"))
 
 import torch  # noqa: E402
 
-from tensorsph.wedge_entry import (  # noqa: E402
+from tensorsph.wedge_entry import (
+    wagner_p_over_q,  # noqa: E402
     WedgeConfig,
     WedgeImpact,
     gci,
@@ -234,7 +235,14 @@ def refs_derived() -> dict:
         "beta_deg": BETA_DEG,
         "wagner": {
             "C": C,
-            "cp_centre": C,               # p(0)/(q) = 2C - 1 + ... == C per eq. (3)
+            # Units: every measured cp in this driver is p/q with q = rho V^2 / 2
+            # (see ``_series``: cp = p / q).  The stagnation reference must then
+            # be the profile's own tau = 0 value, p(0)/q = 2 C, which is also
+            # ``wagner_p_centre`` / q.  The earlier value here was C, i.e.
+            # p(0)/(rho V^2) -- half the measured normalisation, which made the
+            # stagnation-line comparison a factor-of-two comparison.  Audit:
+            # docs/audit_wagner_pressure_reference_m17079.md.
+            "cp_centre": float(wagner_p_over_q(0.0, beta)),
             "cp_max": wagner_peak_over_q(beta),
             "source": "tensorsph.wedge_entry.wagner_c_coeff / wagner_peak_over_q",
         },
