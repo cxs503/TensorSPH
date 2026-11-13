@@ -12,24 +12,24 @@
     "celerity": 1.303843232850413,
     "group_velocity": 0.9365278339068391,
     "sinh_kh": 1.5180667501011569,
-    "mu_repo_per_m": 0.0011684718299723323
+    "mu_repo_per_m": 0.0016524687091977817
   },
   "u_b": 0.0827787751330553,
   "delta": 0.0005641895835477562,
   "delta_over_h": 0.002256758334191025,
   "routes": {
     "repo_closed_form": {
-      "D": 4.2940582818358045e-06,
-      "mu_per_m": 0.0011684718299723323,
+      "D": 6.072715459792705e-06,
+      "mu_per_m": 0.0016524687091977817,
       "source": "Putnam & Johnson 1949 / Mei 1983 \u00a74.2 as implemented in wave_flume_grade"
     },
     "closed_form_rebuilt": {
-      "D": 4.2940582818358045e-06,
-      "mu_per_m": 0.0023369436599446646
+      "D": 6.072715459792705e-06,
+      "mu_per_m": 0.0016524687091977815
     },
     "stokes_integral": {
       "D": 6.0726135656664575e-06,
-      "mu_per_m": 0.0033048819648323624
+      "mu_per_m": 0.0016524409824161812
     }
   },
   "quadrature": [
@@ -38,30 +38,30 @@
       "nt": 128,
       "delta_m": 0.0005641895835477562,
       "D_numeric": 6.0710956880268296e-06,
-      "mu_numeric_per_m": 0.0033040558944128
+      "mu_numeric_per_m": 0.0016520279472064
     },
     {
       "nz": 800,
       "nt": 512,
       "delta_m": 0.0005641895835477562,
       "D_numeric": 6.0726135656664575e-06,
-      "mu_numeric_per_m": 0.0033048819648323624
+      "mu_numeric_per_m": 0.0016524409824161812
     }
   ],
   "quadrature_convergence": {
-    "mu_coarse": 0.0033040558944128,
-    "mu_fine": 0.0033048819648323624,
+    "mu_coarse": 0.0016520279472064,
+    "mu_fine": 0.0016524409824161812,
     "relative_change": 0.0002500170838390936
   },
   "comparison": {
-    "repo_vs_stokes_relative_error": -0.646440677032893,
-    "closed_form_vs_stokes_relative_error": -0.2928813540657861,
-    "ratio_stokes_over_closed": 1.4141898332759195,
+    "repo_vs_stokes_relative_error": 1.6779287064228043e-05,
+    "closed_form_vs_stokes_relative_error": 1.6779287064006e-05,
+    "ratio_stokes_over_closed": 0.9999832209944758,
     "gate_15pct": 0.15,
-    "within_gate": false
+    "within_gate": true
   },
   "implication_over_2m": {
-    "physical_loss_repo": 0.0023342151329949212,
-    "physical_loss_stokes": 0.0065879674896096585
+    "physical_loss_repo": 0.003299482124182629,
+    "physical_loss_stokes": 0.003299426853585863
   }
 }
