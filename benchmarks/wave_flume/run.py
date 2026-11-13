@@ -63,6 +63,16 @@ def build_config(args) -> WaveFlumeConfig:
     # away from it at start-up (see validate_flume).
     flume = max(round(flume / dx), int(round(2.5 * depth / dx))) * dx
     sponge = min(sponge, 0.4 * flume)
+
+    # Density regularization: either δ-SPH diffusion (default) or compression-
+    # based regularization (SPHinXsys port). They are mutually exclusive.
+    density_diffusion = args.density_diffusion
+    density_regularization = args.density_regularization
+    if density_regularization != "none" and density_diffusion > 0.0:
+        raise ValueError(
+            "density_regularization and density_diffusion are mutually exclusive; "
+            "use --density-diffusion 0 to enable compression regularization")
+
     cfg = WaveFlumeConfig(
         flume_length=flume,
         depth=depth,
@@ -88,7 +98,11 @@ def build_config(args) -> WaveFlumeConfig:
         sound_speed=args.sound_speed,
         ramp_periods=args.ramp_periods,
         viscosity=args.viscosity,
-        density_diffusion=args.density_diffusion,
+        density_diffusion=density_diffusion,
+        density_regularization=density_regularization,
+        compression_regularization_rule=args.compression_rule,
+        transport_velocity=args.transport_velocity,
+        transport_velocity_strength=args.transport_velocity_strength,
         device=args.device,
     )
     return cfg
@@ -119,7 +133,18 @@ def main(argv=None) -> int:
     parser.add_argument("--flume-length", type=float, default=3.2)
     parser.add_argument("--sound-speed", type=float, default=30.0)
     parser.add_argument("--viscosity", type=float, default=1.0e-6)
-    parser.add_argument("--density-diffusion", type=float, default=0.1)
+    parser.add_argument("--density-diffusion", type=float, default=0.1,
+                        help="δ-SPH density diffusion coefficient (0 to disable)")
+    parser.add_argument("--density-regularization", choices=("none", "compression"),
+                        default="none",
+                        help="SPHinXsys-style compression-based density regularization")
+    parser.add_argument("--compression-rule", choices=("internal", "free_surface", "free_stream"),
+                        default="free_surface",
+                        help="Compression regularization rule (used with --density-regularization compression)")
+    parser.add_argument("--transport-velocity", choices=("off", "on"), default="off",
+                        help="Transport-velocity correction (Zhang, Hu & Adams 2017)")
+    parser.add_argument("--transport-velocity-strength", type=float, default=1.0,
+                        help="Strength coefficient for transport-velocity correction")
     parser.add_argument("--sponge-strength", type=float, default=4.0)
     parser.add_argument("--active-absorption", type=float, default=0.0)
     parser.add_argument("--ramp-periods", type=float, default=2.0)
