@@ -742,6 +742,22 @@ def _write_bundle(out_dir: Path, payload: dict, repro_cmd: str) -> None:
         if path.is_file() and path.name != "MANIFEST.json":
             files[path.name] = {"sha256": _sha256(path),
                                 "bytes": path.stat().st_size}
+    # ``out/`` is shared by the quick / ladder / sensitivity modes, so a single
+    # top-level ``mode``/``command`` describes only the run that wrote last.
+    # Keep a per-results-file record instead: the manifest then stays truthful
+    # about every artefact it hashes (the published bundle once certified a
+    # ladder with ``mode: quick`` and a stale ``c0`` because a later quick run
+    # rewrote the header).
+    results_name = f"results_{payload['mode']}.json"
+    runs = {}
+    manifest_path = out_dir / "MANIFEST.json"
+    if manifest_path.is_file():
+        try:
+            runs = json.loads(manifest_path.read_text()).get("runs") or {}
+        except json.JSONDecodeError:
+            runs = {}
+    runs[results_name] = {"mode": payload["mode"], "command": repro_cmd,
+                          "finished": payload.get("finished")}
     (out_dir / "MANIFEST.json").write_text(json.dumps(
         {"case": "stokes_second_oscillating_plate",
          "anchor": "CASE-SPH-STOKES-2ND-PROBLEM",
@@ -749,6 +765,7 @@ def _write_bundle(out_dir: Path, payload: dict, repro_cmd: str) -> None:
          "provenance": payload["provenance"],
          "gates": payload["provenance"]["gates"],
          "artifacts": files,
+         "runs": runs,
          "command": repro_cmd}, indent=1, default=_jsonable))
 
 
