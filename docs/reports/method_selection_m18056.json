@@ -1,0 +1,200 @@
+{
+  "anchor": "XVAL-SPH-METHOD-SELECTION-2026-11-12",
+  "mission": 18056,
+  "owner_tolerance_pct": 15.0,
+  "profiles": [
+    {
+      "candidates": [
+        {
+          "method": "wcsph_delta_sph",
+          "status": "SELECTED"
+        }
+      ],
+      "expected_primary": "wcsph_delta_sph",
+      "label": "regular wave in a flume",
+      "modifiers": [
+        {
+          "method": "density_diffusion",
+          "status": "SELECTED"
+        },
+        {
+          "method": "compression_regularization",
+          "status": "SELECTED"
+        }
+      ],
+      "notes": [],
+      "primary_method": "wcsph_delta_sph",
+      "primary_status": "SELECTED",
+      "primary_worst_pct": 2.9679295205491987,
+      "profile": {
+        "acoustic_mach": 0.03,
+        "gravity_waves": true,
+        "has_free_surface": true
+      },
+      "verified": true
+    },
+    {
+      "candidates": [
+        {
+          "method": "compressible_riemann",
+          "status": "SELECTED"
+        }
+      ],
+      "expected_primary": "compressible_riemann",
+      "label": "Sod shock tube",
+      "modifiers": [],
+      "notes": [],
+      "primary_method": "compressible_riemann",
+      "primary_status": "SELECTED",
+      "primary_worst_pct": 0.7768408089469451,
+      "profile": {
+        "acoustic_mach": 0.9,
+        "domain": "closed",
+        "shock_advection": true
+      },
+      "verified": true
+    },
+    {
+      "candidates": [
+        {
+          "method": "csf_surface_tension",
+          "status": "SELECTED"
+        }
+      ],
+      "expected_primary": "csf_surface_tension",
+      "label": "capillary droplet (Laplace law)",
+      "modifiers": [
+        {
+          "method": "density_diffusion",
+          "status": "SELECTED"
+        },
+        {
+          "method": "compression_regularization",
+          "status": "SELECTED"
+        }
+      ],
+      "notes": [],
+      "primary_method": "csf_surface_tension",
+      "primary_status": "SELECTED",
+      "primary_worst_pct": 5.59931563881463,
+      "profile": {
+        "acoustic_mach": 0.05,
+        "capillary_dominated": true,
+        "has_free_surface": true
+      },
+      "verified": true
+    },
+    {
+      "candidates": [
+        {
+          "method": "isph_projection",
+          "status": "SELECTED"
+        },
+        {
+          "method": "wcsph_wall_no_slip",
+          "status": "SELECTED"
+        }
+      ],
+      "expected_primary": "isph_projection",
+      "label": "planar Couette channel",
+      "modifiers": [],
+      "notes": [
+        "wcsph_wall_no_slip preferred by rule 'wall_bounded' but SELECTED: plane Couette channel: interior L2 velocity error vs u=U*y/H (finest rung) = 5.65% misses its own 5% gate but is inside 15% (benchmarks/couette/out/results.json)"
+      ],
+      "primary_method": "isph_projection",
+      "primary_status": "SELECTED",
+      "primary_worst_pct": 0.8665938382240863,
+      "profile": {
+        "acoustic_mach": 0.01,
+        "domain": "closed",
+        "reynolds": 1.0
+      },
+      "verified": true
+    },
+    {
+      "candidates": [
+        {
+          "method": "isph_projection",
+          "status": "WITHHELD"
+        }
+      ],
+      "expected_primary": null,
+      "label": "Gresho vortex (smooth inviscid, periodic)",
+      "modifiers": [],
+      "notes": [
+        "rule 'wall_bounded' fired but no candidate is selectable (isph_projection=WITHHELD)",
+        "no rule produced an evidence-backed scheme: profile outside the validated regime of this repository, do not run silently"
+      ],
+      "primary_method": null,
+      "primary_status": "NONE",
+      "primary_worst_pct": null,
+      "profile": {
+        "acoustic_mach": 0.05,
+        "domain": "periodic",
+        "reynolds": 10000.0,
+        "smooth_inviscid_vortex": true
+      },
+      "verified": false
+    },
+    {
+      "candidates": [
+        {
+          "method": "heat_conduction_operator",
+          "status": "SELECTED"
+        }
+      ],
+      "expected_primary": "heat_conduction_operator",
+      "label": "1-D transient conduction",
+      "modifiers": [],
+      "notes": [],
+      "primary_method": "heat_conduction_operator",
+      "primary_status": "SELECTED",
+      "primary_worst_pct": 0.00021805730765489528,
+      "profile": {
+        "domain": "closed",
+        "thermal_transport": true
+      },
+      "verified": true
+    },
+    {
+      "candidates": [
+        {
+          "method": "wcsph_delta_sph",
+          "status": "SELECTED"
+        }
+      ],
+      "expected_primary": "wcsph_delta_sph",
+      "label": "breaking wave over a slope",
+      "modifiers": [
+        {
+          "method": "density_diffusion",
+          "status": "SELECTED"
+        },
+        {
+          "method": "transport_velocity_correction",
+          "status": "WITHHELD"
+        },
+        {
+          "method": "particle_shifting",
+          "status": "SELECTED"
+        },
+        {
+          "method": "compression_regularization",
+          "status": "SELECTED"
+        }
+      ],
+      "notes": [],
+      "primary_method": "wcsph_delta_sph",
+      "primary_status": "SELECTED",
+      "primary_worst_pct": 2.9679295205491987,
+      "profile": {
+        "acoustic_mach": 0.04,
+        "gravity_waves": true,
+        "has_free_surface": true,
+        "tensile_stretching": true
+      },
+      "verified": true
+    }
+  ],
+  "unexpected_routes": []
+}
