@@ -15,15 +15,18 @@ index  label          question                                                  
                       is the failure resolution-driven?
 2      D20_h025_xsph  is the growth a tensile/clumping instability (does XSPH     H3 (mechanism
                       velocity smoothing in the propagation phase remove it)?      probe, post-hoc)
+3      D20_h025_comp  does SPHinXsys-style compression regularization fix the     H4 (mechanism
+                      divergence that δ-SPH cannot? (δ-SPH off, compression on)   probe, post-hoc)
 ===================  =========================================================  ===============
 
 Usage (one cell per process, so the cluster can shard them)::
 
     PYTHONPATH=src python benchmarks/xval_method_selection/run_cell.py 0 --out runs/xval/<label>.json
 
-Cell 2 is marked *post-hoc*: the pre-registered protocol did not include a
-propagation-phase XSPH coefficient, so its outcome is diagnostic evidence, not a
-pre-registered hypothesis test.  It is recorded as such in the report.
+Cell 2 and 3 are marked *post-hoc*: the pre-registered protocol did not include
+a propagation-phase XSPH coefficient or compression regularization, so their
+outcomes are diagnostic evidence, not a pre-registered hypothesis test.  They
+are recorded as such in the report.
 """
 
 from __future__ import annotations
@@ -61,6 +64,15 @@ CELLS = {
     0: ("D20_h025_A", ["--depth-cells", "20"]),
     1: ("D13_h025_A", ["--depth-cells", "13"]),
     2: ("D20_h025_xsph", ["--depth-cells", "20", "--xsph", "0.05"]),
+    # Cell 3: SPHinXsys-style compression regularization instead of δ-SPH.
+    # This tests whether the divergence is caused by the density diffusion
+    # formulation or by something more fundamental in the WCSPH solver.
+    3: ("D20_h025_comp", [
+        "--depth-cells", "20",
+        "--density-diffusion", "0",
+        "--density-regularization", "compression",
+        "--compression-rule", "free_surface",
+    ]),
 }
 
 
