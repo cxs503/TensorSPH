@@ -19,6 +19,8 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 def f(x, n=4):
+    if isinstance(x, str):
+        return x
     return "%.*g" % (n, x)
 
 
@@ -37,8 +39,11 @@ def build(run_dir: Path) -> tuple:
     conv, mach, re_, nc = (R["convergence"], R["mach_window"],
                           R["reynolds_window"], R["negative_control"])
 
-    def err_at(key, value, rows):
-        return next(r for r in rows if abs(r[key] - value) < 1e-12)["error_pct"]
+    def err_at(key, value, rows, default="N/A"):
+        try:
+            return next(r for r in rows if abs(r[key] - value) < 1e-12)["error_pct"]
+        except StopIteration:
+            return default
 
     ref_doc = f"""# Taylor-Green reference: what exactly is being compared against
 
@@ -208,8 +213,8 @@ Worst row {f(B['worst_rel_error_pct'], 4)} %; all rows pass the 8 % criterion:
    `t_end` (equivalent to {f(nc['equivalent_numerical_viscosity_m2_s'], 5)} m²/s).
    Once the physical rate approaches that floor the fit is contaminated: inside
    8 % for `Re <= 5`, and **failing** at `Re = 10`
-   ({err_at('reynolds', 10.0, re_):.2f} %) and `Re = 20`
-   ({err_at('reynolds', 20.0, re_):.2f} %).  This case is therefore declared at
+   ({f(err_at('reynolds', 10.0, re_), 2)} %) and `Re = 20`
+   ({f(err_at('reynolds', 20.0, re_), 2)} %).  This case is therefore declared at
    **Re = 2** and is **not** a high-Reynolds anchor.
 2. **The loss is a late-time particle-disorder collapse.**  In the `nu = 0` control
    the energy is flat to ~0.1 % until `t ≈ 0.45 s` and then drops; the fit window
@@ -217,7 +222,7 @@ Worst row {f(B['worst_rel_error_pct'], 4)} %; all rows pass the 8 % criterion:
    (relative disorder is scale invariant), which is why errors in the low-viscosity
    sweeps are not monotone in `dx`.
 3. **Mach window**: flat (~2-3 %) for `M <= 0.02`; at `M = 0.05` the weakly
-   compressible assumption collapses ({err_at('mach', 0.05, mach):.0f} %).
+   compressible assumption collapses ({f(err_at('mach', 0.05, mach), 0)} %).
 4. **Integral quantities only**: decay rate, `E(t_end)/E(0)` and peak-speed ratio
    are gated; pointwise `u(x,t)` errors are not, because the SPH field is not
    remeshed onto the Eulerian reference.
