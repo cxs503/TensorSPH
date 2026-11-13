@@ -1,7 +1,7 @@
 {
  "case": "stokes_second_oscillating_plate",
  "anchor": "CASE-SPH-STOKES-2ND-PROBLEM",
- "mode": "ladder",
+ "mode": "quick",
  "provenance": {
   "symbolic": {
    "available": true,
@@ -25,30 +25,30 @@
   },
   "numeric": {
    "viscosity": 0.01,
-   "omega": 6.28319,
-   "delta": 0.056419,
+   "omega": 6.283185307179586,
+   "delta": 0.05641895835477563,
    "grid_points": 4001,
-   "pde_relative_residual": 6.21394e-07,
+   "pde_relative_residual": 6.21394047328921e-07,
    "pde_residual_tolerance": 0.005,
    "plate_bc_relative_error": 0.0,
-   "amplitude_at_delta": 0.367879,
-   "amplitude_at_delta_target": 0.367879,
+   "amplitude_at_delta": 0.36787944117144233,
+   "amplitude_at_delta_target": 0.36787944117144233,
    "amplitude_at_delta_error": 0.0,
    "finite_depth_plate_bc_relative_error": 0.0,
    "finite_depth_far_wall_relative_error": 0.0,
-   "finite_depth_vs_half_space_max_diff": 0.00196851,
-   "finite_depth_expected_truncation": 0.00673795,
+   "finite_depth_vs_half_space_max_diff": 0.0019685061438677706,
+   "finite_depth_expected_truncation": 0.006737946999085467,
    "finite_depth_comparison_domain": "0 <= y <= H (channel interior)",
    "all_checks_pass": true
   },
   "case": {
    "nu": 0.01,
-   "omega": 6.28319,
+   "omega": 6.283185307179586,
    "U0": 0.01,
    "H_over_delta": 6.0,
    "columns": 6,
    "rho0": 1000.0,
-   "c0": 4.0,
+   "c0": 10.0,
    "periods": 6.0,
    "measure_periods": 2.0,
    "ladder": [
@@ -59,8 +59,8 @@
    "gamma": 7.0,
    "h_factor": 1.3,
    "wall_friction": 1.0,
-   "mach_number": 0.0025,
-   "reynolds_u0_delta_over_nu": 0.056419,
+   "mach_number": 0.001,
+   "reynolds_u0_delta_over_nu": 0.05641895835477563,
    "solvers": {
     "rhs": "tensorsph.droplet_impact.rhs",
     "wall": "tensorsph.wall_mirror.plane_walls",
@@ -78,7 +78,7 @@
   "torch_threads": 1,
   "torch": "2.7.1",
   "numpy": "2.4.6",
-  "started": "2026-11-12T12:31:46Z"
+  "started": "2026-11-13T02:33:26Z"
  },
  "gates": {
   "G1_amplitude_l2_pct": 5.0,
@@ -88,26 +88,22 @@
   "G5_control_amp_pct": 5.0
  },
  "artifacts": {
-  "amplitude_decay.png": {
-   "sha256": "e5a2fe905013294017e345460ae00cb380f1f31cdcbcd6c8745f15eed87e4b2b",
-   "bytes": 107823
-  },
   "benchmark.json": {
    "sha256": "d649c3a3dc149882ee64a5bbb0f7b2468a652616fa12c97bef7c467f0025662e",
    "bytes": 2244
   },
-  "field_snapshot.png": {
-   "sha256": "62fce5ca46f7fb7609c58b87a9723924e687e027cf916f72c01ef2a652294610",
-   "bytes": 104042
-  },
   "results_ladder.json": {
    "sha256": "bd6cc05cacab5801a378a1b9cf0bfd6c2585261d8fe74788c8731efaee2cbc1b",
    "bytes": 1260586
+  },
+  "results_quick.json": {
+   "sha256": "66382fbf1b31d6ddccfe96dfc57b6c11d0faae30497a49f35c06942a9ba3e257",
+   "bytes": 242234
   },
   "results_sensitivity.json": {
    "sha256": "4b5fadfd94b29bcc3f7c969cb1f94bcc9d183b306236e386c8f0b3f748a3ba37",
    "bytes": 101211
   }
  },
- "command": "PYTHONPATH=.:src python benchmarks/stokes_second/run.py --ladder --c0 4 --periods 6 --measure-periods 2 --out benchmarks/stokes_second/out"
+ "command": "PYTHONPATH=.:src python benchmarks/stokes_second/run.py --quick"
 }
