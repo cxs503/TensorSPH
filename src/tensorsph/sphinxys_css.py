@@ -105,6 +105,27 @@ def _grad(delta: torch.Tensor, h: float, kernel: str) -> torch.Tensor:
         raise ValueError(f"unknown kernel {kernel!r}; expected {sorted(_GRADIENTS)}") from None
 
 
+#: Normalisation of the pair flux.  ``"upstream"`` is the literal transcription
+#: of SPHinXsys (``(m_i/rho_i) V_j``); ``"consistent"`` uses ``V_j/rho_i``, which
+#: is what ``a_i = (1/rho_i) div S_i`` requires.  The two differ by exactly
+#: ``m_i``, i.e. by ``rho_i dx^2`` -- see ``docs/xval_sphinxys_mixture_laplace``.
+ASSEMBLIES = ("upstream", "consistent")
+
+
+def pair_weight(mass_i, rho_i, vol_other, assembly: str = "upstream"):
+    """Per-end weight of the pair flux ``B_ij . grad_i W_ij``.
+
+    ``assembly="upstream"``     ``(m_i / rho_i) * V_j``  (SPHinXsys transcription)
+    ``assembly="consistent"``   ``V_j / rho_i``          (so that ``rho_i a_i = V_j B.gW``
+                                 is the divergence of the stress, independent of ``m_i``)
+    """
+    if assembly == "upstream":
+        return (mass_i / rho_i) * vol_other
+    if assembly == "consistent":
+        return vol_other / rho_i
+    raise ValueError(f"unknown assembly {assembly!r}; expected {list(ASSEMBLIES)}")
+
+
 def contact_fraction(rho0_self: torch.Tensor, rho0_other: torch.Tensor) -> torch.Tensor:
     """``f_k = rho0_i / (rho0_i + rho0_k)`` (surface_tension.cpp line ~"contact_fraction_.push_back").
 
@@ -233,10 +254,13 @@ def inner_stress_force(
     hourglass: bool = True,
     hourglass_coeff: float = SPHINXSYS_HOURGLASS_COEFF,
     eps: float = SPHINXSYS_EPS,
+    assembly: str = "upstream",
 ) -> torch.Tensor:
     """Acceleration from the same-phase stress divergence.
 
-    ``a_i = (m_i/rho_i) sum_j V_j (S_i + S_j + H_ij) . grad_i W_ij``.
+    ``a_i = (m_i/rho_i) sum_j V_j (S_i + S_j + H_ij) . grad_i W_ij``
+    (``assembly="upstream"``) or ``a_i = (1/rho_i) sum_j V_j (...)``
+    (``assembly="consistent"``; see :func:`pair_weight`).
 
     The pair list is stored once, so the ``j`` end is assembled explicitly:
     ``H`` flips sign under ``i <-> j`` (``e_ji = -e_ij``) while ``S_i + S_j``
@@ -268,8 +292,10 @@ def inner_stress_force(
     else:
         hg = torch.zeros_like(flux_s)
 
-    acc = acc.index_add(0, i, (mass[i] / rho[i])[:, None] * vol[j][:, None] * (flux_s + hg))
-    acc = acc.index_add(0, j, -(mass[j] / rho[j])[:, None] * vol[i][:, None] * (flux_s - hg))
+    w_i = pair_weight(mass[i], rho[i], vol[j], assembly)[:, None]
+    w_j = pair_weight(mass[j], rho[j], vol[i], assembly)[:, None]
+    acc = acc.index_add(0, i, w_i * (flux_s + hg))
+    acc = acc.index_add(0, j, -w_j * (flux_s - hg))
     return acc
 
 
@@ -290,6 +316,8 @@ def contact_stress_force(
     hourglass: bool = True,
     hourglass_coeff: float = SPHINXSYS_HOURGLASS_COEFF,
     eps: float = SPHINXSYS_EPS,
+    assembly: str = "upstream",
+    bracket: str = "mixture",
 ) -> torch.Tensor:
     """Acceleration from the cross-phase stress flux.
 
@@ -310,9 +338,17 @@ def contact_stress_force(
     w_prime = (gw * e).sum(dim=1)
 
     f_i = frac[i]
-    s_ij = torch.einsum("pab,pb->pa",
-                        (2.0 * (1.0 - f_i))[:, None, None] * fields.stress[i]
-                        + (2.0 * f_i)[:, None, None] * fields.stress[j], gw)
+    if bracket == "mixture":
+        # upstream: 2(1-f) S_i + 2f S_j  (the same bracket from either end)
+        st_i = (2.0 * (1.0 - f_i))[:, None, None] * fields.stress[i]
+        st_j = (2.0 * f_i)[:, None, None] * fields.stress[j]
+    elif bracket == "symmetric":
+        # the symmetric two-point form of the *same* stress field, which is what
+        # div S is discretised by (see docs/xval_sphinxys_mixture_laplace)
+        st_i, st_j = fields.stress[i], fields.stress[j]
+    else:  # pragma: no cover - argument validation
+        raise ValueError(f"unknown bracket {bracket!r}; expected 'mixture' or 'symmetric'")
+    s_ij = torch.einsum("pab,pb->pa", st_i + st_j, gw)
 
     if hourglass and hourglass_coeff != 0.0:
         g_avg = 0.5 * (fields.color_gradient[i] + fields.color_gradient[j])
@@ -334,8 +370,10 @@ def contact_stress_force(
         hg_ij = torch.zeros_like(s_ij)
         hg_ji = hg_ij
 
-    acc = acc.index_add(0, i, (mass[i] / rho[i])[:, None] * vol[j][:, None] * (s_ij + hg_ij))
-    acc = acc.index_add(0, j, -(mass[j] / rho[j])[:, None] * vol[i][:, None] * (s_ij - hg_ji))
+    w_i = pair_weight(mass[i], rho[i], vol[j], assembly)[:, None]
+    w_j = pair_weight(mass[j], rho[j], vol[i], assembly)[:, None]
+    acc = acc.index_add(0, i, w_i * (s_ij + hg_ij))
+    acc = acc.index_add(0, j, -w_j * (s_ij - hg_ji))
     return acc
 
 
@@ -358,6 +396,8 @@ def surface_tension_acceleration(
     hourglass: bool = True,
     hourglass_coeff: float = SPHINXSYS_HOURGLASS_COEFF,
     eps: float = SPHINXSYS_EPS,
+    assembly: str = "upstream",
+    bracket: str = "mixture",
 ) -> tuple[torch.Tensor, StressFields]:
     """Full SPHinXsys surface-tension acceleration + the fields it was built from.
 
@@ -380,11 +420,13 @@ def surface_tension_acceleration(
     fields = surface_stress(grad_c, sigma, eps=eps)
     acc = inner_stress_force(pos, mass, rho, vol, pairs_inner, fields, sigma, h,
                              kernel=kernel, hourglass=hourglass,
-                             hourglass_coeff=hourglass_coeff, eps=eps)
+                             hourglass_coeff=hourglass_coeff, eps=eps,
+                             assembly=assembly)
     if mode == "two_phase":
         acc = acc + contact_stress_force(pos, mass, rho, vol, pairs_cross, fields, frac,
                                          sigma, h, kernel=kernel, hourglass=hourglass,
-                                         hourglass_coeff=hourglass_coeff, eps=eps)
+                                         hourglass_coeff=hourglass_coeff, eps=eps,
+                                         assembly=assembly, bracket=bracket)
     return acc, fields
 
 
