@@ -1,0 +1,23 @@
+{
+  "repository": "https://github.com/Xiangyu-Hu/SPHinXsys",
+  "ref": "master",
+  "commit": "09e55cfdd23104e1b1db006a209a906218b3b14e",
+  "commit_date": "2026-11-13T07:02:18Z",
+  "fetched_at": "2026-11-13T07:41:12.412397Z",
+  "fetch_route": "api.github.com contents API (base64) + codeload tarball; raw.githubusercontent.com refused from this host",
+  "files_sha256": {
+    "Dambreak.cpp": "39db696801e62abc240ab5ee4f149adbda9583ff8f3f76cc26f9174aa916e16a",
+    "SOURCE_SHA256.txt": "736c4fc8a27ff6db9458568a8758e21444d3449b03ea08a96670fa8891e2cc94",
+    "base_fluid_dynamics.h": "4d9ca977703bed49a458933dbd1c1743de27588908302fd1c36b46a75beb94ce",
+    "base_local_dynamics.h": "d66c888eba8b6cefc4d43f4862fa04d476c20ec479402f91af03a5833f1cf3e8",
+    "fluid_integration.h": "03b4347353d02a6bfbdb73b7bac4a238849fa5f26b5af94e38a156b14d88cc9c",
+    "fluid_integration.hpp": "da397955871efbd89c0a04467b617d5a5c83b1f29addc09896a8d8a0982e7f18",
+    "kernel_correction.h": "34de18f914eef988b279037031d9803f0005b1727ef1525b7639dd00d15a87c9",
+    "kernel_correction.hpp": "18002561160952ecb940ebccde117285a8e163129bde2bd7017a5811e21a398d",
+    "pressure_gradient.hpp": "4e7ae5bf726d7f8bbcec6e594e01a2db26384a788dc67d0c03903a352a214d45",
+    "transport_velocity_correction.h": "348ff1ec1a45d019f2571b592f8088e26b69004cdfe32ba55c81c40bd55be97e",
+    "transport_velocity_correction.hpp": "dadfa8b99baecb0b8ff7827726512512dd115a486598195f0eb88155c9c091d5",
+    "transport_velocity_correction_ck.hpp": "58b66185987c0104b2290778f2ef9f8731b7281d6e9a4eae1b126d6ca0f0a3f1"
+  },
+  "license": "Apache-2.0 (upstream headers retained in the verbatim files)"
+}
