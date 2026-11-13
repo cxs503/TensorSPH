@@ -23,7 +23,9 @@ import math
 
 import torch
 
-from .particle_shifting import shift_positions
+from .particle_shifting import (concentration, estimate_reference_concentration,
+                                shift_positions)
+from .transport_velocity_correction import transport_velocity_correction
 from .droplet_impact import (
     Config,
     apply_boundary,
@@ -73,6 +75,24 @@ class DamBreakConfig(Config):
     # rest cannot relax the lattice, which is precisely defect F1
     # (docs/verification_startup_quiescence.md).
     shift_v_ref: float | None = None
+    # Transport-velocity correction (Adami, Hu & Adams 2013) in the
+    # position-correction form of SPHinXsys, ported in
+    # ``tensorsph.transport_velocity_correction``. ``tvc_every`` = 0 disables
+    # it, so every published number without it is bit-identical.
+    tvc_every: int = 0
+    # None selects the SPHinXsys default for a single acoustic step
+    # (0.2 / 4 = 0.05); 0.2 is the literal constructor default, valid for the
+    # dual-criteria scheme.
+    tvc_alpha: float | None = None
+    # "all" = every fluid particle (upstream ParticleScope=AllParticles);
+    # "bulk" = interior particles only (ParticleScope=BulkParticles, the scope
+    # used by the upstream channel-flow examples).
+    tvc_scope: str = "all"
+    # Free-surface detector threshold for scope="bulk": C_i < tvc_bulk_c * c_ref.
+    tvc_bulk_c: float = 0.95
+    # Safety cap on the per-step displacement in units of h; None keeps the
+    # upstream behaviour (no cap).
+    tvc_max_shift: float | None = None
 
     def tank_top(self) -> float:
         return float(self.tank_height)
@@ -215,6 +235,9 @@ class DamBreakRun:
     # a fixed-step run is ``dt c0 / h``; this is the number the stability
     # condition actually bounds, and the two differ by |v|/c0.
     max_acoustic_courant: float = 0.0
+    # Largest transport-velocity-correction displacement applied in the run
+    # (meters); 0 for a run without the correction.
+    max_tvc_shift: float = 0.0
     # ``(time, positions, velocities)`` captured at the requested
     # ``snapshot_times``.
     # Used by the shallow-water (Ritter) verification, which needs the depth
@@ -284,6 +307,7 @@ def run_case(cfg: DamBreakConfig, pair_skin_factor: float | None = None,
     wall_impact_time = None
 
     dt = cfg.dt
+    tvc_shift_peak = 0.0
     elapsed = 0.0
     dt_min = dt_max = dt
     # Same semantics as ``droplet_impact.run``: ``cfg.steps`` at ``cfg.dt`` is
@@ -353,6 +377,27 @@ def run_case(cfg: DamBreakConfig, pair_skin_factor: float | None = None,
                                         v_ref=v_ref,
                                         strength=cfg.shift_strength,
                                         limit=cfg.shift_limit)
+        if cfg.tvc_every and step > 0 and step % cfg.tvc_every == 0:
+            # Volumes from the summation density of this step; the correction
+            # moves positions only (mass and velocity untouched), exactly as the
+            # upstream ``update()`` does.
+            volume = mass / density
+            active = None
+            if cfg.tvc_scope == "bulk":
+                c_ref = estimate_reference_concentration(
+                    concentration(positions, volume, h))
+                active = concentration(positions, volume, h) >= cfg.tvc_bulk_c * c_ref
+            all_positions[:fluid_count] = positions
+            wall_volume_p = torch.full((wall.shape[0],), cfg.dx ** positions.shape[1],
+                                       dtype=mass.dtype, device=device)
+            tvc = transport_velocity_correction(
+                all_positions, torch.cat((volume, wall_volume_p)), h,
+                alpha=cfg.tvc_alpha, pairs=pairs, wall_count=wall.shape[0],
+                limiter=None, max_shift=(None if cfg.tvc_max_shift is None
+                                         else cfg.tvc_max_shift * h),
+                active=active)
+            positions = positions + tvc.shift
+            tvc_shift_peak = max(tvc_shift_peak, tvc.max_shift)
             escaped += apply_boundary(positions, velocity, cfg, top=top)
         elapsed += step_dt
         if cfg.adaptive_dt:
@@ -376,6 +421,7 @@ def run_case(cfg: DamBreakConfig, pair_skin_factor: float | None = None,
         steps_taken=step, simulated_time=elapsed,
         dt_min=dt_min, dt_max=dt_max,
         max_acoustic_courant=float(courant_peak),
+        max_tvc_shift=float(tvc_shift_peak),
         snapshots=snapshots,
     )
 
