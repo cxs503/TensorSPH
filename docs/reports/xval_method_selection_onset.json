@@ -1,0 +1,71 @@
+{
+  "record": {
+    "simulated_time_s": 3.7011831037519585,
+    "samples": 971,
+    "particles": 6400,
+    "dt_requested_s": 0.00010833333333333334,
+    "dt_final_s": 5.6893384337482154e-05,
+    "sound_speed_m_s": 30.0,
+    "depth_m": 0.2,
+    "wave_height_m": 0.03,
+    "wavelength_m": 1.2123690665891134,
+    "celerity_m_s": 1.2123690665891134
+  },
+  "wavemaker_fidelity": {
+    "settle_cut_s": 2.8,
+    "samples": 324,
+    "fitted_amplitude_m": 0.014777507676100267,
+    "analytic_amplitude_m": 0.014777507676100263,
+    "amplitude_ratio": 1.0000000000000002,
+    "offset_bias_m": -4.0223831435996625e-18,
+    "phase_error_rad": 1.2566370614359181,
+    "phase_expected_rad": 1.2566370614359172,
+    "phase_matches_designed_lag": true,
+    "relative_residual": 4.343409593685963e-15,
+    "stroke_target_m": 0.029555015352200526,
+    "recorded_peak_offset_m": 0.014777501075545275,
+    "note": "amplitude_ratio = fitted harmonic amplitude / (S/2); phase_error_rad = fitted phase offset against S/2 sin(omega t); both are measured after the ramp"
+  },
+  "speed_scale": {
+    "linear_orbital_speed_m_s": 0.12137393146625947,
+    "observed_max_speed_m_s": 106.5459213256836,
+    "ratio_observed_over_orbital": 877.8320026265452,
+    "mach_observed": 3.55153071085612
+  },
+  "threshold_crossings_s": {
+    "0.5": 1.46900000000035,
+    "1": 1.6206666666670777,
+    "2": 1.7680000000004703,
+    "5": 3.128666666667684,
+    "10": 3.2255215030285704,
+    "20": 3.2473203584702057
+  },
+  "peak_speed_growth": {
+    "points": 361,
+    "rate_per_s": 0.9231817342715949,
+    "r2": 0.7616732748385716,
+    "e_folding_s": 1.0832103397160646
+  },
+  "compression_crossings_s": {
+    "0.01": 1.412666666666994,
+    "0.05": 1.9110000000005278,
+    "0.10": 3.1026666666676737,
+    "0.20": 3.293943517666543
+  },
+  "wave_front_arrivals_s": {
+    "probes_s": [
+      0.8502571274985637,
+      0.9752571274985637,
+      1.1002571274985637,
+      1.2252571274985637
+    ],
+    "sponge_entrance_s": 1.8894602833301415,
+    "downstream_wall_s": 2.6394602833301413
+  },
+  "onset_vs_front": {
+    "first_supersonic_s": 3.249899913855222,
+    "sponge_entrance_s": 1.8894602833301415,
+    "supersonic_before_sponge_arrival": false
+  },
+  "source_record": "docs/reports/artifacts_wave_flume/wf_D20_unstable.json"
+}
