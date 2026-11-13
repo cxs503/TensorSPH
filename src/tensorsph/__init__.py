@@ -111,6 +111,7 @@ from .ice_thermal import (
 )
 from . import wall_mirror
 from .stokes_second import (
+    CASE_KEY as STOKES_SECOND_CASE_KEY,
     finite_depth,
     finite_depth_amplitude,
     harmonic_fit,
@@ -164,4 +165,7 @@ __all__ = [
     "ThreeFieldConfig", "ThreeFieldResult", "crack_assessment",
     "critical_temperature_drop", "flexural_strength", "restrained_stress",
     "run_stefan_sph", "run_three_field", "strength_band",
+    "STOKES_SECOND_CASE_KEY", "penetration_depth", "semi_infinite",
+    "semi_infinite_amplitude", "finite_depth", "finite_depth_amplitude",
+    "harmonic_fit", "verify_stokes_second_numeric", "verify_stokes_second_symbolic",
 ]
