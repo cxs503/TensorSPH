@@ -1,0 +1,183 @@
+{
+  "case": "Kleefsman (2005) dam break with obstacle -- gauge-metric ladder",
+  "grids_dx": [
+    0.02,
+    0.04
+  ],
+  "protocol": {
+    "t_end": [
+      1.2
+    ],
+    "sound_speed": [
+      20.0
+    ],
+    "gauge_aperture_m": [
+      0.08
+    ],
+    "stations_offset_m": [
+      [
+        0.05,
+        0.248
+      ]
+    ],
+    "arrival_threshold": [
+      0.02
+    ]
+  },
+  "rows": [
+    {
+      "tag": "dx0.02",
+      "dx": 0.02,
+      "t_end": 1.2,
+      "sound_speed": 20.0,
+      "dt": 0.0002,
+      "probe_x": 2.426,
+      "arrival_threshold": 0.02,
+      "peak_height_m": 0.5174656510353088,
+      "peak_time_s": 0.7159999999999538,
+      "gauge_aperture_m": 0.08,
+      "stations_offset_m": [
+        0.05,
+        0.248
+      ],
+      "gauges": {
+        "height@x2.426": {
+          "peak_m": 0.5174656510353088,
+          "peak_time_s": 0.7159999999999538,
+          "arrival_time_s": 0.4540686776727774,
+          "station_x_m": 2.426,
+          "operator": "height"
+        },
+        "surface@x2.426": {
+          "peak_m": 0.5374656510353089,
+          "peak_time_s": 0.7159999999999538,
+          "arrival_time_s": 0.4355690667292489,
+          "station_x_m": 2.426,
+          "operator": "surface"
+        },
+        "slab@x2.426": {
+          "peak_m": 0.47681819915771484,
+          "peak_time_s": 1.103999999999911,
+          "arrival_time_s": 0.44092004444087324,
+          "station_x_m": 2.426,
+          "operator": "slab"
+        },
+        "height@x2.228": {
+          "peak_m": 0.18069833517074585,
+          "peak_time_s": 1.2001999999999005,
+          "arrival_time_s": 0.3997810356124967,
+          "station_x_m": 2.228,
+          "operator": "height"
+        },
+        "surface@x2.228": {
+          "peak_m": 0.20069833517074584,
+          "peak_time_s": 1.2001999999999005,
+          "arrival_time_s": 0.3869386347156008,
+          "station_x_m": 2.228,
+          "operator": "surface"
+        },
+        "slab@x2.228": {
+          "peak_m": 0.2036172103881836,
+          "peak_time_s": 1.2001999999999005,
+          "arrival_time_s": 0.3893126361119045,
+          "station_x_m": 2.228,
+          "operator": "slab"
+        }
+      },
+      "column_peak_m": 0.53,
+      "arrival_time_s": 0.4540686776727774,
+      "steps": 6001,
+      "simulated_time_s": 1.2001999999999005,
+      "dt_min": 0.0002,
+      "dt_max": 0.0002,
+      "max_density_compression": 0.12032958984374997,
+      "max_speed": 6.641249179840088,
+      "mass_error_rel": 0.0,
+      "boundary_escapes": 0,
+      "particles_fluid": 1647,
+      "comparison": {
+        "verdict": "WITHHELD",
+        "tolerance": 0.1,
+        "rows": [],
+        "experimental_status": "WITHHELD"
+      }
+    },
+    {
+      "tag": "dx0.04",
+      "dx": 0.04,
+      "t_end": 1.2,
+      "sound_speed": 20.0,
+      "dt": 0.0002,
+      "probe_x": 2.426,
+      "arrival_threshold": 0.02,
+      "peak_height_m": 0.4254579544067383,
+      "peak_time_s": 0.9199999999999313,
+      "gauge_aperture_m": 0.08,
+      "stations_offset_m": [
+        0.05,
+        0.248
+      ],
+      "gauges": {
+        "height@x2.426": {
+          "peak_m": 0.4254579544067383,
+          "peak_time_s": 0.9199999999999313,
+          "arrival_time_s": 0.48414603344528545,
+          "station_x_m": 2.426,
+          "operator": "height"
+        },
+        "surface@x2.426": {
+          "peak_m": 0.46545795440673826,
+          "peak_time_s": 0.9199999999999313,
+          "arrival_time_s": 0.4658087708469711,
+          "station_x_m": 2.426,
+          "operator": "surface"
+        },
+        "slab@x2.426": {
+          "peak_m": 0.43382301330566403,
+          "peak_time_s": 0.9119999999999322,
+          "arrival_time_s": 0.46039496901992677,
+          "station_x_m": 2.426,
+          "operator": "slab"
+        },
+        "height@x2.228": {
+          "peak_m": 0.1777607649564743,
+          "peak_time_s": 1.1519999999999058,
+          "arrival_time_s": 0.4358024256643237,
+          "station_x_m": 2.228,
+          "operator": "height"
+        },
+        "surface@x2.228": {
+          "peak_m": 0.2177607649564743,
+          "peak_time_s": 1.1519999999999058,
+          "arrival_time_s": 0.40179328208226006,
+          "station_x_m": 2.228,
+          "operator": "surface"
+        },
+        "slab@x2.228": {
+          "peak_m": 0.2010190582275391,
+          "peak_time_s": 1.1519999999999058,
+          "arrival_time_s": 0.4073935439619555,
+          "station_x_m": 2.228,
+          "operator": "slab"
+        }
+      },
+      "column_peak_m": 0.5,
+      "arrival_time_s": 0.48414603344528545,
+      "steps": 6001,
+      "simulated_time_s": 1.2001999999999005,
+      "dt_min": 0.0002,
+      "dt_max": 0.0002,
+      "max_density_compression": 0.14149401855468757,
+      "max_speed": 5.977508544921875,
+      "mass_error_rel": 0.0,
+      "boundary_escapes": 0,
+      "particles_fluid": 390,
+      "comparison": {
+        "verdict": "WITHHELD",
+        "tolerance": 0.1,
+        "rows": [],
+        "experimental_status": "WITHHELD"
+      }
+    }
+  ]
+}

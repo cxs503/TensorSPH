@@ -94,3 +94,11 @@ FAILED tests/test_kleefsman_obstacle.py::test_water_column_lattice_and_mass
    与仓内 grep 均 0 命中 → 本单为首落地。
 3. 集群 `queued_ahead=406`（cj1231 双分片），本机 shell 120 s 超时迫使重计算只能后台/集群，回收窗口与本单预算不匹配。
 4. run_shell 安全策略拦掉含 `$(...)` 命令替换与 `curl -e/-A` 的命令，取 token/发报告只能走 python urllib。
+
+## 补充（agent/m17524）：先量仪器，再量解
+
+本文④表的「got」列用的是 legacy 顶 3 粒子均值，它对新网格有 **0.4–1.4 dx 的系统性偏低**
+（dx=0.02 时 −1.8…−2.7 cm，dx=0.04 时 −1.5…−5.3 cm），大于本算例自己的 0.02 m 到达阈值。
+`docs/verification_kleefsman_gauge_bias.md` 给出三种算子的解析偏置、固定物理孔径体积计，
+以及两个网格之间的读数极差：历史指标 peak 21.6 %（>10 % 容差，不可判）、
+`slab@x2.228` 1.3 %。实验值仍 WITHHELD，验收结论未变。
