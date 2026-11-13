@@ -1,0 +1,12 @@
+{
+ "branch": "agent/m17452",
+ "head": "e64e0064dd058d2e10b03b1fcbfb30c99f7751f9",
+ "log": "e64e006 Merge #626 (m17227) via push-merge",
+ "porcelain": [
+  "?? benchmarks/xval_fsi2/",
+  "?? docs/xval_fsi2/",
+  "?? src/tensorsph/fsi_force_from_fluid.py",
+  "?? tests/test_fsi_force_from_fluid.py"
+ ],
+ "delivered_tracked": []
+}
