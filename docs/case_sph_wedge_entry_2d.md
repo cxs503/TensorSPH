@@ -114,3 +114,14 @@ python benchmarks/case_sph_wedge_entry_2d/make_doc.py
 
 重判需重跑（原始工件未入 git）：`python benchmarks/case_sph_wedge_entry_2d/run.py --stage accept && python benchmarks/case_sph_wedge_entry_2d/make_doc.py`。
 Zhao & Faltinsen (1993) 仍为 **WITHHELD**，本次审计未产生任何替代它的数值。
+
+## ⑧ 测量链复核（m17548，2026-11-13）
+
+上轮 FAIL 判决（`cp_band_peak` +233.8 % @ dx=2 mm）经同一轨迹重算后确认**主要由分箱估计量产生**：
+`profile_bins=120` 大于每帧湿面节点数（dx=2 mm 时 62 个），bin 内采样数 0–2，120 bin 峰值 28.05
+与该算例逐点最大压力 28.047 相同，即"一个 bin 就是一个粒子"。同一轨迹换分箱数，峰值在
+9.22 … 28.05 间变化（极差 3.04×）。噪声鲁棒量在 dx=2 mm 均 <15 %：c/(C·V·t) −0.54 %、
+顶点 Cp −10.45 %、峰值位置 τ=0.92–0.94 vs 解析 0.930。峰值 Cp 本身当前**不可判定**
+（估计量不确定度 >30 % > 容差），Z&F (1993) 仍 **WITHHELD**。
+全文与数据：`docs/case_sph_wedge_entry_2d_metric_resolution_m17548.md`；
+工件：`artifacts/case_sph_wedge_entry_2d_metric/`；复现脚本 `benchmarks/case_sph_wedge_entry_2d/metric_resolution.py`。
