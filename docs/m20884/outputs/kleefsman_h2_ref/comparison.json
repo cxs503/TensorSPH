@@ -1,0 +1,67 @@
+{
+ "reference": {
+  "probe": "H2 (in the tank just in front of the box)",
+  "ref": "Kleefsman et al. 2005 JCP 206:363-393 doi:10.1016/j.jcp.2004.12.007, Fig. 19 right panel",
+  "source_pdf": "https://pure.rug.nl/ws/files/2941055/2005JCompPhysKleefsman.pdf",
+  "peak_height_m": 0.37,
+  "peak_time_s": 1.7027,
+  "arrival_time_s": 0.3591,
+  "arrival_threshold_m": 0.02,
+  "tolerance": {
+   "relative": 0.1
+  },
+  "digitised_from": "raster JPEG 1182x450 (page 22 image xref 314); x 0..6 s over px 661..1179, y 0.4..0.0 m over px 6.5..413.5",
+  "cross_check": {
+   "comflow_peak_height_m": 0.3361,
+   "comflow_peak_time_s": 1.7722,
+   "comflow_arrival_time_s": 0.3707,
+   "arrival_agreement_rel": 0.0323,
+   "why": "two curves traced independently by continuity; the paper states the impact instant is 'perfectly captured', so a digitisation that reproduces that agreement (<5 %) is self-consistent"
+  },
+  "uncertainty": {
+   "peak_height_m": 0.005,
+   "arrival_time_s": 0.01,
+   "reason": "1 px = 0.0038 m vertical, 0.0116 s horizontal; line thickness 3-6 px"
+  },
+  "series_csv": "h2_fig19.csv"
+ },
+ "tolerance": 0.1,
+ "runs": [
+  {
+   "tag": "dx0.02",
+   "window_s": null,
+   "t_end": 1.2002,
+   "peak_height_m": 0.517466,
+   "peak_time_s": 0.716,
+   "arrival_time_s": 0.4540684757798631,
+   "peak_err_rel": 0.3985567567567567,
+   "arrival_err_rel": 0.264462477805244,
+   "peak_pass": false,
+   "arrival_pass": false
+  },
+  {
+   "tag": "dx0.01",
+   "window_s": null,
+   "t_end": 1.000107,
+   "peak_height_m": 0.377295,
+   "peak_time_s": 0.965859,
+   "arrival_time_s": 0.444281036199095,
+   "peak_err_rel": 0.019716216216216206,
+   "arrival_err_rel": 0.23720700695932892,
+   "peak_pass": true,
+   "arrival_pass": false
+  },
+  {
+   "tag": "dx0.04",
+   "window_s": null,
+   "t_end": 1.2002,
+   "peak_height_m": 0.425458,
+   "peak_time_s": 0.92,
+   "arrival_time_s": 0.48414582084182756,
+   "peak_err_rel": 0.1498864864864865,
+   "arrival_err_rel": 0.34822005246958393,
+   "peak_pass": false,
+   "arrival_pass": false
+  }
+ ]
+}
