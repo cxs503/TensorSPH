@@ -44,8 +44,8 @@ sys.path.insert(0, str(REPO / "src"))
 
 import torch  # noqa: E402
 
-from tensorsph.isph_periodic import (periodic_pairs, project,  # noqa: E402
-                                     viscous_laplacian)
+from tensorsph.isph_periodic import (pair_geometry, periodic_pairs,  # noqa: E402
+                                     project, shift_positions, viscous_laplacian)
 
 TOLERANCE_PCT = 15.0   # owner precision standard
 
@@ -68,7 +68,7 @@ def exact_field(pos, t, *, L=1.0, U0=1.0, Re=10.0):
 
 
 def run_config(dx: float, courant: float, *, L=1.0, U0=1.0, Re=10.0,
-               t_end=0.5, h_factor=1.3, rho0=1000.0) -> dict:
+               t_end=0.5, h_factor=1.3, rho0=1000.0, shifting=0.0) -> dict:
     """One Taylor-Green run with Heun time integration + a projection per stage."""
     k = 2.0 * math.pi / L
     nu = U0 / (Re * k)
@@ -79,7 +79,7 @@ def run_config(dx: float, courant: float, *, L=1.0, U0=1.0, Re=10.0,
     u = exact_field(pos, 0.0, L=L, U0=U0, Re=Re)
     e0 = float(u.square().sum())
     n_steps = int(round(t_end / dt))
-    ratios, its = [], []
+    ratios, its, rmin_hist = [], [], []
     t0 = time.time()
     for _ in range(n_steps):
         pairs = periodic_pairs(pos, 2.0 * h, L)
@@ -96,6 +96,16 @@ def run_config(dx: float, courant: float, *, L=1.0, U0=1.0, Re=10.0,
         u = u_new
         pos = pos + dt * u
         pos = pos - L * torch.round(pos / L)
+        if shifting > 0.0:
+            pairs_shift = periodic_pairs(pos, 2.0 * h, L)
+            pos = shift_positions(pos, vol, pairs_shift, h, L, amplitude=shifting, dx=dx,
+                                  speed=u, dt=dt)
+        # cloud regularity: the smallest pair distance is the leading indicator of
+        # the disorder-driven blow-up analysed in
+        # docs/xval_isph_projection_taylor_green_r2.md
+        _i, _j, _d, _g = pair_geometry(pos, periodic_pairs(pos, 2.0 * h, L), h, L)
+        rmin = torch.linalg.vector_norm(_d, dim=-1).min()
+        rmin_hist.append(float(rmin))
     exact = exact_field(pos, t_end, L=L, U0=U0, Re=Re)
     err_pct = float((u - exact).norm() / exact.norm() * 100.0)
     e_ratio = float(u.square().sum()) / float(exact.square().sum())
@@ -108,6 +118,9 @@ def run_config(dx: float, courant: float, *, L=1.0, U0=1.0, Re=10.0,
         "energy_over_initial": float(u.square().sum()) / e0,
         "div_ratio_mean": sum(ratios) / len(ratios),
         "cg_iterations_mean": sum(its) / len(its),
+        "shifting_amplitude": shifting,
+        "min_pair_distance_over_dx": min(rmin_hist) / dx if rmin_hist else None,
+        "final_min_pair_distance_over_dx": rmin_hist[-1] / dx if rmin_hist else None,
         "tolerance_pct": TOLERANCE_PCT,
         "pass": err_pct <= TOLERANCE_PCT,
         "wall_seconds": time.time() - t0,
@@ -121,6 +134,8 @@ def main(argv=None) -> int:
                     help="dx:courant list")
     ap.add_argument("--t-end", type=float, default=0.5)
     ap.add_argument("--threads", type=int, default=4)
+    ap.add_argument("--shifting", type=float, default=0.0,
+                    help="Fickian shifting amplitude (0 = legacy, no regularisation)")
     args = ap.parse_args(argv)
     torch.set_num_threads(args.threads)
     torch.set_default_dtype(torch.float64)
@@ -128,7 +143,8 @@ def main(argv=None) -> int:
     rows = []
     for spec in args.configs.split(","):
         dx_s, c_s = spec.split(":")
-        rows.append(run_config(float(dx_s), float(c_s), t_end=args.t_end))
+        rows.append(run_config(float(dx_s), float(c_s), t_end=args.t_end,
+                               shifting=args.shifting))
         last = rows[-1]
         print(f"dx={last['dx']:.4g} Co={last['courant']:g} N={last['particles']:5d} "
               f"err={last['velocity_rel_l2_pct']:7.3f}%  E/Eexact={last['energy_over_exact']:.3f} "
