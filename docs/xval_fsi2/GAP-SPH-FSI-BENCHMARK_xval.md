@@ -181,3 +181,34 @@ fsi2 resolution `dx = 0.1`).  Full derivation, tables, pitfalls and the
 error-vs-3 % judgement: `X3_VISCOUS_DEFICIT.md`.  The pressure verdict of this
 report is **unchanged** — the pressure arms reproduce every number in §4 exactly
 after the addition, and the coupled fsi2 transient remains the round-2 target.
+
+## 11. Update (round 2, same anchor): the flat-wall pressure bias is a kernel-truncation moment, and it is removable
+
+§4 reported the one-sided pressure over-load as an unexplained, dx-independent
+"+24..28 % FAIL" (Wendland C2) / "-10..-14 %" (quintic).  It is neither a porting
+bug nor a discretisation error: it is the *half-space kernel moment* of the
+one-sided sum.  With ``g_i = sum_j (e_ij.n_i) dW/dr V_j`` the raw branch loads a
+wall particle by ``-2 p V_i g_i`` whereas the tributary surface load is
+``-p A_i``, so the exact multiplier is ``m_i = A_i/(2 V_i |g_i|)`` -- measured on
+the actual truncated neighbour set, no fitted constant.  Continuum closed form
+``g_cont = 2 int_0^R W dr = 7/(3 pi h)`` (Wendland C2, 2-D), the same kernel
+moment that governs the viscous branch (``7/(3 pi)``); the lattice value is
+1.12x that at ``h/dx = 1.3``, which is why the observed bias (+28 %) is twice the
+continuum prediction (+14.3 %) at that support.
+
+Result (``artifacts/xval_fsi2/pressure_normalisation.json``): flat-wall
+hydrostatic load restored to +0.1..+0.8 % (X1) and -0.3..-1.4 % (X2), both
+kernels, first-order convergent in ``dx``; the raw arm keeps its bias verbatim,
+so the two arms stay comparable.  Scope measured: **single surface layer** only
+(2/3 layers double count: +100 %/+201 %), and **not** the closed-body
+pressure-gradient load of X4 (+83 % -> +187 % at ``dx = 0.05``; keep the panel arm
+there).  Driver ``benchmarks/xval_fsi2/pressure_normalisation_audit.py``,
+document ``PRESSURE_MOMENT_NORMALISATION.md``, guards
+``tests/test_pressure_moment_normalisation.py``.
+
+Correction to §6 item 6: the "known +87 % large-deformation rod error" cited there
+as the blocker for the coupled fsi2 transient was **falsified** in
+``docs/fsi_elastic_gate/04_a2_frame_fix.md`` (frame-mismatch artefact; same-frame
+error is +2.55 % at n=25, converging).  The coupled transient is therefore blocked
+by cost/resolution and by the still-open solid-model question (discrete rod vs
+TLSPH), not by a rod accuracy defect -- it remains the round-2 target.
