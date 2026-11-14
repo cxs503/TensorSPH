@@ -1,0 +1,1682 @@
+{
+ "case_key": "CASE-SPH-POISEUILLE-MORRIS",
+ "anchor": "CASE-SPH-POISEUILLE-MORRIS",
+ "generated_at": "2026-11-14T10:33:59.900658+00:00",
+ "reference": {
+  "bibliography": {
+   "authors": "Morris, J. P.; Fox, P. J.; Zhu, Y.",
+   "title": "Modeling Low Reynolds Number Incompressible Flows Using SPH",
+   "journal": "Journal of Computational Physics",
+   "volume": 136,
+   "issue": 1,
+   "pages": "214-226",
+   "year": 1997,
+   "doi": "10.1006/jcph.1997.5776",
+   "role": "the no-slip low-Reynolds plane channel is this paper's viscous-operator test; the numbers compared against here are that problem's exact solution, re-derived in code, not copied"
+  },
+  "provenance": "reference values are computed from the exact solution at run time; the symbolic and series certificates below are the anti-transcription evidence",
+  "parameter_provenance": "the case is defined by dimensionless groups (Re_mean, h/H, L/H); the drive is derived from Re, not tabulated. The Morris et al. paper's own tabulated parameters were not re-read offline, so no literal table values are claimed (WITHHELD); the exact solution used for grading holds for any parameter set.",
+  "symbolic": {
+   "available": true,
+   "profile": "u(y) = g*(H-y)*y/(2*nu)",
+   "ode_residual_nu_uyy_plus_g": "0",
+   "ode_residual_is_zero": true,
+   "bc_y0": "0",
+   "bc_yH": "0",
+   "bc_both_zero": true,
+   "u_max": "H**2*g/(8*nu)",
+   "u_max_matches_gH2_over_8nu": true,
+   "du_dy_at_wall": "H*g/(2*nu)",
+   "tau_wall": "H*g*rho/2",
+   "tau_wall_matches_rho_gH_over_2": true,
+   "flow_rate": "H**3*g/(12*nu)",
+   "flow_rate_matches_gH3_over_12nu": true
+  },
+  "series": {
+   "n_terms": 400,
+   "initial_condition_residual_over_umax": 6.437834085271098e-09,
+   "pde_residual_over_g": 1.745528327906716e-05,
+   "steady_limit_residual_over_umax": 4.68549567359903e-05,
+   "truncation_sensitivity_over_umax": 0.0,
+   "pass": true
+  },
+  "values": {
+   "u_mean": 0.1,
+   "u_max": 0.15000000000000002,
+   "tau_wall": 600.0000000000001,
+   "flow_rate": 0.00010000000000000003,
+   "tau_diffusive_s": 0.00010132118364233777
+  },
+  "startup_centreline": [
+   {
+    "t_over_tau": 0.0,
+    "u_max_exact": 1.2093872014951046e-09
+   },
+   {
+    "t_over_tau": 0.05,
+    "u_max_exact": 0.00607927045523482
+   },
+   {
+    "t_over_tau": 0.1,
+    "u_max_exact": 0.012157251775604117
+   },
+   {
+    "t_over_tau": 0.2,
+    "u_max_exact": 0.024193888297210614
+   },
+   {
+    "t_over_tau": 0.3,
+    "u_max_exact": 0.03570052825864982
+   },
+   {
+    "t_over_tau": 0.4,
+    "u_max_exact": 0.04638612701700953
+   },
+   {
+    "t_over_tau": 0.6,
+    "u_max_exact": 0.06506581249892344
+   },
+   {
+    "t_over_tau": 0.8,
+    "u_max_exact": 0.0804448475477184
+   },
+   {
+    "t_over_tau": 1.0,
+    "u_max_exact": 0.09305026055499757
+   },
+   {
+    "t_over_tau": 2.0,
+    "u_max_exact": 0.1290491014601271
+   },
+   {
+    "t_over_tau": 3.0,
+    "u_max_exact": 0.14229259512099854
+   }
+  ]
+ },
+ "config": {
+  "case_key": "CASE-SPH-POISEUILLE-MORRIS",
+  "height_m": 0.001,
+  "length_m": 0.004,
+  "rho0": 1000.0,
+  "mu": 1.0,
+  "nu": 0.001,
+  "reynolds_mean": 0.1,
+  "body_force_m_per_s2": 1200.0000000000002,
+  "u_mean_reference": 0.1,
+  "u_max_reference": 0.15000000000000002,
+  "tau_wall_reference": 600.0000000000001,
+  "flow_rate_reference": 0.00010000000000000003,
+  "tau_diffusive_s": 0.00010132118364233777,
+  "t_end_s": 0.0003039635509270133,
+  "dt_s": 8.251953125000002e-07,
+  "steps": 368,
+  "resolution_H_over_dx": 16,
+  "dx_m": 6.25e-05,
+  "h_m": 8.125000000000001e-05,
+  "h_factor": 1.3,
+  "sound_speed": 20.0,
+  "wall_model": "mirror_no_slip",
+  "slip": "no_slip",
+  "dimensionless": {
+   "Re_mean": 0.1,
+   "Re_max": 0.15000000000000002,
+   "mach_max": 0.0075000000000000015,
+   "courant_acoustic": 0.203125,
+   "viscous_number": 0.125,
+   "H_over_dx": 16,
+   "h_over_dx": 1.3,
+   "L_over_H": 4.0,
+   "h_over_H": 0.08125,
+   "t_end_over_tau": 3.0,
+   "tau_diffusive_s": 0.00010132118364233777,
+   "steps": 368
+  }
+ },
+ "ladder": {
+  "resolutions": [
+   8,
+   12,
+   16
+  ],
+  "entries": [
+   {
+    "config": {
+     "case_key": "CASE-SPH-POISEUILLE-MORRIS",
+     "height_m": 0.001,
+     "length_m": 0.004,
+     "rho0": 1000.0,
+     "mu": 1.0,
+     "nu": 0.001,
+     "reynolds_mean": 0.1,
+     "body_force_m_per_s2": 1200.0000000000002,
+     "u_mean_reference": 0.1,
+     "u_max_reference": 0.15000000000000002,
+     "tau_wall_reference": 600.0000000000001,
+     "flow_rate_reference": 0.00010000000000000003,
+     "tau_diffusive_s": 0.00010132118364233777,
+     "t_end_s": 0.0003039635509270133,
+     "dt_s": 2.4375000000000004e-06,
+     "steps": 125,
+     "resolution_H_over_dx": 8,
+     "dx_m": 0.000125,
+     "h_m": 0.00016250000000000002,
+     "h_factor": 1.3,
+     "sound_speed": 20.0,
+     "wall_model": "mirror_no_slip",
+     "slip": "no_slip",
+     "dimensionless": {
+      "Re_mean": 0.1,
+      "Re_max": 0.15000000000000002,
+      "mach_max": 0.0075000000000000015,
+      "courant_acoustic": 0.3,
+      "viscous_number": 0.0923076923076923,
+      "H_over_dx": 8,
+      "h_over_dx": 1.3,
+      "L_over_H": 4.0,
+      "h_over_H": 0.1625,
+      "t_end_over_tau": 3.0,
+      "tau_diffusive_s": 0.00010132118364233777,
+      "steps": 125
+     }
+    },
+    "trace": [
+     {
+      "t": 0.0,
+      "t_over_tau": 0.0,
+      "u_max": 0.002925000000000001,
+      "u_mean": 0.002925000000000002,
+      "mach_max": 0.00014625000000000006,
+      "wall_clock_s": 0.0215761661529541
+     },
+     {
+      "t": 3.656250000000001e-05,
+      "t_over_tau": 0.36085741091482976,
+      "u_max": 0.044679573838085775,
+      "u_mean": 0.03447173088263365,
+      "mach_max": 0.002233978691904289,
+      "wall_clock_s": 0.2768254280090332
+     },
+     {
+      "t": 7.312500000000002e-05,
+      "t_over_tau": 0.7217148218296595,
+      "u_max": 0.07648126128445165,
+      "u_mean": 0.05547183258405311,
+      "mach_max": 0.0038240630642225825,
+      "wall_clock_s": 0.5271506309509277
+     },
+     {
+      "t": 0.00010968750000000002,
+      "t_over_tau": 1.082572232744489,
+      "u_max": 0.09888199503359738,
+      "u_mean": 0.07011737853146681,
+      "mach_max": 0.004944099751679869,
+      "wall_clock_s": 0.7779762744903564
+     },
+     {
+      "t": 0.00014625000000000003,
+      "t_over_tau": 1.443429643659319,
+      "u_max": 0.11455817077738925,
+      "u_mean": 0.08035888567174049,
+      "mach_max": 0.005727908538869462,
+      "wall_clock_s": 1.012666940689087
+     },
+     {
+      "t": 0.00018281250000000003,
+      "t_over_tau": 1.8042870545741487,
+      "u_max": 0.12552310764919394,
+      "u_mean": 0.08752197927602293,
+      "mach_max": 0.006276155382459697,
+      "wall_clock_s": 1.249037742614746
+     },
+     {
+      "t": 0.00021937500000000003,
+      "t_over_tau": 2.165144465488978,
+      "u_max": 0.13319198868549453,
+      "u_mean": 0.09253187626164333,
+      "mach_max": 0.006659599434274727,
+      "wall_clock_s": 1.4728097915649414
+     },
+     {
+      "t": 0.00025593750000000003,
+      "t_over_tau": 2.526001876403808,
+      "u_max": 0.13855363034235432,
+      "u_mean": 0.09603579367346568,
+      "mach_max": 0.0069276815171177165,
+      "wall_clock_s": 1.7320075035095215
+     },
+     {
+      "t": 0.00029250000000000006,
+      "t_over_tau": 2.886859287318638,
+      "u_max": 0.14230070993320412,
+      "u_mean": 0.09848492010548329,
+      "mach_max": 0.0071150354966602065,
+      "wall_clock_s": 1.963348150253296
+     },
+     {
+      "t": 0.00030225000000000006,
+      "t_over_tau": 2.983087930229259,
+      "u_max": 0.14309211618661308,
+      "u_mean": 0.09900240159132496,
+      "mach_max": 0.007154605809330654,
+      "wall_clock_s": 2.0305027961730957
+     }
+    ],
+    "evaluation": {
+     "resolution_H_over_dx": 8,
+     "dx": 0.000125,
+     "dt": 2.4375000000000004e-06,
+     "steps": 125,
+     "n_fluid": 256,
+     "n_ghost": 576,
+     "n_averaged_samples": 31,
+     "u_max_measured": 0.13914795925121645,
+     "u_max_reference": 0.13639791858258515,
+     "wall_shear_bottom": 548.6784355382232,
+     "wall_shear_top": 548.678435538225,
+     "wall_shear_reference": 600.0000000000001,
+     "wall_shear_reference_estimator": [
+      552.097956052274,
+      552.0979560522753
+     ],
+     "wall_shear_error_vs_closed_form_pct": 8.553594076962822,
+     "flow_rate_measured": 9.188517152784375e-05,
+     "flow_rate_reference": 8.931178698030017e-05,
+     "flow_rate_closed_form": 0.00010000000000000003,
+     "flow_rate_error_vs_closed_form_pct": -8.114828472156288,
+     "flow_rate_estimator_bias_pct": -10.688213019699866,
+     "slip_bottom_over_umax": 0.03063979830641432,
+     "slip_top_over_umax": 0.030639798306409085,
+     "profile_rms_interior_pct": 2.7201426305288114,
+     "profile_rms_all_rows_pct": 5.6711297588495375,
+     "fit": {
+      "c0": 0.004263465406206431,
+      "c1": 548.6784355382232,
+      "c2": -548678.4355382241
+     },
+     "steady_drift": 0.005561506009214154,
+     "wall_clock_s": 2.0386393070220947,
+     "rows": [
+      {
+       "row": 0,
+       "y": 6.25e-05,
+       "y_over_H": 0.0625,
+       "u_mean": 0.03631299878138671,
+       "u_std_x": 2.0488567746017883e-15,
+       "count": 32,
+       "u_ref": 0.032916828644035334,
+       "rel_error_pct": 10.317428127957818
+      },
+      {
+       "row": 1,
+       "y": 0.0001875,
+       "y_over_H": 0.1875,
+       "u_mean": 0.0880292601377131,
+       "u_std_x": 3.599662818432062e-15,
+       "count": 32,
+       "u_ref": 0.08502891753396548,
+       "rel_error_pct": 3.5286143711627442
+      },
+      {
+       "row": 2,
+       "y": 0.0003125,
+       "y_over_H": 0.3125,
+       "u_mean": 0.12220696733175204,
+       "u_std_x": 4.326823923618597e-15,
+       "count": 32,
+       "u_ref": 0.11936189748263239,
+       "rel_error_pct": 2.383566204226624
+      },
+      {
+       "row": 3,
+       "y": 0.0004375,
+       "y_over_H": 0.4375,
+       "u_mean": 0.13914795925121642,
+       "u_std_x": 6.106303514744807e-15,
+       "count": 32,
+       "u_ref": 0.13639791858258515,
+       "rel_error_pct": 2.0161896143350586
+      },
+      {
+       "row": 4,
+       "y": 0.0005625000000000001,
+       "y_over_H": 0.5625,
+       "u_mean": 0.13914795925121645,
+       "u_std_x": 6.145494367701008e-15,
+       "count": 32,
+       "u_ref": 0.13639791858258513,
+       "rel_error_pct": 2.0161896143350995
+      },
+      {
+       "row": 5,
+       "y": 0.0006875,
+       "y_over_H": 0.6875,
+       "u_mean": 0.12220696733175206,
+       "u_std_x": 4.438375358691435e-15,
+       "count": 32,
+       "u_ref": 0.1193618974826324,
+       "rel_error_pct": 2.3835662042266237
+      },
+      {
+       "row": 6,
+       "y": 0.0008125000000000001,
+       "y_over_H": 0.8125,
+       "u_mean": 0.08802926013771317,
+       "u_std_x": 3.9292202824327164e-15,
+       "count": 32,
+       "u_ref": 0.08502891753396545,
+       "rel_error_pct": 3.5286143711628597
+      },
+      {
+       "row": 7,
+       "y": 0.0009375,
+       "y_over_H": 0.9375,
+       "u_mean": 0.036312998781386725,
+       "u_std_x": 1.9226273749586565e-15,
+       "count": 32,
+       "u_ref": 0.03291682864403536,
+       "rel_error_pct": 10.317428127957765
+      }
+     ],
+     "transient": [
+      {
+       "fraction_of_tau": 0.1,
+       "t_over_tau": 0.12028580363827657,
+       "u_max_exact": 0.014619535920118554,
+       "u_max_measured": 0.014610018515235426,
+       "max_abs_error_over_umax_inf_pct": 1.3820647102639412,
+       "max_abs_error_over_umax_t_pct": 14.180320611566314,
+       "centre_row_rel_error_pct": -0.01469610248686986,
+       "worst_row_y_over_H": 0.9375,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      {
+       "fraction_of_tau": 0.2,
+       "t_over_tau": 0.21651444654889784,
+       "u_max_exact": 0.026141743977040277,
+       "u_max_measured": 0.02607351387004831,
+       "max_abs_error_over_umax_inf_pct": 1.6707683198029464,
+       "max_abs_error_over_umax_t_pct": 9.5867838117668,
+       "centre_row_rel_error_pct": 0.05851947603643363,
+       "worst_row_y_over_H": 0.9375,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      {
+       "fraction_of_tau": 0.4,
+       "t_over_tau": 0.40897173237014034,
+       "u_max_exact": 0.04730082276021999,
+       "u_max_measured": 0.04714458156631739,
+       "max_abs_error_over_umax_inf_pct": 1.8674145149662222,
+       "max_abs_error_over_umax_t_pct": 5.921930336495285,
+       "centre_row_rel_error_pct": 0.502531052895704,
+       "worst_row_y_over_H": 0.0625,
+       "limit_pct": 5.0,
+       "pass": true
+      }
+     ],
+     "gates": {
+      "A_centre_line": {
+       "value_pct": 2.0161896143350733,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      "B_profile_shape": {
+       "value_pct": 2.7201426305288114,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      "C_wall_shear": {
+       "value_pct": 0.6193684429664836,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      "D_wall_slip": {
+       "value_pct": 3.063979830641432,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      "E_flow_rate": {
+       "value_pct": 2.881349298397984,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      "F_startup": {
+       "value_pct": 1.8674145149662222,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      "G_steady_state": {
+       "value_pct": 0.5561506009214153,
+       "limit_pct": 1.0,
+       "pass": true
+      }
+     },
+     "pass": true,
+     "nodes": [
+      {
+       "name": "u_max",
+       "symbol": "u_max",
+       "unit": "m/s",
+       "reference": 0.15000000000000002,
+       "got": 0.13914795925121645,
+       "rel_error_pct": -7.234693832522376
+      },
+      {
+       "name": "profile_rms_interior",
+       "symbol": "RMS(u)",
+       "unit": "%",
+       "reference": 0.0,
+       "got": 2.7201426305288114,
+       "rel_error_pct": 2.7201426305288114
+      },
+      {
+       "name": "wall_shear_bottom",
+       "symbol": "tau_w(0)",
+       "unit": "Pa",
+       "reference": 552.097956052274,
+       "got": 548.6784355382232,
+       "rel_error_pct": -0.6193684429664836
+      },
+      {
+       "name": "wall_shear_top",
+       "symbol": "tau_w(H)",
+       "unit": "Pa",
+       "reference": 552.0979560522753,
+       "got": 548.678435538225,
+       "rel_error_pct": -0.6193684429664059
+      },
+      {
+       "name": "wall_shear_vs_closed_form",
+       "symbol": "tau_w (rho g H/2)",
+       "unit": "Pa",
+       "reference": 600.0000000000001,
+       "got": 548.6784355382232,
+       "rel_error_pct": 8.553594076962822
+      },
+      {
+       "name": "flow_rate",
+       "symbol": "Q",
+       "unit": "m^2/s",
+       "reference": 8.931178698030017e-05,
+       "got": 9.188517152784375e-05,
+       "rel_error_pct": 2.881349298397984
+      },
+      {
+       "name": "flow_rate_vs_closed_form",
+       "symbol": "Q (closed form)",
+       "unit": "m^2/s",
+       "reference": 0.00010000000000000003,
+       "got": 9.188517152784375e-05,
+       "rel_error_pct": -8.114828472156288
+      },
+      {
+       "name": "wall_slip",
+       "symbol": "u_wall/u_max",
+       "unit": "-",
+       "reference": 0.0,
+       "got": 0.03063979830641432,
+       "rel_error_pct": 3.063979830641432
+      }
+     ]
+    }
+   },
+   {
+    "config": {
+     "case_key": "CASE-SPH-POISEUILLE-MORRIS",
+     "height_m": 0.001,
+     "length_m": 0.004,
+     "rho0": 1000.0,
+     "mu": 1.0,
+     "nu": 0.001,
+     "reynolds_mean": 0.1,
+     "body_force_m_per_s2": 1200.0000000000002,
+     "u_mean_reference": 0.1,
+     "u_max_reference": 0.15000000000000002,
+     "tau_wall_reference": 600.0000000000001,
+     "flow_rate_reference": 0.00010000000000000003,
+     "tau_diffusive_s": 0.00010132118364233777,
+     "t_end_s": 0.0003039635509270133,
+     "dt_s": 1.4670138888888885e-06,
+     "steps": 207,
+     "resolution_H_over_dx": 12,
+     "dx_m": 8.333333333333333e-05,
+     "h_m": 0.00010833333333333333,
+     "h_factor": 1.3,
+     "sound_speed": 20.0,
+     "wall_model": "mirror_no_slip",
+     "slip": "no_slip",
+     "dimensionless": {
+      "Re_mean": 0.1,
+      "Re_max": 0.15000000000000002,
+      "mach_max": 0.0075000000000000015,
+      "courant_acoustic": 0.27083333333333326,
+      "viscous_number": 0.125,
+      "H_over_dx": 12,
+      "h_over_dx": 1.3,
+      "L_over_H": 4.0,
+      "h_over_H": 0.10833333333333332,
+      "t_end_over_tau": 3.0,
+      "tau_diffusive_s": 0.00010132118364233777,
+      "steps": 207
+     }
+    },
+    "trace": [
+     {
+      "t": 0.0,
+      "t_over_tau": 0.0,
+      "u_max": 0.0017604166666666666,
+      "u_mean": 0.0017604166666666666,
+      "mach_max": 8.802083333333333e-05,
+      "wall_clock_s": 0.021228551864624023
+     },
+     {
+      "t": 3.667534722222221e-05,
+      "t_over_tau": 0.3619711683559247,
+      "u_max": 0.043942208997453144,
+      "u_mean": 0.033076391777006636,
+      "mach_max": 0.0021971104498726573,
+      "wall_clock_s": 0.5856144428253174
+     },
+     {
+      "t": 7.335069444444442e-05,
+      "t_over_tau": 0.7239423367118494,
+      "u_max": 0.07609168125526783,
+      "u_mean": 0.05395987039226502,
+      "mach_max": 0.0038045840627633914,
+      "wall_clock_s": 1.1234192848205566
+     },
+     {
+      "t": 0.00011002604166666664,
+      "t_over_tau": 1.0859135050677742,
+      "u_max": 0.09863110162445839,
+      "u_mean": 0.06848158286068126,
+      "mach_max": 0.00493155508122292,
+      "wall_clock_s": 1.7728211879730225
+     },
+     {
+      "t": 0.00014670138888888884,
+      "t_over_tau": 1.4478846734236988,
+      "u_max": 0.11434426685440269,
+      "u_mean": 0.07860029042636238,
+      "mach_max": 0.005717213342720134,
+      "wall_clock_s": 2.40680193901062
+     },
+     {
+      "t": 0.00018337673611111107,
+      "t_over_tau": 1.8098558417796238,
+      "u_max": 0.12529497939264686,
+      "u_mean": 0.08565176023535043,
+      "mach_max": 0.006264748969632343,
+      "wall_clock_s": 2.903651714324951
+     },
+     {
+      "t": 0.00022005208333333328,
+      "t_over_tau": 2.1718270101355484,
+      "u_max": 0.1329255130982696,
+      "u_mean": 0.09056584564474829,
+      "mach_max": 0.00664627565491348,
+      "wall_clock_s": 3.599966526031494
+     },
+     {
+      "t": 0.0002567274305555555,
+      "t_over_tau": 2.533798178491473,
+      "u_max": 0.13824108804639318,
+      "u_mean": 0.09399037104830629,
+      "mach_max": 0.006912054402319659,
+      "wall_clock_s": 4.145964622497559
+     },
+     {
+      "t": 0.0002934027777777777,
+      "t_over_tau": 2.8957693468473975,
+      "u_max": 0.14194027466935183,
+      "u_mean": 0.09637330487738488,
+      "mach_max": 0.0070970137334675915,
+      "wall_clock_s": 4.8090221881866455
+     },
+     {
+      "t": 0.00030220486111111106,
+      "t_over_tau": 2.98264242725282,
+      "u_max": 0.14264474428652146,
+      "u_mean": 0.09682745380196346,
+      "mach_max": 0.007132237214326073,
+      "wall_clock_s": 4.962871551513672
+     }
+    ],
+    "evaluation": {
+     "resolution_H_over_dx": 12,
+     "dx": 8.333333333333333e-05,
+     "dt": 1.4670138888888885e-06,
+     "steps": 207,
+     "n_fluid": 576,
+     "n_ghost": 864,
+     "n_averaged_samples": 51,
+     "u_max_measured": 0.13883241196197002,
+     "u_max_reference": 0.13757764170352127,
+     "wall_shear_bottom": 551.1393525999076,
+     "wall_shear_top": 551.139352599909,
+     "wall_shear_reference": 600.0000000000001,
+     "wall_shear_reference_estimator": [
+      552.4213982680344,
+      552.4213982680358
+     ],
+     "wall_shear_error_vs_closed_form_pct": 8.143441233348748,
+     "flow_rate_measured": 9.237116923568764e-05,
+     "flow_rate_reference": 9.114694983899473e-05,
+     "flow_rate_closed_form": 0.00010000000000000003,
+     "flow_rate_error_vs_closed_form_pct": -7.628830764312388,
+     "flow_rate_estimator_bias_pct": -8.853050161005305,
+     "slip_bottom_over_umax": 0.015815107526206167,
+     "slip_top_over_umax": 0.015815107526202053,
+     "profile_rms_interior_pct": 1.4426160604792815,
+     "profile_rms_all_rows_pct": 3.0931662123597325,
+     "fit": {
+      "c0": 0.0021956495233011073,
+      "c1": 551.1393525999076,
+      "c2": -551139.3525999082
+     },
+     "steady_drift": 0.0049631411437711225,
+     "wall_clock_s": 4.965097188949585,
+     "rows": [
+      {
+       "row": 0,
+       "y": 4.1666666666666665e-05,
+       "y_over_H": 0.041666666666666664,
+       "u_mean": 0.02399982526645177,
+       "u_std_x": 2.968155040845044e-15,
+       "count": 48,
+       "u_ref": 0.02246003685530977,
+       "rel_error_pct": 6.85568069661461
+      },
+      {
+       "row": 1,
+       "y": 0.000125,
+       "y_over_H": 0.125,
+       "u_mean": 0.06262402318865554,
+       "u_std_x": 2.792950049611936e-15,
+       "count": 48,
+       "u_ref": 0.06123221699512438,
+       "rel_error_pct": 2.2729965724448316
+      },
+      {
+       "row": 2,
+       "y": 0.00020833333333333332,
+       "y_over_H": 0.20833333333333331,
+       "u_mean": 0.09332135150145483,
+       "u_std_x": 2.772302323334571e-15,
+       "count": 48,
+       "u_ref": 0.09197042470462212,
+       "rel_error_pct": 1.4688708910189694
+      },
+      {
+       "row": 3,
+       "y": 0.0002916666666666667,
+       "y_over_H": 0.2916666666666667,
+       "u_mean": 0.11615702681226597,
+       "u_std_x": 4.928300241453485e-15,
+       "count": 48,
+       "u_ref": 0.11485151350641948,
+       "rel_error_pct": 1.136696649429461
+      },
+      {
+       "row": 4,
+       "y": 0.000375,
+       "y_over_H": 0.375,
+       "u_mean": 0.13129228931655373,
+       "u_std_x": 5.611278898950185e-15,
+       "count": 48,
+       "u_ref": 0.13001988369662612,
+       "rel_error_pct": 0.9786238717891047
+      },
+      {
+       "row": 5,
+       "y": 0.0004583333333333333,
+       "y_over_H": 0.4583333333333333,
+       "u_mean": 0.13883241196197002,
+       "u_std_x": 4.788289308870543e-15,
+       "count": 48,
+       "u_ref": 0.13757764170352121,
+       "rel_error_pct": 0.9120451862031672
+      },
+      {
+       "row": 6,
+       "y": 0.0005416666666666666,
+       "y_over_H": 0.5416666666666666,
+       "u_mean": 0.13883241196197002,
+       "u_std_x": 5.1056681231030005e-15,
+       "count": 48,
+       "u_ref": 0.13757764170352127,
+       "rel_error_pct": 0.9120451862031265
+      },
+      {
+       "row": 7,
+       "y": 0.0006249999999999999,
+       "y_over_H": 0.6249999999999999,
+       "u_mean": 0.13129228931655365,
+       "u_std_x": 6.106938881871918e-15,
+       "count": 48,
+       "u_ref": 0.13001988369662612,
+       "rel_error_pct": 0.9786238717890406
+      },
+      {
+       "row": 8,
+       "y": 0.0007083333333333333,
+       "y_over_H": 0.7083333333333333,
+       "u_mean": 0.11615702681226599,
+       "u_std_x": 5.125035909700063e-15,
+       "count": 48,
+       "u_ref": 0.11485151350641948,
+       "rel_error_pct": 1.1366966494294732
+      },
+      {
+       "row": 9,
+       "y": 0.0007916666666666666,
+       "y_over_H": 0.7916666666666666,
+       "u_mean": 0.0933213515014548,
+       "u_std_x": 2.9536067078992923e-15,
+       "count": 48,
+       "u_ref": 0.09197042470462213,
+       "rel_error_pct": 1.4688708910189239
+      },
+      {
+       "row": 10,
+       "y": 0.0008749999999999999,
+       "y_over_H": 0.8749999999999999,
+       "u_mean": 0.06262402318865536,
+       "u_std_x": 2.8555073019457793e-15,
+       "count": 48,
+       "u_ref": 0.06123221699512443,
+       "rel_error_pct": 2.2729965724444443
+      },
+      {
+       "row": 11,
+       "y": 0.0009583333333333333,
+       "y_over_H": 0.9583333333333333,
+       "u_mean": 0.02399982526645197,
+       "u_std_x": 3.4843348954937617e-15,
+       "count": 48,
+       "u_ref": 0.0224600368553098,
+       "rel_error_pct": 6.855680696615358
+      }
+     ],
+     "transient": [
+      {
+       "fraction_of_tau": 0.1,
+       "t_over_tau": 0.10135192713965892,
+       "u_max_exact": 0.012321473758645896,
+       "u_max_measured": 0.012320825368898308,
+       "max_abs_error_over_umax_inf_pct": 0.7752801317346286,
+       "max_abs_error_over_umax_t_pct": 9.43815829487061,
+       "centre_row_rel_error_pct": 0.003712213166385774,
+       "worst_row_y_over_H": 0.9583333333333333,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      {
+       "fraction_of_tau": 0.2,
+       "t_over_tau": 0.20270385427931784,
+       "u_max_exact": 0.02451388417717723,
+       "u_max_measured": 0.024504403755592902,
+       "max_abs_error_over_umax_inf_pct": 0.8564191999792965,
+       "max_abs_error_over_umax_t_pct": 5.24041310909412,
+       "centre_row_rel_error_pct": 0.08002796211994476,
+       "worst_row_y_over_H": 0.9583333333333333,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      {
+       "fraction_of_tau": 0.4,
+       "t_over_tau": 0.40540770855863567,
+       "u_max_exact": 0.046938337933757374,
+       "u_max_measured": 0.04693371724056291,
+       "max_abs_error_over_umax_inf_pct": 0.9109833953767029,
+       "max_abs_error_over_umax_t_pct": 2.9112132069812926,
+       "centre_row_rel_error_pct": 0.3536831702474621,
+       "worst_row_y_over_H": 0.9583333333333333,
+       "limit_pct": 5.0,
+       "pass": true
+      }
+     ],
+     "gates": {
+      "A_centre_line": {
+       "value_pct": 0.9120451862031365,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      "B_profile_shape": {
+       "value_pct": 1.4426160604792815,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      "C_wall_shear": {
+       "value_pct": 0.23207748145641638,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      "D_wall_slip": {
+       "value_pct": 1.5815107526206167,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      "E_flow_rate": {
+       "value_pct": 1.3431271138040435,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      "F_startup": {
+       "value_pct": 0.9109833953767029,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      "G_steady_state": {
+       "value_pct": 0.49631411437711226,
+       "limit_pct": 1.0,
+       "pass": true
+      }
+     },
+     "pass": true,
+     "nodes": [
+      {
+       "name": "u_max",
+       "symbol": "u_max",
+       "unit": "m/s",
+       "reference": 0.15000000000000002,
+       "got": 0.13883241196197002,
+       "rel_error_pct": -7.445058692020002
+      },
+      {
+       "name": "profile_rms_interior",
+       "symbol": "RMS(u)",
+       "unit": "%",
+       "reference": 0.0,
+       "got": 1.4426160604792815,
+       "rel_error_pct": 1.4426160604792815
+      },
+      {
+       "name": "wall_shear_bottom",
+       "symbol": "tau_w(0)",
+       "unit": "Pa",
+       "reference": 552.4213982680344,
+       "got": 551.1393525999076,
+       "rel_error_pct": -0.23207748145641638
+      },
+      {
+       "name": "wall_shear_top",
+       "symbol": "tau_w(H)",
+       "unit": "Pa",
+       "reference": 552.4213982680358,
+       "got": 551.139352599909,
+       "rel_error_pct": -0.23207748145641638
+      },
+      {
+       "name": "wall_shear_vs_closed_form",
+       "symbol": "tau_w (rho g H/2)",
+       "unit": "Pa",
+       "reference": 600.0000000000001,
+       "got": 551.1393525999076,
+       "rel_error_pct": 8.143441233348748
+      },
+      {
+       "name": "flow_rate",
+       "symbol": "Q",
+       "unit": "m^2/s",
+       "reference": 9.114694983899473e-05,
+       "got": 9.237116923568764e-05,
+       "rel_error_pct": 1.3431271138040435
+      },
+      {
+       "name": "flow_rate_vs_closed_form",
+       "symbol": "Q (closed form)",
+       "unit": "m^2/s",
+       "reference": 0.00010000000000000003,
+       "got": 9.237116923568764e-05,
+       "rel_error_pct": -7.628830764312388
+      },
+      {
+       "name": "wall_slip",
+       "symbol": "u_wall/u_max",
+       "unit": "-",
+       "reference": 0.0,
+       "got": 0.015815107526206167,
+       "rel_error_pct": 1.5815107526206167
+      }
+     ]
+    }
+   },
+   {
+    "config": {
+     "case_key": "CASE-SPH-POISEUILLE-MORRIS",
+     "height_m": 0.001,
+     "length_m": 0.004,
+     "rho0": 1000.0,
+     "mu": 1.0,
+     "nu": 0.001,
+     "reynolds_mean": 0.1,
+     "body_force_m_per_s2": 1200.0000000000002,
+     "u_mean_reference": 0.1,
+     "u_max_reference": 0.15000000000000002,
+     "tau_wall_reference": 600.0000000000001,
+     "flow_rate_reference": 0.00010000000000000003,
+     "tau_diffusive_s": 0.00010132118364233777,
+     "t_end_s": 0.0003039635509270133,
+     "dt_s": 8.251953125000002e-07,
+     "steps": 368,
+     "resolution_H_over_dx": 16,
+     "dx_m": 6.25e-05,
+     "h_m": 8.125000000000001e-05,
+     "h_factor": 1.3,
+     "sound_speed": 20.0,
+     "wall_model": "mirror_no_slip",
+     "slip": "no_slip",
+     "dimensionless": {
+      "Re_mean": 0.1,
+      "Re_max": 0.15000000000000002,
+      "mach_max": 0.0075000000000000015,
+      "courant_acoustic": 0.203125,
+      "viscous_number": 0.125,
+      "H_over_dx": 16,
+      "h_over_dx": 1.3,
+      "L_over_H": 4.0,
+      "h_over_H": 0.08125,
+      "t_end_over_tau": 3.0,
+      "tau_diffusive_s": 0.00010132118364233777,
+      "steps": 368
+     }
+    },
+    "trace": [
+     {
+      "t": 0.0,
+      "t_over_tau": 0.0,
+      "u_max": 0.0009902343750000004,
+      "u_mean": 0.0009902343750000009,
+      "mach_max": 4.951171875000002e-05,
+      "wall_clock_s": 0.04421234130859375
+     },
+     {
+      "t": 3.795898437500001e-05,
+      "t_over_tau": 0.3746401592483823,
+      "u_max": 0.044605744421054104,
+      "u_mean": 0.033180818952880095,
+      "mach_max": 0.0022302872210527053,
+      "wall_clock_s": 1.7020902633666992
+     },
+     {
+      "t": 7.591796875000002e-05,
+      "t_over_tau": 0.7492803184967646,
+      "u_max": 0.07745933117734131,
+      "u_mean": 0.054392882315264665,
+      "mach_max": 0.0038729665588670657,
+      "wall_clock_s": 3.305069923400879
+     },
+     {
+      "t": 0.00011387695312500002,
+      "t_over_tau": 1.1239204777451468,
+      "u_max": 0.10018077738534688,
+      "u_mean": 0.0689569346596198,
+      "mach_max": 0.005009038869267344,
+      "wall_clock_s": 4.898174524307251
+     },
+     {
+      "t": 0.00015183593750000003,
+      "t_over_tau": 1.4985606369935291,
+      "u_max": 0.1158150676205165,
+      "u_mean": 0.07897439260910433,
+      "mach_max": 0.005790753381025825,
+      "wall_clock_s": 6.780399799346924
+     },
+     {
+      "t": 0.00018979492187500002,
+      "t_over_tau": 1.873200796241911,
+      "u_max": 0.12656999749332934,
+      "u_mean": 0.08586519834218691,
+      "mach_max": 0.006328499874666467,
+      "wall_clock_s": 8.53598403930664
+     },
+     {
+      "t": 0.00022775390625000004,
+      "t_over_tau": 2.2478409554902936,
+      "u_max": 0.13396684019942404,
+      "u_mean": 0.09060577382508343,
+      "mach_max": 0.006698342009971202,
+      "wall_clock_s": 10.046045303344727
+     },
+     {
+      "t": 0.00026571289062500005,
+      "t_over_tau": 2.622481114738676,
+      "u_max": 0.13905255852077825,
+      "u_mean": 0.0938655280912385,
+      "mach_max": 0.0069526279260389125,
+      "wall_clock_s": 11.63890552520752
+     },
+     {
+      "t": 0.0003028466796875001,
+      "t_over_tau": 2.98897692269905,
+      "u_max": 0.1424798715155258,
+      "u_mean": 0.09606300823347239,
+      "mach_max": 0.00712399357577629,
+      "wall_clock_s": 13.295341491699219
+     }
+    ],
+    "evaluation": {
+     "resolution_H_over_dx": 16,
+     "dx": 6.25e-05,
+     "dt": 8.251953125000002e-07,
+     "steps": 368,
+     "n_fluid": 1024,
+     "n_ghost": 1152,
+     "n_averaged_samples": 91,
+     "u_max_measured": 0.13869993485455895,
+     "u_max_reference": 0.1379904413485209,
+     "wall_shear_bottom": 551.859036366673,
+     "wall_shear_top": 551.8590363666739,
+     "wall_shear_reference": 600.0000000000001,
+     "wall_shear_reference_estimator": [
+      552.5339356144267,
+      552.5339356144278
+     ],
+     "wall_shear_error_vs_closed_form_pct": 8.02349393888786,
+     "flow_rate_measured": 9.252006124463835e-05,
+     "flow_rate_reference": 9.181093534300067e-05,
+     "flow_rate_closed_form": 0.00010000000000000003,
+     "flow_rate_error_vs_closed_form_pct": -7.479938755361681,
+     "flow_rate_estimator_bias_pct": -8.189064656999356,
+     "slip_bottom_over_umax": 0.010696230806991624,
+     "slip_top_over_umax": 0.010696230806988158,
+     "profile_rms_interior_pct": 0.7180784837754937,
+     "profile_rms_all_rows_pct": 2.0087016218417526,
+     "fit": {
+      "c0": 0.0014835665161190648,
+      "c1": 551.859036366673,
+      "c2": -551859.0363666734
+     },
+     "steady_drift": 0.0,
+     "wall_clock_s": 13.297245025634766,
+     "rows": [
+      {
+       "row": 0,
+       "y": 3.125e-05,
+       "y_over_H": 0.03125,
+       "u_mean": 0.01791444713589488,
+       "u_std_x": 5.868466562385558e-15,
+       "count": 64,
+       "u_ref": 0.017038934020846528,
+       "rel_error_pct": 5.138309203951325
+      },
+      {
+       "row": 1,
+       "y": 9.375e-05,
+       "y_over_H": 0.09375,
+       "u_mean": 0.04843923705593613,
+       "u_std_x": 4.166351771828118e-15,
+       "count": 64,
+       "u_ref": 0.04764441511913221,
+       "rel_error_pct": 1.6682373680451577
+      },
+      {
+       "row": 2,
+       "y": 0.00015625,
+       "y_over_H": 0.15625,
+       "u_mean": 0.07447335288585173,
+       "u_std_x": 6.164046411781837e-15,
+       "count": 64,
+       "u_ref": 0.07369044877288923,
+       "rel_error_pct": 1.0624227779849433
+      },
+      {
+       "row": 3,
+       "y": 0.00021875,
+       "y_over_H": 0.21875,
+       "u_mean": 0.09601915756412878,
+       "u_std_x": 7.172171362432473e-15,
+       "count": 64,
+       "u_ref": 0.09525692849299636,
+       "rel_error_pct": 0.8001822893003153
+      },
+      {
+       "row": 4,
+       "y": 0.00028125000000000003,
+       "y_over_H": 0.28125,
+       "u_mean": 0.11315902120591731,
+       "u_std_x": 8.632354763807537e-15,
+       "count": 64,
+       "u_ref": 0.1124157565394835,
+       "rel_error_pct": 0.6611748115334254
+      },
+      {
+       "row": 5,
+       "y": 0.00034375,
+       "y_over_H": 0.34375,
+       "u_mean": 0.12595512390658514,
+       "u_std_x": 1.0139775532889445e-14,
+       "count": 64,
+       "u_ref": 0.1252280807580177,
+       "rel_error_pct": 0.5805751746466001
+      },
+      {
+       "row": 6,
+       "y": 0.00040625000000000004,
+       "y_over_H": 0.40625,
+       "u_mean": 0.134457438916181,
+       "u_std_x": 1.0569257162668542e-14,
+       "count": 64,
+       "u_ref": 0.13374194470254247,
+       "rel_error_pct": 0.5349811648319278
+      },
+      {
+       "row": 7,
+       "y": 0.00046875,
+       "y_over_H": 0.46875,
+       "u_mean": 0.13869993485455892,
+       "u_std_x": 1.3828795136952285e-14,
+       "count": 64,
+       "u_ref": 0.1379904413485209,
+       "rel_error_pct": 0.5141613427020375
+      },
+      {
+       "row": 8,
+       "y": 0.00053125,
+       "y_over_H": 0.53125,
+       "u_mean": 0.13869993485455895,
+       "u_std_x": 1.3583120099194146e-14,
+       "count": 64,
+       "u_ref": 0.13799044134852087,
+       "rel_error_pct": 0.5141613427020778
+      },
+      {
+       "row": 9,
+       "y": 0.0005937500000000001,
+       "y_over_H": 0.5937500000000001,
+       "u_mean": 0.13445743891618106,
+       "u_std_x": 1.0340214462290477e-14,
+       "count": 64,
+       "u_ref": 0.13374194470254244,
+       "rel_error_pct": 0.5349811648319902
+      },
+      {
+       "row": 10,
+       "y": 0.00065625,
+       "y_over_H": 0.65625,
+       "u_mean": 0.12595512390658525,
+       "u_std_x": 9.833000271143588e-15,
+       "count": 64,
+       "u_ref": 0.1252280807580177,
+       "rel_error_pct": 0.5805751746466887
+      },
+      {
+       "row": 11,
+       "y": 0.00071875,
+       "y_over_H": 0.71875,
+       "u_mean": 0.11315902120591742,
+       "u_std_x": 8.20372961186422e-15,
+       "count": 64,
+       "u_ref": 0.11241575653948349,
+       "rel_error_pct": 0.6611748115335366
+      },
+      {
+       "row": 12,
+       "y": 0.00078125,
+       "y_over_H": 0.78125,
+       "u_mean": 0.09601915756412896,
+       "u_std_x": 6.949502518863639e-15,
+       "count": 64,
+       "u_ref": 0.09525692849299633,
+       "rel_error_pct": 0.800182289300534
+      },
+      {
+       "row": 13,
+       "y": 0.0008437500000000001,
+       "y_over_H": 0.8437500000000001,
+       "u_mean": 0.07447335288585177,
+       "u_std_x": 6.390869140240807e-15,
+       "count": 64,
+       "u_ref": 0.0736904487728892,
+       "rel_error_pct": 1.062422777985038
+      },
+      {
+       "row": 14,
+       "y": 0.00090625,
+       "y_over_H": 0.90625,
+       "u_mean": 0.048439237055936286,
+       "u_std_x": 4.438489178261421e-15,
+       "count": 64,
+       "u_ref": 0.04764441511913219,
+       "rel_error_pct": 1.6682373680455223
+      },
+      {
+       "row": 15,
+       "y": 0.00096875,
+       "y_over_H": 0.96875,
+       "u_mean": 0.01791444713589476,
+       "u_std_x": 3.898621033631294e-15,
+       "count": 64,
+       "u_ref": 0.017038934020846545,
+       "rel_error_pct": 5.138309203950525
+      }
+     ],
+     "transient": [
+      {
+       "fraction_of_tau": 0.1,
+       "t_over_tau": 0.10587656674410803,
+       "u_max_exact": 0.012870987162958591,
+       "u_max_measured": 0.012870344048427244,
+       "max_abs_error_over_umax_inf_pct": 0.4777127109854301,
+       "max_abs_error_over_umax_t_pct": 5.567320186134278,
+       "centre_row_rel_error_pct": 0.0011229512091003337,
+       "worst_row_y_over_H": 0.96875,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      {
+       "fraction_of_tau": 0.2,
+       "t_over_tau": 0.20360878220020776,
+       "u_max_exact": 0.024620889120405026,
+       "u_max_measured": 0.024614728461337533,
+       "max_abs_error_over_umax_inf_pct": 0.5081333552330168,
+       "max_abs_error_over_umax_t_pct": 3.095745361274698,
+       "centre_row_rel_error_pct": 0.04174574868085437,
+       "worst_row_y_over_H": 0.96875,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      {
+       "fraction_of_tau": 0.4,
+       "t_over_tau": 0.4072175644004155,
+       "u_max_exact": 0.04712255696924536,
+       "u_max_measured": 0.0471196454517614,
+       "max_abs_error_over_umax_inf_pct": 0.5307277331474067,
+       "max_abs_error_over_umax_t_pct": 1.6894066258770317,
+       "centre_row_rel_error_pct": 0.19829786208247197,
+       "worst_row_y_over_H": 0.96875,
+       "limit_pct": 5.0,
+       "pass": true
+      }
+     ],
+     "gates": {
+      "A_centre_line": {
+       "value_pct": 0.5141613427020575,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      "B_profile_shape": {
+       "value_pct": 0.7180784837754937,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      "C_wall_shear": {
+       "value_pct": 0.12214620754532612,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      "D_wall_slip": {
+       "value_pct": 1.0696230806991625,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      "E_flow_rate": {
+       "value_pct": 0.7723762959046532,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      "F_startup": {
+       "value_pct": 0.5307277331474067,
+       "limit_pct": 5.0,
+       "pass": true
+      },
+      "G_steady_state": {
+       "value_pct": 0.0,
+       "limit_pct": 1.0,
+       "pass": true
+      }
+     },
+     "pass": true,
+     "nodes": [
+      {
+       "name": "u_max",
+       "symbol": "u_max",
+       "unit": "m/s",
+       "reference": 0.15000000000000002,
+       "got": 0.13869993485455895,
+       "rel_error_pct": -7.533376763627386
+      },
+      {
+       "name": "profile_rms_interior",
+       "symbol": "RMS(u)",
+       "unit": "%",
+       "reference": 0.0,
+       "got": 0.7180784837754937,
+       "rel_error_pct": 0.7180784837754937
+      },
+      {
+       "name": "wall_shear_bottom",
+       "symbol": "tau_w(0)",
+       "unit": "Pa",
+       "reference": 552.5339356144267,
+       "got": 551.859036366673,
+       "rel_error_pct": -0.12214620754528172
+      },
+      {
+       "name": "wall_shear_top",
+       "symbol": "tau_w(H)",
+       "unit": "Pa",
+       "reference": 552.5339356144278,
+       "got": 551.8590363666739,
+       "rel_error_pct": -0.12214620754532612
+      },
+      {
+       "name": "wall_shear_vs_closed_form",
+       "symbol": "tau_w (rho g H/2)",
+       "unit": "Pa",
+       "reference": 600.0000000000001,
+       "got": 551.859036366673,
+       "rel_error_pct": 8.02349393888786
+      },
+      {
+       "name": "flow_rate",
+       "symbol": "Q",
+       "unit": "m^2/s",
+       "reference": 9.181093534300067e-05,
+       "got": 9.252006124463835e-05,
+       "rel_error_pct": 0.7723762959046532
+      },
+      {
+       "name": "flow_rate_vs_closed_form",
+       "symbol": "Q (closed form)",
+       "unit": "m^2/s",
+       "reference": 0.00010000000000000003,
+       "got": 9.252006124463835e-05,
+       "rel_error_pct": -7.479938755361681
+      },
+      {
+       "name": "wall_slip",
+       "symbol": "u_wall/u_max",
+       "unit": "-",
+       "reference": 0.0,
+       "got": 0.010696230806991624,
+       "rel_error_pct": 1.0696230806991625
+      }
+     ]
+    }
+   }
+  ],
+  "observed_order": 2.4250193107876648,
+  "profile_rms_monotone": true,
+  "pass": true
+ },
+ "sensitivity": {
+  "sound_speed": {
+   "values": [
+    20.0,
+    40.0,
+    80.0
+   ],
+   "runs": [
+    {
+     "value": 20.0,
+     "u_max_error_pct": 1.764581288583611,
+     "profile_rms_interior_pct": 2.484986503770245,
+     "wall_shear_error_pct": 0.9613346351441177,
+     "flow_rate_error_pct": 2.656020276423088,
+     "mach_max": 0.0075000000000000015,
+     "steps": 333,
+     "pass": true
+    },
+    {
+     "value": 40.0,
+     "u_max_error_pct": 0.27496631343431055,
+     "profile_rms_interior_pct": 1.4665485442568302,
+     "wall_shear_error_pct": 3.0865674167806056,
+     "flow_rate_error_pct": 1.4586655358205025,
+     "mach_max": 0.0037500000000000007,
+     "steps": 665,
+     "pass": true
+    },
+    {
+     "value": 80.0,
+     "u_max_error_pct": -5.368328806624323,
+     "profile_rms_interior_pct": 3.986354330174708,
+     "wall_shear_error_pct": 11.168302866898362,
+     "flow_rate_error_pct": -3.108617061358143,
+     "mach_max": 0.0018750000000000004,
+     "steps": 1330,
+     "pass": false
+    }
+   ],
+   "resolution_H_over_dx": 8,
+   "profile_rms_spread_pct": 2.5198057859178777
+  },
+  "t_end_over_tau": {
+   "values": [
+    1.0,
+    2.0,
+    3.0
+   ],
+   "runs": [
+    {
+     "value": 1.0,
+     "u_max_error_pct": 1.5209399079118668,
+     "profile_rms_interior_pct": 2.7193676525570627,
+     "wall_shear_error_pct": 2.9046979883359803,
+     "flow_rate_error_pct": 2.9167876356720246,
+     "mach_max": 0.0075000000000000015,
+     "steps": 42,
+     "pass": false
+    },
+    {
+     "value": 2.0,
+     "u_max_error_pct": 1.6900085734301795,
+     "profile_rms_interior_pct": 2.516983243631573,
+     "wall_shear_error_pct": 1.3070812312988456,
+     "flow_rate_error_pct": 2.6752230671448274,
+     "mach_max": 0.0075000000000000015,
+     "steps": 83,
+     "pass": true
+    },
+    {
+     "value": 3.0,
+     "u_max_error_pct": 2.0161896143350733,
+     "profile_rms_interior_pct": 2.7201426305288114,
+     "wall_shear_error_pct": 0.6193684429664836,
+     "flow_rate_error_pct": 2.881349298397984,
+     "mach_max": 0.0075000000000000015,
+     "steps": 125,
+     "pass": true
+    }
+   ],
+   "resolution_H_over_dx": 8,
+   "profile_rms_spread_pct": 0.20315938689723856
+  },
+  "h_factor": {
+   "values": [
+    1.2,
+    1.3,
+    1.5
+   ],
+   "runs": [
+    {
+     "value": 1.2,
+     "u_max_error_pct": 3.0900935270860908,
+     "profile_rms_interior_pct": 3.539998053738214,
+     "wall_shear_error_pct": 0.7564351859311147,
+     "flow_rate_error_pct": 3.7390901719474234,
+     "mach_max": 0.0075000000000000015,
+     "steps": 360,
+     "pass": true
+    },
+    {
+     "value": 1.3,
+     "u_max_error_pct": 1.764581288583611,
+     "profile_rms_interior_pct": 2.484986503770245,
+     "wall_shear_error_pct": 0.9613346351441177,
+     "flow_rate_error_pct": 2.656020276423088,
+     "mach_max": 0.0075000000000000015,
+     "steps": 333,
+     "pass": true
+    },
+    {
+     "value": 1.5,
+     "u_max_error_pct": 3.2461319547331113,
+     "profile_rms_interior_pct": 4.108913749631952,
+     "wall_shear_error_pct": 0.03143755538188575,
+     "flow_rate_error_pct": 4.32751855243898,
+     "mach_max": 0.0075000000000000015,
+     "steps": 288,
+     "pass": true
+    }
+   ],
+   "resolution_H_over_dx": 8,
+   "profile_rms_spread_pct": 1.6239272458617071
+  }
+ },
+ "finest": {
+  "resolution_H_over_dx": 16,
+  "nodes": [
+   {
+    "name": "u_max",
+    "symbol": "u_max",
+    "unit": "m/s",
+    "reference": 0.15000000000000002,
+    "got": 0.13869993485455895,
+    "rel_error_pct": -7.533376763627386
+   },
+   {
+    "name": "profile_rms_interior",
+    "symbol": "RMS(u)",
+    "unit": "%",
+    "reference": 0.0,
+    "got": 0.7180784837754937,
+    "rel_error_pct": 0.7180784837754937
+   },
+   {
+    "name": "wall_shear_bottom",
+    "symbol": "tau_w(0)",
+    "unit": "Pa",
+    "reference": 552.5339356144267,
+    "got": 551.859036366673,
+    "rel_error_pct": -0.12214620754528172
+   },
+   {
+    "name": "wall_shear_top",
+    "symbol": "tau_w(H)",
+    "unit": "Pa",
+    "reference": 552.5339356144278,
+    "got": 551.8590363666739,
+    "rel_error_pct": -0.12214620754532612
+   },
+   {
+    "name": "wall_shear_vs_closed_form",
+    "symbol": "tau_w (rho g H/2)",
+    "unit": "Pa",
+    "reference": 600.0000000000001,
+    "got": 551.859036366673,
+    "rel_error_pct": 8.02349393888786
+   },
+   {
+    "name": "flow_rate",
+    "symbol": "Q",
+    "unit": "m^2/s",
+    "reference": 9.181093534300067e-05,
+    "got": 9.252006124463835e-05,
+    "rel_error_pct": 0.7723762959046532
+   },
+   {
+    "name": "flow_rate_vs_closed_form",
+    "symbol": "Q (closed form)",
+    "unit": "m^2/s",
+    "reference": 0.00010000000000000003,
+    "got": 9.252006124463835e-05,
+    "rel_error_pct": -7.479938755361681
+   },
+   {
+    "name": "wall_slip",
+    "symbol": "u_wall/u_max",
+    "unit": "-",
+    "reference": 0.0,
+    "got": 0.010696230806991624,
+    "rel_error_pct": 1.0696230806991625
+   }
+  ],
+  "gates": {
+   "A_centre_line": {
+    "value_pct": 0.5141613427020575,
+    "limit_pct": 5.0,
+    "pass": true
+   },
+   "B_profile_shape": {
+    "value_pct": 0.7180784837754937,
+    "limit_pct": 5.0,
+    "pass": true
+   },
+   "C_wall_shear": {
+    "value_pct": 0.12214620754532612,
+    "limit_pct": 5.0,
+    "pass": true
+   },
+   "D_wall_slip": {
+    "value_pct": 1.0696230806991625,
+    "limit_pct": 5.0,
+    "pass": true
+   },
+   "E_flow_rate": {
+    "value_pct": 0.7723762959046532,
+    "limit_pct": 5.0,
+    "pass": true
+   },
+   "F_startup": {
+    "value_pct": 0.5307277331474067,
+    "limit_pct": 5.0,
+    "pass": true
+   },
+   "G_steady_state": {
+    "value_pct": 0.0,
+    "limit_pct": 1.0,
+    "pass": true
+   }
+  },
+  "pass": true
+ },
+ "convergence": {
+  "observed_order": 2.4250193107876648,
+  "profile_rms_monotone": true,
+  "profile_rms_pct_by_resolution": {
+   "8": 2.7201426305288114,
+   "12": 1.4426160604792815,
+   "16": 0.7180784837754937
+  }
+ },
+ "environment": {
+  "python": "3.11.6",
+  "torch": "2.7.1",
+  "numpy": "2.4.6",
+  "platform": "Linux-6.6.52-1.7.lns23.loongarch64-loongarch64-with-glibc2.38",
+  "tensorsph": "0.8.0",
+  "device": "cpu",
+  "torch_threads": 8,
+  "git_commit": "bfe80969ddc47ee6b50bf509877ee81cf63a91cd"
+ },
+ "figures": [
+  {
+   "name": "poiseuille_morris_profile.png",
+   "caption": "steady streamwise velocity vs the exact parabola (left) and the per-row relative error against the 5 % band (right)"
+  },
+  {
+   "name": "poiseuille_morris_convergence.png",
+   "caption": "profile error vs dx with a slope-2 reference (left) and the measured centre-line start-up against the exact series (right)"
+  }
+ ],
+ "repro_cmd": "PYTHONPATH=src python -m tensorsph.case_poiseuille_morris --out runs/case_poiseuille_morris --resolutions 8 12 16 24",
+ "verdict": {
+  "tolerance_pct": 5.0,
+  "pass": true,
+  "gates": {
+   "A_centre_line": true,
+   "B_profile_shape": true,
+   "C_wall_shear": true,
+   "D_wall_slip": true,
+   "E_flow_rate": true,
+   "F_startup": true,
+   "G_steady_state": true
+  },
+  "sensitivity_resolution_H_over_dx": 8
+ }
+}
