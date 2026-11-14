@@ -111,6 +111,39 @@ def _grad(delta: torch.Tensor, h: float, kernel: str) -> torch.Tensor:
 #: ``m_i``, i.e. by ``rho_i dx^2`` -- see ``docs/xval_sphinxys_mixture_laplace``.
 ASSEMBLIES = ("upstream", "consistent")
 
+#: Interface completion of the one-sided (vacuum-reduced) stress flux.  A
+#: free-surface particle has no neighbour on the far side of the interface, so
+#: ``sum_present V grad W`` does not represent the full kernel; ``"mirror"``
+#: adds the specular image of every present neighbour across the local
+#: interface tangent plane (see :func:`interface_completion`).  In the bulk the
+#: present sum of ``V W' e`` already vanishes, and the reflection of that sum is
+#: zero as well, so the completion switches itself off away from the interface.
+COMPLETIONS = ("none", "mirror")
+
+
+def interface_completion(
+    e: torch.Tensor,
+    w_prime: torch.Tensor,
+    normal: torch.Tensor,
+) -> torch.Tensor:
+    """Specular image of the kernel gradient across the local interface plane.
+
+    ``grad W_ij = W'(r) e``.  Reflecting ``e`` in the plane with unit normal
+    ``n`` gives ``e' = e - 2 (e.n) n``, so the same kernel gradient evaluated at
+    the mirrored neighbour is ``W'(r) e'``.  Adding it to ``W'(r) e`` yields the
+    pair gradient of a *full* kernel support:
+
+    ``W'(r) (e + e') = 2 W'(r) (e - (e.n) n)``
+
+    i.e. the radial part is removed and only the tangential part survives -- the
+    two-sided flux of a plane-symmetric interface field.  The stress of the
+    mirrored neighbour is taken as the present neighbour's ``S_j`` (exact for a
+    plane-symmetric ``S = sigma (I - n n^T) delta(dist)``).
+    """
+    en = (e * normal).sum(dim=1)[:, None]
+    e_mirror = e - 2.0 * en * normal
+    return w_prime[:, None] * e_mirror
+
 
 def pair_weight(mass_i, rho_i, vol_other, assembly: str = "upstream"):
     """Per-end weight of the pair flux ``B_ij . grad_i W_ij``.
@@ -255,6 +288,8 @@ def inner_stress_force(
     hourglass_coeff: float = SPHINXSYS_HOURGLASS_COEFF,
     eps: float = SPHINXSYS_EPS,
     assembly: str = "upstream",
+    completion: str = "none",
+    completion_weight: float = 1.0,
 ) -> torch.Tensor:
     """Acceleration from the same-phase stress divergence.
 
@@ -276,7 +311,17 @@ def inner_stress_force(
     gw = _grad(delta, h, kernel)          # = W'(r) e_ij
     w_prime = (gw * e).sum(dim=1)         # W'(r) < 0
 
-    flux_s = torch.einsum("pab,pb->pa", fields.stress[i] + fields.stress[j], gw)
+    if completion == "none":
+        gw_eff = gw
+    elif completion == "mirror":
+        n_pair = fields.normal[i] + fields.normal[j]
+        n_pair = n_pair / torch.linalg.vector_norm(n_pair, dim=1,
+                                                   keepdim=True).clamp_min(eps)
+        gw_eff = gw + completion_weight * interface_completion(e, w_prime, n_pair)
+    else:  # pragma: no cover - argument validation
+        raise ValueError(f"unknown completion {completion!r}; expected {list(COMPLETIONS)}")
+
+    flux_s = torch.einsum("pab,pb->pa", fields.stress[i] + fields.stress[j], gw_eff)
 
     if hourglass and hourglass_coeff != 0.0:
         g_avg = 0.5 * (fields.color_gradient[i] + fields.color_gradient[j])
@@ -398,6 +443,8 @@ def surface_tension_acceleration(
     eps: float = SPHINXSYS_EPS,
     assembly: str = "upstream",
     bracket: str = "mixture",
+    completion: str = "none",
+    completion_weight: float = 1.0,
 ) -> tuple[torch.Tensor, StressFields]:
     """Full SPHinXsys surface-tension acceleration + the fields it was built from.
 
@@ -421,7 +468,8 @@ def surface_tension_acceleration(
     acc = inner_stress_force(pos, mass, rho, vol, pairs_inner, fields, sigma, h,
                              kernel=kernel, hourglass=hourglass,
                              hourglass_coeff=hourglass_coeff, eps=eps,
-                             assembly=assembly)
+                             assembly=assembly, completion=completion,
+                             completion_weight=completion_weight)
     if mode == "two_phase":
         acc = acc + contact_stress_force(pos, mass, rho, vol, pairs_cross, fields, frac,
                                          sigma, h, kernel=kernel, hourglass=hourglass,
