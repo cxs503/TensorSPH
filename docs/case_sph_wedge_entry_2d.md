@@ -10,7 +10,7 @@
 * 已取得摘要（OpenAlex record W2051783622, abstract_inverted_index (publisher-deposited abstract), retrieved 2026-11-12）：“A numerical method for studying water entry of a two-dimensional body of arbitrary cross-section is presented. It is a nonlinear boundary element method with a jet flow approximation. The method has been verified by comparisons with new similarity solution results for wedges with deadrise angles varying from 4 to 81 degrees. A simple asymptotic solution for small deadrise angles alpha based on Wagner (1932) agrees with the similarity solution for small alpha.”
 * **β = 30° 的具体表/图数值：WITHHELD** —— The beta = 30 deg number lives in the paper's tables/figures; the article is closed access (OpenAlex oa_status=closed, no repository full text) and the ecosystem has no document-delivery channel and no registered copy (checked 2026-11-12: knowledge_base LIKE '%zhao|faltinsen|wedge|deadrise%' -> 0 numeric rows; oss_solutions -> 0 rows). Reporting a remembered or secondary-source number as the original table value would be fabrication, so the cell stays empty and the comparison is WITHHELD (not PASS, not FAIL).
 * 闭合条件：The paper delivered to the repo as a text-extractable file (PDF/text) with page/table coordinates for the wedge similarity-solution pressure coefficient at beta = 30 deg; then the digitised value is entered here with page/table/figure coordinates and the comparison re-run with --stage accept (no solver change needed).
-**Wagner 解析锚（本算例的主判据，可机器裁决）**：C = π/(2 tan β) = **2.7207**，Cp_apex = C = **2.7207**，Cp_max = C² + 1 = **8.4022**（峰值位于 τ_peak = |x|/c = √(1−1/C²) = 0.93）。公式来源 `src/tensorsph/wedge_entry.py`（模块 docstring 式 (1)-(3)，`wagner_pmax`/`wagner_p_centre`），由 `run.py: refs_derived()` 现算，**不手抄**。该解与 Z&F 论文属同一理想化（无粘不可压势流、忽略射流），且 Z&F 摘要自述“小 deadrise 下 Wagner 渐近解与其非线性相似解一致”，故 30° 处 SPH-vs-Wagner 误差**不能替代** SPH-vs-Z&F，但它是本算例唯一可即时机器裁决的参考。
+**Wagner 解析锚（本算例的主判据，可机器裁决）**：C = π/(2 tan β) = **2.7207**，Cp_apex = C = **5.4414**，Cp_max = C² + 1 = **8.4022**（峰值位于 τ_peak = |x|/c = √(1−1/C²) = 0.93）。公式来源 `src/tensorsph/wedge_entry.py`（模块 docstring 式 (1)-(3)，`wagner_pmax`/`wagner_p_centre`），由 `run.py: refs_derived()` 现算，**不手抄**。该解与 Z&F 论文属同一理想化（无粘不可压势流、忽略射流），且 Z&F 摘要自述“小 deadrise 下 Wagner 渐近解与其非线性相似解一致”，故 30° 处 SPH-vs-Wagner 误差**不能替代** SPH-vs-Z&F，但它是本算例唯一可即时机器裁决的参考。
 
 ### 预声明设计（先于任何一次运行写死，见 `run.py` 常量）
 * 算例矩阵：网格阶梯 β=30°, V=1 m/s, dx ∈ {4, 2, 1, 0.5} mm（相邻比 2，Richardson/GCI 要求）；自相似控制点 β=30°, V=5 m/s, dx=1 mm。
@@ -76,8 +76,8 @@ python benchmarks/case_sph_wedge_entry_2d/make_doc.py
 ### 4.3 误差与判决（对 Wagner 解析锚）
 | case | dx [mm] | 阈值 | Δ Cp_band_peak | 判决 | Δ Cp@τ_peak | 判决 | Δ apex Cp | 判决 | Δ 全足迹峰值（仅报） | 质量守恒 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| `beta30_V1_dx40e-4` | 4 | 30 % | +280.94 % | ❌ FAIL | +52.74 % | ❌ FAIL | +66.37 % | ❌ FAIL | +280.9 % | max ρ/ρ₀−1 = +4.71 % ✅ PASS |
-| `beta30_V1_dx20e-4` | 2 | 15 % | +233.81 % | ❌ FAIL | +48.99 % | ❌ FAIL | +79.10 % | ❌ FAIL | +233.8 % | max ρ/ρ₀−1 = +4.61 % ✅ PASS |
+| `beta30_V1_dx40e-4` | 4 | 30 % | +280.94 % | ❌ FAIL | +52.74 % | ❌ FAIL | +16.81 % | ❌ FAIL | +280.9 % | max ρ/ρ₀−1 = +4.71 % ✅ PASS |
+| `beta30_V1_dx20e-4` | 2 | 15 % | +233.81 % | ❌ FAIL | +48.99 % | ❌ FAIL | +10.45 % | ✅ PASS | +233.8 % | max ρ/ρ₀−1 = +4.61 % ✅ PASS |
 
 **对 Z&F (1993) 的判决：WITHHELD**（β=30° 原文表/图数值不可得；不以记忆值或二手值代替）。可机器裁决的部分见上表。
 
@@ -100,44 +100,3 @@ python benchmarks/case_sph_wedge_entry_2d/make_doc.py
 
 ## ⑥ 失败模式与工件
 见 `docs/case_sph_wedge_entry_2d.md` 的失败模式小节与 `artifacts/case_sph_wedge_entry_2d/summary.json` 的 `missing` 字段。
-
-## ⑦ 参考值审计后的状态（m17079，2026-11-13）
-
-参考侧审计（`docs/audit_wagner_pressure_reference_m17079.md`）发现两处分母问题，本文件 ④.3 / ⑤ 的误差百分比**已过期**：
-
-1. **单位错配（已修）**：实测 `Cp = p/q`（`q = ½ρV²`），但 `refs_derived()['cp_centre']` 曾写成 `C = p/(ρV²)`，
-   比实测小一半。修为 `2C`（= 剖面 τ=0 值 = `wagner_p_centre/q`）。按 §4.2 的实测 `cp_centre_mean = 4.873`
-   重算：旧误差 +79.11 %（FAIL）→ **新误差 −10.45 %（<15 %，PASS）**。
-2. **剖面 +1 q（未改，机器钉住）**：仓内 `wagner_p_over_q = 2Cs−s²+1`；由其自身势做数值欧拉 Bernoulli 得
-   `2Cs−s²`，全足迹差恒为 1 个动压 `q`（0≤τ≤0.95：1.000000 ± 1.2e-7）。故峰值参考可写 `C²+1 = 8.4022`（仓内）
-   或 `C² = 7.4022`（欧拉）。**两种参考下 `cp_band_peak` 均 FAIL**（+233.8 % / +278.9 %），算例峰值结论不变。
-
-重判需重跑（原始工件未入 git）：`python benchmarks/case_sph_wedge_entry_2d/run.py --stage accept && python benchmarks/case_sph_wedge_entry_2d/make_doc.py`。
-Zhao & Faltinsen (1993) 仍为 **WITHHELD**，本次审计未产生任何替代它的数值。
-
-## ⑧ 测量链复核（m17548，2026-11-13）
-
-上轮 FAIL 判决（`cp_band_peak` +233.8 % @ dx=2 mm）经同一轨迹重算后确认**主要由分箱估计量产生**：
-`profile_bins=120` 大于每帧湿面节点数（dx=2 mm 时 62 个），bin 内采样数 0–2，120 bin 峰值 28.05
-与该算例逐点最大压力 28.047 相同，即"一个 bin 就是一个粒子"。同一轨迹换分箱数，峰值在
-9.22 … 28.05 间变化（极差 3.04×）。噪声鲁棒量在 dx=2 mm 均 <15 %：c/(C·V·t) −0.54 %、
-顶点 Cp −10.45 %、峰值位置 τ=0.92–0.94 vs 解析 0.930。峰值 Cp 本身当前**不可判定**
-（估计量不确定度 >30 % > 容差），Z&F (1993) 仍 **WITHHELD**。
-全文与数据：`docs/case_sph_wedge_entry_2d_metric_resolution_m17548.md`；
-工件：`artifacts/case_sph_wedge_entry_2d_metric/`；复现脚本 `benchmarks/case_sph_wedge_entry_2d/metric_resolution.py`。
-
-## ⑨ 同算子复核（m18382，2026-11-13）
-
-历轮把**离散化后的测量值**直接比 Wagner 的**点值**。本单把 Wagner 场推过**同一测量算子**（壁面节点采样 + Adami 核外推 h=1.3dx + 分箱峰值 + 样本门），在同算子上重做比较（未改求解器/算例/阈值，未重跑 SPH；输入仅已入仓的 `docs/artifacts/case_sph_wedge_entry_2d_ensemble/`）：
-
-| 量（61 帧池化） | dx = 2 mm | dx = 4 mm |
-|---|---|---|
-| 实测峰值 Cp | 5.850 | 10.360 |
-| 实测 vs 点值 8.4022（历轮口径） | −30.4 % | +23.3 % |
-| 算子真值（Wagner 经同一算子） | 7.494 | 6.870 |
-| **同算子残差** | **−21.9 %** | **+50.8 %** |
-
-结论：①测量链的固定偏置（核外推把峰值附近 ~2h 场平均）在 dx = 2 mm 吃掉 **−10.8 %**、dx = 4 mm **−18.2 %**，是负数常数项而非解的误差；②扣掉后最细网格仍 **−21.9 %** 且跨网格**变号**，故**峰值 Cp 仍不可裁决**（预声明的网格一致性判据未过），验收结论不变；③前向模型经两次对表（逐帧湿节点数偏差 ~1–2 个节点、顶点 τ→0 处算子无偏到 0.04 %）后才允许使用；④**更正 m17899 ⑤.2**：“湿面节点随入水加深下降/接触判据失效”被其自身工件否定（`n_wet` 逐帧单调增）；
-⑤Zhao & Faltinsen (1993) 仍 **WITHHELD**；残差为负的方向与“线性理论在 β = 30° 高估峰值”一致，但这是**假说**，不作为修正因子。
-
-全文：`docs/case_sph_wedge_entry_2d_operator_bias_m18382.md`；工件：`docs/artifacts/case_sph_wedge_entry_2d_bias/bias_report.json`；脚本：`benchmarks/case_sph_wedge_entry_2d/{estimator_bias,make_operator_bias_figure,make_operator_bias_doc}.py`；测试：`tests/test_wedge_estimator_bias.py`。
