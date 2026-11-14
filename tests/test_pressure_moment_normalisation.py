@@ -178,8 +178,13 @@ def test_interior_layers_are_out_of_scope_guard():
 
 
 def test_closed_body_gradient_load_is_out_of_scope_guard():
-    """X4 is driven by the pressure gradient along the surface: normalisation
-    over-amplifies, the panel arm stays the recommended one there."""
+    """X4 is driven by the pressure gradient *along* the surface, not by a wall
+    pressure: on the fully wetted body both one-sided arms stay far from the
+    15 % gate, so the half-space normalisation is not a repair there (it does
+    reduce the raw error, 0.54 -> 0.35 at dx = 0.05, and nothing more).  The
+    panel (WLS) arm is the recommended one and reaches the 3 % target -- see
+    ``docs/xval_fsi2/X4_DRY_BODY_DEFECT.md`` for the harness erratum that made
+    this case look like a panel failure."""
     # dx = 0.1 is too coarse to be representative for this body; use 0.05
     case = C.fsi2_insert_linear(0.05)
     cfg = _cfg(case)
@@ -188,6 +193,6 @@ def test_closed_body_gradient_load_is_out_of_scope_guard():
     panel = abs(_err(ff.panel_pressure_force(
         case.pos_solid, case.vol_solid, case.normal_solid, case.pos_fluid,
         case.vol_fluid, case.pressure_fluid, cfg), case.reference_force))
-    assert norm > raw, (raw, norm)
-    assert panel < 0.25, panel  # panel is the documented arm; its own dx
-    # convergence on a closed body is a separate, open issue (see the doc)
+    assert raw > 0.15 and norm > 0.15, (raw, norm)  # both out of scope
+    assert norm < raw, (raw, norm)                  # but the moment helps
+    assert panel < 0.03, panel                      # target, not just the gate

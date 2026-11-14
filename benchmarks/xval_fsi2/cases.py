@@ -78,6 +78,10 @@ class LoadCase:
     wetted_area: float
     fluid_state: str          # "analytic" | "solved"
     notes: str = ""
+    #: analytic pressure law ``p(x)`` of the case, when one exists.  Lets an
+    #: audit evaluate the *exact* surface quadrature on the very same particles
+    #: the operator sees (used by ``closed_body_audit.py`` segments).
+    pressure_at: Optional[Callable[[torch.Tensor], torch.Tensor]] = None
 
     @property
     def h(self) -> float:
@@ -217,12 +221,21 @@ def couette_shear(dx: float, gap: float = 0.1, length: float = 1.0,
     )
 
 
-def _fsi2_body(dx: float, pad: float = 0.0) -> tuple[torch.Tensor, torch.Tensor]:
+def _fsi2_body(dx: float, pad: float = 0.0,
+               include_buried: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
     """Single-layer wetted surface of the fsi2 insert body (cylinder + beam).
 
     Built analytically along the perimeter instead of by carving a lattice, so
     that the surface carries exactly one particle per ``dx`` of wetted length
     (a two-layer shell would double-count the load of the closed body).
+
+    ``include_buried=False`` (default) removes the cylinder arc that the beam
+    swallows (``|y - cy| < bh/2`` at ``x > cx``): those particles sit *inside*
+    the solid body, carry no fluid neighbour, and their vertical normals cancel
+    in pairs, so they add no load -- they only inflate the particle count.  The
+    open vertical segment left at the beam root has a purely streamwise normal,
+    so the ``-c A`` identity in the gradient direction is unaffected
+    (``docs/xval_fsi2/X4_DRY_BODY_DEFECT.md`` §2).
     """
     cx, cy = FSI2["insert_circle_center"]
     r = FSI2["insert_circle_radius"]
@@ -248,11 +261,15 @@ def _fsi2_body(dx: float, pad: float = 0.0) -> tuple[torch.Tensor, torch.Tensor]
                      torch.tensor([0.0, -1.0], dtype=torch.float64).expand_as(bot),
                      torch.tensor([1.0, 0.0], dtype=torch.float64).expand_as(tip)), dim=0)
     del pad
+    if not include_buried:
+        buried = ((pos[:, 1] - cy).abs() < 0.5 * bh - 1.0e-12) & (pos[:, 0] > cx)
+        pos, nrm = pos[~buried], nrm[~buried]
     return pos, nrm
 
 
 def fsi2_insert_linear(dx: float, gradient=(0.0, -1.0), p0: float = 1.0,
-                       h_factor: float = 1.3) -> LoadCase:
+                       h_factor: float = 1.3, wetted: bool = True,
+                       include_buried: bool = False) -> LoadCase:
     """fsi2 insert body in an analytic *linear* pressure field (no gravity).
 
     The analytic load of a closed body in ``p = p0 + c.x`` is ``-c * A`` where
@@ -262,10 +279,15 @@ def fsi2_insert_linear(dx: float, gradient=(0.0, -1.0), p0: float = 1.0,
     """
     c = torch.tensor(gradient, dtype=torch.float64)
     pad = 4.0 * h_factor * dx
-    solid, normal = _fsi2_body(dx, pad)
+    solid, normal = _fsi2_body(dx, pad, include_buried=include_buried)
     cx, cy = FSI2["insert_circle_center"]
     r, bh, bl = FSI2["insert_circle_radius"], FSI2["bh"], FSI2["bl"]
-    lo = torch.tensor([cx - r - pad, cy - 0.5 * bh - pad], dtype=torch.float64)
+    # Vertical extent of the *wetted* body: the cylinder reaches cy - r, the beam
+    # only cy - bh/2.  ``wetted=False`` keeps the pre-m20600 box, which stopped
+    # at cy - bh/2 - pad and therefore left the lower cylinder dry (erratum:
+    # docs/xval_fsi2/X4_DRY_BODY_DEFECT.md).
+    y_lo = max(0.5 * bh, r) if wetted else 0.5 * bh
+    lo = torch.tensor([cx - r - pad, cy - y_lo - pad], dtype=torch.float64)
     hi = torch.tensor([cx + r + bl + pad * 0.0 + 3.0 * h_factor * dx,
                        cy + max(0.5 * bh, r) + pad], dtype=torch.float64)
     fluid = _lattice([float(lo[0]), float(lo[1])], [float(hi[0]), float(hi[1])], dx)
@@ -295,6 +317,7 @@ def fsi2_insert_linear(dx: float, gradient=(0.0, -1.0), p0: float = 1.0,
         reference_label="-c A (linear field, closed body)",
         wetted_area=float("nan"), fluid_state="analytic",
         notes="analytic wall area only; the load is compared as a total force",
+        pressure_at=lambda x: p0 + x @ c,
     )
 
 
