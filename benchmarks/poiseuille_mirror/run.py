@@ -129,7 +129,8 @@ def analytic_ode_residual(rows, body_force: float, viscosity: float) -> float:
 
 def run_case_mirror(cfg, height: float, length: float, body_force: float,
                     t_end: float, t_average: float, device,
-                    slip: str = "no_slip", t_steady_check: float = 0.25) -> dict:
+                    slip: str = "no_slip", t_steady_check: float = 0.25,
+                    dt_scale: float = 1.0) -> dict:
     """Integrate to steady state with mirror ghosts at ``y = 0`` and ``y = H``."""
     dx = cfg.dx
     pos, mass = build_fluid(cfg, height, length, device)
@@ -142,7 +143,7 @@ def run_case_mirror(cfg, height: float, length: float, body_force: float,
 
     dt_acoustic = 0.3 * h / cfg.sound_speed
     dt_viscous = 0.125 * h * h / cfg.viscosity
-    dt = min(dt_acoustic, dt_viscous)
+    dt = dt_scale * min(dt_acoustic, dt_viscous)
     steps = int(round(t_end / dt))
     avg_from = t_end - t_average
 
@@ -206,6 +207,7 @@ def run_case_mirror(cfg, height: float, length: float, body_force: float,
         "n_fluid": int(n),
         "n_ghost": n_ghost,
         "dt": dt,
+        "dt_scale": dt_scale,
         "steps": steps,
         "n_averaged_samples": samples,
         "rows": rows,
@@ -334,6 +336,10 @@ def main(argv=None) -> int:
     parser.add_argument("--t-average", type=float, default=0.2)
     parser.add_argument("--device", default="auto")
     parser.add_argument("--threads", type=int, default=1)
+    parser.add_argument("--dt-scale", type=float, default=1.0,
+                        help="multiply the stability-limited dt (temporal-"
+                             "refinement study; the steady state of explicit "
+                             "Euler is dt-independent up to sampling)")
     parser.add_argument("--slip", default="no_slip",
                         choices=("no_slip", "free_slip"))
     parser.add_argument("--quick", action="store_true")
@@ -355,9 +361,11 @@ def main(argv=None) -> int:
         length = args.columns * dx
         cfg = make_config(dx, args.viscosity, 1.0, device)   # full wall coupling
         case = run_case_mirror(cfg, args.height, length, args.body_force,
-                               args.t_end, args.t_average, device, slip=args.slip)
+                               args.t_end, args.t_average, device,
+                               slip=args.slip, dt_scale=args.dt_scale)
         res = evaluate(case, args.height, args.body_force, args.viscosity,
                        1000.0, r)
+        res["dt_scale"] = case["dt_scale"]
         res["length"] = length
         res["slip"] = args.slip
         res["gates"] = gates(res)
@@ -403,6 +411,7 @@ def main(argv=None) -> int:
         "thresholds": {"centreline_pct": 5.0, "profile_rms_pct": 5.0,
                        "wall_shear_pct": 5.0, "wall_slip_over_umax": 0.05},
         "t_end": args.t_end,
+        "dt_scale": args.dt_scale,
         "t_average": args.t_average,
         "device": str(device),
         "torch": torch.__version__,
