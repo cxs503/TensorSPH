@@ -88,14 +88,17 @@ __all__ = [
 # --------------------------------------------------------------------------- #
 # the operator triple: D, D^T, A = D D^T
 # --------------------------------------------------------------------------- #
-def _pair_geometry(pos, pairs, h):
+def _pair_geometry(pos, pairs, h, box=None):
+    """Pair geometry; ``box`` applies the minimum-image convention (torus)."""
     i, j = pairs.unbind(dim=1)
     delta = pos[i] - pos[j]
+    if box is not None:
+        delta = delta - box * torch.round(delta / box)
     gw = cubic_spline_gradient(delta, h)
     return i, j, gw
 
 
-def pair_divergence(pos, u, vol, pairs, h):
+def pair_divergence(pos, u, vol, pairs, h, box=None):
     """``D u|_i = sum_j V_j (u_j - u_i) . grad_i W_ij`` on unordered pairs.
 
     A pair ``(i, j)`` contributes to ``i`` with ``V_j`` and to ``j`` with
@@ -112,7 +115,7 @@ def pair_divergence(pos, u, vol, pairs, h):
     return out
 
 
-def adjoint_gradient(pos, p, vol, pairs, h):
+def adjoint_gradient(pos, p, vol, pairs, h, box=None):
     """``G p = -D^T p`` -- the exact Euclidean adjoint of :func:`pair_divergence`.
 
     Derived from ``<D u, p> = sum_pairs (V_j p_i + V_i p_j) (u_j - u_i) . g_ij``
@@ -122,7 +125,7 @@ def adjoint_gradient(pos, p, vol, pairs, h):
     n = pos.shape[0]
     if pairs.numel() == 0:
         return torch.zeros((n, pos.shape[1]), dtype=pos.dtype, device=pos.device)
-    i, j, gw = _pair_geometry(pos, pairs, h)
+    i, j, gw = _pair_geometry(pos, pairs, h, box)
     coef = vol[j] * p[i] + vol[i] * p[j]
     contrib = coef[:, None] * gw
     out = torch.zeros((n, pos.shape[1]), dtype=p.dtype, device=p.device)
@@ -132,7 +135,7 @@ def adjoint_gradient(pos, p, vol, pairs, h):
     return out
 
 
-def adjoint_laplacian(pos, p, vol, pairs, h):
+def adjoint_laplacian(pos, p, vol, pairs, h, box=None):
     """``(D G) p`` with ``G = -D^T``: symmetric **negative** semi-definite.
 
     ``-adjoint_laplacian`` is ``D D^T``, the positive operator the projection
@@ -140,8 +143,8 @@ def adjoint_laplacian(pos, p, vol, pairs, h):
     (``<p, lap p> < 0``), because a flipped sign is exactly the failure mode
     that makes a projection double the divergence instead of removing it.
     """
-    return pair_divergence(pos, adjoint_gradient(pos, p, vol, pairs, h),
-                           vol, pairs, h)
+    return pair_divergence(pos, adjoint_gradient(pos, p, vol, pairs, h, box),
+                           vol, pairs, h, box)
 
 
 def adjointness_defect(pos, vol, pairs, h, seed: int = 0) -> float:
@@ -160,7 +163,7 @@ def adjointness_defect(pos, vol, pairs, h, seed: int = 0) -> float:
 
 
 def poisson_adjoint(pos, rhs, vol, pairs, h, gauge: int = 0,
-                    rel_tol: float = 1e-10, max_iter: int = 20000):
+                    rel_tol: float = 1e-10, max_iter: int = 20000, box=None):
     """Conjugate gradient on ``A p = rhs`` with ``A = D D^T`` and ``p[gauge] = 0``.
 
     The pinned particle is implemented with a Jacobi preconditioner whose
@@ -174,11 +177,11 @@ def poisson_adjoint(pos, rhs, vol, pairs, h, gauge: int = 0,
     def apply(q):
         # A = -D G = D D^T is the positive (Laplacian-like) operator; the CG
         # below needs positive definiteness, so the sign is flipped here.
-        return -adjoint_laplacian(pos, q, vol, pairs, h)
+        return -adjoint_laplacian(pos, q, vol, pairs, h, box)
 
     # Jacobi diagonal by probing the operator on the unit basis is too costly;
     # use the pair-coefficient estimate instead: diag ~ sum_j (V_j+V_i)|g|^2-like
-    i, j, gw = _pair_geometry(pos, pairs, h)
+    i, j, gw = _pair_geometry(pos, pairs, h, box)
     w = (gw * gw).sum(dim=1)
     diag = torch.zeros(n, dtype=pos.dtype)
     diag = diag.index_add(0, i, (vol[i] + vol[j]) * w)
@@ -214,14 +217,14 @@ def poisson_adjoint(pos, rhs, vol, pairs, h, gauge: int = 0,
 
 
 def project_velocity(pos, u_star, vol, pairs, h, rho, dt, gauge: int = 0,
-                     rel_tol: float = 1e-10, max_iter: int = 20000):
+                     rel_tol: float = 1e-10, max_iter: int = 20000, box=None):
     """One exact projection step: return ``(u, p, info)`` with ``D u ~ 0``."""
-    div_star = pair_divergence(pos, u_star, vol, pairs, h)
+    div_star = pair_divergence(pos, u_star, vol, pairs, h, box)
     rhs = -(rho / dt) * div_star
     p, it = poisson_adjoint(pos, rhs, vol, pairs, h, gauge=gauge,
-                            rel_tol=rel_tol, max_iter=max_iter)
-    u = u_star - (dt / rho) * adjoint_gradient(pos, p, vol, pairs, h)
-    div_new = pair_divergence(pos, u, vol, pairs, h)
+                            rel_tol=rel_tol, max_iter=max_iter, box=box)
+    u = u_star - (dt / rho) * adjoint_gradient(pos, p, vol, pairs, h, box)
+    div_new = pair_divergence(pos, u, vol, pairs, h, box)
     # The gauge particle is the one row the pinned system does not enforce, so
     # it is excluded from the ratio (it is also a velocity-pinned particle in
     # ``relax_projection_consistent``).  Keeping it in would report a 1e-2
@@ -241,12 +244,12 @@ def project_velocity(pos, u_star, vol, pairs, h, rho, dt, gauge: int = 0,
 # --------------------------------------------------------------------------- #
 # time marching
 # --------------------------------------------------------------------------- #
-def _viscous_acceleration(pos, u, vol, pairs, h, nu):
+def _viscous_acceleration(pos, u, vol, pairs, h, nu, box=None):
     """``nu * lap(u)`` with the pair Laplacian (component-wise)."""
     if nu <= 0.0:
         return torch.zeros_like(u)
-    lap = adjoint_laplacian(pos, u[:, 0], vol, pairs, h)
-    lap_y = adjoint_laplacian(pos, u[:, 1], vol, pairs, h)
+    lap = adjoint_laplacian(pos, u[:, 0], vol, pairs, h, box)
+    lap_y = adjoint_laplacian(pos, u[:, 1], vol, pairs, h, box)
     return nu * torch.stack([lap, lap_y], dim=1)
 
 
