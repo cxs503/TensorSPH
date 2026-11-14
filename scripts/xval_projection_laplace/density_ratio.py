@@ -107,7 +107,7 @@ def _row(r, axis, ratio=None, **extra):
 def sweep_ratio(ratios=RATIOS):
     rows = []
     for ratio in ratios:
-        for arm in ("density", "uniform"):
+        for arm in ("density", "force_density", "uniform"):
             r = laplace_isph_case(radius=RADIUS, dx=DX, outer=OUTER,
                                   rho0=RHO_L, rho_vapour=RHO_L / ratio,
                                   poisson_weighting=arm)
@@ -119,10 +119,11 @@ def sweep_resolution(ratios=RES_RATIOS, levels=RES_LEVELS):
     rows = []
     for ratio in ratios:
         for lvl in levels:
-            r = laplace_isph_case(radius=RADIUS, dx=RADIUS / lvl, outer=OUTER,
-                                  rho0=RHO_L, rho_vapour=RHO_L / ratio,
-                                  poisson_weighting="density")
-            rows.append(_row(r, "resolution", ratio=ratio, arm="density"))
+            for arm in ("density", "force_density"):
+                r = laplace_isph_case(radius=RADIUS, dx=RADIUS / lvl, outer=OUTER,
+                                      rho0=RHO_L, rho_vapour=RHO_L / ratio,
+                                      poisson_weighting=arm)
+                rows.append(_row(r, "resolution", ratio=ratio, arm=arm))
     return rows
 
 
@@ -203,10 +204,13 @@ def controls(ratio=1000):
 
 def summarise(ratio_rows, res_rows, trans_rows, diff_rows, ctrl):
     dens = [r for r in ratio_rows if r["arm"] == "density"]
+    fd = [r for r in ratio_rows if r["arm"] == "force_density"]
     naive = [r for r in ratio_rows if r["arm"] == "uniform"]
     dp_over = [r["dp_measured_Pa"] / r["dp_theory_Pa"] for r in dens]
+    fd_over = [r["dp_measured_Pa"] / r["dp_theory_Pa"] for r in fd]
     flux_over = [r["dp_flux_Pa"] / r["dp_theory_Pa"] for r in ratio_rows]
     res_ok = [r for r in res_rows if r["R_over_dx"] >= 20]
+    res_fd_ok = [r for r in res_rows if r["R_over_dx"] >= 20 and r["arm"] == "force_density"]
     trans_err = [r["err_pct"] for r in trans_rows]
     by_res = {}
     for r in res_rows:
@@ -215,9 +219,14 @@ def summarise(ratio_rows, res_rows, trans_rows, diff_rows, ctrl):
         "gates": GATES,
         "density_arm_err_pct_by_ratio": {r["ratio"]: r["err_pct"] for r in dens},
         "density_arm_max_abs_err_pct": max(abs(e) for e in dp_over_to_err(dp_over)),
+        "force_density_arm_err_pct_by_ratio": {r["ratio"]: r["err_pct"] for r in fd},
+        "force_density_arm_max_abs_err_pct": max(abs(e) for e in dp_over_to_err(fd_over)),
         "err_pct_ratio_1000_R_over_dx_20": next(
             r["err_pct"] for r in dens if r["ratio"] == 1000),
+        "err_pct_ratio_1000_R_over_dx_20_force_density": next(
+            r["err_pct"] for r in fd if r["ratio"] == 1000),
         "ratio_spread_pct": (max(dp_over) - min(dp_over)) * 100.0,
+        "force_density_ratio_spread_pct": (max(fd_over) - min(fd_over)) * 100.0,
         "flux_err_pct_max_abs": max(abs((f - 1.0) * 100.0) for f in flux_over),
         "flux_err_pct_max_abs_density_arm": max(
             abs(r["flux_err_pct"]) for r in dens),
@@ -228,6 +237,8 @@ def summarise(ratio_rows, res_rows, trans_rows, diff_rows, ctrl):
         "resolution_err_pct_by_ratio": by_res,
         "resolution_max_abs_err_pct_R_over_dx_ge_20": max(
             abs(r["err_pct"]) for r in res_ok),
+        "resolution_max_abs_err_pct_R_over_dx_ge_20_force_density": max(
+            abs(r["err_pct"]) for r in res_fd_ok),
         "diffuse_err_pct_by_level_ratio_1000": {r["R_over_dx"]: r["err_pct"]
                                                 for r in diff_rows},
         "translation_spread_pct": max(trans_err) - min(trans_err),

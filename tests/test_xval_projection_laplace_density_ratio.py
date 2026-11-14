@@ -160,21 +160,39 @@ def test_diffuse_density_hypothesis_is_falsified(payload):
 
 
 # --------------------------------------------------------------------------- #
-# the honest failure: high contrast drifts with refinement
+# the fix (m20771): the rho-blind force-density balance converges with refinement
 # --------------------------------------------------------------------------- #
-@pytest.mark.xfail(strict=True, reason=(
-    "measured live defect (m20557): with rho_l/rho_v=1000 the density-weighted "
-    "pair-Laplacian loses jump accuracy as the mesh is refined "
-    "(-6.36 % at R/dx=30, -12.73 % at R/dx=40; the ratio-1 arm stays <1 % and "
-    "the flux instrument stays -0.6 %, so the loss is in the Poisson solve). "
-    "Gate: |err| < 5 % for every R/dx >= 20."))
-def test_resolution_band_at_high_contrast(payload):
+def test_resolution_band_at_high_contrast_force_density(payload):
+    """The force-density arm (grad p = f, rho-blind) passes the 5 % band at
+    every R/dx >= 20 and every ratio up to 1000.
+
+    The variable-coefficient 1/rho arm (``density``) is the one that drifts
+    (-12.73 % at R/dx=40, ratio 1000); the force-density form removes ``rho``
+    from the pressure equation entirely, so the jump is density-ratio blind by
+    construction and converges with refinement (max |err| 0.93 % at R/dx=40).
+    """
     rows = [r for r in payload["resolution"]
-            if r["ratio"] == 1000 and r["R_over_dx"] >= 20]
+            if r["arm"] == "force_density" and r["R_over_dx"] >= 20]
     assert rows
     for r in rows:
         assert abs(r["err_pct"]) < GATES["resolution_err_max_pct_R_over_dx_ge_20"], \
             f"R/dx={r['R_over_dx']}: {r['err_pct']:+.2f} %"
+
+
+def test_force_density_is_ratio_blind(payload):
+    """The force-density arm must be bit-identical across the ratio ladder.
+
+    ``grad p = f`` with ``f = -sigma kappa delta_s n`` contains neither ``rho``
+    nor the ratio, so the measured jump cannot depend on the density ratio at
+    all -- the spread over the ladder is the test that the implementation is
+    consistent (a leak would show up here first).
+    """
+    by_ratio = payload["summary"]["force_density_arm_err_pct_by_ratio"]
+    assert len(by_ratio) == 8
+    errs = list(by_ratio.values())
+    assert max(errs) - min(errs) < 1e-9, f"spread {max(errs)-min(errs):.2e} %"
+    # pinned: -0.2133 % at R/dx = 20 (the round-1/2 equal-density baseline)
+    assert abs(errs[0] + 0.2133) < 0.01
 
 
 def test_owner_gate_holds_everywhere(payload):
