@@ -91,6 +91,18 @@
       "within_owner_tolerance": true
     },
     {
+      "case": "plane density wave decay (finite run)",
+      "extractor": "x_density_diffusion_finite_time",
+      "gate_pct": 3.5,
+      "measured_pct": 0.4819784767019315,
+      "method": "density_diffusion",
+      "own_gate_passed": true,
+      "quantity": "final amplitude vs the analytic exp(-D k^2 t) after 100 steps, artefact gate 3.5 %",
+      "source": "benchmarks/density_diffusion_decay/decay_rate.json",
+      "source_sha256": "f97947eb8a7b92d2d7e2bf65e6d17c6b107abe7aec7cd43d4c8b17d4e52da4fd",
+      "within_owner_tolerance": true
+    },
+    {
       "case": "CASE-ISPH-CHANNEL (GAP-SPH-ISPH-PROJECTION ladder)",
       "extractor": "x_isph_channel",
       "gate_pct": 3.0,
@@ -136,6 +148,54 @@
       "quantity": "interior L2 velocity error vs u=U*y/H (finest rung)",
       "source": "benchmarks/couette/out/results.json",
       "source_sha256": "71cb10053fab7df60ba023d93e25809f0280ea6c73adf8d1342e9283b17978cd",
+      "within_owner_tolerance": true
+    },
+    {
+      "case": "plane Couette channel",
+      "extractor": "x_couette_wall_shear",
+      "gate_pct": 5.0,
+      "measured_pct": 32.64941126108171,
+      "method": "wcsph_wall_no_slip",
+      "own_gate_passed": false,
+      "quantity": "wall-shear error at the moving wall, |1 - tau_SPH/tau_exact| (the no-slip quantity itself; artefact gate 5 %)",
+      "source": "benchmarks/couette/out/results.json",
+      "source_sha256": "71cb10053fab7df60ba023d93e25809f0280ea6c73adf8d1342e9283b17978cd",
+      "within_owner_tolerance": false
+    },
+    {
+      "case": "plane Couette channel",
+      "extractor": "x_couette_flux",
+      "gate_pct": 5.0,
+      "measured_pct": 7.159256050363205,
+      "method": "wcsph_wall_no_slip",
+      "own_gate_passed": false,
+      "quantity": "cross-channel mass-flux error |1 - Q_SPH/Q_exact| (artefact gate 5 %)",
+      "source": "benchmarks/couette/out/results.json",
+      "source_sha256": "71cb10053fab7df60ba023d93e25809f0280ea6c73adf8d1342e9283b17978cd",
+      "within_owner_tolerance": true
+    },
+    {
+      "case": "CASE-ISPH-CHANNEL (GAP-SPH-ISPH-PROJECTION ladder)",
+      "extractor": "x_isph_wall_shear",
+      "gate_pct": 3.0,
+      "measured_pct": 0.04583375643014956,
+      "method": "isph_projection",
+      "own_gate_passed": true,
+      "quantity": "momentum-budget wall shear vs rho g H/2 on the finest rung (artefact gate 3 %)",
+      "source": "benchmarks/isph_channel/results.json",
+      "source_sha256": "5f01ce56b5b7780063326ec948a1b6110fa8baee86055f151a74cfaff21d6aae",
+      "within_owner_tolerance": true
+    },
+    {
+      "case": "CASE-LAPLACE-SPH (consistent CSF)",
+      "extractor": "x_csf_cut_force",
+      "gate_pct": 15.0,
+      "measured_pct": 5.986710404320461,
+      "method": "csf_surface_tension",
+      "own_gate_passed": true,
+      "quantity": "cut-force |F_SPH - sigma| error of the consistent-CSF arm",
+      "source": "benchmarks/csf_consistent/validation_report.json",
+      "source_sha256": "84e0ae27bb78b0bada35ffda28a7f8d7ff5f3711ca6eef0799d85f936a784109",
       "within_owner_tolerance": true
     },
     {

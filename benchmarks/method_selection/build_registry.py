@@ -78,6 +78,11 @@ def x_density_diffusion_decay(doc: dict) -> float:
     return abs(float(doc["max_rate_relative_error"])) * 100.0
 
 
+def x_density_diffusion_finite_time(doc: dict) -> float:
+    """Amplitude decay over a finite run (the artefact's second gate, 3.5 %)."""
+    return abs(float(doc["finite_time"]["relative_error"])) * 100.0
+
+
 def x_isph_channel(doc: dict) -> float:
     finest = max(doc["results"], key=lambda row: row["resolution_H_over_dx"])
     return abs(float(finest["gates"]["centre_velocity"]["rel_error_pct"]))
@@ -95,6 +100,38 @@ def x_particle_shifting(doc: dict) -> float:
 def x_couette(doc: dict) -> float:
     finest = max(doc["ladder"], key=lambda row: row["resolution_H_over_dx"])
     return abs(float(finest["metrics"]["interior_l2"])) * 100.0
+
+def _couette_finest(doc: dict) -> dict:
+    return max(doc["ladder"], key=lambda row: row["resolution_H_over_dx"])
+
+
+def x_couette_wall_shear(doc: dict) -> float:
+    """Wall-shear error at the moving wall -- the quantity that *defines* no-slip.
+
+    ``metrics.wall_shear_ratio = tau_wall_SPH / tau_wall_analytic``; the artefact
+    gates it at ``gates.wall_shear_rel`` (5 %).  Banking only the interior L2
+    profile error lets a scheme look accurate while its wall stress is off.
+    """
+    row = _couette_finest(doc)
+    return abs(1.0 - float(row["metrics"]["wall_shear_ratio"])) * 100.0
+
+
+def x_couette_flux(doc: dict) -> float:
+    """Mass-flux error across the channel (``gates.flux_rel``, 5 %)."""
+    row = _couette_finest(doc)
+    return abs(1.0 - float(row["metrics"]["flux_ratio"])) * 100.0
+
+
+def x_isph_wall_shear(doc: dict) -> float:
+    """Momentum-budget wall shear on the finest rung (gated at 3 % in the artefact)."""
+    finest = max(doc["results"], key=lambda row: row["resolution_H_over_dx"])
+    return abs(float(finest["gates"]["wall_shear_budget"]["rel_error_pct"]))
+
+
+def x_csf_cut_force(doc: dict) -> float:
+    """Cut-force error of the consistent-CSF arm (the Laplace pressure companion)."""
+    entry = doc["instant"]["consistent"][0]
+    return abs(float(entry["cut_force"]["rel_error_pct"]))
 
 
 #: Variant the transport-velocity record is scored on: the coefficient calibrated
@@ -190,6 +227,16 @@ SOURCES: tuple[Source, ...] = (
         fn=x_density_diffusion_decay,
     ),
     Source(
+        extractor="x_density_diffusion_finite_time",
+        method="density_diffusion",
+        case="plane density wave decay (finite run)",
+        quantity="final amplitude vs the analytic exp(-D k^2 t) after 100 steps, "
+                 "artefact gate 3.5 %",
+        gate_pct=3.5,
+        path="benchmarks/density_diffusion_decay/decay_rate.json",
+        fn=x_density_diffusion_finite_time,
+    ),
+    Source(
         extractor="x_isph_channel",
         method="isph_projection",
         case="CASE-ISPH-CHANNEL (GAP-SPH-ISPH-PROJECTION ladder)",
@@ -227,6 +274,44 @@ SOURCES: tuple[Source, ...] = (
         gate_pct=5.0,
         path="benchmarks/couette/out/results.json",
         fn=x_couette,
+    ),
+    Source(
+        extractor="x_couette_wall_shear",
+        method="wcsph_wall_no_slip",
+        case="plane Couette channel",
+        quantity="wall-shear error at the moving wall, |1 - tau_SPH/tau_exact| "
+                 "(the no-slip quantity itself; artefact gate 5 %)",
+        gate_pct=5.0,
+        path="benchmarks/couette/out/results.json",
+        fn=x_couette_wall_shear,
+    ),
+    Source(
+        extractor="x_couette_flux",
+        method="wcsph_wall_no_slip",
+        case="plane Couette channel",
+        quantity="cross-channel mass-flux error |1 - Q_SPH/Q_exact| (artefact gate 5 %)",
+        gate_pct=5.0,
+        path="benchmarks/couette/out/results.json",
+        fn=x_couette_flux,
+    ),
+    Source(
+        extractor="x_isph_wall_shear",
+        method="isph_projection",
+        case="CASE-ISPH-CHANNEL (GAP-SPH-ISPH-PROJECTION ladder)",
+        quantity="momentum-budget wall shear vs rho g H/2 on the finest rung "
+                 "(artefact gate 3 %)",
+        gate_pct=3.0,
+        path="benchmarks/isph_channel/results.json",
+        fn=x_isph_wall_shear,
+    ),
+    Source(
+        extractor="x_csf_cut_force",
+        method="csf_surface_tension",
+        case="CASE-LAPLACE-SPH (consistent CSF)",
+        quantity="cut-force |F_SPH - sigma| error of the consistent-CSF arm",
+        gate_pct=15.0,
+        path="benchmarks/csf_consistent/validation_report.json",
+        fn=x_csf_cut_force,
     ),
     Source(
         extractor="x_transport_velocity",
@@ -368,6 +453,9 @@ def build_matrix(registry: dict) -> dict:
                 "primary_status": selection.primary.status if selection.primary else "NONE",
                 "primary_worst_pct": (
                     selection.primary.worst_measured_pct if selection.primary else None
+                ),
+                "primary_worst_banked_pct": (
+                    selection.primary.worst_banked_pct if selection.primary else None
                 ),
                 "modifiers": [
                     {"method": d.method, "status": d.status} for d in selection.modifiers
