@@ -1,0 +1,97 @@
+{
+  "anchor": "CASE-SPH-DAMBREAK-PRESSURE",
+  "subject_mission": 19980,
+  "audit_mission": 20099,
+  "subject_worktree": "/root/tp-agent/work/m19980",
+  "subject_head": "e915ab1",
+  "subject_git_status": [
+    "?? benchmarks/koshizuka_dam_break/",
+    "?? docs/benchmarks/koshizuka-dam-break-pressure.md"
+  ],
+  "run_artifacts": {
+    "__init__.py": {
+      "bytes": 1105,
+      "sha256_16": "f3593c67fe3f72b4"
+    },
+    "koshizuka.py": {
+      "bytes": 11410,
+      "sha256_16": "3df1d93eb012b6e3"
+    },
+    "make_report.py": {
+      "bytes": 3230,
+      "sha256_16": "335e9a2e3cb15026"
+    },
+    "pressure_history.pdf": {
+      "bytes": 20957,
+      "sha256_16": "380a9989f38fbb91"
+    },
+    "pressure_history.png": {
+      "bytes": 120865,
+      "sha256_16": "c703ad25ca877ce6"
+    },
+    "reference.json": {
+      "bytes": 1117,
+      "sha256_16": "8f577a1715801943"
+    },
+    "resolution_study.py": {
+      "bytes": 736,
+      "sha256_16": "62b43ac44fd2f429"
+    },
+    "result_dx0014.json": {
+      "bytes": 13684,
+      "sha256_16": "d11426d1ce0bd2f0"
+    },
+    "run.py": {
+      "bytes": 4617,
+      "sha256_16": "7dae755c0ad26c73"
+    }
+  },
+  "benchmark": {
+    "reference_pa": 2700.0,
+    "tolerance_pct": 12.0,
+    "got_archived_pa": 34047.92578125,
+    "got_rerun_pa": 34047.92578125,
+    "error_archived_pct": 1161.0342881944443,
+    "error_rerun_pct": 1161.0342881944443,
+    "rerun_vs_archived_rel_delta": 0.0,
+    "within_tolerance": false,
+    "registry_rows_tensor_benchmark_cases": 0,
+    "case_pool_row": "188|SPH-DAMBREAK-PRESSURE|dispatched|19980|<12%",
+    "tol_policy_pool": "<12%"
+  },
+  "artifact_self_consistency": {
+    "archived_history_max_pa": 30080.791015625,
+    "archived_peak_pa": 34047.92578125,
+    "history_undercounts_peak_pct": 11.651619517479325,
+    "history_samples": 237,
+    "history_sample_dt_s": 0.002056497175141243,
+    "peak_not_resolvable_from_archived_history": true,
+    "smoothed_peak_5ms_pa": 12827.0494140625,
+    "smoothed_peak_5ms_t": 0.2839123734629049,
+    "smoothed_peak_20ms_pa": 6317.742675584601,
+    "smoothed_peak_20ms_t": 0.28982964833110314,
+    "samples_above_tolerance_band": 34,
+    "sample_fraction_above_band": 0.14345991561181434
+  },
+  "resolution_study": {
+    "dx_0.02_pa_reported_doc": 24028.0,
+    "dx_0.02_pa_rerun": 24027.794921875,
+    "dx_0.02_doc_row_reproduced": true,
+    "dx_0.02_artifact_in_subject_tree": false,
+    "dx_0.01_claimed_status_in_doc": "集群运行中 / cj2420 排队",
+    "cluster_job_2420_db_row": "succeeded|0|run rc=0",
+    "cluster_job_2420_log": "{\"job_id\": \"cj2420\", \"node\": \"n330\", \"head\": \"b77a718\", \"rc\": 1, \"output_tail\": \"bash: line 1: cd: /root/tp-agent/work/m19980: Permission denied\\n\"}",
+    "cluster_job_2420_really_failed": true,
+    "convergence_evidence": "absent (dx=0.01/0.007/0.005 无任何工件)"
+  },
+  "platform": {
+    "mission_row": "succeeded||[auto-approve] TP_AUTO_APPROVE_DEV_ACCEPTANCE: 交付验收自动批准（owner 2026-11-03 指令；仅 dev_acceptance）",
+    "tensor_reports_rows_for_mission": 0,
+    "pre_existing_verdicts_for_scope": 1
+  },
+  "level_rationale": {
+    "impl_real": true,
+    "l3_rejected": "无 tensor_benchmark_cases 登记、case_pool 仍 dispatched、模块未入库(main 无此路径)、tests/ 无引用",
+    "l4_rejected": "误差 1161% >> 12%；收敛性工件缺失；工件不可由 repro_cmd 原样重生成"
+  }
+}
