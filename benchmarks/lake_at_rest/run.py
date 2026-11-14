@@ -34,84 +34,14 @@ import sys
 
 import torch
 
-from tensorsph.lake_at_rest import LakeConfig, run_case
+# The gate table and the grader live in the library
+# (``tensorsph.lake_at_rest.GATES_WALL`` / ``GATES_PERIODIC`` /
+# ``evaluate_gates``) so that this runner, ``freeze.py`` and the evidence tests
+# grade the *same* thresholds.  ``evaluate`` keeps this module's public surface.
+from tensorsph.lake_at_rest import (GATES_PERIODIC, GATES_WALL,  # noqa: E402
+                                    LakeConfig, evaluate_gates, run_case)
 
-GATES_WALL = [
-    ("G1", "vertical equilibrium max|a_y|/g", 1.0e-9, "lt"),
-    ("G2", "horizontal residual, side-wall band max|a_x|/g", 1.0e-9, "lt"),
-    ("G3", "rest preservation max|v|/c0", 1.0e-9, "lt"),
-    ("G4", "surface invariance max|dy|/H", 1.0e-9, "lt"),
-    ("G5", "density invariance max|drho|/rho0", 1.0e-9, "lt"),
-    ("G3i", "interior rest max|v|/c0 (>= 2h from side walls)", 1.0e-9, "lt"),
-    ("G4i", "interior surface invariance max|dy|/H", 1.0e-9, "lt"),
-    ("G6", "negative control uniform lattice mass max|a|/g", 0.5, "gt"),
-    ("G7", "negative control analytic profile max|a_y|/g", 0.05, "gt"),
-    ("G8", "linear response r(1e-4)/r(1e-3)", 0.05, "gt"),
-    ("G8", "linear response r(1e-4)/r(1e-3)", 0.15, "lt"),
-]
-
-# The laterally periodic tank asks for the *same* anchor tolerance, and there the
-# horizontal equation is part of the problem instead of a side-wall artefact:
-# G2 is the maximum over every particle, and the run is not split into an
-# interior band because there is no wall band to split off.
-GATES_PERIODIC = [
-    ("G1", "vertical equilibrium max|a_y|/g", 1.0e-9, "lt"),
-    ("G2", "horizontal equilibrium max|a_x|/g", 1.0e-9, "lt"),
-    ("G3", "rest preservation max|v|/c0", 1.0e-9, "lt"),
-    ("G4", "surface invariance max|dy|/H", 1.0e-9, "lt"),
-    ("G5", "density invariance max|drho|/rho0", 1.0e-9, "lt"),
-    ("G6", "negative control uniform lattice mass max|a|/g", 0.5, "gt"),
-    ("G7", "negative control analytic profile max|a_y|/g", 0.05, "gt"),
-    ("G8", "linear response r(1e-4)/r(1e-3)", 0.05, "gt"),
-    ("G8", "linear response r(1e-4)/r(1e-3)", 0.15, "lt"),
-]
-
-
-def evaluate(result: dict) -> dict:
-    equilibrium = result["equilibrium"]
-    rest = result["rest"]
-    controls = result["controls"]
-    perturb = result["perturbation_response"]
-    ratio = None
-    small = perturb.get(1.0e-4) or perturb.get("0.0001")
-    large = perturb.get(1.0e-3) or perturb.get("0.001")
-    if small and large:
-        ratio = small / large
-    periodic = bool(result["geometry"].get("periodic_x"))
-    gates = GATES_PERIODIC if periodic else GATES_WALL
-    measured = {
-        "G1": equilibrium["a_max_over_g"],
-        "G2": (equilibrium["a_max_over_g_horizontal"] if periodic
-               else equilibrium["a_max_over_g_horizontal_wall_band"]),
-        "G3": rest["max_v_over_c0"],
-        "G4": rest["max_dy_over_H"],
-        "G5": rest["max_drho_over_rho0"],
-        "G6": controls["uniform_lattice_mass"]["a_max_over_g"],
-        "G7": controls["analytic_hydrostatic_profile"]["a_max_over_g"],
-        "G8": ratio,
-        "G3i": rest["max_v_over_c0_interior"],
-        "G4i": rest["max_dy_over_H_interior"],
-    }
-    rows = []
-    for identifier, description, threshold, comparison in gates:
-        value = measured[identifier]
-        if value is None:
-            passed = None
-        elif comparison == "lt":
-            passed = bool(value < threshold)
-        else:
-            passed = bool(value > threshold)
-        rows.append({"gate": identifier, "quantity": description,
-                     "measured": value, "threshold": threshold,
-                     "comparison": comparison, "passed": passed})
-    # G6 needs both of its two-sided rows; report the pair as one verdict.
-    verdict = {}
-    for row in rows:
-        current = verdict.get(row["gate"])
-        verdict[row["gate"]] = row["passed"] if current is None else (
-            bool(current) and bool(row["passed"]))
-    return {"rows": rows, "verdicts": verdict,
-            "all_passed": all(v for v in verdict.values() if v is not None)}
+evaluate = evaluate_gates
 
 
 def main(argv=None) -> int:

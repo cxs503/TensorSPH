@@ -1,0 +1,23 @@
+{
+  "case": "CASE-SPH-LAKE-AT-REST",
+  "frozen_by": "benchmarks/lake_at_rest/freeze.py",
+  "manifest": "MANIFEST.sha256",
+  "not_shipped": {
+    "artifacts": [
+      "artifacts/lake_at_rest/*.json (gitignored)"
+    ],
+    "png": [
+      "docs/lake_at_rest_periodic_*.png"
+    ],
+    "why": "figures are artifact-class in the delivery rule and are re-creatable from the shipped numbers; artifacts/ is not pushed, so evidence kept only there is absent where the case is read"
+  },
+  "read_by": "tests/test_lake_at_rest_evidence.py",
+  "regenerate": "PYTHONPATH=src python3 benchmarks/lake_at_rest/run.py --periodic-x --json artifacts/lake_at_rest/rest_dx020_periodic.json",
+  "shipped": [
+    "periodic_dx020.json",
+    "wall_dx020.json",
+    "report.json",
+    "MANIFEST.sha256",
+    "channel.json"
+  ]
+}
