@@ -1,0 +1,427 @@
+{
+  "rederivation": {
+    "artefact": "/root/tp-agent/work/m20084/runs/poiseuille_morris/results.json",
+    "anchor": "CASE-SPH-POISEUILLE-MORRIS",
+    "mission_id": 20084,
+    "n_isph_cases": 9,
+    "n_wcsp_cases": 0,
+    "summary_block": {},
+    "declared_verdict_block": {
+      "isph": {
+        "0.1": {
+          "route": "isph_projection",
+          "reynolds_c": 0.1,
+          "H_over_dx": 16,
+          "centre_error_pct": 1.2208826401654524,
+          "l2_interior_pct": 1.1701200949012358,
+          "limit_pct": 5.0,
+          "pass_profile": true,
+          "pass_centre": true,
+          "pass": true
+        }
+      },
+      "wcsp": {
+        "1.0": null,
+        "12.26": null
+      }
+    },
+    "controls": {
+      "zero_forcing": {
+        "case": "zero body force, same geometry and run length as Re_c = 1, H/dx = 16",
+        "max_abs_u_measured": 0.0,
+        "steps": 575,
+        "wall_clock_s": 15.972780466079712,
+        "pass": true
+      },
+      "repeat_headline": {
+        "case": "repeat of isph Re_c=1, H/dx=16, h/dx=1.90, columns=12",
+        "centre_error_pct_first": 1.2591313380821305,
+        "centre_error_pct_repeat": 1.2591313380821305,
+        "profiles_identical": true
+      }
+    },
+    "settings_ladders": {
+      "height": 0.1,
+      "rho0": 1000.0,
+      "reynolds_base": 12.26,
+      "n_diffusive_times": 10.0,
+      "resolutions": [
+        16
+      ],
+      "reynolds_ladder": [
+        0.1
+      ],
+      "h_over_dx_ladder": [
+        1.5
+      ],
+      "columns_ladder": [
+        6
+      ],
+      "reference_normalisation": "errors / u_max = g H^2/(8 nu)",
+      "interior_band": [
+        0.15,
+        0.85
+      ]
+    },
+    "cases": [
+      {
+        "re_c": 0.1,
+        "re_realised": 0.1,
+        "H_over_dx": 16,
+        "h_over_dx": 1.9,
+        "columns": 12,
+        "steps": 575,
+        "n_fluid": 192,
+        "n_wall": 120,
+        "centre_pct_indep": 1.216113567352306,
+        "centre_pct_recorded": 1.2208826401654524,
+        "l2_pct_indep": 1.1701200949012358,
+        "l2_pct_recorded": 1.1701200949012358,
+        "max_row_pct_indep": 1.216137409210205,
+        "u_centre_measured": 1.008254885673523,
+        "u_centre_reference": 0.9960937499999999,
+        "d_reference_column": 0.0,
+        "d_error_column": 0.0,
+        "density_max": 0.00010597705841064453,
+        "density_limit": 0.001,
+        "density_pass": true,
+        "divergence_reduction": 0.9853908732637314,
+        "wall_shear_budget_rel_pct": -0.016069582802592776
+      },
+      {
+        "re_c": 1.0,
+        "re_realised": 1.0,
+        "H_over_dx": 16,
+        "h_over_dx": 1.5,
+        "columns": 12,
+        "steps": 923,
+        "n_fluid": 192,
+        "n_wall": 120,
+        "centre_pct_indep": 0.5713105201721413,
+        "centre_pct_recorded": 0.5735509535845812,
+        "l2_pct_indep": 0.5658462310524917,
+        "l2_pct_recorded": 0.5658462310524917,
+        "max_row_pct_indep": 0.5936086177826039,
+        "u_centre_measured": 1.0018068552017212,
+        "u_centre_reference": 0.9960937499999998,
+        "d_reference_column": 0.0,
+        "d_error_column": 0.0,
+        "density_max": 0.000316619873046875,
+        "density_limit": 0.001,
+        "density_pass": true,
+        "divergence_reduction": 1.0446367636451828,
+        "wall_shear_budget_rel_pct": -0.036912574431642045
+      },
+      {
+        "re_c": 1.0,
+        "re_realised": 1.0,
+        "H_over_dx": 16,
+        "h_over_dx": 1.9,
+        "columns": 6,
+        "steps": 575,
+        "n_fluid": 96,
+        "n_wall": 60,
+        "centre_pct_indep": 1.147890090942405,
+        "centre_pct_recorded": 1.152391620710807,
+        "l2_pct_indep": 1.116252750027752,
+        "l2_pct_recorded": 1.116252750027752,
+        "max_row_pct_indep": 1.1597633361816628,
+        "u_centre_measured": 1.0075726509094238,
+        "u_centre_reference": 0.9960937499999998,
+        "d_reference_column": 0.0,
+        "d_error_column": 0.0,
+        "density_max": 0.0036240816116333008,
+        "density_limit": 0.001,
+        "density_pass": false,
+        "divergence_reduction": 1.0381164627717876,
+        "wall_shear_budget_rel_pct": -0.041922115971351565
+      },
+      {
+        "re_c": 1.0,
+        "re_realised": 1.0,
+        "H_over_dx": 8,
+        "h_over_dx": 1.9,
+        "columns": 12,
+        "steps": 144,
+        "n_fluid": 96,
+        "n_wall": 120,
+        "centre_pct_indep": 4.37508821487429,
+        "centre_pct_recorded": 4.444534059554835,
+        "l2_pct_indep": 4.298693611844338,
+        "l2_pct_recorded": 4.298693611844338,
+        "max_row_pct_indep": 4.37508821487429,
+        "u_centre_measured": 1.0281258821487427,
+        "u_centre_reference": 0.9843749999999998,
+        "d_reference_column": 0.0,
+        "d_error_column": 0.0,
+        "density_max": 0.00012922286987304688,
+        "density_limit": 0.001,
+        "density_pass": true,
+        "divergence_reduction": 1.008724179164679,
+        "wall_shear_budget_rel_pct": -0.049053162443976825
+      },
+      {
+        "re_c": 1.0,
+        "re_realised": 1.0,
+        "H_over_dx": 12,
+        "h_over_dx": 1.9,
+        "columns": 12,
+        "steps": 324,
+        "n_fluid": 144,
+        "n_wall": 120,
+        "centre_pct_indep": 2.05064084794786,
+        "centre_pct_recorded": 2.0649809937377053,
+        "l2_pct_indep": 2.0372564421086268,
+        "l2_pct_recorded": 2.0372564421086268,
+        "max_row_pct_indep": 2.0554065704345925,
+        "u_centre_measured": 1.0135619640350342,
+        "u_centre_reference": 0.9930555555555556,
+        "d_reference_column": 0.0,
+        "d_error_column": 0.0,
+        "density_max": 0.0001583099365234375,
+        "density_limit": 0.001,
+        "density_pass": true,
+        "divergence_reduction": 1.0033682417930665,
+        "wall_shear_budget_rel_pct": -0.04088454066118175
+      },
+      {
+        "re_c": 1.0,
+        "re_realised": 1.0,
+        "H_over_dx": 16,
+        "h_over_dx": 1.9,
+        "columns": 12,
+        "steps": 575,
+        "n_fluid": 192,
+        "n_wall": 120,
+        "centre_pct_indep": 1.2542128562927468,
+        "centre_pct_recorded": 1.2591313380821305,
+        "l2_pct_indep": 1.2203674374007663,
+        "l2_pct_recorded": 1.2203674374007663,
+        "max_row_pct_indep": 1.2555003166198953,
+        "u_centre_measured": 1.0086358785629272,
+        "u_centre_reference": 0.9960937499999998,
+        "d_reference_column": 0.0,
+        "d_error_column": 0.0,
+        "density_max": 0.0001672506332397461,
+        "density_limit": 0.001,
+        "density_pass": true,
+        "divergence_reduction": 1.0235669472701714,
+        "wall_shear_budget_rel_pct": -0.04105261467472019
+      },
+      {
+        "re_c": 12.26,
+        "re_realised": 12.26,
+        "H_over_dx": 8,
+        "h_over_dx": 1.9,
+        "columns": 12,
+        "steps": 200,
+        "n_fluid": 96,
+        "n_wall": 120,
+        "centre_pct_indep": 4.375565052032471,
+        "centre_pct_recorded": 4.445018465556796,
+        "l2_pct_indep": 4.310776381368509,
+        "l2_pct_recorded": 4.310776381368509,
+        "max_row_pct_indep": 4.375684261322032,
+        "u_centre_measured": 1.0281306505203247,
+        "u_centre_reference": 0.984375,
+        "d_reference_column": 0.0,
+        "d_error_column": 0.0,
+        "density_max": 0.0003253817558288574,
+        "density_limit": 0.001,
+        "density_pass": true,
+        "divergence_reduction": 0.9795743245532329,
+        "wall_shear_budget_rel_pct": -0.047558294473207245
+      },
+      {
+        "re_c": 12.26,
+        "re_realised": 12.26,
+        "H_over_dx": 12,
+        "h_over_dx": 1.9,
+        "columns": 12,
+        "steps": 324,
+        "n_fluid": 144,
+        "n_wall": 120,
+        "centre_pct_indep": 2.066829469468856,
+        "centre_pct_recorded": 2.0812828224022044,
+        "l2_pct_indep": 2.0391552556877093,
+        "l2_pct_recorded": 2.0391552556877093,
+        "max_row_pct_indep": 2.066841390397811,
+        "u_centre_measured": 1.0137238502502441,
+        "u_centre_reference": 0.9930555555555556,
+        "d_reference_column": 0.0,
+        "d_error_column": 0.0,
+        "density_max": 0.00032514333724975586,
+        "density_limit": 0.001,
+        "density_pass": true,
+        "divergence_reduction": 0.9834775794936335,
+        "wall_shear_budget_rel_pct": -0.042954083422170414
+      },
+      {
+        "re_c": 12.26,
+        "re_realised": 12.26,
+        "H_over_dx": 16,
+        "h_over_dx": 1.9,
+        "columns": 12,
+        "steps": 575,
+        "n_fluid": 192,
+        "n_wall": 120,
+        "centre_pct_indep": 1.258695125579845,
+        "centre_pct_recorded": 1.2636311848958446,
+        "l2_pct_indep": 1.2216059030975632,
+        "l2_pct_recorded": 1.2216059030975632,
+        "max_row_pct_indep": 1.2588143348693959,
+        "u_centre_measured": 1.0086807012557983,
+        "u_centre_reference": 0.9960937499999999,
+        "d_reference_column": 0.0,
+        "d_error_column": 0.0,
+        "density_max": 0.001361548900604248,
+        "density_limit": 0.001,
+        "density_pass": false,
+        "divergence_reduction": 0.9462936123102784,
+        "wall_shear_budget_rel_pct": -0.04218671256948327
+      }
+    ],
+    "independent_readout": {
+      "0.1": {
+        "H_over_dx": 16,
+        "centre_pct": 1.216113567352306,
+        "l2_pct": 1.1701200949012358,
+        "pass_3pct": true,
+        "pass_5pct": true,
+        "density_gate": {
+          "measured": 0.00010597705841064453,
+          "limit": 0.001,
+          "pass": true
+        }
+      },
+      "1.0": {
+        "H_over_dx": 16,
+        "centre_pct": 1.2542128562927468,
+        "l2_pct": 1.2203674374007663,
+        "pass_3pct": true,
+        "pass_5pct": true,
+        "density_gate": {
+          "measured": 0.0001672506332397461,
+          "limit": 0.001,
+          "pass": true
+        }
+      },
+      "12.26": {
+        "H_over_dx": 16,
+        "centre_pct": 1.258695125579845,
+        "l2_pct": 1.2216059030975632,
+        "pass_3pct": true,
+        "pass_5pct": true,
+        "density_gate": {
+          "measured": 0.001361548900604248,
+          "limit": 0.001,
+          "pass": false
+        }
+      }
+    },
+    "max_abs_dev_reference_column": 0.0,
+    "max_abs_dev_error_column": 0.0,
+    "max_abs_dev_centre": 0.06945341352432521,
+    "max_abs_dev_l2": 0.0,
+    "max_abs_dev_reynolds": 0.0,
+    "density_gate_failures": [
+      {
+        "re_c": 1.0,
+        "H_over_dx": 16,
+        "h_over_dx": 1.9,
+        "columns": 6,
+        "measured": 0.0036240816116333008,
+        "limit": 0.001
+      },
+      {
+        "re_c": 12.26,
+        "H_over_dx": 16,
+        "h_over_dx": 1.9,
+        "columns": 12,
+        "measured": 0.001361548900604248,
+        "limit": 0.001
+      }
+    ]
+  },
+  "reruns": [
+    {
+      "re_c": 12.26,
+      "steps": 575,
+      "wall_clock_s": 18.296719312667847,
+      "n_fluid": 192,
+      "n_wall": 120,
+      "centre_pct": 1.258695125579845,
+      "l2_pct": 1.2216059030975632,
+      "density_max": 0.001361548900604248,
+      "density_pass": false,
+      "wall_shear_rel_pct": -0.04218671256948327,
+      "divergence_reduction": 0.9462936123102784,
+      "profile": [
+        [
+          0.03125,
+          0.13443733751773834
+        ],
+        [
+          0.09375000000000001,
+          0.3508543074131012
+        ],
+        [
+          0.15625,
+          0.5389867424964905
+        ],
+        [
+          0.21875,
+          0.6955402493476868
+        ],
+        [
+          0.28125,
+          0.8207821249961853
+        ],
+        [
+          0.34375,
+          0.9147236347198486
+        ],
+        [
+          0.40625,
+          0.9773513078689575
+        ],
+        [
+          0.46875,
+          1.0086807012557983
+        ],
+        [
+          0.53125,
+          1.0086818933486938
+        ],
+        [
+          0.59375,
+          0.9773542284965515
+        ],
+        [
+          0.65625,
+          0.9147281050682068
+        ],
+        [
+          0.71875,
+          0.820790708065033
+        ],
+        [
+          0.78125,
+          0.695549488067627
+        ],
+        [
+          0.84375,
+          0.5389956831932068
+        ],
+        [
+          0.9062500000000001,
+          0.35087424516677856
+        ],
+        [
+          0.96875,
+          0.13448448479175568
+        ]
+      ]
+    }
+  ]
+}
