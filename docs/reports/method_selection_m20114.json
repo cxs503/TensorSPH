@@ -1,0 +1,43 @@
+{
+  "anchor": "XVAL-SPH-METHOD-SELECTION-2026-11-12",
+  "increment": "transport_velocity_correction evidence closure",
+  "arm": "tvc_a010_all",
+  "recomputed": {
+    "0.03": {
+      "baseline": {
+        "points": 19,
+        "mae": 0.6449041862540582,
+        "mean_rel_error_pct": 50.98288390599619,
+        "max_abs_error": 1.1073831728950987
+      },
+      "tvc_a010_all": {
+        "points": 19,
+        "mae": 0.14082200666333503,
+        "mean_rel_error_pct": 10.810360584937099,
+        "max_abs_error": 0.3067137378347391
+      }
+    },
+    "0.04": {
+      "baseline": {
+        "points": 19,
+        "mae": 0.6167604724966984,
+        "mean_rel_error_pct": 46.73859226597445,
+        "max_abs_error": 1.1507732226262117
+      },
+      "tvc_a010_all": {
+        "points": 19,
+        "mae": 0.14923712525459468,
+        "mean_rel_error_pct": 16.96262081604608,
+        "max_abs_error": 0.3227795753738545
+      }
+    }
+  },
+  "registry_backed_pct": 10.810360584937099,
+  "methods_without_evidence": [],
+  "records": 12,
+  "figures": [
+    "figure_tvc_front.png",
+    "figure_registry_coverage.png"
+  ],
+  "owner_tolerance_pct": 15.0
+}
