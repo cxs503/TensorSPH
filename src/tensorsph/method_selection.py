@@ -239,6 +239,14 @@ class CaseProfile:
 # --------------------------------------------------------------------------- #
 # Evidence registry
 # --------------------------------------------------------------------------- #
+#: Record states.  ``banked`` records are the evidence a scheme may claim;
+#: ``refuted`` records stay in the registry (deleting evidence is how a bad
+#: reading gets forgotten) but may never enter an accuracy claim.
+RECORD_BANKED = "banked"
+RECORD_REFUTED = "refuted"
+RECORD_STATES = (RECORD_BANKED, RECORD_REFUTED)
+
+
 @dataclass(frozen=True)
 class Evidence:
     """One benchmark record for one method, extracted from a committed artefact."""
@@ -250,6 +258,13 @@ class Evidence:
     gate_pct: float
     source: str
     source_sha256: str = ""
+    status: str = RECORD_BANKED
+    precondition: str = ""
+
+    def __post_init__(self) -> None:
+        if self.status not in RECORD_STATES:
+            raise ValueError(f"evidence status must be one of {RECORD_STATES}, "
+                             f"got {self.status!r}")
 
     @property
     def own_gate_passed(self) -> bool:
@@ -259,10 +274,16 @@ class Evidence:
     def within_owner_tolerance(self) -> bool:
         return self.measured_pct <= OWNER_TOLERANCE_PCT
 
+    @property
+    def is_refuted(self) -> bool:
+        """True when a later audit invalidated the measurement itself."""
+        return self.status == RECORD_REFUTED
+
     def as_dict(self) -> dict:
         out = asdict(self)
         out["own_gate_passed"] = self.own_gate_passed
         out["within_owner_tolerance"] = self.within_owner_tolerance
+        out["is_refuted"] = self.is_refuted
         return out
 
 
@@ -292,6 +313,8 @@ def load_registry(path: str | Path | None = None) -> dict[str, list[Evidence]]:
             gate_pct=float(raw["gate_pct"]),
             source=str(raw["source"]),
             source_sha256=str(raw.get("source_sha256", "")),
+            status=str(raw.get("status", RECORD_BANKED)),
+            precondition=str(raw.get("precondition", "")),
         )
         registry.setdefault(ev.method, []).append(ev)
     return registry
@@ -324,10 +347,13 @@ class Decision:
         """
         if not self.evidence:
             return None
-        passing = [ev.measured_pct for ev in self.evidence if ev.within_owner_tolerance]
+        banked = [ev for ev in self.evidence if not ev.is_refuted]
+        if not banked:
+            return None
+        passing = [ev.measured_pct for ev in banked if ev.within_owner_tolerance]
         if passing:
             return max(passing)
-        return max(ev.measured_pct for ev in self.evidence)
+        return max(ev.measured_pct for ev in banked)
 
     @property
     def worst_banked_pct(self) -> float | None:
@@ -349,6 +375,11 @@ class Decision:
             return None
         return max(self.evidence, key=lambda ev: ev.measured_pct)
 
+    @property
+    def refuted_evidence(self) -> list[Evidence]:
+        """Records kept for the audit trail but excluded from the claim."""
+        return [ev for ev in self.evidence if ev.is_refuted]
+
     def as_dict(self) -> dict:
         return {
             "method": self.method,
@@ -358,6 +389,7 @@ class Decision:
             "citation": self.citation,
             "worst_measured_pct": self.worst_measured_pct,
             "worst_banked_pct": self.worst_banked_pct,
+            "n_refuted": len(self.refuted_evidence),
             "evidence": [ev.as_dict() for ev in self.evidence],
             "caveats": list(self.caveats),
         }
@@ -542,8 +574,22 @@ def _classify(method_key: str, role: str, rationale: str,
                      "the rule fires but the scheme stays unselectable "
                      "(evidence gate)"],
         )
-    passing = [ev for ev in records if ev.within_owner_tolerance]
-    for ev in records:
+    banked = [ev for ev in records if not ev.is_refuted]
+    refuted = [ev for ev in records if ev.is_refuted]
+    if not banked:
+        return Decision(
+            method=method_key, status="WITHHELD", role=role,
+            rationale=rationale + " -- every record for this scheme was refuted "
+                                   "by a later audit, so it has no live evidence",
+            citation=spec.citation, evidence=records,
+            caveats=[
+                f"refuted: {ev.case}: {ev.quantity} = {ev.measured_pct:.3g}% -- "
+                f"{ev.precondition or 'invalidated by a later audit'} ({ev.source})"
+                for ev in refuted
+            ],
+        )
+    passing = [ev for ev in banked if ev.within_owner_tolerance]
+    for ev in banked:
         if not ev.within_owner_tolerance:
             caveats.append(
                 f"{ev.case}: {ev.quantity} = {ev.measured_pct:.3g}% exceeds the "
@@ -555,8 +601,14 @@ def _classify(method_key: str, role: str, rationale: str,
                 f"{ev.gate_pct:g}% gate but is inside {OWNER_TOLERANCE_PCT:g}% "
                 f"({ev.source})"
             )
+    for ev in refuted:
+        caveats.append(
+            f"refuted record, excluded from the accuracy claim: {ev.case}: "
+            f"{ev.quantity} = {ev.measured_pct:.3g}% -- "
+            f"{ev.precondition or 'invalidated by a later audit'} ({ev.source})"
+        )
     if not passing:
-        worst = max(records, key=lambda ev: ev.measured_pct)
+        worst = max(banked, key=lambda ev: ev.measured_pct)
         return Decision(
             method=method_key, status="FAILED", role=role,
             rationale=rationale + " -- but its own benchmarks are outside tolerance",

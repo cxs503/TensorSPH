@@ -4,11 +4,11 @@
 
 ## 1 覆盖情况
 
-- 登记表记录数：17
-- 产物自带门限的量：16
+- 登记表记录数：20
+- 产物自带门限的量：19
 - 覆盖完整（每个自带门限的量都有对应登记记录）：**是**
-- 复算与登记值不一致：无
-- 产物内已存百分比与复算不一致：无
+- 复算与登记值不一致：['x_couette_design']
+- 产物内已存百分比与复算不一致：['x_couette_design']
 
 ## 2 逐量审计表
 
@@ -31,6 +31,9 @@
 | `wcsph_wall_no_slip` | RMS relative error including the two wall-adjacent rows | direct | 6 | - | - | - | - |
 | `wcsph_wall_no_slip` | cross-channel mass-flux error |Q_SPH / Q_exact - 1| | direct | 7.16 | 7.16 | 5 | 是 | **否** |
 | `wcsph_wall_no_slip` | wall-shear error at the moving wall |tau_SPH / tau_exact - 1| | direct | 32.6 | 32.6 | 5 | **否** | **否** |
+| `wcsph_wall_no_slip` | interior L2 velocity error vs u = U y / H at t_end = 1.2 H^2/nu | direct | 2.85 | 2.93 | 5 | 是 | 是 |
+| `wcsph_wall_no_slip` | cross-channel mass-flux error |Q_SPH / Q_exact - 1| | direct | 4.42 | 4.42 | 5 | 是 | 是 |
+| `wcsph_wall_no_slip` | wall-shear error at the moving wall |tau_SPH / tau_exact - 1| | direct | 0.478 | 0.478 | 5 | 是 | 是 |
 | `transport_velocity_correction` | mean relative error of Z/a vs Martin & Moyce | direct | 10.8 | 10.8 | 15 | 是 | 是 |
 | `transport_velocity_correction` | same quantity on the coarse rung | direct | 17 | 17 | 15 | **否** | **否** |
 
@@ -56,6 +59,7 @@
 | `benchmarks/case_conduction_1d/result.json` | `True` |
 | `benchmarks/case_sod_shock_compressible/result.json` | `None` |
 | `benchmarks/couette/out/results.json` | `FAIL` |
+| `benchmarks/couette/out_design/results.json` | `FAIL` |
 | `benchmarks/csf_consistent/validation_report.json` | `None` |
 | `benchmarks/density_diffusion_decay/decay_rate.json` | `pass` |
 | `benchmarks/isph_channel/results.json` | `None` |
