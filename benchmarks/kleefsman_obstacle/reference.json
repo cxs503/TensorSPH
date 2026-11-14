@@ -1,89 +1,106 @@
 {
-  "case": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST",
-  "repo": "TensorSPH",
-  "reference": {
-    "citation": "Kleefsman K.M.T., Fekken G., Veldman A.E.P., Iwanowski B., Buchner B. (2005) A Volume-of-Fluid based simulation method for wave impact problems. J. Comput. Phys. 206:363-393.",
-    "doi": "10.1016/j.jcp.2004.12.007",
-    "measured_quantity": "water height in front of the obstacle, peak value and arrival time"
+ "case": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST",
+ "repo": "TensorSPH",
+ "reference": {
+  "citation": "Kleefsman K.M.T., Fekken G., Veldman A.E.P., Iwanowski B., Buchner B. (2005) A Volume-of-Fluid based simulation method for wave impact problems. J. Comput. Phys. 206:363-393.",
+  "doi": "10.1016/j.jcp.2004.12.007",
+  "measured_quantity": "water height in front of the obstacle, peak value and arrival time"
+ },
+ "geometry_m": {
+  "tank_length": 3.22,
+  "tank_height": 1.0,
+  "column_length": 1.228,
+  "column_height": 0.55,
+  "obstacle_length": 0.161,
+  "obstacle_height": 0.161,
+  "obstacle_upstream_face_x": 2.476,
+  "downstream_gap": 0.744
+ },
+ "geometry_provenance": {
+  "primary_strings": [
+   "1.000",
+   "1.228",
+   "1.248",
+   "0.744",
+   "0.550",
+   "0.161",
+   "0.403"
+  ],
+  "reading": "tank 3.22 x 1.00 m; column 1.228 x 0.550 m at the closed end; box 0.161 m (streamwise) x 0.161 m high, 0.403 m wide, upstream face at 1.228 + 1.248 = 2.476 m",
+  "consistency_check": "1.228 + 1.248 + 0.744 = 3.220 m = tank length (exact, residuals 0)",
+  "secondary_source": "Amaro Junior R.A., Cheng L.-Y., Buruchenko S.K. (2020) A comparison between WCSPH and MPS methods for 3D dam-break flows. Int. J. Offshore Polar Eng. 30(4), doi:10.1142/s021987622050036x; open preprint arXiv:2306.01959, Fig. 2 (dimensioned setup reproduced from Kleefsman et al. 2005) and Sec. 'Computational domain and model parameters'.",
+  "verified_against": [
+   "3.22 m tank, 1.22 m column, 0.55 m column height, 0.40 x 0.16 x 0.16 m box placed 1.248 m downstream (A. English et al. 2021, doi:10.1007/s40571-021-00403-3, Sec. 'Three-dimensional dam-break flow with a fixed structure')"
+  ]
+ },
+ "experimental_values": {
+  "status": "ANCHORED",
+  "peak_height_m": 0.37,
+  "arrival_time_s": 0.3591,
+  "probe_x_m": 2.426,
+  "probe_id": "H2",
+  "probe_note": "paper text: 'In Fig. 19 time histories of the water height at two locations are shown: in the reservoir, and in the tank just in front of the box' -> H2 is the in-front-of-box probe; its x is not machine-readable from the raster setup figure Fig. 17, so the code convention (box upstream face 2.476 m minus 0.05 m) is used.",
+  "source": "Kleefsman, Fekken, Veldman, Iwanowski & Buchner (2005) J. Comput. Phys. 206:363-393, doi:10.1016/j.jcp.2004.12.007, Fig. 19 right panel",
+  "source_pdf": "https://pure.rug.nl/ws/files/2941055/2005JCompPhysKleefsman.pdf (research.rug.nl mirror is Cloudflare-gated; the pure.rug.nl mirror serves the same file)",
+  "digitisation": "raster JPEG 1182x450 (page 22 image xref 314); x 0..6 s over px 661..1179, y 0.4..0.0 m over px 6.5..413.5",
+  "digitised_series": "../../outputs/kleefsman_h2_ref/h2_fig19.csv",
+  "digitisation_cross_check": {
+   "comflow_peak_height_m": 0.3361,
+   "comflow_peak_time_s": 1.7722,
+   "comflow_arrival_time_s": 0.3707,
+   "arrival_agreement_rel": 0.0323,
+   "why": "two curves traced independently by continuity; the paper states the impact instant is 'perfectly captured', so a digitisation that reproduces that agreement (<5 %) is self-consistent"
   },
-  "geometry_m": {
-    "tank_length": 3.22,
-    "tank_height": 1.0,
-    "column_length": 1.228,
-    "column_height": 0.55,
-    "obstacle_length": 0.161,
-    "obstacle_height": 0.161,
-    "obstacle_upstream_face_x": 2.476,
-    "downstream_gap": 0.744
+  "uncertainty": {
+   "peak_height_m": 0.005,
+   "arrival_time_s": 0.01,
+   "reason": "1 px = 0.0038 m vertical, 0.0116 s horizontal; line thickness 3-6 px"
   },
-  "geometry_provenance": {
-    "primary_strings": [
-      "1.000",
-      "1.228",
-      "1.248",
-      "0.744",
-      "0.550",
-      "0.161",
-      "0.403"
-    ],
-    "reading": "tank 3.22 x 1.00 m; column 1.228 x 0.550 m at the closed end; box 0.161 m (streamwise) x 0.161 m high, 0.403 m wide, upstream face at 1.228 + 1.248 = 2.476 m",
-    "consistency_check": "1.228 + 1.248 + 0.744 = 3.220 m = tank length (exact, residuals 0)",
-    "secondary_source": "Amaro Junior R.A., Cheng L.-Y., Buruchenko S.K. (2020) A comparison between WCSPH and MPS methods for 3D dam-break flows. Int. J. Offshore Polar Eng. 30(4), doi:10.1142/s021987622050036x; open preprint arXiv:2306.01959, Fig. 2 (dimensioned setup reproduced from Kleefsman et al. 2005) and Sec. 'Computational domain and model parameters'.",
-    "verified_against": [
-      "3.22 m tank, 1.22 m column, 0.55 m column height, 0.40 x 0.16 x 0.16 m box placed 1.248 m downstream (A. English et al. 2021, doi:10.1007/s40571-021-00403-3, Sec. 'Three-dimensional dam-break flow with a fixed structure')"
-    ]
+  "previous_status_note": "until this mission the field was WITHHELD because the paper PDF was believed unreachable; the pure.rug.nl mirror resolves that."
+ },
+ "tolerance": {
+  "relative": 0.1,
+  "rule": "|got - ref| / |ref| < 0.10 for both the peak height and the arrival time"
+ },
+ "metric_definition": {
+  "operators": {
+   "height": "legacy top-3 particle-centre mean (water_height_at); systematic bias -0.38..-1.33 dx",
+   "surface": "same with the (k-1)/2 dx row offset removed (surface_level); residual +/-0.5 dx",
+   "slab": "fixed physical aperture volume gauge (slab_level); dx-independent for a planar surface"
   },
-  "experimental_values": {
-    "status": "WITHHELD",
-    "peak_height_m": null,
-    "arrival_time_s": null,
-    "probe_x_m": null,
-    "reason": "Kleefsman et al. (2005) report the water-height traces graphically (gauges H1-H4). The paper PDF could not be retrieved from this node: the University of Groningen repository copy (research.rug.nl/files/2941055/2005JCompPhysKleefsman.pdf) is behind a Cloudflare challenge (HTTP 403), ScienceDirect returns HTTP 403, and no digitized table of the Kleefsman water-level traces was found in the openly reachable literature. The gauge x-coordinates of H1-H4 are printed only inside the setup figure, not in its caption or body text.",
-    "resolve_by": "obtain the paper PDF via an institutional subscription, read the water-height traces at the gauge nearest the box, and fill peak_height_m / arrival_time_s / probe_x_m here; benchmarks/kleefsman_obstacle/run.py then performs the <10% tolerance check automatically and flips the verdict from WITHHELD to PASS/FAIL."
-  },
-  "tolerance": {
-    "relative": 0.1,
-    "rule": "|got - ref| / |ref| < 0.10 for both the peak height and the arrival time"
-  },
-  "metric_definition": {
-    "operators": {
-      "height": "legacy top-3 particle-centre mean (water_height_at); systematic bias -0.38..-1.33 dx",
-      "surface": "same with the (k-1)/2 dx row offset removed (surface_level); residual +/-0.5 dx",
-      "slab": "fixed physical aperture volume gauge (slab_level); dx-independent for a planar surface"
-    },
-    "aperture_m": 0.08,
-    "stations_offset_m": [
-      0.05,
-      0.248
-    ],
-    "arrival_threshold_m": 0.02,
-    "why": "the case-pool tolerance is 10 %, so the gauge itself must not carry a resolution-dependent bias of that size; measured on a still lattice, the historical operator is 1.8-2.7 cm low at dx=0.02 and 1.5-5.3 cm low at dx=0.04, i.e. it exceeds its own 0.02 m arrival threshold",
-    "evidence": "docs/verification_kleefsman_gauge_bias.md, results/gauge_ladder/analysis.json, tests/test_kleefsman_gauge_bias.py",
-    "frozen_primary": {
-      "operator": "slab",
-      "aperture_m": 0.08,
-      "station_offset_m": 0.05,
-      "peak_filter_window_s": 0.03,
-      "arrival_threshold_m": 0.02,
-      "why": "the audit of the committed bundle (docs/benchmarks/kleefsman-decidability-audit-m20773.md) measured a 9-20 % peak spread across the three water-level operators at the probe station, which is the same size as the 10 % case tolerance. The acceptance metric therefore cannot be evaluated until one operator is frozen: the fixed-aperture slab gauge is chosen because it is the only one of the three that is dx-independent for a planar surface, and the peak is taken after a 30 ms symmetric moving average because the particle-stack peak is set by ballistic spray (gauge-equivalent level, see convergence_analysis.py).",
-      "frozen_by": "m20773",
-      "frozen_on": "2026-11-14",
-      "evidence": [
-        "docs/benchmarks/kleefsman-decidability-audit-m20773.md",
-        "results/audit_protocol/decidability.json",
-        "tests/test_kleefsman_decidability.py"
-      ]
-    }
-  },
-  "gauge_ladder_status": {
-    "grids_completed": [
-      0.02,
-      0.04
-    ],
-    "grids_pending": [
-      0.01
-    ],
-    "pending_job": "cluster cj1576 (queued); rerun benchmarks/kleefsman_obstacle/gauge_convergence.py after it lands",
-    "pair_spread": "peak 21.6 % (height@x2.426) -> 9.9 % (slab@x2.426) -> 1.3 % (slab@x2.228); arrival 6.2 % -> 4.2 % -> 4.4 %"
+  "aperture_m": 0.08,
+  "stations_offset_m": [
+   0.05,
+   0.248
+  ],
+  "arrival_threshold_m": 0.02,
+  "why": "the case-pool tolerance is 10 %, so the gauge itself must not carry a resolution-dependent bias of that size; measured on a still lattice, the historical operator is 1.8-2.7 cm low at dx=0.02 and 1.5-5.3 cm low at dx=0.04, i.e. it exceeds its own 0.02 m arrival threshold",
+  "evidence": "docs/verification_kleefsman_gauge_bias.md, results/gauge_ladder/analysis.json, tests/test_kleefsman_gauge_bias.py",
+  "frozen_primary": {
+   "operator": "slab",
+   "aperture_m": 0.08,
+   "station_offset_m": 0.05,
+   "peak_filter_window_s": 0.03,
+   "arrival_threshold_m": 0.02,
+   "why": "the audit of the committed bundle (docs/benchmarks/kleefsman-decidability-audit-m20773.md) measured a 9-20 % peak spread across the three water-level operators at the probe station, which is the same size as the 10 % case tolerance. The acceptance metric therefore cannot be evaluated until one operator is frozen: the fixed-aperture slab gauge is chosen because it is the only one of the three that is dx-independent for a planar surface, and the peak is taken after a 30 ms symmetric moving average because the particle-stack peak is set by ballistic spray (gauge-equivalent level, see convergence_analysis.py).",
+   "frozen_by": "m20773",
+   "frozen_on": "2026-11-14",
+   "evidence": [
+    "docs/benchmarks/kleefsman-decidability-audit-m20773.md",
+    "results/audit_protocol/decidability.json",
+    "tests/test_kleefsman_decidability.py"
+   ]
   }
+ },
+ "gauge_ladder_status": {
+  "grids_completed": [
+   0.02,
+   0.04
+  ],
+  "grids_pending": [
+   0.01
+  ],
+  "pending_job": "cluster cj1576 (queued); rerun benchmarks/kleefsman_obstacle/gauge_convergence.py after it lands",
+  "pair_spread": "peak 21.6 % (height@x2.426) -> 9.9 % (slab@x2.426) -> 1.3 % (slab@x2.228); arrival 6.2 % -> 4.2 % -> 4.4 %"
+ }
 }
