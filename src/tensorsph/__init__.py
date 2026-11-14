@@ -33,6 +33,11 @@ from .droplet_impact import (
     viscous_dt_limit,
     wall_lattice,
 )
+from . import case_poiseuille_morris
+from .case_poiseuille_morris import (
+    MorrisConfig,
+    run_ladder as run_poiseuille_morris_ladder,
+)
 from . import eos_hydrostatics
 from .eos_hydrostatics import (
     acoustic_mach,
@@ -205,6 +210,7 @@ __all__ = [
     "contact_stress_force",
     "surface_tension_acceleration",
     "sphinxys_capillary_dt_limit",
+    "case_poiseuille_morris", "MorrisConfig", "run_poiseuille_morris_ladder",
     "STOKES_SECOND_CASE_KEY", "penetration_depth", "semi_infinite",
     "semi_infinite_amplitude", "finite_depth", "finite_depth_amplitude",
     "harmonic_fit", "verify_stokes_second_numeric", "verify_stokes_second_symbolic",
