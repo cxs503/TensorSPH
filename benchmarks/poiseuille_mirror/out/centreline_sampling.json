@@ -1,0 +1,104 @@
+{
+  "case": "plane_poiseuille_channel_mirror_wall_centreline_sampling",
+  "anchor": "CASE-POISEUILLE-SPH",
+  "question": "does gate A compare a row mean against the continuum centre-line value, and how large is that sampling artefact?",
+  "hypothesis": "A_legacy carries a 1-(dx/H)^2 sampling factor at even H/dx and none at odd H/dx; A_same_row / A_fit_* are blind to lattice parity",
+  "setup": {
+    "height": 0.1,
+    "viscosity": 0.01,
+    "body_force": 9.81,
+    "columns": 12,
+    "t_end": 1.0,
+    "t_average": 0.2,
+    "threads": 8
+  },
+  "provenance": {
+    "job": "cj3057",
+    "log": "/root/tp-agent/cluster/jobs/cj3057.log",
+    "transcribed": true,
+    "reason": "run_compute fetch returns the staged pre-run snapshot; the node-side JSON is not retrievable, so the rung numbers are transcribed from job stdout",
+    "requested_rungs": [
+      15,
+      16,
+      17,
+      24,
+      25
+    ],
+    "completed_rungs": [
+      15,
+      16,
+      17,
+      24
+    ],
+    "missing_rungs": [
+      25
+    ],
+    "abort_marker": "free(): corrupted unsorted chunks"
+  },
+  "series": [
+    {
+      "resolution_H_over_dx": 15,
+      "dx_over_H": 0.06666666666666667,
+      "nearest_row_y_over_H": 0.5,
+      "row_sits_on_centreline": true,
+      "u_max_ref": 1.2262500000000003,
+      "u_max_measured": 1.2270225375000001,
+      "A_legacy": 0.00063,
+      "A_same_row": 0.00063,
+      "A_fit_full": 0.0023899999999999998,
+      "A_fit_mid": null,
+      "bias_pred_factor": 1.0,
+      "A_legacy_from_fit_full": 0.002389999999999892,
+      "wall_clock_s": 78.0,
+      "provenance": "transcribed from job log (3 d.p. percent)"
+    },
+    {
+      "resolution_H_over_dx": 16,
+      "dx_over_H": 0.0625,
+      "nearest_row_y_over_H": 0.46875,
+      "row_sits_on_centreline": false,
+      "u_max_ref": 1.2262500000000003,
+      "u_max_measured": 1.2231353250000003,
+      "A_legacy": -0.00254,
+      "A_same_row": 0.0013700000000000001,
+      "A_fit_full": 0.00192,
+      "A_fit_mid": null,
+      "bias_pred_factor": 0.99609375,
+      "A_legacy_from_fit_full": -0.0019937500000001274,
+      "wall_clock_s": 91.0,
+      "provenance": "transcribed from job log (3 d.p. percent)"
+    },
+    {
+      "resolution_H_over_dx": 17,
+      "dx_over_H": 0.058823529411764705,
+      "nearest_row_y_over_H": 0.5,
+      "row_sits_on_centreline": true,
+      "u_max_ref": 1.2262500000000003,
+      "u_max_measured": 1.2260783250000002,
+      "A_legacy": -0.00014000000000000001,
+      "A_same_row": -0.00014000000000000001,
+      "A_fit_full": 0.00116,
+      "A_fit_mid": null,
+      "bias_pred_factor": 1.0,
+      "A_legacy_from_fit_full": 0.0011600000000000499,
+      "wall_clock_s": 90.0,
+      "provenance": "transcribed from job log (3 d.p. percent)"
+    },
+    {
+      "resolution_H_over_dx": 24,
+      "dx_over_H": 0.041666666666666664,
+      "nearest_row_y_over_H": 0.4791666666666667,
+      "row_sits_on_centreline": false,
+      "u_max_ref": 1.2262500000000003,
+      "u_max_measured": 1.2220684875000003,
+      "A_legacy": -0.0034100000000000003,
+      "A_same_row": -0.00168,
+      "A_fit_full": -0.00146,
+      "A_fit_mid": null,
+      "bias_pred_factor": 0.9982638888888888,
+      "A_legacy_from_fit_full": -0.0031935763888889523,
+      "wall_clock_s": 173.0,
+      "provenance": "transcribed from job log (3 d.p. percent)"
+    }
+  ]
+}
