@@ -231,3 +231,24 @@ pytest tests/test_case_poiseuille_sph_anchor.py -v
 The TensorSPH mirror-wall Poiseuille case passes all pre-declared gates within the 5% tolerance at $H/dx \geq 12$, with the centreline velocity accurate to 0.02% and wall shear to 0.4%. The case provides a rigorous, multi-gauge verification of the viscous operator and no-slip wall treatment, with honest documentation of resolution requirements and stencil bias effects.
 
 The overall verdict is **PASS_WITH_CAVEAT**, where the caveat is that the all-row profile RMS requires $H/dx \geq 12$ and the bias-corrected wall-shear stencil requires $H/dx \geq 16$ for full accuracy.
+
+---
+
+## 9. Erratum (selfstart m20930) — Gate A metric and monotonicity
+
+An adversarial re-grade of this case (job cj3057, `H/dx` odd/even parity pairs 15/16/17/24)
+shows that gate A compares the largest *binned row* velocity against the *continuum*
+centre-line value. On an even lattice no row sits on `y = H/2`, so the metric carries a
+structural penalty `1 - (dx/H)^2` (1.56 % at `H/dx = 8`, 0.39 % at 16), confirmed
+numerically to <= 0.0005 pp. Consequences for the claims above:
+
+1. **§6 `u_max` +0.017 % at `H/dx = 12` is a metric coincidence**: the sampling penalty
+   (-0.69 %) cancels the solver bias (+0.67 %). The sampling-free centre-line error is
+   **+1.96 / +0.67 / +0.19 / -0.15 / -0.28 %** at `H/dx = 8/12/16/24/32`. All still meet the
+   5 % case criterion (and <3 %), so the case verdict stands, but the accuracy claim was
+   overstated by ~40x.
+2. **§4.2 "All metrics improve monotonically with resolution" is falsified**: interior row
+   RMS rises from 0.148 % (`H/dx = 24`) to 0.219 % (`H/dx = 32`), and the raw centre-line
+   readout falls from -0.341 % to -0.513 %.
+
+Full treatment, figures and reproduction: `docs/case_poiseuille_centreline_metric.md`.
