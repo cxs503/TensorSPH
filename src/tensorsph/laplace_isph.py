@@ -402,10 +402,23 @@ def laplace_isph_case(radius: float = 0.02, dx: float = 0.002,
     acc = ((-sigma * kappa_use * delta_use)[:, None] * normal
            / rho_phase[:, None])
 
+    # force density f (rho-independent): the CSF traction without the /rho.
+    # The Young-Laplace law contains sigma and R only, so the *force-density*
+    # balance grad p = f is density-ratio blind by construction.
+    f = (-sigma * kappa_use * delta_use)[:, None] * normal
+
     # source of the pressure Poisson: -grad^2 p = -rho div(a)
     div_a = mls_divergence(pos, acc, vol, pairs, h)
+    div_f = mls_divergence(pos, f, vol, pairs, h)
     uniform = bool(float(rho_phase.max()) == float(rho_phase.min()))
-    if uniform:
+    if poisson_weighting == "force_density":
+        # -grad^2 p = -div(f): the rho-blind force-density balance (grad p = f).
+        # Bit-identical to the historical path at ratio 1 (div(f/rho0)=div(f)/rho0),
+        # and it converges with refinement at high contrast where the
+        # variable-coefficient 1/rho form drifts (see xval_projection_laplace_density_ratio).
+        source = -div_f
+        rho_op = None
+    elif uniform:
         # historical path (bit-identical): -grad^2 p = -rho0 div(a)
         source = -rho0 * div_a
         rho_op = None
