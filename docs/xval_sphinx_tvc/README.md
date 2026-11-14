@@ -299,3 +299,20 @@ MAE 0.563 vs 0.591, i.e. no gain at all).
 3. `raw.githubusercontent.com` is refused from this host while
    `api.github.com` works; sources were fetched through the contents API
    (base64) and the codeload tarball.
+## Leg: free-surface / wall branches against analytic anchors (m20882)
+
+`SURFACE_ANCHOR.md` (+ `surface_term.py`, `tests/test_tvc_surface_anchor.py`) closes the
+part of gap 2 above that does **not** need a live SPHinXsys binary: the operator's
+surface and wall branches are graded against exact continuum limits instead.
+
+* plane free surface -> gradient theorem `g = +2 n I(h,d)`, `I(h,0) = 15/(7 pi h)`:
+  the production lattice (`h/dx = 1.3`) is **14.15 %** below the continuum value
+  (`<15 %` gate passes, `<3 %` fails), converging at local order 2.0 to 0.02 % at
+  `h/dx = 32`;
+* wall contact -> mirror ghost lattice: `|g|` vanishes to round-off **iff**
+  `wall_factor = 2` (3e-14), and keeps 42.9 % of the surface scale when it is 1;
+* hence `|dr|/h = 30 alpha/(7 pi)`, independent of `dx` -- the *derivation* of the
+  fixed-`alpha` scaling that `RESOLUTION_LADDER.md` section 3 had only fitted.
+
+Still open: a numeric diff against a live SPHinXsys build (gap 2), hexagonal
+lattices, and the adaptive `h_ratio` branch (not ported).
