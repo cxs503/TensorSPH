@@ -1,0 +1,240 @@
+{
+  "bundle": {
+    "runs": {
+      "0": {
+        "n_samples": 107,
+        "x_mean_scaled": 5.822745794392524,
+        "y_mean_scaled": 2.028119065420561,
+        "x_amplitude_scaled": 0.15576999999999996,
+        "y_amplitude_scaled": 0.796685,
+        "x_mean": 0.5822745794392523,
+        "y_mean": 0.2028119065420561,
+        "tip_x_amplitude": 0.015576999999999997,
+        "tip_y_amplitude": 0.0796685,
+        "length_scale": 10.0
+      },
+      "4": {
+        "n_samples": 107,
+        "x_mean_scaled": 5.819429065420561,
+        "y_mean_scaled": 2.003997102803738,
+        "x_amplitude_scaled": 0.15556000000000036,
+        "y_amplitude_scaled": 0.8272349999999999,
+        "x_mean": 0.581942906542056,
+        "y_mean": 0.2003997102803738,
+        "tip_x_amplitude": 0.015556000000000037,
+        "tip_y_amplitude": 0.08272349999999999,
+        "length_scale": 10.0
+      },
+      "9": {
+        "n_samples": 107,
+        "x_mean_scaled": 5.8280817757009356,
+        "y_mean_scaled": 1.9911943925233648,
+        "x_amplitude_scaled": 0.15612499999999985,
+        "y_amplitude_scaled": 0.7683000000000001,
+        "x_mean": 0.5828081775700935,
+        "y_mean": 0.1991194392523365,
+        "tip_x_amplitude": 0.015612499999999984,
+        "tip_y_amplitude": 0.07683000000000001,
+        "length_scale": 10.0
+      }
+    },
+    "worst_run": "4",
+    "tip_gate": {
+      "rows": [
+        {
+          "quantity": "tip_x_amplitude",
+          "reference": 0.0028,
+          "computed": 0.015576999999999997,
+          "rel_error": 4.563214285714285,
+          "pass_15": false,
+          "pass_3": false
+        },
+        {
+          "quantity": "tip_y_amplitude",
+          "reference": 0.0082,
+          "computed": 0.0796685,
+          "rel_error": 8.715670731707316,
+          "pass_15": false,
+          "pass_3": false
+        }
+      ],
+      "passed_15": false,
+      "passed_3": false,
+      "worst_rel_error": 8.715670731707316
+    },
+    "viscous_force_scaled": [
+      0.451157,
+      0.00157671
+    ],
+    "viscous_force_physical": [
+      45.1157,
+      0.157671
+    ],
+    "viscous_Cd": [
+      0.902314,
+      0.00315342
+    ],
+    "flat_plate_estimate": {
+      "Re_L": 349.99999999999994,
+      "Cf": 0.07098458585193992,
+      "Cd_friction": 0.49689210096357944
+    },
+    "length_scale": 10.0,
+    "inferred_length_scale": 9.742083333333333,
+    "amplitude_spread_tip_y": 0.07390833618981509
+  },
+  "default_case": {
+    "groups": {
+      "Re": 100.0,
+      "Ae": 100000.00000000001,
+      "rho_s_over_rho_f": 1.0,
+      "poisson_s": 0.3,
+      "slenderness": 17.5,
+      "mach": 0.006666666666666666
+    },
+    "report": {
+      "groups": [
+        {
+          "name": "Re",
+          "value": 100.0,
+          "target": 100.0,
+          "rel_error": 0.0,
+          "passed": true
+        },
+        {
+          "name": "Ae",
+          "value": 100000.00000000001,
+          "target": 5600.0,
+          "rel_error": 16.85714285714286,
+          "passed": false
+        },
+        {
+          "name": "rho_s_over_rho_f",
+          "value": 1.0,
+          "target": 1.0,
+          "rel_error": 0.0,
+          "passed": true
+        },
+        {
+          "name": "poisson_s",
+          "value": 0.3,
+          "target": 0.4,
+          "rel_error": -0.25000000000000006,
+          "passed": false
+        },
+        {
+          "name": "slenderness",
+          "value": 17.5,
+          "target": 17.5,
+          "rel_error": 0.0,
+          "passed": true
+        }
+      ],
+      "passed": false,
+      "failed": [
+        "Ae"
+      ],
+      "tol": 0.02,
+      "mach": 0.006666666666666666,
+      "informational": [
+        "poisson_s"
+      ]
+    },
+    "consequence": {
+      "Ae": 100000.00000000001,
+      "Ae_target": 5600.0,
+      "tip_amplitude_ratio": 0.055999999999999994,
+      "bending_frequency_ratio": 4.225771273642583,
+      "tip_amplitude_rel_error": -0.944
+    },
+    "beam_E": 4000000.0,
+    "u_mean": 0.19999999999999998
+  },
+  "corrected_case": {
+    "groups": {
+      "Re": 100.0,
+      "Ae": 5600.0,
+      "rho_s_over_rho_f": 1.0,
+      "poisson_s": 0.4,
+      "slenderness": 17.5,
+      "mach": 0.006666666666666667
+    },
+    "report": {
+      "groups": [
+        {
+          "name": "Re",
+          "value": 100.0,
+          "target": 100.0,
+          "rel_error": 0.0,
+          "passed": true
+        },
+        {
+          "name": "Ae",
+          "value": 5600.0,
+          "target": 5600.0,
+          "rel_error": 0.0,
+          "passed": true
+        },
+        {
+          "name": "rho_s_over_rho_f",
+          "value": 1.0,
+          "target": 1.0,
+          "rel_error": 0.0,
+          "passed": true
+        },
+        {
+          "name": "poisson_s",
+          "value": 0.4,
+          "target": 0.4,
+          "rel_error": 0.0,
+          "passed": true
+        },
+        {
+          "name": "slenderness",
+          "value": 17.5,
+          "target": 17.5,
+          "rel_error": 0.0,
+          "passed": true
+        }
+      ],
+      "passed": true,
+      "failed": [],
+      "tol": 0.02,
+      "mach": 0.006666666666666667,
+      "informational": []
+    },
+    "consequence": {
+      "Ae": 5600.0,
+      "Ae_target": 5600.0,
+      "tip_amplitude_ratio": 1.0,
+      "bending_frequency_ratio": 1.0,
+      "tip_amplitude_rel_error": 0.0
+    },
+    "beam_E": 224000.00000000003,
+    "viscosity": 0.2,
+    "u_mean": 0.2
+  },
+  "oss_case": {
+    "rho0_f": 1.0,
+    "rho0_s": 10.0,
+    "U_f": 1.0,
+    "Re": 100.0,
+    "Ae": 1400.0,
+    "poisson_s": 0.4,
+    "beam_thickness": 0.2,
+    "beam_length": 3.5,
+    "length_scale": 10.0
+  },
+  "benchmark": {
+    "Re": 100.0,
+    "Ae": 5600.0,
+    "rho_s_over_rho_f": 1.0,
+    "poisson_s": 0.4,
+    "slenderness": 17.5
+  },
+  "benchmark_tip": {
+    "tip_x_amplitude": 0.0028,
+    "tip_y_amplitude": 0.0082
+  },
+  "sample_dt_physical": 0.1
+}
