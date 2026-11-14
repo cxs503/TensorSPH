@@ -1,0 +1,77 @@
+{
+  "tag": "audit_dx0.02_t30",
+  "dx": 0.02,
+  "t_end": 3.0,
+  "sound_speed": 20.0,
+  "dt": 0.0002,
+  "probe_x": 2.426,
+  "arrival_threshold": 0.02,
+  "peak_height_m": 0.5174656510353088,
+  "peak_time_s": 0.7159999999999538,
+  "gauge_aperture_m": 0.08,
+  "stations_offset_m": [
+    0.05,
+    0.248
+  ],
+  "gauges": {
+    "height@x2.426": {
+      "peak_m": 0.5174656510353088,
+      "peak_time_s": 0.7159999999999538,
+      "arrival_time_s": 0.4540686776727774,
+      "station_x_m": 2.426,
+      "operator": "height"
+    },
+    "surface@x2.426": {
+      "peak_m": 0.5374656510353089,
+      "peak_time_s": 0.7159999999999538,
+      "arrival_time_s": 0.4355690667292489,
+      "station_x_m": 2.426,
+      "operator": "surface"
+    },
+    "slab@x2.426": {
+      "peak_m": 0.4782044219970703,
+      "peak_time_s": 1.1199999999999093,
+      "arrival_time_s": 0.44092004444087324,
+      "station_x_m": 2.426,
+      "operator": "slab"
+    },
+    "height@x2.228": {
+      "peak_m": 0.4007650315761566,
+      "peak_time_s": 1.4119999999998771,
+      "arrival_time_s": 0.3997810356124967,
+      "station_x_m": 2.228,
+      "operator": "height"
+    },
+    "surface@x2.228": {
+      "peak_m": 0.42076503157615663,
+      "peak_time_s": 1.4119999999998771,
+      "arrival_time_s": 0.3869386347156008,
+      "station_x_m": 2.228,
+      "operator": "surface"
+    },
+    "slab@x2.228": {
+      "peak_m": 0.38501194000244143,
+      "peak_time_s": 1.4919999999998683,
+      "arrival_time_s": 0.3893126361119045,
+      "station_x_m": 2.228,
+      "operator": "slab"
+    }
+  },
+  "column_peak_m": 0.52,
+  "arrival_time_s": 0.4540686776727774,
+  "steps": 15001,
+  "simulated_time_s": 3.0001999999997024,
+  "dt_min": 0.0002,
+  "dt_max": 0.0002,
+  "max_density_compression": 0.2733310546875001,
+  "max_speed": 13.134227752685547,
+  "mass_error_rel": 0.0,
+  "boundary_escapes": 0,
+  "particles_fluid": 1647,
+  "comparison": {
+    "verdict": "WITHHELD",
+    "tolerance": 0.1,
+    "rows": [],
+    "experimental_status": "WITHHELD"
+  }
+}
