@@ -83,9 +83,11 @@ Verification that does not need long-time integration:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import functools
 import math
 from typing import Dict, List, Optional, Tuple
 
+import numpy as np
 import torch
 
 from . import droplet_impact as di
@@ -204,10 +206,37 @@ class FSI2Case:
                          / (self.beam_area_density() * l0))
 
     def rod_substeps_effective(self) -> int:
+        """Rod sub-steps per fluid step, set by the rod's *highest* mode.
+
+        The explicit symplectic-Euler rod is only conditionally stable, and the
+        binding mode is the shortest bending wavelength, not the (much slower)
+        axial mode.  Sizing the sub-cycling on the axial frequency alone leaves
+        the highest bending mode under-resolved: measured on the FSI2 point at
+        ``dx = 20 mm`` (``rho_s/rho_f = 1``), a freely vibrating beam integrated
+        with the axial-only count gains **1e249** in energy over 200 steps with
+        *zero* load, while ``rho_s/rho_f = 2`` and 10 happen to stay bounded at
+        the same count.  That pathology is exactly what was previously read as
+        an "added-mass instability" of the fluid coupling
+        (``docs/xval_fsi2/COUPLED_RUN_DEFECTS.md``).
+
+        The criterion is derived, not tuned: ``omega_max`` is the highest
+        eigenfrequency of the discrete energy Hessian at the straight
+        configuration (mass-normalised), and the sub-step count is
+        ``ceil(dt * omega_max / rod_stability_target)`` so that every mode
+        satisfies ``dt_sub * omega <= rod_stability_target < 2``, the symplectic
+        Euler limit.
+        """
         if self.rod_substeps > 0:
             return int(self.rod_substeps)
-        needed = self.dt() * self.beam_axial_frequency() / self.rod_stability_target
-        return max(1, int(math.ceil(needed - 1.0e-12)))
+        needed = self.dt() * beam_max_frequency(self) / self.rod_stability_target
+        n = max(1, int(math.ceil(needed - 1.0e-12)))
+        if n > self.max_rod_substeps:
+            raise ValueError(
+                f"rod sub-cycling needs {n} sub-steps per fluid step "
+                f"(dt={self.dt():.3e} s, omega_max={beam_max_frequency(self):.1f} rad/s) "
+                f"> max_rod_substeps={self.max_rod_substeps}; reduce dt or raise "
+                f"max_rod_substeps")
+        return n
 
     def validate(self) -> None:
         if self.dx <= 0:
@@ -230,6 +259,36 @@ class FSI2Case:
             pool_width=self.channel_length, pool_depth=self.channel_height,
             device=self.device, boundary="wall", wall_layers=3,
             max_courant=self.max_courant, density_calibration=True)
+
+
+@functools.lru_cache(maxsize=64)
+def _beam_max_frequency_cached(E: float, rho: float, t: float, length: float,
+                               n_nodes: int) -> float:
+    """Highest eigenfrequency [rad/s] of the discrete clamped beam.
+
+    ``omega_max = sqrt(lambda_max(H) / m_node)`` where ``H`` is the Hessian of
+    the discrete energy (:func:`beam_energy`) at the straight configuration,
+    restricted to the free (non-clamped) degrees of freedom.  Both the stretch
+    and the bending terms of the rod enter the Hessian, so this is the binding
+    stability mode by construction -- no empirical constant is fitted.
+    """
+    probe = FSI2Case(beam_E=E, beam_rho=rho, beam_thickness=t,
+                     beam_length=length, n_beam_nodes=n_nodes)
+    nodes = beam_initial_nodes(probe, torch.device("cpu")).reshape(-1)
+    hess = torch.autograd.functional.hessian(
+        lambda z: beam_energy(z.reshape(-1, 2), probe), nodes)
+    hess = hess.detach().to(torch.float64).numpy()
+    free = np.arange(2, hess.shape[0])  # node 0 is clamped (2 dofs)
+    lam_max = float(np.linalg.eigvalsh(hess[np.ix_(free, free)]).max())
+    m_node = float(beam_nodal_mass(probe).reshape(-1)[1])
+    return math.sqrt(max(lam_max, 0.0) / m_node)
+
+
+def beam_max_frequency(case: "FSI2Case") -> float:
+    """Highest natural frequency of the case's discrete rod [rad/s]."""
+    return _beam_max_frequency_cached(
+        float(case.beam_E), float(case.beam_rho), float(case.beam_thickness),
+        float(case.beam_length), int(case.n_beam_nodes))
 
 
 # --------------------------------------------------------------------------- #
