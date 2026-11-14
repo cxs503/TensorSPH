@@ -1,5 +1,14 @@
 # Lake at rest: does the shipped WCSPH hold a still lake still?
 
+> **Update (2026-11-14, m20689).** The FAIL below stands for this wall-bounded
+> tank. The truncation that causes it is now removed rather than argued about:
+> `LakeConfig(periodic_x=True)` drives the shipped `rhs` with a minimum image in
+> `x`, the horizontal residual drops from `1.242e-01` to `1.377e-12`, and the lake
+> then stays at rest to `2.6e-14` in `|v|/c0`. See
+> `docs/verification_lake_at_rest_periodic.md` and
+> `artifacts/lake_at_rest/rest_dx020_periodic.json`. The numbers below are
+> reproduced unchanged by `artifacts/lake_at_rest/rest_dx020_wall.json`.
+
 Case-pool anchor `CASE-SPH-LAKE-AT-REST`. Reference: the analytic hydrostatic
 identity (`u = 0`, flat free surface) — no experimental uncertainty, no fitted
 constant. Artefact: `artifacts/lake_at_rest/rest_dx020.json`; code

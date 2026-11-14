@@ -798,7 +798,8 @@ def drop_wall_wall_pairs(pairs: torch.Tensor, fluid_count: int) -> torch.Tensor:
 
 
 def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None,
-        wall_vel=None, wall_accel=None, state=None, split: bool = False):
+        wall_vel=None, wall_accel=None, state=None, split: bool = False,
+        wrap_width: float | None = None):
     """Compute WCSPH RHS with pair-based compact-support interactions.
 
     ``state`` is an optional mutable dict carrying the cross-step scalar of the
@@ -828,6 +829,17 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None,
     where Adami et al. (2012, eq. 11) uses ``(g - a_w).(r_w - r_f)``. Both
     default to ``None``, which is the static-wall case and reproduces the
     previous numbers bit for bit.
+
+    ``wrap_width`` makes the ``x`` direction periodic with that period: every
+    pair separation is reduced to its minimum image,
+    ``dx - L round(dx / L)``, before the kernel is evaluated. Nothing else
+    changes -- the density summation, the wall extrapolation and the viscous
+    terms all see the same wrapped separations, so the operator is exactly
+    translation invariant in ``x`` instead of being truncated by a side wall.
+    ``None`` (the default) is the previous code path, bit for bit; a caller
+    that keeps a cached pair list must make sure every physical interaction
+    within the support is in it, because the pair list is *not* rebuilt here
+    (see :func:`tensorsph.lake_at_rest.periodic_pairs`).
 
     Returns ``(rho, pressure, acceleration)`` for the fluid particles.
     """
@@ -872,6 +884,13 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None,
 
     i, j = pairs.unbind(dim=1)
     delta = all_pos[i] - all_pos[j]
+    if wrap_width is not None:
+        width = float(wrap_width)
+        if not math.isfinite(width) or width <= 0.0:
+            raise ValueError("wrap_width must be a positive finite length")
+        delta = torch.stack(
+            (delta[:, 0] - width * torch.round(delta[:, 0] / width),
+             delta[:, 1]), dim=1)
     distance = torch.linalg.vector_norm(delta, dim=1)
     wij, grad_w = pair_kernels(delta, h)
 

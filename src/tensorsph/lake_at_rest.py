@@ -60,6 +60,23 @@ Determinism
 No random numbers, no fitted constants.  Every number this module reports can be
 re-derived from ``dx``, ``H``, ``c0`` and the library's kernel.
 
+Lateral periodicity: the variant where the anchor's tolerance is reachable
+-----------------------------------------------------------------------
+In the wall-bounded tank the horizontal balance cannot be closed: the side-wall
+truncation pushes every near-wall particle *away* from its own wall, so the
+residual is odd under reflection about the centreline and no mass field that is
+even under that reflection can cancel it (measured, see
+``docs/verification_lake_at_rest.md``).  The truncation, not the SPH operator,
+is what breaks the test.  ``LakeConfig(periodic_x=True)`` removes it: the ``x``
+direction is periodic ({:func:`tensorsph.droplet_impact.rhs` with
+``wrap_width``), the bottom wall stays, and the discrete problem becomes
+translation invariant in ``x``.  The equilibrium therefore only has to be a
+function of ``y`` -- one unknown per row instead of one per mirror pair -- and
+``a_x`` vanishes identically by pair symmetry, so both components are zero to
+roundoff and the lake really does stay at rest.  That is the configuration in
+which the anchor's machine-precision tolerance is *met*; the wall-bounded run
+is kept as the honest FAIL and as the measurement of the truncation error.
+
 Usage
 -----
 ``python benchmarks/lake_at_rest/run.py --json out.json`` writes the artefact;
@@ -81,6 +98,7 @@ __all__ = [
     "LakeConfig",
     "build_state",
     "analytic_profile",
+    "periodic_pairs",
     "reconstruct",
     "residual_report",
     "integrate_at_rest",
@@ -102,6 +120,7 @@ class LakeConfig:
     gravity: float = 9.81
     viscosity: float = 0.0        # a resting lake has zero strain rate
     wall_layers: int = 3
+    periodic_x: bool = False     # lateral periodicity instead of side walls
     max_courant: float = 0.30    # dt = max_courant * h / c0
     t_end: float = 0.50          # simulated time (s)
     sample_every: int = 20
@@ -114,6 +133,11 @@ class LakeConfig:
 
     def h(self) -> float:
         return self.h_factor * self.dx
+
+    @property
+    def wrap_width(self) -> float | None:
+        """Period of the ``x`` direction, or ``None`` for solid side walls."""
+        return float(self.width) if self.periodic_x else None
 
     def dt(self) -> float:
         return self.max_courant * self.h() / self.sound_speed
@@ -148,8 +172,11 @@ def build_state(cfg: LakeConfig):
     pos = pool_lattice(shipped, device).to(cfg.torch_dtype).round(decimals=12)
     wall = wall_particles(cfg, device).to(cfg.torch_dtype).round(decimals=12)
     n, nw = pos.shape[0], wall.shape[0]
-    pairs = cell_linked_pairs(torch.cat((pos, wall), dim=0), 2.0 * cfg.h())
-    pairs = drop_wall_wall_pairs(pairs, n)
+    if cfg.periodic_x:
+        pairs = periodic_pairs(pos, wall, cfg.h(), cfg.width)
+    else:
+        pairs = cell_linked_pairs(torch.cat((pos, wall), dim=0), 2.0 * cfg.h())
+        pairs = drop_wall_wall_pairs(pairs, n)
     m_unit = float(lattice_mass_unit(shipped))
     return {
         "config": shipped,
@@ -159,7 +186,13 @@ def build_state(cfg: LakeConfig):
         "m_unit": m_unit,
         "n_fluid": n,
         "n_wall": nw,
-        "columns": _columns(pos, cfg),
+        # The unknown map of the reconstruction: mirror pairs in the tank
+        # (one degree of freedom per symmetric column), rows under lateral
+        # periodicity (translation invariance).  Same solver, different
+        # statement about the equilibrium.
+        "columns": _tie_map(pos, cfg),
+        "tie": "row" if cfg.periodic_x else "mirror_pair",
+        "wrap_width": cfg.wrap_width,
     }
 
 
@@ -177,6 +210,15 @@ def wall_particles(cfg: LakeConfig, device) -> torch.Tensor:
     dx, layers = cfg.dx, cfg.wall_layers
     columns = int(math.floor(cfg.width / dx + 1.0e-9))
     dtype = torch.get_default_dtype()
+    if cfg.periodic_x:
+        # Bottom wall only, one column per fluid column: the side walls are
+        # replaced by the periodic seam and their particles would be a second
+        # copy of columns that already see each other through the minimum image.
+        k = torch.arange(columns, dtype=dtype, device=device)
+        xs = (k + 0.5) * dx
+        parts = [torch.stack((xs, torch.full_like(xs, dx * 0.5 - layer * dx)),
+                             dim=-1) for layer in range(1, layers + 1)]
+        return torch.cat(parts, dim=0)
     k = torch.arange(-layers, columns + layers, dtype=dtype, device=device)
     xs = (k + 0.5) * dx
     rows = torch.arange(columns, dtype=dtype, device=device)
@@ -189,6 +231,63 @@ def wall_particles(cfg: LakeConfig, device) -> torch.Tensor:
         for x in (dx * 0.5 - layer * dx, cfg.width - dx * 0.5 + layer * dx):
             parts.append(torch.stack((torch.full_like(ys_fluid, x), ys_fluid), dim=-1))
     return torch.cat(parts, dim=0)
+
+
+def periodic_pairs(pos: torch.Tensor, wall: torch.Tensor, h: float,
+                   width: float) -> torch.Tensor:
+    """Neighbour list of an ``x``-periodic lattice, with minimum-image separations.
+
+    ``cell_linked_pairs`` builds pairs from the positions it is given and cannot
+    see the seam, so the periodic variant enumerates the pairs directly: every
+    unordered pair whose *minimum-image* separation is inside the support,
+    wall/wall pairs excluded (they touch no fluid particle).  ``O(N^2)`` on
+    purpose -- the case has a few hundred particles and the list is built once --
+    and it contains every image interaction exactly once, which is what
+    ``rhs(..., wrap_width=width)`` then wraps.
+    """
+    if width < 4.0 * h:
+        raise ValueError(
+            "periodic_pairs needs width >= 4 h so that one minimum image per "
+            f"pair covers the 2 h support (width={width:.6g}, h={h:.6g})")
+    all_pos = torch.cat((pos, wall), dim=0)
+    n = pos.shape[0]
+    delta = all_pos[:, None, :] - all_pos[None, :, :]
+    delta_x = delta[..., 0]
+    delta_x = delta_x - width * torch.round(delta_x / width)
+    separation = torch.sqrt(delta_x.square() + delta[..., 1].square())
+    inside = separation < 2.0 * h
+    both_wall = torch.ones(all_pos.shape[0], dtype=torch.bool,
+                           device=all_pos.device)
+    both_wall[:n] = False
+    inside = inside & ~(both_wall[:, None] & both_wall[None, :])
+    index = inside.triu(diagonal=1).nonzero()
+    return index.to(torch.long)
+
+
+def _tie_map(pos: torch.Tensor, cfg: LakeConfig) -> torch.Tensor:
+    """Particle -> independent unknown index of the reconstruction."""
+    if cfg.periodic_x:
+        return _row_index(pos, cfg)
+    return _columns(pos, cfg)
+
+
+def _row_index(pos: torch.Tensor, cfg: LakeConfig) -> torch.Tensor:
+    """Row map for the periodic tank: every particle in a row shares one unknown.
+
+    Translation invariance in ``x`` is the whole content of the periodic
+    variant: the equilibrium mass field cannot depend on the column, so tying
+    the columns of one row is not an assumption but the statement the case is
+    testing.
+    """
+    y = pos[:, 1].round(decimals=12)
+    row = (y / cfg.dx - 0.5).round().to(torch.long)
+    if bool((row < 0).any()):
+        raise ValueError("particle below the first lattice row")
+    residual = (y - (row.to(y.dtype) + 0.5) * cfg.dx).abs().max()
+    if float(residual) > 1e-12:
+        raise ValueError("particle rows do not match the lattice rows: "
+                         f"max deviation {float(residual):.3e}")
+    return row
 
 
 def density_operator(state, cfg: LakeConfig):
@@ -207,6 +306,10 @@ def density_operator(state, cfg: LakeConfig):
     dtype, device = pos.dtype, pos.device
     i, j = pairs.unbind(dim=1)
     delta = torch.cat((pos, wall), dim=0)[i] - torch.cat((pos, wall), dim=0)[j]
+    wrap = cfg.wrap_width
+    if wrap is not None:
+        delta = torch.stack(
+            (delta[:, 0] - wrap * torch.round(delta[:, 0] / wrap), delta[:, 1]), dim=1)
     wij = pair_kernels(delta, h)[0]
     fluid = j < n
     A = torch.zeros((n, n), dtype=dtype, device=device)
@@ -250,7 +353,8 @@ def wall_symmetry_report(cfg: LakeConfig) -> dict:
     case_xs = torch.unique(case[:, 0])
     case_paired = sum(1 for x in (cfg.width - case_xs).tolist()
                       if bool((case_xs - x).abs().min() < 1e-9 * cfg.width))
-    return {"shipped_wall_columns": int(xs.numel()),
+    return {"periodic_x": bool(cfg.periodic_x),
+            "shipped_wall_columns": int(xs.numel()),
             "shipped_wall_columns_with_partner": int(paired),
             "unpaired": int(xs.numel() - paired),
             "case_wall_unpaired": int(case_xs.numel() - case_paired)}
@@ -307,7 +411,8 @@ def analytic_profile(state, cfg: LakeConfig):
     rho_uniform, _, _ = rhs(pos, torch.zeros_like(pos),
                             torch.full((pos.shape[0],), m_unit,
                                        dtype=pos.dtype, device=pos.device),
-                            shipped, pairs=state["pairs"], wall=state["wall"])
+                            shipped, pairs=state["pairs"], wall=state["wall"],
+                            wrap_width=state["wrap_width"])
     fraction = rho_uniform / cfg.rho0                      # support fraction
     rho_eq = eos.eos_hydrostatic_density(pos[:, 1], depth=cfg.depth,
                                          rho0=cfg.rho0,
@@ -323,7 +428,8 @@ def analytic_profile(state, cfg: LakeConfig):
 def _evaluate(state, cfg: LakeConfig, mass: torch.Tensor):
     pos = state["pos"]
     return rhs(pos, torch.zeros_like(pos), mass, state["config"],
-               pairs=state["pairs"], wall=state["wall"])
+               pairs=state["pairs"], wall=state["wall"],
+               wrap_width=state["wrap_width"])
 
 
 def residual_report(state, cfg: LakeConfig, mass: torch.Tensor) -> dict:
@@ -354,7 +460,12 @@ def residual_report(state, cfg: LakeConfig, mass: torch.Tensor) -> dict:
 
 
 def _wall_band(pos: torch.Tensor, cfg: LakeConfig) -> torch.Tensor:
-    """Particles within two smoothing lengths of either side wall."""
+    """Particles within two smoothing lengths of either side wall.
+
+    Empty under lateral periodicity: there is no side wall to be near.
+    """
+    if cfg.periodic_x:
+        return torch.zeros(pos.shape[0], dtype=torch.bool, device=pos.device)
     band = 2.0 * cfg.h()
     return (pos[:, 0] < band) | (pos[:, 0] > cfg.width - band)
 
@@ -473,7 +584,8 @@ def integrate_at_rest(state, cfg: LakeConfig, mass: torch.Tensor,
     worst_speed_in = worst_rise_in = worst_drho_in = 0.0
     for step in range(steps):
         rho, _p, acc = rhs(pos, vel, mass, state["config"],
-                           pairs=state["pairs"], wall=state["wall"])
+                           pairs=state["pairs"], wall=state["wall"],
+                           wrap_width=state["wrap_width"])
         vel = vel + dt * acc
         pos = pos + dt * vel
         speed = float(vel.abs().max()) / cfg.sound_speed
@@ -602,6 +714,8 @@ def run_case(cfg: LakeConfig, verbose: bool = False) -> dict:
                 "h": cfg.h(), "h_factor": cfg.h_factor,
                 "particles": state["n_fluid"], "wall_particles": state["n_wall"],
                 "pairs": int(state["pairs"].shape[0]),
+                "periodic_x": bool(cfg.periodic_x),
+                "tie": state["tie"],
                 "sound_speed": cfg.sound_speed, "gamma": cfg.gamma,
                 "gravity": cfg.gravity,
                 "acoustic_mach": cfg.sound_speed / math.sqrt(cfg.gravity * cfg.depth),
