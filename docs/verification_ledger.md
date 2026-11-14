@@ -24,10 +24,10 @@
 
 ## 3. 汇总
 
-- claims **62** ／ 物理量 **40** ／ findings **19**
-- 分级分布：PASS 16，MARGINAL 15，WITHHELD 16，FAIL 13，WITHDRAWN 2
-- findings 分类：credit_from_failing_artifact 5，declared_vs_derived 3，inadmissible_run 3，quantity_spread 4，run_validity 4
-- **credit 资格**：16 条 PASS / 15 条 MARGINAL，其中 **5** 条取自「工件自述 verdict = fail」的运行集（best-of-N / 阶梯不全，不可作为能力验证引用）；另有 19 条 credit 的工件根本没有声明 verdict（等级只能被读成「该读数自身合规」，不是「该能力被验证」）。
+- claims **63** ／ 物理量 **41** ／ findings **37**
+- 分级分布：PASS 16，MARGINAL 16，WITHHELD 16，FAIL 13，WITHDRAWN 2
+- findings 分类：credit_from_failing_artifact 5，declared_vs_derived 3，inadmissible_run 3，quantity_spread 4，run_validity 4，uncovered_benchmark 11，unregistered_artifact 7
+- **credit 资格**：16 条 PASS / 16 条 MARGINAL，其中 **5** 条取自「工件自述 verdict = fail」的运行集（best-of-N / 阶梯不全，不可作为能力验证引用）；另有 20 条 credit 的工件根本没有声明 verdict（等级只能被读成「该读数自身合规」，不是「该能力被验证」）。
 
 ## 4. 断言表
 
@@ -42,6 +42,7 @@
 | `csf_force.sigma_eff_over_sigma.dx5mm` | effective surface tension from the half-droplet force integral, sigma_eff/sigma | 1 - | 0.704004 - | -29.60 % | **FAIL** | `benchmarks/laplace_pressure/validation_report.json` → `cases[0]` | `tests/test_laplace_pressure.py` |
 | `curvature_operator.delta_s_weighted.dx3mm` | delta_s-weighted curvature kappa vs analytic 1/R (R = 20 mm) | 50 1/m | 64.1315 1/m | +28.26 % | **WITHHELD** | `benchmarks/csf_consistent/curvature_audit.json` → `rows[0].variants[0]` | `tests/test_csf_curvature_audit.py` |
 | `dam_break.martin_moyce.mae` | dam-break front position vs Martin & Moyce (1952), mean abs error in Z/a | limit 0.15 | 0.572757 | — | **FAIL** | `benchmarks/dam_break/resolution_ladder.json` → `gates.experimental_comparison` | `tests/test_dam_break_experimental.py` |
+| `dam_break.tvc_alpha010.mae` | dam-break front position vs Martin & Moyce (1952) with TVC (alpha=0.10, dx=0.03 m) | limit 0.15 | 0.142531 | — | **MARGINAL** | `benchmarks/xval_sphinx_tvc/validation_report.json` → `results[0]` | `tests/test_transport_velocity_correction.py` |
 | `density_diffusion.decay_rate.worst_of_ladder` | decay rate of a plane density wave vs the analytic gamma = D k^2, D = delta c0 h (Antuono, Colagrossi & Marrone 2012) | limit 0.03 | 0.010208 | — | **PASS** | `benchmarks/density_diffusion_decay/decay_rate.json` → `max_rate_relative_error` | `tests/test_density_diffusion_decay.py::test_the_diffusive_term_decays_a_plane_wave_at_the_analytic_rate` |
 | `density_diffusion.finite_time.amplitude` | mode amplitude after a finite integration time vs rho0 A exp(-gamma t) | limit 0.035 | 0.00482 | — | **PASS** | `benchmarks/density_diffusion_decay/decay_rate.json` → `finite_time` | `tests/test_density_diffusion_decay.py::test_the_mode_amplitude_follows_the_exponential_over_a_finite_time` |
 | `effective_sigma.sigma_eff_over_sigma.dx5mm` | effective surface tension from the half-droplet force integral, sigma_eff/sigma (R = 40 mm, curvature estimator: quadratic interface fit) | 1 - | 0.710625 - | -28.94 % | **FAIL** | `benchmarks/effective_sigma/out/report.json` → `rows[0].ratio` | `tests/test_effective_sigma.py::test_current_default_delivers_the_documented_ratio` |
@@ -117,6 +118,24 @@
 - **quantity_spread**（`high`）`threed_shear_decay_rate_2nuk2` — 3 active readings of one quantity span -12.6 % … +11.5 % (spread 24.1 pt): threed_shear.decay_rate.finest=-2.7 %, threed_shear.decay_rate.raw_laplacian=+11.5 %, threed_shear.decay_rate.worst_of_ladder=-12.6 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
 - **quantity_spread**（`high`）`young_laplace_jump_sigma0.072_R0.1` — 2 active readings of one quantity span +219.7 % … +252.0 % (spread 32.3 pt): laplace_droplet.merged_csf.8cases=+219.7 %, surface_tension_ladder.laplace_error_finest=+252.0 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
 - **quantity_spread**（`high`）`young_laplace_jump_sigma7.2_R0.02` — 14 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.closure.closure_on_all_donors.dx1.5mm_c20=-25.3 %, young_laplace.closure.closure_on_all_donors.dx2mm_c20=-20.1 %, young_laplace.closure.closure_on_interior_layers2.dx1.5mm_c20=-3.4 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c10=-4.0 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c20=+8.8 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c5=+4.9 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.force_balance.flux_integral.dx1.5mm=-7.5 %, young_laplace.force_balance.flux_integral.dx2mm=-0.3 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.
+- **uncovered_benchmark**（`medium`）`benchmarks/force_from_fluid` — benchmark harness (run_budget.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **uncovered_benchmark**（`medium`）`benchmarks/fsi2_gate_load` — benchmark harness (run_fsi2_benchmark.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **uncovered_benchmark**（`medium`）`benchmarks/fsi2_turek_hron` — benchmark harness (run_fsi2_benchmark.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **uncovered_benchmark**（`medium`）`benchmarks/poiseuille_startup` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **uncovered_benchmark**（`medium`）`benchmarks/xval_fsi2` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **uncovered_benchmark**（`medium`）`benchmarks/xval_mach_limited_riemann` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **uncovered_benchmark**（`medium`）`benchmarks/xval_method_selection` — benchmark harness (run_cell.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **uncovered_benchmark**（`medium`）`benchmarks/xval_mixture_laplace` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **uncovered_benchmark**（`medium`）`benchmarks/xval_sphinxsys_compression` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **uncovered_benchmark**（`medium`）`benchmarks/xval_sycl_execution_policy` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **uncovered_benchmark**（`medium`）`benchmarks/xval_transport_velocity` — benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo
+- **unregistered_artifact**（`medium`）`benchmarks/isph_channel/results.json` — machine-readable evidence file not referenced by any ledger claim
+- **unregistered_artifact**（`medium`）`benchmarks/laplace_sph/results_dynamic.json` — machine-readable evidence file not referenced by any ledger claim
+- **unregistered_artifact**（`medium`）`benchmarks/poiseuille_mirror/case_verdict.json` — machine-readable evidence file not referenced by any ledger claim
+- **unregistered_artifact**（`medium`）`benchmarks/stokes_second/case_verdict.json` — machine-readable evidence file not referenced by any ledger claim
+- **unregistered_artifact**（`medium`）`benchmarks/xval_mixture_laplace/ablation_curvature.json` — machine-readable evidence file not referenced by any ledger claim
+- **unregistered_artifact**（`medium`）`benchmarks/xval_mixture_laplace/results.json` — machine-readable evidence file not referenced by any ledger claim
+- **unregistered_artifact**（`medium`）`benchmarks/xval_sphinxsys_compression/records.json` — machine-readable evidence file not referenced by any ledger claim
 
 ## 6. 读数明细（口径决定数字）
 
@@ -245,6 +264,20 @@
   - 守护测试：`tests/test_dam_break_experimental.py`
 - 欠账指针：`docs/verification_ledger.md`
 - 注：RMSE 0.699 Z/a, max 1.618 Z/a; fraction inside experimental uncertainty 0.00. Wave breaking is a 3-D/viscous/non-hydrostatic problem: this is not a surface-tension defect.
+
+### `dam_break.tvc_alpha010.mae` — MARGINAL
+
+- 物理量：dam-break front position vs Martin & Moyce (1952) with TVC (alpha=0.10, dx=0.03 m)
+- 参考：0.15 Z/a（acceptance limit on the mean absolute error）
+- 实测：0.142531 Z/a
+  - 口径：mean absolute error over 20 digitised points; TVC alpha=0.1, scope=all, every 1 step
+- 相对误差：—（平台线 ±15%，论文级 ±3%）
+- 工件自述状态：`PASS`；本账等级：**MARGINAL**
+- 工件自身 verdict：未声明
+- 溯源：`benchmarks/xval_sphinx_tvc/validation_report.json` → `results[0]`
+  - 守护测试：`tests/test_transport_velocity_correction.py`
+- 欠账指针：`docs/xval_sphinx_tvc/README.md`
+- 注：Relative error 10.8%; RMSE 0.169 Z/a; max abs error 0.307 Z/a. TVC reduces baseline MAE from 0.621 to 0.143 (4.4x improvement). Density compression 2.20%, mass drift 0. Operator port verified against upstream SPHinXsys by exact transcription test (9 unit tests, sha256-pinned verbatim source files). Limitation: alpha=0.10 calibrated for dx in [0.02, 0.03]; at dx=0.01 error rises to 16.4% (requires alpha=0.15).
 
 ### `density_diffusion.decay_rate.worst_of_ladder` — PASS
 
