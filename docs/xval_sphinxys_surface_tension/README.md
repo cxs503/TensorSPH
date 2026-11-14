@@ -16,6 +16,15 @@ fraction and its measured effect on the surface-delta normalisation.
 
 ---
 
+> **Follow-up (mission m19927, dynamic test).** The static-droplet readings above are
+> bookkeeping-sensitive and cannot separate a model defect from a lattice-symmetry
+> cancellation. Measured instead as a Lamb-mode frequency on a *perturbed* interface,
+> the ported CSS force reproduces `omega_n^2 = n(n^2-1)sigma/(rho R^3)` to **+0.7 %**
+> (single phase, hourglass off) and **-4.2 %** (two-phase mixture 1000:1) — inside the
+> 15 % gate — while the inner hourglass penalty contributes a spurious `O(sigma/R)`
+> mode-2 pressure that does not scale with the perturbation. See
+> [`LAMB.md`](LAMB.md) and `benchmarks/surface_tension/sphinxys_lamb.py`.
+
 ## 1. Problem and the reference (zero hand-copy)
 
 Question: does TensorSPH's surface-tension capability agree with the mixture /
