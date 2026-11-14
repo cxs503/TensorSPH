@@ -192,6 +192,38 @@ def r_couette_wall_shear(doc: dict) -> float:
                     float(metrics["wall_shear_analytic"]))
 
 
+def _couette_sweep(doc: dict, resolution: int) -> list[dict]:
+    return [r for r in doc["points"] if r["resolution_H_over_dx"] == resolution]
+
+
+def _couette_sweep_end(doc: dict, resolution: int) -> dict:
+    """Point that carries the claim: longest run whose steady_drift passes its gate."""
+    rows = _couette_sweep(doc, resolution)
+    pool = [r for r in rows if r["admissible"]] or rows
+    return max(pool, key=lambda r: r["viscous_times"])
+
+
+def _r_sweep_bottom(resolution: int) -> Callable[[dict], float]:
+    def run(doc: dict) -> float:
+        return float(_couette_sweep_end(doc, resolution)["wall_shear_error_pct_bottom"])
+    return run
+
+
+def _r_sweep_top(resolution: int) -> Callable[[dict], float]:
+    def run(doc: dict) -> float:
+        return float(_couette_sweep_end(doc, resolution)["wall_shear_error_pct_top"])
+    return run
+
+
+def _r_sweep_mobility(resolution: int) -> Callable[[dict], float]:
+    def run(doc: dict) -> float:
+        rows = _couette_sweep(doc, resolution)
+        pool = [r for r in rows if r["admissible"]] or rows
+        values = [float(r["wall_shear_error_pct_bottom"]) for r in pool]
+        return max(values) - min(values)
+    return run
+
+
 TVC_VARIANT = "tvc_a010_all"
 
 
@@ -396,6 +428,54 @@ QUANTITIES: tuple[Quantity, ...] = (
         quantity="wall-shear error at the moving wall |tau_SPH / tau_exact - 1|",
         gate_pct=5.0, gate_note="artefact gate wall_shear_rel = 0.05",
         recompute=r_couette_wall_shear, recompute_kind="direct",
+    ),
+    Quantity(
+        extractor="x_couette_viscous_time_h8", method="wcsph_wall_no_slip",
+        artifact="benchmarks/couette/out_design/viscous_time_convergence.json",
+        label=f"Couette viscous-time sweep (H/dx=8)",
+        quantity="bottom-wall shear reading at the steady end of the sweep",
+        gate_pct=5.0, gate_note="artefact gate wall_shear_rel = 0.05",
+        recompute=_r_sweep_bottom(8), recompute_kind="direct",
+    ),
+    Quantity(
+        extractor="x_couette_viscous_time_top_h8", method="wcsph_wall_no_slip",
+        artifact="benchmarks/couette/out_design/viscous_time_convergence.json",
+        label=f"Couette viscous-time sweep, moving wall (H/dx=8)",
+        quantity="moving-wall shear reading at the steady end of the sweep",
+        gate_pct=5.0, gate_note="artefact gate wall_shear_rel = 0.05",
+        recompute=_r_sweep_top(8), recompute_kind="direct",
+    ),
+    Quantity(
+        extractor="x_couette_viscous_time_mobility_h8", method="wcsph_wall_no_slip",
+        artifact="benchmarks/couette/out_design/viscous_time_convergence.json",
+        label=f"Couette viscous-time sweep, reading mobility (H/dx=8)",
+        quantity="mobility of the bottom-wall reading across admissible runs [pp]",
+        gate_pct=5.0, gate_note="a reading that moves more than the 5 % gate is not converged",
+        recompute=_r_sweep_mobility(8), recompute_kind="direct",
+    ),
+    Quantity(
+        extractor="x_couette_viscous_time_h16", method="wcsph_wall_no_slip",
+        artifact="benchmarks/couette/out_design/viscous_time_convergence.json",
+        label=f"Couette viscous-time sweep (H/dx=16)",
+        quantity="bottom-wall shear reading at the steady end of the sweep",
+        gate_pct=5.0, gate_note="artefact gate wall_shear_rel = 0.05",
+        recompute=_r_sweep_bottom(16), recompute_kind="direct",
+    ),
+    Quantity(
+        extractor="x_couette_viscous_time_top_h16", method="wcsph_wall_no_slip",
+        artifact="benchmarks/couette/out_design/viscous_time_convergence.json",
+        label=f"Couette viscous-time sweep, moving wall (H/dx=16)",
+        quantity="moving-wall shear reading at the steady end of the sweep",
+        gate_pct=5.0, gate_note="artefact gate wall_shear_rel = 0.05",
+        recompute=_r_sweep_top(16), recompute_kind="direct",
+    ),
+    Quantity(
+        extractor="x_couette_viscous_time_mobility_h16", method="wcsph_wall_no_slip",
+        artifact="benchmarks/couette/out_design/viscous_time_convergence.json",
+        label=f"Couette viscous-time sweep, reading mobility (H/dx=16)",
+        quantity="mobility of the bottom-wall reading across admissible runs [pp]",
+        gate_pct=5.0, gate_note="a reading that moves more than the 5 % gate is not converged",
+        recompute=_r_sweep_mobility(16), recompute_kind="direct",
     ),
     Quantity(
         extractor="x_transport_velocity", method="transport_velocity_correction",
