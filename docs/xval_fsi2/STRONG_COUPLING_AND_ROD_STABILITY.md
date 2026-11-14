@@ -176,3 +176,19 @@ Test evidence: 63 passed in 44.8 s (`test_fsi2_strong_coupling.py`,
    (panel/WLS fit instead of one-sided kernel sum) so that the strong iteration
    can reach 1e-4 reduction; then re-test strong coupling as the production
    driver.
+## 8. Round 4 (same anchor): next-round item 2 is closed -- the impedance sign was inverted
+
+`boundary_pressure_from_fluid` implemented `p* = p_f - rho c (u_wall - u_f).n`
+while its own docstring specified `+`.  The heavy-wall limit of the linearised
+Riemann problem (`Z_wall >> Z_fluid`) is `p* = p_f + Z (u_wall - u_f).n`, so the
+shipped sign was an **anti-damping** term, which is exactly the observed
+"destabilises every configuration" behaviour.  Fixed (default
+`wall_impedance_sign = +1`, the old convention kept as an audit arm), guarded by
+`tests/test_fsi2_impedance_sign.py` and an energy diagnostic on a common
+trajectory: `Wdot = sum F_imp . v` is negative (dissipation) at all 19 sampled
+states with the fix and exactly mirrored (injection) without it.  Coupled probe:
+pre-fix sign reaches 1.5e3 m/s in 200 steps, fixed sign 0.35 m/s -- but the
+`wall_impedance = False` arm grows too, so the *residual* excitation is not the
+impedance term.  Details, tables and the honest error budget:
+`docs/fsi2_impedance_sign/01_report.md`; data in
+`docs/xval_fsi2/assets/impedance_{sign,energy}.json`.

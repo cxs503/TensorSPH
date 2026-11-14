@@ -259,7 +259,8 @@ def _fluid_load(state: FSI2State, case: FSI2Case, dt: float,
         normals=beam_normals if case.wall_impedance else None,
         vel=fluid_vel if case.wall_impedance else None,
         wall_vel=wall_vel if case.wall_impedance else None,
-        rho0=case.rho0, sound_speed=case.sound_speed)
+        rho0=case.rho0, sound_speed=case.sound_speed,
+        impedance_sign=case.wall_impedance_sign)
     f_beam = boundary_force_from_pressure(p_wall, beam_normals, tributary)
     coverage = (float((w_sum > 1.0e-30).to(torch.float64).mean())
                 if p_wall.numel() else 0.0)
