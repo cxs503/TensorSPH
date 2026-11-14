@@ -1,0 +1,330 @@
+{
+  "case": "SPH-OSC-DROP-FREQ",
+  "round": 2,
+  "reference": "Rayleigh 1879",
+  "gate_pct": 6.0,
+  "generated": "2026-11-14T21:07:25Z",
+  "environment": {
+    "python": "3.11.6",
+    "torch": "2.7.1",
+    "device": "cpu"
+  },
+  "parameters": {
+    "radius_m": 0.02,
+    "sigma_N_m": 7.2,
+    "rho_kg_m3": 1000.0,
+    "wall_seconds": 0.9751760959625244
+  },
+  "rows": [
+    {
+      "radius_over_dx": 8.0,
+      "mode": 2,
+      "eps": 0.02,
+      "n_particles": 241,
+      "omega_analytic": 84.85281374238569,
+      "volume_ratio": 1.0554233953542755,
+      "measurements": {
+        "delta_estimator": {
+          "route": "delta",
+          "curvature": "estimator",
+          "dp_measured": 60.53042290717254,
+          "area_ratio": 1.246019001104564,
+          "kappaR_mean": 1.936299676089307,
+          "n_surface": 132,
+          "h": 0.0032500000000000003,
+          "dp_exact": -28.800000000000004,
+          "stiffness_ratio": -2.101750795387935,
+          "omega_ratio": -1.4497416305631619,
+          "omega_error_pct": -244.9741630563162,
+          "omega_measured": -123.0146565527585
+        },
+        "delta_exact": {
+          "route": "delta",
+          "curvature": "exact",
+          "dp_measured": -28.564027811466733,
+          "area_ratio": 1.246019001104564,
+          "kappaR_mean": 2.00038727771434,
+          "n_surface": 132,
+          "h": 0.0032500000000000003,
+          "dp_exact": -28.800000000000004,
+          "stiffness_ratio": 0.9918065212314836,
+          "omega_ratio": 0.9958948344235368,
+          "omega_error_pct": -0.4105165576463232,
+          "omega_measured": 84.50447889234441
+        },
+        "shell_estimator": {
+          "route": "shell",
+          "curvature": "estimator",
+          "dp_measured": 116.35376345981858,
+          "area_ratio": 1.4107289970136727,
+          "kappaR_mean": 1.965866178666449,
+          "n_surface": 132,
+          "dl_over_true": 1.6433072717006494,
+          "h": 0.0032500000000000003,
+          "dp_exact": -28.800000000000004,
+          "stiffness_ratio": -4.0400612312437,
+          "omega_ratio": -2.009990356007635,
+          "omega_error_pct": -300.99903560076353,
+          "omega_measured": -170.55333730230737
+        },
+        "shell_marker": {
+          "route": "shell",
+          "curvature": "marker",
+          "dp_measured": 1983.0981863371203,
+          "area_ratio": 1.4107289970136727,
+          "kappaR_mean": -2.7274190756686933,
+          "n_surface": 132,
+          "dl_over_true": 1.6433072717006494,
+          "h": 0.0032500000000000003,
+          "dp_exact": -28.800000000000004,
+          "stiffness_ratio": -68.85757591448333,
+          "omega_ratio": -8.298046511949865,
+          "omega_error_pct": -929.8046511949865,
+          "omega_measured": -704.1125951041352
+        },
+        "shell_exact": {
+          "route": "shell",
+          "curvature": "exact",
+          "dp_measured": -148.8480517670589,
+          "area_ratio": 1.4107289970136727,
+          "kappaR_mean": 2.0016735018024265,
+          "n_surface": 132,
+          "dl_over_true": 1.6433072717006494,
+          "h": 0.0032500000000000003,
+          "dp_exact": -28.800000000000004,
+          "stiffness_ratio": 5.1683351308006555,
+          "omega_ratio": 2.273397266383651,
+          "omega_error_pct": 127.33972663836508,
+          "omega_measured": 192.90415480690072
+        }
+      }
+    },
+    {
+      "radius_over_dx": 12.0,
+      "mode": 2,
+      "eps": 0.02,
+      "n_particles": 517,
+      "omega_analytic": 84.85281374238569,
+      "volume_ratio": 0.9855852276892272,
+      "measurements": {
+        "delta_estimator": {
+          "route": "delta",
+          "curvature": "estimator",
+          "dp_measured": 75.73717437596471,
+          "area_ratio": 1.251112840184955,
+          "kappaR_mean": 1.8755659833552107,
+          "n_surface": 204,
+          "h": 0.002166666666666667,
+          "dp_exact": -28.800000000000004,
+          "stiffness_ratio": -2.629762999165441,
+          "omega_ratio": -1.6216544018888368,
+          "omega_error_pct": -262.1654401888837,
+          "omega_measured": -137.60193891799335
+        },
+        "delta_exact": {
+          "route": "delta",
+          "curvature": "exact",
+          "dp_measured": -46.595860467915394,
+          "area_ratio": 1.251112840184955,
+          "kappaR_mean": 2.0009986796361443,
+          "n_surface": 204,
+          "h": 0.002166666666666667,
+          "dp_exact": -28.800000000000004,
+          "stiffness_ratio": 1.6179118218026176,
+          "omega_ratio": 1.2719716277506419,
+          "omega_error_pct": 27.197162775064186,
+          "omega_measured": 107.93037161512436
+        },
+        "shell_estimator": {
+          "route": "shell",
+          "curvature": "estimator",
+          "dp_measured": 195.98169295962182,
+          "area_ratio": 1.542278504184432,
+          "kappaR_mean": 1.9452526451201488,
+          "n_surface": 204,
+          "dl_over_true": 1.7412155169038783,
+          "h": 0.002166666666666667,
+          "dp_exact": -28.800000000000004,
+          "stiffness_ratio": -6.804919894431312,
+          "omega_ratio": -2.6086241382060606,
+          "omega_error_pct": -360.8624138206061,
+          "omega_measured": -221.34909812309024
+        },
+        "shell_marker": {
+          "route": "shell",
+          "curvature": "marker",
+          "dp_measured": 2561.9614925778424,
+          "area_ratio": 1.542278504184432,
+          "kappaR_mean": -2.755478630653718,
+          "n_surface": 204,
+          "dl_over_true": 1.7412155169038783,
+          "h": 0.002166666666666667,
+          "dp_exact": -28.800000000000004,
+          "stiffness_ratio": -88.95699627006395,
+          "omega_ratio": -9.43170166354216,
+          "omega_error_pct": -1043.170166354216,
+          "omega_measured": -800.3064245302922
+        },
+        "shell_exact": {
+          "route": "shell",
+          "curvature": "exact",
+          "dp_measured": -149.66853796505652,
+          "area_ratio": 1.542278504184432,
+          "kappaR_mean": 2.0014890112187587,
+          "n_surface": 204,
+          "dl_over_true": 1.7412155169038783,
+          "h": 0.002166666666666667,
+          "dp_exact": -28.800000000000004,
+          "stiffness_ratio": 5.196824234897795,
+          "omega_ratio": 2.2796544112864554,
+          "omega_error_pct": 127.96544112864554,
+          "omega_measured": 193.43509115789752
+        }
+      }
+    },
+    {
+      "radius_over_dx": 16.0,
+      "mode": 2,
+      "eps": 0.02,
+      "n_particles": 931,
+      "omega_analytic": 84.85281374238569,
+      "volume_ratio": 1.0031255610676102,
+      "measurements": {
+        "delta_estimator": {
+          "route": "delta",
+          "curvature": "estimator",
+          "dp_measured": 71.43395893846339,
+          "area_ratio": 1.3174281027982508,
+          "kappaR_mean": 1.888805789067041,
+          "n_surface": 282,
+          "h": 0.0016250000000000001,
+          "dp_exact": -28.800000000000004,
+          "stiffness_ratio": -2.480345796474423,
+          "omega_ratio": -1.5749113614659154,
+          "omega_error_pct": -257.49113614659154,
+          "omega_measured": -133.63566041523438
+        },
+        "delta_exact": {
+          "route": "delta",
+          "curvature": "exact",
+          "dp_measured": -45.362258043004864,
+          "area_ratio": 1.3174281027982508,
+          "kappaR_mean": 2.0008877857529392,
+          "n_surface": 282,
+          "h": 0.0016250000000000001,
+          "dp_exact": -28.800000000000004,
+          "stiffness_ratio": 1.575078404271002,
+          "omega_ratio": 1.2550212764216397,
+          "omega_error_pct": 25.502127642163973,
+          "omega_measured": 106.49208661093654
+        },
+        "shell_estimator": {
+          "route": "shell",
+          "curvature": "estimator",
+          "dp_measured": 190.66193248885386,
+          "area_ratio": 1.6314243140690823,
+          "kappaR_mean": 1.9349786841865062,
+          "n_surface": 282,
+          "dl_over_true": 1.7812436282722206,
+          "h": 0.0016250000000000001,
+          "dp_exact": -28.800000000000004,
+          "stiffness_ratio": -6.620205989196314,
+          "omega_ratio": -2.5729760957296732,
+          "omega_error_pct": -357.2976095729673,
+          "omega_measured": -218.3242614145607
+        },
+        "shell_marker": {
+          "route": "shell",
+          "curvature": "marker",
+          "dp_measured": 2431.435074590855,
+          "area_ratio": 1.6314243140690823,
+          "kappaR_mean": -2.6334353889570816,
+          "n_surface": 282,
+          "dl_over_true": 1.7812436282722206,
+          "h": 0.0016250000000000001,
+          "dp_exact": -28.800000000000004,
+          "stiffness_ratio": -84.42482897884912,
+          "omega_ratio": -9.18829848115793,
+          "omega_error_pct": -1018.8298481157929,
+          "omega_measured": -779.6529796311391
+        },
+        "shell_exact": {
+          "route": "shell",
+          "curvature": "exact",
+          "dp_measured": -125.10129217999943,
+          "area_ratio": 1.6314243140690823,
+          "kappaR_mean": 2.001049552494019,
+          "n_surface": 282,
+          "dl_over_true": 1.7812436282722206,
+          "h": 0.0016250000000000001,
+          "dp_exact": -28.800000000000004,
+          "stiffness_ratio": 4.34379486736109,
+          "omega_ratio": 2.084177263900816,
+          "omega_error_pct": 108.41772639008158,
+          "omega_measured": 176.84830517989096
+        }
+      }
+    }
+  ],
+  "verdict": {
+    "gate_pct": 6.0,
+    "routes": {
+      "delta_estimator": {
+        "n_rows": 3,
+        "n_passing": 0,
+        "n_sign_flipped": 3,
+        "best": null,
+        "passing_rows": []
+      },
+      "delta_exact": {
+        "n_rows": 3,
+        "n_passing": 1,
+        "n_sign_flipped": 0,
+        "best": {
+          "mode": 2,
+          "eps": 0.02,
+          "radius_over_dx": 8.0,
+          "omega_analytic": 84.85281374238569,
+          "omega_measured": 84.50447889234441,
+          "omega_error_pct": -0.4105165576463232
+        },
+        "passing_rows": [
+          {
+            "mode": 2,
+            "eps": 0.02,
+            "radius_over_dx": 8.0,
+            "omega_error_pct": -0.4105165576463232
+          }
+        ]
+      },
+      "shell_estimator": {
+        "n_rows": 3,
+        "n_passing": 0,
+        "n_sign_flipped": 3,
+        "best": null,
+        "passing_rows": []
+      },
+      "shell_marker": {
+        "n_rows": 3,
+        "n_passing": 0,
+        "n_sign_flipped": 3,
+        "best": null,
+        "passing_rows": []
+      },
+      "shell_exact": {
+        "n_rows": 3,
+        "n_passing": 0,
+        "n_sign_flipped": 0,
+        "best": {
+          "mode": 2,
+          "eps": 0.02,
+          "radius_over_dx": 16.0,
+          "omega_analytic": 84.85281374238569,
+          "omega_measured": 176.84830517989096,
+          "omega_error_pct": 108.41772639008158
+        },
+        "passing_rows": []
+      }
+    }
+  }
+}
