@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "fsi2-cff-1794688017-461db4d2",
+  "benchmark": {
+    "benchmark_id": "SPH-FSI2-CURVED-FORCE-FROM-FLUID",
+    "version": "1.0.0"
+  },
+  "implementation": {
+    "project": "TensorSPH",
+    "revision": "461db4d266d69e7c89d01f3e3bd2487f9020446e"
+  },
+  "workload": {
+    "workload_id": "fsi2-curved-force-from-fluid",
+    "version": "1.0.0",
+    "host": "ec6ae0b42a0c",
+    "device": "cpu",
+    "argv": [
+      "benchmarks/fsi2_turek_hron/run_curved_force_benchmark.py",
+      "--dx",
+      "0.05",
+      "--out",
+      "out/fsi2_curved_force.json"
+    ]
+  },
+  "execution": {
+    "status": "ok",
+    "wall_seconds": 0.45682787895202637
+  },
+  "metrics": {
+    "curved_uniform_net_force": {
+      "got": 1.4042197960001066e-11,
+      "ref": 0.0,
+      "unit": "N/m",
+      "rel_error": null,
+      "note": "closed-surface identity oint n dl = 0; machine precision"
+    },
+    "curved_hydrostatic_buoyancy": {
+      "got": 0.7875000270489522,
+      "ref": 0.7853981633974483,
+      "unit": "N/m",
+      "rel_error": 0.002676175918736197,
+      "note": "Archimedes F = rho g A, A = pi R^2 per unit width"
+    }
+  },
+  "validation": {
+    "refs": {
+      "uniform": "oint p n dl = p oint n dl = 0 (closed-surface identity)",
+      "hydrostatic": "F = rho g A (Archimedes, per unit width)"
+    },
+    "not_judged": {
+      "oss_one_sided_branch": "carries the documented +24..+29 % systematic over-load on a single surface layer; not a clean closed-surface integrator, so excluded from the uniform-field invariant by design."
+    }
+  },
+  "details": {
+    "geometry": {
+      "radius": 0.5,
+      "area_per_width": 0.7853981633974483,
+      "n_solid": 63,
+      "source": "fsi2.h:14-35 (cylinder r=0.5 at (2,2))"
+    },
+    "curved_uniform": {
+      "net_force": 1.4042197960001066e-11
+    },
+    "curved_hydrostatic": {
+      "F_x": -1.4041885709747959e-11,
+      "F_y": 0.7875000270489522,
+      "rel_error": 0.002676175918736197
+    }
+  }
+}
