@@ -211,11 +211,22 @@ def _beam_speed_after(case, n_steps):
 
 @pytest.mark.parametrize("ratio,diverges", [(1.0, True), (10.0, False)])
 def test_added_mass_limit_of_loose_coupling(ratio, diverges):
-    """rho_s/rho_f = 1 (the Turek-Hron FSI2 point) blows up; 10 stays bounded.
+    """rho_s/rho_f = 1 and 10 both stay bounded -- verdict revised in m20761.
+
+    The earlier claim ("rho_s/rho_f = 1 blows up, 10 stays bounded") is
+    **falsified**: the blow-up was the rod sub-cycling criterion, which sized
+    the explicit rod sub-steps on the *axial* frequency only and left the
+    shortest bending mode unresolvable at rho_s/rho_f = 1 (free-beam energy
+    +1e249 over 200 zero-load steps).  With the bending-aware criterion
+    (``FSI2Case.beam_max_frequency`` / ``rod_substeps_effective``, m20761) the
+    same loose driver at the same dt gives max|v_beam| = 5.4e-3 m/s after 60
+    steps at ratio 1 instead of a divergence.  What still diverges is the
+    acoustic wall-impedance term, which is off here.
+    See docs/xval_fsi2/STRONG_COUPLING_AND_ROD_STABILITY.md.
 
     Run at the similarity-corrected stiffness (Ae = 5600), which is the point
     the benchmark comparison has to be made at; the shipped FSI2Case default is
-    18x stiffer and does not show the instability at this step count.
+    18x stiffer.
     """
     from tensorsph.fsi2_similarity import similarity_corrected_case
     case = similarity_corrected_case(U_mean=0.2)
@@ -224,7 +235,6 @@ def test_added_mass_limit_of_loose_coupling(ratio, diverges):
     case.beam_rho = 1000.0 * ratio
     case.wall_impedance = False
     v = _beam_speed_after(case, 60)
-    if diverges:
-        assert not math.isfinite(v) or v > 1.0
-    else:
-        assert math.isfinite(v) and v < 0.3
+    # both density ratios are bounded; the pre-m20761 run left this branch
+    # asserting a divergence at ratio 1
+    assert math.isfinite(v) and v < 0.3, (ratio, v)
