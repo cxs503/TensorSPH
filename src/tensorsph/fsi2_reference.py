@@ -231,6 +231,69 @@ def independent_friction_estimate(
     return {"Re_L": float(re_l), "Cf": float(cf), "Cd_friction": float(2.0 * cf * L / D)}
 
 
+def summarise_body_forces(drag, lift, rho_f: float, u_mean: float, D: float,
+                          warmup: int = 0) -> Dict[str, float]:
+    """Mean and half-range amplitude of the body force coefficients.
+
+    ``drag``/``lift`` are the fluid load on the *whole* body (cylinder + beam,
+    per unit depth, N/m) sampled at each coupled step.  The coefficients are the
+    Turek-Hron convention ``C = F / (0.5 rho U_mean^2 D)``; being dimensionless
+    they are invariant under the similarity rescaling of the case, so a run at
+    ``U_mean = 0.2 m/s`` is directly comparable with the benchmark values.
+
+    ``warmup`` drops the start-up transient (in samples, not seconds).
+    """
+    d = np.asarray(drag, dtype=float)[warmup:]
+    l = np.asarray(lift, dtype=float)[warmup:]
+    if d.size == 0 or l.size == 0:
+        return {"n_samples": 0}
+    scale = 0.5 * rho_f * u_mean ** 2 * D
+    cd, cl = d / scale, l / scale
+    return {
+        "n_samples": int(d.size),
+        "drag_mean": float(d.mean()),
+        "drag_amplitude": float(0.5 * (d.max() - d.min())),
+        "lift_mean": float(l.mean()),
+        "lift_amplitude": float(0.5 * (l.max() - l.min())),
+        "cd_mean": float(cd.mean()),
+        "cd_amplitude": float(0.5 * (cd.max() - cd.min())),
+        "cl_mean": float(cl.mean()),
+        "cl_amplitude": float(0.5 * (cl.max() - cl.min())),
+        "scale_0.5_rho_U2_D": float(scale),
+    }
+
+
+def compare_body_forces(summary: Dict[str, float],
+                        reference: Optional[Dict[str, float]] = None
+                        ) -> Dict[str, Any]:
+    """Gates for the force coefficients against the Turek-Hron FSI2 values.
+
+    Same owner thresholds as :func:`compare_to_benchmark` (15 % acceptance,
+    3 % reporting target).  ``lift_mean`` is not gated: the benchmark's lift
+    oscillates about zero and its mean is a resolution artefact, not a
+    reference quantity.
+    """
+    reference = BENCHMARK_FORCES if reference is None else reference
+    rows = []
+    for name, ref in reference.items():
+        key = "cd_" + name.split("_", 1)[1] if name.startswith("drag") else "cl_amplitude"
+        got = summary.get(key)
+        if got is None:
+            rows.append({"quantity": name, "reference": ref, "computed": None,
+                         "rel_error": None, "pass_15": False, "pass_3": False})
+            continue
+        rel = (got - ref) / ref
+        rows.append({"quantity": name, "reference": ref, "computed": got,
+                     "rel_error": float(rel),
+                     "pass_15": abs(rel) <= 0.15, "pass_3": abs(rel) <= 0.03})
+    worst = max((abs(r["rel_error"]) for r in rows if r["rel_error"] is not None),
+                default=float("inf"))
+    return {"rows": rows,
+            "passed_15": all(r["pass_15"] for r in rows),
+            "passed_3": all(r["pass_3"] for r in rows),
+            "worst_rel_error": float(worst)}
+
+
 # --------------------------------------------------------------------------- #
 # acceptance gate
 # --------------------------------------------------------------------------- #
