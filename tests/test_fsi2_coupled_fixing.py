@@ -137,7 +137,15 @@ def test_uniform_pressure_gives_no_net_force():
 
 
 def test_acoustic_impedance_sign():
-    """A face closing on the fluid must see a *higher* pressure (Riemann star state)."""
+    """A face closing on the fluid must see a *higher* pressure (Riemann star state).
+
+    Corrected in the impedance-sign round: the earlier version of this test
+    moved the *upper* face *downwards* (away from its fluid, i.e. expansion) and
+    called it compression, thereby pinning the anti-damping sign.  The upper
+    row's normal is ``+y``, so ``+y`` motion is the closing one.  See
+    ``tests/test_fsi2_impedance_sign.py`` for the quantitative invariants and
+    ``docs/fsi2_impedance_sign/01_report.md`` for the coupled measurement.
+    """
     case = _case(dx=0.02)
     state = fsi2.initial_state(case)
     beam_pos, normals, interp, trib = fsi2.beam_boundary_geometry(
@@ -147,23 +155,34 @@ def test_acoustic_impedance_sign():
     pairs = cell_linked_pairs(torch.cat((state.fluid_pos, wall), dim=0), 2.0 * case.h())
     p = torch.zeros((state.fluid_pos.shape[0],), dtype=state.fluid_pos.dtype)
     vel = torch.zeros_like(state.fluid_pos)
+    n_b = beam_pos.shape[0] // 2
 
     still, _ = fsi2.boundary_pressure_from_fluid(
         state.fluid_pos, p, wall, wall_start, pairs, case.h(),
         normals=normals, vel=vel,
         wall_vel=torch.zeros_like(wall), rho0=case.rho0,
         sound_speed=case.sound_speed)
-    # upper face moving down into the fluid: normal is +y, so v.n < 0 (compression)
+
+    # upper face moving up (+y, normal +y): it closes on the fluid above
     wall_vel = torch.zeros_like(wall)
-    wall_vel[wall_start:wall_start + beam_pos.shape[0] // 2, 1] = -0.5
+    wall_vel[wall_start:wall_start + n_b, 1] = +0.5
     closing, _ = fsi2.boundary_pressure_from_fluid(
         state.fluid_pos, p, wall, wall_start, pairs, case.h(),
         normals=normals, vel=vel, wall_vel=wall_vel,
         rho0=case.rho0, sound_speed=case.sound_speed)
-    assert float(closing.abs().max()) > 0.0
-    assert float((closing[:beam_pos.shape[0] // 2]
-                  - still[:beam_pos.shape[0] // 2]).min()) > 0.0
-    assert float((closing - still).abs().max()) <= case.rho0 * case.sound_speed * 0.5 + 1e-9
+    assert float(still.abs().max()) < 1.0e-12
+    assert float(closing[:n_b].min()) == pytest.approx(
+        case.rho0 * case.sound_speed * 0.5, rel=1.0e-10)
+
+    # ... and moving down (-y) is expansion: the pressure drops by the same amount
+    wall_vel = torch.zeros_like(wall)
+    wall_vel[wall_start:wall_start + n_b, 1] = -0.5
+    expanding, _ = fsi2.boundary_pressure_from_fluid(
+        state.fluid_pos, p, wall, wall_start, pairs, case.h(),
+        normals=normals, vel=vel, wall_vel=wall_vel,
+        rho0=case.rho0, sound_speed=case.sound_speed)
+    assert float(expanding[:n_b].max()) == pytest.approx(
+        -case.rho0 * case.sound_speed * 0.5, rel=1.0e-10)
 
 
 # --------------------------------------------------------------------------- #

@@ -159,6 +159,9 @@ class FSI2Case:
     # transfer: p* = p_f + rho0 c0 (v_wall - v_f).n.  Without this damping the
     # loosely coupled scheme diverges at rho_s/rho_f = 1.
     wall_impedance: bool = True
+    # Sign of that term: +1 is the heavy-wall Riemann star state (dissipative);
+    # -1 reproduces the pre-fix convention, kept only for the audit arm.
+    wall_impedance_sign: float = 1.0
 
     # Open boundaries (the benchmark channel is a through-flow, not a tank)
     open_boundaries: bool = True
@@ -573,7 +576,8 @@ def beam_boundary_geometry(nodes: torch.Tensor, case: FSI2Case):
 
 def boundary_pressure_from_fluid(pos, pressure, wall, wall_start_idx, pairs, h,
                                  normals=None, vel=None, wall_vel=None,
-                                 rho0=None, sound_speed=None):
+                                 rho0=None, sound_speed=None,
+                                 impedance_sign=1.0):
     """Kernel-weighted fluid pressure extrapolated onto moving wall particles.
 
     ``wall`` holds the boundary particles from index ``wall_start_idx`` on.
@@ -584,6 +588,12 @@ def boundary_pressure_from_fluid(pos, pressure, wall, wall_start_idx, pairs, h,
     Wendland C2 kernel used by the earlier one-sided port, which the audit in
     ``docs/xval_fsi2/PRESSURE_MOMENT_NORMALISATION.md`` showed carries a
     +24..28 % kernel-mismatch overload.
+
+    ``impedance_sign`` is the sign of the acoustic (Riemann star-state) term and
+    is ``+1`` for the heavy-wall limit derived in the comment below.  It exists
+    only so that the pre-fix convention (``-1``, an anti-damping term) can be
+    replayed side by side in ``benchmarks/xval_fsi2/impedance_sign.py``; no
+    production path uses anything but the default.
     """
     n = pos.shape[0]
     n_moving = max(wall.shape[0] - wall_start_idx, 0)
@@ -616,17 +626,25 @@ def boundary_pressure_from_fluid(pos, pressure, wall, wall_start_idx, pairs, h,
     p_src = pressure[fluid_idx]
     if normals is not None and vel is not None and wall_vel is not None:
         # Acoustic-impedance (Riemann star-state) wall pressure:
-        #   p* = p_f - rho0 c0 (v_wall - v_f).n_solid
-        # with n_solid pointing from the solid into the fluid.  A face closing
-        # on the fluid (v_wall.n < v_f.n) compresses it and therefore sees a
-        # *higher* pressure -- the standard linearised Riemann star state.
-        # This is what the compressible fluid does at the wall; without it the
-        # loosely coupled scheme has no damping at all in the added-mass limit
-        # (rho_s/rho_f -> 1) and diverges, see docs/xval_fsi2/COUPLED_RUN_DEFECTS.md.
+        #   p* = p_f + rho0 c0 (v_wall - v_f).n_solid
+        # with n_solid pointing from the solid *into* the fluid.  Derivation of
+        # the sign: linearised Riemann problem across the interface, states
+        # (p_L, u_L) = wall and (p_R, u_R) = fluid, impedances Z = rho c.  The
+        # interface velocity is
+        #   u* = (Z_L u_L + Z_R u_R + p_R - p_L) / (Z_L + Z_R)
+        # and in the heavy-wall limit Z_L >> Z_R it collapses to u* = u_L, so
+        #   p* = p_R + Z_R (u_L - u_R) = p_f + rho_f c_f (u_wall - u_f).n.
+        # Physics: a face closing on the fluid, (u_wall - u_f).n > 0, does work
+        # on it and generates a compression wave of amplitude rho c u_n, i.e. a
+        # *higher* wall pressure; the reaction -p* n then opposes the motion and
+        # the term is dissipative.  The opposite sign pumps energy into every
+        # wall mode (anti-damping) -- measured in
+        # docs/fsi2_impedance_sign/01_report.md, where it was the destabiliser
+        # of the added-mass regime (rho_s/rho_f -> 1).
         n_w = normals[wall_idx]
         dv = wall_vel[wall_start_idx + wall_idx] - vel[fluid_idx]
         u_n = (dv * n_w).sum(dim=1)
-        p_src = p_src - rho0 * sound_speed * u_n
+        p_src = p_src + impedance_sign * rho0 * sound_speed * u_n
 
     w_sum = torch.zeros_like(p_out).index_add(0, wall_idx, w)
     wp = torch.zeros_like(p_out).index_add(0, wall_idx, w * p_src)
@@ -864,7 +882,8 @@ def step_fsi2(state: FSI2State, case: FSI2Case, dt: float) -> Dict[str, float]:
         normals=beam_normals if case.wall_impedance else None,
         vel=state.fluid_vel if case.wall_impedance else None,
         wall_vel=wall_vel if case.wall_impedance else None,
-        rho0=case.rho0, sound_speed=case.sound_speed)
+        rho0=case.rho0, sound_speed=case.sound_speed,
+        impedance_sign=case.wall_impedance_sign)
     f_beam = boundary_force_from_pressure(p_wall, beam_normals, tributary)
     coverage = float((w_sum > 1.0e-30).to(torch.float64).mean()) if p_wall.numel() else 0.0
 
