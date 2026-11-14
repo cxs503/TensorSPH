@@ -28,8 +28,10 @@
       "group": "ladder",
       "knob": "method A, H/dx = 3.20, t_end 5.5 s",
       "record": "runs/xval/cell_0.json",
-      "present": false,
-      "note": "record missing (job not dispatched)"
+      "present": true,
+      "failed": true,
+      "error": "FloatingPointError: non-finite acceleration at step 3890",
+      "passed": false
     },
     {
       "label": "D13_h025_A",
@@ -44,6 +46,14 @@
       "group": "mechanism",
       "knob": "method A + XSPH 0.05 in the propagation phase (post-hoc probe)",
       "record": "runs/xval/cell_2.json",
+      "present": false,
+      "note": "record missing (job not dispatched)"
+    },
+    {
+      "label": "D20_h025_comp",
+      "group": "mechanism",
+      "knob": "method A + SPHinXsys compression regularization (post-hoc probe)",
+      "record": "runs/xval/cell_3.json",
       "present": false,
       "note": "record missing (job not dispatched)"
     },
@@ -252,10 +262,10 @@
   ],
   "verdict_rule": "a row passes only when its own diagnostics satisfy the pre-registered stability gate (max|v|/c0 < 1, max density compression < 10 %) AND its worst gauge wave-height error is within the owner 15 % gate; 'ungradeable' means the record exists but the analysis window holds no usable samples, and is reported as a gap, never as a zero",
   "counts": {
-    "matrix": 4,
-    "present": 1,
+    "matrix": 5,
+    "present": 2,
     "missing": 3,
-    "failed": 0,
+    "failed": 1,
     "ungradeable": 1,
     "unstable": 0,
     "within_owner_tol": 0,

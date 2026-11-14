@@ -1,0 +1,49 @@
+{
+  "anchor": "XVAL-SPH-METHOD-SELECTION-2026-11-12",
+  "mission": 20968,
+  "generated_by": "benchmarks/xval_method_selection/record_provenance.py",
+  "cells_total": 4,
+  "cells_present": 1,
+  "records": [
+    {
+      "index": 0,
+      "label": "D20_h025_A",
+      "path": "runs/xval/cell_0.json",
+      "job": "cj3094",
+      "recovery": "log_base64",
+      "present": true,
+      "sha256": "37c472e0190ecb012683462cbf12de34ebe5b6edd1baedde7e98c2e62c19ef04",
+      "bytes": 168
+    },
+    {
+      "index": 1,
+      "label": "D13_h025_A",
+      "path": "runs/xval/cell_1.json",
+      "job": "cj3095",
+      "recovery": "missing",
+      "present": false,
+      "sha256": null,
+      "bytes": null
+    },
+    {
+      "index": 2,
+      "label": "D20_h025_xsph",
+      "path": "runs/xval/cell_2.json",
+      "job": "cj3096",
+      "recovery": "missing",
+      "present": false,
+      "sha256": null,
+      "bytes": null
+    },
+    {
+      "index": 3,
+      "label": "D20_h025_comp",
+      "path": "runs/xval/cell_3.json",
+      "job": "cj3097",
+      "recovery": "missing",
+      "present": false,
+      "sha256": null,
+      "bytes": null
+    }
+  ]
+}
