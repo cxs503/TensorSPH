@@ -36,7 +36,7 @@ import torch
 
 from tensorsph.lake_at_rest import LakeConfig, run_case
 
-GATES = [
+GATES_WALL = [
     ("G1", "vertical equilibrium max|a_y|/g", 1.0e-9, "lt"),
     ("G2", "horizontal residual, side-wall band max|a_x|/g", 1.0e-9, "lt"),
     ("G3", "rest preservation max|v|/c0", 1.0e-9, "lt"),
@@ -44,6 +44,22 @@ GATES = [
     ("G5", "density invariance max|drho|/rho0", 1.0e-9, "lt"),
     ("G3i", "interior rest max|v|/c0 (>= 2h from side walls)", 1.0e-9, "lt"),
     ("G4i", "interior surface invariance max|dy|/H", 1.0e-9, "lt"),
+    ("G6", "negative control uniform lattice mass max|a|/g", 0.5, "gt"),
+    ("G7", "negative control analytic profile max|a_y|/g", 0.05, "gt"),
+    ("G8", "linear response r(1e-4)/r(1e-3)", 0.05, "gt"),
+    ("G8", "linear response r(1e-4)/r(1e-3)", 0.15, "lt"),
+]
+
+# The laterally periodic tank asks for the *same* anchor tolerance, and there the
+# horizontal equation is part of the problem instead of a side-wall artefact:
+# G2 is the maximum over every particle, and the run is not split into an
+# interior band because there is no wall band to split off.
+GATES_PERIODIC = [
+    ("G1", "vertical equilibrium max|a_y|/g", 1.0e-9, "lt"),
+    ("G2", "horizontal equilibrium max|a_x|/g", 1.0e-9, "lt"),
+    ("G3", "rest preservation max|v|/c0", 1.0e-9, "lt"),
+    ("G4", "surface invariance max|dy|/H", 1.0e-9, "lt"),
+    ("G5", "density invariance max|drho|/rho0", 1.0e-9, "lt"),
     ("G6", "negative control uniform lattice mass max|a|/g", 0.5, "gt"),
     ("G7", "negative control analytic profile max|a_y|/g", 0.05, "gt"),
     ("G8", "linear response r(1e-4)/r(1e-3)", 0.05, "gt"),
@@ -61,9 +77,12 @@ def evaluate(result: dict) -> dict:
     large = perturb.get(1.0e-3) or perturb.get("0.001")
     if small and large:
         ratio = small / large
+    periodic = bool(result["geometry"].get("periodic_x"))
+    gates = GATES_PERIODIC if periodic else GATES_WALL
     measured = {
         "G1": equilibrium["a_max_over_g"],
-        "G2": equilibrium["a_max_over_g_horizontal_wall_band"],
+        "G2": (equilibrium["a_max_over_g_horizontal"] if periodic
+               else equilibrium["a_max_over_g_horizontal_wall_band"]),
         "G3": rest["max_v_over_c0"],
         "G4": rest["max_dy_over_H"],
         "G5": rest["max_drho_over_rho0"],
@@ -74,7 +93,7 @@ def evaluate(result: dict) -> dict:
         "G4i": rest["max_dy_over_H_interior"],
     }
     rows = []
-    for identifier, description, threshold, comparison in GATES:
+    for identifier, description, threshold, comparison in gates:
         value = measured[identifier]
         if value is None:
             passed = None
@@ -103,15 +122,19 @@ def main(argv=None) -> int:
     parser.add_argument("--t-end", type=float, default=0.50)
     parser.add_argument("--json", type=Path, default=None)
     parser.add_argument("--verbose", action="store_true")
+    parser.add_argument("--periodic-x", action="store_true",
+                        help="lateral periodicity instead of side walls: the "
+                             "configuration in which the anchor tolerance is met")
     args = parser.parse_args(argv)
 
     cfg = LakeConfig(dx=args.dx, depth=args.depth, width=args.width,
-                     t_end=args.t_end)
+                     t_end=args.t_end, periodic_x=args.periodic_x)
     result = run_case(cfg, verbose=args.verbose)
     gates = evaluate(result)
     result["gates"] = {"rows": gates["rows"], "verdicts": gates["verdicts"],
                        "all_passed": gates["all_passed"]}
-    result["parameters"] = {"dx": cfg.dx, "depth": cfg.depth, "width": cfg.width,
+    result["parameters"] = {"periodic_x": bool(cfg.periodic_x),
+                            "dx": cfg.dx, "depth": cfg.depth, "width": cfg.width,
                             "t_end": cfg.t_end, "max_courant": cfg.max_courant,
                             "h_factor": cfg.h_factor,
                             "prior_weight": cfg.prior_weight,
@@ -122,6 +145,7 @@ def main(argv=None) -> int:
         print(f"wrote {args.json}")
 
     print(f"\ncase CASE-SPH-LAKE-AT-REST  dx={cfg.dx} H={cfg.depth} "
+          f"periodic_x={cfg.periodic_x} "
           f"N={result['geometry']['particles']} pairs={result['geometry']['pairs']}")
     print(f"reconstruction: {result['equilibrium']['iterations']} Newton "
           f"iterations, converged={result['equilibrium']['converged']}")
