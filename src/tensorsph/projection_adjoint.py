@@ -78,7 +78,10 @@ __all__ = [
     "adjointness_defect",
     "poisson_adjoint",
     "project_velocity",
+    "helmholtz_split",
+    "irrotationality_defect",
     "relax_projection_consistent",
+    "relax_projection_balanced",
 ]
 
 
@@ -357,4 +360,205 @@ def relax_projection_consistent(radius: float = 0.02, dx: float = 0.002,
         "dp_theory_Pa": dp_theory,
         "dp_rel_error_pct": (dp / dp_theory - 1.0) * 100.0,
         "history": history,
+    }
+
+# --------------------------------------------------------------------------- #
+# well-balanced capillary force: discrete Helmholtz split of the CSF field
+# --------------------------------------------------------------------------- #
+def helmholtz_split(pos, f, vol, pairs, h, gauge: int = 0,
+                    rel_tol: float = 1e-8, max_iter: int = 20000):
+    """Split a body-force field into a discrete gradient plus a remainder.
+
+    Why this exists
+    ---------------
+    A projection step removes *only* the component of ``u*`` that its own
+    gradient ``G`` can represent: ``u^{n+1} = u* - (dt/rho) G p`` is orthogonal
+    to ``ker(D)`` in the ``D``-inner-product, so whatever ``D``-divergence the
+    remaining acceleration has is *re-injected every step*.  For a static drop
+    the CSF acceleration ``a = (sigma/rho) kappa grad c`` should be, in the
+    continuum, a pure gradient (for a circular interface ``kappa`` and ``c``
+    both vary radially, so ``curl a = (sigma/rho) grad(kappa) x grad(c) = 0``).
+    On the lattice it is not: the smoothed colour function and the MLS curvature
+    leave an azimuthal ripple, whose curl is the solenoidal part that keeps the
+    drop moving.  This routine separates the two parts *with the same operator
+    the projection uses*, so the gradient part is annihilated exactly by the
+    projection and the remainder is measurable instead of being integrated.
+
+    Construction
+    ------------
+    ``q`` minimises ``||f - G q||^2`` over scalars:
+
+        G^T G q = G^T f ,  G = -D^T  =>  (D D^T) q = -D f ,
+
+    i.e. the very matrix :func:`poisson_adjoint` factorises for the pressure,
+    with one particle pinned (the constant null mode of ``A = D D^T``).  Returned
+    ``irrotational = G q`` and ``solenoidal = f - G q`` are ``L2``-orthogonal up
+    to the CG tolerance (asserted in ``tests/test_projection_balanced.py``).
+
+    Caveat, stated up front: ``q`` is a *discrete* potential, so
+    ``irrotational`` is the least-squares gradient fit to ``f`` and not an
+    analytic identity.  Whether the discarded ``solenoidal`` part carries
+    physical content is a falsifiable question, answered numerically in
+    ``docs/xval_projection_laplace_wellbalanced.md`` ⑤: the Laplace jump read
+    off ``q`` reproduces ``sigma/R`` while the discarded part does not change it.
+    """
+    df = pair_divergence(pos, f, vol, pairs, h)
+    q, it = poisson_adjoint(pos, -df, vol, pairs, h, gauge=gauge,
+                            rel_tol=rel_tol, max_iter=max_iter)
+    irrotational = adjoint_gradient(pos, q, vol, pairs, h)
+    solenoidal = f - irrotational
+    nf = torch.linalg.vector_norm(f).clamp_min(1e-300)
+    return {
+        "potential": q,
+        "irrotational": irrotational,
+        "solenoidal": solenoidal,
+        "cg_iterations": int(it),
+        "solenoidal_fraction": float(torch.linalg.vector_norm(solenoidal) / nf),
+        "reconstruction_defect": float(torch.linalg.vector_norm(
+            irrotational + solenoidal - f) / nf),
+        "orthogonality": float((irrotational * solenoidal).sum() / (nf * nf)),
+    }
+
+
+def irrotationality_defect(pos, f, vol, pairs, h, gauge: int = 0,
+                           rel_tol: float = 1e-8, max_iter: int = 20000) -> float:
+    """``||f - G q|| / ||f||``: how much of a force field the projection cannot see."""
+    return helmholtz_split(pos, f, vol, pairs, h, gauge=gauge, rel_tol=rel_tol,
+                           max_iter=max_iter)["solenoidal_fraction"]
+
+
+def relax_projection_balanced(radius: float = 0.02, dx: float = 0.002,
+                              sigma: float = 0.072, rho0: float = 1000.0,
+                              outer: float = 0.012, h_factor: float = 1.3,
+                              curvature_method: str = "mls",
+                              steps: int = 50, dt_factor: float = 0.1,
+                              sample_every: int = 10, nu_factor: float = 0.0,
+                              pin_outer: bool = True, balanced: bool = True,
+                              rel_tol: float = 1e-6, cg_max_iter: int = 4000,
+                              keep_fields: bool = False):
+    """March projection SPH on a static drop with a *well-balanced* capillary force.
+
+    Same time loop as :func:`relax_projection_consistent`; the one change is
+    that only the discrete-gradient part of the CSF acceleration enters the
+    momentum update (``balanced=True``; ``balanced=False`` reproduces the
+    round-3 path for A/B control).  Consequence: the projection has nothing
+    rotational left to inject, so a static drop stays at rest to solver
+    tolerance instead of requiring a viscosity knob to hold it, and the
+    Laplace jump is read off the potential itself (``Delta p = rho [q]``), an
+    instrument that never touches the pressure field.
+
+    Reported per sample: ``umax_over_vref`` (Adami et al. 2012 gate ``< 0.1``),
+    ``dp_Pa`` from the pressure solve and ``dp_potential_Pa`` from ``rho [q]``,
+    area ratio, post-projection divergence ratio and the solenoidal fraction of
+    the CSF force.  ``rel_tol = 1e-6`` on both CG solves: the projection
+    residual then sets the spurious-current floor (~1e-6 v_ref, measured), five
+    decades under the gate.
+    """
+    h = h_factor * dx
+    pos, mass, liquid, half = hex_block(radius, dx, outer, rho0)
+    vol = mass / rho0
+    n = pos.shape[0]
+    t_sigma = math.sqrt(rho0 * h ** 3 / max(sigma, 1e-30))
+    dt = dt_factor * t_sigma
+    v_ref = math.sqrt(sigma / (rho0 * radius))
+    nu = nu_factor * math.sqrt(sigma * radius / rho0)
+    edge = 1.6 * dx
+    area_scale = dx * dx * math.sqrt(3.0) / 2.0
+    area0 = float((torch.linalg.vector_norm(pos, dim=1) < radius).sum()) * area_scale
+
+    u = torch.zeros_like(pos)
+    history = []
+    pinned = torch.zeros(n, dtype=torch.bool)
+    if pin_outer:
+        pinned = ((pos[:, 0].abs() > half - edge)
+                  | (pos[:, 1].abs() > half - edge))
+    gauge = int(torch.nonzero(pinned)[0, 0]) if bool(pinned.any()) else 0
+    diverged = False
+    fields = None
+
+    for step in range(1, steps + 1):
+        pairs = cell_linked_pairs(pos, 2.0 * h)
+        st = csf_state_two_phase(pos, mass, liquid, h, rho0, sigma,
+                                 curvature_method=curvature_method)
+        a_csf = st["acc"]
+        if balanced:
+            sp = helmholtz_split(pos, a_csf, vol, pairs, h, gauge=gauge,
+                                 rel_tol=rel_tol, max_iter=cg_max_iter)
+            a_csf = sp["irrotational"]
+            sol_frac = sp["solenoidal_fraction"]
+            q = sp["potential"]
+        else:
+            sol_frac = float("nan")
+            q = None
+        a = a_csf + _viscous_acceleration(pos, u, vol, pairs, h, nu)
+        u_star = u + dt * a
+        u, p, info = project_velocity(pos, u_star, vol, pairs, h, rho0, dt,
+                                      gauge=gauge, rel_tol=rel_tol,
+                                      max_iter=cg_max_iter)
+        if bool(pinned.any()):
+            u = torch.where(pinned[:, None], torch.zeros_like(u), u)
+        pos = pos + dt * u
+        vmax = float(torch.linalg.vector_norm(u, dim=1).max())
+        if (not bool(torch.isfinite(u).all())) or vmax > 1.0e3 * v_ref:
+            history.append({"step": step, "diverged": True,
+                            "umax_over_vref": vmax / v_ref})
+            diverged = True
+            break
+        if step % sample_every == 0 or step == steps:
+            speed = torch.linalg.vector_norm(u, dim=1)
+            r_now = torch.linalg.vector_norm(pos, dim=1)
+            area = float((r_now < radius).sum()) * area_scale
+            core = r_now < 0.5 * radius
+            band = (r_now > 1.25 * radius) & (r_now < 1.45 * radius)
+            row = {
+                "step": step,
+                "t_over_t_sigma": step * dt / t_sigma,
+                "umax_over_vref": float(speed.max() / v_ref),
+                "umean_over_vref": float(speed.mean() / v_ref),
+                "dp_Pa": float(p[core].mean() - p[band].mean()) if bool(band.any())
+                          else float("nan"),
+                "area_ratio": area / area0,
+                "solenoidal_fraction": sol_frac,
+                "div_after_over_div_before": info["div_after_over_div_before"],
+                "cg_iterations": info["cg_iterations"],
+            }
+            if q is not None and bool(band.any()):
+                row["dp_potential_Pa"] = float(rho0 * (q[core].mean() - q[band].mean()))
+            history.append(row)
+        if keep_fields:
+            # decimated final state: enough for a cloud map, small enough for JSON
+            idx = torch.arange(0, n, max(1, n // 4000))
+            fields = {
+                "pos": pos[idx].tolist(),
+                "pressure": p[idx].tolist(),
+                "speed_over_vref": (torch.linalg.vector_norm(u, dim=1)[idx]
+                                    / v_ref).tolist(),
+                "liquid": liquid[idx].to(torch.int64).tolist(),
+            }
+
+    last = history[-1] if history else {}
+    dp_theory = sigma / radius
+    dp = float(last.get("dp_Pa", float("nan")))
+    dp_pot = float(last.get("dp_potential_Pa", float("nan")))
+    return {
+        "radius_m": radius, "dx_m": dx, "h_m": h, "dt_s": dt,
+        "R_over_dx": radius / dx, "R_over_h": radius / h,
+        "n_particles": int(n), "n_liquid": int(liquid.sum()),
+        "sigma": sigma, "rho0": rho0, "nu_m2_per_s": nu,
+        "nu_factor": nu_factor, "balanced": bool(balanced),
+        "pin_outer": bool(pin_outer), "curvature_method": curvature_method,
+        "v_ref_m_per_s": v_ref, "diverged": diverged,
+        "steps_completed": len([x for x in history if not x.get("diverged")]),
+        "steps_marched": int(history[-1]["step"]) if history else 0,
+        "samples": len(history),
+        "umax_over_vref_final": float(last.get("umax_over_vref", float("nan"))),
+        "umean_over_vref_final": float(last.get("umean_over_vref", float("nan"))),
+        "area_ratio_final": float(last.get("area_ratio", float("nan"))),
+        "solenoidal_fraction_final": float(last.get("solenoidal_fraction", float("nan"))),
+        "dp_final_Pa": dp, "dp_potential_final_Pa": dp_pot,
+        "dp_theory_Pa": dp_theory,
+        "dp_rel_error_pct": (dp / dp_theory - 1.0) * 100.0,
+        "dp_potential_rel_error_pct": (dp_pot / dp_theory - 1.0) * 100.0,
+        "history": history,
+        "fields": fields,
     }
