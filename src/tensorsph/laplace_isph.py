@@ -46,9 +46,13 @@ colour function   ``c = sum_j V_j W_ij c_j / sum_j V_j W_ij``  (Shepard
                   ``int |grad c| dn = 1`` across the interface.
 normal            ``n = -grad c / |grad c|`` (outward), Shepard-smoothed twice.
 gradient          first-order consistent MLS gradient (``csf_consistent``).
-curvature         ``fit_curvature`` local quadratic surface fit
-                  (``csf_curvature``), the operator that removed the +25 % bias
-                  of ``div n``.
+curvature         ``mls`` ``div n`` (default, validated on this two-phase
+                  carrier: ``kappa R -> 1``, jump -0.2 %); the ``fit_curvature``
+                  local quadratic surface fit (``csf_curvature``) is the
+                  operator that removed the +25 % bias of ``div n`` on a *sharp*
+                  free surface, but on the smooth multi-layer colour shell of
+                  the filled carrier it measures ``kappa`` ~30 % low and is a
+                  documented live defect (-24.5 %, fails the 15 % gate).
 delta function    ``delta_s = |grad c|`` (Brackbill, Kothe & Zemach 1992).
 force             ``a = -sigma kappa delta_s n / rho`` (CSF).
 pressure          ``-grad^2 p = -rho div(a)`` on the pair-Laplacian of Cummins
@@ -166,7 +170,13 @@ def smooth_indicator(pos, liquid, vol, pairs, h):
 # CSF state on the two-phase carrier
 # --------------------------------------------------------------------------- #
 def csf_state_two_phase(pos, mass, liquid, h, rho0, sigma,
-                        curvature_method: str = "fit_quadratic",
+                        # ``mls`` (div n) is the *validated* default for the
+                        # two-phase carrier: ``fit_quadratic`` fits the smooth
+                        # multi-layer colour shell (not the sharp free-surface
+                        # layer it was written for) and measures kappa ~30 %
+                        # low, a -24.5 % jump that fails the 15 % gate
+                        # (docs/xval_projection_laplace_oss.md, m17736 audit).
+                        curvature_method: str = "mls",
                         curvature_stencil: float = 4.0):
     """Colour / normal / curvature / delta_s / CSF acceleration."""
     vol = mass / rho0
@@ -283,7 +293,10 @@ def spurious_acceleration(pos, acc_csf, p, rho0, pairs, vol, h):
 def laplace_isph_case(radius: float = 0.02, dx: float = 0.002,
                       sigma: float = 0.072, rho0: float = 1000.0,
                       outer: float = 0.012, h_factor: float = 1.3,
-                      curvature_method: str = "fit_quadratic",
+                      # ``mls`` is the validated default (see
+                      # csf_state_two_phase); ``fit_quadratic`` is a documented
+                      # live defect on this two-phase carrier (-24.5 %).
+                      curvature_method: str = "mls",
                       variant: str = "model",
                       curvature_stencil: float = 4.0,
                       out_band=(1.25, 1.45), core_frac: float = 0.5,
