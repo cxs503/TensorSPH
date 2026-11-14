@@ -207,3 +207,28 @@ Figures: `artifacts/xval_execution_policy/fig_*.png` —
 - `fig_density_field.png` — Left: summation density field of the dam-break column with dynamic boundary particles. Right: relative deviation of the padded masked sweep, on a log scale, for the worst-padded work-group; the deviation stays at round-off everywhere including the clamped last particle.
 - `fig_wallclock.png` — Wall clock of the two arms as a function of work-group size (CPU backend): the padded sweep pays per-work-group overhead, which is the honest price of the OSS launch discipline on a host backend.
 
+
+## 8. Verification follow-up (branch `agent/m19962`, 2026-11-14)
+
+An independent re-measurement of this deliverable is in
+`docs/xval_sycl_execution_policy_verification_m19962.md` (harness:
+`benchmarks/xval_sycl_execution_policy/verify_convention.py`). Everything above
+reproduces, but **one claim above is stated without its precondition** and is
+corrected here:
+
+- "the padded-masked launch reproduces the shipped vectorised summation density
+  for *any* work-group size" — true for a **uniform** smoothing length, which is
+  the only case this report measured. With a spatially varying `h` the shipped
+  reference evaluates each pair once with `h[i]` (symmetric) while the sweep
+  evaluates every row with its own `h` (one-sided, as the OSS device launch
+  must), so the two arms are different operators: measured gap 0 to 44.16 %
+  (dx=0.04 m, `h` modulated ±90 %), 5.88 % at dx=0.02 m, `h` modulated ±50 %,
+  and 2.02 % at dx=0.04 m, `h` modulated ±10 % — four orders of magnitude above
+  the 1e-12 target declared above, and over the 15 % gate in the coarse corner.
+- The *launch-geometry* invariance itself is not affected: against a
+  convention-matched (per-row-`h`) reference the sweep is bit-identical
+  (ULP 0) at every work-group size and every amplitude tested, so the
+  padded-masked sweep is sound; only the comparison target was over-general.
+- New assertions pin this scope: `tests/test_execution_policy.py` section 5,
+  and `summation_density_vectorised_row_h` in `tensorsph.wcsph.swept` provides
+  the convention-matched reference.
