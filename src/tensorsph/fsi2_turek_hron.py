@@ -149,6 +149,15 @@ class FSI2Case:
     # Force transfer
     load_transfer: str = "two_face"
     load_scale: float = 1.0
+    # Diagnostic viscous (friction) arm of the body load.  Off in the coupled
+    # physics (the rod is loaded by pressure only, as before); on, it produces
+    # the friction part of the benchmark force coefficients.
+    body_viscous_load: bool = True
+    #: arm used for the *reported* body coefficients: ``"fit"`` (plane fit,
+    #: exact on a linear pressure field) or ``"avg"`` (OSS kernel average).
+    #: Both are always computed for the rigid cylinder; only the reported
+    #: ``*_fit`` keys depend on this switch.
+    cylinder_load_arm: str = "fit"
 
     # Loosely-coupled FSI: under-relaxation of the fluid load on the beam.
     # 1.0 = no relaxation (one fluid solve per step).  Needed when the added
@@ -318,17 +327,112 @@ def build_channel_walls(case: FSI2Case, device) -> torch.Tensor:
     return torch.cat(parts, dim=0)
 
 
-def build_cylinder_particles(case: FSI2Case, device) -> torch.Tensor:
-    """Boundary particles on the cylinder surface."""
+def cylinder_surface_geometry(case: FSI2Case, device=None, dtype=torch.float64):
+    """Cylinder surface stations with outward normals and tributary arc length.
+
+    The cylinder is rigid, so its stations are fixed: ``n_circ`` points evenly
+    spaced on the circumference, ``trib = 2 pi r / n_circ`` of arc each.  The
+    outward normal of a circle points along the radius, i.e. *from the solid
+    into the fluid*, which is the sign convention of
+    :func:`boundary_force_from_pressure` (``F = -p n trib``).
+
+    This is the geometry the force-from-fluid operator needs on the rigid part
+    of the benchmark body.  Before it existed the coupled driver only
+    accumulated the *beam* load, so the Turek-Hron drag/lift coefficients --
+    which are defined on the whole body -- could not be formed at all.
+
+    Returns ``(pos, normals, tributary)``; ``pos`` is the same particle set as
+    :func:`build_cylinder_particles` (bit for bit, same angle lattice).
+    """
     dx = case.dx
     r = case.cylinder_d / 2.0
-    # Circumference / dx gives approximate number of particles
     n_circ = max(int(math.ceil(2 * math.pi * r / dx)), 8)
-    angles = torch.arange(n_circ, dtype=torch.float64, device=device) * (2 * math.pi) / n_circ  # was linspace
-                            
-    x = case.cylinder_x + r * torch.cos(angles)
-    y = case.cylinder_y + r * torch.sin(angles)
-    return torch.stack((x, y), dim=-1)
+    angles = torch.arange(n_circ, dtype=dtype, device=device) * (2 * math.pi) / n_circ
+    normals = torch.stack((torch.cos(angles), torch.sin(angles)), dim=-1)
+    pos = torch.stack((case.cylinder_x + r * normals[:, 0],
+                       case.cylinder_y + r * normals[:, 1]), dim=-1)
+    tributary = 2.0 * math.pi * r / n_circ
+    return pos, normals, tributary
+
+
+def build_cylinder_particles(case: FSI2Case, device) -> torch.Tensor:
+    """Boundary particles on the cylinder surface."""
+    pos, _, _ = cylinder_surface_geometry(case, device=device)
+    return pos
+
+
+def wall_shear_from_velocity_gradient(pos_solid, normals, tributary, pos_fluid,
+                                      vel_fluid, vol_fluid, mu_fluid, h,
+                                      vel_solid=None):
+    """Viscous traction on a solid surface from a kernel-corrected gradient.
+
+    Mirrors the X3 arm of the force-from-fluid audit
+    (:func:`tensorsph.fsi_force_from_fluid.wall_shear_from_gradient`) with the
+    driver's own cubic-spline kernel and support ``2h``: the velocity-gradient
+    tensor is reconstructed from the *measured* first moment of the truncated
+    neighbour set, so the one-sided quadrature deficit (measured at -38 % on the
+    X3 Couette case) is absorbed exactly for a linear velocity field.  The
+    traction is ``F = trib * mu_wall * (grad u . n)`` with ``n`` the outward
+    normal (into the fluid) and ``mu_wall`` the kernel-weighted mean viscosity.
+
+    ``vol_fluid`` are the fluid particle volumes (``mass / rho``).  Returns
+    ``(n_solid, 2)``.
+    """
+    n_s = pos_solid.shape[0]
+    dim = pos_solid.shape[1]
+    out = torch.zeros((n_s, dim), dtype=pos_solid.dtype, device=pos_solid.device)
+    if n_s == 0 or pos_fluid.shape[0] == 0:
+        return out
+    pos_all = torch.cat((pos_solid, pos_fluid), dim=0)
+    pairs = cell_linked_pairs(pos_all, 2.0 * h)
+    if pairs.numel() == 0:
+        return out
+    i, j = pairs.unbind(dim=1)
+    crossing = (i < n_s) != (j < n_s)
+    if not bool(crossing.any()):
+        return out
+    is_idx = torch.where(i < n_s, i, j)[crossing]
+    jf_idx = (torch.where(i < n_s, j, i) - n_s)[crossing]
+
+    delta = pos_fluid[jf_idx] - pos_solid[is_idx]
+    r = torch.linalg.vector_norm(delta, dim=1)
+    active = (r > 1.0e-12) & (r < 2.0 * h)
+    if not bool(active.any()):
+        return out
+    is_idx, jf_idx, delta, r = is_idx[active], jf_idx[active], delta[active], r[active]
+    e = delta / r[:, None]
+    # dW/dr of the 2-D cubic spline, written out so that the sign does not
+    # depend on which of (x_i - x_j), (x_j - x_i) a helper happens to take.
+    q = r / h
+    dshape = torch.where(q < 1.0, -3.0 * q + 2.25 * q.square(),
+                         torch.where(q < 2.0, -0.75 * (2.0 - q).square(), 0.0))
+    radial = (10.0 / (7.0 * math.pi * h * h)) * dshape / h  # dW/dr < 0
+    vol = vol_fluid[jf_idx]
+    w = di.cubic_spline_kernel(r, h) * vol
+
+    moment = (radial * vol * r)[:, None, None] * (e[:, :, None] * e[:, None, :])
+    b_mat = torch.zeros((n_s, dim, dim), dtype=pos_solid.dtype,
+                        device=pos_solid.device).index_add(0, is_idx, -moment)
+    v_s = (torch.zeros_like(pos_solid) if vel_solid is None else vel_solid)
+    du = vel_fluid[jf_idx] - v_s[is_idx]
+    raw = (radial * vol)[:, None, None] * (du[:, :, None] * e[:, None, :])
+    g_mat = torch.zeros_like(b_mat).index_add(0, is_idx, raw)
+
+    trace = b_mat.diagonal(dim1=-2, dim2=-1).sum(dim=1).clamp_min(1.0e-30)
+    eye = torch.eye(dim, dtype=pos_solid.dtype,
+                    device=pos_solid.device).expand_as(b_mat)
+    grad_u = torch.bmm(g_mat, torch.linalg.inv(
+        b_mat + 1.0e-12 * trace[:, None, None] * eye))
+    mu_wall = (torch.zeros(n_s, dtype=pos_solid.dtype, device=pos_solid.device)
+               .index_add(0, is_idx, w * mu_fluid[jf_idx])
+               / torch.zeros(n_s, dtype=pos_solid.dtype, device=pos_solid.device)
+               .index_add(0, is_idx, w).clamp_min(1.0e-30))
+    shear = torch.bmm(grad_u, normals.unsqueeze(-1)).squeeze(-1)
+    # Traction *on the solid*, from the fluid: with ``n`` pointing into the
+    # fluid, the viscous stress the fluid exerts is ``-mu (grad u . n)``.  Gate
+    # D (flat wall under ``u = gamma y``) pins both the sign and the magnitude:
+    # +mu*gamma before the sign flip, as measured.
+    return -tributary[:, None] * mu_wall[:, None] * shear
 
 
 def build_inlet_particles(case: FSI2Case, device) -> torch.Tensor:
@@ -575,6 +679,7 @@ def beam_boundary_geometry(nodes: torch.Tensor, case: FSI2Case):
 
 
 def boundary_pressure_from_fluid(pos, pressure, wall, wall_start_idx, pairs, h,
+                                 wall_stop_idx=None,
                                  normals=None, vel=None, wall_vel=None,
                                  rho0=None, sound_speed=None,
                                  impedance_sign=1.0):
@@ -597,6 +702,8 @@ def boundary_pressure_from_fluid(pos, pressure, wall, wall_start_idx, pairs, h,
     """
     n = pos.shape[0]
     n_moving = max(wall.shape[0] - wall_start_idx, 0)
+    if wall_stop_idx is not None:
+        n_moving = max(min(n_moving, wall_stop_idx - wall_start_idx), 0)
     p_out = torch.zeros((n_moving,), dtype=pos.dtype, device=pos.device)
     w_out = torch.zeros((n_moving,), dtype=pos.dtype, device=pos.device)
     if n_moving == 0 or pairs.numel() == 0:
@@ -609,6 +716,8 @@ def boundary_pressure_from_fluid(pos, pressure, wall, wall_start_idx, pairs, h,
     fluid_idx = torch.where(i < n, i, j)[crossing]
     wall_idx = (torch.where(i < n, j, i) - n)[crossing]
     keep = wall_idx >= wall_start_idx
+    if wall_stop_idx is not None:
+        keep = keep & (wall_idx < wall_stop_idx)
     if not bool(keep.any()):
         return p_out, w_out
     fluid_idx = fluid_idx[keep]
@@ -653,11 +762,108 @@ def boundary_pressure_from_fluid(pos, pressure, wall, wall_start_idx, pairs, h,
     return p_out, w_sum
 
 
+def boundary_pressure_from_fluid_linear_exact(pos, pressure, wall,
+                                              wall_start_idx, wall_stop_idx,
+                                              pairs, h):
+    """Wall pressure from a *local plane fit*, exact on a linear pressure field.
+
+    Why this arm exists
+    -------------------
+    :func:`boundary_pressure_from_fluid` returns the kernel-weighted mean of the
+    neighbouring fluid pressures.  The support of a surface particle is
+    truncated by the body (a half space), so the weighted *centroid* of its
+    neighbours sits a distance ``delta`` outside the surface.  For a linear
+    field that biases the face pressure by ``grad p . delta``; on a convex
+    surface ``delta`` is radial, so the bias shows up as a spurious inward
+    (over-)load whose relative size is ``O(h / r)`` and does **not** vanish at
+    fixed ``h/r``.  Measured on the FSI2 cylinder with an imposed field
+    ``p = 1 - y``: +60.1 / +38.5 / +18.6 / +9.5 % at dx = 40 / 20 / 10 / 5 mm
+    (``docs/xval_fsi2/CYLINDER_BODY_FORCE.md``).  The x- (drag) component is
+    unaffected to < 0.4 %, which is why the defect hid in the flat-wall audits.
+
+    This arm fits ``p(x) ~ a + g . (x - x_wall)`` by weighted least squares over
+    the same neighbour set and returns ``a``, the value *at the surface
+    station*.  For a linear field the fit is exact whatever the truncation, so
+    the geometric bias is removed instead of being made smaller.  The measured
+    first moment of the actual neighbour set enters the normal equations
+    directly; no analytic half-space correction is assumed.
+
+    Returns ``(p_wall, w_sum)`` like the kernel-average arm; stations with fewer
+    than three usable neighbours fall back to the kernel average (documented,
+    and reported through ``w_sum``).
+    """
+    n = pos.shape[0]
+    n_wall = max(min(wall.shape[0] - wall_start_idx, wall_stop_idx - wall_start_idx), 0)
+    p_out = torch.zeros((n_wall,), dtype=pos.dtype, device=pos.device)
+    w_out = torch.zeros((n_wall,), dtype=pos.dtype, device=pos.device)
+    if n_wall == 0 or pairs.numel() == 0:
+        return p_out, w_out
+
+    i, j = pairs.unbind(dim=1)
+    crossing = (i < n) != (j < n)
+    if not bool(crossing.any()):
+        return p_out, w_out
+    fluid_idx = torch.where(i < n, i, j)[crossing]
+    wall_idx = (torch.where(i < n, j, i) - n)[crossing]
+    keep = (wall_idx >= wall_start_idx) & (wall_idx < wall_start_idx + n_wall)
+    if not bool(keep.any()):
+        return p_out, w_out
+    fluid_idx = fluid_idx[keep]
+    wall_idx = wall_idx[keep] - wall_start_idx
+
+    delta = pos[fluid_idx] - wall[wall_start_idx + wall_idx]
+    r = torch.linalg.vector_norm(delta, dim=1)
+    active = (r > 1.0e-12) & (r < 2.0 * h)
+    if not bool(active.any()):
+        return p_out, w_out
+    fluid_idx, wall_idx = fluid_idx[active], wall_idx[active]
+    delta, r = delta[active], r[active]
+    w = di.cubic_spline_kernel(r, h)
+    p_src = pressure[fluid_idx]
+
+    # normal equations of the weighted plane fit, accumulated per station
+    one = torch.ones_like(r)
+    basis = torch.stack((one, delta[:, 0], delta[:, 1]), dim=1)      # (P, 3)
+    lhs = torch.zeros((n_wall, 3, 3), dtype=pos.dtype, device=pos.device)
+    lhs = lhs.index_add(0, wall_idx, w[:, None, None] * (basis[:, :, None] * basis[:, None, :]))
+    rhs = torch.zeros((n_wall, 3), dtype=pos.dtype, device=pos.device)
+    rhs = rhs.index_add(0, wall_idx, w[:, None] * p_src[:, None] * basis)
+    w_out = w_out.index_add(0, wall_idx, w)
+
+    # Tikhonov-regularised solve: the penalty is scaled by the station's own
+    # weight sum, so a well-populated station is unaffected while a degenerate
+    # one (collinear neighbours) falls back to its kernel-weighted mean instead
+    # of producing a huge gradient.
+    wsum = w_out.clamp_min(1.0e-30)
+    scale = wsum[:, None, None]
+    eye = torch.eye(3, dtype=pos.dtype, device=pos.device).expand(n_wall, 3, 3)
+    reg = 1.0e-10 * scale * eye
+    fallback = (torch.zeros_like(rhs[:, 0]).index_add(0, wall_idx, w * p_src)
+                / wsum)
+    try:
+        sol = torch.linalg.solve(lhs + reg, rhs.unsqueeze(-1)).squeeze(-1)
+    except Exception:  # pragma: no cover - singular batch on exotic input
+        sol = None
+    if sol is None or not bool(torch.isfinite(sol).all()):
+        p_out = fallback
+    else:
+        ok = (wsum > 1.0e-30) & torch.isfinite(sol[:, 0])
+        p_out = torch.where(ok, sol[:, 0], fallback)
+    return p_out, w_out
+
+
 def boundary_force_from_pressure(p_wall, normals, tributary):
-    """Traction on a boundary particle: ``F = -p n trib`` (n points into fluid)."""
+    """Traction on a boundary particle: ``F = -p n trib`` (n points into fluid).
+
+    ``tributary`` is a scalar (a straight row, as on the beam) or one value per
+    particle (a curved surface, where the arc spacing varies with ``dx``).
+    """
     if p_wall.numel() == 0:
         return torch.zeros((0, 2), dtype=p_wall.dtype, device=p_wall.device)
-    return -(p_wall[:, None] * tributary * normals)
+    trib = tributary
+    if torch.is_tensor(trib) and trib.dim() > 0:
+        trib = trib[:, None]
+    return -(p_wall[:, None] * trib * normals)
 
 
 def beam_load_on_fluid_boundary(pos, rho, pressure, wall, wall_mass,
@@ -738,6 +944,10 @@ class FSI2State:
     time: float = 0.0
     history: Dict[str, List[float]] = field(default_factory=dict)
     load: Optional[torch.Tensor] = None
+    #: outward unit normals of the rigid cylinder stations (into the fluid)
+    cylinder_normals: Optional[torch.Tensor] = None
+    #: tributary arc length per cylinder station [m]
+    cylinder_tributary: Optional[torch.Tensor] = None
 
 
 def initial_state(case: FSI2Case) -> FSI2State:
@@ -753,8 +963,8 @@ def initial_state(case: FSI2Case) -> FSI2State:
     m_wall = torch.full((wall_static.shape[0],), di.lattice_mass_unit(case.fluid_config()),
                         dtype=wall_static.dtype, device=device)
 
-    # Cylinder (static)
-    cyl = build_cylinder_particles(case, device)
+    # Cylinder (static), with the surface normals the load operator needs
+    cyl, cyl_normals, cyl_trib = cylinder_surface_geometry(case, device=device)
     m_cyl = torch.full((cyl.shape[0],), di.lattice_mass_unit(case.fluid_config()),
                        dtype=cyl.dtype, device=device)
 
@@ -767,11 +977,18 @@ def initial_state(case: FSI2Case) -> FSI2State:
         "t": [], "tip_x": [], "tip_y": [],
         "drag": [], "lift": [], "max_speed": [],
         "n_fluid": [], "injected": [], "removed": [], "force_coverage": [],
+        "cyl_drag": [], "cyl_lift": [], "body_drag": [], "body_lift": [],
+        "drag_viscous": [], "lift_viscous": [], "cyl_coverage": [],
+        "cyl_drag_fit": [], "cyl_lift_fit": [],
+        "body_drag_fit": [], "body_lift_fit": [],
     }
 
     return FSI2State(
         pos, vel, mass, wall_static, m_wall, cyl, m_cyl,
-        beam_interp, nodes, torch.zeros_like(nodes), 0.0, history)
+        beam_interp, nodes, torch.zeros_like(nodes), time=0.0, history=history,
+        cylinder_normals=cyl_normals,
+        cylinder_tributary=torch.full((cyl.shape[0],), cyl_trib,
+                                      dtype=cyl.dtype, device=device))
 
 
 def _inlet_ramp(case: FSI2Case, t: float) -> float:
@@ -887,6 +1104,65 @@ def step_fsi2(state: FSI2State, case: FSI2Case, dt: float) -> Dict[str, float]:
     f_beam = boundary_force_from_pressure(p_wall, beam_normals, tributary)
     coverage = float((w_sum > 1.0e-30).to(torch.float64).mean()) if p_wall.numel() else 0.0
 
+    # ---- rigid-body (cylinder) load from the fluid ------------------------ #
+    # The Turek-Hron drag/lift coefficients are defined on the *whole* body
+    # (cylinder + beam).  Until this arm existed the driver accumulated only
+    # the beam pressure load, so the benchmark's force coefficients could not
+    # be formed from the coupled state at all.
+    cyl_start = state.wall_static.shape[0]
+    n_cyl = state.cylinder_particles.shape[0]
+    # The operator addresses the wall particles of the window
+    # ``[wall_start_idx, wall_stop_idx)`` of the concatenated wall array; for
+    # the cylinder the window must stop before the moving beam rows.
+    p_cyl, w_cyl = boundary_pressure_from_fluid(
+        state.fluid_pos, pressure, wall, cyl_start, pairs, case.h(),
+        wall_stop_idx=cyl_start + n_cyl,
+        normals=state.cylinder_normals if case.wall_impedance else None,
+        vel=state.fluid_vel if case.wall_impedance else None,
+        wall_vel=wall_vel if case.wall_impedance else None,
+        rho0=case.rho0, sound_speed=case.sound_speed,
+        impedance_sign=case.wall_impedance_sign)
+    f_cyl = boundary_force_from_pressure(p_cyl, state.cylinder_normals,
+                                        state.cylinder_tributary)
+    cyl_coverage = (float((w_cyl > 1.0e-30).to(torch.float64).mean())
+                    if p_cyl.numel() else 0.0)
+    # Second, geometric-bias-free arm on the same neighbours (see
+    # ``boundary_pressure_from_fluid_linear_exact``).  The kernel-average arm is
+    # kept because it is what the OSS operator does; the plane fit is the one
+    # whose body coefficients are reported, because its radial over-load on a
+    # convex body is +O(h/r) and does not vanish at the resolutions we can run.
+    if case.cylinder_load_arm == "fit":
+        p_cyl_fit, _ = boundary_pressure_from_fluid_linear_exact(
+            state.fluid_pos, pressure, wall, cyl_start, cyl_start + n_cyl,
+            pairs, case.h())
+        f_cyl_fit = boundary_force_from_pressure(
+            p_cyl_fit, state.cylinder_normals, state.cylinder_tributary)
+    else:
+        f_cyl_fit = f_cyl
+
+    # Friction (diagnostic arm, not fed back into the rod dynamics): one call on
+    # the concatenated body surface so the neighbour search is shared.
+    if case.body_viscous_load:
+        body_pos = torch.cat((state.cylinder_particles, beam_boundary), dim=0)
+        body_nrm = torch.cat((state.cylinder_normals, beam_normals), dim=0)
+        body_trib = torch.cat((state.cylinder_tributary,
+                               torch.full((beam_boundary.shape[0],), tributary,
+                                          dtype=beam_boundary.dtype,
+                                          device=beam_boundary.device)), dim=0)
+        body_vel = torch.cat((torch.zeros_like(state.cylinder_particles),
+                              beam_boundary_vel), dim=0)
+        vol_fluid = state.fluid_mass / rho.clamp_min(1.0e-12)
+        mu_fluid = torch.full_like(state.fluid_mass, case.viscosity)
+        f_visc = wall_shear_from_velocity_gradient(
+            body_pos, body_nrm, body_trib, state.fluid_pos, state.fluid_vel,
+            vol_fluid, mu_fluid, case.h(), vel_solid=body_vel)
+        f_visc_cyl = f_visc[:state.cylinder_particles.shape[0]]
+        f_visc_beam = f_visc[state.cylinder_particles.shape[0]:]
+    else:
+        f_visc_cyl = torch.zeros_like(f_cyl)
+        f_visc_beam = torch.zeros((beam_boundary.shape[0], 2),
+                                  dtype=f_cyl.dtype, device=f_cyl.device)
+
     raw_load = (beam_interp.T @ f_beam) * case.load_scale
     alpha = float(case.coupling_relaxation)
     if alpha >= 1.0 or state.load is None:
@@ -916,9 +1192,22 @@ def step_fsi2(state: FSI2State, case: FSI2Case, dt: float) -> Dict[str, float]:
     tip_y = float(state.beam_nodes[-1, 1]) - case.cylinder_y
     drag = float(f_beam[:, 0].sum()) if f_beam.numel() else 0.0
     lift = float(f_beam[:, 1].sum()) if f_beam.numel() else 0.0
+    cyl_drag = float(f_cyl[:, 0].sum()) if f_cyl.numel() else 0.0
+    cyl_lift = float(f_cyl[:, 1].sum()) if f_cyl.numel() else 0.0
+    visc = (torch.cat((f_visc_cyl, f_visc_beam), dim=0).sum(dim=0)
+            if f_visc_cyl.numel() else
+            torch.zeros(2, dtype=f_cyl.dtype, device=f_cyl.device))
 
     return {"t": state.time, "tip_x": tip_x, "tip_y": tip_y,
             "drag": drag, "lift": lift,
+            "cyl_drag": cyl_drag, "cyl_lift": cyl_lift,
+            "body_drag": cyl_drag + drag, "body_lift": cyl_lift + lift,
+            "cyl_drag_fit": float(f_cyl_fit[:, 0].sum()) if f_cyl_fit.numel() else 0.0,
+            "cyl_lift_fit": float(f_cyl_fit[:, 1].sum()) if f_cyl_fit.numel() else 0.0,
+            "body_drag_fit": (float(f_cyl_fit[:, 0].sum()) if f_cyl_fit.numel() else 0.0) + drag,
+            "body_lift_fit": (float(f_cyl_fit[:, 1].sum()) if f_cyl_fit.numel() else 0.0) + lift,
+            "drag_viscous": float(visc[0]), "lift_viscous": float(visc[1]),
+            "cyl_coverage": cyl_coverage,
             "max_speed": float(state.fluid_vel.norm(dim=1).max()),
             "n_fluid": int(state.fluid_pos.shape[0]),
             "injected": counters["injected"], "removed": counters["removed"],
@@ -947,6 +1236,10 @@ def run_fsi2(case: FSI2Case, state: Optional[FSI2State] = None):
         "final_tip_y": tip_y[-1] if tip_y else 0.0,
         "mean_drag": sum(hist["drag"]) / max(len(hist["drag"]), 1),
         "mean_lift": sum(hist["lift"]) / max(len(hist["lift"]), 1),
+        "mean_body_drag": (sum(hist["body_drag"]) / max(len(hist["body_drag"]), 1)
+                           if hist.get("body_drag") else 0.0),
+        "mean_body_lift": (sum(hist["body_lift"]) / max(len(hist["body_lift"]), 1)
+                           if hist.get("body_lift") else 0.0),
         "n_fluid": int(state.fluid_pos.shape[0]),
         "n_steps": n_steps, "dt": dt, "dx": case.dx, "h": case.h(),
         "history": hist,
