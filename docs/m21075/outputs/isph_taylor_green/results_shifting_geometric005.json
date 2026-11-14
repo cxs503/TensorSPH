@@ -1,0 +1,40 @@
+{
+  "case": "CASE-SPH-PROJECTION-TAYLOR-GREEN",
+  "anchor": "XVAL-SPH-METHOD-SELECTION-2026-11-12",
+  "reference": "Taylor & Green (1937) Proc. R. Soc. Lond. A 158:499; exact unsteady Navier-Stokes solution",
+  "scheme": "periodic ISPH projection (Cummins & Rudman 1999) + pair (graph) Laplacian viscosity, Heun time integration",
+  "tolerance_pct": 15.0,
+  "pass": false,
+  "rows": [
+    {
+      "dx": 0.05,
+      "h": 0.065,
+      "courant": 0.1,
+      "dt": 0.006500000000000001,
+      "steps": 77,
+      "particles": 400,
+      "reynolds": 10.0,
+      "mach_note": "ISPH: no EOS, no acoustic Mach",
+      "t_end": 0.5,
+      "nu": 0.015915494309189534,
+      "k": 6.283185307179586,
+      "velocity_rel_l2_pct": 1.9627623549306756e+40,
+      "energy_over_exact": 3.8524360619330086e+76,
+      "energy_over_initial": 8.221983592811815e+41,
+      "div_ratio_mean": 8.655018513938314e+17,
+      "cg_iterations_mean": 89.74025974025975,
+      "shifting_amplitude": 0.05,
+      "min_pair_distance_over_dx": 0.0,
+      "final_min_pair_distance_over_dx": 0.0,
+      "tolerance_pct": 15.0,
+      "pass": false,
+      "wall_seconds": 20.42381501197815
+    }
+  ],
+  "environment": {
+    "python": "3.11.6",
+    "torch": "2.7.1",
+    "platform": "Linux-6.6.52-1.7.lns23.loongarch64-loongarch64-with-glibc2.38",
+    "threads": 4
+  }
+}

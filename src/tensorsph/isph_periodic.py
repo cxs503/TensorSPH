@@ -56,6 +56,7 @@ from __future__ import annotations
 import torch
 
 from .csf_consistent import cubic_spline_gradient
+from .droplet_impact import cubic_spline_kernel
 
 __all__ = [
     "periodic_pairs",
@@ -68,6 +69,9 @@ __all__ = [
     "project",
     "viscous_laplacian",
     "divergence_norm",
+    "concentration",
+    "concentration_gradient",
+    "shift_positions",
 ]
 
 
@@ -286,3 +290,63 @@ def viscous_laplacian(pos, u, vol, pairs, h, box, nu: float):
     return -nu * torch.stack(
         [laplacian(pos, u[:, 0], vol, pairs, h, box),
          laplacian(pos, u[:, 1], vol, pairs, h, box)], dim=1)
+
+# --------------------------------------------------------------------------- #
+# periodic particle regularisation (shifting)
+# --------------------------------------------------------------------------- #
+def concentration(pos, vol, pairs, h, box):
+    """Particle concentration ``C_i = sum_j V_j W_ij`` under the torus metric.
+
+    ``C = 1`` for a complete kernel support; it drops where the packing is
+    sparse.  On an exact lattice ``grad C`` vanishes by symmetry, so a regular
+    cloud is left untouched.
+    """
+    i, j, delta, _gw = pair_geometry(pos, pairs, h, box)
+    r = torch.linalg.vector_norm(delta, dim=-1)
+    w = cubic_spline_kernel(r, h)
+    # the self term is not in the pair list but carries ~27 % of the sum at
+    # h/dx = 1.3 (measured: 0.731 without it, 1.000 with it)
+    out = vol * cubic_spline_kernel(torch.zeros(pos.shape[0], dtype=pos.dtype,
+                                                device=pos.device), h)
+    out = out.index_add(0, i, vol[j] * w).index_add(0, j, vol[i] * w)
+    return out
+
+
+def concentration_gradient(pos, vol, pairs, h, box):
+    """``grad C_i = sum_j V_j grad_i W_ij`` (periodic, minimum image)."""
+    i, j, delta, gw = pair_geometry(pos, pairs, h, box)
+    out = torch.zeros((pos.shape[0], pos.shape[1]), dtype=pos.dtype, device=pos.device)
+    out = out.index_add(0, i, vol[j][:, None] * gw)
+    # grad_j W_ji = -grad_i W_ij: the *sum* form flips sign at the j end (unlike
+    # the difference form used by :func:`gradient`)
+    out = out.index_add(0, j, -(vol[i][:, None] * gw))
+    return out
+
+
+def shift_positions(pos, vol, pairs, h, box, amplitude=0.5, max_shift_fraction=0.2,
+                    dx=None, speed=None, dt=None):
+    """Fickian shifting ``delta r_i = -A_i grad C_i`` with ``A_i = C_d h |u_i| dt``.
+
+    ``amplitude`` is Lind et al.'s dimensionless ``C_d`` (their calibrated range
+    is 0.1-1.0).  Falls back to ``A = amplitude * h^2`` when ``speed``/``dt`` are
+    not supplied (a pure geometric relaxation).  Clipped.
+
+    Lind, Xu, Stansby & Rogers (2012) *J. Comput. Phys.* 231:805, the periodic
+    counterpart of :mod:`tensorsph.particle_shifting` (which handles free
+    surfaces and walls).  The shift is clipped per particle to
+    ``max_shift_fraction * dx`` and wrapped into the box, so the cloud cannot be
+    kicked out of the torus.  Positions only: mass and momentum are untouched.
+    """
+    grad_c = concentration_gradient(pos, vol, pairs, h, box)
+    if speed is not None and dt is not None:
+        coeff = amplitude * h * dt * torch.linalg.vector_norm(speed, dim=-1)[:, None]
+    else:
+        coeff = amplitude * h * h
+    step = -coeff * grad_c
+    if dx is not None:
+        limit = max_shift_fraction * dx
+        norm = torch.linalg.vector_norm(step, dim=-1, keepdim=True).clamp_min(1e-300)
+        factor = (limit / norm).clamp_max(1.0)
+        step = step * factor
+    moved = pos + step
+    return moved - box * torch.round(moved / box)
