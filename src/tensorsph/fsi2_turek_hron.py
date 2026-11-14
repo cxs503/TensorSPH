@@ -58,6 +58,15 @@ used in the original benchmark.  A WCSPH solver at finite Mach number will
 produce slightly different numbers; the force-from-fluid methodology is what
 this module validates, not the exact match to the incompressible reference.
 
+Similarity warning: the benchmark is posed in SI units, so running it at a lower
+inlet velocity requires the beam stiffness to be re-scaled as well.  With the
+shipped default (``beam_E = 4 MPa`` at ``U_mean = 0.2 m/s``) the stiffness group
+``Ae = E / (rho_f U_mean^2)`` is 1.0e5 against the benchmark's 5.6e3, i.e. the
+beam is ~18x too stiff and the expected tip amplitude is ~94 % low; check with
+:func:`tensorsph.fsi2_similarity.similarity_report` and use
+:func:`tensorsph.fsi2_similarity.similarity_corrected_case` for a comparison
+against the table above (see ``docs/xval_fsi2/SIMILARITY_AND_REFERENCE_AUDIT.md``).
+
 Solver
 ------
 * fluid: weakly-compressible SPH (Tait EOS, cubic-spline kernel, Adami wall BC)
