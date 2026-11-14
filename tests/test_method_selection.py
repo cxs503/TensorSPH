@@ -309,3 +309,78 @@ def test_vortex_refusal_survives_generic_projection_evidence():
     selection = select_method(VORTEX, registry=registry)
     assert selection.primary is None
     assert any("isph_projection=WITHHELD" in note for note in selection.notes)
+
+
+# --------------------------------------------------------------------------- #
+# Refuted-evidence discipline (anchor XVAL-SPH-METHOD-SELECTION-2026-11-12)
+# --------------------------------------------------------------------------- #
+def test_refuted_records_never_enter_the_accuracy_claim():
+    """A measurement a later audit invalidated may not bound the claim."""
+    from tensorsph.method_selection import Evidence
+
+    registry = {
+        "wcsph_wall_no_slip": [
+            Evidence(method="wcsph_wall_no_slip", case="design-time",
+                     quantity="wall shear", measured_pct=4.3, gate_pct=5.0,
+                     source="benchmarks/couette/out_design/results.json"),
+            Evidence(method="wcsph_wall_no_slip", case="quick",
+                     quantity="wall shear", measured_pct=32.6, gate_pct=5.0,
+                     source="benchmarks/couette/out/results.json",
+                     status="refuted", precondition="startup transient"),
+        ]
+    }
+    selection = select_method(COUETTE, registry=registry)
+    primary = selection.primary
+    assert primary is not None and primary.status == "SELECTED"
+    assert primary.worst_measured_pct == pytest.approx(4.3)
+    # the refuted reading stays visible, it is just not part of the claim
+    assert primary.worst_banked_pct == pytest.approx(32.6)
+    assert len(primary.refuted_evidence) == 1
+    assert any("refuted" in caveat and "32.6" in caveat for caveat in primary.caveats)
+
+
+def test_all_refuted_records_withhold_the_scheme():
+    """If every record is refuted the scheme has no live evidence: WITHHELD."""
+    from tensorsph.method_selection import Evidence
+
+    registry = {
+        "wcsph_wall_no_slip": [
+            Evidence(method="wcsph_wall_no_slip", case="quick",
+                     quantity="wall shear", measured_pct=4.0, gate_pct=5.0,
+                     source="benchmarks/couette/out/results.json",
+                     status="refuted", precondition="startup transient"),
+        ]
+    }
+    selection = select_method(COUETTE, registry=registry)
+    assert selection.primary is None
+    decision = next(d for d in selection.candidates
+                    if d.method == "wcsph_wall_no_slip")
+    assert decision.status == "WITHHELD"
+    assert decision.worst_measured_pct is None
+    assert any("refuted" in caveat for caveat in decision.caveats)
+
+
+def test_evidence_rejects_an_unknown_status():
+    from tensorsph.method_selection import Evidence
+
+    with pytest.raises(ValueError):
+        Evidence(method="wcsph_wall_no_slip", case="x", quantity="y",
+                 measured_pct=1.0, gate_pct=5.0, source="s", status="maybe")
+
+
+def test_couette_wall_shear_is_banked_at_design_time_not_from_the_quick_run():
+    """The committed registry must not claim a pre-steady reading."""
+    registry = load_registry(REGISTRY_JSON)
+    records = registry["wcsph_wall_no_slip"]
+    banked = [r for r in records if not r.is_refuted]
+    refuted = [r for r in records if r.is_refuted]
+    assert banked and refuted, "both the design-time and the refuted run must be banked"
+    wall = [r for r in banked if "wall-shear" in r.quantity]
+    assert wall, "the design-time wall-shear record is missing"
+    for record in wall:
+        assert record.measured_pct <= 5.0, record
+        assert "out_design" in record.source, record.source
+        assert "1.2 H^2/nu" in record.precondition, record.precondition
+    for record in refuted:
+        assert "out/results.json" in record.source
+        assert "audit_couette_wall_shear_reading" in record.precondition
