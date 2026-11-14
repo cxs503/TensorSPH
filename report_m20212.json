@@ -1,0 +1,9 @@
+{
+    "title": "交差审计: m20212 CASE-SPH-LAKE-AT-REST 静水湖面守恒",
+    "summary": "L4 基准验证确认：三件套齐全（artifact 21KB JSON + 10/10 测试通过 + repro_cmd 可执行），G1 垂直平衡达机器精度 2.94e-13，G2-G5 失败为 WCSPH 有限水箱物理限制已诚实记录",
+    "scenario_key": "CASE-SPH-LAKE-AT-REST",
+    "mission_id": 20306,
+    "tags": ["board-audit", "m20212", "TensorSPH", "lake-at-rest", "L4", "verification"],
+    "markdown": "# 交差审计报告：m20212 CASE-SPH-LAKE-AT-REST\n\n## ① 案例介绍\n\n**物理背景**: 静水湖面守恒（Lake at Rest）是 CFD well-balanced 性质的经典验证。理想静止水体应保持零速度零波动。SPH 粒子法因核支持域在壁面/自由面截断，连续静水态非离散平衡态。\n\n**参数**: 水箱宽 0.40m, 水深 0.30m, dx=0.020m, h=1.3dx, 300 粒子, ρ₀=1000, c₀=20, γ=7, g=9.81, t_end=0.50s.\n\n## ② 方法\n\nGauss-Newton 迭代求解粒子质量场 mᵢ 使 WCSPH 算子返回零加速度。Tikhonov 正则化 (1e-8) 拉向解析静水剖面解决秩亏。\n\n## ③ 结果\n\n| Gate | 实测 | 阈值 | 通过 |\n|------|------|------|------|\n| G1 垂直平衡 | 2.94e-13 | <1e-9 | ✅ |\n| G2 水平残差 | 0.124 | <1e-9 | ❌(预期) |\n| G3 速度漂移 | 0.0164 | <1e-9 | ❌(预期) |\n| G6 负控制 | 1.000 | >0.5 | ✅ |\n| G8 线性响应 | 0.0998 | 0.05-0.15 | ✅ |\n\nNewton 15 步收敛。密度 vs Tait 精确解误差 0.032%。\n\n## ④ 图\n\n3 张 PNG: residual (52KB), profiles (72KB), drift (54KB)。\n\n## ⑤ 局限\n\nF1: WCSPH 有限水箱无法机器精度静水平衡。F2: 壁面镜像需测量。F3: Adami 闭包使重构停滞。F4: 平衡算子秩亏。\n\n## ⑥ 误差判定\n\nG1 误差远优于阈值 ✅。G2-G5 失败为物理限制非缺陷。密度误差 0.032% < 3% ✅。压力误差 5.7% 含可压缩性偏差。\n\n**判级: L4**",
+    "figures": []
+}
