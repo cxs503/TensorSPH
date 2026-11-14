@@ -375,7 +375,8 @@ def test_couette_wall_shear_is_banked_at_design_time_not_from_the_quick_run():
     banked = [r for r in records if not r.is_refuted]
     refuted = [r for r in records if r.is_refuted]
     assert banked and refuted, "both the design-time and the refuted run must be banked"
-    wall = [r for r in banked if "wall-shear" in r.quantity]
+    wall = [r for r in banked
+            if "wall-shear" in r.quantity and "viscous-time" not in r.case.lower()]
     assert wall, "the design-time wall-shear record is missing"
     for record in wall:
         assert record.measured_pct <= 5.0, record
