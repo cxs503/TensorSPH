@@ -195,3 +195,42 @@ class TestShippedThreeDimensionalOperator:
                          radius=1.0, stencil=2.1)
         assert res["kappa_mean_R"] < 1.5
         assert res["delta_measure_ratio"] < 0.6
+
+# --------------------------------------------------------------------------- #
+# 5. analytic-curvature baseline (m20600 addition)
+# --------------------------------------------------------------------------- #
+class TestAnalyticCurvatureBaseline:
+    """Analytic curvature + CSF delta_s: isolates quadrature error from curvature error.
+
+    Even with exact curvature the delta_s discretisation on a lattice staircase
+    carries a large error (surface measure ~0.6 instead of 1.0), so the baseline
+    does **not** pass the 6 % gate either.  This proves the root cause is the
+    *combined* curvature+delta_s discretisation, not the curvature estimator alone.
+    """
+
+    def test_baseline_still_fails_gate(self):
+        """Analytic curvature + lattice delta_s still misses the gate."""
+        from tensorsph.oscillating_drop3d import (axisym_drop_geometry,
+                                                   axisym_modal_stress_analytic)
+        geom = axisym_drop_geometry(RADIUS, RADIUS / 12.0, mode=2, eps=0.02, rho0=RHO)
+        row = axisym_modal_stress_analytic(geom, SIGMA)
+        # The delta_s error alone gives >50% frequency error.
+        assert abs(row["omega_error_pct"]) > 50.0, (
+            f"analytic baseline error {row['omega_error_pct']:+.1f}% unexpectedly small; "
+            "the delta_s discretisation alone should contribute significant error")
+        # But the kappa_mean should be close to 2.0 (exact curvature).
+        # Note: the delta_s weighting skews the mean away from 2.0 because
+        # delta_s is not uniform on the interface.
+        assert row["kappa_mean_R"] > 1.0, (
+            f"analytic kappa_mean_R = {row['kappa_mean_R']:.4f} too low")
+
+    def test_analytic_curvature_formula(self):
+        """The analytic curvature at eps=0 is exactly 2/R."""
+        from tensorsph.oscillating_drop3d import (axisym_drop_geometry,
+                                                   axisym_curvature_analytic)
+        geom = axisym_drop_geometry(RADIUS, RADIUS / 12.0, mode=2, eps=0.0, rho0=RHO)
+        kappa = axisym_curvature_analytic(geom)
+        # At eps=0, kappa should be 2/R = 100 for R=0.02
+        expected = 2.0 / RADIUS
+        assert float(kappa.mean()) == pytest.approx(expected, rel=0.02), (
+            f"analytic kappa mean = {kappa.mean():.4f}, expected {expected}")
