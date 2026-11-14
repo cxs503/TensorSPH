@@ -56,6 +56,7 @@ convention as SPHinXsys, where volumes carry ``dx**dim`` and ``rho0 = 1`` makes
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 from typing import Optional
 
 import torch
@@ -67,6 +68,10 @@ __all__ = [
     "ForceFromFluidConfig",
     "cross_pairs",
     "pressure_force_from_fluid",
+    "pressure_force_from_fluid_normalised",
+    "half_space_wall_moment",
+    "half_space_normalisation",
+    "half_space_moment_continuum",
     "viscous_force_from_fluid",
     "wall_shear_from_gradient",
     "one_sided_viscous_truncation_factor",
@@ -216,6 +221,149 @@ def pressure_force_from_fluid(
                 + (p_wall + p_j)[:, None] * e) * (dwdr * vol_fluid[j_f])[:, None]
     out = out.index_add(0, i_s, contrib)
     return out * vol_solid[:, None]
+
+
+def half_space_wall_moment(
+    pos_solid: torch.Tensor,
+    vol_solid: torch.Tensor,
+    normal_solid: torch.Tensor,
+    pos_fluid: torch.Tensor,
+    vol_fluid: torch.Tensor,
+    cfg: ForceFromFluidConfig,
+    correction_fluid: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    """Per-particle kernel moment that measures used support of the wall.
+
+    ``g_i = sum_j (e_ij . n_i) (dW_ij/dr) V_j`` -- the one-sided (half-space)
+    kernel-gradient moment of the fluid neighbour set of solid particle ``i``,
+    in units of 1/length.  For a wall wetted on the ``-n_i`` side by a
+    continuous fluid this has the closed value ``-pi int_0^R W(r) dr``
+    (2-D, any normalised radial kernel; :func:`half_space_moment_continuum`).
+    It is the quantity that normalises the one-sided pressure sum: see
+    :func:`half_space_normalisation`.
+    """
+    n_s = pos_solid.shape[0]
+    out = torch.zeros(n_s, dtype=pos_solid.dtype, device=pos_solid.device)
+    i_s, j_f = cross_pairs(pos_solid, pos_fluid, cfg.support)
+    if i_s.numel() == 0:
+        return out
+    i_s, j_f, r, e, dwdr = _pair_geometry(pos_solid, pos_fluid, i_s, j_f,
+                                          cfg.support, cfg.kernel)
+    if cfg.kernel_correction and correction_fluid is not None:
+        e = torch.bmm(correction_fluid[j_f], e.unsqueeze(-1)).squeeze(-1)
+    n_i = normal_solid[i_s]
+    contrib = (e * n_i).sum(dim=1) * dwdr * vol_fluid[j_f]
+    return out.index_add(0, i_s, contrib)
+
+
+def half_space_normalisation(
+    pos_solid: torch.Tensor,
+    vol_solid: torch.Tensor,
+    normal_solid: torch.Tensor,
+    pos_fluid: torch.Tensor,
+    vol_fluid: torch.Tensor,
+    cfg: ForceFromFluidConfig,
+    correction_fluid: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    """Multiplier that turns the one-sided pressure sum into a surface traction.
+
+    The OSS pressure branch returns, per solid particle,
+
+        F_i = V_i sum_j [-(p_wall + p_j) e_ij dW_ij/dr V_j],
+
+    whose wall-normal component for a locally uniform wall pressure ``p`` is
+    ``-2 p V_i g_i`` -- while the surface load carried by that particle is
+    ``-p A_i`` (``A_i = V_i**((dim-1)/dim)`` the tributary face measure).  The
+    ratio of the two is exactly ``2 V_i g_i / A_i``, so multiplying by
+
+        m_i = A_i / (2 V_i |g_i|)
+
+    reproduces the traction with no fitted constant.  ``g_i`` is measured on the
+    *actual truncated neighbour set* (:func:`half_space_wall_moment`), which is
+    why a lattice wall with ``h/dx = 1.3`` is repaired to ~1 % while the
+    continuum closed form would leave ~12 % (documented in
+    ``docs/xval_fsi2/PRESSURE_MOMENT_NORMALISATION.md``).
+
+    Scope (measured, not assumed): valid for a **single surface layer wetted on
+    one side** with the pressure locally uniform across the wetting depth
+    (hydrostatic / normal-load conditions).  It is *not* applicable to interior
+    layers (each layer would be normalised to a full traction -> twofold load) and
+    not to loads driven by the pressure gradient *along* a closed body (case X4:
+    the multiplier over-amplifies).  Particles with no fluid neighbour, or whose
+    neighbour set is symmetric (``g_i ~ 0``), get a zero multiplier.
+    """
+    g = half_space_wall_moment(pos_solid, vol_solid, normal_solid, pos_fluid,
+                               vol_fluid, cfg, correction_fluid=correction_fluid)
+    dim = cfg.dim
+    face = vol_solid.pow((dim - 1.0) / dim) if dim > 1 else vol_solid
+    scale = (pos_solid.abs().sum() + 1.0) * 0.0  # zero, keeps dtype/device
+    threshold = 1.0e-12 * (1.0 / cfg.h)
+    return torch.where(g.abs() > threshold,
+                       face / (2.0 * vol_solid * g.abs()),
+                       scale)
+
+
+def half_space_moment_continuum(h: float, dim: int = 2, kernel: str = "wendland",
+                                n_quad: int = 200001) -> float:
+    """Continuum value of :func:`half_space_wall_moment` for a plane wall.
+
+    For a wall wetted on one side by continuous fluid, ``e_ij`` sweeps the half
+    circle, so with ``int_0^R r dW/dr dr = -int_0^R W dr``,
+
+        g_cont = |int e.n dphi| * |int_0^R r dW/dr dr| = 2 int_0^R W(r) dr  (2-D)
+
+    -- the *same* half-space kernel moment that governs the viscous branch
+    (``one_sided_viscous_truncation_factor`` = ``2 s int_0^R W dr``), which is why
+    both branches carry the Wendland C2 constant ``7/(3 pi)``:
+
+        g_cont = 7/(3 pi h)   [wendland C2, 2-D],   = 0.7427 / h
+
+    Kernel quadrature only -- no lattice fit.  The *lattice* value is slightly
+    larger (finite neighbour shells are denser than the continuum in the near
+    field): ratio 1.12 at ``h/dx = 1.3``, 1.05 at 2, 1.01 at 4 for both kernels
+    (``artifacts/xval_fsi2/pressure_normalisation.json`` ``moment_law``).  That
+    lattice excess is why the observed flat-wall over-load is +28 % while the
+    continuum law predicts +14 % at ``h/dx = 1.3``; use
+    :func:`half_space_normalisation` when a specific case has to be exact.
+    """
+    r = torch.linspace(1.0e-9, kernels.SUPPORT_FACTOR[kernel] * h, n_quad,
+                       dtype=torch.float64)
+    w, _ = kernels.shape(r / h, kernel)
+    w = kernels.normalisation(dim, kernel) / h ** dim * w
+    return float(2.0 * torch.trapezoid(w, r))
+
+
+def pressure_force_from_fluid_normalised(
+    pos_solid: torch.Tensor,
+    vol_solid: torch.Tensor,
+    normal_solid: torch.Tensor,
+    acc_solid: torch.Tensor,
+    vel_solid: torch.Tensor,
+    pos_fluid: torch.Tensor,
+    vol_fluid: torch.Tensor,
+    p_fluid: torch.Tensor,
+    rho_fluid: torch.Tensor,
+    vel_fluid: torch.Tensor,
+    acc_ext_fluid: torch.Tensor,
+    cfg: ForceFromFluidConfig,
+    correction_fluid: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    """OSS pressure branch with the half-space moment normalisation applied.
+
+    Same argument list as :func:`pressure_force_from_fluid`; the returned load is
+    the OSS one multiplied per particle by
+    :func:`half_space_normalisation`.  With the default configuration this turns
+    the flat-wall hydrostatic over-load of the raw branch (+24..28 % for
+    ``wendland`` at ``h/dx = 1.3``) into a first-order-convergent residual
+    (<=1.4 %).
+    """
+    raw = pressure_force_from_fluid(
+        pos_solid, vol_solid, normal_solid, acc_solid, vel_solid,
+        pos_fluid, vol_fluid, p_fluid, rho_fluid, vel_fluid, acc_ext_fluid,
+        cfg, correction_fluid=correction_fluid)
+    m = half_space_normalisation(pos_solid, vol_solid, normal_solid, pos_fluid,
+                                 vol_fluid, cfg, correction_fluid=correction_fluid)
+    return raw * m[:, None]
 
 
 def viscous_force_from_fluid(
