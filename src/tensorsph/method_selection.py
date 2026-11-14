@@ -329,6 +329,26 @@ class Decision:
             return max(passing)
         return max(ev.measured_pct for ev in self.evidence)
 
+    @property
+    def worst_banked_pct(self) -> float | None:
+        """Worst error over *every* banked record, failing ones included.
+
+        ``worst_measured_pct`` deliberately quotes only records inside the owner
+        standard; that makes it a *claim*, not a bound on the scheme's worst
+        measured behaviour.  This property is the honest companion: if the two
+        differ, the decision card must say so (mission 20432, evidence-coverage
+        audit in ``docs/reports/method_selection_coverage_audit_m20432.md``).
+        """
+        if not self.evidence:
+            return None
+        return max(ev.measured_pct for ev in self.evidence)
+
+    @property
+    def worst_banked_record(self) -> Evidence | None:
+        if not self.evidence:
+            return None
+        return max(self.evidence, key=lambda ev: ev.measured_pct)
+
     def as_dict(self) -> dict:
         return {
             "method": self.method,
@@ -337,6 +357,7 @@ class Decision:
             "rationale": self.rationale,
             "citation": self.citation,
             "worst_measured_pct": self.worst_measured_pct,
+            "worst_banked_pct": self.worst_banked_pct,
             "evidence": [ev.as_dict() for ev in self.evidence],
             "caveats": list(self.caveats),
         }
@@ -586,9 +607,12 @@ def select_method(profile: CaseProfile | Mapping[str, object],
             primary = chosen
             blocked = [d for d in decisions if d is not chosen]
             for d in blocked:
+                # every caveat, not just the first: a fallback whose *worst*
+                # quantity fails the owner standard must say so here (m20432).
+                detail = "; ".join(d.caveats) if d.caveats else ""
                 notes.append(
                     f"{d.method} preferred by rule {rule.key!r} but {d.status}: "
-                    f"{d.caveats[0] if d.caveats else ''}".rstrip(": ")
+                    f"{detail}".rstrip(": ")
                 )
             if chosen is not decisions[0]:
                 notes.append(
@@ -635,8 +659,19 @@ def render_decision(selection: Selection) -> str:
         lines.append(f"- {d.method}: {d.status}")
         lines.append(f"- why: {d.rationale}")
         if worst is not None:
-            lines.append(f"- worst measured error: {worst:.3g}% "
-                         f"(owner standard {OWNER_TOLERANCE_PCT:g}%)")
+            lines.append(
+                f"- claimed bound: {worst:.3g}% (owner standard "
+                f"{OWNER_TOLERANCE_PCT:g}%; passing records only)"
+            )
+            banked = d.worst_banked_pct
+            if banked is not None and banked > worst + 1e-12:
+                record = d.worst_banked_record
+                case = f" ({record.case}: {record.quantity})" if record else ""
+                lines.append(
+                    f"- worst banked record: {banked:.3g}%{case} -- outside the "
+                    "owner standard, so the claim above is NOT a bound on this "
+                    "scheme's worst measured error"
+                )
         if d.citation:
             lines.append(f"- reference: {d.citation}")
         for caveat in d.caveats:
