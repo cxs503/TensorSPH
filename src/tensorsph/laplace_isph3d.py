@@ -66,7 +66,7 @@ __all__ = [
 # carrier
 # --------------------------------------------------------------------------- #
 def sphere_block(radius: float = 0.02, dx: float = 0.002, outer: float = 0.012,
-                 rho0: float = 1000.0):
+                 rho0: float = 1000.0, rho_vapour: float | None = None):
     """Two-phase carrier: simple-cubic lattice block with a liquid sphere inside.
 
     The lattice spacing is ``dx``, so the rest volume is exactly ``V_i = dx^3``
@@ -74,6 +74,12 @@ def sphere_block(radius: float = 0.02, dx: float = 0.002, outer: float = 0.012,
     the tests through the colour field, ``c -> 1`` in the liquid).  The block
     half-width is ``radius + outer``; the outer ``1.6 dx`` layer is the
     Dirichlet gauge.
+
+    ``rho_vapour`` (``None`` = the historical one-phase carrier) puts a
+    different density in the vapour phase: the particle *mass* becomes
+    ``rho_phase dx^3`` while the cell volume ``V = dx^3`` -- hence the colour
+    function and the interface geometry -- is unchanged, so the density ratio
+    is the only knob that moves.
 
     Returns ``(pos, mass, liquid)`` with ``liquid = |x| < radius``.
     """
@@ -83,7 +89,12 @@ def sphere_block(radius: float = 0.02, dx: float = 0.002, outer: float = 0.012,
     grid = torch.stack(torch.meshgrid(axis, axis, axis, indexing="ij"), dim=-1)
     pos = grid.reshape(-1, 3).contiguous()
     liquid = torch.linalg.vector_norm(pos, dim=1) < radius
-    mass = torch.full((pos.shape[0],), rho0 * dx ** 3, dtype=torch.float64)
+    if rho_vapour is None:
+        rho_phase = torch.full((pos.shape[0],), rho0, dtype=torch.float64)
+    else:
+        rho_phase = torch.where(liquid, torch.full_like(pos[:, 0], rho0),
+                                torch.full_like(pos[:, 0], float(rho_vapour)))
+    mass = rho_phase * dx ** 3
     return pos, mass, liquid
 
 
@@ -370,9 +381,19 @@ def csf_state3_two_phase(pos, mass, liquid, h, rho0, sigma,
                          curvature_method: str = "fit3",
                          curvature_stencil: float = 2.5,
                          fit_band: float = 0.6,
-                         mask_fraction: float = 0.05):
-    """Colour / normal / curvature / delta_s / CSF acceleration (3-D)."""
-    vol = mass / rho0
+                         mask_fraction: float = 0.05,
+                         rho_phase=None):
+    """Colour / normal / curvature / delta_s / CSF acceleration (3-D).
+
+    ``rho_phase`` (per-particle density, default ``rho0``) makes the CSF
+    traction ``f = -sigma kappa delta_s n`` -- a force *density* -- produce the
+    acceleration ``a = f / rho_phase``; the interface operators all see the
+    per-particle volume ``V = m / rho_phase``, which is unchanged by the ratio
+    because the carrier is built with fixed cell volume (``m = rho V``).
+    """
+    rho_use = (torch.full_like(mass, rho0) if rho_phase is None
+               else rho_phase.to(mass.dtype))
+    vol = mass / rho_use
     pairs = box_pairs(pos, 2.0 * h)
     color = shepard_color3(pos, liquid, vol, pairs, h)
     grad_c = mls_gradient3(pos, color, vol, pairs, h)
@@ -404,11 +425,11 @@ def csf_state3_two_phase(pos, mass, liquid, h, rho0, sigma,
         raise ValueError(f"unknown curvature_method {curvature_method!r}")
     kappa = torch.where(active, kappa, torch.zeros_like(kappa))
     delta_s = torch.where(active, delta_s, torch.zeros_like(delta_s))
-    acc = (-sigma * kappa * delta_s)[:, None] * normal / rho0
+    acc = (-sigma * kappa * delta_s)[:, None] * normal / rho_use[:, None]
     return {"color": color, "grad_c": grad_c, "normal": normal,
             "kappa": kappa, "delta_s": delta_s, "acc": acc,
             "pairs": pairs, "pairs_fit": pairs_fit, "vol": vol, "active": active,
-            "kappa_mls": kappa_mls}
+            "kappa_mls": kappa_mls, "rho": rho_use}
 
 
 # --------------------------------------------------------------------------- #
@@ -424,12 +445,26 @@ def _pair_coeffs3(pos, pairs, vol, h, eta):
 
 
 def pressure_poisson3(pos, source, pairs, vol, h, dirichlet,
-                      rel_tol: float = 1e-10, max_iter: int = 4000):
-    """Solve ``-grad^2 p = source`` in 3-D with ``p = 0`` on ``dirichlet`` (CG)."""
+                      rel_tol: float = 1e-10, max_iter: int = 4000,
+                      rho=None, weighting: str = "density"):
+    """Solve ``-grad^2 p = source`` in 3-D with ``p = 0`` on ``dirichlet`` (CG).
+
+    With ``rho`` (per-particle density) and ``weighting="density"`` the operator
+    is the variable-coefficient (density-weighted) Laplacian
+    ``-div((1/rho) grad p) = source`` with the harmonic pair mean
+    ``rho_ij = 2 rho_i rho_j / (rho_i + rho_j)``; this is the projection step
+    when the pressure must balance a force density in both phases.  The
+    ``weighting="uniform"`` constant-coefficient Laplacian is kept as the
+    documented ablation.  Mirrors the 2-D operator in ``laplace_isph``.
+    """
     n = pos.shape[0]
     eta = 0.1 * h
     i, j, coef = _pair_coeffs3(pos, pairs, vol, h, eta)
     fixed = dirichlet
+    if rho is not None and weighting == "density":
+        rho = rho.to(pos.dtype)
+        rho_pair = 2.0 * rho[i] * rho[j] / (rho[i] + rho[j]).clamp_min(1e-300)
+        coef = coef / rho_pair
 
     def apply(p):
         val = coef * (p[i] - p[j])
@@ -469,10 +504,12 @@ def pressure_poisson3(pos, source, pairs, vol, h, dirichlet,
     return p, n_iter
 
 
-def spurious_acceleration3(pos, acc_csf, p, rho0, pairs, vol, h):
+def spurious_acceleration3(pos, acc_csf, p, rho0, pairs, vol, h, rho=None):
     """Momentum-balance residual ``a_CSF - grad p / rho`` per particle."""
     grad_p = mls_gradient3(pos, p, vol, pairs, h)
-    return acc_csf - grad_p / rho0
+    rho_use = (rho.to(pos.dtype)[:, None] if rho is not None
+               else torch.full_like(grad_p[:, :1], rho0))
+    return acc_csf - grad_p / rho_use
 
 
 # --------------------------------------------------------------------------- #
@@ -485,7 +522,9 @@ def laplace_isph3d_case(radius: float = 0.02, dx: float = 0.002,
                         curvature_stencil: float = 2.5, fit_band: float = 0.6,
                         variant: str = "model", core_frac: float = 0.5,
                         band=(1.25, 1.45), rel_tol: float = 1e-10,
-                        max_iter: int = 4000, return_fields: bool = False):
+                        max_iter: int = 4000, return_fields: bool = False,
+                        rho_vapour: float | None = None,
+                        poisson_weighting: str = "density"):
     """Projection-SPH Young-Laplace jump of a 3-D droplet against ``dp = 2 sigma/R``.
 
     ``variant``:
@@ -495,13 +534,29 @@ def laplace_isph3d_case(radius: float = 0.02, dx: float = 0.002,
         ``delta_unit``   measured curvature with ``delta_s`` rescaled so that
                     ``int delta_s dV = 4 pi R^2`` (isolates the delta error)
         ``gauge``   both replaced (instrument check: must be within a few %)
+
+    ``rho_vapour`` / ``poisson_weighting`` are the 3-D counterparts of the 2-D
+    round-3/4 knobs (``docs/xval_projection_laplace_density_ratio.md``):
+
+    ``rho_vapour=None``   one-phase carrier (historical, bit-identical path).
+    ``rho_vapour=rho``    real density contrast in the pressure solve.
+    ``poisson_weighting``
+        ``force_density``  ``-grad^2 p = -div(f)``: the static momentum balance is
+                           ``grad p = f`` with the rho-independent CSF traction, so
+                           the operator carries no ``1/rho`` and the jump is
+                           density-ratio blind by construction.
+        ``density``        ``-div((1/rho) grad p) = -div(a)``, harmonic pair mean
+                           (the 2-D round-3 validated arm).
+        ``uniform``        constant-coefficient Laplacian fed by ``-rho0 div(a)``
+                           -- the naive implementation kept as the ablation.
     """
     h = h_factor * dx
-    pos, mass, liquid = sphere_block(radius, dx, outer, rho0)
+    pos, mass, liquid = sphere_block(radius, dx, outer, rho0, rho_vapour=rho_vapour)
+    rho_phase = mass / dx ** 3              # uniform cell volume in both phases
     st = csf_state3_two_phase(pos, mass, liquid, h, rho0, sigma,
                              curvature_method=curvature_method,
                              curvature_stencil=curvature_stencil,
-                             fit_band=fit_band)
+                             fit_band=fit_band, rho_phase=rho_phase)
     vol, pairs, active = st["vol"], st["pairs"], st["active"]
     delta_s, kappa, normal = st["delta_s"], st["kappa"], st["normal"]
 
@@ -527,16 +582,38 @@ def laplace_isph3d_case(radius: float = 0.02, dx: float = 0.002,
     else:
         delta_use = delta_s
 
-    acc = (-sigma * kappa_use * delta_use)[:, None] * normal / rho0
+    acc = ((-sigma * kappa_use * delta_use)[:, None] * normal
+           / rho_phase[:, None])
+    # force density f (rho-independent): the CSF traction without the /rho.
+    # The Young-Laplace law contains sigma and R only, so the *force-density*
+    # balance grad p = f is density-ratio blind by construction.
+    f = (-sigma * kappa_use * delta_use)[:, None] * normal
     div_a = mls_divergence3(pos, acc, vol, pairs, h)
-    source = -rho0 * div_a
+    div_f = mls_divergence3(pos, f, vol, pairs, h)
+    uniform = bool(float(rho_phase.max()) == float(rho_phase.min()))
+    if poisson_weighting == "force_density":
+        source = -div_f
+        rho_op = None
+    elif uniform:
+        # historical path (bit-identical): -grad^2 p = -rho0 div(a)
+        source = -rho0 * div_a
+        rho_op = None
+    elif poisson_weighting == "uniform":
+        # ablation: constant-coefficient Laplacian fed by a ratio-aware source
+        source = -rho0 * div_a
+        rho_op = None
+    else:
+        # -div((1/rho) grad p) = -div(a)   (the projection step at u = 0)
+        source = -div_a
+        rho_op = rho_phase
 
     half = radius + outer
     edge = 1.6 * dx
     dirichlet = ((pos[:, 0].abs() > half - edge) | (pos[:, 1].abs() > half - edge)
                  | (pos[:, 2].abs() > half - edge))
     p, n_cg = pressure_poisson3(pos, source, pairs, vol, h, dirichlet,
-                                rel_tol=rel_tol, max_iter=max_iter)
+                                rel_tol=rel_tol, max_iter=max_iter,
+                                rho=rho_op, weighting=poisson_weighting)
 
     core = r < core_frac * radius
     out_band = (r > band[0] * radius) & (r < band[1] * radius)
@@ -544,13 +621,19 @@ def laplace_isph3d_case(radius: float = 0.02, dx: float = 0.002,
     p_out = float(p[out_band].mean()) if bool(out_band.any()) else 0.0
     dp = p_core - p_out
 
-    resid = spurious_acceleration3(pos, acc, p, rho0, pairs, vol, h)
+    resid = spurious_acceleration3(pos, acc, p, rho0, pairs, vol, h,
+                                   rho=rho_phase)
     resid_norm = torch.linalg.vector_norm(resid[active], dim=1)
     a_scale = float(torch.linalg.vector_norm(acc[active], dim=1).mean())
 
     a_r = (acc * rhat).sum(dim=1)
+    # radial integral of the CSF traction: sum rho a_r V / (4 pi R^2) = sum f_r V /
+    # (4 pi R^2); it never touches the pressure solve, so it is the independent
+    # cross-check of the jump.
     flux = float((-a_r * mass).sum() / surface)
     v_ref = math.sqrt(sigma / (rho0 * radius))
+    rho_v = float(rho_phase.min())
+    v_ref_vapour = math.sqrt(sigma / (rho_v * radius))
 
     dp_theory = 2.0 * sigma / radius
     safe = dp_theory if dp_theory > 0.0 else float("nan")
@@ -571,6 +654,12 @@ def laplace_isph3d_case(radius: float = 0.02, dx: float = 0.002,
             (st["kappa_mls"] * st["delta_s"] * vol).sum()
             / (st["delta_s"] * vol).sum() * radius),
         "p_core_Pa": p_core, "p_vapour_Pa": p_out,
+        "rho_liquid": float(rho_phase[liquid].max()) if bool(liquid.any()) else float(rho0),
+        "rho_vapour": rho_v,
+        "density_ratio": (float(rho_phase[liquid].max()) / rho_v
+                          if bool(liquid.any()) and rho_v > 0 else 1.0),
+        "poisson_weighting": "uniform" if uniform else poisson_weighting,
+        "v_ref_vapour_m_per_s": v_ref_vapour,
         "dp_measured_Pa": dp, "dp_theory_Pa": dp_theory,
         "dp_over_theory": dp / safe,
         "dp_error_pct": (dp / safe - 1.0) * 100.0,
