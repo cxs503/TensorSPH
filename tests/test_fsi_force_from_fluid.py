@@ -238,3 +238,86 @@ def test_gradient_corrected_arm_needs_no_slip_consistent_solid_velocity():
         torch.zeros_like(case.pos_solid), _cfg(case))
     got, ref = _along(bad, case.reference_force)
     assert abs(got - ref) / ref > 1.0, got / ref
+
+
+# --------------------------------------------------------------------------- #
+# Pressure branch on the *curved* FSI2 cylinder (the benchmark body)
+# --------------------------------------------------------------------------- #
+# The existing curved-body case (``curved_disk_shear``) exercises only the
+# *viscous* branch.  These two tests close the gap on the *pressure* branch of
+# the "force from fluid" on the curved benchmark body (fsi2.h:14-35, r = 0.5):
+#
+#   V-uniform : a closed disk in a *uniform* pressure field must feel **zero**
+#               net force -- ``oint p n dl = p oint n dl = 0`` over the closed
+#               surface, independent of how the normals are discretised.  This
+#               is the strongest curvature invariant: a spurious net force here
+#               would be a curved-surface integration error, not a physics one.
+#
+#   V-hydro   : the same closed disk in a *linear* (hydrostatic) field
+#               ``p = p0 - rho g (y - cy)`` must feel the Archimedes buoyancy
+#               ``+rho g A`` (A = pi R^2 per unit width), the "force from
+#               fluid" that actually drives the FSI2 beam.  The panel operator
+#               is the production transfer path, so the gate is the owner's
+#               <3 % precision standard.
+#
+# The OSS one-sided branch is *not* asserted here: it carries the documented
+# +24..+29 % systematic over-load on a single surface layer (pinned in
+# ``test_oss_operator_signs_and_documented_overload``), so it is not a clean
+# closed-surface integrator and would fail the uniform-field invariant by
+# design.  The panel operator is the arm the benchmark validates.
+
+
+def _uniform_pressure(case):
+    """Panel pressure force on the closed disk in a uniform field p = 1."""
+    p = torch.ones_like(case.pressure_fluid)
+    return panel_pressure_force(case.pos_solid, case.vol_solid, case.normal_solid,
+                                case.pos_fluid, case.vol_fluid, p, _cfg(case))
+
+
+def _hydrostatic_pressure(case):
+    """Panel pressure force on the closed disk in p = 1 - (y - cy) (c = (0,-1))."""
+    cy = float(case.pos_solid[:, 1].mean())
+    p = 1.0 - (case.pos_fluid[:, 1] - cy)
+    return panel_pressure_force(case.pos_solid, case.vol_solid, case.normal_solid,
+                                case.pos_fluid, case.vol_fluid, p, _cfg(case))
+
+
+def test_panel_pressure_force_zero_net_on_closed_curved_body_uniform():
+    """V-uniform: closed disk in a uniform field -> zero net force (oint n dl = 0).
+
+    The panel operator must integrate a constant pressure over the closed curved
+    surface to machine precision -- the normals sum to zero, so any residual is
+    a curved-surface integration error.  This is the curvature invariant the
+    flat-wall cases cannot see.
+    """
+    for dx in (0.1, 0.05, 0.025):
+        case = C.curved_disk_shear(dx=dx)
+        # the closed-surface normal integral is zero to machine precision
+        assert float(case.normal_solid.sum(dim=0).norm()) < 1.0e-12
+        f = _uniform_pressure(case).sum(dim=0)
+        assert float(f.norm()) < 1.0e-9, (dx, f)
+
+
+def test_panel_pressure_force_archimedes_on_curved_disk_hydrostatic():
+    """V-hydro: closed disk in a linear field -> Archimedes buoyancy +rho g A.
+
+    The "force from fluid" that drives the FSI2 beam: a submerged cylinder in a
+    hydrostatic gradient ``c = (0, -1)`` feels ``-c A = +A`` (A = pi R^2 per
+    unit width).  The panel operator must reproduce it to the owner's <3 %
+    standard, and the error must shrink under refinement (the plane fit is
+    first-order on a curved one-sided support).
+    """
+    errs = []
+    for dx in (0.1, 0.05, 0.025):
+        case = C.curved_disk_shear(dx=dx)
+        A = math.pi * 0.5 ** 2
+        f = _hydrostatic_pressure(case).sum(dim=0)
+        # the x-component must stay at machine zero (symmetric field)
+        assert abs(float(f[0])) < 1.0e-9, (dx, f)
+        errs.append(abs(float(f[1]) - A) / A)
+    assert errs[0] < 0.03, errs          # <3 % at the coarsest resolution
+    assert errs[1] < 0.01 and errs[2] < 0.01, errs
+    # the plane fit is first-order on a curved one-sided support: the coarse
+    # error must be the largest, and the fine resolutions sit on the ~0.27 %
+    # discretisation plateau (not strictly monotone between them)
+    assert errs[0] > errs[1] and errs[0] > errs[2], errs
