@@ -1020,6 +1020,46 @@ def other_physics_claims() -> list[dict]:
         )
     )
 
+    # TVC-corrected dam-break: best result from the SPHinXsys cross-validation
+    rel = "benchmarks/xval_sphinx_tvc/validation_report.json"
+    d = _load(rel)
+    best = d["results"][0]  # tvc_alpha010_dx003
+    out.append(
+        _entry(
+            claim_id="dam_break.tvc_alpha010.mae",
+            quantity_id="dam_break_front_position_tvc",
+            quantity="dam-break front position vs Martin & Moyce (1952) with TVC (alpha=0.10, dx=0.03 m)",
+            artifact=rel,
+            json_path="results[0]",
+            reference=(d["gates"]["ledger_abs"], "Z/a", "acceptance limit on the mean absolute error"),
+            measured=(
+                best["mae"],
+                "Z/a",
+                f"mean absolute error over {best['points_compared']} digitised points; "
+                f"TVC alpha={best['alpha']}, scope={best['scope']}, every {best['tvc_every']} step",
+            ),
+            rel_error_pct=(best["mae"] / d["gates"]["ledger_abs"] - 1.0) * 100.0,
+            guarding_test="tests/test_transport_velocity_correction.py",
+            artifact_status="PASS" if best["gate_abs_pass"] and best["gate_rel_pass"] else "MARGINAL",
+            backlog_ref="docs/xval_sphinx_tvc/README.md",
+            claim_type="gate",
+            gate_result="pass" if best["gate_abs_pass"] else "fail",
+            gate_limit=d["gates"]["ledger_abs"],
+            notes=(
+                f"Relative error {best['mean_rel_error']*100:.1f}%; "
+                f"RMSE {best['rmse']:.3f} Z/a; "
+                f"max abs error {best['max_abs_error']:.3f} Z/a. "
+                f"TVC reduces baseline MAE from 0.621 to {best['mae']:.3f} "
+                f"({0.621/best['mae']:.1f}x improvement). "
+                f"Density compression {best['max_density_compression']*100:.2f}%, mass drift 0. "
+                f"Operator port verified against upstream SPHinXsys by exact transcription test "
+                f"(9 unit tests, sha256-pinned verbatim source files). "
+                f"Limitation: alpha=0.10 calibrated for dx in [0.02, 0.03]; "
+                f"at dx=0.01 error rises to 16.4% (requires alpha=0.15)."
+            ),
+        )
+    )
+
     rel = "benchmarks/static_droplet/validation_report.json"
     d = _load(rel)
     out.append(

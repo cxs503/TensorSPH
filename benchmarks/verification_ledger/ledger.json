@@ -318,6 +318,40 @@
     },
     {
       "admissibility": null,
+      "artifact": "benchmarks/xval_sphinx_tvc/validation_report.json",
+      "artifact_status": "PASS",
+      "backlog_ref": "docs/xval_sphinx_tvc/README.md",
+      "claim_id": "dam_break.tvc_alpha010.mae",
+      "claim_type": "gate",
+      "credit_qualified": true,
+      "criterion_pct": 15.0,
+      "declared_verdict": null,
+      "gate_limit": 0.15,
+      "gate_result": "pass",
+      "gauge_degenerate": false,
+      "grade": "MARGINAL",
+      "guarding_test": "tests/test_transport_velocity_correction.py",
+      "json_path": "results[0]",
+      "measured": {
+        "definition": "mean absolute error over 20 digitised points; TVC alpha=0.1, scope=all, every 1 step",
+        "unit": "Z/a",
+        "value": 0.142531
+      },
+      "notes": "Relative error 10.8%; RMSE 0.169 Z/a; max abs error 0.307 Z/a. TVC reduces baseline MAE from 0.621 to 0.143 (4.4x improvement). Density compression 2.20%, mass drift 0. Operator port verified against upstream SPHinXsys by exact transcription test (9 unit tests, sha256-pinned verbatim source files). Limitation: alpha=0.10 calibrated for dx in [0.02, 0.03]; at dx=0.01 error rises to 16.4% (requires alpha=0.15).",
+      "paper_criterion_pct": 3.0,
+      "quantity": "dam-break front position vs Martin & Moyce (1952) with TVC (alpha=0.10, dx=0.03 m)",
+      "quantity_id": "dam_break_front_position_tvc",
+      "reference": {
+        "source": "acceptance limit on the mean absolute error",
+        "unit": "Z/a",
+        "value": 0.15
+      },
+      "rel_error_pct": -4.979333,
+      "run_validity": "UNPROBED",
+      "superseded_by": null
+    },
+    {
+      "admissibility": null,
       "artifact": "benchmarks/density_diffusion_decay/decay_rate.json",
       "artifact_status": "PASS",
       "backlog_ref": "docs/verification_density_diffusion_decay.md",
@@ -2390,13 +2424,121 @@
       "detail": "14 active readings of one quantity span -87.6 % … +47.3 % (spread 134.9 pt): paper_uncertainty.band.dx3mm=-30.7 %, young_laplace.absolute_tail.best_of_6=-34.0 %, young_laplace.closure.closure_on_all_donors.dx1.5mm_c20=-25.3 %, young_laplace.closure.closure_on_all_donors.dx2mm_c20=-20.1 %, young_laplace.closure.closure_on_interior_layers2.dx1.5mm_c20=-3.4 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c10=-4.0 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c20=+8.8 %, young_laplace.closure.closure_on_interior_layers2.dx2mm_c5=+4.9 %, young_laplace.csf_consistent.dx2mm=-78.6 %, young_laplace.csf_curvature_fit.dx2mm=-87.6 %, young_laplace.force_balance.flux_integral.dx1.5mm=-7.5 %, young_laplace.force_balance.flux_integral.dx2mm=-0.3 %, young_laplace.laplace_law.vacuum_gauge=+5.6 %, young_laplace.plateau_definition=+47.3 % — definitions differ (gauge / scheme / resolution), so no single number may be quoted without naming its definition.",
       "rule": "quantity_spread",
       "severity": "high"
+    },
+    {
+      "claim_id": "benchmarks/force_from_fluid",
+      "detail": "benchmark harness (run_budget.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/fsi2_gate_load",
+      "detail": "benchmark harness (run_fsi2_benchmark.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/fsi2_turek_hron",
+      "detail": "benchmark harness (run_fsi2_benchmark.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/poiseuille_startup",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/xval_fsi2",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/xval_mach_limited_riemann",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/xval_method_selection",
+      "detail": "benchmark harness (run_cell.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/xval_mixture_laplace",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/xval_sphinxsys_compression",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/xval_sycl_execution_policy",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/xval_transport_velocity",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/isph_channel/results.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/laplace_sph/results_dynamic.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/poiseuille_mirror/case_verdict.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/stokes_second/case_verdict.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/xval_mixture_laplace/ablation_curvature.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/xval_mixture_laplace/results.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/xval_sphinxsys_compression/records.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
     }
   ],
   "schema_version": 1,
   "summary": {
     "by_grade": {
       "FAIL": 13,
-      "MARGINAL": 15,
+      "MARGINAL": 16,
       "PASS": 16,
       "WITHDRAWN": 2,
       "WITHHELD": 16
@@ -2407,15 +2549,17 @@
       "declared_vs_derived": 3,
       "inadmissible_run": 3,
       "quantity_spread": 4,
-      "run_validity": 4
+      "run_validity": 4,
+      "uncovered_benchmark": 11,
+      "unregistered_artifact": 7
     },
     "n_artifact_verdicts_fail": 14,
-    "n_claims": 62,
+    "n_claims": 63,
     "n_credits_unqualified": 5,
-    "n_credits_without_declared_verdict": 19,
-    "n_findings": 19,
+    "n_credits_without_declared_verdict": 20,
+    "n_findings": 37,
     "n_missing_artifacts": 0,
-    "n_quantities": 40,
+    "n_quantities": 41,
     "paper_criterion_pct": 3.0
   }
 }
