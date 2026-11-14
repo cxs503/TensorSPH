@@ -159,6 +159,25 @@ def x_transport_velocity_coarse(doc: dict) -> float:
     return abs(float(_tvc_record(doc, 0.04)["score"]["mean_rel_error"])) * 100.0
 
 
+#: Records whose measurement a later audit invalidated are kept, but marked so
+#: that no accuracy claim can be built on them (see
+#: ``docs/audit_couette_wall_shear_reading.md``).  Deleting them instead would
+#: make the registry look cleaner than the evidence justifies.
+REFUTED_COUETTE_QUICK = (
+    "measured on the ``run.py --quick`` artefact, which overrides the DESIGN.md "
+    "terminal time 1.2 H^2/nu down to 0.3 H^2/nu: the reading is a startup "
+    "transient, not a property of the wall model "
+    "(docs/audit_couette_wall_shear_reading.md; superseded by the design-time "
+    "record from benchmarks/couette/out_design/results.json)"
+)
+DESIGN_TIME_PRECONDITION = (
+    "steady-state precondition: t_end = 1.2 H^2/nu per DESIGN.md (not the 0.3 "
+    "H^2/nu --quick override); the run's steady_drift misses its 1 % gate "
+    "(1.55e-2 at H/dx=16), which the viscous-time convergence sweep in "
+    "benchmarks/couette/out_design/viscous_time_convergence.json bounds"
+)
+
+
 @dataclass(frozen=True)
 class Source:
     extractor: str
@@ -168,6 +187,8 @@ class Source:
     gate_pct: float
     path: str
     fn: object
+    status: str = "banked"
+    precondition: str = ""
 
 
 SOURCES: tuple[Source, ...] = (
@@ -274,6 +295,19 @@ SOURCES: tuple[Source, ...] = (
         gate_pct=5.0,
         path="benchmarks/couette/out/results.json",
         fn=x_couette,
+        status="refuted",
+        precondition=REFUTED_COUETTE_QUICK,
+    ),
+    Source(
+        extractor="x_couette_design",
+        method="wcsph_wall_no_slip",
+        case="plane Couette channel (design-time run)",
+        quantity="interior L2 velocity error vs u=U*y/H (finest rung, "
+                 "t_end = 1.2 H^2/nu per DESIGN.md)",
+        gate_pct=5.0,
+        path="benchmarks/couette/out_design/results.json",
+        fn=x_couette,
+        precondition=DESIGN_TIME_PRECONDITION,
     ),
     Source(
         extractor="x_couette_wall_shear",
@@ -284,6 +318,19 @@ SOURCES: tuple[Source, ...] = (
         gate_pct=5.0,
         path="benchmarks/couette/out/results.json",
         fn=x_couette_wall_shear,
+        status="refuted",
+        precondition=REFUTED_COUETTE_QUICK,
+    ),
+    Source(
+        extractor="x_couette_wall_shear_design",
+        method="wcsph_wall_no_slip",
+        case="plane Couette channel (design-time run)",
+        quantity="wall-shear error at the moving wall, |1 - tau_SPH/tau_exact|, "
+                 "read at t_end = 1.2 H^2/nu per DESIGN.md (finest rung)",
+        gate_pct=5.0,
+        path="benchmarks/couette/out_design/results.json",
+        fn=x_couette_wall_shear,
+        precondition=DESIGN_TIME_PRECONDITION,
     ),
     Source(
         extractor="x_couette_flux",
@@ -293,6 +340,19 @@ SOURCES: tuple[Source, ...] = (
         gate_pct=5.0,
         path="benchmarks/couette/out/results.json",
         fn=x_couette_flux,
+        status="refuted",
+        precondition=REFUTED_COUETTE_QUICK,
+    ),
+    Source(
+        extractor="x_couette_flux_design",
+        method="wcsph_wall_no_slip",
+        case="plane Couette channel (design-time run)",
+        quantity="cross-channel mass-flux error |1 - Q_SPH/Q_exact| at "
+                 "t_end = 1.2 H^2/nu per DESIGN.md (finest rung)",
+        gate_pct=5.0,
+        path="benchmarks/couette/out_design/results.json",
+        fn=x_couette_flux,
+        precondition=DESIGN_TIME_PRECONDITION,
     ),
     Source(
         extractor="x_isph_wall_shear",
@@ -364,6 +424,8 @@ def build_registry() -> dict:
                 "source": source.path,
                 "source_sha256": sha256_of(path),
                 "extractor": source.extractor,
+                "status": source.status,
+                "precondition": source.precondition,
             }
         )
     evidenced = sorted({r["method"] for r in records})
