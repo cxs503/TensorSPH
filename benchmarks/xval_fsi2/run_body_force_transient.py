@@ -61,8 +61,10 @@ def main() -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
 
     keys = ("t", "tip_x", "tip_y", "body_drag", "body_lift", "cyl_drag",
-            "cyl_drag_fit", "drag_viscous", "max_speed", "drag", "lift",
-            "body_drag_fit", "body_lift_fit")
+            "cyl_lift", "cyl_drag_fit", "cyl_lift_fit", "drag_viscous",
+            "lift_viscous", "max_speed", "drag", "lift", "body_drag_fit",
+            "body_lift_fit", "cyl_coverage", "coupling_iterations",
+            "coupling_converged")
     hist = {k: [] for k in keys}
     iters, converged = [], []
     t0 = time.time()
