@@ -80,7 +80,17 @@ reference: mu U / h * L = [0.09999999999999999, 0.0] ; linear Couette profile U=
 | 0.05 | +83.32 % FAIL | +83.32 % FAIL | +20.08 % FAIL | -275.25 % FAIL | n/a |
 | 0.025 | +67.66 % FAIL | +67.66 % FAIL | +32.26 % FAIL | -263.95 % FAIL | n/a |
 
-reference: -c A (linear field, closed body) = [-0.0, 1.4853981633974485] ; fsi2 insert body (cylinder r=0.5 + beam 3.5x0.2) in a linear pressure field with no gravity; analytic load = -c A
+reference: -c A (linear field, closed body)
+> **勘误（m20587）**：上表 X4 的 `panel +20.08 % / +32.26 %` 与 `A/B +83 % / +68 %`
+> 是**算例干区缺陷**所致，不是算子缺陷。旧流体格点包围盒下界取 `cy - bh/2 - pad`
+> （梁半高），而圆柱下缘在 `cy - r`，`pad = 5.2 dx` 随加密缩小 → 越来越多的下弧粒子
+> 没有流体邻居（dx = 0.025 时 12 %），其分摊面积被静默扣除。修正后（`wetted=True`）
+> 面元臂在 dx = 0.1…0.0125 上误差 ≤0.8 %（过 3 % 目标），精确面元积分同量级；
+> OSS 原始臂 100 %→27 %、加半空间矩归一化 70 %→9 %（仅最细网格过 15 % 门限）。
+> 详见 `docs/xval_fsi2/X4_DRY_BODY_DEFECT.md`，数据 `artifacts/xval_fsi2/closed_body_x4.json`，
+> 驱动 `benchmarks/xval_fsi2/closed_body_audit.py`，守护 `tests/test_x4_closed_body_wetting.py`。
+> 本表旧数值保留以供复现（`cases.fsi2_insert_linear(wetted=False, include_buried=True)`）。
+ = [-0.0, 1.4853981633974485] ; fsi2 insert body (cylinder r=0.5 + beam 3.5x0.2) in a linear pressure field with no gravity; analytic load = -c A
 
 ## 5. Convergence and sensitivity
 
