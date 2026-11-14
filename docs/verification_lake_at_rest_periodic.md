@@ -1,3 +1,12 @@
+> **Evidence channel (m21078).** The numbers in this document are now
+> machine-decidable on a fresh checkout: the text records ship in
+> `tests/data/lake_at_rest/` (manifest + re-graded gate table) and
+> `tests/test_lake_at_rest_evidence.py` re-derives the geometry and the
+> `G7` control from source. See
+> `docs/verification_lake_at_rest_evidence_channel.md`. Note there: the
+> rounding-level entries are reproducible as a *scale*, not as digits
+> (run-to-run spread ~1.3x on `max|a|/g`).
+
 # Lake at rest, laterally periodic: where the anchor tolerance is actually met
 
 Case-pool anchor `CASE-SPH-LAKE-AT-REST` — *still water with a free surface must
