@@ -9,12 +9,11 @@
     "heat_conduction_operator",
     "isph_projection",
     "particle_shifting",
+    "transport_velocity_correction",
     "wcsph_delta_sph",
     "wcsph_wall_no_slip"
   ],
-  "methods_without_evidence": [
-    "transport_velocity_correction"
-  ],
+  "methods_without_evidence": [],
   "missing_sources": [],
   "mission": 18056,
   "owner_tolerance_pct": 15.0,
@@ -138,6 +137,30 @@
       "source": "benchmarks/couette/out/results.json",
       "source_sha256": "71cb10053fab7df60ba023d93e25809f0280ea6c73adf8d1342e9283b17978cd",
       "within_owner_tolerance": true
+    },
+    {
+      "case": "XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.03 m)",
+      "extractor": "x_transport_velocity",
+      "gate_pct": 15.0,
+      "measured_pct": 10.810360584937099,
+      "method": "transport_velocity_correction",
+      "own_gate_passed": true,
+      "quantity": "mean relative error of the front position Z/a vs the Martin & Moyce (1952) digitised points, alpha=0.10 over all particles",
+      "source": "docs/xval_sphinx_tvc/data/grid_dx003.json",
+      "source_sha256": "d4303d39883607222c6725a442de45da1c87ee0d5ec27c277673fdf20c444a05",
+      "within_owner_tolerance": true
+    },
+    {
+      "case": "XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.04 m)",
+      "extractor": "x_transport_velocity_coarse",
+      "gate_pct": 15.0,
+      "measured_pct": 16.96262081604608,
+      "method": "transport_velocity_correction",
+      "own_gate_passed": false,
+      "quantity": "same quantity on the coarser rung: records the alpha=0.10 arm is resolution-sensitive (kept in the registry, fails the owner standard)",
+      "source": "docs/xval_sphinx_tvc/data/grid_dx004.json",
+      "source_sha256": "9ebb989574f46e039550a216e9e6d9dc122c4bcb41c5bfd8389a759cf806efab",
+      "within_owner_tolerance": false
     }
   ],
   "schema_version": "1.0"

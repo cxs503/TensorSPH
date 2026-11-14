@@ -106,8 +106,10 @@ python -m tensorsph.method_selection --json /tmp/prof.json     # CLI 判型（�
 | `compression_regularization` | XVAL-SPHINXSYS-COMPRESSION-DENSITY-REGULARIZATION | max interior-band hydrostatic pressure error vs analytic p = rho0 g (H - y), SPHinXsys reference-mean arm | 5.533 | 1 | ✔ | ✘ | `benchmarks/xval_sphinxsys_compression/records.json` |
 | `particle_shifting` | CASE-PARTICLE-SHIFTING-DAMBREAK (B2, shifting on vs off) | dam-break front-position deviation from the unshifted published answer, relative to the 0.2 m column | 8.833 | 10 | ✔ | ✔ | `benchmarks/particle_shifting/results.json` |
 | `wcsph_wall_no_slip` | plane Couette channel | interior L2 velocity error vs u=U*y/H (finest rung) | 5.654 | 5 | ✔ | ✘ | `benchmarks/couette/out/results.json` |
+| `transport_velocity_correction` | XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.03 m) | mean relative error of the front position Z/a vs the Martin & Moyce (1952) digitised points, alpha=0.10 over all particles | 10.81 | 15 | ✔ | ✔ | `docs/xval_sphinx_tvc/data/grid_dx003.json` |
+| `transport_velocity_correction` | XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.04 m) | same quantity on the coarser rung: records the alpha=0.10 arm is resolution-sensitive (kept in the registry, fails the owner standard) | 16.96 | 15 | ✘ | ✘ | `docs/xval_sphinx_tvc/data/grid_dx004.json` |
 
-登记记录 10 条，覆盖 9 个方法；最坏误差 23.8%。缺失源文件：无。
+登记记录 12 条，覆盖 10 个方法；最坏误差 23.8%。缺失源文件：无。
 
 
 ### 3.2 路由矩阵（候选算例画像 → 选定方法）
@@ -120,7 +122,7 @@ python -m tensorsph.method_selection --json /tmp/prof.json     # CLI 判型（�
 | planar Couette channel | isph_projection | SELECTED | 0.8666 | - |
 | Gresho vortex (smooth inviscid, periodic) | （无） | NONE | - | - |
 | 1-D transient conduction | heat_conduction_operator | SELECTED | 0.0002181 | - |
-| breaking wave over a slope | wcsph_delta_sph | SELECTED | 2.968 | density_diffusion=SELECTED, transport_velocity_correction=WITHHELD, particle_shifting=SELECTED, compression_regularization=SELECTED |
+| breaking wave over a slope | wcsph_delta_sph | SELECTED | 2.968 | density_diffusion=SELECTED, transport_velocity_correction=SELECTED, particle_shifting=SELECTED, compression_regularization=SELECTED |
 
 7 个画像中 6 个给出证据背书的方案；与预期不一致者：无。
 
@@ -129,7 +131,6 @@ python -m tensorsph.method_selection --json /tmp/prof.json     # CLI 判型（�
 
 | 方法 | 族 | 状态 | 文献出处 |
 |---|---|---|---|
-| `transport_velocity_correction` | particle regularisation | 无机器可读验证记录 | Zhang, Hu & Adams (2017) J. Comput. Phys. 338:210; Litvinov et al. (2015) J. Comput. Phys. 300:327 |
 
 ### 3.4 图
 
