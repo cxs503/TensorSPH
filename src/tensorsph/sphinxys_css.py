@@ -118,7 +118,88 @@ ASSEMBLIES = ("upstream", "consistent")
 #: interface tangent plane (see :func:`interface_completion`).  In the bulk the
 #: present sum of ``V W' e`` already vanishes, and the reflection of that sum is
 #: zero as well, so the completion switches itself off away from the interface.
-COMPLETIONS = ("none", "mirror")
+#:
+#: ``"completeness"`` takes the measured support instead of assuming it: the
+#: kernel gradient is renormalised by the particle support fraction
+#: ``s = trace(M)/2``, ``M = sum_j V_j (x_j - x_i) (x) grad_i W_ij``
+#: (:func:`support_matrix`).  ``s = 1`` for a complete support and ``s = 1/2``
+#: for an exact half-space, so the factor ``1/s`` restores precisely the missing
+#: fraction of the flux.  The factor is evaluated *per pair* as
+#: ``1/[(s_i + s_j)/2]`` and applied to both ends, which keeps the pair
+#: contributions equal and opposite: momentum stays conserved to round-off.
+#: No coefficient is tuned -- see ``docs/xval_sphinxys_free_surface_completeness``.
+COMPLETIONS = ("none", "mirror", "completeness")
+
+#: Lower bound on the support fraction used by ``completion="completeness"``.
+#: An isolated particle (``s -> 0``) would otherwise produce an unbounded
+#: amplification; ``0.25`` corresponds to a quarter-space support, well beyond
+#: any truncated particle reachable in a resolved body.
+SUPPORT_FRACTION_FLOOR = 0.25
+
+
+def support_matrix(
+    pos: torch.Tensor,
+    vol: torch.Tensor,
+    pairs: torch.Tensor,
+    h: float,
+    kernel: str = "wendland",
+) -> torch.Tensor:
+    """Per-particle kernel-support matrix ``M_i = sum_j V_j (x_j - x_i) (x) grad_i W_ij``.
+
+    ``M`` is the diagonal of the first-moment (completeness) condition of the
+    kernel: it equals the identity ``I`` when the support of a particle is
+    completely filled with neighbours, and ``I/2`` when exactly one half-space
+    of the support is empty (exact half-ball integration, any dimension).  It is
+    therefore a *measured* statement about how much of the kernel a particle
+    actually sees, which is what a free-surface particle is missing.
+
+    The pair list may be stored in either order (``(i, j)`` and ``(j, i)`` give
+    the same outer product, because both the separation and the gradient change
+    sign), so both ends receive ``V_other * outer``.
+    """
+    n, dim = pos.shape
+    if pairs.numel() == 0:
+        return torch.zeros((n, dim, dim), dtype=pos.dtype, device=pos.device)
+    i, j = pairs.unbind(dim=1)
+    gw = _grad(pos[i] - pos[j], h, kernel)
+    separation = pos[j] - pos[i]
+    outer = separation[:, :, None] * gw[:, None, :]
+    matrix = torch.zeros((n, dim, dim), dtype=pos.dtype, device=pos.device)
+    matrix = matrix.index_add(0, i, vol[j][:, None, None] * outer)
+    matrix = matrix.index_add(0, j, vol[i][:, None, None] * outer)
+    return matrix
+
+
+def support_fraction(
+    pos: torch.Tensor,
+    vol: torch.Tensor,
+    pairs: torch.Tensor,
+    h: float,
+    kernel: str = "wendland",
+) -> torch.Tensor:
+    """``s_i = trace(M_i)/dim`` in ``[1/2, ~1]``: the filled fraction of the kernel.
+
+    ``s`` reaches ``1/2`` on an exact free surface (half the support missing) and
+    ``~1`` in the bulk.  The lattice quadrature of the kernel with
+    ``h/dp = 1.3`` leaves a small deficit even in the bulk (``s ~ 0.97``); it is
+    systematic and is corrected by the same renormalisation.
+    """
+    matrix = support_matrix(pos, vol, pairs, h, kernel)
+    return torch.diagonal(matrix, dim1=1, dim2=2).sum(dim=1) / pos.shape[1]
+
+
+def pair_renormalisation(s: torch.Tensor, pairs: torch.Tensor) -> torch.Tensor:
+    """Pair-symmetric ``1/[(s_i + s_j)/2]`` (channel: stress-flux completion).
+
+    Using one number per *pair* rather than one per particle is what keeps the
+    symmetric flux momentum conservative: the ``i`` and ``j`` ends of a pair are
+    scaled by the same factor, so their contributions remain equal and opposite.
+    """
+    if pairs.numel() == 0:
+        return torch.empty(0, dtype=s.dtype, device=s.device)
+    i, j = pairs.unbind(dim=1)
+    mean = 0.5 * (s[i] + s[j])
+    return mean.clamp_min(SUPPORT_FRACTION_FLOOR).reciprocal()
 
 
 def interface_completion(
@@ -318,6 +399,9 @@ def inner_stress_force(
         n_pair = n_pair / torch.linalg.vector_norm(n_pair, dim=1,
                                                    keepdim=True).clamp_min(eps)
         gw_eff = gw + completion_weight * interface_completion(e, w_prime, n_pair)
+    elif completion == "completeness":
+        s = support_fraction(pos, vol, pairs, h, kernel)
+        gw_eff = pair_renormalisation(s, pairs)[:, None] * gw
     else:  # pragma: no cover - argument validation
         raise ValueError(f"unknown completion {completion!r}; expected {list(COMPLETIONS)}")
 
