@@ -16,8 +16,17 @@ time.  Two implementations of the same discrete sum are provided:
     particle's neighbour sum -- and is kept so that the failure mode can be
     measured instead of asserted.
 
-Both arms share the kernel and the mass vector, so the only difference between
-them is the launch geometry.
+Both arms share the kernel and the mass vector.  For a *uniform* smoothing
+length they differ only in the launch geometry, and the sweep is bit-identical
+to the reference.  For a **spatially varying** ``h`` they also differ in the
+convention used to evaluate the kernel: the reference evaluates each unordered
+pair once with ``h[i]`` and reuses that value for both rows (symmetric), while
+the sweep (like the OSS device launch) evaluates every row with its *own* ``h``,
+i.e. one-sided.  The two operators therefore disagree by a measurable amount
+that grows with the ``h`` modulation -- see
+``docs/xval_sycl_execution_policy_verification_m19962.md``.  Use
+``summation_density_vectorised_row_h`` to compare the sweep with a reference
+that shares its convention.
 """
 from __future__ import annotations
 
@@ -28,6 +37,7 @@ from . import kernels
 
 __all__ = [
     "summation_density_vectorised",
+    "summation_density_vectorised_row_h",
     "summation_density_naive",
     "build_csr",
     "summation_density_swept",
@@ -76,6 +86,48 @@ def summation_density_vectorised(
                                     h[i] if torch.is_tensor(h) else h, dim, kernel)
         rho = rho.index_add(0, i, mass[j] * w)
         rho = rho.index_add(0, j, mass[i] * w)
+    return rho[:n]
+
+
+def summation_density_vectorised_row_h(
+    pos: torch.Tensor,
+    mass: torch.Tensor,
+    h: torch.Tensor | float,
+    dim: int,
+    pairs: torch.Tensor,
+    *,
+    kernel: str = "quintic",
+) -> torch.Tensor:
+    """Vectorised reference that follows the sweep's *per-row* ``h`` convention.
+
+    ``summation_density_vectorised`` evaluates each unordered pair once with
+    ``h[i]`` and adds the same ``w`` to both rows.  A padded row-per-work-item
+    launch cannot do that -- the row only knows its own ``h`` -- so the OSS
+    density kernel evaluates ``W(x_i - x_j, h_i)`` for every row.  This
+    function is the vectorised form of exactly that operator::
+
+        rho_i = m_i W_self(h_i) + sum_j m_j W(x_i - x_j, h_i)
+
+    For a uniform ``h`` it is identical to ``summation_density_vectorised``
+    (bit-for-bit: same values, same accumulation order); for a spatially
+    varying ``h`` it is the reference the sweep must be validated against,
+    because comparing the one-sided sweep with the symmetric reference
+    measures the *convention* difference, not the launch geometry.
+    """
+    n = pos.shape[0]
+    rho = mass * kernels.self_contribution(h, dim, kernel)
+    if pairs.numel():
+        i, j = pairs.unbind(dim=1)
+        delta = pos[i] - pos[j]
+        if torch.is_tensor(h):
+            w_i, _ = kernels.kernel_pairs(delta, h[i], dim, kernel)
+            w_j, _ = kernels.kernel_pairs(delta, h[j], dim, kernel)
+        else:
+            w_i = w_j = kernels.kernel_pairs(delta, h, dim, kernel)[0]
+        # same accumulation order as ``summation_density_vectorised``: the row's
+        # own-``h`` contribution first, then the partner's.
+        rho = rho.index_add(0, i, mass[j] * w_i)
+        rho = rho.index_add(0, j, mass[i] * w_j)
     return rho[:n]
 
 
