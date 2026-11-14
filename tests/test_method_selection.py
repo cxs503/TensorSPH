@@ -151,14 +151,21 @@ def test_free_surface_profile_selects_wcsph_with_density_diffusion():
     assert modifiers["density_diffusion"] == "SELECTED"
 
 
-def test_tensile_stretching_modifier_is_withheld_without_record():
+def test_tensile_stretching_modifier_is_backed_by_the_tvc_record():
     profile = WAVE.replace(tensile_stretching=True)
     selection = select_method(profile, registry=load_registry(REGISTRY_JSON))
-    modifiers = {d.method: d.status for d in selection.modifiers}
-    # m18278: particle shifting is banked (8.83 % <= 10 % gate); the transport
-    # velocity correction is still WITHHELD (its record is owned by another run).
-    assert modifiers["particle_shifting"] == "SELECTED"
-    assert modifiers["transport_velocity_correction"] == "WITHHELD"
+    modifiers = {d.method: d for d in selection.modifiers}
+    # m18278 banked particle shifting (8.83 % <= 10 % gate); the transport
+    # velocity correction was the last WITHHELD hole and now carries the
+    # Martin & Moyce dam-break record (10.81 % at dx=0.03 m).
+    assert modifiers["particle_shifting"].status == "SELECTED"
+    tvc = modifiers["transport_velocity_correction"]
+    assert tvc.status == "SELECTED"
+    assert tvc.worst_measured_pct is not None
+    assert tvc.worst_measured_pct <= OWNER_TOLERANCE_PCT
+    # the coarser rung is inside the registry on purpose; it must surface as a
+    # caveat instead of being dropped, so resolution sensitivity stays visible.
+    assert any("dx=0.04 m" in caveat for caveat in tvc.caveats)
 
 
 def test_capillary_rule_outranks_free_surface_rule():
@@ -246,6 +253,53 @@ def test_m18278_withheld_methods_are_closed_by_records():
         assert records, f"{method} still has no evidence record"
         assert min(r.measured_pct for r in records) <= gate
         assert records[0].source_sha256
+
+
+def test_transport_velocity_record_is_reproducible_from_raw_curves():
+    """The banked percentage must be recomputable from the raw Z/a curves.
+
+    Anti-drift for the number itself, not just for the file hash: the stored
+    ``score`` block of the artefact is ignored here and the error is recomputed
+    against the in-repo Martin & Moyce digitisation.
+    """
+    artefact = json.loads((REPO / "docs/xval_sphinx_tvc/data/grid_dx003.json").read_text())
+    builder = _builder()
+    record = next(r for r in json.loads(REGISTRY_JSON.read_text())["records"]
+                  if r["extractor"] == "x_transport_velocity")
+    exp = json.loads((REPO / "benchmarks/dam_break/martin_moyce_1952.json").read_text())
+    arm = next(r for r in artefact["records"]
+               if r["variant"] == builder.TVC_VARIANT and abs(r["dx"] - 0.03) < 1e-12)
+    tau, za = arm["tau"], arm["Z_over_a"]
+    rel = []
+    for point in exp["data"]:
+        t_ref, z_ref = point["tau"], point["Z_over_a"]
+        if not z_ref or t_ref < tau[0] or t_ref > tau[-1]:
+            continue
+        for k in range(len(tau) - 1):
+            if tau[k] <= t_ref <= tau[k + 1]:
+                w = 0.0 if tau[k + 1] == tau[k] else (t_ref - tau[k]) / (tau[k + 1] - tau[k])
+                got = za[k] + w * (za[k + 1] - za[k])
+                rel.append(abs(got - z_ref) / z_ref)
+                break
+    recomputed = sum(rel) / len(rel) * 100.0
+    assert recomputed == pytest.approx(record["measured_pct"], rel=1e-9)
+    assert record["within_owner_tolerance"] is True
+
+
+def test_every_catalogued_scheme_has_a_verification_record():
+    """Evidence-completeness gate: the selector must have nothing left to withhold.
+
+    Adding a scheme to ``METHODS``/``MODIFIERS`` without banking a machine-readable
+    record trips this test -- that is the point of the gate: an unverified scheme
+    would otherwise be reported as WITHHELD while looking shipped.
+    """
+    doc = json.loads(REGISTRY_JSON.read_text())
+    assert doc["methods_without_evidence"] == []
+    assert doc["missing_sources"] == []
+    evidenced = set(doc["methods_with_evidence"])
+    assert set(METHODS) | set(MODIFIERS) <= evidenced
+    for record in doc["records"]:
+        assert record["source_sha256"], record["extractor"]
 
 
 def test_vortex_refusal_survives_generic_projection_evidence():

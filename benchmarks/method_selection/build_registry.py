@@ -97,6 +97,31 @@ def x_couette(doc: dict) -> float:
     return abs(float(finest["metrics"]["interior_l2"])) * 100.0
 
 
+#: Variant the transport-velocity record is scored on: the coefficient calibrated
+#: in ``docs/xval_tvc_validation_report.md`` (upstream default 0.2 over-disperses
+#: in this solver; 0.10 is the validated setting).  Pinned by name, not by index,
+#: so re-ordering the grid cannot silently change which arm is read.
+TVC_VARIANT = "tvc_a010_all"
+
+
+def _tvc_record(doc: dict, dx: float) -> dict:
+    matches = [r for r in doc["records"]
+               if r["variant"] == TVC_VARIANT and abs(float(r["dx"]) - dx) < 1e-12]
+    if not matches:
+        raise KeyError(f"no {TVC_VARIANT!r} record at dx={dx} in the TVC artefact")
+    return matches[0]
+
+
+def x_transport_velocity(doc: dict) -> float:
+    """Mean relative error of Z/a vs Martin & Moyce, dx = 0.03 m (finest committed)."""
+    return abs(float(_tvc_record(doc, 0.03)["score"]["mean_rel_error"])) * 100.0
+
+
+def x_transport_velocity_coarse(doc: dict) -> float:
+    """Same quantity on the coarser rung -- kept in the registry on purpose."""
+    return abs(float(_tvc_record(doc, 0.04)["score"]["mean_rel_error"])) * 100.0
+
+
 @dataclass(frozen=True)
 class Source:
     extractor: str
@@ -202,6 +227,26 @@ SOURCES: tuple[Source, ...] = (
         gate_pct=5.0,
         path="benchmarks/couette/out/results.json",
         fn=x_couette,
+    ),
+    Source(
+        extractor="x_transport_velocity",
+        method="transport_velocity_correction",
+        case="XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.03 m)",
+        quantity="mean relative error of the front position Z/a vs the Martin & "
+                 "Moyce (1952) digitised points, alpha=0.10 over all particles",
+        gate_pct=15.0,
+        path="docs/xval_sphinx_tvc/data/grid_dx003.json",
+        fn=x_transport_velocity,
+    ),
+    Source(
+        extractor="x_transport_velocity_coarse",
+        method="transport_velocity_correction",
+        case="XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.04 m)",
+        quantity="same quantity on the coarser rung: records the alpha=0.10 arm is "
+                 "resolution-sensitive (kept in the registry, fails the owner standard)",
+        gate_pct=15.0,
+        path="docs/xval_sphinx_tvc/data/grid_dx004.json",
+        fn=x_transport_velocity_coarse,
     ),
 )
 
