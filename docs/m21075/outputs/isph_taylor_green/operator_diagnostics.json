@@ -1,0 +1,48 @@
+{
+  "case": "CASE-SPH-PROJECTION-TAYLOR-GREEN-OPERATOR-DIAGNOSTICS",
+  "anchor": "XVAL-SPH-METHOD-SELECTION-2026-11-12",
+  "rows": [
+    {
+      "dx": 0.05,
+      "h": 0.065,
+      "courant": 0.1,
+      "dt": 0.006500000000000001,
+      "particles": 400,
+      "reynolds": 10.0,
+      "nu": 0.015915494309189534,
+      "t_end": 0.5,
+      "viscous_rate": {
+        "k2_exact": 78.95683520871486,
+        "k2_effective": 76.85997535924196,
+        "rate_error_pct": -2.6557040235086093,
+        "extra_amplitude_decay_over_t_end_pct": -1.6826274052482049
+      },
+      "solenoidal_field": {
+        "div_exact_rms": 3.7465921108668315e-15,
+        "shipped_energy_kept": 1.0,
+        "shipped_div_after_over_before": 0.7928023810571958,
+        "composed_energy_kept": 7.472171515723877,
+        "composed_cg_iterations": 2000
+      },
+      "projection": {
+        "div_star_rms": 1.7731860710478722,
+        "shipped": {
+          "div_after_over_div_before": 0.07718624016724576,
+          "cg_iterations": 1,
+          "energy_kept_fraction": 0.9190462100101969
+        },
+        "composed_operator": {
+          "div_after_over_div_before": 3.7555029396017844e-15,
+          "cg_iterations": 1,
+          "energy_kept_fraction": 0.9185610197211467
+        }
+      }
+    }
+  ],
+  "wall_seconds": 6.254732370376587,
+  "environment": {
+    "python": "3.11.6",
+    "torch": "2.7.1",
+    "platform": "Linux-6.6.52-1.7.lns23.loongarch64-loongarch64-with-glibc2.38"
+  }
+}
