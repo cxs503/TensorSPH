@@ -29,3 +29,4 @@ PYTHONPATH=src:. python -m pytest tests/test_poiseuille_morris.py -q
 `--threads 1` matters: with these tensor sizes multi-threaded torch is ~7×
 slower than a single thread (the same effect is recorded in
 `benchmarks/poiseuille/run.py`).
+| `audit_independent.py` | re-derives the reference, metrics, Re mapping, wall shear and verdicts from the artefact without importing `run.py`, binds the rendered document back to the JSON, and flags band-RMS passes that are really error cancellations → `docs/benchmarks/poiseuille-morris-audit.md` |
