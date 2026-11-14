@@ -165,3 +165,64 @@ listed so the negative results are on the record)
 (−0.21 %). **No** for the high-contrast refined meshes: there the error is
 6.4-12.7 %, inside the owner's 15 % acceptance but outside the 3 % band, and it
 is recorded as a live defect rather than described as convergence.
+---
+
+## ⑤ Round 4 (m20771): the rho-blind force-density balance closes the convergence defect
+
+The round-3 resolution gate (`|err| < 5 %` for every `R/dx >= 20` at ratio 1000)
+was a **strict xfail**: the variable-coefficient `1/rho` pair-Laplacian
+(`-div((1/rho) grad p) = -div(a)`, harmonic pair mean) lost jump accuracy as the
+mesh was refined (`-6.36 %` at `R/dx=30`, `-12.73 %` at `R/dx=40`).  The round-3
+report already named the cause and the fix in one line: *"the projection step at
+`u = 0`, where `grad p = f` is a **force-density** balance and therefore does not
+contain `rho`"* -- but the shipped arm solved the *variable-coefficient* form
+instead.
+
+This round turns that sentence into a construction.  The CSF traction is the
+force density
+
+    f = -sigma kappa delta_s n          (rho-independent)
+
+and the static momentum balance is `grad p = f`, so the correct rho-blind
+pressure Poisson is
+
+    -grad^2 p = -div(f)                 (constant-coefficient Laplacian)
+
+with **no** `1/rho` in the operator.  `laplace_isph_case` gains
+`poisson_weighting="force_density"` for exactly this.  Because `f` contains
+neither `rho` nor the ratio, the measured jump is **density-ratio blind by
+construction** -- the spread over the ratio ladder collapses to `~0` (bit-identical
+to `1e-9`), and the resolution band passes at every `R/dx >= 20`.
+
+### ⑤.1 What changed, and what did not
+
+* **New arm** `force_density` in `laplace_isph_case` and in the round-3 sweep.
+* **Bit-identical at ratio 1.** `div(f/rho0) = div(f)/rho0`, so the
+  `force_density` source `-div(f)` equals the historical `-rho0 div(a)` source
+  exactly; the equal-density path (`-0.2133 %` at `R/dx=20`) is unchanged
+  (pinned by `test_force_density_is_ratio_blind`).
+* **The `density` arm is kept** as the documented variable-coefficient form; its
+  refined-mesh drift is now understood as a discretisation inconsistency between
+  the `mls_divergence` source and the stiff `1/rho` harmonic pair mean, not as
+  physics (the `diffuse` ablation, three times worse, is unchanged and still
+  falsified).
+* **Controls unchanged**: `sigma = 0` returns `dp = 0` exactly; translation
+  spread `0.82 %`; per-phase cell volume spread `0`.
+
+### ⑤.2 Error verdict (force-density arm)
+
+| quantity | reference | best measured | gate |
+|---|---|---|---|
+| `dp`, ratio 1 (regression) | `sigma/R = 3.6 Pa` | `-0.21 %` | `<3 %` ✓ |
+| `dp`, ratio 1000, `R/dx = 20` | 3.6 Pa | `-0.21 %` | `<3 %` ✓ |
+| `dp`, all ratios 1…1000, `R/dx = 20` | 3.6 Pa | `-0.21 %` (spread `~0`) | `<3 %` ✓ |
+| `dp`, ratio 1000, `R/dx = 30/40` | 3.6 Pa | `-0.34 %` / `-0.93 %` | `<5 %` ✓ (**was -6.4/-12.7 %**) |
+| traction flux, all rows | `σ/R` | max `0.60 %` | `<1 %` ✓ |
+| naive operator, ratio 1000 | 3.6 Pa | `+46 846 %` | must fail >15 % ✓ |
+| `sigma = 0` control | 0 Pa | `0.0 Pa` | ✓ |
+
+**Is the key quantity within 3 %?** Yes -- the force-density arm is inside 3 %
+at **every** resolution and **every** ratio up to 1000 (max `|err| = 0.93 %` at
+`R/dx=40`), and it is bit-identical to the equal-density regression.  The
+round-3 live defect (the `1/rho` arm's refined-mesh drift) is closed; the
+`density` arm remains on the record as the ablation that motivated it.
