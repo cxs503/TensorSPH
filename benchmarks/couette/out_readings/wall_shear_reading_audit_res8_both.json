@@ -1,0 +1,153 @@
+{
+ "case": "plane_couette_channel",
+ "anchor": "XVAL-SPH-METHOD-SELECTION-2026-11-12",
+ "generated_by": "benchmarks/couette/wall_shear_reading_audit.py",
+ "quantity": "wall-shear reading |1 - slope_measured/slope_analytic| [%] at the sliding wall of the plane Couette channel, four estimators on the SAME profile, plus a mirror arm that moves the sliding wall from y=H to y=0 at identical lattice",
+ "setup": {
+  "height_m": 0.1,
+  "viscosity_m2_s": 0.02,
+  "wall_speed_m_s": 0.2,
+  "sound_speed_m_s": 20.0,
+  "wall_friction": 1.0,
+  "columns": 12,
+  "wall_layers": 3,
+  "viscous_times": 1.2,
+  "averaging_fraction": 0.2,
+  "banked_records": {
+   "H_over_dx_8": 14.203286170959451,
+   "H_over_dx_16": 17.076468467712292
+  }
+ },
+ "estimators": {
+  "secant1": "banked estimator (run.py profile_metrics): (u[N-1]-u[N-2])/(y[N-1]-y[N-2])",
+  "fit4": "least squares over the 4 rows nearest the sliding wall",
+  "fit8": "least squares over the 8 rows nearest the sliding wall",
+  "interior": "least squares over 0.15 <= y/H <= 0.85"
+ },
+ "gate_pct": 5.0,
+ "owner_tolerance_pct": 15.0,
+ "arms": [
+  {
+   "resolution_H_over_dx": 8,
+   "mirrored": false,
+   "sliding_wall_at": "y=H",
+   "steps": 2462,
+   "particles": 96,
+   "dt": 0.00024375,
+   "samples": 492,
+   "steady_drift": 0.03544607381972969,
+   "interior_l2_pct": 2.989112839512717,
+   "flux_ratio": 1.0390664101578293,
+   "secant1_sliding_pct": -27.523791790008534,
+   "secant1_fixed_pct": -4.338367283344291,
+   "fit4_sliding_pct": -2.8319381177425385,
+   "fit8_sliding_pct": -8.498001506640806,
+   "interior_slope_pct": -6.626416529927948,
+   "gradient_over_analytic_per_spacing": [
+    0.9566163271665573,
+    0.9710066020488739,
+    0.9876435995101929,
+    0.9682497382164001,
+    0.8979710936546326,
+    0.8053112030029297,
+    0.7247620820999146
+   ],
+   "profile": [
+    {
+     "y_over_H": 0.0625,
+     "u_over_U": 0.10761338286101818
+    },
+    {
+     "y_over_H": 0.18750000000000003,
+     "u_over_U": 0.22719042375683784
+    },
+    {
+     "y_over_H": 0.3125,
+     "u_over_U": 0.3485662490129471
+    },
+    {
+     "y_over_H": 0.4375,
+     "u_over_U": 0.4720216989517212
+    },
+    {
+     "y_over_H": 0.5625,
+     "u_over_U": 0.5930529162287712
+    },
+    {
+     "y_over_H": 0.6875,
+     "u_over_U": 0.7052993029356003
+    },
+    {
+     "y_over_H": 0.8125000000000001,
+     "u_over_U": 0.8059632033109665
+    },
+    {
+     "y_over_H": 0.9375000000000001,
+     "u_over_U": 0.8965584635734558
+    }
+   ],
+   "wall_clock_s": 19.162809133529663
+  },
+  {
+   "resolution_H_over_dx": 8,
+   "mirrored": true,
+   "sliding_wall_at": "y=0",
+   "steps": 2462,
+   "particles": 96,
+   "dt": 0.00024375,
+   "samples": 492,
+   "steady_drift": 0.035438733735848556,
+   "interior_l2_pct": 41.364935870801744,
+   "flux_ratio": 1.039063553325832,
+   "secant1_sliding_pct": -27.523314952850352,
+   "secant1_fixed_pct": -4.3386727571487205,
+   "fit4_sliding_pct": -2.8322681784630377,
+   "fit8_sliding_pct": -8.4979265573479,
+   "interior_slope_pct": -6.626336489404972,
+   "gradient_over_analytic_per_spacing": [
+    -0.7247668504714966,
+    -0.8053147792816162,
+    -0.897977352142334,
+    -0.9682497382164001,
+    -0.9876412153244019,
+    -0.9710024297237396,
+    -0.9566132724285126
+   ],
+   "profile": [
+    {
+     "y_over_H": 0.0625,
+     "u_over_U": 0.896558091044426
+    },
+    {
+     "y_over_H": 0.18750000000000003,
+     "u_over_U": 0.8059622347354889
+    },
+    {
+     "y_over_H": 0.3125,
+     "u_over_U": 0.7052978873252869
+    },
+    {
+     "y_over_H": 0.4375,
+     "u_over_U": 0.5930507183074951
+    },
+    {
+     "y_over_H": 0.5625,
+     "u_over_U": 0.4720195010304451
+    },
+    {
+     "y_over_H": 0.6875,
+     "u_over_U": 0.34856434911489487
+    },
+    {
+     "y_over_H": 0.8125000000000001,
+     "u_over_U": 0.22718904539942741
+    },
+    {
+     "y_over_H": 0.9375000000000001,
+     "u_over_U": 0.10761238634586334
+    }
+   ],
+   "wall_clock_s": 18.887402534484863
+  }
+ ]
+}
