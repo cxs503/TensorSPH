@@ -119,16 +119,26 @@ DEFAULT_RHO0 = 1000.0
 # --------------------------------------------------------------------------- #
 def sphere_shell_lattice(radius_in: float, radius_out: float, dx: float,
                          pad: float, rho0: float = DEFAULT_RHO0,
-                         lattice: str = "cubic"):
+                         lattice: str = "cubic", center=None):
     """Cubic-lattice carrier of a hollow sphere, ``r <= radius_out + pad``.
 
     The carrier is *filled*: sites with ``r < radius_in`` are the gas cavity,
     ``radius_in <= r <= radius_out`` is the liquid shell and the rest is the
-    outer gas.  All particles carry the same mass ``rho0 dx^3`` so the colour
-    field is a purely geometric phase indicator.
+    outer gas.  Every site carries the volume of *one lattice cell per site*,
+    so the colour field is a purely geometric phase indicator and ``sum_j V_j``
+    is the geometric volume: ``rho0 dx^3`` for ``"cubic"`` and ``rho0 dx^3/2``
+    for ``"fcc"``, whose second (interpenetrating) copy doubles the site count.
 
     ``lattice="cubic"`` (default) or ``"fcc"`` (two interpenetrating cubic
-    lattices, the denser packing).  ``radius_in = 0`` gives a liquid ball.
+    lattices, nearest-neighbour spacing ``dx/sqrt(2)``).  ``radius_in = 0``
+    gives a liquid ball.
+
+    ``center`` (``(3,)`` sequence, default ``None`` = origin) translates the
+    *lattice* while the phase geometry (the interfaces, and the Dirichlet
+    sphere ``r > radius_out + pad - 1.6 dx``) stays at the origin.  That is the
+    3-D counterpart of ``laplace_isph.hex_block(center=...)``: a static drop is
+    a physical solution, so the measured jump must not depend on where the
+    interface falls inside a lattice cell.
     """
     if dx <= 0.0 or radius_out <= 0.0:
         raise ValueError("dx and radius_out must be positive")
@@ -142,6 +152,11 @@ def sphere_shell_lattice(radius_in: float, radius_out: float, dx: float,
     axis = torch.arange(-n, n + 1, dtype=torch.float64) * dx
     gx, gy, gz = torch.meshgrid(axis, axis, axis, indexing="ij")
     pos = torch.stack([gx.reshape(-1), gy.reshape(-1), gz.reshape(-1)], dim=1)
+    if center is not None:
+        shift_c = torch.as_tensor(center, dtype=torch.float64).reshape(-1)
+        if shift_c.numel() != 3:
+            raise ValueError("center must be a 3-sequence")
+        pos = pos + shift_c
     if lattice == "fcc":
         shift = torch.tensor([0.5 * dx, 0.5 * dx, 0.0], dtype=torch.float64)
         pos = torch.cat([pos, pos + shift], dim=0)
@@ -153,7 +168,14 @@ def sphere_shell_lattice(radius_in: float, radius_out: float, dx: float,
     r = torch.linalg.vector_norm(pos, dim=1)
     pos = pos[r <= half]
     r = r[r <= half]
-    mass = torch.full((pos.shape[0],), rho0 * dx ** 3, dtype=torch.float64)
+    # Volume per *site*, not per cube: the ``fcc`` option adds a second
+    # (interpenetrating) copy of the lattice, so each of its sites represents
+    # half a cubic cell.  Charging ``rho0 dx^3`` to every site doubles the
+    # carried mass and breaks the colour-shell normalisation
+    # ``int delta_s dn = 1``; measured as a -50.7 % Young-Laplace jump
+    # (docs/xval_projection_laplace_3d_budget.md, defect D1).
+    vol_per_site = dx ** 3 * (0.5 if lattice == "fcc" else 1.0)
+    mass = torch.full((pos.shape[0],), rho0 * vol_per_site, dtype=torch.float64)
     liquid = (r >= radius_in) & (r <= radius_out)
     return pos, mass, liquid, r, half
 
@@ -392,7 +414,8 @@ def hollow_sphere_case(*, radius_in: float = 6.0, radius_out: float = 14.0,
                        dx: float = 1.0, sigma: float = 0.072,
                        rho0: float = DEFAULT_RHO0, pad: float = 4.0,
                        h_factor: float = 1.3, curvature: str = "analytic",
-                       lattice: str = "cubic", max_iter: int = 3000):
+                       lattice: str = "cubic", center=None,
+                       max_iter: int = 3000):
     """Run one shell/droplet configuration and return the measured jump.
 
     Lengths are in metres; the defaults are the dimensionless-lattice
@@ -401,7 +424,7 @@ def hollow_sphere_case(*, radius_in: float = 6.0, radius_out: float = 14.0,
     ``sigma/R``).
     """
     pos, mass, liquid, r, half = sphere_shell_lattice(
-        radius_in, radius_out, dx, pad, rho0, lattice)
+        radius_in, radius_out, dx, pad, rho0, lattice, center)
     h = h_factor * dx
     st = shell_csf_state(pos, mass, liquid, h, rho0=rho0, sigma=sigma,
                          radius_in=radius_in, radius_out=radius_out,
@@ -483,6 +506,8 @@ def hollow_sphere_case(*, radius_in: float = 6.0, radius_out: float = 14.0,
         "h_m": h, "R_out_over_dx": radius_out / dx, "R_out_over_h": radius_out / h,
         "shell_dx": (radius_out - radius_in) / dx,
         "curvature": curvature, "lattice": lattice,
+        "center_m": (None if center is None
+                     else [float(c) for c in center]),
         "n_particles": int(pos.shape[0]),
         "n_liquid": int(liquid.sum()),
         "n_pairs": int(pairs.shape[0]),
