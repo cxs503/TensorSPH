@@ -20,7 +20,8 @@ parser.add_argument("--device", default="auto")
 parser.add_argument("--no-plot", action="store_true",
                     help="skip the snapshot figure (saves ~1.5 s)")
 parser.add_argument("--case", default="droplet",
-                    choices=("droplet", "hydrostatic", "taylor_green", "compressible_sod", "stokes_second"),
+                    choices=("droplet", "hydrostatic", "taylor_green", "compressible_sod",
+                             "stokes_second", "poiseuille_morris"),
                     help="case to run: the droplet impact example (default), the "
                          "CASE-HYDROSTATIC still-water pressure-profile case, the "
                          "CASE-TAYLOR-GREEN-SPH vortex-decay benchmark, or the "
@@ -61,6 +62,14 @@ if args.case == "taylor_green":
     if args.no_plot:
         argv.append("--no-figures")
     raise SystemExit(taylor_green_main(argv))
+
+if args.case == "poiseuille_morris":
+    from .case_poiseuille_morris import main as poiseuille_morris_main
+
+    argv = ["--out", args.output, "--no-sensitivity"]
+    if args.quick:
+        argv.append("--quick")
+    raise SystemExit(poiseuille_morris_main(argv))
 
 if args.case == "hydrostatic":
     from .case_hydrostatic import main as hydrostatic_main
