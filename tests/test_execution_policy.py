@@ -239,3 +239,123 @@ def test_sweep_diagnostics_report_launch_cost(density_case):
     assert stats["padded_global_size"] == 256
     assert stats["idle_work_items"] == 56
     assert stats["work_groups"] == 4
+
+
+# --------------------------------------------------------------------------- #
+# 5. scope of the invariance claim -- the smoothing-length convention
+#
+# The invariance asserted in section 3 holds for a *uniform* h.  With a
+# spatially varying h the two arms also differ in how they evaluate the kernel:
+# ``summation_density_vectorised`` evaluates each unordered pair once with
+# ``h[i]`` and reuses that value for both rows (symmetric), while the sweep --
+# like the OSS device launch, where a work item only knows its own row --
+# evaluates every row with its own ``h`` (one-sided).  These tests pin the scope
+# of the claim instead of leaving it implicit; the measurements behind the
+# numbers are in docs/xval_sycl_execution_policy_verification_m19962.md.
+# --------------------------------------------------------------------------- #
+
+
+def _lattice_case(dx=0.02, h_modulation=0.0, box=(0.4, 0.2)):
+    pos = lattice_box([0.0, 0.0], list(box), dx, 2)
+    n = int(pos.shape[0])
+    h0 = 1.3 * dx
+    x = pos[:, 0]
+    length = float(x.max()) or 1.0
+    h = h0 * (1.0 + h_modulation * torch.sin(2.0 * math.pi * x / length))
+    cache = PairListCache(kernels.SUPPORT_FACTOR["quintic"] * float(h.max()), 0.0,
+                          fluid_count=n)
+    pairs, _ = cache.get(pos)
+    return {"pos": pos, "mass": torch.full((n,), 1000.0 * dx * dx, dtype=torch.float64),
+            "h": h, "pairs": pairs, "n": n}
+
+
+def _gap(case, local_size=64):
+    sym = swept.summation_density_vectorised(case["pos"], case["mass"], case["h"], 2,
+                                            case["pairs"])
+    got = swept.summation_density_swept(case["pos"], case["mass"], case["h"], 2,
+                                        case["pairs"], local_size=local_size)
+    return float(((got - sym).abs() / sym.abs()).max())
+
+
+def test_row_h_reference_is_the_symmetric_one_for_uniform_h(density_case):
+    """With one smoothing length the two conventions are the same operator."""
+    case = density_case
+    sym = swept.summation_density_vectorised(case["pos"], case["mass"], case["h"], 2,
+                                             case["pairs"])
+    rowh = swept.summation_density_vectorised_row_h(case["pos"], case["mass"], case["h"], 2,
+                                                    case["pairs"])
+    assert torch.equal(sym, rowh)
+
+
+@pytest.mark.parametrize("local", [1, 7, 8, 64, 256])
+def test_launch_geometry_is_invariant_under_variable_h(local):
+    """The launch-geometry invariance is *not* an artefact of a uniform h."""
+    case = _lattice_case(h_modulation=0.5)
+    rowh = swept.summation_density_vectorised_row_h(case["pos"], case["mass"], case["h"], 2,
+                                                    case["pairs"])
+    got = swept.summation_density_swept(case["pos"], case["mass"], case["h"], 2,
+                                        case["pairs"], local_size=local)
+    relative = float(((got - rowh).abs() / rowh.abs()).max())
+    assert relative < 1.0e-12, f"local_size={local} relative error {relative:.3e}"
+
+
+def test_symmetric_reference_deviates_once_h_varies():
+    """The delivered equivalence claim is conditional on a uniform h.
+
+    Measured on the base lattice: the symmetric and the per-row operators drift
+    apart as soon as ``h`` varies, and the drift grows with the modulation.
+    """
+    gaps = {amp: _lattice_case(h_modulation=amp) for amp in (0.0, 0.1, 0.3, 0.5)}
+    measured = {amp: _gap(case) for amp, case in gaps.items()}
+    assert measured[0.0] == 0.0, "uniform h must be bit-identical"
+    assert 0.005 < measured[0.5] < 0.15, measured
+    assert measured[0.1] < measured[0.3] < measured[0.5], measured
+
+
+def test_convention_gap_exceeds_the_owner_gate_at_coarse_resolution():
+    """Where the overstatement bites: coarse lattice, strongly varying h.
+
+    ``h`` here spans 0.35-2.47 dx, which is outside the WCSPH operating range --
+    the point of the test is that the *statement* "the ported sweep reproduces
+    the shipped reference" has no such qualifier, and at 44 % it would sail
+    through a 15 % gate unnoticed.
+    """
+    case = _lattice_case(dx=0.04, h_modulation=0.9, box=(0.4, 0.2))
+    gap = _gap(case)
+    assert gap > 0.15, f"expected the convention gap to breach the gate, got {gap:.3e}"
+    rowh = swept.summation_density_vectorised_row_h(case["pos"], case["mass"], case["h"], 2,
+                                                    case["pairs"])
+    got = swept.summation_density_swept(case["pos"], case["mass"], case["h"], 2,
+                                        case["pairs"], local_size=64)
+    assert torch.equal(got, rowh), "the launch itself must still be exact"
+
+
+def test_negative_control_has_a_precondition():
+    """The mask control is vacuous when the clamped row has no neighbours.
+
+    The deliverable's negative control relies on the last swept row being
+    populated; with an isolated last row the unmasked padded work items add
+    exactly zero and a missing mask would go undetected.  The benchmark keeps a
+    dense column for that reason -- this test records the precondition.
+    """
+    pos = torch.tensor([[0.0, 0.0], [50.0, 0.0], [0.2, 0.0]], dtype=torch.float64)
+    mass = torch.full((3,), 1.0, dtype=torch.float64)
+    h = torch.full((3,), 0.5, dtype=torch.float64)
+    pairs = torch.tensor([[0, 2]], dtype=torch.long)          # row 1 is isolated
+    ref = swept.summation_density_vectorised(pos, mass, h, 2, pairs)
+    bad = swept.summation_density_swept(pos, mass, h, 2, pairs, local_size=4,
+                                        mask_tail=False, bound=2)
+    assert float(((bad[:2] - ref[:2]).abs() / ref[:2].abs()).max()) == 0.0
+
+
+def test_bound_edges():
+    pos = torch.tensor([[0.0, 0.0], [0.4, 0.0]], dtype=torch.float64)
+    mass = torch.ones(2, dtype=torch.float64)
+    h = torch.full((2,), 0.5, dtype=torch.float64)
+    pairs = torch.tensor([[0, 1]], dtype=torch.long)
+    # bound = 0: nothing is swept, every row keeps its self term only
+    got = swept.summation_density_swept(pos, mass, h, 2, pairs, local_size=4, bound=0)
+    self_terms = mass * kernels.self_contribution(h, 2)
+    assert torch.allclose(got, self_terms)
+    with pytest.raises(ValueError, match="bound must satisfy"):
+        swept.summation_density_swept(pos, mass, h, 2, pairs, bound=3)
