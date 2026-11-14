@@ -100,6 +100,7 @@ H_OVER_DX = 1.3          # solver support radius / particle spacing (WedgeConfig
 FLUID_ROWS = 3           # fluid lattice rows inside 2h = 2.6 dx (support cutoff)
 NOISE_REL = 0.30         # declared per-node relative scatter for the noise model
 NOISE_SEEDS = 200
+GRID_TAGS = ("dx4mm", "dx2mm", "dx1mm", "dx0.5mm")  # coarse -> fine
 BETA = 30.0
 VELOCITY = 1.0
 FRAMES_TOTAL = 61
@@ -353,8 +354,12 @@ def main() -> int:
               "wagner_cp_max_point": ref_point,
               "grids": {}}
 
-    for grid in ("dx2mm", "dx4mm"):
+    # grids are discovered, not hardcoded, so closing the ladder (dx <= 1 mm)
+    # needs no edit here; the historical dyad dx2mm/dx4mm keeps its keys.
+    for grid in GRID_TAGS:
         art_path = Path(args.artifacts) / f"ensemble_{grid}_c0v20.json"
+        if not art_path.exists():
+            continue
         art = json.loads(art_path.read_text())
         dx = art["config"]["dx"]
         t_end = art["t_end"]

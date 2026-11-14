@@ -1,0 +1,116 @@
+{
+ "case": "CASE-SPH-WEDGE-ENTRY-2D",
+ "script": "benchmarks/case_sph_wedge_entry_2d/ladder_closure.py",
+ "design": {
+  "gate": 0.15,
+  "frame_count": "61",
+  "grid_tags": [
+   "dx4mm",
+   "dx2mm",
+   "dx1mm",
+   "dx0.5mm"
+  ],
+  "order_range": [
+   0.0,
+   3.0
+  ],
+  "order_consistency": 0.3,
+  "metric": "by_frames[61].resolution_band.peak_median",
+  "truth": "bias_report synth_smoothed.peak_median (same operator)"
+ },
+ "wagner_cp_max_point": 8.402203300817021,
+ "grids": [
+  {
+   "tag": "dx4mm",
+   "dx": 0.004,
+   "obs_peak": 10.041483876237576,
+   "obs_spread_rel": 0.23532990691078393,
+   "obs_jackknife_rel": 0.001159017447267652,
+   "uncertainty": 0.23532990691078393,
+   "synth_peak": 6.87022734865926,
+   "synth_spread_rel": 0.06527734757111851,
+   "residual": 0.4615941171433276,
+   "err_vs_wagner_point": 0.23303328001348797,
+   "judgeable": false,
+   "n_bins_used": [
+    6,
+    8,
+    10,
+    12,
+    16
+   ],
+   "pooled_samples": 834,
+   "mean_wet_nodes": 13.672131147540984,
+   "wall_seconds": 22.9,
+   "steps": 329
+  },
+  {
+   "tag": "dx2mm",
+   "dx": 0.002,
+   "obs_peak": 6.070821030113392,
+   "obs_spread_rel": 0.1182695652941803,
+   "obs_jackknife_rel": 0.4295484978580885,
+   "uncertainty": 0.4295484978580885,
+   "synth_peak": 7.494341592486912,
+   "synth_spread_rel": 0.06313406363554767,
+   "residual": -0.18994604726859546,
+   "err_vs_wagner_point": -0.30372491363712867,
+   "judgeable": false,
+   "n_bins_used": [
+    8,
+    10,
+    12,
+    16,
+    20,
+    30
+   ],
+   "pooled_samples": 1816,
+   "mean_wet_nodes": 29.770491803278688,
+   "wall_seconds": 111.1,
+   "steps": 587
+  },
+  {
+   "tag": "dx1mm",
+   "dx": 0.001,
+   "obs_peak": 6.804966366578175,
+   "obs_spread_rel": 0.03155891765150737,
+   "obs_jackknife_rel": 0.06484754104443549,
+   "uncertainty": 0.06484754104443549,
+   "synth_peak": 7.764859659975639,
+   "synth_spread_rel": 0.06999569711091581,
+   "residual": -0.12362017285969536,
+   "err_vs_wagner_point": -0.19760875784385745,
+   "judgeable": true,
+   "n_bins_used": [
+    16,
+    20,
+    30
+   ],
+   "pooled_samples": 3552,
+   "mean_wet_nodes": 58.22950819672131,
+   "wall_seconds": 381.8,
+   "steps": 1076
+  }
+ ],
+ "missing_grids": [
+  "dx0.5mm"
+ ],
+ "verdict": {
+  "verdict": "NOT_DECIDABLE",
+  "reason": "only 1 judgeable grid(s) (estimator spread > 15%)",
+  "grids_judgeable": [
+   "dx1mm"
+  ]
+ },
+ "grid_convergence": {
+  "available": false,
+  "reason": "need 3 same-sign judgeable grids, have 1",
+  "grids": [
+   "dx1mm"
+  ]
+ },
+ "zhao_faltinsen_1993_beta30": {
+  "status": "WITHHELD",
+  "reason": "closed access, no registered copy in the ecosystem; no remembered/secondary number is substituted"
+ }
+}
