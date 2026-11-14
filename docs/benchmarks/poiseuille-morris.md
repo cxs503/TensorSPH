@@ -38,9 +38,9 @@ Error convention (predeclared): `e = (u − u_ref)/u_max` with `u_max = gH²/(8�
 |---|---|---|
 | channel height | `H` | 0.1 m |
 | density | `ρ0` | 1000.0 kg/m³ |
-| Reynolds numbers run | `Re_c = u_max H/ν` (analytic `u_max`) | 0.1 |
-| dimensionless forcing | `G = g H^3/\nu^2` | Re_c=0.1: 0.8 |
-| resolution ladder | `H/dx` | 16 |
+| Reynolds numbers run | `Re_c = u_max H/ν` (analytic `u_max`) | 0.1, 1.0, 12.26 |
+| dimensionless forcing | `G = g H^3/\nu^2` | Re_c=0.1: 0.8; Re_c=1: 8; Re_c=12.26: 98.1 |
+| resolution ladder | `H/dx` | 8, 12, 16, 24 |
 | support | `h/dx` (ISPH) | 1.90 (sensitivity 1.5, 2.3) |
 | support | `h/dx` (WCSPH) | 1.30 (production default) |
 | periodic domain | `L/H` | 1.2 (sensitivity 0.6) |
@@ -54,9 +54,11 @@ Headline runs, in the same table (these are the actual discretisations, `run.py`
 
 | route | Re_c | H/dx | dx [m] | h [m] | ν [m²/s] | g [m/s²] | steps | n_fluid | n_wall | wall clock [s] |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| isph_projection | 0.1 | 16 | 0.00625 | 0.01188 | 1 | 800 | 575 | 192 | 120 | 16.9 |
-| isph_projection | 1 | 16 | 0.00625 | 0.01188 | 0.1 | 80 | 575 | 192 | 120 | 15.9 |
-| isph_projection | 12.26 | 16 | 0.00625 | 0.01188 | 0.0081566 | 6.5253 | 575 | 192 | 120 | 17.3 |
+| isph_projection | 0.1 | 24 | 0.00417 | 0.00792 | 1 | 800 | 1294 | 288 | 120 | 50.2 |
+| isph_projection | 1 | 24 | 0.00417 | 0.00792 | 0.1 | 80 | 1294 | 288 | 120 | 50.2 |
+| isph_projection | 12.26 | 24 | 0.00417 | 0.00792 | 0.0081566 | 6.5253 | 1294 | 288 | 120 | 50.7 |
+| wcsp_production | 1 | 24 | 0.00417 | 0.00542 | 0.1 | 80 | 2763 | 288 | 108 | 34.2 |
+| wcsp_production | 12.26 | 24 | 0.00417 | 0.00542 | 0.0081566 | 6.5253 | 15289 | 288 | 108 | 188.7 |
 
 ## ④ Reference vs got, itemised errors
 
@@ -64,44 +66,68 @@ Headline runs, in the same table (these are the actual discretisations, `run.py`
 
 | quantity | reference (exact) | got | error | < 5 % | < 3 % |
 |---|---:|---:|---:|:--:|:--:|
-| centre velocity `u(0.5H)` | 0.99609 m/s | 1.00864 m/s | +1.26 % | ✅ | ✅ |
-| interior profile L2 (`e_L2`) | 0 | 1.22 % | 1.22 % | ✅ | ✅ |
-| interior max row error | 0 | 1.26 % | 1.26 % | ✅ | ✅ |
+| centre velocity `u(0.5H)` | 0.99826 m/s | 1.00505 m/s | +0.68 % | ✅ | ✅ |
+| interior profile L2 (`e_L2`) | 0 | 0.66 % | 0.66 % | ✅ | ✅ |
+| interior max row error | 0 | 0.68 % | 0.68 % | ✅ | ✅ |
 | wall shear `τ_w` (momentum budget) | 4000 Pa | 3998 Pa | -0.041 % | ✅ | ✅ |
-| divergence reduction `‖∇·u‖` after/before | 0 | 1.0236 | — | — | — |
-| density fluctuation max | 0 | 1.67e-04 | — | — | — |
+| divergence reduction `‖∇·u‖` after/before | 0 | 0.9659 | — | — | — |
+| density fluctuation max | 0 | 2.61e-04 | — | — | — |
 
-Profile, row by row (finest ISPH run at `Re_c = 1`, `H/dx = 16`, every row):
+Profile, row by row (finest ISPH run at `Re_c = 1`, `H/dx = 24`, every row):
 
 | y/H | u_ref/u_max | u_ISPH/u_max | (u−u_ref)/u_max [%] |
 |---:|---:|---:|---:|
-| 0.0312 | 0.12109 | 0.13448 | +1.34 |
-| 0.0938 | 0.33984 | 0.35110 | +1.13 |
-| 0.1562 | 0.52734 | 0.53890 | +1.16 |
-| 0.2188 | 0.68359 | 0.69554 | +1.20 |
-| 0.2812 | 0.80859 | 0.82077 | +1.22 |
-| 0.3438 | 0.90234 | 0.91475 | +1.24 |
-| 0.4062 | 0.96484 | 0.97740 | +1.26 |
-| 0.4688 | 0.99609 | 1.00864 | +1.25 |
-| 0.5312 | 0.99609 | 1.00864 | +1.25 |
-| 0.5938 | 0.96484 | 0.97740 | +1.26 |
-| 0.6562 | 0.90234 | 0.91475 | +1.24 |
-| 0.7188 | 0.80859 | 0.82077 | +1.22 |
-| 0.7812 | 0.68359 | 0.69555 | +1.20 |
-| 0.8438 | 0.52734 | 0.53890 | +1.16 |
-| 0.9063 | 0.33984 | 0.35111 | +1.13 |
-| 0.9688 | 0.12109 | 0.13448 | +1.34 |
+| 0.0208 | 0.08160 | 0.08766 | +0.61 |
+| 0.0625 | 0.23437 | 0.23965 | +0.53 |
+| 0.1042 | 0.37326 | 0.37901 | +0.57 |
+| 0.1458 | 0.49826 | 0.50411 | +0.58 |
+| 0.1875 | 0.60937 | 0.61545 | +0.61 |
+| 0.2292 | 0.70660 | 0.71291 | +0.63 |
+| 0.2708 | 0.78993 | 0.79642 | +0.65 |
+| 0.3125 | 0.85937 | 0.86592 | +0.65 |
+| 0.3542 | 0.91493 | 0.92160 | +0.67 |
+| 0.3958 | 0.95660 | 0.96336 | +0.68 |
+| 0.4375 | 0.98437 | 0.99112 | +0.67 |
+| 0.4792 | 0.99826 | 1.00505 | +0.68 |
+| 0.5208 | 0.99826 | 1.00505 | +0.68 |
+| 0.5625 | 0.98437 | 0.99112 | +0.67 |
+| 0.6042 | 0.95660 | 0.96336 | +0.68 |
+| 0.6458 | 0.91493 | 0.92159 | +0.67 |
+| 0.6875 | 0.85937 | 0.86594 | +0.66 |
+| 0.7292 | 0.78993 | 0.79643 | +0.65 |
+| 0.7708 | 0.70660 | 0.71291 | +0.63 |
+| 0.8125 | 0.60938 | 0.61544 | +0.61 |
+| 0.8542 | 0.49826 | 0.50412 | +0.59 |
+| 0.8958 | 0.37326 | 0.37903 | +0.58 |
+| 0.9375 | 0.23438 | 0.23966 | +0.53 |
+| 0.9792 | 0.08160 | 0.08766 | +0.61 |
 
 ### Same metric on the incumbent WCSPH route
 
-| Re_c | H/dx | centre error | interior L2 | < 5 % |
-|---:|---:|---:|---:|:--:|
+| Re_c | H/dx | centre error | interior L2 | u_max/u_max,ref | ν_eff/ν | wall-band max \|e\| | sign-cancel | < 5 % |
+|---:|---:|---:|---:|---:|---:|---:|---:|:--:|
+| 1 | 8 | +30.11 % | 29.65 % | 1.2808 | 1.009 | 30.28 % | 0 % | ❌ |
+| 1 | 12 | +19.37 % | 19.27 % | 1.1854 | 1.005 | 19.67 % | 0 % | ❌ |
+| 1 | 16 | +14.11 % | 14.17 % | 1.1367 | 1.004 | 14.41 % | 0 % | ❌ |
+| 1 | 24 | +9.13 % | 9.19 % | 1.0894 | 1.004 | 9.55 % | 0 % | ❌ |
+| 12.26 | 8 | +22.78 % | 24.16 % | 1.2092 | 1.242 | 37.70 % | 0 % | ❌ |
+| 12.26 | 12 | +5.17 % | 9.12 % | 1.0488 | 1.312 | 25.85 % | 0 % | ❌ |
+| 12.26 | 16 | +2.68 % | 6.47 % | 1.0249 | 1.243 | 19.88 % | 0 % | ❌ |
+| 12.26 | 24 | -2.18 % | 2.76 % | 0.9775 | 1.192 | 13.95 % | 44 % | ✅ |
+
+At the low-Re case the production WCSPH route keeps a **9.19 %** interior error at `H/dx = 24` (peak `u_max/u_max,ref = 1.0894`, wall offset `δ/dx = 0.563`): it does **not** meet the case tolerance, which is why the projection route carries the headline claim at `Re_c = 1`.
+
+**Qualified pass, not accuracy.** The baseline route *does* fall inside the 5 % band at `Re_c = 12.26`, `H/dx = 24` (`e_L2 = 2.76 %`), but the same profile errs by up to **13.9 %** on the rows the score band excludes and **44 %** of the scored rows have the opposite error sign to the centre row (`n = 16`): the band-RMS is small because the errors partly cancel (over-diffusive core against wall-region excess), not because the profile is right. This pass is therefore reported as an error cancellation and **must not** be quoted as a validation of the WCSPH viscous operator; only the projection route passes without a cancellation signature (its wall-band error and interior RMS agree).
 
 ### Verdict
 
 | route | Re_c | finest H/dx | centre err | interior L2 | PASS (<5 %) |
 |---|---:|---:|---:|---:|:--:|
-| ISPH projection | 0.1 | 16 | +1.22 % | 1.17 % | ✅ |
+| ISPH projection | 0.1 | 24 | +0.64 % | 0.60 % | ✅ |
+| ISPH projection | 1.0 | 24 | +0.68 % | 0.66 % | ✅ |
+| ISPH projection | 12.26 | 24 | +0.68 % | 0.65 % | ✅ |
+| WCSPH production | 1.0 | 24 | +9.13 % | 9.19 % | ❌ |
+| WCSPH production | 12.26 | 24 | -2.18 % | 2.76 % | ✅ |
 
 ## ⑤ Convergence and sensitivity
 
@@ -109,16 +135,28 @@ Profile, row by row (finest ISPH run at `Re_c = 1`, `H/dx = 16`, every row):
 
 | route | Re_c | H/dx | centre err [%] | interior L2 [%] | max row [%] |
 |---|---:|---:|---:|---:|---:|
+| ISPH | 0.1 | 8 | +4.43 | 4.29 | 4.36 |
+| ISPH | 0.1 | 12 | +2.04 | 1.99 | 2.03 |
 | ISPH | 0.1 | 16 | +1.22 | 1.17 | 1.22 |
+| ISPH | 0.1 | 24 | +0.64 | 0.60 | 0.64 |
 | ISPH | 1 | 8 | +4.44 | 4.30 | 4.38 |
 | ISPH | 1 | 12 | +2.06 | 2.04 | 2.06 |
 | ISPH | 1 | 16 | +1.26 | 1.22 | 1.26 |
-| ISPH | 12.26 | 8 | +4.45 | 4.31 | 4.38 |
+| ISPH | 1 | 16 | +1.26 | 1.22 | 1.26 |
+| ISPH | 1 | 16 | +1.26 | 1.22 | 1.26 |
+| ISPH | 1 | 24 | +0.68 | 0.66 | 0.68 |
+| ISPH | 12.26 | 8 | +4.44 | 4.31 | 4.38 |
 | ISPH | 12.26 | 12 | +2.08 | 2.04 | 2.07 |
 | ISPH | 12.26 | 16 | +1.26 | 1.22 | 1.26 |
+| ISPH | 12.26 | 24 | +0.68 | 0.65 | 0.68 |
 
 | ladder | observed order `p` from `e_L2 ∝ dx^p` | points |
 |---|---:|---:|
+| isph_re0.1 | -1.79 | 4 |
+| isph_re1.0 | -1.73 | 6 |
+| isph_re12.26 | -1.73 | 4 |
+| wcsp_re1.0 | -1.07 | 4 |
+| wcsp_re12.26 | -1.92 | 4 |
 
 **Sensitivity 1 — support radius `h/dx`** (`H/dx = 16`, `Re_c = 1`):
 
@@ -126,12 +164,17 @@ Profile, row by row (finest ISPH run at `Re_c = 1`, `H/dx = 16`, every row):
 |---:|---:|---:|
 | 1.50 | +0.57 | 0.57 |
 | 1.90 | +1.26 | 1.22 |
+| 1.90 | +1.26 | 1.22 |
+| 1.90 | +1.26 | 1.22 |
+| 2.30 | +1.24 | 1.26 |
 
 **Sensitivity 2 — Reynolds number** (`H/dx = 16`, `h/dx = 1.90`):
 
 | Re_c | centre err [%] | interior L2 [%] |
 |---:|---:|---:|
 | 0.1 | +1.22 | 1.17 |
+| 1 | +1.26 | 1.22 |
+| 1 | +1.26 | 1.22 |
 | 1 | +1.26 | 1.22 |
 | 12.26 | +1.26 | 1.22 |
 
@@ -140,6 +183,8 @@ Profile, row by row (finest ISPH run at `Re_c = 1`, `H/dx = 16`, every row):
 | L/H | centre err [%] | interior L2 [%] |
 |---:|---:|---:|
 | 0.38 | +1.15 | 1.12 |
+| 0.75 | +1.26 | 1.22 |
+| 0.75 | +1.26 | 1.22 |
 | 0.75 | +1.26 | 1.22 |
 
 **Controls**
@@ -151,7 +196,7 @@ Profile, row by row (finest ISPH run at `Re_c = 1`, `H/dx = 16`, every row):
 
 * **Friction (ecosystem)**: the Morris case authority is closed access, so the paper's printed profile cannot be compared number-by-number from inside this environment. The case is therefore anchored on the exact solution the paper validates against; a paper-table cross-check stays **WITHHELD** until the article is readable. Nothing in the pipeline may substitute a remembered digit for that — this is exactly the zero-hand-copy boundary.
 * **Friction (solver)**: the production WCSPH path is ~1.2 over-diffusive at `h/dx = 1.3`, so its peak velocity sits ~20 % low and no affordable resolution reaches the case tolerance; the projection route is what makes the case passable, and it is ~10× cheaper per step only because it needs no acoustic limit — its per-step Poisson solve is expensive in absolute terms.
-* **Failure mode 1** — resolution too coarse: `H/dx = 8` already shows a 4.30 % floor, i.e. a coarse run can look 'close' while still being outside the strong (< 3 %) band.
+* **Failure mode 1** — resolution too coarse: `H/dx = 8` already shows a 4.29 % floor, i.e. a coarse run can look 'close' while still being outside the strong (< 3 %) band.
 * **Failure mode 2** — support radius: the error is *not* monotone in `h/dx` (see sensitivity 1); a support chosen for cost reasons can dominate the discretisation error, so `h/dx` is a genuine free parameter for this operator, not a convention.
 * **Failure mode 3** — under-resolved transient: run lengths must be counted in diffusive times; a fixed number of steps would under-converge at low `Re` where `ν` is large and the viscous step is tiny.
 * **Artefacts**: `runs/poiseuille_morris/results.json` (every profile, every per-row reference value, gates, timings, controls), `runs/poiseuille_morris/fig1_profiles.png` … `fig5_sensitivity.png`, `benchmarks/poiseuille_morris/DESIGN.md` (predeclared design), `tests/test_poiseuille_morris.py`.

@@ -36,12 +36,90 @@ def table_profile(case, stride=1):
     return "\n".join(out)
 
 
+def band_diagnostics(case):
+    """Wall-band exposure and sign-cancellation of the scored interior band.
+
+    A band-RMS can be small for two opposite reasons: the profile is right, or
+    the profile is wrong in *both* directions (over-diffusive core inside,
+    wall-slip excess outside) so the squared errors partly cancel.  The
+    discriminator is computed here from the rows, never asserted by hand:
+    ``wall_max_pct`` is the largest |error| on the rows the score band excludes
+    and ``sign_cancel`` is the fraction of scored rows whose error sign opposes
+    the centre-row error.
+    """
+    rows = rows_of(case)
+    u_max = case["metrics"]["u_max_reference"]
+    inband = [r for r in rows if 0.15 <= r["y_over_H"] <= 0.85]
+    outband = [r for r in rows if not (0.15 <= r["y_over_H"] <= 0.85)]
+    centre = min(rows, key=lambda r: abs(r["y_over_H"] - 0.5))
+    sgn = 1.0 if centre["u_measured"] >= centre["u_reference"] else -1.0
+    oppose = sum(1 for r in inband
+                 if (r["u_measured"] - r["u_reference"]) * sgn < 0.0)
+    return {
+        "u_max_ratio": (max(abs(r["u_measured"]) for r in rows) / u_max) if u_max else float("nan"),
+        "wall_max_pct": (100.0 * max(abs(r["u_measured"] - r["u_reference"]) for r in outband) / u_max
+                         if outband and u_max else float("nan")),
+        "sign_cancel": oppose / len(inband) if inband else float("nan"),
+        "n_inband": len(inband),
+    }
+
+
 def pick(payload, route, re_c, hfd, res, columns=12):
     for c in payload["cases"][route]:
         if (c["reynolds_c"] == re_c and c["h_over_dx"] == hfd
                 and c["resolution_H_over_dx"] == res and c["columns"] == columns):
             return c
     return None
+
+
+def assert_coverage(payload):
+    """Refuse to render a document from an incomplete sweep.
+
+    A chunked sweep (``PM_RES``/``PM_RE``/``PM_H``/``PM_COLS`` slices that merge
+    into one ``results.json``) can leave the payload with whole cells missing.
+    The renderer used to drop those silently -- tables came out with a header
+    and no rows, and the verdict covered only the slice that happened to run
+    last, so a partially-filled artefact rendered as a plausible finished
+    document.  Every predeclared cell is therefore required here; on a miss the
+    renderer raises instead of publishing a hole.
+    """
+    settings = payload.get("settings", {})
+    cases = payload.get("cases", {})
+    verdict = payload.get("verdict", {})
+    re_ladder = settings.get("reynolds_ladder") or []
+    routes = [("isph_projection", "isph"), ("wcsp_production", "wcsp")]
+    missing = []
+
+    for case_key, verdict_key in routes:
+        decl = [c for c in cases.get(case_key, [])]
+        if not decl:
+            missing.append(f"{case_key}: no cases at all")
+            continue
+        declared_re = {c["reynolds_c"] for c in decl}
+        for re_v in re_ladder:
+            if re_v not in declared_re:
+                continue                      # route ran a narrower Re ladder
+            if not (verdict.get(verdict_key) or {}).get(str(re_v)):
+                missing.append(f"verdict[{verdict_key}][{re_v:g}]: empty")
+            pts = [c for c in decl if c["reynolds_c"] == re_v and c["columns"] == 12]
+            if len(pts) < 2:
+                missing.append(f"{case_key} Re_c={re_v:g}: only {len(pts)} resolution "
+                               f"point(s) at columns=12, a ladder needs >= 2")
+
+    for key, cell in (payload.get("summary") or {}).items():
+        conv = cell.get("convergence") or {}
+        if conv.get("n_points", 0) < 2:
+            missing.append(f"summary[{key}].convergence: {conv.get('n_points')} point(s)")
+
+    for key in ("zero_forcing", "repeat_headline"):
+        if not (payload.get("controls") or {}).get(key):
+            missing.append(f"controls[{key}]: missing")
+
+    if missing:
+        raise SystemExit(
+            "make_doc: incomplete sweep, refusing to render a document:\n  "
+            + "\n  ".join(missing)
+            + "\nRe-run the missing slices (see PM_* env knobs in run.py) and merge.")
 
 
 def main(argv=None) -> int:
@@ -61,6 +139,8 @@ def main(argv=None) -> int:
     ctrl = payload.get("controls", {})
     settings = payload["settings"]
     verdict = payload["verdict"]
+
+    assert_coverage(payload)
 
     # headline = finest ISPH case of the low-Re ladder at the default support
     def finest(route, re_c, hfd):
@@ -165,7 +245,8 @@ def main(argv=None) -> int:
         if not c:
             continue
         A(f"| {c['route']} | {c['reynolds_c']:g} | {c['resolution_H_over_dx']} | "
-          f"{c['dx']:.5f} | {c['h']:.5f} | {c['viscosity']:.5g} | {c['body_force']:.5g} | "
+          f"{c['dx']:.5f} | {c.get('h', c['h_over_dx'] * c['dx']):.5f} | "
+          f"{c['viscosity']:.5g} | {c['body_force']:.5g} | "
           f"{c['steps']} | {c['n_fluid']} | {c['n_wall']} | {c['wall_clock_s']:.1f} |")
     A("")
     A("## ④ Reference vs got, itemised errors")
@@ -204,23 +285,49 @@ def main(argv=None) -> int:
     A("")
     A("### Same metric on the incumbent WCSPH route")
     A("")
-    A("| Re_c | H/dx | centre error | interior L2 | < 5 % |")
-    A("|---:|---:|---:|---:|:--:|")
+    A("| Re_c | H/dx | centre error | interior L2 | u_max/u_max,ref | ν_eff/ν | wall-band max \\|e\\| | sign-cancel | < 5 % |")
+    A("|---:|---:|---:|---:|---:|---:|---:|---:|:--:|")
     for c in sorted(wcsp, key=lambda c: (c["reynolds_c"], c["resolution_H_over_dx"])):
         m = c["metrics"]
-        if m["interior"]["l2_over_umax_pct"] < 50:
-            A(f"| {c['reynolds_c']:g} | {c['resolution_H_over_dx']} | "
-              f"{m['centre_error_pct']:+.2f} % | {m['interior']['l2_over_umax_pct']:.2f} % | "
-              f"{mark(m['interior']['l2_over_umax_pct'] < LIMIT)} |")
+        d = band_diagnostics(c)
+        # No error filter here: the baseline route is *expected* to fail this
+        # case, and dropping its large-error rows made the table look empty
+        # (and the route look absent) instead of showing the failure.
+        A(f"| {c['reynolds_c']:g} | {c['resolution_H_over_dx']} | "
+          f"{m['centre_error_pct']:+.2f} % | {m['interior']['l2_over_umax_pct']:.2f} % | "
+          f"{d['u_max_ratio']:.4f} | {c.get('nu_eff_over_nu', float('nan')):.3f} | "
+          f"{d['wall_max_pct']:.2f} % | {100.0 * d['sign_cancel']:.0f} % | "
+          f"{mark(m['interior']['l2_over_umax_pct'] < LIMIT)} |")
     A("")
     if wc_re1:
-        A(f"The production WCSPH route keeps a **{wc_re1['metrics']['interior']['l2_over_umax_pct']:.2f} %** "
-          f"interior error at `H/dx = {wc_re1['resolution_H_over_dx']}` "
-          f"(effective viscosity `ν_eff/ν = {wc_re1.get('nu_eff_over_nu', float('nan')):.3f}`, "
-          f"wall offset `δ/dx = {wc_re1.get('wall_offset_over_dx', float('nan')):.3f}`): "
-          "it does **not** meet the case tolerance, which is why the projection route "
-          "is the one used for the headline claim.")
+        d1 = band_diagnostics(wc_re1)
+        A(f"At the low-Re case the production WCSPH route keeps a "
+          f"**{wc_re1['metrics']['interior']['l2_over_umax_pct']:.2f} %** interior error "
+          f"at `H/dx = {wc_re1['resolution_H_over_dx']}` (peak "
+          f"`u_max/u_max,ref = {d1['u_max_ratio']:.4f}`, wall offset "
+          f"`δ/dx = {wc_re1.get('wall_offset_over_dx', float('nan')):.3f}`): it does "
+          "**not** meet the case tolerance, which is why the projection route carries "
+          "the headline claim at `Re_c = 1`.")
         A("")
+        passes = [c for c in wcsp
+                  if c["metrics"]["interior"]["l2_over_umax_pct"] < LIMIT]
+        if passes:
+            best = max(passes, key=lambda c: c["reynolds_c"])
+            d = band_diagnostics(best)
+            A(f"**Qualified pass, not accuracy.** The baseline route *does* fall inside "
+              f"the 5 % band at `Re_c = {best['reynolds_c']:g}`, "
+              f"`H/dx = {best['resolution_H_over_dx']}` "
+              f"(`e_L2 = {best['metrics']['interior']['l2_over_umax_pct']:.2f} %`), but "
+              f"the same profile errs by up to **{d['wall_max_pct']:.1f} %** on the rows "
+              f"the score band excludes and **{100.0 * d['sign_cancel']:.0f} %** of the "
+              f"scored rows have the opposite error sign to the centre row "
+              f"(`n = {d['n_inband']}`): the band-RMS is small because the errors "
+              "partly cancel (over-diffusive core against wall-region excess), not "
+              "because the profile is right. This pass is therefore reported as an "
+              "error cancellation and **must not** be quoted as a validation of the "
+              "WCSPH viscous operator; only the projection route passes without a "
+              "cancellation signature (its wall-band error and interior RMS agree).")
+            A("")
     A("### Verdict")
     A("")
     A("| route | Re_c | finest H/dx | centre err | interior L2 | PASS (<5 %) |")
