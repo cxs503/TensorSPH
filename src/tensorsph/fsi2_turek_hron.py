@@ -335,6 +335,29 @@ def beam_energy(nodes: torch.Tensor, case: FSI2Case) -> torch.Tensor:
     return e_stretch + 0.5 * kb * (theta0.square() + theta.square().sum())
 
 
+
+
+def _beam_energy_clamped(nodes: torch.Tensor, case: FSI2Case) -> torch.Tensor:
+    """Beam energy with hard clamped BC (first segment direction fixed to +x).
+
+    Used only in :func:`verify_beam_point_load` for the static deflection test.
+    Excludes ``theta0`` from the bending energy and assumes nodes[0] and
+    nodes[1] are already clamped.
+    """
+    n = nodes.shape[0]
+    l0 = case.beam_length / (n - 1)
+    seg = nodes[1:] - nodes[:-1]
+    length = torch.linalg.vector_norm(seg, dim=1).clamp_min(1.0e-9)
+    ks = case.beam_stiffness_axial() / l0
+    e_stretch = 0.5 * ks * (length - l0).square().sum()
+    tangent = seg / length[:, None]
+    cross = tangent[1:, 0] * tangent[:-1, 1] - tangent[1:, 1] * tangent[:-1, 0]
+    dot = (tangent[1:] * tangent[:-1]).sum(dim=1).clamp(-1.0, 1.0)
+    theta = torch.atan2(cross, dot)
+    kb = case.beam_stiffness_bending() / l0
+    # No theta0 term: first segment direction is hard-clamped
+    return e_stretch + 0.5 * kb * theta.square().sum()
+
 def beam_forces(nodes: torch.Tensor, case: FSI2Case,
                 nodal_load: Optional[torch.Tensor] = None) -> torch.Tensor:
     """Nodal force -dE/dx + load; clamped node gets zero force."""
@@ -662,38 +685,61 @@ def verify_beam_stiffness(case: FSI2Case) -> Dict[str, float]:
 
 
 def verify_beam_point_load(case: FSI2Case) -> Dict[str, float]:
-    """V4: Beam tip deflection under point load vs Euler-Bernoulli.
+    """V4: Beam tip deflection under transverse point load vs Euler-Bernoulli.
 
-    Uses a small load so that linear beam theory applies.
+    Uses a small load so that linear beam theory applies.  The load is applied
+    in the y-direction (transverse to the beam axis) and the deflection is
+    measured in y.  Static equilibrium is found via L-BFGS-B optimisation
+    with the gradient computed by torch autograd.
     """
+    import numpy as np
+    from scipy.optimize import minimize
+
     device = torch.device(case.device)
     EI = case.beam_stiffness_bending()
     L = case.beam_length
-    # Small point load at tip
+    l0 = L / (case.n_beam_nodes - 1)
+
+    # Small transverse point load at tip (y-direction)
     P = 1.0e-3 * 2.0 * EI / L ** 2
-    load = torch.zeros((case.n_beam_nodes, 2), dtype=torch.float64, device=device)
-    load[-1, 0] = P
+    load = torch.zeros((case.n_beam_nodes, 2), dtype=torch.float64)
+    load[-1, 1] = P  # transverse (y) direction
 
-    # Static equilibrium via energy minimization
-    nodes = beam_initial_nodes(case, device)
-    nodes = nodes.requires_grad_(False)
+    def _energy_and_grad(x_flat: np.ndarray):
+        """Total energy and its gradient w.r.t. free node coordinates."""
+        nodes = torch.zeros((case.n_beam_nodes, 2), dtype=torch.float64)
+        # Clamp first two nodes (position + first segment direction)
+        nodes[0, 0] = case.cylinder_x + case.cylinder_d / 2
+        nodes[0, 1] = case.cylinder_y
+        nodes[1, 0] = nodes[0, 0] + l0
+        nodes[1, 1] = nodes[0, 1]
+        nodes[2:] = torch.from_numpy(x_flat.reshape(-1, 2)).double()
 
-    # Simple gradient descent for static equilibrium
-    lr = 1.0e-8
-    for _ in range(5000):
-        work = nodes.detach().clone().requires_grad_(True)
-        energy = beam_energy(work, case)
-        # Add load potential
-        load_potential = -(load * work).sum()
-        total = energy + load_potential
-        grad, = torch.autograd.grad(total, work)
-        nodes = nodes - lr * grad
-        nodes = nodes.clone()
-        nodes[0] = torch.tensor(
-            (case.cylinder_x + case.cylinder_d / 2, case.cylinder_y),
-            dtype=nodes.dtype, device=device)
+        nodes_w = nodes.clone().requires_grad_(True)
+        E = _beam_energy_clamped(nodes_w, case)
+        U = -(load * nodes_w).sum()
+        total = E + U
+        grad_all = torch.autograd.grad(total, nodes_w)[0]
+        return float(total.item()), grad_all[2:].numpy().flatten()
 
-    tip_deflection = float(nodes[-1, 0]) - (case.cylinder_x + case.cylinder_d / 2 + L)
+    # Initial guess: straight beam (free nodes only)
+    nodes0 = beam_initial_nodes(case, device)
+    x0 = nodes0[2:].numpy().flatten().copy()
+
+    res = minimize(lambda x: _energy_and_grad(x), x0, jac=True,
+                   method="L-BFGS-B",
+                   options={"maxiter": 5000, "ftol": 1e-15, "gtol": 1e-12})
+
+    # Reconstruct full solution
+    nodes_opt = torch.zeros((case.n_beam_nodes, 2), dtype=torch.float64)
+    nodes_opt[0, 0] = case.cylinder_x + case.cylinder_d / 2
+    nodes_opt[0, 1] = case.cylinder_y
+    nodes_opt[1, 0] = nodes_opt[0, 0] + l0
+    nodes_opt[1, 1] = nodes_opt[0, 1]
+    nodes_opt[2:] = torch.from_numpy(res.x.reshape(-1, 2)).double()
+
+    # Tip deflection in y (transverse)
+    tip_deflection = float(nodes_opt[-1, 1]) - case.cylinder_y
     # Euler-Bernoulli: delta = P L^3 / (3 EI)
     delta_eb = P * L ** 3 / (3 * EI)
     rel_error = (tip_deflection - delta_eb) / delta_eb if delta_eb != 0 else 0.0
@@ -703,4 +749,6 @@ def verify_beam_point_load(case: FSI2Case) -> Dict[str, float]:
         "tip_deflection_rod": tip_deflection,
         "tip_deflection_EB": delta_eb,
         "rel_error": rel_error,
+        "optim_success": bool(res.success),
+        "optim_nit": int(res.nit),
     }
