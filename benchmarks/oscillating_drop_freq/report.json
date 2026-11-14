@@ -1,0 +1,283 @@
+{
+  "case": "SPH-OSC-DROP-FREQ",
+  "reference": "Rayleigh 1879",
+  "gate_pct": 6.0,
+  "generated": "2026-11-14T10:03:56Z",
+  "environment": {
+    "python": "3.11.6",
+    "torch": "2.7.1",
+    "device": "cpu",
+    "threads": 128
+  },
+  "analytic": {
+    "radius": 0.02,
+    "sigma": 7.2,
+    "rho": 1000.0,
+    "gate_pct": 6.0,
+    "reference": "Rayleigh 1879, Proc. R. Soc. Lond. 29:71; Lamb 1932 Art. 275",
+    "branches": {
+      "2": {
+        "omega_3d_rad_s": 84.85281374238569,
+        "omega_2d_rad_s": 73.48469228349533,
+        "period_3d_s": 0.07404804896930611,
+        "formula_3d": "2*1*4*sigma/(rho R^3)",
+        "formula_2d": "2*(2^2-1)*sigma/(rho R^3)",
+        "frequency_ratio_3d_over_2d": 1.1547005383792515,
+        "frequency_gap_pct": 15.470053837925146
+      },
+      "3": {
+        "omega_3d_rad_s": 164.3167672515498,
+        "omega_2d_rad_s": 146.96938456699067,
+        "period_3d_s": 0.038238248063636515,
+        "formula_3d": "3*2*5*sigma/(rho R^3)",
+        "formula_2d": "3*(3^2-1)*sigma/(rho R^3)",
+        "frequency_ratio_3d_over_2d": 1.1180339887498947,
+        "frequency_gap_pct": 11.803398874989469
+      },
+      "4": {
+        "omega_3d_rad_s": 254.55844122715706,
+        "omega_2d_rad_s": 232.37900077244498,
+        "period_3d_s": 0.024682682989768705,
+        "formula_3d": "4*3*6*sigma/(rho R^3)",
+        "formula_2d": "4*(4^2-1)*sigma/(rho R^3)",
+        "frequency_ratio_3d_over_2d": 1.0954451150103321,
+        "frequency_gap_pct": 9.544511501033215
+      }
+    }
+  },
+  "axisym": {
+    "rows": [
+      {
+        "mode": 2,
+        "eps": 0.02,
+        "dx": 0.0025,
+        "radius_over_dx": 8.0,
+        "n_particles": 241,
+        "dp_measured": 60.53042290717254,
+        "dp_analytic": -28.800000000000004,
+        "stiffness_ratio": -2.101750795387935,
+        "omega_ratio": -1.4497416305631619,
+        "omega_error_pct": -244.9741630563162,
+        "kappa_mean_R": 1.2063330941199448,
+        "kappa_mean_exact_R": 2.0,
+        "meridional_mode_coeff_ratio": 0.048758050146275635,
+        "surface_measure": 0.623009500552282,
+        "delta_normalization": "legacy",
+        "h": 0.0032500000000000003,
+        "wall_seconds": 0.35613489151000977,
+        "is_noise_floor": false,
+        "omega_analytic": 84.85281374238569,
+        "omega_measured": -123.0146565527585
+      },
+      {
+        "mode": 2,
+        "eps": 0.02,
+        "dx": 0.0016666666666666668,
+        "radius_over_dx": 12.0,
+        "n_particles": 517,
+        "dp_measured": 75.73717437596471,
+        "dp_analytic": -28.800000000000004,
+        "stiffness_ratio": -2.629762999165441,
+        "omega_ratio": -1.6216544018888368,
+        "omega_error_pct": -262.1654401888837,
+        "kappa_mean_R": 1.173272342194913,
+        "kappa_mean_exact_R": 2.0,
+        "meridional_mode_coeff_ratio": -0.01730623855776509,
+        "surface_measure": 0.6255564200924775,
+        "delta_normalization": "legacy",
+        "h": 0.002166666666666667,
+        "wall_seconds": 0.7018485069274902,
+        "is_noise_floor": false,
+        "omega_analytic": 84.85281374238569,
+        "omega_measured": -137.60193891799335
+      },
+      {
+        "mode": 2,
+        "eps": 0.05,
+        "dx": 0.0025,
+        "radius_over_dx": 8.0,
+        "n_particles": 241,
+        "dp_measured": 106.262777899611,
+        "dp_analytic": -72.0,
+        "stiffness_ratio": -1.475871915272375,
+        "omega_ratio": -1.2148546889535288,
+        "omega_error_pct": -221.48546889535288,
+        "kappa_mean_R": 1.0268523420617603,
+        "kappa_mean_exact_R": 2.0,
+        "meridional_mode_coeff_ratio": 0.021182500487868038,
+        "surface_measure": 0.615652261283774,
+        "delta_normalization": "legacy",
+        "h": 0.0032500000000000003,
+        "wall_seconds": 0.3535454273223877,
+        "is_noise_floor": false,
+        "omega_analytic": 84.85281374238569,
+        "omega_measured": -103.08383864583769
+      },
+      {
+        "mode": 2,
+        "eps": 0.05,
+        "dx": 0.0016666666666666668,
+        "radius_over_dx": 12.0,
+        "n_particles": 517,
+        "dp_measured": 151.5122692887585,
+        "dp_analytic": -72.0,
+        "stiffness_ratio": -2.104337073454979,
+        "omega_ratio": -1.4506333352901342,
+        "omega_error_pct": -245.06333352901342,
+        "kappa_mean_R": 1.0199015051878972,
+        "kappa_mean_exact_R": 2.0,
+        "meridional_mode_coeff_ratio": 0.033115721149562544,
+        "surface_measure": 0.6202638988370072,
+        "delta_normalization": "legacy",
+        "h": 0.002166666666666667,
+        "wall_seconds": 0.710181713104248,
+        "is_noise_floor": false,
+        "omega_analytic": 84.85281374238569,
+        "omega_measured": -123.09032020786948
+      },
+      {
+        "mode": 2,
+        "eps": 1e-06,
+        "dx": 0.0025,
+        "radius_over_dx": 8.0,
+        "n_particles": 241,
+        "dp_measured": -2.7479930909258807,
+        "dp_analytic": -0.0014399999999999999,
+        "stiffness_ratio": 1908.3285353651952,
+        "omega_ratio": 43.684419824065365,
+        "omega_error_pct": 4268.441982406536,
+        "kappa_mean_R": 1.3406152615119806,
+        "kappa_mean_exact_R": 2.0,
+        "meridional_mode_coeff_ratio": 473.9313635004997,
+        "surface_measure": 0.6265183846716601,
+        "delta_normalization": "legacy",
+        "h": 0.0032500000000000003,
+        "wall_seconds": 0.35753655433654785,
+        "is_noise_floor": true,
+        "omega_analytic": 84.85281374238569,
+        "omega_measured": 3706.7459387755994
+      },
+      {
+        "mode": 2,
+        "eps": 1e-06,
+        "dx": 0.0016666666666666668,
+        "radius_over_dx": 12.0,
+        "n_particles": 517,
+        "dp_measured": -8.814990919633859,
+        "dp_analytic": -0.0014399999999999999,
+        "stiffness_ratio": 6121.521471967958,
+        "omega_ratio": 78.24015255588372,
+        "omega_error_pct": 7724.015255588372,
+        "kappa_mean_R": 1.3122748853860784,
+        "kappa_mean_exact_R": 2.0,
+        "meridional_mode_coeff_ratio": -1835.9805084146008,
+        "surface_measure": 0.6273769487043951,
+        "delta_normalization": "legacy",
+        "h": 0.002166666666666667,
+        "wall_seconds": 0.6940493583679199,
+        "is_noise_floor": true,
+        "omega_analytic": 84.85281374238569,
+        "omega_measured": 6638.897092000244
+      }
+    ],
+    "noise_equivalent_eps": {
+      "l2_rdx8": 0.001908328535365195,
+      "l2_rdx12": 0.006121521471967957
+    }
+  },
+  "lattice3d": {
+    "plane": [
+      {
+        "n_particles": 1391,
+        "h_over_dx": 1.3,
+        "delta_measure_ratio": 2.3128000451648454,
+        "color_max": 1.000000000000001,
+        "wall_seconds": 1.5872273445129395,
+        "h_factor": 1.3
+      },
+      {
+        "n_particles": 287,
+        "h_over_dx": 2.0,
+        "delta_measure_ratio": 0.9610142698805137,
+        "color_max": 0.8019679706909026,
+        "wall_seconds": 0.3845832347869873,
+        "h_factor": 2.0
+      }
+    ],
+    "sphere": [
+      {
+        "n_particles": 3054,
+        "h_over_dx": 1.3,
+        "delta_measure_ratio": 0.3284890554895378,
+        "color_max": 1.0000000000000013,
+        "kappa_mean_R": 0.7735220235964597,
+        "dp_measured": -2.0603202526407547e-16,
+        "dp_analytic": -4e-09,
+        "mode_traction_ratio": 5.150800631601886e-08,
+        "wall_seconds": 3.426128625869751,
+        "radius_over_dx": 8.0,
+        "eps": 0.0
+      },
+      {
+        "n_particles": 3054,
+        "h_over_dx": 1.3,
+        "delta_measure_ratio": 0.3424898701427817,
+        "color_max": 1.043858007685869,
+        "kappa_mean_R": 0.9194291596391189,
+        "dp_measured": 0.3130963480457435,
+        "dp_analytic": -0.12,
+        "mode_traction_ratio": -2.609136233714529,
+        "wall_seconds": 3.281052350997925,
+        "radius_over_dx": 8.0,
+        "eps": 0.03
+      },
+      {
+        "n_particles": 10184,
+        "h_over_dx": 1.3,
+        "delta_measure_ratio": 0.34240092598550675,
+        "color_max": 1.0000000000000016,
+        "kappa_mean_R": 0.7659237304468868,
+        "dp_measured": -1.7527538778050965e-05,
+        "dp_analytic": -4e-09,
+        "mode_traction_ratio": 4381.884694512741,
+        "wall_seconds": 10.598865032196045,
+        "radius_over_dx": 12.0,
+        "eps": 0.0
+      },
+      {
+        "n_particles": 10184,
+        "h_over_dx": 1.3,
+        "delta_measure_ratio": 0.3650988174379987,
+        "color_max": 1.0453151605372066,
+        "kappa_mean_R": 0.9636542389760929,
+        "dp_measured": 0.29579325813259877,
+        "dp_analytic": -0.12,
+        "mode_traction_ratio": -2.4649438177716565,
+        "wall_seconds": 14.582529306411743,
+        "radius_over_dx": 12.0,
+        "eps": 0.03
+      }
+    ]
+  },
+  "verdict": {
+    "gate_pct": 6.0,
+    "n_rows": 4,
+    "n_passing": 0,
+    "best": {
+      "mode": 2,
+      "eps": 0.05,
+      "radius_over_dx": 8.0,
+      "omega_analytic": 84.85281374238569,
+      "omega_measured": -103.08383864583769,
+      "omega_error_pct": -221.48546889535288
+    },
+    "finest_resolution_row": {
+      "mode": 2,
+      "eps": 0.02,
+      "radius_over_dx": 12.0,
+      "omega_error_pct": -262.1654401888837
+    },
+    "gate_pass": false,
+    "gate_pass_statement": "no resolution/mode/amplitude combination reproduces the Rayleigh frequency within 6 %; the estimator's mode-2 noise floor is of the same order as the seeded perturbation (see noise_equivalent_eps)"
+  }
+}
