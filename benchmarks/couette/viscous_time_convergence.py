@@ -33,10 +33,12 @@ import sys
 import time
 from pathlib import Path
 
-import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
+# matplotlib is imported lazily, inside ``_pyplot``: the compute nodes that run
+# this sweep do not ship matplotlib, and a module-level import there killed the
+# whole scan before a single run happened (cluster job cj2857, rc=1,
+# ``ModuleNotFoundError: No module named 'matplotlib'``) while the queue still
+# reported the job as succeeded.  Plotting is a *reporting* step; it must never
+# be a precondition for producing the numbers.
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
@@ -115,7 +117,23 @@ def summarise(points: list[dict]) -> dict:
     return per_res
 
 
+def _pyplot():
+    """Import matplotlib lazily; raise a readable error when it is absent."""
+    try:
+        import matplotlib
+    except ImportError as exc:  # pragma: no cover - exercised on compute nodes
+        raise RuntimeError(
+            "matplotlib is not installed; the numbers are still computed and "
+            "written to the JSON artefact -- pass --no-figure on headless nodes"
+        ) from exc
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    return plt
+
+
 def make_figure(points: list[dict], summary: dict, out: Path) -> Path:
+    plt = _pyplot()
     fig, (ax, ax2) = plt.subplots(1, 2, figsize=(11, 4.2))
     colors = {8: "tab:blue", 16: "tab:red"}
     for resolution in RESOLUTIONS:
@@ -159,7 +177,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--threads", type=int, default=4)
     parser.add_argument("--cached", action="store_true",
                         help="reuse points already present in the result file")
+    parser.add_argument("--no-figure", action="store_true",
+                        help="skip the PNG (headless compute nodes have no matplotlib)")
+    parser.add_argument("--figure-only", action="store_true",
+                        help="re-plot an existing result file without running the solver")
     args = parser.parse_args(argv)
+
+    if args.figure_only:
+        doc = json.loads(RESULT_PATH.read_text())
+        make_figure(doc["points"], doc["summary"], FIGURE_PATH)
+        print(f"[couette-conv] re-plotted {FIGURE_PATH}", flush=True)
+        return 0
 
     import torch
     torch.set_num_threads(args.threads)
@@ -201,10 +229,25 @@ def main(argv: list[str] | None = None) -> int:
         "summary": summary,
     }
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+    # Numbers first: the JSON artefact is the evidence, the PNG is reporting.
     RESULT_PATH.write_text(json.dumps(payload, indent=2) + "\n")
-    make_figure(points, summary, FIGURE_PATH)
-    print(f"[couette-conv] wrote {RESULT_PATH.relative_to(REPO)} and "
-          f"{FIGURE_PATH.relative_to(REPO)}", flush=True)
+    try:
+        print(f"[couette-conv] wrote {RESULT_PATH.relative_to(REPO)}", flush=True)
+    except ValueError:  # --out outside the repo root (tests, scratch dirs)
+        print(f"[couette-conv] wrote {RESULT_PATH}", flush=True)
+    if args.no_figure:
+        print("[couette-conv] --no-figure: PNG skipped", flush=True)
+    else:
+        try:
+            make_figure(points, summary, FIGURE_PATH)
+        except RuntimeError as exc:
+            # Headless node: keep the numbers, report the missing plot.
+            print(f"[couette-conv] figure skipped: {exc}", flush=True)
+        else:
+            try:
+                print(f"[couette-conv] wrote {FIGURE_PATH.relative_to(REPO)}", flush=True)
+            except ValueError:
+                print(f"[couette-conv] wrote {FIGURE_PATH}", flush=True)
     for resolution, block in summary.items():
         print(f"[couette-conv] H/dx={resolution}: converged "
               f"{block['converged_error_pct']:.2f} % "

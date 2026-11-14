@@ -16,6 +16,12 @@
 | `wcsph_wall_no_slip` | plane Couette channel (design-time run) | interior L2 velocity error vs u=U*y/H (finest rung, t_end = 1.2 H^2/nu per DESIGN.md) | 2.933 | 5 | ✔ | ✔ | `benchmarks/couette/out_design/results.json` |
 | `wcsph_wall_no_slip` | plane Couette channel | wall-shear error at the moving wall, \|1 - tau_SPH/tau_exact\| (the no-slip quantity itself; artefact gate 5 %) | 32.65 | 5 | ✘ | ✘ | `benchmarks/couette/out/results.json` |
 | `wcsph_wall_no_slip` | plane Couette channel (design-time run) | wall-shear error at the moving wall, \|1 - tau_SPH/tau_exact\|, read at t_end = 1.2 H^2/nu per DESIGN.md (finest rung) | 0.4781 | 5 | ✔ | ✔ | `benchmarks/couette/out_design/results.json` |
+| `wcsph_wall_no_slip` | CASE-COUETTE-VISCOUS-TIME (steady-state envelope, H/dx=8) | wall-shear error \|1 - tau_SPH/tau_exact\| at the steady end of the viscous-time sweep (longest run whose steady_drift passes the 1 % gate), H/dx=8 | 9.55 | 5 | ✔ | ✘ | `benchmarks/couette/out_design/viscous_time_convergence.json` |
+| `wcsph_wall_no_slip` | CASE-COUETTE-VISCOUS-TIME (reading mobility, H/dx=8) | mobility of the wall-shear reading across the admissible viscous-time sweep (max - min, percentage points), H/dx=8: how much the accuracy claim would move if the run were stopped earlier | 18.26 | 5 | ✘ | ✘ | `benchmarks/couette/out_design/viscous_time_convergence.json` |
+| `wcsph_wall_no_slip` | CASE-COUETTE-VISCOUS-TIME (steady-state envelope, H/dx=16) | wall-shear error \|1 - tau_SPH/tau_exact\| at the steady end of the viscous-time sweep (longest run whose steady_drift passes the 1 % gate), H/dx=16 | 1.811 | 5 | ✔ | ✔ | `benchmarks/couette/out_design/viscous_time_convergence.json` |
+| `wcsph_wall_no_slip` | CASE-COUETTE-VISCOUS-TIME (reading mobility, H/dx=16) | mobility of the wall-shear reading across the admissible viscous-time sweep (max - min, percentage points), H/dx=16: how much the accuracy claim would move if the run were stopped earlier | 0 | 5 | ✔ | ✔ | `benchmarks/couette/out_design/viscous_time_convergence.json` |
+| `wcsph_wall_no_slip` | CASE-COUETTE-VISCOUS-TIME (moving wall, H/dx=8) | wall-shear error at the MOVING wall, \|1 - tau_SPH/tau_exact\|, at the steady end of the viscous-time sweep, H/dx=8 (the bottom-wall reading alone does not evidence the whole no-slip condition) | 14.2 | 5 | ✔ | ✘ | `benchmarks/couette/out_design/viscous_time_convergence.json` |
+| `wcsph_wall_no_slip` | CASE-COUETTE-VISCOUS-TIME (moving wall, H/dx=16) | wall-shear error at the MOVING wall, \|1 - tau_SPH/tau_exact\|, at the steady end of the viscous-time sweep, H/dx=16 (the bottom-wall reading alone does not evidence the whole no-slip condition) | 17.08 | 5 | ✘ | ✘ | `benchmarks/couette/out_design/viscous_time_convergence.json` |
 | `wcsph_wall_no_slip` | plane Couette channel | cross-channel mass-flux error \|1 - Q_SPH/Q_exact\| (artefact gate 5 %) | 7.159 | 5 | ✔ | ✘ | `benchmarks/couette/out/results.json` |
 | `wcsph_wall_no_slip` | plane Couette channel (design-time run) | cross-channel mass-flux error \|1 - Q_SPH/Q_exact\| at t_end = 1.2 H^2/nu per DESIGN.md (finest rung) | 4.415 | 5 | ✔ | ✔ | `benchmarks/couette/out_design/results.json` |
 | `isph_projection` | CASE-ISPH-CHANNEL (GAP-SPH-ISPH-PROJECTION ladder) | momentum-budget wall shear vs rho g H/2 on the finest rung (artefact gate 3 %) | 0.04583 | 3 | ✔ | ✔ | `benchmarks/isph_channel/results.json` |
@@ -23,7 +29,7 @@
 | `transport_velocity_correction` | XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.03 m) | mean relative error of the front position Z/a vs the Martin & Moyce (1952) digitised points, alpha=0.10 over all particles | 10.81 | 15 | ✔ | ✔ | `docs/xval_sphinx_tvc/data/grid_dx003.json` |
 | `transport_velocity_correction` | XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.04 m) | same quantity on the coarser rung: records the alpha=0.10 arm is resolution-sensitive (kept in the registry, fails the owner standard) | 16.96 | 15 | ✘ | ✘ | `docs/xval_sphinx_tvc/data/grid_dx004.json` |
 
-登记记录 20 条，覆盖 10 个方法；最坏误差 32.65%。缺失源文件：无。
+登记记录 26 条，覆盖 10 个方法；最坏误差 32.65%。缺失源文件：无。
 
 
 ### 3.2 路由矩阵（候选算例画像 → 选定方法）
