@@ -230,10 +230,12 @@ class Config:
     # "reference_mean" = SPHinXsys master (neighbour sum scaled by 1/Kref);
     # "none" = the formulation before commit 375ec50b42 (2026-07-19).
     compression_normalization: str = "reference_mean"
-    # Transport-velocity correction (Zhang, Hu & Adams 2017; SPHinXsys port).
-    # "off" = no correction (default, backward compatible); "on" = apply the
-    # correction δv = -A·∇C/C to the advection velocity, where A = C_d·h·v_ref·dt.
-    # This maintains particle regularity without a separate position-shift pass.
+    # Velocity-form particle shifting (Lind et al. 2012), *not* the SPHinXsys
+    # transport-velocity correction: "on" applies δv = -A·∇C/C to the advection
+    # velocity, A = C_d·h·v_ref·dt.  The upstream operator (grad-1 inconsistency,
+    # position update alpha·h²) lives in tensorsph.transport_velocity_correction
+    # and is the one graded by XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION; see
+    # tests/test_tvc_attribution.py.
     # See src/tensorsph/transport_velocity.py and docs/verification_transport_velocity.md.
     transport_velocity: str = "off"
     transport_velocity_strength: float = 1.0
