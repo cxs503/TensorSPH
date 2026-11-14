@@ -145,8 +145,23 @@ class FSI2Case:
     max_rod_substeps: int = 500
 
     # Force transfer
-    load_transfer: str = "panel"
+    load_transfer: str = "two_face"
     load_scale: float = 1.0
+
+    # Loosely-coupled FSI: under-relaxation of the fluid load on the beam.
+    # 1.0 = no relaxation (one fluid solve per step).  Needed when the added
+    # mass is comparable to the structural mass (``rho_s/rho_f`` near 1).
+    coupling_relaxation: float = 1.0
+
+    # Acoustic-impedance (Riemann star-state) wall pressure in the load
+    # transfer: p* = p_f + rho0 c0 (v_wall - v_f).n.  Without this damping the
+    # loosely coupled scheme diverges at rho_s/rho_f = 1.
+    wall_impedance: bool = True
+
+    # Open boundaries (the benchmark channel is a through-flow, not a tank)
+    open_boundaries: bool = True
+    inlet_ramp_time: float = 1.0  # s, cosine ramp of the inlet profile
+    inlet_zone: float = 2.0       # inlet velocity imposed for x < inlet_zone*dx
 
     device: str = "cpu"
 
@@ -280,13 +295,20 @@ def build_fluid_particles(case: FSI2Case, device) -> Tuple[torch.Tensor, torch.T
     dist_sq = (pos[:, 0] - cx) ** 2 + (pos[:, 1] - cy) ** 2
     outside_cylinder = dist_sq > r ** 2
 
-    # Remove particles in the beam region (simplified: rectangular exclusion)
-    beam_x0 = case.cylinder_x + r
+    # Remove particles in the beam region.  The clearance is the half thickness
+    # plus half a particle spacing: the beam's boundary particles sit exactly on
+    # the physical surface (+-t/2) and a fluid row that landed on that surface
+    # would be a zero-distance neighbour (density -> 3494 kg/m3, pressure ->
+    # 8e8 Pa, i.e. the step-0 blow-up recorded in
+    # docs/xval_fsi2/COUPLED_RUN_DEFECTS.md).  Single precision on the lattice
+    # makes the coincidence generic, not a corner case: t/2 = 0.01 m is a
+    # multiple of dx for dyadic dx.
+    beam_x0 = case.cylinder_x + case.cylinder_d / 2
     beam_x1 = beam_x0 + case.beam_length
-    beam_y0 = case.cylinder_y - case.beam_thickness / 2
-    beam_y1 = case.cylinder_y + case.beam_thickness / 2
-    outside_beam = ~((pos[:, 0] > beam_x0) & (pos[:, 0] < beam_x1)
-                     & (pos[:, 1] > beam_y0) & (pos[:, 1] < beam_y1))
+    clearance = 0.5 * case.beam_thickness + 0.5 * dx + 1.0e-9
+    inside_beam = ((pos[:, 0] >= beam_x0 - 0.5 * dx) & (pos[:, 0] <= beam_x1 + 0.5 * dx)
+                   & ((pos[:, 1] - case.cylinder_y).abs() <= clearance))
+    outside_beam = ~inside_beam
 
     keep = outside_cylinder & outside_beam
     pos = pos[keep]
@@ -411,17 +433,171 @@ def beam_initial_nodes(case: FSI2Case, device) -> torch.Tensor:
 # Force from fluid to beam (panel method)
 # --------------------------------------------------------------------------- #
 
-def beam_load_on_fluid_boundary(pos, rho, pressure, wall, wall_mass,
-                                 wall_start_idx, pairs, case: FSI2Case):
-    """Pressure force on beam boundary particles from the fluid.
+def interpolation_matrix_beam(n_nodes: int, n_boundary: int,
+                               device, dtype=torch.float64) -> torch.Tensor:
+    """Linear interpolation from beam nodes to boundary stations.
 
-    Uses the panel extrapolation method: fit a pressure plane to neighbouring
-    fluid particles and evaluate at the wall particle location.
+    Shape: ``(n_boundary, n_nodes)``, rows sum to 1.  Station ``k`` sits at
+    ``xi_k = k (n_nodes - 1) / (n_boundary - 1)`` in *node-index* space, so the
+    stations span the whole beam, node 0 to node ``n_nodes - 1``.
+
+    .. warning::
+       Until this round the parameter was normalised to ``[0, 1]`` instead of
+       ``[0, n_nodes-1]``, which squeezed every boundary particle between node
+       0 and node 1.  For the shipped FSI2 set-up that is 17 particles in
+       12 mm instead of 350 mm -- 0.04 dx apart.  The overlapping wall
+       particles then inflated the local density to 3494 kg/m3 and the
+       pressure to 8.2e8 Pa on the *first* coupled step, launching the fluid at
+       3777 m/s.  See ``docs/xval_fsi2/COUPLED_RUN_DEFECTS.md``.
+    """
+    if n_nodes < 2 or n_boundary < 2:
+        raise ValueError("beam interpolation needs at least 2 nodes and 2 stations")
+    idx_dtype = torch.float64
+    xi = (torch.arange(n_boundary, dtype=idx_dtype, device=device)
+          * (n_nodes - 1) / (n_boundary - 1))
+    xi = xi.clamp(0.0, n_nodes - 1 - 1.0e-12)
+    lo = xi.floor().long()
+    w = (xi - lo.to(idx_dtype)).clamp(0.0, 1.0)
+    mat = torch.zeros((n_boundary, n_nodes), dtype=dtype, device=device)
+    rows = torch.arange(n_boundary, device=device)
+    mat[rows, lo] += 1.0 - w
+    mat[rows, (lo + 1).clamp(max=n_nodes - 1)] += w
+    return mat
+
+
+def beam_boundary_geometry(nodes: torch.Tensor, case: FSI2Case):
+    """Two-sided boundary layer wrapping the elastic beam.
+
+    The benchmark beam is a plate of thickness ``t`` (0.02 m = 4 dx at
+    dx = 5 mm), not a zero-thickness line.  A single row of boundary particles
+    on the beam centreline cannot represent it: both faces see that one row, so
+    the two pressure loads are averaged into a single normal and the net
+    transverse load collapses towards zero.  This function returns the
+    boundary particles of *both* faces, offset ``t/2`` from the centreline
+    along the local normal, together with the outward normal of each particle
+    (pointing from the solid into the fluid).
+
+    Returns ``(pos, normals, interp, tributary)`` with
+
+    * ``pos``      ``(2 M, 2)``: upper row first, then the lower row,
+    * ``normals``  ``(2 M, 2)``: unit outward normals,
+    * ``interp``   ``(2 M, n_nodes)``: node -> boundary-station interpolation,
+    * ``tributary`` scalar: arc length per boundary particle.
+    """
+    n = nodes.shape[0]
+    n_b = max(int(math.floor(case.beam_length / case.dx)), 2)
+    interp1 = interpolation_matrix_beam(n, n_b, nodes.device, dtype=nodes.dtype)
+
+    seg = nodes[1:] - nodes[:-1]
+    seg = seg / torch.linalg.vector_norm(seg, dim=1, keepdim=True).clamp_min(1.0e-12)
+    tan = torch.empty_like(nodes)
+    tan[0] = seg[0]
+    tan[-1] = seg[-1]
+    if n > 2:
+        tan[1:-1] = seg[:-1] + seg[1:]
+    tan = tan / torch.linalg.vector_norm(tan, dim=1, keepdim=True).clamp_min(1.0e-12)
+    nrm = torch.stack((-tan[:, 1], tan[:, 0]), dim=1)
+
+    stations = interp1 @ nodes
+    st_normals = interp1 @ nrm
+    st_normals = st_normals / torch.linalg.vector_norm(
+        st_normals, dim=1, keepdim=True).clamp_min(1.0e-12)
+
+    half = 0.5 * case.beam_thickness
+    pos = torch.cat((stations + half * st_normals,
+                     stations - half * st_normals), dim=0)
+    normals = torch.cat((st_normals, -st_normals), dim=0)
+    interp = torch.cat((interp1, interp1), dim=0)
+    tributary = case.beam_length / (n_b - 1)
+    return pos, normals, interp, tributary
+
+
+def boundary_pressure_from_fluid(pos, pressure, wall, wall_start_idx, pairs, h,
+                                 normals=None, vel=None, wall_vel=None,
+                                 rho0=None, sound_speed=None):
+    """Kernel-weighted fluid pressure extrapolated onto moving wall particles.
+
+    ``wall`` holds the boundary particles from index ``wall_start_idx`` on.
+    Returns ``(p_wall, w_sum)`` of shape ``(W_moving,)``; entries with no fluid
+    neighbour inside ``2h`` get ``p_wall = 0`` and ``w_sum = 0`` so a caller can
+    tell "no load" from "no data".  The kernel is the solver's own cubic-spline
+    kernel (:func:`tensorsph.droplet_impact.cubic_spline_kernel`), not the
+    Wendland C2 kernel used by the earlier one-sided port, which the audit in
+    ``docs/xval_fsi2/PRESSURE_MOMENT_NORMALISATION.md`` showed carries a
+    +24..28 % kernel-mismatch overload.
     """
     n = pos.shape[0]
-    n_wall = wall.shape[0] - wall_start_idx
-    out = torch.zeros((max(n_wall, 0), 2), dtype=pos.dtype, device=pos.device)
-    if n_wall <= 0 or pairs.numel() == 0:
+    n_moving = max(wall.shape[0] - wall_start_idx, 0)
+    p_out = torch.zeros((n_moving,), dtype=pos.dtype, device=pos.device)
+    w_out = torch.zeros((n_moving,), dtype=pos.dtype, device=pos.device)
+    if n_moving == 0 or pairs.numel() == 0:
+        return p_out, w_out
+
+    i, j = pairs.unbind(dim=1)
+    crossing = (i < n) != (j < n)
+    if not bool(crossing.any()):
+        return p_out, w_out
+    fluid_idx = torch.where(i < n, i, j)[crossing]
+    wall_idx = (torch.where(i < n, j, i) - n)[crossing]
+    keep = wall_idx >= wall_start_idx
+    if not bool(keep.any()):
+        return p_out, w_out
+    fluid_idx = fluid_idx[keep]
+    wall_idx = wall_idx[keep] - wall_start_idx
+
+    delta = pos[fluid_idx] - wall[wall_start_idx + wall_idx]
+    r = torch.linalg.vector_norm(delta, dim=1)
+    active = (r > 1.0e-12) & (r < 2.0 * h)
+    if not bool(active.any()):
+        return p_out, w_out
+    fluid_idx = fluid_idx[active]
+    wall_idx = wall_idx[active]
+    w = di.cubic_spline_kernel(r[active], h)
+
+    p_src = pressure[fluid_idx]
+    if normals is not None and vel is not None and wall_vel is not None:
+        # Acoustic-impedance (Riemann star-state) wall pressure:
+        #   p* = p_f - rho0 c0 (v_wall - v_f).n_solid
+        # with n_solid pointing from the solid into the fluid.  A face closing
+        # on the fluid (v_wall.n < v_f.n) compresses it and therefore sees a
+        # *higher* pressure -- the standard linearised Riemann star state.
+        # This is what the compressible fluid does at the wall; without it the
+        # loosely coupled scheme has no damping at all in the added-mass limit
+        # (rho_s/rho_f -> 1) and diverges, see docs/xval_fsi2/COUPLED_RUN_DEFECTS.md.
+        n_w = normals[wall_idx]
+        dv = wall_vel[wall_start_idx + wall_idx] - vel[fluid_idx]
+        u_n = (dv * n_w).sum(dim=1)
+        p_src = p_src - rho0 * sound_speed * u_n
+
+    w_sum = torch.zeros_like(p_out).index_add(0, wall_idx, w)
+    wp = torch.zeros_like(p_out).index_add(0, wall_idx, w * p_src)
+    covered = w_sum > 1.0e-30
+    p_out = torch.where(covered, wp / w_sum.clamp_min(1.0e-30), p_out)
+    return p_out, w_sum
+
+
+def boundary_force_from_pressure(p_wall, normals, tributary):
+    """Traction on a boundary particle: ``F = -p n trib`` (n points into fluid)."""
+    if p_wall.numel() == 0:
+        return torch.zeros((0, 2), dtype=p_wall.dtype, device=p_wall.device)
+    return -(p_wall[:, None] * tributary * normals)
+
+
+def beam_load_on_fluid_boundary(pos, rho, pressure, wall, wall_mass,
+                                 wall_start_idx, pairs, case: FSI2Case):
+    """Pressure force on a single row of beam boundary particles (legacy arm).
+
+    Kept for the audit scripts that reproduce the one-sided OSS numbers.  The
+    force direction is the mean wall->fluid direction, i.e. the outward normal
+    of a solid whose surface is the wall row, so the load is
+    ``-p * trib * n_fluid``.  The coupled driver does **not** use this arm any
+    more -- see :func:`beam_boundary_geometry`, which gives each face its own
+    normal.
+    """
+    n = pos.shape[0]
+    n_wall = max(wall.shape[0] - wall_start_idx, 0)
+    out = torch.zeros((n_wall, 2), dtype=pos.dtype, device=pos.device)
+    if n_wall == 0 or pairs.numel() == 0:
         return out
 
     i, j = pairs.unbind(dim=1)
@@ -436,60 +612,34 @@ def beam_load_on_fluid_boundary(pos, rho, pressure, wall, wall_mass,
     fluid_idx = fluid_idx[keep]
     wall_idx = wall_idx[keep] - wall_start_idx
 
-    h = case.h()
     delta = pos[fluid_idx] - wall[wall_start_idx + wall_idx]
     r = torch.linalg.vector_norm(delta, dim=1)
-    active = (r > 1.0e-12) & (r < 2.0 * h)
+    active = (r > 1.0e-12) & (r < 2.0 * case.h())
     if not bool(active.any()):
         return out
-
     fluid_idx = fluid_idx[active]
     wall_idx = wall_idx[active]
     delta = delta[active]
     r = r[active]
-    q = r / h
-    w = torch.where(q < 1.0, 2.0 / 3.0 - q ** 2 + 0.5 * q ** 3,
-                    torch.where(q < 2.0, (2.0 - q) ** 3 / 6.0, torch.zeros_like(q)))
+    w = di.cubic_spline_kernel(r, case.h())
 
-    # Group by wall particle
     unique_walls = wall_idx.unique()
     for wi in unique_walls:
         mask = wall_idx == wi
         w_loc = w[mask]
         w_sum = w_loc.sum()
-        if w_sum < 1.0e-12:
+        if float(w_sum) < 1.0e-30:
             continue
         p_loc = pressure[fluid_idx[mask]]
         p_wall = (w_loc * p_loc).sum() / w_sum
-        # Force direction: normal to beam surface (approximate as -delta direction)
-        n_vec = -delta[mask].mean(dim=0)
+        n_vec = delta[mask].mean(dim=0)
         n_norm = torch.linalg.vector_norm(n_vec)
-        if n_norm > 1.0e-12:
+        if float(n_norm) > 1.0e-12:
             n_vec = n_vec / n_norm
         else:
             n_vec = torch.tensor([1.0, 0.0], dtype=pos.dtype, device=pos.device)
-        tributary = case.dx  # per-unit-depth tributary length
-        out[wi] = p_wall * tributary * n_vec
-
+        out[wi] = -p_wall * case.dx * n_vec
     return out
-
-
-def interpolation_matrix_beam(n_nodes: int, n_boundary: int,
-                               device) -> torch.Tensor:
-    """Linear interpolation from beam nodes to boundary particles.
-
-    Shape: (n_boundary, n_nodes), rows sum to 1.
-    """
-    l0 = 1.0 / (n_nodes - 1)
-    xi = torch.arange(n_boundary, dtype=torch.float64, device=device) * l0 * (n_nodes - 1) / max(n_boundary - 1, 1)
-    xi = xi.clamp(0.0, n_nodes - 1 - 1.0e-12)
-    idx = xi.floor().long()
-    w = (xi - idx.to(xi.dtype)).clamp(0.0, 1.0)
-    mat = torch.zeros((n_boundary, n_nodes), dtype=torch.float64, device=device)
-    rows = torch.arange(n_boundary, device=device)
-    mat[rows, idx] = 1.0 - w
-    mat[rows, (idx + 1).clamp(max=n_nodes - 1)] += w
-    return mat
 
 
 # --------------------------------------------------------------------------- #
@@ -510,6 +660,7 @@ class FSI2State:
     beam_vel: torch.Tensor
     time: float = 0.0
     history: Dict[str, List[float]] = field(default_factory=dict)
+    load: Optional[torch.Tensor] = None
 
 
 def initial_state(case: FSI2Case) -> FSI2State:
@@ -537,7 +688,8 @@ def initial_state(case: FSI2Case) -> FSI2State:
 
     history: Dict[str, List[float]] = {
         "t": [], "tip_x": [], "tip_y": [],
-        "drag": [], "lift": [], "max_speed": []
+        "drag": [], "lift": [], "max_speed": [],
+        "n_fluid": [], "injected": [], "removed": [], "force_coverage": [],
     }
 
     return FSI2State(
@@ -545,13 +697,86 @@ def initial_state(case: FSI2Case) -> FSI2State:
         beam_interp, nodes, torch.zeros_like(nodes), 0.0, history)
 
 
+def _inlet_ramp(case: FSI2Case, t: float) -> float:
+    """Cosine start-up ramp so the inlet does not shock the fluid at t = 0."""
+    if case.inlet_ramp_time <= 0.0:
+        return 1.0
+    x = min(max(t / case.inlet_ramp_time, 0.0), 1.0)
+    return 0.5 * (1.0 - math.cos(math.pi * x))
+
+
+def _apply_open_boundaries(state: "FSI2State", case: FSI2Case) -> Dict[str, int]:
+    """Inflow column injection + outflow removal for the through-flow channel.
+
+    Without this the channel is a closed tank: fluid piles up against the
+    downstream end and the benchmark's through-flow (and hence its drag level)
+    cannot exist.  The scheme is the standard "buffer-zone" treatment for
+    particle methods:
+
+    * particles that reach the downstream end (``x > L - dx/4``) are deleted;
+    * when the inlet column has drifted one lattice spacing downstream
+      (``min x > 1.5 dx``) a fresh column of fluid particles is laid at
+      ``x = dx/2`` with the parabolic inlet velocity.
+
+    Particle count therefore stays within one lattice column of its initial
+    value; the exact count is logged in ``state.history``.
+    """
+    dx = case.dx
+    injected = removed = 0
+
+    keep = state.fluid_pos[:, 0] < case.channel_length - 0.25 * dx
+    if not bool(keep.all()):
+        removed = int((~keep).sum())
+        state.fluid_pos = state.fluid_pos[keep]
+        state.fluid_vel = state.fluid_vel[keep]
+        state.fluid_mass = state.fluid_mass[keep]
+
+    n_now = state.fluid_pos.shape[0]
+    if n_now == 0:
+        return {"injected": 0, "removed": removed}
+
+    if float(state.fluid_pos[:, 0].min()) > 1.5 * dx:
+        ys = torch.arange(0.5 * dx, case.channel_height, dx,
+                          dtype=state.fluid_pos.dtype, device=state.fluid_pos.device)
+        xs = torch.full_like(ys, 0.5 * dx)
+        col = torch.stack((xs, ys), dim=-1)
+        # keep the inlet column clear of the cylinder / beam footprint
+        cx, cy = case.cylinder_x, case.cylinder_y
+        r = 0.5 * case.cylinder_d + 0.5 * dx
+        col = col[((col[:, 0] - cx) ** 2 + (col[:, 1] - cy) ** 2) > r ** 2]
+        if col.shape[0]:
+            vel = set_inlet_velocity(case, col) * _inlet_ramp(case, state.time)
+            mass = torch.full((col.shape[0],), di.lattice_mass_unit(case.fluid_config()),
+                              dtype=state.fluid_pos.dtype, device=state.fluid_pos.device)
+            state.fluid_pos = torch.cat((state.fluid_pos, col), dim=0)
+            state.fluid_vel = torch.cat((state.fluid_vel, vel), dim=0)
+            state.fluid_mass = torch.cat((state.fluid_mass, mass), dim=0)
+            injected = int(col.shape[0])
+
+    # imposed inlet velocity in the inlet buffer zone
+    zone = case.inlet_zone * dx
+    on_inlet = state.fluid_pos[:, 0] < zone
+    if bool(on_inlet.any()):
+        u_in = set_inlet_velocity(case, state.fluid_pos[on_inlet]) * _inlet_ramp(case, state.time)
+        state.fluid_vel[on_inlet] = u_in
+
+    return {"injected": injected, "removed": removed}
+
+
 def step_fsi2(state: FSI2State, case: FSI2Case, dt: float) -> Dict[str, float]:
     """Advance the coupled FSI2 system by one step."""
     cfg = case.fluid_config()
     cfg.dt = dt
 
-    # Build wall: static walls + cylinder + beam boundary particles
-    beam_boundary = state.beam_interp @ state.beam_nodes
+    counters = {"injected": 0, "removed": 0}
+    if case.open_boundaries:
+        counters = _apply_open_boundaries(state, case)
+
+    # Beam boundary layer: one row per face, outward normals per particle
+    beam_boundary, beam_normals, beam_interp, tributary = beam_boundary_geometry(
+        state.beam_nodes, case)
+    wall_start = state.wall_static.shape[0] + state.cylinder_particles.shape[0]
+
     wall = torch.cat((state.wall_static, state.cylinder_particles, beam_boundary), dim=0)
     m_unit = di.lattice_mass_unit(cfg)
     wall_mass = torch.cat((
@@ -561,28 +786,36 @@ def step_fsi2(state: FSI2State, case: FSI2Case, dt: float) -> Dict[str, float]:
                    dtype=beam_boundary.dtype, device=beam_boundary.device)
     ))
 
-    # Wall velocity: cylinder is static, beam moves
-    beam_boundary_vel = state.beam_interp @ state.beam_vel
+    beam_boundary_vel = beam_interp @ state.beam_vel
     wall_vel = torch.cat((
         torch.zeros_like(state.wall_static),
         torch.zeros_like(state.cylinder_particles),
         beam_boundary_vel
     ))
 
-    # SPH RHS
     all_pos = torch.cat((state.fluid_pos, wall), dim=0)
     pairs = cell_linked_pairs(all_pos, 2.0 * case.h())
     rho, pressure, acc = di.rhs(state.fluid_pos, state.fluid_vel, state.fluid_mass,
                                 cfg, pairs=pairs, wall=wall, dt=dt,
                                 wall_vel=wall_vel)
 
-    # Force on beam from fluid
-    wall_start = state.wall_static.shape[0] + state.cylinder_particles.shape[0]
-    f_beam = beam_load_on_fluid_boundary(
-        state.fluid_pos, rho, pressure, wall, wall_mass, wall_start, pairs, case)
+    # Force on the beam from the fluid: each face carries its own normal
+    p_wall, w_sum = boundary_pressure_from_fluid(
+        state.fluid_pos, pressure, wall, wall_start, pairs, case.h(),
+        normals=beam_normals if case.wall_impedance else None,
+        vel=state.fluid_vel if case.wall_impedance else None,
+        wall_vel=wall_vel if case.wall_impedance else None,
+        rho0=case.rho0, sound_speed=case.sound_speed)
+    f_beam = boundary_force_from_pressure(p_wall, beam_normals, tributary)
+    coverage = float((w_sum > 1.0e-30).to(torch.float64).mean()) if p_wall.numel() else 0.0
 
-    # Lump force to beam nodes
-    nodal_load = (state.beam_interp.T @ f_beam) * case.load_scale
+    raw_load = (beam_interp.T @ f_beam) * case.load_scale
+    alpha = float(case.coupling_relaxation)
+    if alpha >= 1.0 or state.load is None:
+        nodal_load = raw_load
+    else:
+        nodal_load = alpha * raw_load + (1.0 - alpha) * state.load
+    state.load = nodal_load
 
     # Beam sub-cycling
     n_sub = case.rod_substeps_effective()
@@ -592,25 +825,26 @@ def step_fsi2(state: FSI2State, case: FSI2Case, dt: float) -> Dict[str, float]:
         nodes, node_vel = beam_advance(nodes, node_vel, nodal_load, case, dt_rod)
     state.beam_nodes, state.beam_vel = nodes, node_vel
 
-    # Update fluid
+    # Fluid update
     state.fluid_vel = state.fluid_vel + dt * acc
     state.fluid_pos = state.fluid_pos + dt * state.fluid_vel
-
-    # Clamp positions to channel
-    state.fluid_pos[:, 0] = state.fluid_pos[:, 0].clamp(0.0, case.channel_length)
     state.fluid_pos[:, 1] = state.fluid_pos[:, 1].clamp(0.0, case.channel_height)
+    if not case.open_boundaries:
+        state.fluid_pos[:, 0] = state.fluid_pos[:, 0].clamp(0.0, case.channel_length)
 
     state.time += dt
 
-    # Diagnostics
     tip_x = float(state.beam_nodes[-1, 0]) - (case.cylinder_x + case.cylinder_d / 2 + case.beam_length)
     tip_y = float(state.beam_nodes[-1, 1]) - case.cylinder_y
     drag = float(f_beam[:, 0].sum()) if f_beam.numel() else 0.0
     lift = float(f_beam[:, 1].sum()) if f_beam.numel() else 0.0
-    max_speed = float(state.fluid_vel.norm(dim=1).max())
 
     return {"t": state.time, "tip_x": tip_x, "tip_y": tip_y,
-            "drag": drag, "lift": lift, "max_speed": max_speed}
+            "drag": drag, "lift": lift,
+            "max_speed": float(state.fluid_vel.norm(dim=1).max()),
+            "n_fluid": int(state.fluid_pos.shape[0]),
+            "injected": counters["injected"], "removed": counters["removed"],
+            "force_coverage": coverage}
 
 
 def run_fsi2(case: FSI2Case, state: Optional[FSI2State] = None):
