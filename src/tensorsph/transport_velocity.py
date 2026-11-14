@@ -1,4 +1,22 @@
-"""Transport-velocity correction (Zhang, Hu & Adams, JCP 2017; SPHinXsys port).
+"""Velocity-form particle-shifting regulariser (Lind et al. 2012, velocity form).
+
+**Attribution (corrected 2026-11-13, XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION).**
+This module is *not* the operator SPHinXsys implements.  It writes the
+particle-shifting displacement of Lind et al. (2012) as a velocity
+``dX/dt = v + dv`` and advects with it; the SPHinXsys
+``TransportVelocityCorrection`` is a *position* update driven by the ``grad-1``
+inconsistency ``sum_j grad_i W_ij V_j`` with coefficient ``alpha * h_ref**2`` and
+no reference velocity at all -- that operator is
+:mod:`tensorsph.transport_velocity_correction`, whose docstring records the
+line-by-line provenance (verbatim upstream files with sha256 under
+``docs/xval_sphinx_tvc/oss_source/``).  An earlier revision of this docstring
+claimed the ``dv = -A grad C / C`` form was "in SPHinXsys"; the vendored source
+refutes it (``transport_velocity_correction.hpp`` has no concentration term and
+``update()`` moves ``pos_``, not ``v_``), and
+``tests/test_tvc_attribution.py`` now pins the distinction.  Both modules are
+kept because they are different schemes -- ``droplet_impact`` uses this one,
+``dam_break`` uses the upstream port -- but they must never be quoted
+interchangeably.
 
 Why this module exists
 ----------------------
@@ -12,7 +30,8 @@ momentum-carrying velocity:
     dX/dt = V = v + δv,
 
 where the correction ``δv`` drives particles toward a locally uniform
-distribution.  In SPHinXsys the correction is
+distribution.  In this module (the Lind et al. 2012 form, *not* the upstream
+SPHinXsys operator -- see the attribution note above) the correction is
 
     δv = -A · ∇C / C,
 
