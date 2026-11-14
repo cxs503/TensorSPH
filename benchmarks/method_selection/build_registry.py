@@ -170,11 +170,57 @@ REFUTED_COUETTE_QUICK = (
     "(docs/audit_couette_wall_shear_reading.md; superseded by the design-time "
     "record from benchmarks/couette/out_design/results.json)"
 )
+COUETTE_SWEEP = "benchmarks/couette/out_design/viscous_time_convergence.json"
+
+
+def _couette_sweep_block(doc: dict, resolution: int) -> dict:
+    """Summary block of the viscous-time sweep for one resolution."""
+    blocks = doc["summary"]
+    key = str(resolution)
+    if key not in blocks:
+        raise KeyError(f"viscous-time sweep has no summary for H/dx={resolution}")
+    return blocks[key]
+
+
+def _x_couette_viscous_time_top(resolution: int):
+    def extract(doc: dict) -> float:
+        """Wall-shear reading at the *moving* wall, longest admissible run."""
+        rows = [r for r in doc["points"] if r["resolution_H_over_dx"] == resolution]
+        pool = [r for r in rows if r["admissible"]] or rows
+        return max(pool, key=lambda r: r["viscous_times"])["wall_shear_error_pct_top"]
+    return extract
+
+
+def _x_couette_viscous_time(resolution: int):
+    def extract(doc: dict) -> float:
+        """Wall-shear reading at the longest *admissible* (steady) run."""
+        return float(_couette_sweep_block(doc, resolution)["converged_error_pct"])
+    return extract
+
+
+def _x_couette_viscous_time_mobility(resolution: int):
+    def extract(doc: dict) -> float:
+        """How far the reading moves across admissible runs [percentage points]."""
+        return float(_couette_sweep_block(doc, resolution)["spread_over_admissible_pct"])
+    return extract
+
+
 DESIGN_TIME_PRECONDITION = (
     "steady-state precondition: t_end = 1.2 H^2/nu per DESIGN.md (not the 0.3 "
     "H^2/nu --quick override); the run's steady_drift misses its 1 % gate "
-    "(1.55e-2 at H/dx=16), which the viscous-time convergence sweep in "
-    "benchmarks/couette/out_design/viscous_time_convergence.json bounds"
+    "(1.55e-2 at H/dx=16). The viscous-time convergence sweep "
+    "(benchmarks/couette/out_design/viscous_time_convergence.json) re-runs the "
+    "same reading over t_end/(H^2/nu) in 0.6/1.2/2.4/3.6 at H/dx=8 and 16 and is "
+    "banked as separate records (x_couette_viscous_time*): what these records "
+    "claim is the design-time reading, what the sweep records is its envelope"
+)
+SWEEP_PRECONDITION = (
+    "read from the same solver/lattice/estimator swept over viscous times "
+    "t_end/(H^2/nu) in 0.6/1.2/2.4/3.6 (H/dx=8,16) with t_end = 1.2 H^2/nu kept "
+    "as the design point; 'admissible' = the run's own steady_drift passes its "
+    "1 % gate, so the reading is taken on a steady flow rather than a startup "
+    "transient (cluster job cj2995; driver benchmarks/couette/"
+    "viscous_time_convergence.py)"
 )
 
 
@@ -331,6 +377,78 @@ SOURCES: tuple[Source, ...] = (
         path="benchmarks/couette/out_design/results.json",
         fn=x_couette_wall_shear,
         precondition=DESIGN_TIME_PRECONDITION,
+    ),
+    Source(
+        extractor="x_couette_viscous_time_h8",
+        method="wcsph_wall_no_slip",
+        case="CASE-COUETTE-VISCOUS-TIME (steady-state envelope, H/dx=8)",
+        quantity="wall-shear error |1 - tau_SPH/tau_exact| at the steady end of the "
+                 "viscous-time sweep (longest run whose steady_drift passes the 1 % "
+                 "gate), H/dx=8",
+        gate_pct=5.0,
+        path=COUETTE_SWEEP,
+        fn=_x_couette_viscous_time(8),
+        precondition=SWEEP_PRECONDITION,
+    ),
+    Source(
+        extractor="x_couette_viscous_time_mobility_h8",
+        method="wcsph_wall_no_slip",
+        case="CASE-COUETTE-VISCOUS-TIME (reading mobility, H/dx=8)",
+        quantity="mobility of the wall-shear reading across the admissible viscous-time "
+                 "sweep (max - min, percentage points), H/dx=8: how much the "
+                 "accuracy claim would move if the run were stopped earlier",
+        gate_pct=5.0,
+        path=COUETTE_SWEEP,
+        fn=_x_couette_viscous_time_mobility(8),
+        precondition=SWEEP_PRECONDITION,
+    ),
+    Source(
+        extractor="x_couette_viscous_time_h16",
+        method="wcsph_wall_no_slip",
+        case="CASE-COUETTE-VISCOUS-TIME (steady-state envelope, H/dx=16)",
+        quantity="wall-shear error |1 - tau_SPH/tau_exact| at the steady end of the "
+                 "viscous-time sweep (longest run whose steady_drift passes the 1 % "
+                 "gate), H/dx=16",
+        gate_pct=5.0,
+        path=COUETTE_SWEEP,
+        fn=_x_couette_viscous_time(16),
+        precondition=SWEEP_PRECONDITION,
+    ),
+    Source(
+        extractor="x_couette_viscous_time_mobility_h16",
+        method="wcsph_wall_no_slip",
+        case="CASE-COUETTE-VISCOUS-TIME (reading mobility, H/dx=16)",
+        quantity="mobility of the wall-shear reading across the admissible viscous-time "
+                 "sweep (max - min, percentage points), H/dx=16: how much the "
+                 "accuracy claim would move if the run were stopped earlier",
+        gate_pct=5.0,
+        path=COUETTE_SWEEP,
+        fn=_x_couette_viscous_time_mobility(16),
+        precondition=SWEEP_PRECONDITION,
+    ),
+    Source(
+        extractor="x_couette_viscous_time_top_h8",
+        method="wcsph_wall_no_slip",
+        case="CASE-COUETTE-VISCOUS-TIME (moving wall, H/dx=8)",
+        quantity="wall-shear error at the MOVING wall, |1 - tau_SPH/tau_exact|, at the "
+                 "steady end of the viscous-time sweep, H/dx=8 (the bottom-wall "
+                 "reading alone does not evidence the whole no-slip condition)",
+        gate_pct=5.0,
+        path=COUETTE_SWEEP,
+        fn=_x_couette_viscous_time_top(8),
+        precondition=SWEEP_PRECONDITION,
+    ),
+    Source(
+        extractor="x_couette_viscous_time_top_h16",
+        method="wcsph_wall_no_slip",
+        case="CASE-COUETTE-VISCOUS-TIME (moving wall, H/dx=16)",
+        quantity="wall-shear error at the MOVING wall, |1 - tau_SPH/tau_exact|, at the "
+                 "steady end of the viscous-time sweep, H/dx=16 (the bottom-wall "
+                 "reading alone does not evidence the whole no-slip condition)",
+        gate_pct=5.0,
+        path=COUETTE_SWEEP,
+        fn=_x_couette_viscous_time_top(16),
+        precondition=SWEEP_PRECONDITION,
     ),
     Source(
         extractor="x_couette_flux",

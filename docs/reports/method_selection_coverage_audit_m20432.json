@@ -18,6 +18,10 @@
       "own_verdict": "FAIL"
     },
     {
+      "artifact": "benchmarks/couette/out_design/viscous_time_convergence.json",
+      "own_verdict": null
+    },
+    {
       "artifact": "benchmarks/csf_consistent/validation_report.json",
       "own_verdict": null
     },
@@ -55,7 +59,7 @@
     }
   ],
   "coverage_complete": true,
-  "gated_quantities": 19,
+  "gated_quantities": 25,
   "generated_by": "benchmarks/method_selection/audit_quantity_coverage.py",
   "integrity_failures": [
     "x_couette_design"
@@ -209,7 +213,7 @@
       "worst_banked_pct": 2.9679295205491987
     },
     {
-      "claimed_pct": 7.159256050363205,
+      "claimed_pct": 14.203286170959451,
       "method": "wcsph_wall_no_slip",
       "quantities": [
         {
@@ -246,6 +250,42 @@
           "extractor": "x_couette_wall_shear_design",
           "pct": 0.47810226678850487,
           "quantity": "wall-shear error at the moving wall |tau_SPH / tau_exact - 1|",
+          "within_owner_tolerance": true
+        },
+        {
+          "extractor": "x_couette_viscous_time_h8",
+          "pct": 9.549750387668631,
+          "quantity": "bottom-wall shear reading at the steady end of the sweep",
+          "within_owner_tolerance": true
+        },
+        {
+          "extractor": "x_couette_viscous_time_top_h8",
+          "pct": 14.203286170959451,
+          "quantity": "moving-wall shear reading at the steady end of the sweep",
+          "within_owner_tolerance": true
+        },
+        {
+          "extractor": "x_couette_viscous_time_mobility_h8",
+          "pct": 18.255122005939473,
+          "quantity": "mobility of the bottom-wall reading across admissible runs [pp]",
+          "within_owner_tolerance": false
+        },
+        {
+          "extractor": "x_couette_viscous_time_h16",
+          "pct": 1.811376214027427,
+          "quantity": "bottom-wall shear reading at the steady end of the sweep",
+          "within_owner_tolerance": true
+        },
+        {
+          "extractor": "x_couette_viscous_time_top_h16",
+          "pct": 17.076468467712292,
+          "quantity": "moving-wall shear reading at the steady end of the sweep",
+          "within_owner_tolerance": false
+        },
+        {
+          "extractor": "x_couette_viscous_time_mobility_h16",
+          "pct": 0.0,
+          "quantity": "mobility of the bottom-wall reading across admissible runs [pp]",
           "within_owner_tolerance": true
         }
       ],
@@ -636,6 +676,120 @@
       "within_owner_tolerance": true
     },
     {
+      "artifact": "benchmarks/couette/out_design/viscous_time_convergence.json",
+      "banked": true,
+      "banked_gate_pct": 5.0,
+      "banked_pct": 9.549750387668631,
+      "extractor": "x_couette_viscous_time_h8",
+      "gate_note": "artefact gate wall_shear_rel = 0.05",
+      "gate_pct": 5.0,
+      "integrity_ok": true,
+      "label": "Couette viscous-time sweep (H/dx=8)",
+      "method": "wcsph_wall_no_slip",
+      "own_gate_passed": false,
+      "quantity": "bottom-wall shear reading at the steady end of the sweep",
+      "recompute_kind": "direct",
+      "recomputed_pct": 9.549750387668631,
+      "stored_matches_recomputed": null,
+      "stored_pct": null,
+      "within_owner_tolerance": true
+    },
+    {
+      "artifact": "benchmarks/couette/out_design/viscous_time_convergence.json",
+      "banked": true,
+      "banked_gate_pct": 5.0,
+      "banked_pct": 14.203286170959451,
+      "extractor": "x_couette_viscous_time_top_h8",
+      "gate_note": "artefact gate wall_shear_rel = 0.05",
+      "gate_pct": 5.0,
+      "integrity_ok": true,
+      "label": "Couette viscous-time sweep, moving wall (H/dx=8)",
+      "method": "wcsph_wall_no_slip",
+      "own_gate_passed": false,
+      "quantity": "moving-wall shear reading at the steady end of the sweep",
+      "recompute_kind": "direct",
+      "recomputed_pct": 14.203286170959451,
+      "stored_matches_recomputed": null,
+      "stored_pct": null,
+      "within_owner_tolerance": true
+    },
+    {
+      "artifact": "benchmarks/couette/out_design/viscous_time_convergence.json",
+      "banked": true,
+      "banked_gate_pct": 5.0,
+      "banked_pct": 18.255122005939473,
+      "extractor": "x_couette_viscous_time_mobility_h8",
+      "gate_note": "a reading that moves more than the 5 % gate is not converged",
+      "gate_pct": 5.0,
+      "integrity_ok": true,
+      "label": "Couette viscous-time sweep, reading mobility (H/dx=8)",
+      "method": "wcsph_wall_no_slip",
+      "own_gate_passed": false,
+      "quantity": "mobility of the bottom-wall reading across admissible runs [pp]",
+      "recompute_kind": "direct",
+      "recomputed_pct": 18.255122005939473,
+      "stored_matches_recomputed": null,
+      "stored_pct": null,
+      "within_owner_tolerance": false
+    },
+    {
+      "artifact": "benchmarks/couette/out_design/viscous_time_convergence.json",
+      "banked": true,
+      "banked_gate_pct": 5.0,
+      "banked_pct": 1.811376214027427,
+      "extractor": "x_couette_viscous_time_h16",
+      "gate_note": "artefact gate wall_shear_rel = 0.05",
+      "gate_pct": 5.0,
+      "integrity_ok": true,
+      "label": "Couette viscous-time sweep (H/dx=16)",
+      "method": "wcsph_wall_no_slip",
+      "own_gate_passed": true,
+      "quantity": "bottom-wall shear reading at the steady end of the sweep",
+      "recompute_kind": "direct",
+      "recomputed_pct": 1.811376214027427,
+      "stored_matches_recomputed": null,
+      "stored_pct": null,
+      "within_owner_tolerance": true
+    },
+    {
+      "artifact": "benchmarks/couette/out_design/viscous_time_convergence.json",
+      "banked": true,
+      "banked_gate_pct": 5.0,
+      "banked_pct": 17.076468467712292,
+      "extractor": "x_couette_viscous_time_top_h16",
+      "gate_note": "artefact gate wall_shear_rel = 0.05",
+      "gate_pct": 5.0,
+      "integrity_ok": true,
+      "label": "Couette viscous-time sweep, moving wall (H/dx=16)",
+      "method": "wcsph_wall_no_slip",
+      "own_gate_passed": false,
+      "quantity": "moving-wall shear reading at the steady end of the sweep",
+      "recompute_kind": "direct",
+      "recomputed_pct": 17.076468467712292,
+      "stored_matches_recomputed": null,
+      "stored_pct": null,
+      "within_owner_tolerance": false
+    },
+    {
+      "artifact": "benchmarks/couette/out_design/viscous_time_convergence.json",
+      "banked": true,
+      "banked_gate_pct": 5.0,
+      "banked_pct": 0.0,
+      "extractor": "x_couette_viscous_time_mobility_h16",
+      "gate_note": "a reading that moves more than the 5 % gate is not converged",
+      "gate_pct": 5.0,
+      "integrity_ok": true,
+      "label": "Couette viscous-time sweep, reading mobility (H/dx=16)",
+      "method": "wcsph_wall_no_slip",
+      "own_gate_passed": true,
+      "quantity": "mobility of the bottom-wall reading across admissible runs [pp]",
+      "recompute_kind": "direct",
+      "recomputed_pct": 0.0,
+      "stored_matches_recomputed": null,
+      "stored_pct": null,
+      "within_owner_tolerance": true
+    },
+    {
       "artifact": "docs/xval_sphinx_tvc/data/grid_dx003.json",
       "banked": true,
       "banked_gate_pct": 15.0,
@@ -680,14 +834,20 @@
     "x_couette",
     "x_couette_flux",
     "x_couette_wall_shear",
+    "x_couette_viscous_time_h8",
+    "x_couette_viscous_time_top_h8",
+    "x_couette_viscous_time_mobility_h8",
+    "x_couette_viscous_time_top_h16",
     "x_transport_velocity_coarse"
   ],
   "records_over_owner_tolerance": [
     "x_csf_curvature",
     "x_couette_wall_shear",
+    "x_couette_viscous_time_mobility_h8",
+    "x_couette_viscous_time_top_h16",
     "x_transport_velocity_coarse"
   ],
-  "registry_records": 20,
+  "registry_records": 26,
   "schema_version": "1.0",
   "stored_vs_recomputed_mismatches": [
     "x_couette_design"
