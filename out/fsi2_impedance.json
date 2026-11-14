@@ -1,0 +1,54 @@
+{
+  "dx": 0.02,
+  "nst": 600,
+  "rows": [
+    {
+      "impedance": false,
+      "ratio": 1.0,
+      "sigma_per_s": Infinity,
+      "v20": 1.148597708617838,
+      "v_end": 6.4000181659661734e+153,
+      "finite": false
+    },
+    {
+      "impedance": false,
+      "ratio": 2.0,
+      "sigma_per_s": 20.5849399369053,
+      "v20": 3.8369155468300966e-07,
+      "v_end": 0.09474264340448589,
+      "finite": true
+    },
+    {
+      "impedance": false,
+      "ratio": 10.0,
+      "sigma_per_s": 22.033934786532328,
+      "v20": 8.482437230795344e-08,
+      "v_end": 0.050196324960899964,
+      "finite": true
+    },
+    {
+      "impedance": true,
+      "ratio": 1.0,
+      "sigma_per_s": Infinity,
+      "v20": 1.1485977087240218,
+      "v_end": 7.855352592963237e+153,
+      "finite": false
+    },
+    {
+      "impedance": true,
+      "ratio": 2.0,
+      "sigma_per_s": 16.99238144402479,
+      "v20": 6.547903415282935e-07,
+      "v_end": 0.018515514906196788,
+      "finite": true
+    },
+    {
+      "impedance": true,
+      "ratio": 10.0,
+      "sigma_per_s": 18.919527563544186,
+      "v20": 2.3751975391032767e-07,
+      "v_end": 0.021477357974286973,
+      "finite": true
+    }
+  ]
+}
