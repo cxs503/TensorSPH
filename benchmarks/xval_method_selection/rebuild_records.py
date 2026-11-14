@@ -30,6 +30,31 @@ BEGIN = re.compile(r"^>>>BEGIN_RECORD_B64 (\S+) ([0-9a-f]{64}) (\d+)\s*$")
 END = ">>>END_RECORD_B64 "
 
 
+def normalize_log(text: str) -> str:
+    """Undo one level of JSON escaping in a job log.
+
+    The compute gate stores a finished job as a JSON object whose ``output_tail``
+    (or the whole body) has newlines escaped as ``\\n``.  Feeding that file
+    straight to :func:`parse_log` would see a single line and find no dump, which
+    looks like "the job wrote nothing" - the exact confusion this module exists to
+    prevent.  So unescape newlines when the text clearly is JSON.
+    """
+    stripped = text.lstrip()
+    if not stripped.startswith("{"):
+        return text
+    try:
+        obj = json.loads(stripped)
+    except json.JSONDecodeError:
+        return text.replace("\\n", "\n")
+    parts = []
+    if isinstance(obj, dict):
+        for value in obj.values():
+            if isinstance(value, str):
+                parts.append(value)
+        parts.append(stripped)
+    return "\n".join(parts).replace("\\n", "\n")
+
+
 def parse_log(text: str) -> tuple[dict[str, bytes], list[dict]]:
     """Return ``({label: blob}, [problems])`` for every dump found in ``text``.
 
@@ -39,7 +64,7 @@ def parse_log(text: str) -> tuple[dict[str, bytes], list[dict]]:
     """
     blobs: dict[str, bytes] = {}
     problems: list[dict] = []
-    lines = text.splitlines()
+    lines = normalize_log(text).splitlines()
     i = 0
     while i < len(lines):
         head = BEGIN.match(lines[i].strip())
