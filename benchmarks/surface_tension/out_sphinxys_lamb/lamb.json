@@ -36,13 +36,13 @@
       },
       {
         "case": "csf_R24",
-        "dp_measured": -0.20740885284567875,
+        "dp_measured": -0.20740885284567878,
         "dp_analytic": -0.21600000000000003,
-        "stiffness_ratio": 0.960226170581846,
+        "stiffness_ratio": 0.9602261705818461,
         "omega_ratio": 0.979911307507902,
         "omega_error_pct": -2.0088692492097993,
         "surface_measure_ratio": 0.7105819420392213,
-        "kappa_mode_ratio": 0.960226170581846,
+        "kappa_mode_ratio": 0.9602261705818463,
         "n_particles": 2102.0,
         "h": 0.005416666666666667,
         "model": "csf_brackbill",
@@ -61,7 +61,7 @@
         "omega_ratio": 0.9173560645470614,
         "omega_error_pct": -8.264393545293858,
         "surface_measure_ratio": 0.714272312076487,
-        "kappa_mode_ratio": 0.8415421491612721,
+        "kappa_mode_ratio": 0.8415421491612722,
         "n_particles": 3734.0,
         "h": 0.0040625,
         "model": "csf_brackbill",
@@ -345,7 +345,7 @@
       "css_no_hourglass_ratio": NaN,
       "hourglass_dp": -1.5080212028410231,
       "hourglass_over_sigma_R": -2.094473892834755,
-      "csf_dp": 0.005846217925737539,
+      "csf_dp": 0.0058462179257375525,
       "csf_ratio": -Infinity
     },
     {
@@ -356,8 +356,8 @@
       "css_no_hourglass_ratio": 1.0259237863245552,
       "hourglass_dp": -1.181378215902628,
       "hourglass_over_sigma_R": -1.6408030776425393,
-      "csf_dp": -0.009759373606389702,
-      "csf_ratio": 0.4518228521476714
+      "csf_dp": -0.009759373606389666,
+      "csf_ratio": 0.45182285214766976
     },
     {
       "eps": 0.02,
@@ -367,8 +367,8 @@
       "css_no_hourglass_ratio": 0.9069575041646444,
       "hourglass_dp": -1.1083342348765335,
       "hourglass_over_sigma_R": -1.5393531039951855,
-      "csf_dp": -0.044378323355072524,
-      "csf_ratio": 1.0272760035896418
+      "csf_dp": -0.04437832335507251,
+      "csf_ratio": 1.0272760035896416
     },
     {
       "eps": 0.05,
@@ -378,8 +378,8 @@
       "css_no_hourglass_ratio": 1.045895976064327,
       "hourglass_dp": -0.7005391317027998,
       "hourglass_over_sigma_R": -0.9729710162538887,
-      "csf_dp": -0.10099091480847983,
-      "csf_ratio": 0.9351010630414798
+      "csf_dp": -0.1009909148084798,
+      "csf_ratio": 0.9351010630414796
     },
     {
       "eps": 0.1,
@@ -389,8 +389,8 @@
       "css_no_hourglass_ratio": 0.983055334475944,
       "hourglass_dp": -0.9769810745554497,
       "hourglass_over_sigma_R": -1.3569181591047914,
-      "csf_dp": -0.20740885284567875,
-      "csf_ratio": 0.960226170581846
+      "csf_dp": -0.20740885284567878,
+      "csf_ratio": 0.9602261705818461
     }
   ]
 }
