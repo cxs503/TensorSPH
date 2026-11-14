@@ -215,6 +215,20 @@ class Config:
     # the surface and a hydrostatic column does not hold itself up. Off by
     # default so every published number stays reproducible.
     density_renormalization: bool = False
+    # Boundary-consistent summation density: the static wall particles enter the
+    # fluid's density summation with the density their own extrapolated pressure
+    # implies (Adami et al. 2012 eq. 11 -> Tait inverse) instead of the nominal
+    # rho0, and the wall-face pressure is then re-extrapolated from the corrected
+    # field. With a stiff Tait law the nominal rho0 walls put a density step at
+    # the interface that the EOS amplifies by ~100x: a hydrostatic column at
+    # c0 = 20 m/s, gamma = 7 supported only 73.4 % of its weight at its floor and
+    # that deficit sat in the two wall-adjacent rows, whose pressure gradient was
+    # *inverted* (docs/force_from_fluid/README.md). Enabling this closes both the
+    # floor reaction and the gate thrust to a few percent of the closed-form
+    # hydrostatic loads. Off by default so every published number stays
+    # reproducible; requires density_regularization='none' (see the check in
+    # ``rhs``).
+    boundary_consistent_density: bool = False
     # Compression-based density regularization -- a port of SPHinXsys
     # (:mod:`tensorsph.compression_regularization`, cross-checked in
     # docs/xval_sphinxsys_compression_density_regularization.md). "none" keeps
@@ -865,6 +879,14 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None,
     rho_all = rho_all.index_add(0, j, all_mass[i] * wij)
     rho = rho_all[:n].clamp_min(0.1 * cfg.rho0)
 
+    if cfg.boundary_consistent_density and cfg.density_regularization != "none":
+        # The compression regularizer *replaces* the summation density from a
+        # reference volume, so an additive wall-mass correction would double
+        # count the boundary support it already models.
+        raise ValueError(
+            "boundary_consistent_density corrects the summation density and "
+            "cannot be combined with density_regularization != 'none'")
+
     if cfg.density_renormalization:
         # Shepard normalization of the summation density. Only the *truncation*
         # of the support is removed: on a complete lattice sum_j W_ij is S_full
@@ -963,9 +985,6 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None,
         wall_idx = (torch.where(i_fluid, j, i) - n).clamp_(0, nw - 1)
         weight = torch.where(crossing, wij, torch.zeros_like(wij))
         zeros = torch.zeros(nw, dtype=pos.dtype, device=pos.device)
-        pressure_ext = torch.cat((pressure, zeros))
-        numerator = torch.zeros(nw, dtype=pos.dtype, device=pos.device)
-        denominator = torch.zeros(nw, dtype=pos.dtype, device=pos.device)
 
         # Adami et al. (2012) eq. (11) carries a body-force term next to the
         # kernel-weighted pressure average:
@@ -987,14 +1006,47 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None,
             dx_wall = torch.where(i_fluid, -delta[:, 0], delta[:, 0])
             body = body - (wall_accel[wall_idx, 0] * dx_wall
                            + wall_accel[wall_idx, 1] * dy)
-        source = pressure_ext[fluid_idx]
-        if cfg.gravity != 0.0:
-            source = source + torch.cat((rho, zeros))[fluid_idx] * body
-        numerator = numerator.index_add(0, wall_idx, source * weight)
-        denominator = denominator.index_add(0, wall_idx, weight)
-        wall_pressure = (numerator / denominator.clamp_min(1.0e-30)).clamp_min(0.0)
-        wall_density = (cfg.rho0 * (wall_pressure / bulk + 1.0).pow(1.0 / cfg.gamma)
+
+        def extrapolate_wall(pressure_vec, rho_vec):
+            """Wall-face pressure (Adami eq. 11) and EOS density from a fluid field."""
+            source = torch.cat((pressure_vec, zeros))[fluid_idx]
+            if cfg.gravity != 0.0:
+                source = source + torch.cat((rho_vec, zeros))[fluid_idx] * body
+            numerator = torch.zeros(nw, dtype=pos.dtype, device=pos.device)
+            numerator = numerator.index_add(0, wall_idx, source * weight)
+            denominator = torch.zeros(nw, dtype=pos.dtype, device=pos.device)
+            denominator = denominator.index_add(0, wall_idx, weight)
+            p_wall = (numerator / denominator.clamp_min(1.0e-30)).clamp_min(0.0)
+            rho_wall = (cfg.rho0 * (p_wall / bulk + 1.0).pow(1.0 / cfg.gamma)
                         ).clamp_min(cfg.rho0)
+            return p_wall, rho_wall
+
+        wall_pressure, wall_density = extrapolate_wall(pressure, rho)
+
+        if cfg.boundary_consistent_density:
+            # Second pass. The wall particles enter the fluid's *summation*
+            # density, but they carried the nominal lattice mass, i.e. rho0 dx^2,
+            # whatever pressure the fluid extrapolates onto them. Under a stiff
+            # Tait law the mismatch is amplified: at c0 = 20 m/s, gamma = 7 the
+            # bulk modulus is 57 kPa, so a 0.3 % density step becomes a 30 %
+            # pressure step, and a hydrostatic column then supports only ~74 %
+            # of its own weight at its floor (docs/force_from_fluid/README.md,
+            # measured). Feeding the extrapolated wall density back into the
+            # summation removes the step. The summation is linear in the masses,
+            # so the correction is one index_add over the crossing pairs, not a
+            # second kernel sweep.
+            wall_mass_old = all_mass[n:]
+            delta_mass = wall_mass_old * (wall_density / cfg.rho0) - wall_mass_old
+            correction = torch.zeros(n, dtype=pos.dtype, device=pos.device)
+            correction = correction.index_add(
+                0, fluid_idx[crossing],
+                delta_mass[wall_idx[crossing]] * wij[crossing])
+            rho = (rho + correction).clamp_min(0.1 * cfg.rho0)
+            pressure = tait_pressure(rho, cfg)
+            # The wall face pressure is re-extrapolated from the corrected
+            # fluid field, so both sides of the interface use one state.
+            wall_pressure, wall_density = extrapolate_wall(pressure, rho)
+
         pressure_all = torch.cat((pressure, wall_pressure))
         density_all = torch.cat((rho, wall_density))
     else:
