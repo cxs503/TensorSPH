@@ -1,0 +1,77 @@
+{
+  "tag": "audit_dx0.04_t30",
+  "dx": 0.04,
+  "t_end": 3.0,
+  "sound_speed": 20.0,
+  "dt": 0.0002,
+  "probe_x": 2.426,
+  "arrival_threshold": 0.02,
+  "peak_height_m": 0.4254579544067383,
+  "peak_time_s": 0.9199999999999313,
+  "gauge_aperture_m": 0.08,
+  "stations_offset_m": [
+    0.05,
+    0.248
+  ],
+  "gauges": {
+    "height@x2.426": {
+      "peak_m": 0.4254579544067383,
+      "peak_time_s": 0.9199999999999313,
+      "arrival_time_s": 0.48414603344528545,
+      "station_x_m": 2.426,
+      "operator": "height"
+    },
+    "surface@x2.426": {
+      "peak_m": 0.46545795440673826,
+      "peak_time_s": 0.9199999999999313,
+      "arrival_time_s": 0.4658087708469711,
+      "station_x_m": 2.426,
+      "operator": "surface"
+    },
+    "slab@x2.426": {
+      "peak_m": 0.43382301330566403,
+      "peak_time_s": 0.9119999999999322,
+      "arrival_time_s": 0.46039496901992677,
+      "station_x_m": 2.426,
+      "operator": "slab"
+    },
+    "height@x2.228": {
+      "peak_m": 0.3876568377017975,
+      "peak_time_s": 1.5239999999998648,
+      "arrival_time_s": 0.4358024256643237,
+      "station_x_m": 2.228,
+      "operator": "height"
+    },
+    "surface@x2.228": {
+      "peak_m": 0.42765683770179747,
+      "peak_time_s": 1.5239999999998648,
+      "arrival_time_s": 0.40179328208226006,
+      "station_x_m": 2.228,
+      "operator": "surface"
+    },
+    "slab@x2.228": {
+      "peak_m": 0.4012372589111328,
+      "peak_time_s": 1.5439999999998626,
+      "arrival_time_s": 0.4073935439619555,
+      "station_x_m": 2.228,
+      "operator": "slab"
+    }
+  },
+  "column_peak_m": 0.5,
+  "arrival_time_s": 0.48414603344528545,
+  "steps": 15001,
+  "simulated_time_s": 3.0001999999997024,
+  "dt_min": 0.0002,
+  "dt_max": 0.0002,
+  "max_density_compression": 0.17233422851562508,
+  "max_speed": 5.977508544921875,
+  "mass_error_rel": 0.0,
+  "boundary_escapes": 0,
+  "particles_fluid": 390,
+  "comparison": {
+    "verdict": "WITHHELD",
+    "tolerance": 0.1,
+    "rows": [],
+    "experimental_status": "WITHHELD"
+  }
+}

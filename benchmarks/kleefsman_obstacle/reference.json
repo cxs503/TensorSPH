@@ -58,7 +58,22 @@
     ],
     "arrival_threshold_m": 0.02,
     "why": "the case-pool tolerance is 10 %, so the gauge itself must not carry a resolution-dependent bias of that size; measured on a still lattice, the historical operator is 1.8-2.7 cm low at dx=0.02 and 1.5-5.3 cm low at dx=0.04, i.e. it exceeds its own 0.02 m arrival threshold",
-    "evidence": "docs/verification_kleefsman_gauge_bias.md, results/gauge_ladder/analysis.json, tests/test_kleefsman_gauge_bias.py"
+    "evidence": "docs/verification_kleefsman_gauge_bias.md, results/gauge_ladder/analysis.json, tests/test_kleefsman_gauge_bias.py",
+    "frozen_primary": {
+      "operator": "slab",
+      "aperture_m": 0.08,
+      "station_offset_m": 0.05,
+      "peak_filter_window_s": 0.03,
+      "arrival_threshold_m": 0.02,
+      "why": "the audit of the committed bundle (docs/benchmarks/kleefsman-decidability-audit-m20773.md) measured a 9-20 % peak spread across the three water-level operators at the probe station, which is the same size as the 10 % case tolerance. The acceptance metric therefore cannot be evaluated until one operator is frozen: the fixed-aperture slab gauge is chosen because it is the only one of the three that is dx-independent for a planar surface, and the peak is taken after a 30 ms symmetric moving average because the particle-stack peak is set by ballistic spray (gauge-equivalent level, see convergence_analysis.py).",
+      "frozen_by": "m20773",
+      "frozen_on": "2026-11-14",
+      "evidence": [
+        "docs/benchmarks/kleefsman-decidability-audit-m20773.md",
+        "results/audit_protocol/decidability.json",
+        "tests/test_kleefsman_decidability.py"
+      ]
+    }
   },
   "gauge_ladder_status": {
     "grids_completed": [

@@ -1,0 +1,313 @@
+{
+  "case": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST",
+  "tolerance": 0.1,
+  "grids": {
+    "dx0.01": {
+      "dx": 0.01,
+      "t_end": 1.0,
+      "peak_height_m": 0.3772946298122406,
+      "peak_time_s": 0.9658586633250333,
+      "arrival_time_s": 0.4442808353981013,
+      "horizon": {
+        "censored": true,
+        "margin_s": 0.05,
+        "slack_s": 0.03414133667496666,
+        "peak_time_s": 0.9658586633250333,
+        "t_end": 1.0,
+        "reason": "peak at last sample(s): report as lower bound"
+      },
+      "courant": {
+        "ok": false,
+        "dt_implied_s": 0.00048638132295719845,
+        "dt_acoustic_limit_s": 0.00019500000000000002,
+        "courant": 0.7482789583956898,
+        "max_courant": 0.3,
+        "ratio_to_limit": 2.4942631946522993
+      },
+      "compression": {
+        "compression": 0.1305438232421876,
+        "limit": 0.01,
+        "sound_speed": 20.0,
+        "ok": false,
+        "mach_max": 0.3114989519119263,
+        "sound_speed_for_10U": 62.299790382385254,
+        "ten_u_rule_ok": false
+      },
+      "operator_spread": {}
+    },
+    "dx0.02": {
+      "dx": 0.02,
+      "t_end": 1.2,
+      "peak_height_m": 0.5174656510353088,
+      "peak_time_s": 0.7159999999999538,
+      "arrival_time_s": 0.4540686776727774,
+      "horizon": {
+        "censored": false,
+        "margin_s": 0.06,
+        "slack_s": 0.48400000000004617,
+        "peak_time_s": 0.7159999999999538,
+        "t_end": 1.2,
+        "reason": "peak observed with margin"
+      },
+      "courant": {
+        "ok": true,
+        "dt_implied_s": 0.00019996667222129644,
+        "dt_acoustic_limit_s": 0.00039000000000000005,
+        "courant": 0.15382051709330496,
+        "max_courant": 0.3,
+        "ratio_to_limit": 0.5127350569776831
+      },
+      "compression": {
+        "compression": 0.12032958984374997,
+        "limit": 0.01,
+        "sound_speed": 20.0,
+        "ok": false,
+        "mach_max": 0.3320624589920044,
+        "sound_speed_for_10U": 66.41249179840088,
+        "ten_u_rule_ok": false
+      },
+      "operator_spread": {
+        "2.426": {
+          "operators": {
+            "height@x2.426": 0.5174656510353088,
+            "surface@x2.426": 0.5374656510353089,
+            "slab@x2.426": 0.47681819915771484
+          },
+          "spread_rel": 0.11878075069512331,
+          "range_m": 0.060647451877594016
+        },
+        "2.228": {
+          "operators": {
+            "height@x2.228": 0.18069833517074585,
+            "surface@x2.228": 0.20069833517074584,
+            "slab@x2.228": 0.2036172103881836
+          },
+          "spread_rel": 0.11752990470337996,
+          "range_m": 0.02291887521743774
+        }
+      }
+    },
+    "dx0.04": {
+      "dx": 0.04,
+      "t_end": 1.2,
+      "peak_height_m": 0.4254579544067383,
+      "peak_time_s": 0.9199999999999313,
+      "arrival_time_s": 0.48414603344528545,
+      "horizon": {
+        "censored": false,
+        "margin_s": 0.06,
+        "slack_s": 0.28000000000006864,
+        "peak_time_s": 0.9199999999999313,
+        "t_end": 1.2,
+        "reason": "peak observed with margin"
+      },
+      "courant": {
+        "ok": true,
+        "dt_implied_s": 0.00019996667222129644,
+        "dt_acoustic_limit_s": 0.0007800000000000001,
+        "courant": 0.07691025854665248,
+        "max_courant": 0.3,
+        "ratio_to_limit": 0.25636752848884153
+      },
+      "compression": {
+        "compression": 0.14149401855468757,
+        "limit": 0.01,
+        "sound_speed": 20.0,
+        "ok": false,
+        "mach_max": 0.29887542724609373,
+        "sound_speed_for_10U": 59.77508544921875,
+        "ten_u_rule_ok": false
+      },
+      "operator_spread": {
+        "2.426": {
+          "operators": {
+            "height@x2.426": 0.4254579544067383,
+            "surface@x2.426": 0.46545795440673826,
+            "slab@x2.426": 0.43382301330566403
+          },
+          "spread_rel": 0.09058388637667561,
+          "range_m": 0.03999999999999998
+        },
+        "2.228": {
+          "operators": {
+            "height@x2.228": 0.1777607649564743,
+            "surface@x2.228": 0.2177607649564743,
+            "slab@x2.228": 0.2010190582275391
+          },
+          "spread_rel": 0.20115982447071906,
+          "range_m": 0.04000000000000001
+        }
+      }
+    }
+  },
+  "findings": [
+    {
+      "id": "CENSORED-dx0.01",
+      "severity": "blocking",
+      "detail": "peak at t=0.966 s with t_end=1.000 s (slack 0.034 s <= margin 0.050 s): peak is a lower bound"
+    },
+    {
+      "id": "COURANT-dx0.01",
+      "severity": "blocking",
+      "detail": "implied dt 4.864e-04 s is 2.49x the acoustic limit 1.950e-04 s (Courant 0.748 > 0.3)"
+    },
+    {
+      "id": "COMPRESSION-dx0.01",
+      "severity": "major",
+      "detail": "|drho|/rho0 = 13.1% > 1%; c0/umax = 3.21 (10U rule wants c0 >= 62.3 m/s)"
+    },
+    {
+      "id": "COMPRESSION-dx0.02",
+      "severity": "major",
+      "detail": "|drho|/rho0 = 12.0% > 1%; c0/umax = 3.01 (10U rule wants c0 >= 66.4 m/s)"
+    },
+    {
+      "id": "GAUGE-dx0.02@2.426",
+      "severity": "major",
+      "detail": "operator peak spread 11.9% of the mean at x=2.426 m exceeds half the tolerance"
+    },
+    {
+      "id": "GAUGE-dx0.02@2.228",
+      "severity": "major",
+      "detail": "operator peak spread 11.8% of the mean at x=2.228 m exceeds half the tolerance"
+    },
+    {
+      "id": "COMPRESSION-dx0.04",
+      "severity": "major",
+      "detail": "|drho|/rho0 = 14.1% > 1%; c0/umax = 3.35 (10U rule wants c0 >= 59.8 m/s)"
+    },
+    {
+      "id": "GAUGE-dx0.04@2.426",
+      "severity": "major",
+      "detail": "operator peak spread 9.1% of the mean at x=2.426 m exceeds half the tolerance"
+    },
+    {
+      "id": "GAUGE-dx0.04@2.228",
+      "severity": "major",
+      "detail": "operator peak spread 20.1% of the mean at x=2.228 m exceeds half the tolerance"
+    },
+    {
+      "id": "MIXED-HORIZON",
+      "severity": "blocking",
+      "detail": "ladder mixes t_end = [1.0, 1.2] s; an observed order of accuracy is undefined on it"
+    },
+    {
+      "id": "C0-NONMONOTONE-dx0.04",
+      "severity": "major",
+      "detail": "peak does not decrease monotonically with c0 (peaks [0.4254579544067383, 0.4475060999393463, 0.513088047504425]): the c0-dependence stored as 'compressibility effect' is not a systematic trend on this grid"
+    }
+  ],
+  "ladder": {
+    "rows": [
+      {
+        "dx": 0.04,
+        "t_end": 1.2,
+        "censored": false,
+        "peak": 0.4254579544067383,
+        "arrival": 0.48414603344528545
+      },
+      {
+        "dx": 0.02,
+        "t_end": 1.2,
+        "censored": false,
+        "peak": 0.5174656510353088,
+        "arrival": 0.4540686776727774
+      },
+      {
+        "dx": 0.01,
+        "t_end": 1.0,
+        "censored": true,
+        "peak": 0.3772946298122406,
+        "arrival": 0.4442808353981013
+      }
+    ],
+    "uniform_horizon": false,
+    "horizons_s": [
+      1.0,
+      1.2
+    ],
+    "censored_grids": [
+      0.01
+    ]
+  },
+  "compressibility_family": {
+    "0.02": {
+      "status": "OK",
+      "points": [
+        [
+          20.0,
+          0.5174656510353088
+        ],
+        [
+          40.0,
+          0.48058047890663147
+        ],
+        [
+          80.0,
+          0.45548737049102783
+        ]
+      ],
+      "a_incompressible_peak_m": 0.45770421127478284,
+      "b_m2_per_s2": 24.509216490246,
+      "residuals_m": [
+        -0.0015116014650889964,
+        0.007558007325444871,
+        -0.00604640586035593
+      ],
+      "max_abs_residual_m": 0.007558007325444871,
+      "monotone_decreasing": true,
+      "sound_speed_order": [
+        20.0,
+        40.0,
+        80.0
+      ],
+      "spread_rel": 0.1279191993699891
+    },
+    "0.04": {
+      "status": "OK",
+      "points": [
+        [
+          20.0,
+          0.4254579544067383
+        ],
+        [
+          40.0,
+          0.4475060999393463
+        ],
+        [
+          80.0,
+          0.513088047504425
+        ]
+      ],
+      "a_incompressible_peak_m": 0.4949020892381668,
+      "b_m2_per_s2": -30.066031501406716,
+      "residuals_m": [
+        0.005720943922088273,
+        -0.02860471961044131,
+        0.022883775688353036
+      ],
+      "max_abs_residual_m": 0.02860471961044131,
+      "monotone_decreasing": false,
+      "sound_speed_order": [
+        20.0,
+        40.0,
+        80.0
+      ],
+      "spread_rel": 0.18966839626163914
+    }
+  },
+  "uncertainty_budget": {
+    "discretisation_rel": 0.19515408480082946,
+    "n_uncensored_grids": 2,
+    "compressibility_rel": 0.18966839626163914,
+    "gauge_operator_rel": 0.20115982447071906,
+    "total_rel": 0.3384146751191532,
+    "verdict": {
+      "decidable": false,
+      "uncertainty_rel": 0.3384146751191532,
+      "tolerance": 0.1,
+      "headroom_rel": -0.23841467511915318,
+      "rule": "decidable iff numerical uncertainty < case tolerance"
+    }
+  }
+}
