@@ -1,0 +1,199 @@
+{
+ "case_id": "CASE-HYDROSTATIC",
+ "layer": "static_initial_state",
+ "shipped": "tests/data/case_hydrostatic/runs",
+ "rel_tolerance": 1e-09,
+ "records": [
+  {
+   "record": "static_dx_0025.json",
+   "config_name": "dx_0025",
+   "dx": 0.025,
+   "tank_width": 1.0,
+   "sound_speed": 20.0,
+   "fluid_particles": 640,
+   "shipped_max_band_error_pct": 14.937769776299598,
+   "fresh_max_band_error_pct": 14.937769776299598,
+   "shipped_mean_band_error_pct": 3.539507943195128,
+   "fresh_mean_band_error_pct": 3.539507943195128,
+   "worst_band": 0,
+   "worst_band_y": 0.024996399879455566,
+   "gated_bands": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "reproduced": true,
+   "diffs": []
+  },
+  {
+   "record": "static_dx_004.json",
+   "config_name": "dx_004",
+   "dx": 0.04,
+   "tank_width": 1.0,
+   "sound_speed": 20.0,
+   "fluid_particles": 250,
+   "shipped_max_band_error_pct": 28.22266872915354,
+   "fresh_max_band_error_pct": 28.22266872915354,
+   "shipped_mean_band_error_pct": 7.386438132151885,
+   "fresh_mean_band_error_pct": 7.386438132151885,
+   "worst_band": 0,
+   "worst_band_y": 0.020000003278255463,
+   "gated_bands": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "reproduced": true,
+   "diffs": []
+  },
+  {
+   "record": "static_sound_c30.json",
+   "config_name": "sound_c30",
+   "dx": 0.02,
+   "tank_width": 1.0,
+   "sound_speed": 30.0,
+   "fluid_particles": 1000,
+   "shipped_max_band_error_pct": 10.104803314808136,
+   "fresh_max_band_error_pct": 10.104803314808136,
+   "shipped_mean_band_error_pct": 2.5071401540290954,
+   "fresh_mean_band_error_pct": 2.5071401540290954,
+   "worst_band": 0,
+   "worst_band_y": 0.029997168108820915,
+   "gated_bands": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "reproduced": true,
+   "diffs": []
+  },
+  {
+   "record": "static_width_w15.json",
+   "config_name": "width_w15",
+   "dx": 0.02,
+   "tank_width": 1.5,
+   "sound_speed": 20.0,
+   "fluid_particles": 1500,
+   "shipped_max_band_error_pct": 9.910937230121474,
+   "fresh_max_band_error_pct": 9.910937230121474,
+   "shipped_mean_band_error_pct": 2.2109328839793156,
+   "fresh_mean_band_error_pct": 2.2109328839793156,
+   "worst_band": 0,
+   "worst_band_y": 0.029993847012519836,
+   "gated_bands": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "reproduced": true,
+   "diffs": []
+  },
+  {
+   "record": "static_window_2s.json",
+   "config_name": "window_2s",
+   "dx": 0.02,
+   "tank_width": 1.0,
+   "sound_speed": 20.0,
+   "fluid_particles": 1000,
+   "shipped_max_band_error_pct": 10.216052446306495,
+   "fresh_max_band_error_pct": 10.216052446306495,
+   "shipped_mean_band_error_pct": 2.5384595095144005,
+   "fresh_mean_band_error_pct": 2.5384595095144005,
+   "worst_band": 0,
+   "worst_band_y": 0.029993847012519836,
+   "gated_bands": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "reproduced": true,
+   "diffs": []
+  },
+  {
+   "record": "static_window_4s.json",
+   "config_name": "window_4s",
+   "dx": 0.02,
+   "tank_width": 1.0,
+   "sound_speed": 20.0,
+   "fluid_particles": 1000,
+   "shipped_max_band_error_pct": 10.216052446306495,
+   "fresh_max_band_error_pct": 10.216052446306495,
+   "shipped_mean_band_error_pct": 2.5384595095144005,
+   "fresh_mean_band_error_pct": 2.5384595095144005,
+   "worst_band": 0,
+   "worst_band_y": 0.029993847012519836,
+   "gated_bands": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "reproduced": true,
+   "diffs": []
+  },
+  {
+   "record": "static_window_8s.json",
+   "config_name": "window_8s",
+   "dx": 0.02,
+   "tank_width": 1.0,
+   "sound_speed": 20.0,
+   "fluid_particles": 1000,
+   "shipped_max_band_error_pct": 10.216052446306495,
+   "fresh_max_band_error_pct": 10.216052446306495,
+   "shipped_mean_band_error_pct": 2.5384595095144005,
+   "fresh_mean_band_error_pct": 2.5384595095144005,
+   "worst_band": 0,
+   "worst_band_y": 0.029993847012519836,
+   "gated_bands": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "reproduced": true,
+   "diffs": []
+  }
+ ],
+ "truncation_ladder": [
+  {
+   "dx": 0.02,
+   "fluid_particles": 1000,
+   "max_band_error_pct": 10.216052446306495,
+   "worst_band": 0,
+   "worst_band_y": 0.029993847012519836
+  },
+  {
+   "dx": 0.025,
+   "fluid_particles": 640,
+   "max_band_error_pct": 14.937769776299598,
+   "worst_band": 0,
+   "worst_band_y": 0.024996399879455566
+  },
+  {
+   "dx": 0.04,
+   "fluid_particles": 250,
+   "max_band_error_pct": 28.22266872915354,
+   "worst_band": 0,
+   "worst_band_y": 0.020000003278255463
+  }
+ ],
+ "all_reproduced": true
+}
