@@ -43,6 +43,7 @@ from tensorsph.fsi_force_from_fluid import (ForceFromFluidConfig,  # noqa: E402
                                             panel_pressure_force,
                                             pairwise_pressure_force,
                                             pressure_force_from_fluid,
+                                            pressure_force_from_fluid_normalised,
                                             one_sided_viscous_truncation_factor,
                                             viscous_force_from_fluid,
                                             wall_shear_from_gradient)
@@ -99,6 +100,13 @@ def evaluate(case: C.LoadCase) -> dict:
             case.pos_fluid, case.vol_fluid, case.pressure_fluid, case.rho_fluid,
             case.vel_fluid, case.acc_ext_fluid, _cfg(case.dx, case, **kwargs))
         row["operators"][name] = _score(f, case.reference_force)
+
+    f = pressure_force_from_fluid_normalised(
+        case.pos_solid, case.vol_solid, case.normal_solid,
+        torch.zeros_like(case.pos_solid), case.vel_solid,
+        case.pos_fluid, case.vol_fluid, case.pressure_fluid, case.rho_fluid,
+        case.vel_fluid, case.acc_ext_fluid, _cfg(case.dx, case, riemann=False))
+    row["operators"]["oss_normalised"] = _score(f, case.reference_force)
 
     f = panel_pressure_force(case.pos_solid, case.vol_solid, case.normal_solid,
                              case.pos_fluid, case.vol_fluid, case.pressure_fluid,
