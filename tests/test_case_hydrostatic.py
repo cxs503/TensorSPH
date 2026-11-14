@@ -21,6 +21,14 @@ Two layers:
 * **Harness checks**: ``--config all --static`` must schedule *both* layers of
   the declared grid, and ``--aggregate`` must refuse to emit a report with no
   gate record (it used to die with a ``TypeError`` on ``None``).
+* **Reproducibility layer** (fast, always runs): the time-stepped gate needs
+  ~11 min, so the only re-run check used to skip on a fresh checkout -- a check
+  that never runs where the evidence is read.  The deterministic ``t = 0``
+  lattice record does not: every shipped ``runs/static_*.json`` is re-derived
+  from source here (~2 s for all seven) and diffed band by band, so knob drift,
+  a changed band partition or a moved truncation ladder fails CI.  The gate run
+  itself stays reproducible with
+  ``python benchmarks/case_hydrostatic/run.py --config window_8s``.
 """
 from __future__ import annotations
 
@@ -255,7 +263,8 @@ def test_report_quotes_the_run_files(report, evidence):
         stored = json.loads((evidence / "runs" / f"{run['config_name']}.json").read_text())
         assert run == stored
     for static in report["static_runs"]:
-        stored = json.loads((evidence / "runs" / f"static_{static['config_name']}.json").read_text())
+        path = evidence / "runs" / f"static_{static['config_name']}.json"
+        stored = json.loads(path.read_text())
         assert static == stored
 
 
@@ -358,7 +367,9 @@ def test_shipped_evidence_agrees_with_a_regenerated_bundle():
     must still agree, otherwise the frozen evidence is not reproducible."""
     fresh = REPO / "runs" / "case_hydrostatic"
     if not (fresh / "report.json").exists():
-        pytest.skip("no regenerated runs/ bundle in this checkout")
+        pytest.skip("no regenerated runs/ bundle in this checkout; the deterministic"
+                    " t = 0 layer is re-derived by "
+                    "test_shipped_static_layer_reproduces_on_a_fresh_checkout")
     shipped = shipped_base()
     if (fresh / "report.json").read_bytes() == (shipped / "report.json").read_bytes():
         return
@@ -438,3 +449,123 @@ def test_package_entry_dispatches_to_the_case(tmp_path):
     assert record["case_id"] == CASE_ID
     assert record["benchmark"], "the CLI record carries no ref-vs-got rows"
     assert "max interior-band error" in proc.stdout
+
+
+# --------------------------------------------------------------------------- #
+# Reproducibility of the shipped evidence (deterministic layer -- always runs)
+#
+# The time-stepped gate needs the whole declared grid (~11 min), so on a fresh
+# checkout the only re-run check used to skip: the case's 1 % acceptance was
+# decidable there, but *reproducibility* was not.  The t = 0 lattice record is
+# deterministic and costs ~0.3 s per configuration, so every shipped
+# ``runs/static_*.json`` is re-derived from source below (~2 s for all seven).
+# --------------------------------------------------------------------------- #
+
+#: Float tolerance for the static layer.  The shipped numbers were written by
+#: this code; the only legitimate drift is summation order in the density loop
+#: (arch / BLAS), which stays far below 1e-9 relative.  A real change -- a band
+#: value moving in the 6th digit, a different band partition, a moved ladder --
+#: is orders of magnitude larger and fails here.
+STATIC_REL = 1e-9
+
+
+def _static_records() -> list[Path]:
+    return sorted((CHANNEL / "runs").glob("static_*.json"))
+
+
+def _static_kwargs(record: dict) -> dict:
+    """The t = 0 knobs, read off the shipped record itself (no hand copy)."""
+    cfg = record["config"]
+    return dict(dx=cfg["dx"], tank_width=cfg["tank_width"], depth=cfg["depth"],
+                sound_speed=cfg["sound_speed"], bands=cfg["bands"])
+
+
+def _same_gate(shipped: dict, fresh: dict, rel: float = STATIC_REL) -> None:
+    """Every gate number/partition the two records share must agree."""
+    shared = set(shipped) & set(fresh)
+    assert {"max_band_error_pct", "mean_band_error_pct"} <= shared
+    for key in sorted(shared):
+        a, b = shipped[key], fresh[key]
+        if isinstance(a, float) and isinstance(b, float):
+            assert b == pytest.approx(a, rel=rel, abs=1e-12), f"gate.{key}: {a} -> {b}"
+        else:
+            assert b == a, f"gate.{key}: {a!r} -> {b!r}"
+
+
+def test_shipped_static_layer_reproduces_on_a_fresh_checkout():
+    """Re-derive every shipped t = 0 record and diff it band by band.
+
+    This is the check that keeps the frozen evidence honest *without* the
+    expensive gate run: a solver change, a moved geometry/band rule or a hand
+    edit of the shipped numbers all show up here.
+    """
+    paths = _static_records()
+    assert paths, f"no shipped static records under {CHANNEL}"
+    for path in paths:
+        shipped = json.loads(path.read_text())
+        assert shipped["case_id"] == CASE_ID
+        assert shipped["kind"] == "static_initial_state"
+        fresh = run_initial_state(**_static_kwargs(shipped))
+
+        assert fresh["config"] == shipped["config"], f"{path.name}: config drift"
+
+        old_rows, new_rows = shipped["benchmark"], fresh["benchmark"]
+        assert len(new_rows) == len(old_rows), f"{path.name}: band count"
+        for a, b in zip(old_rows, new_rows):
+            assert a["band"] == b["band"]
+            for field in ("y_m", "ref_Pa", "got_Pa", "rel_error_pct"):
+                assert b[field] == pytest.approx(a[field], rel=STATIC_REL, abs=1e-12), (
+                    f"{path.name} band {a['band']} {field}: {a[field]} -> {b[field]}")
+        _same_gate(shipped["gate"], fresh["gate"])
+        assert fresh["reference"]["formula"] == shipped["reference"]["formula"]
+
+
+def test_static_truncation_ladder_is_monotone_and_wall_owned():
+    """The t = 0 error is a truncation diagnostic, so it must *shrink* as dx
+    shrinks and its worst band must sit on the floor/wall edge.
+
+    Read on freshly computed records (not on the shipped table): this is the
+    physical invariant behind the mechanism claim in ``docs/``, and it is what
+    makes the static layer useful as a diagnostic even though it is not the gate.
+    """
+    ladder = []
+    for dx in (0.04, 0.025, 0.02):
+        rec = run_initial_state(dx=dx, tank_width=1.0)
+        ladder.append((dx, rec["gate"]))
+    errors = [gate["max_band_error_pct"] for _, gate in ladder]
+    assert errors == sorted(errors, reverse=True), f"ladder not monotone: {errors}"
+    assert len(set(errors)) == len(errors), f"ladder not strictly decreasing: {errors}"
+    for dx, gate in ladder:
+        # the coarse lattice truncates the summation density at the floor row;
+        # the interior complete-support columns are exact (see the live rhs test)
+        assert gate["worst_band"] == 0, f"dx={dx}: worst band {gate['worst_band']}"
+        assert gate["worst_band_y"] < 2.0 * dx, "worst band is not the floor band"
+    # the coarse static layer is a diagnostic, never the acceptance number
+    assert errors[0] > TOLERANCE_PCT
+
+
+def test_repro_check_detects_a_tampered_static_record(tmp_path):
+    """The re-derivation above must be able to fail.
+
+    ``benchmarks/case_hydrostatic/reproduce_static.py`` is the tool version of
+    the same check; feed it a shipped record with one band moved by 0.1 % and it
+    has to report the record as not reproduced (otherwise the tool -- and the
+    evidence it guards -- would be vacuous).
+    """
+    import importlib.util
+
+    tool_path = REPO / "benchmarks" / "case_hydrostatic" / "reproduce_static.py"
+    spec = importlib.util.spec_from_file_location("case_hydrostatic_repro", tool_path)
+    tool = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tool)
+
+    clean = _static_records()[0]
+    record = json.loads(clean.read_text())
+    assert tool.repro_one(clean)["reproduced"] is True
+
+    record["benchmark"][1]["got_Pa"] *= 1.001
+    tampered = tmp_path / clean.name
+    tampered.write_text(json.dumps(record))
+    result = tool.repro_one(tampered)
+    assert result["reproduced"] is False
+    assert any("got_Pa" in d for d in result["diffs"]), result["diffs"]
