@@ -866,6 +866,108 @@ def boundary_force_from_pressure(p_wall, normals, tributary):
     return -(p_wall[:, None] * trib * normals)
 
 
+def body_force_from_fluid(pos, rho, pressure, wall, pairs, case: "FSI2Case",
+                         *, cyl_start: int, cyl_normals, cyl_tributary,
+                         vel=None, wall_vel=None, fluid_mass=None,
+                         beam_boundary=None, beam_normals=None,
+                         beam_tributary=None, beam_boundary_vel=None):
+    """Loads on the rigid cylinder (two pressure arms + friction arm).
+
+    Shared by the loose driver (:func:`step_fsi2`) and the strong-coupling
+    driver (:func:`tensorsph.fsi2_strong_coupling.step_fsi2_strong`) so the two
+    paths cannot drift apart.  That matters for the benchmark: at
+    ``rho_s/rho_f = 1`` only the strong path is stable, so the Turek-Hron body
+    coefficients have to be formed there, from exactly the operators audited in
+    ``docs/xval_fsi2/CYLINDER_BODY_FORCE.md``.
+
+    Parameters
+    ----------
+    pos, rho, pressure : fluid positions, densities, pressures of the current
+        fluid snapshot.
+    wall : concatenated wall rows ``[static walls, cylinder, beam boundary]``.
+    pairs : ``cell_linked_pairs`` of ``cat(fluid, wall)`` at support ``2h``.
+    cyl_start : first row of the cylinder inside ``wall``.
+    vel, wall_vel : fluid / wall velocities, consumed only by the Robin
+        (impedance) interface; the cylinder rows are static (zero velocity).
+    fluid_mass : fluid particle masses, needed by the friction arm (volumes
+        ``m/rho``); required when ``case.body_viscous_load`` is true.
+
+    Returns a dict with ``f_cyl`` (kernel-average arm), ``f_cyl_fit``
+    (linear-exact plane-fit arm; equal to ``f_cyl`` unless
+    ``case.cylinder_load_arm == "fit"``), the friction arms ``f_visc_cyl`` /
+    ``f_visc_beam`` and ``cyl_coverage`` -- the fraction of cylinder rows with a
+    non-empty fluid neighbourhood, so a silent (zero) load is distinguishable
+    from a small one.
+    """
+    n_cyl = int(cyl_normals.shape[0])
+    dev, dtype = pos.device, pos.dtype
+    empty = torch.zeros((0, 2), dtype=dtype, device=dev)
+    if n_cyl == 0:
+        return {"f_cyl": empty, "f_cyl_fit": empty, "f_visc_cyl": empty,
+                "f_visc_beam": empty, "cyl_coverage": 0.0,
+                "visc_total": torch.zeros(2, dtype=dtype, device=dev)}
+
+    p_cyl, w_cyl = boundary_pressure_from_fluid(
+        pos, pressure, wall, cyl_start, pairs, case.h(),
+        wall_stop_idx=cyl_start + n_cyl,
+        normals=cyl_normals if case.wall_impedance else None,
+        vel=vel if case.wall_impedance else None,
+        wall_vel=wall_vel if case.wall_impedance else None,
+        rho0=case.rho0, sound_speed=case.sound_speed,
+        impedance_sign=case.wall_impedance_sign)
+    f_cyl = boundary_force_from_pressure(p_cyl, cyl_normals, cyl_tributary)
+    cyl_coverage = (float((w_cyl > 1.0e-30).to(torch.float64).mean())
+                    if p_cyl.numel() else 0.0)
+    # Second, geometric-bias-free arm on the same neighbours: the kernel-average
+    # arm carries the +O(h/r) radial over-load of a one-sided sum on a convex
+    # body, which does not vanish at the resolutions we can afford.
+    if case.cylinder_load_arm == "fit":
+        p_cyl_fit, _ = boundary_pressure_from_fluid_linear_exact(
+            pos, pressure, wall, cyl_start, cyl_start + n_cyl, pairs, case.h())
+        f_cyl_fit = boundary_force_from_pressure(
+            p_cyl_fit, cyl_normals, cyl_tributary)
+    else:
+        f_cyl_fit = f_cyl
+
+    # Friction (diagnostic arm, not fed back into the rod dynamics): one call on
+    # the concatenated body surface so the neighbour search is shared.
+    if case.body_viscous_load and beam_boundary is not None \
+            and beam_boundary.shape[0]:
+        body_pos = torch.cat((wall[cyl_start:cyl_start + n_cyl],
+                              beam_boundary), dim=0)
+        body_nrm = torch.cat((cyl_normals, beam_normals), dim=0)
+        n_beam_rows = int(beam_boundary.shape[0])
+        cyl_trib = (cyl_tributary if torch.is_tensor(cyl_tributary)
+                    else torch.full((n_cyl,), float(cyl_tributary),
+                                    dtype=dtype, device=dev))
+        beam_trib = (beam_tributary if torch.is_tensor(beam_tributary)
+                     else torch.full((n_beam_rows,), float(beam_tributary),
+                                     dtype=dtype, device=dev))
+        body_trib = torch.cat((cyl_trib, beam_trib), dim=0)
+        body_vel = torch.cat((torch.zeros_like(wall[cyl_start:cyl_start + n_cyl]),
+                              beam_boundary_vel), dim=0)
+        if fluid_mass is None:
+            raise ValueError("body_viscous_load needs the fluid particle masses")
+        vol_fluid = fluid_mass / rho.clamp_min(1.0e-12)
+        mu_fluid = torch.full_like(fluid_mass, case.viscosity)
+        f_visc = wall_shear_from_velocity_gradient(
+            body_pos, body_nrm, body_trib, pos,
+            vel if vel is not None else torch.zeros_like(pos),
+            vol_fluid, mu_fluid, case.h(), vel_solid=body_vel)
+        f_visc_cyl = f_visc[:n_cyl]
+        f_visc_beam = f_visc[n_cyl:]
+    else:
+        f_visc_cyl = torch.zeros((n_cyl, 2), dtype=dtype, device=dev)
+        f_visc_beam = torch.zeros((0 if beam_boundary is None
+                                   else int(beam_boundary.shape[0]), 2),
+                                  dtype=dtype, device=dev)
+    visc_total = (torch.cat((f_visc_cyl, f_visc_beam), dim=0).sum(dim=0)
+                  if f_visc_cyl.numel() else torch.zeros(2, dtype=dtype, device=dev))
+    return {"f_cyl": f_cyl, "f_cyl_fit": f_cyl_fit, "f_visc_cyl": f_visc_cyl,
+            "f_visc_beam": f_visc_beam, "cyl_coverage": cyl_coverage,
+            "visc_total": visc_total}
+
+
 def beam_load_on_fluid_boundary(pos, rho, pressure, wall, wall_mass,
                                  wall_start_idx, pairs, case: FSI2Case):
     """Pressure force on a single row of beam boundary particles (legacy arm).
@@ -1106,62 +1208,21 @@ def step_fsi2(state: FSI2State, case: FSI2Case, dt: float) -> Dict[str, float]:
 
     # ---- rigid-body (cylinder) load from the fluid ------------------------ #
     # The Turek-Hron drag/lift coefficients are defined on the *whole* body
-    # (cylinder + beam).  Until this arm existed the driver accumulated only
-    # the beam pressure load, so the benchmark's force coefficients could not
-    # be formed from the coupled state at all.
-    cyl_start = state.wall_static.shape[0]
-    n_cyl = state.cylinder_particles.shape[0]
-    # The operator addresses the wall particles of the window
-    # ``[wall_start_idx, wall_stop_idx)`` of the concatenated wall array; for
-    # the cylinder the window must stop before the moving beam rows.
-    p_cyl, w_cyl = boundary_pressure_from_fluid(
-        state.fluid_pos, pressure, wall, cyl_start, pairs, case.h(),
-        wall_stop_idx=cyl_start + n_cyl,
-        normals=state.cylinder_normals if case.wall_impedance else None,
+    # (cylinder + beam).  The arms live in :func:`body_force_from_fluid` so the
+    # strong-coupling driver reports exactly the same numbers.
+    body = body_force_from_fluid(
+        state.fluid_pos, rho, pressure, wall, pairs, case,
+        cyl_start=state.wall_static.shape[0],
+        cyl_normals=state.cylinder_normals,
+        cyl_tributary=state.cylinder_tributary,
         vel=state.fluid_vel if case.wall_impedance else None,
         wall_vel=wall_vel if case.wall_impedance else None,
-        rho0=case.rho0, sound_speed=case.sound_speed,
-        impedance_sign=case.wall_impedance_sign)
-    f_cyl = boundary_force_from_pressure(p_cyl, state.cylinder_normals,
-                                        state.cylinder_tributary)
-    cyl_coverage = (float((w_cyl > 1.0e-30).to(torch.float64).mean())
-                    if p_cyl.numel() else 0.0)
-    # Second, geometric-bias-free arm on the same neighbours (see
-    # ``boundary_pressure_from_fluid_linear_exact``).  The kernel-average arm is
-    # kept because it is what the OSS operator does; the plane fit is the one
-    # whose body coefficients are reported, because its radial over-load on a
-    # convex body is +O(h/r) and does not vanish at the resolutions we can run.
-    if case.cylinder_load_arm == "fit":
-        p_cyl_fit, _ = boundary_pressure_from_fluid_linear_exact(
-            state.fluid_pos, pressure, wall, cyl_start, cyl_start + n_cyl,
-            pairs, case.h())
-        f_cyl_fit = boundary_force_from_pressure(
-            p_cyl_fit, state.cylinder_normals, state.cylinder_tributary)
-    else:
-        f_cyl_fit = f_cyl
-
-    # Friction (diagnostic arm, not fed back into the rod dynamics): one call on
-    # the concatenated body surface so the neighbour search is shared.
-    if case.body_viscous_load:
-        body_pos = torch.cat((state.cylinder_particles, beam_boundary), dim=0)
-        body_nrm = torch.cat((state.cylinder_normals, beam_normals), dim=0)
-        body_trib = torch.cat((state.cylinder_tributary,
-                               torch.full((beam_boundary.shape[0],), tributary,
-                                          dtype=beam_boundary.dtype,
-                                          device=beam_boundary.device)), dim=0)
-        body_vel = torch.cat((torch.zeros_like(state.cylinder_particles),
-                              beam_boundary_vel), dim=0)
-        vol_fluid = state.fluid_mass / rho.clamp_min(1.0e-12)
-        mu_fluid = torch.full_like(state.fluid_mass, case.viscosity)
-        f_visc = wall_shear_from_velocity_gradient(
-            body_pos, body_nrm, body_trib, state.fluid_pos, state.fluid_vel,
-            vol_fluid, mu_fluid, case.h(), vel_solid=body_vel)
-        f_visc_cyl = f_visc[:state.cylinder_particles.shape[0]]
-        f_visc_beam = f_visc[state.cylinder_particles.shape[0]:]
-    else:
-        f_visc_cyl = torch.zeros_like(f_cyl)
-        f_visc_beam = torch.zeros((beam_boundary.shape[0], 2),
-                                  dtype=f_cyl.dtype, device=f_cyl.device)
+        fluid_mass=state.fluid_mass,
+        beam_boundary=beam_boundary, beam_normals=beam_normals,
+        beam_tributary=tributary, beam_boundary_vel=beam_boundary_vel)
+    f_cyl, f_cyl_fit = body["f_cyl"], body["f_cyl_fit"]
+    cyl_coverage = body["cyl_coverage"]
+    f_visc_cyl, f_visc_beam = body["f_visc_cyl"], body["f_visc_beam"]
 
     raw_load = (beam_interp.T @ f_beam) * case.load_scale
     alpha = float(case.coupling_relaxation)

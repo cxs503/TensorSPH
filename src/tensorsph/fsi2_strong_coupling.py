@@ -56,6 +56,7 @@ from .fsi2_turek_hron import (
     _apply_open_boundaries,
     beam_advance,
     beam_boundary_geometry,
+    body_force_from_fluid,
     boundary_force_from_pressure,
     boundary_pressure_from_fluid,
     initial_state,
@@ -264,9 +265,28 @@ def _fluid_load(state: FSI2State, case: FSI2Case, dt: float,
     f_beam = boundary_force_from_pressure(p_wall, beam_normals, tributary)
     coverage = (float((w_sum > 1.0e-30).to(torch.float64).mean())
                 if p_wall.numel() else 0.0)
+    # The body (cylinder + beam) force-from-fluid arms: without them the
+    # Turek-Hron drag/lift coefficients cannot be formed on this path, and this
+    # path is the only one that survives ``rho_s/rho_f = 1`` (the loose driver
+    # blows up).  Same operators as :func:`tensorsph.fsi2_turek_hron.step_fsi2`
+    # -- one shared helper, so the two drivers cannot drift apart.
+    body = body_force_from_fluid(
+        fluid_pos, rho, pressure, wall, pairs, case,
+        cyl_start=state.wall_static.shape[0],
+        cyl_normals=state.cylinder_normals,
+        cyl_tributary=state.cylinder_tributary,
+        vel=fluid_vel if case.wall_impedance else None,
+        wall_vel=wall_vel if case.wall_impedance else None,
+        fluid_mass=fluid_mass,
+        beam_boundary=beam_boundary, beam_normals=beam_normals,
+        beam_tributary=tributary, beam_boundary_vel=beam_boundary_vel)
+
     raw_load = (beam_interp.T @ f_beam) * case.load_scale
     return {"raw_load": raw_load, "f_beam": f_beam, "acc": acc,
-            "coverage": coverage}
+            "coverage": coverage,
+            "f_cyl": body["f_cyl"], "f_cyl_fit": body["f_cyl_fit"],
+            "f_visc_cyl": body["f_visc_cyl"], "f_visc_beam": body["f_visc_beam"],
+            "cyl_coverage": body["cyl_coverage"]}
 
 
 def _advance_solid(nodes0: torch.Tensor, vel0: torch.Tensor,
@@ -410,10 +430,31 @@ def step_fsi2_strong(state: FSI2State, case: FSI2Case, dt: float,
     tip_x = float(state.beam_nodes[-1, 0]) - (case.cylinder_x + case.cylinder_d / 2
                                               + case.beam_length)
     tip_y = float(state.beam_nodes[-1, 1]) - case.cylinder_y
+    def _sum(key):
+        f = last.get(key) if last is not None else None
+        if f is None or not f.numel():
+            return torch.zeros(2, dtype=torch.float64)
+        return f.sum(dim=0)
+
+    f_cyl_c = _sum("f_cyl")
+    f_cyl_fit_c = _sum("f_cyl_fit")
+    visc_c = _sum("f_visc_cyl") + _sum("f_visc_beam")
+    drag_beam = float(f_beam[:, 0].sum()) if f_beam.numel() else 0.0
+    lift_beam = float(f_beam[:, 1].sum()) if f_beam.numel() else 0.0
+    f_cyl_n = 0 if last is None or last.get("f_cyl") is None else int(last["f_cyl"].shape[0])
     row = {
         "t": state.time, "tip_x": tip_x, "tip_y": tip_y,
-        "drag": float(f_beam[:, 0].sum()) if f_beam.numel() else 0.0,
-        "lift": float(f_beam[:, 1].sum()) if f_beam.numel() else 0.0,
+        "drag": drag_beam,
+        "lift": lift_beam,
+        "cyl_drag": float(f_cyl_c[0]), "cyl_lift": float(f_cyl_c[1]),
+        "body_drag": float(f_cyl_c[0]) + drag_beam,
+        "body_lift": float(f_cyl_c[1]) + lift_beam,
+        "cyl_drag_fit": float(f_cyl_fit_c[0]), "cyl_lift_fit": float(f_cyl_fit_c[1]),
+        "body_drag_fit": float(f_cyl_fit_c[0]) + drag_beam,
+        "body_lift_fit": float(f_cyl_fit_c[1]) + lift_beam,
+        "drag_viscous": float(visc_c[0]), "lift_viscous": float(visc_c[1]),
+        "cyl_coverage": float(last.get("cyl_coverage", 0.0)) if last else 0.0,
+        "n_cyl_particles_on_body": f_cyl_n,
         "max_speed": float(state.fluid_vel.norm(dim=1).max()),
         "n_fluid": int(state.fluid_pos.shape[0]),
         "injected": counters["injected"], "removed": counters["removed"],
