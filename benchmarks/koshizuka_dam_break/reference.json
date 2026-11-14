@@ -1,0 +1,25 @@
+{
+  "reference": "Koshizuka & Oka (1996) dam-break pressure peak",
+  "source": {
+    "paper": "Koshizuka, S. & Oka, Y. (1996). Moving-particle semi-implicit method for fragmentation of incompressible fluid. Nuclear Science and Engineering, 123(3), 421-434.",
+    "doi": "10.13182/NSE96-A24205",
+    "figure": "Figure 15 (pressure time history at probe)",
+    "note": "The reference pressure peak is read from Fig. 15 of the original paper. The probe is located at x = 0.584 m (right wall), y = 0.024 m from the floor."
+  },
+  "geometry": {
+    "tank_length_m": 0.584,
+    "tank_height_m": 0.30,
+    "column_width_m": 0.14,
+    "column_height_m": 0.28,
+    "probe_x_m": 0.584,
+    "probe_y_m": 0.024
+  },
+  "reference_pressure_pa": 2700.0,
+  "tolerance_pct": 12,
+  "notes": [
+    "The reference value is from the MPS method (Koshizuka & Oka 1996).",
+    "WCSPH typically overpredicts pressure peaks at coarse resolution due to compressibility effects.",
+    "The pressure peak converges with resolution refinement but may not reach the MPS value exactly.",
+    "The 12% tolerance is per the task specification."
+  ]
+}
