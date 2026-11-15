@@ -299,6 +299,59 @@ MAE 0.563 vs 0.591, i.e. no gain at all).
 3. `raw.githubusercontent.com` is refused from this host while
    `api.github.com` works; sources were fetched through the contents API
    (base64) and the codeload tarball.
+## Leg: dimensions (m21804) — `DIMENSION_LEG.md`
+
+Every leg above graded the port in two dimensions, and the operator had **no** dimension:
+`kernel_gradient_integral()` applied the 2-D normalisation `10/(7 pi h^2)` to any point cloud,
+so a 3-D body (`tensorsph.dam_break_3d`) was silently scaled by `sigma_2/sigma_3 = 10 h / 7`
+(`10.8x` under-correction at `dx = 0.05 m`, `26.9x` at `0.02 m`). Fixed with a dimension-aware
+kernel and a `dim=` argument on both entry points (`dim = 2` stays bit-identical); graded against
+the continuum free-surface anchor `|dr|/h = 2 alpha h I_d(h,0)` with `I_d` by quadrature
+(kernel normalisation re-checked to `1 +- 1e-11`):
+
+| d | continuum `|dr|/h/alpha` | measured (cubic lattice, h/dx=1.3) | bias |
+|---|---|---|---|
+| 1 | 1.33333 | 1.16523 | -12.61 % |
+| 2 | 1.36419 | 1.17115 | -14.15 % |
+| 3 | 1.40000 | 1.17478 | -16.09 % |
+
+* the 2-D bias reproduces `SURFACE_ANCHOR.md`'s 14.15 % on an independent lattice (the earlier
+  leg is *confirmed*, not re-quoted);
+* **the <15 % gate does not transfer to 3-D**: cubic −16.09 %, fcc −15.02 % — both miss the gate,
+  so a 3-D quotation of the gate must carry its arrangement family;
+* `|dr|/h` is resolution independent in every dimension (spread < 1e-12 over `dx = 0.2/0.1/0.05`),
+  the dimension-generic form of the fixed-`alpha` mechanism in `RESOLUTION_LADDER.md`;
+* bulk lattice is an exact fixed point (≤3e-15) and the mirror-ghost wall branch vanishes to
+  round-off **iff** `wall_factor = 2`, in 1, 2 and 3 D; the fraction retained at 1 is 0.583/0.586/0.587.
+
+
+## Leg: dimensions (m21804) — `DIMENSION_LEG.md`
+
+Every leg above graded the port in two dimensions, and the operator had **no** dimension:
+`kernel_gradient_integral()` applied the 2-D normalisation `10/(7 pi h^2)` to any point cloud,
+so a 3-D body (`tensorsph.dam_break_3d`) was silently scaled by `sigma_2/sigma_3 = 10 h / 7`
+(`10.8x` under-correction at `dx = 0.05 m`, `26.9x` at `0.02 m`). Fixed with a dimension-aware
+kernel and a `dim=` argument on both entry points (`dim = 2` stays bit-identical); graded against
+the continuum free-surface anchor `|dr|/h = 2 alpha h I_d(h,0)` with `I_d` by quadrature
+(kernel normalisation re-checked to `1 +- 1e-11`):
+
+| d | continuum `|dr|/h/alpha` | measured (cubic lattice, h/dx=1.3) | bias |
+|---|---|---|---|
+| 1 | 1.33333 | 1.16523 | -12.61 % |
+| 2 | 1.36419 | 1.17115 | -14.15 % |
+| 3 | 1.40000 | 1.17478 | -16.09 % |
+
+* the 2-D bias reproduces `SURFACE_ANCHOR.md`'s 14.15 % on an independent lattice (the earlier
+  leg is *confirmed*, not re-quoted);
+* **the <15 % gate does not transfer to 3-D**: cubic -16.09 %, fcc -15.02 % -- both miss the gate,
+  so a 3-D quotation of the gate must carry its arrangement family;
+* `|dr|/h` is resolution independent in every dimension (spread < 1e-12 over `dx = 0.2/0.1/0.05`),
+  the dimension-generic form of the fixed-`alpha` mechanism in `RESOLUTION_LADDER.md`;
+* bulk lattice is an exact fixed point (<=3e-15) and the mirror-ghost wall branch vanishes to
+  round-off **iff** `wall_factor = 2`, in 1, 2 and 3 D; the fraction retained at 1 is
+  0.583/0.586/0.587.
+
+
 ## Leg: free-surface / wall branches against analytic anchors (m20882)
 
 `SURFACE_ANCHOR.md` (+ `surface_term.py`, `tests/test_tvc_surface_anchor.py`) closes the
@@ -335,8 +388,9 @@ coefficient `alpha = 0.05`, but **0.162 at upstream's dual-criteria default `alp
 understate upstream, and cavity-type (bulk, well ordered) comparisons must pass
 `tvc_limiter="truncated_linear"`.
 
-Still open: a numeric diff against a live SPHinXsys build (gap 2) and the adaptive `h_ratio`
-branch (not ported).
+Still open: a numeric diff against a live SPHinXsys build (gap 2).
+The adaptive `h_ratio` branch, listed here as *not ported* until m21804, **is**
+ported and graded -- see `ADAPTIVE_H_RATIO.md` (stale claim corrected, m21804).
 
 ## Cadence leg (closes the coefficient-unit question)
 
