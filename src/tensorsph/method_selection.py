@@ -463,6 +463,13 @@ class Selection:
     modifiers: list[Decision]
     candidates: list[Decision]
     notes: list[str] = field(default_factory=list)
+    #: True when the recommendation was built with ``strict_bound=True``: only
+    #: schemes whose *worst* live accuracy record is inside the owner standard
+    #: may be put forward (see ``select_method``).
+    strict_bound: bool = False
+    #: Schemes the rules would have put forward but that strict mode refused:
+    #: kept here (never dropped silently) with the record that disqualified them.
+    strict_excluded: list[Decision] = field(default_factory=list)
 
     @property
     def is_verified(self) -> bool:
@@ -515,6 +522,16 @@ class Selection:
         headline = self.headline_record
         return {
             "profile": asdict(self.profile),
+            "strict_bound": self.strict_bound,
+            "strict_excluded": [
+                {"method": d.method, "role": d.role, "status": d.status,
+                 "worst_accuracy_pct": d.worst_accuracy_pct,
+                 "worst_accuracy_case": (
+                     None if d.worst_accuracy_record is None
+                     else d.worst_accuracy_record.case),
+                 "rationale": d.rationale, "caveats": list(d.caveats)}
+                for d in self.strict_excluded
+            ],
             "primary": self.primary.as_dict() if self.primary else None,
             "modifiers": [d.as_dict() for d in self.modifiers],
             "candidates": [d.as_dict() for d in self.candidates],
@@ -758,10 +775,41 @@ def _classify(method_key: str, role: str, rationale: str,
     )
 
 
+def _strict_eligible(decision: Decision) -> bool:
+    """Strict bound gate: the scheme's *worst* live accuracy record must be inside
+    the owner standard.
+
+    ``Decision.status`` answers an existential question ("some benchmark of this
+    scheme passed"); a recommendation needs a bound ("no benchmark of it is
+    outside 15 %").  m21115 showed the two differ for three schemes, so the
+    difference is made explicit here instead of being buried in a card note.
+    """
+    return decision.accuracy_within_owner_standard is True
+
+
+def _strict_reason(decision: Decision) -> str:
+    record = decision.worst_accuracy_record
+    worst = decision.worst_accuracy_pct
+    if worst is None:
+        return "no live accuracy record, so no bound can be claimed"
+    where = "" if record is None else f" ({record.case}: {record.quantity})"
+    return (f"worst live accuracy record {worst:.3g}%{where} exceeds the "
+            f"{OWNER_TOLERANCE_PCT:g}% owner standard")
+
+
 def select_method(profile: CaseProfile | Mapping[str, object],
                   registry: Mapping[str, Sequence[Evidence]] | None = None,
-                  registry_path: str | Path | None = None) -> Selection:
-    """Route a case profile to a scheme, gated on the evidence registry."""
+                  registry_path: str | Path | None = None,
+                  strict_bound: bool = False) -> Selection:
+    """Route a case profile to a scheme, gated on the evidence registry.
+
+    ``strict_bound=True`` additionally requires every scheme put forward
+    (primary and modifiers) to have a *worst* live accuracy record inside the
+    owner standard; schemes the rules would have added are then listed in
+    ``Selection.strict_excluded`` with the record that disqualified them.  The
+    default (``False``) keeps the historical route matrix unchanged, which is
+    what the pinned XVAL matrix checks.
+    """
     if isinstance(profile, Mapping):
         profile = CaseProfile.from_mapping(profile)
     if registry is None:
@@ -769,6 +817,7 @@ def select_method(profile: CaseProfile | Mapping[str, object],
 
     notes: list[str] = []
     candidates: list[Decision] = []
+    strict_excluded: list[Decision] = []
     primary: Decision | None = None
 
     for rule in RULES:
@@ -788,7 +837,14 @@ def select_method(profile: CaseProfile | Mapping[str, object],
             for key in keys
         ]
         candidates.extend(decisions)
-        chosen = next((d for d in decisions if d.status == "SELECTED"), None)
+        selectable = [d for d in decisions if d.status == "SELECTED"
+                      and (not strict_bound or _strict_eligible(d))]
+        for d in decisions:
+            if d.status == "SELECTED" and strict_bound and not _strict_eligible(d):
+                strict_excluded.append(d)
+                notes.append(f"strict bound: {d.method} is evidence-backed "
+                             f"({d.status}) but " + _strict_reason(d))
+        chosen = selectable[0] if selectable else None
         if chosen is not None:
             primary = chosen
             blocked = [d for d in decisions if d is not chosen]
@@ -810,6 +866,16 @@ def select_method(profile: CaseProfile | Mapping[str, object],
             f"rule {rule.key!r} fired but no candidate is selectable "
             f"({', '.join(f'{d.method}={d.status}' for d in decisions)})"
         )
+        if strict_bound and any(d.status == "SELECTED" for d in decisions):
+            # The rule that *covers* this regime has no compliant scheme.  Walking
+            # on to a later rule would substitute a scheme chosen for a different
+            # regime (e.g. surface-tension-free WCSPH for a capillary problem),
+            # which is worse than withholding: stop here and say why.
+            notes.append(
+                f"strict bound leaves rule {rule.key!r} without a compliant scheme; "
+                "no later rule is substituted, because it does not cover this regime"
+            )
+            break
 
     if primary is None:
         notes.append(
@@ -818,17 +884,28 @@ def select_method(profile: CaseProfile | Mapping[str, object],
         )
 
     modifiers: list[Decision] = []
-    for rule in MODIFIER_RULES:
+    if primary is None and any(rule.fires(profile) for rule in MODIFIER_RULES):
+        # An add-on term changes *what the chosen solver does*; with no primary
+        # there is nothing to add it to, so listing one would be a promise the
+        # decision card cannot keep (m21537).
+        notes.append("modifiers withheld: no primary scheme was selected, so "
+                     "no add-on term can be applied")
+    for rule in (MODIFIER_RULES if primary is not None else ()):
         if not rule.fires(profile):
             continue
         for key in rule.methods:
-            modifiers.append(
-                _classify(key, "modifier", f"[{rule.key}] {rule.statement}",
-                          registry, MODIFIERS)
-            )
+            decision = _classify(key, "modifier", f"[{rule.key}] {rule.statement}",
+                                 registry, MODIFIERS)
+            if strict_bound and not _strict_eligible(decision):
+                strict_excluded.append(decision)
+                notes.append(f"strict bound: modifier {decision.method} withheld -- "
+                             + _strict_reason(decision))
+                continue
+            modifiers.append(decision)
 
     return Selection(profile=profile, primary=primary, modifiers=modifiers,
-                     candidates=candidates, notes=notes)
+                     candidates=candidates, notes=notes, strict_bound=strict_bound,
+                     strict_excluded=strict_excluded)
 
 
 def render_decision(selection: Selection) -> str:
@@ -901,6 +978,14 @@ def render_decision(selection: Selection) -> str:
         lines.append(f"- {d.method}: {d.status} -- {d.rationale.split('] ', 1)[-1]}")
         for caveat in d.caveats:
             lines.append(f"    - {caveat}")
+    if selection.strict_bound:
+        lines += ["", f"## strict bound (worst live accuracy record <= "
+                      f"{OWNER_TOLERANCE_PCT:g}%)"]
+        if not selection.strict_excluded:
+            lines.append("- nothing excluded: every scheme put forward is inside "
+                         "the owner standard")
+        for d in selection.strict_excluded:
+            lines.append(f"- excluded {d.method} [{d.role}]: " + _strict_reason(d))
     if selection.notes:
         lines += ["", "## notes"]
         lines += [f"- {note}" for note in selection.notes]
@@ -918,18 +1003,23 @@ def _profiles_from_cli(argv: Sequence[str]) -> tuple[CaseProfile, str | None]:
     parser.add_argument("--json", help="path to a JSON object of CaseProfile fields")
     parser.add_argument("--registry", help="override registry JSON path")
     parser.add_argument("--format", choices=("text", "json"), default="text")
+    parser.add_argument("--strict-bound", action="store_true",
+                        help="only put forward schemes whose worst live accuracy "
+                             "record is inside the owner standard")
     args = parser.parse_args(argv)
     if args.json:
         profile = CaseProfile.from_mapping(json.loads(Path(args.json).read_text()))
     else:
         parser.print_help(sys.stderr)
         raise SystemExit(2)
-    return profile, args.registry
+    return profile, args.registry, bool(args.strict_bound)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    profile, registry_path = _profiles_from_cli(sys.argv[1:] if argv is None else argv)
-    selection = select_method(profile, registry_path=registry_path)
+    profile, registry_path, strict_bound = _profiles_from_cli(
+        sys.argv[1:] if argv is None else argv)
+    selection = select_method(profile, registry_path=registry_path,
+                              strict_bound=strict_bound)
     sys.stdout.write(render_decision(selection))
     return 0 if selection.is_verified else 1
 

@@ -1,0 +1,258 @@
+{
+  "anchor": "XVAL-SPH-METHOD-SELECTION-2026-11-12",
+  "mission": 21537,
+  "owner_tolerance_pct": 15.0,
+  "registry": "docs/reports/method_selection_registry.json",
+  "rows": [
+    {
+      "label": "regular wave in a flume",
+      "profile": {
+        "acoustic_mach": 0.03,
+        "has_free_surface": true,
+        "gravity_waves": true
+      },
+      "expected_primary": "wcsph_delta_sph",
+      "lenient": {
+        "primary": "wcsph_delta_sph",
+        "primary_status": "SELECTED",
+        "modifiers": [
+          "density_diffusion",
+          "compression_regularization"
+        ],
+        "headline_bound_pct": 5.532656212791526,
+        "headline_quantity": "compression_regularization: XVAL-SPHINXSYS-COMPRESSION-DENSITY-REGULARIZATION",
+        "within_owner_standard": true,
+        "endorsed_above_tolerance": []
+      },
+      "strict": {
+        "primary": "wcsph_delta_sph",
+        "primary_status": "SELECTED",
+        "modifiers": [
+          "density_diffusion",
+          "compression_regularization"
+        ],
+        "headline_bound_pct": 5.532656212791526,
+        "within_owner_standard": true,
+        "endorsed_above_tolerance": [],
+        "excluded": []
+      },
+      "card": "# method-selection decision\n\n## profile\n- acoustic_mach: 0.03\n- has_free_surface: True\n- gravity_waves: True\n- shock_advection: False\n- capillary_dominated: False\n- density_ratio: 1.0\n- reynolds: 100.0\n- thermal_transport: False\n- tensile_stretching: False\n- smooth_inviscid_vortex: False\n- domain: closed\n\n## verdict\n- accuracy bound: 5.53% over every live accuracy record of the schemes put forward (owner standard 15%) -- set by compression_regularization (XVAL-SPHINXSYS-COMPRESSION-DENSITY-REGULARIZATION)\n- within owner standard: YES\n\n## primary scheme\n- wcsph_delta_sph: SELECTED\n- why: [free_surface] free surface with acoustic Mach 0.03 < 0.1: the weakly compressible branch is the implemented free-surface solver\n- claimed bound: 2.97% (owner standard 15%; passing records only)\n- reference: Antuono, Colagrossi & Marrone (2010) Comput. Phys. Commun. 181:532; Monaghan (1992) J. Comput. Phys. 110:399 (XSPH)\n\n## modifiers\n- density_diffusion: SELECTED -- free-surface flow keeps delta-SPH density diffusion (delta=0.1)\n- compression_regularization: SELECTED -- long-running nearly-incompressible free-surface runs may add compression-based density regularisation instead of delta-SPH\n    - XVAL-SPHINXSYS-COMPRESSION-DENSITY-REGULARIZATION: max interior-band hydrostatic pressure error vs analytic p = rho0 g (H - y), SPHinXsys reference-mean arm = 5.53% misses its own 1% gate but is inside 15% (benchmarks/xval_sphinxsys_compression/records.json)\n\n## strict bound (worst live accuracy record <= 15%)\n- nothing excluded: every scheme put forward is inside the owner standard\n"
+    },
+    {
+      "label": "Sod shock tube",
+      "profile": {
+        "acoustic_mach": 0.9,
+        "shock_advection": true,
+        "domain": "closed"
+      },
+      "expected_primary": "compressible_riemann",
+      "lenient": {
+        "primary": "compressible_riemann",
+        "primary_status": "SELECTED",
+        "modifiers": [],
+        "headline_bound_pct": 0.7768408089469451,
+        "headline_quantity": "compressible_riemann: CASE-SPH-SOD-SHOCK-COMPRESSIBLE",
+        "within_owner_standard": true,
+        "endorsed_above_tolerance": []
+      },
+      "strict": {
+        "primary": "compressible_riemann",
+        "primary_status": "SELECTED",
+        "modifiers": [],
+        "headline_bound_pct": 0.7768408089469451,
+        "within_owner_standard": true,
+        "endorsed_above_tolerance": [],
+        "excluded": []
+      },
+      "card": "# method-selection decision\n\n## profile\n- acoustic_mach: 0.9\n- has_free_surface: False\n- gravity_waves: False\n- shock_advection: True\n- capillary_dominated: False\n- density_ratio: 1.0\n- reynolds: 100.0\n- thermal_transport: False\n- tensile_stretching: False\n- smooth_inviscid_vortex: False\n- domain: closed\n\n## verdict\n- accuracy bound: 0.777% over every live accuracy record of the schemes put forward (owner standard 15%) -- set by compressible_riemann (CASE-SPH-SOD-SHOCK-COMPRESSIBLE)\n- within owner standard: YES\n\n## primary scheme\n- compressible_riemann: SELECTED\n- why: [shock] acoustic Mach 0.9 and explicit shock flag >= 0.3: weak compressibility assumption breaks down\n- claimed bound: 0.777% (owner standard 15%; passing records only)\n- reference: Sod (1978) J. Comput. Phys. 27:1 (reference); Zhang, Hu & Adams (2017) J. Comput. Phys. 338:210 (Riemann WCSPH dissipation)\n\n## modifiers\n- none\n\n## strict bound (worst live accuracy record <= 15%)\n- nothing excluded: every scheme put forward is inside the owner standard\n"
+    },
+    {
+      "label": "capillary droplet (Laplace law)",
+      "profile": {
+        "acoustic_mach": 0.05,
+        "has_free_surface": true,
+        "capillary_dominated": true
+      },
+      "expected_primary": "csf_surface_tension",
+      "lenient": {
+        "primary": "csf_surface_tension",
+        "primary_status": "SELECTED",
+        "modifiers": [
+          "density_diffusion",
+          "compression_regularization"
+        ],
+        "headline_bound_pct": 23.79926667246913,
+        "headline_quantity": "csf_surface_tension: CASE-LAPLACE-SPH (consistent CSF)",
+        "within_owner_standard": false,
+        "endorsed_above_tolerance": [
+          "csf_surface_tension"
+        ]
+      },
+      "strict": {
+        "primary": null,
+        "primary_status": "NONE",
+        "modifiers": [],
+        "headline_bound_pct": null,
+        "within_owner_standard": false,
+        "endorsed_above_tolerance": [],
+        "excluded": [
+          {
+            "method": "csf_surface_tension",
+            "role": "primary",
+            "worst_accuracy_pct": 23.79926667246913,
+            "worst_accuracy_case": "CASE-LAPLACE-SPH (consistent CSF)",
+            "quantity": "delta_s-weighted mean curvature rel. error"
+          }
+        ]
+      },
+      "card": "# method-selection decision\n\n## profile\n- acoustic_mach: 0.05\n- has_free_surface: True\n- gravity_waves: False\n- shock_advection: False\n- capillary_dominated: True\n- density_ratio: 1.0\n- reynolds: 100.0\n- thermal_transport: False\n- tensile_stretching: False\n- smooth_inviscid_vortex: False\n- domain: closed\n\n## verdict\n- accuracy bound: unavailable (no accuracy record among the schemes put forward; owner standard 15%)\n- within owner standard: NO (nothing was selected)\n\n## primary scheme\n- none (WITHHELD: no evidence-backed rule fired)\n\n## modifiers\n- none\n\n## strict bound (worst live accuracy record <= 15%)\n- excluded csf_surface_tension [primary]: worst live accuracy record 23.8% (CASE-LAPLACE-SPH (consistent CSF): delta_s-weighted mean curvature rel. error) exceeds the 15% owner standard\n\n## notes\n- strict bound: csf_surface_tension is evidence-backed (SELECTED) but worst live accuracy record 23.8% (CASE-LAPLACE-SPH (consistent CSF): delta_s-weighted mean curvature rel. error) exceeds the 15% owner standard\n- rule 'capillary' fired but no candidate is selectable (csf_surface_tension=SELECTED)\n- strict bound leaves rule 'capillary' without a compliant scheme; no later rule is substituted, because it does not cover this regime\n- no rule produced an evidence-backed scheme: profile outside the validated regime of this repository, do not run silently\n- modifiers withheld: no primary scheme was selected, so no add-on term can be applied\n"
+    },
+    {
+      "label": "planar Couette channel",
+      "profile": {
+        "acoustic_mach": 0.01,
+        "reynolds": 1.0,
+        "domain": "closed"
+      },
+      "expected_primary": "isph_projection",
+      "lenient": {
+        "primary": "isph_projection",
+        "primary_status": "SELECTED",
+        "modifiers": [],
+        "headline_bound_pct": 0.8665938382240863,
+        "headline_quantity": "isph_projection: CASE-ISPH-CHANNEL (GAP-SPH-ISPH-PROJECTION ladder)",
+        "within_owner_standard": true,
+        "endorsed_above_tolerance": []
+      },
+      "strict": {
+        "primary": "isph_projection",
+        "primary_status": "SELECTED",
+        "modifiers": [],
+        "headline_bound_pct": 0.8665938382240863,
+        "within_owner_standard": true,
+        "endorsed_above_tolerance": [],
+        "excluded": [
+          {
+            "method": "wcsph_wall_no_slip",
+            "role": "primary",
+            "worst_accuracy_pct": 17.076468467712292,
+            "worst_accuracy_case": "CASE-COUETTE-VISCOUS-TIME (moving wall, H/dx=16)",
+            "quantity": "wall-shear error at the MOVING wall, |1 - tau_SPH/tau_exact|, at the steady end of the viscous-time sweep, H/dx=16 (the bottom-wall reading alone does not evidence the whole no-slip condition)"
+          }
+        ]
+      },
+      "card": "# method-selection decision\n\n## profile\n- acoustic_mach: 0.01\n- has_free_surface: False\n- gravity_waves: False\n- shock_advection: False\n- capillary_dominated: False\n- density_ratio: 1.0\n- reynolds: 1.0\n- thermal_transport: False\n- tensile_stretching: False\n- smooth_inviscid_vortex: False\n- domain: closed\n\n## verdict\n- accuracy bound: 0.867% over every live accuracy record of the schemes put forward (owner standard 15%) -- set by isph_projection (CASE-ISPH-CHANNEL (GAP-SPH-ISPH-PROJECTION ladder))\n- within owner standard: YES\n\n## primary scheme\n- isph_projection: SELECTED\n- why: [wall_bounded] domain='closed' with Re=1: a divergence-free projection solve is the preferred branch, WCSPH no-slip walls the fallback\n- claimed bound: 0.867% (owner standard 15%; passing records only)\n- reference: Cummins & Rudman (1999) J. Comput. Phys. 152:584\n\n## modifiers\n- none\n\n## strict bound (worst live accuracy record <= 15%)\n- excluded wcsph_wall_no_slip [primary]: worst live accuracy record 17.1% (CASE-COUETTE-VISCOUS-TIME (moving wall, H/dx=16): wall-shear error at the MOVING wall, |1 - tau_SPH/tau_exact|, at the steady end of the viscous-time sweep, H/dx=16 (the bottom-wall reading alone does not evidence the whole no-slip condition)) exceeds the 15% owner standard\n\n## notes\n- strict bound: wcsph_wall_no_slip is evidence-backed (SELECTED) but worst live accuracy record 17.1% (CASE-COUETTE-VISCOUS-TIME (moving wall, H/dx=16): wall-shear error at the MOVING wall, |1 - tau_SPH/tau_exact|, at the steady end of the viscous-time sweep, H/dx=16 (the bottom-wall reading alone does not evidence the whole no-slip condition)) exceeds the 15% owner standard\n- wcsph_wall_no_slip preferred by rule 'wall_bounded' but SELECTED: CASE-COUETTE-VISCOUS-TIME (steady-state envelope, H/dx=8): wall-shear error |1 - tau_SPH/tau_exact| at the steady end of the viscous-time sweep (longest run whose steady_drift passes the 1 % gate), H/dx=8 = 9.55% misses its own 5% gate but is inside 15% (benchmarks/couette/out_design/viscous_time_convergence.json); CASE-COUETTE-VISCOUS-TIME (reading mobility, H/dx=8): mobility of the wall-shear reading across the admissible viscous-time sweep (max - min, percentage points), H/dx=8: how much the accuracy claim would move if the run were stopped earlier = 18.3% -- a conditioning record (kind=robustness), not an error against a reference: reported for transparency, excluded from the accuracy bound (benchmarks/couette/out_design/viscous_time_convergence.json); CASE-COUETTE-VISCOUS-TIME (reading mobility, H/dx=16): mobility of the wall-shear reading across the admissible viscous-time sweep (max - min, percentage points), H/dx=16: how much the accuracy claim would move if the run were stopped earlier = 0% -- a conditioning record (kind=robustness), not an error against a reference: reported for transparency, excluded from the accuracy bound (benchmarks/couette/out_design/viscous_time_convergence.json); CASE-COUETTE-VISCOUS-TIME (moving wall, H/dx=8): wall-shear error at the MOVING wall, |1 - tau_SPH/tau_exact|, at the steady end of the viscous-time sweep, H/dx=8 (the bottom-wall reading alone does not evidence the whole no-slip condition) = 14.2% misses its own 5% gate but is inside 15% (benchmarks/couette/out_design/viscous_time_convergence.json); CASE-COUETTE-VISCOUS-TIME (moving wall, H/dx=16): wall-shear error at the MOVING wall, |1 - tau_SPH/tau_exact|, at the steady end of the viscous-time sweep, H/dx=16 (the bottom-wall reading alone does not evidence the whole no-slip condition) = 17.1% exceeds the 15% owner standard (benchmarks/couette/out_design/viscous_time_convergence.json); refuted record, excluded from the accuracy claim: plane Couette channel: interior L2 velocity error vs u=U*y/H (finest rung) = 5.65% -- measured on the ``run.py --quick`` artefact, which overrides the DESIGN.md terminal time 1.2 H^2/nu down to 0.3 H^2/nu: the reading is a startup transient, not a property of the wall model (docs/audit_couette_wall_shear_reading.md; superseded by the design-time record from benchmarks/couette/out_design/results.json) (benchmarks/couette/out/results.json); refuted record, excluded from the accuracy claim: plane Couette channel: wall-shear error at the moving wall, |1 - tau_SPH/tau_exact| (the no-slip quantity itself; artefact gate 5 %) = 32.6% -- measured on the ``run.py --quick`` artefact, which overrides the DESIGN.md terminal time 1.2 H^2/nu down to 0.3 H^2/nu: the reading is a startup transient, not a property of the wall model (docs/audit_couette_wall_shear_reading.md; superseded by the design-time record from benchmarks/couette/out_design/results.json) (benchmarks/couette/out/results.json); refuted record, excluded from the accuracy claim: plane Couette channel: cross-channel mass-flux error |1 - Q_SPH/Q_exact| (artefact gate 5 %) = 7.16% -- measured on the ``run.py --quick`` artefact, which overrides the DESIGN.md terminal time 1.2 H^2/nu down to 0.3 H^2/nu: the reading is a startup transient, not a property of the wall model (docs/audit_couette_wall_shear_reading.md; superseded by the design-time record from benchmarks/couette/out_design/results.json) (benchmarks/couette/out/results.json)\n"
+    },
+    {
+      "label": "Gresho vortex (smooth inviscid, periodic)",
+      "profile": {
+        "acoustic_mach": 0.05,
+        "reynolds": 10000.0,
+        "domain": "periodic",
+        "smooth_inviscid_vortex": true
+      },
+      "expected_primary": null,
+      "lenient": {
+        "primary": null,
+        "primary_status": "NONE",
+        "modifiers": [],
+        "headline_bound_pct": null,
+        "headline_quantity": null,
+        "within_owner_standard": false,
+        "endorsed_above_tolerance": []
+      },
+      "strict": {
+        "primary": null,
+        "primary_status": "NONE",
+        "modifiers": [],
+        "headline_bound_pct": null,
+        "within_owner_standard": false,
+        "endorsed_above_tolerance": [],
+        "excluded": []
+      },
+      "card": "# method-selection decision\n\n## profile\n- acoustic_mach: 0.05\n- has_free_surface: False\n- gravity_waves: False\n- shock_advection: False\n- capillary_dominated: False\n- density_ratio: 1.0\n- reynolds: 10000.0\n- thermal_transport: False\n- tensile_stretching: False\n- smooth_inviscid_vortex: True\n- domain: periodic\n\n## verdict\n- accuracy bound: unavailable (no accuracy record among the schemes put forward; owner standard 15%)\n- within owner standard: NO (nothing was selected)\n\n## primary scheme\n- none (WITHHELD: no evidence-backed rule fired)\n\n## modifiers\n- none\n\n## strict bound (worst live accuracy record <= 15%)\n- nothing excluded: every scheme put forward is inside the owner standard\n\n## notes\n- rule 'wall_bounded' fired but no candidate is selectable (isph_projection=WITHHELD)\n- no rule produced an evidence-backed scheme: profile outside the validated regime of this repository, do not run silently\n"
+    },
+    {
+      "label": "1-D transient conduction",
+      "profile": {
+        "thermal_transport": true,
+        "domain": "closed"
+      },
+      "expected_primary": "heat_conduction_operator",
+      "lenient": {
+        "primary": "heat_conduction_operator",
+        "primary_status": "SELECTED",
+        "modifiers": [],
+        "headline_bound_pct": 0.00021805730765489528,
+        "headline_quantity": "heat_conduction_operator: CASE-SPH-CONDUCTION-1D",
+        "within_owner_standard": true,
+        "endorsed_above_tolerance": []
+      },
+      "strict": {
+        "primary": "heat_conduction_operator",
+        "primary_status": "SELECTED",
+        "modifiers": [],
+        "headline_bound_pct": 0.00021805730765489528,
+        "within_owner_standard": true,
+        "endorsed_above_tolerance": [],
+        "excluded": []
+      },
+      "card": "# method-selection decision\n\n## profile\n- acoustic_mach: 0.01\n- has_free_surface: False\n- gravity_waves: False\n- shock_advection: False\n- capillary_dominated: False\n- density_ratio: 1.0\n- reynolds: 100.0\n- thermal_transport: True\n- tensile_stretching: False\n- smooth_inviscid_vortex: False\n- domain: closed\n\n## verdict\n- accuracy bound: 0.000218% over every live accuracy record of the schemes put forward (owner standard 15%) -- set by heat_conduction_operator (CASE-SPH-CONDUCTION-1D)\n- within owner standard: YES\n\n## primary scheme\n- heat_conduction_operator: SELECTED\n- why: [thermal] thermal_transport=True: the SPH Laplacian with flux-normalised stencil is the validated conduction operator\n- claimed bound: 0.000218% (owner standard 15%; passing records only)\n- reference: Cleary & Monaghan (1999) J. Comput. Phys. 148:227\n\n## modifiers\n- none\n\n## strict bound (worst live accuracy record <= 15%)\n- nothing excluded: every scheme put forward is inside the owner standard\n"
+    },
+    {
+      "label": "breaking wave over a slope",
+      "profile": {
+        "acoustic_mach": 0.04,
+        "has_free_surface": true,
+        "gravity_waves": true,
+        "tensile_stretching": true
+      },
+      "expected_primary": "wcsph_delta_sph",
+      "lenient": {
+        "primary": "wcsph_delta_sph",
+        "primary_status": "SELECTED",
+        "modifiers": [
+          "density_diffusion",
+          "transport_velocity_correction",
+          "particle_shifting",
+          "compression_regularization"
+        ],
+        "headline_bound_pct": 16.96262081604608,
+        "headline_quantity": "transport_velocity_correction: XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.04 m)",
+        "within_owner_standard": false,
+        "endorsed_above_tolerance": [
+          "transport_velocity_correction"
+        ]
+      },
+      "strict": {
+        "primary": "wcsph_delta_sph",
+        "primary_status": "SELECTED",
+        "modifiers": [
+          "density_diffusion",
+          "particle_shifting",
+          "compression_regularization"
+        ],
+        "headline_bound_pct": 8.832573890686035,
+        "within_owner_standard": true,
+        "endorsed_above_tolerance": [],
+        "excluded": [
+          {
+            "method": "transport_velocity_correction",
+            "role": "modifier",
+            "worst_accuracy_pct": 16.96262081604608,
+            "worst_accuracy_case": "XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.04 m)",
+            "quantity": "same quantity on the coarser rung: records the alpha=0.10 arm is resolution-sensitive (kept in the registry, fails the owner standard)"
+          }
+        ]
+      },
+      "card": "# method-selection decision\n\n## profile\n- acoustic_mach: 0.04\n- has_free_surface: True\n- gravity_waves: True\n- shock_advection: False\n- capillary_dominated: False\n- density_ratio: 1.0\n- reynolds: 100.0\n- thermal_transport: False\n- tensile_stretching: True\n- smooth_inviscid_vortex: False\n- domain: closed\n\n## verdict\n- accuracy bound: 8.83% over every live accuracy record of the schemes put forward (owner standard 15%) -- set by particle_shifting (CASE-PARTICLE-SHIFTING-DAMBREAK (B2, shifting on vs off))\n- within owner standard: YES\n\n## primary scheme\n- wcsph_delta_sph: SELECTED\n- why: [free_surface] free surface with acoustic Mach 0.04 < 0.1: the weakly compressible branch is the implemented free-surface solver\n- claimed bound: 2.97% (owner standard 15%; passing records only)\n- reference: Antuono, Colagrossi & Marrone (2010) Comput. Phys. Commun. 181:532; Monaghan (1992) J. Comput. Phys. 110:399 (XSPH)\n\n## modifiers\n- density_diffusion: SELECTED -- free-surface flow keeps delta-SPH density diffusion (delta=0.1)\n- particle_shifting: SELECTED -- strong stretching -> transport-velocity correction and/or particle shifting to avoid tensile instability\n- compression_regularization: SELECTED -- long-running nearly-incompressible free-surface runs may add compression-based density regularisation instead of delta-SPH\n    - XVAL-SPHINXSYS-COMPRESSION-DENSITY-REGULARIZATION: max interior-band hydrostatic pressure error vs analytic p = rho0 g (H - y), SPHinXsys reference-mean arm = 5.53% misses its own 1% gate but is inside 15% (benchmarks/xval_sphinxsys_compression/records.json)\n\n## strict bound (worst live accuracy record <= 15%)\n- excluded transport_velocity_correction [modifier]: worst live accuracy record 17% (XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.04 m): same quantity on the coarser rung: records the alpha=0.10 arm is resolution-sensitive (kept in the registry, fails the owner standard)) exceeds the 15% owner standard\n\n## notes\n- strict bound: modifier transport_velocity_correction withheld -- worst live accuracy record 17% (XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.04 m): same quantity on the coarser rung: records the alpha=0.10 arm is resolution-sensitive (kept in the registry, fails the owner standard)) exceeds the 15% owner standard\n"
+    }
+  ],
+  "counts": {
+    "profiles": 7,
+    "lenient_within": 4,
+    "strict_within": 5,
+    "strict_withheld": 2,
+    "excluded_total": 3
+  }
+}
