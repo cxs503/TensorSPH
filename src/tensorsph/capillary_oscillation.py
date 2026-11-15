@@ -48,6 +48,7 @@ import torch
 
 from .droplet_impact import Config, rhs, suggested_dt
 from .neighbor_search import PairListCache
+from .transport_velocity_correction import transport_velocity_correction
 
 __all__ = [
     "rayleigh_2d",
@@ -131,7 +132,11 @@ def run_point(radius_over_dx: int, sigma: float, periods: float,
               rho0: float = RHO_WATER, sound_speed: float = 0.5,
               viscosity: float = 1.0e-6, density_diffusion: float = 0.0,
               sample_every: int = 1,
-              t_end_s: float | None = None) -> dict:
+              t_end_s: float | None = None,
+              tvc_alpha: float = 0.0,
+              tvc_every: int = 1,
+              tvc_max_shift: float | None = None,
+              tvc_limiter=None) -> dict:
     """Integrate one drop-oscillation point and return every reading + reference."""
     device = torch.device(device)
     dx = radius / radius_over_dx
@@ -169,6 +174,8 @@ def run_point(radius_over_dx: int, sigma: float, periods: float,
     times, qs, ps = [], [], []
     max_r_over_R, escaped = 0.0, 0
     t_first_escape = float("nan")
+    # transport-velocity-correction bookkeeping (all zero when tvc_alpha = 0.0)
+    tvc_steps, tvc_shift_peak, tvc_h_grad1_sum = 0, 0.0, 0.0
     t0 = time.time()
     while t < t_end:
         pairs, _ = cache.get(pos)
@@ -176,6 +183,22 @@ def run_point(radius_over_dx: int, sigma: float, periods: float,
                                      dt=cfg.dt)
         vel = vel + cfg.dt * acc
         pos = pos + cfg.dt * vel
+        if tvc_alpha > 0.0 and steps > 0 and steps % tvc_every == 0:
+            # The ported SPHinXsys ``TransportVelocityCorrection``, applied the
+            # way ``dam_break`` applies it: volumes from this step's summation
+            # density, positions moved, mass and velocity untouched.  There is
+            # no wall in the drop case, so ``wall_count = 0``.
+            pairs_now, _ = cache.get(pos)
+            tvc = transport_velocity_correction(
+                pos, mass / density, h, alpha=tvc_alpha, pairs=pairs_now,
+                max_shift=(None if tvc_max_shift is None
+                           else tvc_max_shift * h),
+                limiter=tvc_limiter)
+            pos = pos + tvc.shift
+            tvc_shift_peak = max(tvc_shift_peak, tvc.max_shift)
+            tvc_h_grad1_sum += h * float(
+                torch.linalg.vector_norm(tvc.gradient_integral, dim=1).mean())
+            tvc_steps += 1
         t += cfg.dt
         steps += 1
         cfg.dt = suggested_dt(cfg)
@@ -218,6 +241,12 @@ def run_point(radius_over_dx: int, sigma: float, periods: float,
         "p_interior_mean_pa": p_in,
         "dp_exact_pa": dp_exact,
         "dp_err_pct": err_dp,
+        "tvc_alpha": float(tvc_alpha),
+        "tvc_every": int(tvc_every),
+        "tvc_steps": int(tvc_steps),
+        "tvc_shift_peak_over_h": (tvc_shift_peak / h if h > 0.0 else 0.0),
+        "tvc_mean_h_grad1": (tvc_h_grad1_sum / tvc_steps if tvc_steps else 0.0),
+        "r_mean_over_R": float(torch.linalg.norm(pos, dim=1).mean()) / radius,
         "containment_max_r_over_R": max_r_over_R,
         "t_first_escape_s": t_first_escape,
         "escaped_particles": escaped,

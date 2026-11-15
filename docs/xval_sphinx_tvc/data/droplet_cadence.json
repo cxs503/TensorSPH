@@ -1,0 +1,118 @@
+{
+ "leg": "droplet-cadence",
+ "anchor": "XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION",
+ "generated_at_unix": 1794718289.6,
+ "case": {
+  "module": "tensorsph.capillary_oscillation",
+  "geometry": "2-D drop, free surface, no gravity, no wall",
+  "sigma_n_per_m": 0.072,
+  "rho_kg_m3": 1000.0,
+  "radius_m": 0.05,
+  "mode": 2,
+  "periods": 1.0,
+  "radius_over_dx": 8,
+  "period_gate": "not graded at R/dx = 8 (baseline finds < 2 zero crossings in one period)",
+  "size_channel": "rbar/R vs the baseline run of the same integrator"
+ },
+ "cadence": {
+  "n_ac_advection_over_acoustic": 100,
+  "source": "measured: advection/acoustic sub-step ratio of the production integrator at this Mach number"
+ },
+ "forecast": {
+  "alpha_adv_equivalent_at_port_cadence": [
+   0.0,
+   0.05
+  ],
+  "note": "alpha at per-acoustic cadence = alpha_adv / N_ac; with N_ac = 100 the port's calibrated dam-break alpha = 0.10 corresponds to a per-advection-step strength of about 10.0, i.e. far above upstream's default 0.2"
+ },
+ "rows": [
+  {
+   "radius_over_dx": 8,
+   "tvc_alpha": 0.0,
+   "tvc_every": 1,
+   "steps": 832,
+   "tvc_steps": 0,
+   "period_err_pct": NaN,
+   "zero_crossings": 1,
+   "period_measured_s": NaN,
+   "period_exact_s": 3.3798155633113436,
+   "r_mean_over_R": 0.7903204035902043,
+   "containment_max_r_over_R": 2.1777933927361266,
+   "tvc_shift_peak_over_h": 0.0,
+   "tvc_mean_h_grad1": 0.0,
+   "escaped_particles": 5,
+   "wall_s": 19.51,
+   "inflation_vs_baseline_pct": 0.0,
+   "applications_per_advection_step": 0.0,
+   "cumulative_shift_budget_over_h": 0.0
+  },
+  {
+   "radius_over_dx": 8,
+   "tvc_alpha": 0.05,
+   "tvc_every": 1,
+   "steps": 832,
+   "tvc_steps": 831,
+   "period_err_pct": NaN,
+   "zero_crossings": 1,
+   "period_measured_s": NaN,
+   "period_exact_s": 3.3798155633113436,
+   "r_mean_over_R": 2.272821319407418,
+   "containment_max_r_over_R": 3.818752221307261,
+   "tvc_shift_peak_over_h": 0.07361952542943072,
+   "tvc_mean_h_grad1": 0.189531050917198,
+   "escaped_particles": 176,
+   "wall_s": 14.87,
+   "inflation_vs_baseline_pct": 187.58226525376634,
+   "applications_per_advection_step": 0.9987980769230769,
+   "cumulative_shift_budget_over_h": 61.177825631856926
+  },
+  {
+   "radius_over_dx": 8,
+   "tvc_alpha": 0.05,
+   "tvc_every": 100,
+   "steps": 832,
+   "tvc_steps": 8,
+   "period_err_pct": NaN,
+   "zero_crossings": 1,
+   "period_measured_s": NaN,
+   "period_exact_s": 3.3798155633113436,
+   "r_mean_over_R": 0.7297631477548245,
+   "containment_max_r_over_R": 2.223672873342998,
+   "tvc_shift_peak_over_h": 0.08908010986007955,
+   "tvc_mean_h_grad1": 0.4625974217032957,
+   "escaped_particles": 4,
+   "wall_s": 19.25,
+   "inflation_vs_baseline_pct": -7.662367763793654,
+   "applications_per_advection_step": 0.009615384615384616,
+   "cumulative_shift_budget_over_h": 0.7126408788806364
+  },
+  {
+   "radius_over_dx": 8,
+   "tvc_alpha": 0.2,
+   "tvc_every": 100,
+   "steps": 832,
+   "tvc_steps": 8,
+   "period_err_pct": -71.91845320290402,
+   "zero_crossings": 2,
+   "period_measured_s": 0.9491044890668081,
+   "period_exact_s": 3.3798155633113436,
+   "r_mean_over_R": 1.7170745785058454,
+   "containment_max_r_over_R": 13.537178900318224,
+   "tvc_shift_peak_over_h": 0.36132188861788056,
+   "tvc_mean_h_grad1": 0.5976146987220787,
+   "escaped_particles": 110,
+   "wall_s": 16.86,
+   "inflation_vs_baseline_pct": 117.26309617031983,
+   "applications_per_advection_step": 0.009615384615384616,
+   "cumulative_shift_budget_over_h": 2.8905751089430445
+  }
+ ],
+ "summary": {
+  "baseline_r_mean_over_R": 0.7903204035902043,
+  "worst_inflation_acoustic_cadence_pct": 187.58226525376634,
+  "worst_inflation_advection_cadence_pct": 117.26309617031983,
+  "size_bounded_at_advection_cadence": false,
+  "size_unbounded_at_acoustic_cadence": true,
+  "period_metric": "not graded (see case.period_gate)"
+ }
+}
