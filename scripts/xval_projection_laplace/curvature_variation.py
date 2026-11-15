@@ -253,7 +253,7 @@ def ellipse_case(aspect: float = 1.5, r_eq: float = R_EQ, dx: float | None = Non
                  outer_dx: float = OUTER_DX, variant: str = "model",
                  n_station: int = N_STATION, half_window=None,
                  shell_dx: float = 3.0, probe_in_dx=(2.0, 4.0),
-                 probe_out_dx=(3.0, 6.0)):
+                 probe_out_dx=(3.0, 6.0), return_fields: bool = False):
     """Static equilibrium of the CSF traction on an elliptical two-phase carrier.
 
     ``variant``
@@ -380,7 +380,7 @@ def ellipse_case(aspect: float = 1.5, r_eq: float = R_EQ, dx: float | None = Non
                 "max_abs": max(abs(x) for x in xs)}
 
     r_curv_min = float(1.0 / k_center.max())
-    return {
+    out = {
         "aspect_ratio": aspect, "variant": variant,
         "a_m": a, "b_m": b, "r_eq_m": r_eq, "dx_m": dx, "h_m": h,
         "r_eq_over_dx": r_eq / dx,
@@ -412,6 +412,15 @@ def ellipse_case(aspect: float = 1.5, r_eq: float = R_EQ, dx: float | None = Non
         "mean_kappa_model_per_m": sum(r["kappa_model_per_m"] for r in good) / len(good),
         "stations": rows,
     }
+    if return_fields:
+        # raw fields, for diagnostics only (not JSON-serialisable, not part of the
+        # gated record): the signed interface distance, the pressure field, the
+        # curvature field the force was built from and the per-particle volume.
+        out["fields"] = {"p": p, "s_signed": s_near, "kappa": kappa,
+                         "delta_s": delta_s, "vol": vol, "dx": dx, "h": h,
+                         "probe_in_dx": tuple(probe_in_dx),
+                         "probe_out_dx": tuple(probe_out_dx)}
+    return out
 
 
 # --------------------------------------------------------------------------- #
