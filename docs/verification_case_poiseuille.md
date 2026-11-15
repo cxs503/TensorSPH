@@ -6,7 +6,7 @@ harmonic (Womersley pulsatile state). Generated from
 `benchmarks/case_poiseuille/make_doc.py`; every number below is read from
 that file.
 
-**Overall verdict: PASS** — 9 of 9 graded gates passed.
+**Overall verdict: PASS** — 11 of 11 graded gates passed.
 
 ## 1. Case, geometry and parameters
 
