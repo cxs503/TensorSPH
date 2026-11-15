@@ -83,14 +83,32 @@ def _run_main():
     return module.main
 
 
+def common_argv(simulate_time=None) -> list:
+    """The pre-registered argument vector, optionally with a shorter horizon.
+
+    The protocol fixes ``t_end = 5.5 s``; substituting the horizon is the only
+    permitted deviation and it is used by ``crash_bisect.py`` to find *when* a
+    long cell dies.  Everything else (geometry, resolution, δ-SPH, sponge,
+    settle windows) stays byte-identical, so a bisected run and the graded cell
+    cannot drift apart.  ``COMMON`` itself is never mutated.
+    """
+    argv = list(COMMON)
+    if simulate_time is not None:
+        i = argv.index("--simulate-time")
+        argv[i + 1] = f"{float(simulate_time):g}"
+    return argv
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("index", type=int, choices=sorted(CELLS))
     parser.add_argument("--out", required=True)
+    parser.add_argument("--simulate-time", type=float, default=None,
+                        help="override the protocol horizon t_end (bisect only)")
     args = parser.parse_args(argv)
     label, extra = CELLS[args.index]
     print(f"cell {args.index}: {label} -> {args.out}", flush=True)
-    return _run_main()(COMMON + extra + ["--out", args.out])
+    return _run_main()(common_argv(args.simulate_time) + extra + ["--out", args.out])
 
 
 if __name__ == "__main__":
