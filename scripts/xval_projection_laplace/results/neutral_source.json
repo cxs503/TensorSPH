@@ -1,0 +1,5406 @@
+{
+ "anchor": "XVAL-SPH-PROJECTION-SPH-YOUNG-LAPLACE",
+ "round": "vapour pressure offset: monopole vs traction dipole vs smearing",
+ "gates_declared": {
+  "h1_source_charge_rel_shipped": 0.001,
+  "h1_source_charge_rel_neutral": 1e-12,
+  "h2_net_traction_rel_shipped": 0.01,
+  "h2_net_traction_rel_balanced": 1e-12,
+  "vapour_tail_reduction_source_cure_min": 4.0,
+  "vapour_tail_reduction_source_cure_max_if_h1_false": 1.1,
+  "vapour_tail_reduction_traction_cure_min": 4.0,
+  "h3_tail_resolution_ratio_band": [
+   0.5,
+   2.0
+  ],
+  "readout_bias_pct_owner_gate": 15.0,
+  "readout_bias_pct_claim_line": 3.0,
+  "flux_bias_change_pp_max": 0.01,
+  "i1_symmetric_probes_beat_shipped": true,
+  "readout_bias_pct_owner_gate_resolved": 15.0,
+  "readout_bias_pct_claim_line_resolved": 3.0
+ },
+ "probes_dx": {
+  "inner": [
+   2.0,
+   4.0
+  ],
+  "outer": [
+   3.0,
+   6.0
+  ],
+  "far": [
+   6.0,
+   8.0
+  ],
+  "bulk": [
+   9.0,
+   12.0
+  ]
+ },
+ "tail_bins_dx": [
+  2.0,
+  4.0,
+  6.0,
+  8.0,
+  10.0,
+  12.0
+ ],
+ "levels": [
+  {
+   "aspect_ratio": 3.0,
+   "r_eq_over_dx": 20.0,
+   "r_curv_min_over_dx": 3.312355489193964,
+   "n_particles": 10098,
+   "n_free": 9360,
+   "n_active": 794,
+   "dx_m": 0.001,
+   "h_m": 0.0013000000000000002,
+   "half_window_deg": 7.499999999999999,
+   "min_theory_signal_Pa": 0.6981698144346942,
+   "max_theory_signal_Pa": 17.5181868379377,
+   "net_traction": {
+    "rel_shipped": 0.0021600562809267966,
+    "abs_shipped_N_per_m": 0.0012428003315607663,
+    "rel_balanced": 3.0460384010601684e-17,
+    "torque_rel_shipped": -1.0,
+    "torque_abs_change": 8.139992883541048e-07
+   },
+   "flux_err": {
+    "n": 21,
+    "mean": 4.523264367812201,
+    "rms": 75.97355955259945,
+    "max_abs": 282.03790204084675
+   },
+   "arms": {
+    "shipped": {
+     "n_cg": 217,
+     "cg_rel_residual": 9.799730887583752e-11,
+     "source_charge_rel": -2.6261024084618994e-16,
+     "charge_after_rel": 1.0,
+     "removed_constant": 0.0,
+     "vapour_tail_Pa": [
+      {
+       "s_lo_dx": 2.0,
+       "s_hi_dx": 4.0,
+       "n": 402,
+       "p_mean": 0.5731347594388362,
+       "p_std": 1.0013231321554799
+      },
+      {
+       "s_lo_dx": 4.0,
+       "s_hi_dx": 6.0,
+       "n": 580,
+       "p_mean": 0.30165397545044487,
+       "p_std": 0.7763280355546054
+      },
+      {
+       "s_lo_dx": 6.0,
+       "s_hi_dx": 8.0,
+       "n": 481,
+       "p_mean": 0.4756850001607459,
+       "p_std": 0.553923308622798
+      },
+      {
+       "s_lo_dx": 8.0,
+       "s_hi_dx": 10.0,
+       "n": 470,
+       "p_mean": 0.4879855784301509,
+       "p_std": 0.42553425342193457
+      },
+      {
+       "s_lo_dx": 10.0,
+       "s_hi_dx": 12.0,
+       "n": 487,
+       "p_mean": 0.4641145273488216,
+       "p_std": 0.3457642590622439
+      }
+     ],
+     "tail_6_8_dx_Pa": 0.4756850001607459,
+     "tail_9_12_dx_Pa": 0.4641145273488216,
+     "tail_over_signal_6_8": 0.6813313757282767,
+     "readout": {
+      "shipped_asymmetric_2_4__3_6": {
+       "n": 21,
+       "mean": 38.57390062997057,
+       "rms": 52.009074070635236,
+       "max_abs": 122.72524631832233
+      },
+      "sym_2_4": {
+       "n": 21,
+       "mean": 29.494375690333786,
+       "rms": 44.43291208666142,
+       "max_abs": 125.77973391532868
+      },
+      "sym_3_6": {
+       "n": 21,
+       "mean": 41.720745575664836,
+       "rms": 54.83706845660333,
+       "max_abs": 109.98899110145994
+      },
+      "sym_4_7": {
+       "n": 21,
+       "mean": 44.663436134878374,
+       "rms": 59.71593547667803,
+       "max_abs": 104.52190490520366
+      },
+      "sym_5_8": {
+       "n": 21,
+       "mean": 47.10678372988026,
+       "rms": 64.01854962920291,
+       "max_abs": 101.53595320902768
+      }
+     },
+     "readout_shipped_probes": {
+      "n": 21,
+      "mean": 38.57390062997057,
+      "rms": 52.009074070635236,
+      "max_abs": 122.72524631832233
+     }
+    },
+    "src_neutral": {
+     "n_cg": 217,
+     "cg_rel_residual": 9.799728969363549e-11,
+     "source_charge_rel": -2.6261024084618994e-16,
+     "charge_after_rel": 0.1976241900647948,
+     "removed_constant": -1.1890282870357872e-11,
+     "vapour_tail_Pa": [
+      {
+       "s_lo_dx": 2.0,
+       "s_hi_dx": 4.0,
+       "n": 402,
+       "p_mean": 0.5731347594388408,
+       "p_std": 1.0013231321554812
+      },
+      {
+       "s_lo_dx": 4.0,
+       "s_hi_dx": 6.0,
+       "n": 580,
+       "p_mean": 0.30165397545044836,
+       "p_std": 0.7763280355546067
+      },
+      {
+       "s_lo_dx": 6.0,
+       "s_hi_dx": 8.0,
+       "n": 481,
+       "p_mean": 0.4756850001607497,
+       "p_std": 0.5539233086228001
+      },
+      {
+       "s_lo_dx": 8.0,
+       "s_hi_dx": 10.0,
+       "n": 470,
+       "p_mean": 0.48798557843015467,
+       "p_std": 0.42553425342193607
+      },
+      {
+       "s_lo_dx": 10.0,
+       "s_hi_dx": 12.0,
+       "n": 487,
+       "p_mean": 0.46411452734882525,
+       "p_std": 0.34576425906224545
+      }
+     ],
+     "tail_6_8_dx_Pa": 0.4756850001607497,
+     "tail_9_12_dx_Pa": 0.46411452734882525,
+     "tail_over_signal_6_8": 0.6813313757282823,
+     "readout": {
+      "shipped_asymmetric_2_4__3_6": {
+       "n": 21,
+       "mean": 38.57390062997061,
+       "rms": 52.00907407063527,
+       "max_abs": 122.72524631832238
+      },
+      "sym_2_4": {
+       "n": 21,
+       "mean": 29.49437569033382,
+       "rms": 44.43291208666144,
+       "max_abs": 125.77973391532873
+      },
+      "sym_3_6": {
+       "n": 21,
+       "mean": 41.7207455756649,
+       "rms": 54.83706845660339,
+       "max_abs": 109.98899110146003
+      },
+      "sym_4_7": {
+       "n": 21,
+       "mean": 44.663436134878424,
+       "rms": 59.71593547667808,
+       "max_abs": 104.52190490520383
+      },
+      "sym_5_8": {
+       "n": 21,
+       "mean": 47.10678372988033,
+       "rms": 64.01854962920297,
+       "max_abs": 101.53595320902782
+      }
+     },
+     "readout_shipped_probes": {
+      "n": 21,
+      "mean": 38.57390062997061,
+      "rms": 52.00907407063527,
+      "max_abs": 122.72524631832238
+     }
+    },
+    "traction_balanced": {
+     "n_cg": 213,
+     "cg_rel_residual": 9.611340453752683e-11,
+     "source_charge_rel": -2.6645334844637913e-16,
+     "charge_after_rel": 1.0,
+     "removed_constant": 0.0,
+     "vapour_tail_Pa": [
+      {
+       "s_lo_dx": 2.0,
+       "s_hi_dx": 4.0,
+       "n": 402,
+       "p_mean": 0.5731589813907503,
+       "p_std": 1.0014961277433017
+      },
+      {
+       "s_lo_dx": 4.0,
+       "s_hi_dx": 6.0,
+       "n": 580,
+       "p_mean": 0.30172584455223767,
+       "p_std": 0.7763917161697247
+      },
+      {
+       "s_lo_dx": 6.0,
+       "s_hi_dx": 8.0,
+       "n": 481,
+       "p_mean": 0.4757148788260812,
+       "p_std": 0.5539499431279159
+      },
+      {
+       "s_lo_dx": 8.0,
+       "s_hi_dx": 10.0,
+       "n": 470,
+       "p_mean": 0.4880888685469015,
+       "p_std": 0.42559126122659485
+      },
+      {
+       "s_lo_dx": 10.0,
+       "s_hi_dx": 12.0,
+       "n": 487,
+       "p_mean": 0.46420306452839066,
+       "p_std": 0.34583698093761506
+      }
+     ],
+     "tail_6_8_dx_Pa": 0.4757148788260812,
+     "tail_9_12_dx_Pa": 0.46420306452839066,
+     "tail_over_signal_6_8": 0.6813741714274284,
+     "readout": {
+      "shipped_asymmetric_2_4__3_6": {
+       "n": 21,
+       "mean": 38.56685429828122,
+       "rms": 51.99764552165436,
+       "max_abs": 123.20276971136911
+      },
+      "sym_2_4": {
+       "n": 21,
+       "mean": 29.49404784493727,
+       "rms": 44.44516254838715,
+       "max_abs": 126.27619412719464
+      },
+      "sym_3_6": {
+       "n": 21,
+       "mean": 41.72016382534001,
+       "rms": 54.828956472440595,
+       "max_abs": 110.46311590905597
+      },
+      "sym_4_7": {
+       "n": 21,
+       "mean": 44.663238383491816,
+       "rms": 59.707849313561496,
+       "max_abs": 104.97414583982709
+      },
+      "sym_5_8": {
+       "n": 21,
+       "mean": 47.106789456083035,
+       "rms": 64.01206928052922,
+       "max_abs": 101.95975082506843
+      }
+     },
+     "readout_shipped_probes": {
+      "n": 21,
+      "mean": 38.56685429828122,
+      "rms": 51.99764552165436,
+      "max_abs": 123.20276971136911
+     }
+    }
+   },
+   "stations": [
+    {
+     "station": 0,
+     "t_deg": 0.0,
+     "kappa_exact_window_per_m": 243.30815052691253,
+     "dp_theory_Pa": 17.5181868379377,
+     "dp_flux_Pa": 13.761950056292433,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       2,
+       10
+      ],
+      "sym_2_4": [
+       2,
+       11
+      ],
+      "sym_3_6": [
+       3,
+       10
+      ],
+      "sym_4_7": [
+       2,
+       6
+      ],
+      "sym_5_8": [
+       1,
+       3
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 9.354636505822182,
+     "dp_shipped_sym_2_4_Pa": 9.734977794116878,
+     "dp_shipped_sym_3_6_Pa": 8.743792535031826,
+     "dp_shipped_sym_4_7_Pa": 8.096851692229277,
+     "dp_shipped_sym_5_8_Pa": 7.337049686662119,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 9.354636505822187,
+     "dp_src_neutral_sym_2_4_Pa": 9.734977794116883,
+     "dp_src_neutral_sym_3_6_Pa": 8.743792535031831,
+     "dp_src_neutral_sym_4_7_Pa": 8.096851692229281,
+     "dp_src_neutral_sym_5_8_Pa": 7.337049686662123,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 9.352021960975925,
+     "dp_traction_balanced_sym_2_4_Pa": 9.731866891741824,
+     "dp_traction_balanced_sym_3_6_Pa": 8.740710830058632,
+     "dp_traction_balanced_sym_4_7_Pa": 8.09415874051525,
+     "dp_traction_balanced_sym_5_8_Pa": 7.335074134350426
+    },
+    {
+     "station": 1,
+     "t_deg": 14.999999999999998,
+     "kappa_exact_window_per_m": 136.89020438378407,
+     "dp_theory_Pa": 9.856094715632452,
+     "dp_flux_Pa": 9.523948847182902,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       5,
+       36
+      ],
+      "sym_2_4": [
+       5,
+       14
+      ],
+      "sym_3_6": [
+       4,
+       36
+      ],
+      "sym_4_7": [
+       4,
+       36
+      ],
+      "sym_5_8": [
+       3,
+       25
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 7.722402525791959,
+     "dp_shipped_sym_2_4_Pa": 7.927738087386641,
+     "dp_shipped_sym_3_6_Pa": 7.520085861101889,
+     "dp_shipped_sym_4_7_Pa": 6.428975614454161,
+     "dp_shipped_sym_5_8_Pa": 5.877667784692776,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 7.72240252579196,
+     "dp_src_neutral_sym_2_4_Pa": 7.927738087386641,
+     "dp_src_neutral_sym_3_6_Pa": 7.520085861101889,
+     "dp_src_neutral_sym_4_7_Pa": 6.428975614454161,
+     "dp_src_neutral_sym_5_8_Pa": 5.877667784692777,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 7.7212224844221575,
+     "dp_traction_balanced_sym_2_4_Pa": 7.9263380598369295,
+     "dp_traction_balanced_sym_3_6_Pa": 7.518619411972234,
+     "dp_traction_balanced_sym_4_7_Pa": 6.4274996585012145,
+     "dp_traction_balanced_sym_5_8_Pa": 5.8765232874733995
+    },
+    {
+     "station": 2,
+     "t_deg": 29.999999999999996,
+     "kappa_exact_window_per_m": 51.155010365726554,
+     "dp_theory_Pa": 3.6831607463323115,
+     "dp_flux_Pa": 3.8519436654714823,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       10,
+       48
+      ],
+      "sym_2_4": [
+       10,
+       14
+      ],
+      "sym_3_6": [
+       14,
+       48
+      ],
+      "sym_4_7": [
+       12,
+       57
+      ],
+      "sym_5_8": [
+       10,
+       54
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 5.218678819692238,
+     "dp_shipped_sym_2_4_Pa": 4.913322771217341,
+     "dp_shipped_sym_3_6_Pa": 5.255099870511619,
+     "dp_shipped_sym_4_7_Pa": 4.712806599262213,
+     "dp_shipped_sym_5_8_Pa": 4.294788910929632,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 5.218678819692242,
+     "dp_src_neutral_sym_2_4_Pa": 4.913322771217342,
+     "dp_src_neutral_sym_3_6_Pa": 5.255099870511622,
+     "dp_src_neutral_sym_4_7_Pa": 4.712806599262216,
+     "dp_src_neutral_sym_5_8_Pa": 4.294788910929633,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 5.218424116037831,
+     "dp_traction_balanced_sym_2_4_Pa": 4.913277955929654,
+     "dp_traction_balanced_sym_3_6_Pa": 5.254710445158115,
+     "dp_traction_balanced_sym_4_7_Pa": 4.712353347708919,
+     "dp_traction_balanced_sym_5_8_Pa": 4.294278383377905
+    },
+    {
+     "station": 3,
+     "t_deg": 45.0,
+     "kappa_exact_window_per_m": 23.627980993191507,
+     "dp_theory_Pa": 1.7012146315097885,
+     "dp_flux_Pa": 1.862393671962922,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       15,
+       26
+      ],
+      "sym_2_4": [
+       15,
+       16
+      ],
+      "sym_3_6": [
+       21,
+       26
+      ],
+      "sym_4_7": [
+       19,
+       27
+      ],
+      "sym_5_8": [
+       18,
+       27
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 2.6958511283388242,
+     "dp_shipped_sym_2_4_Pa": 2.5586376760239626,
+     "dp_shipped_sym_3_6_Pa": 2.8299827779459186,
+     "dp_shipped_sym_4_7_Pa": 2.915278575024298,
+     "dp_shipped_sym_5_8_Pa": 2.9417672799578796,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 2.6958511283388247,
+     "dp_src_neutral_sym_2_4_Pa": 2.558637676023963,
+     "dp_src_neutral_sym_3_6_Pa": 2.8299827779459203,
+     "dp_src_neutral_sym_4_7_Pa": 2.915278575024298,
+     "dp_src_neutral_sym_5_8_Pa": 2.941767279957881,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 2.696897311359028,
+     "dp_traction_balanced_sym_2_4_Pa": 2.559764838362157,
+     "dp_traction_balanced_sym_3_6_Pa": 2.83096378165567,
+     "dp_traction_balanced_sym_4_7_Pa": 2.9161108598522345,
+     "dp_traction_balanced_sym_5_8_Pa": 2.94245689171231
+    },
+    {
+     "station": 4,
+     "t_deg": 59.99999999999999,
+     "kappa_exact_window_per_m": 14.188046313036288,
+     "dp_theory_Pa": 1.0215393345386128,
+     "dp_flux_Pa": 0.45273869798287997,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       16,
+       28
+      ],
+      "sym_2_4": [
+       16,
+       19
+      ],
+      "sym_3_6": [
+       26,
+       28
+      ],
+      "sym_4_7": [
+       27,
+       30
+      ],
+      "sym_5_8": [
+       26,
+       31
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.5442651237237937,
+     "dp_shipped_sym_2_4_Pa": 1.4377508477510161,
+     "dp_shipped_sym_3_6_Pa": 1.64447917501746,
+     "dp_shipped_sym_4_7_Pa": 1.7420517743220492,
+     "dp_shipped_sym_5_8_Pa": 1.8309370991452325,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.5442651237237939,
+     "dp_src_neutral_sym_2_4_Pa": 1.4377508477510164,
+     "dp_src_neutral_sym_3_6_Pa": 1.6444791750174603,
+     "dp_src_neutral_sym_4_7_Pa": 1.7420517743220498,
+     "dp_src_neutral_sym_5_8_Pa": 1.8309370991452332,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.5462434750762823,
+     "dp_traction_balanced_sym_2_4_Pa": 1.4398810527845889,
+     "dp_traction_balanced_sym_3_6_Pa": 1.6464556578785214,
+     "dp_traction_balanced_sym_4_7_Pa": 1.7438507795725837,
+     "dp_traction_balanced_sym_5_8_Pa": 1.8325435784513342
+    },
+    {
+     "station": 5,
+     "t_deg": 75.00000000000001,
+     "kappa_exact_window_per_m": 10.641144759248798,
+     "dp_theory_Pa": 0.7661624226659134,
+     "dp_flux_Pa": -0.012447127910609887,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       19,
+       31
+      ],
+      "sym_2_4": [
+       19,
+       21
+      ],
+      "sym_3_6": [
+       30,
+       31
+      ],
+      "sym_4_7": [
+       31,
+       32
+      ],
+      "sym_5_8": [
+       29,
+       34
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 0.9093948005916663,
+     "dp_shipped_sym_2_4_Pa": 0.8099017907324222,
+     "dp_shipped_sym_3_6_Pa": 0.968195834072598,
+     "dp_shipped_sym_4_7_Pa": 1.0816425030744625,
+     "dp_shipped_sym_5_8_Pa": 1.1937945624707644,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 0.9093948005916668,
+     "dp_src_neutral_sym_2_4_Pa": 0.8099017907324226,
+     "dp_src_neutral_sym_3_6_Pa": 0.9681958340725985,
+     "dp_src_neutral_sym_4_7_Pa": 1.0816425030744627,
+     "dp_src_neutral_sym_5_8_Pa": 1.1937945624707655,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 0.911964675776026,
+     "dp_traction_balanced_sym_2_4_Pa": 0.8126033120017377,
+     "dp_traction_balanced_sym_3_6_Pa": 0.9708161676072042,
+     "dp_traction_balanced_sym_4_7_Pa": 1.084109156642823,
+     "dp_traction_balanced_sym_5_8_Pa": 1.1960965722213157
+    },
+    {
+     "station": 6,
+     "t_deg": 90.0,
+     "kappa_exact_window_per_m": 9.696802978259646,
+     "dp_theory_Pa": 0.6981698144346944,
+     "dp_flux_Pa": 2.667273311748779,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       18,
+       38
+      ],
+      "sym_2_4": [
+       18,
+       18
+      ],
+      "sym_3_6": [
+       26,
+       38
+      ],
+      "sym_4_7": [
+       25,
+       38
+      ],
+      "sym_5_8": [
+       34,
+       38
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.555000438919847,
+     "dp_shipped_sym_2_4_Pa": 1.576325949307797,
+     "dp_shipped_sym_3_6_Pa": 1.4660797495063498,
+     "dp_shipped_sym_4_7_Pa": 1.4279102039549625,
+     "dp_shipped_sym_5_8_Pa": 1.4070631905386612,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.5550004389198473,
+     "dp_src_neutral_sym_2_4_Pa": 1.5763259493077972,
+     "dp_src_neutral_sym_3_6_Pa": 1.4660797495063504,
+     "dp_src_neutral_sym_4_7_Pa": 1.4279102039549636,
+     "dp_src_neutral_sym_5_8_Pa": 1.4070631905386621,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.558334363106964,
+     "dp_traction_balanced_sym_2_4_Pa": 1.5797920846477236,
+     "dp_traction_balanced_sym_3_6_Pa": 1.469389945795732,
+     "dp_traction_balanced_sym_4_7_Pa": 1.4310676136490208,
+     "dp_traction_balanced_sym_5_8_Pa": 1.4100220175681515
+    },
+    {
+     "station": 7,
+     "t_deg": 104.99999999999999,
+     "kappa_exact_window_per_m": 10.641144759248798,
+     "dp_theory_Pa": 0.7661624226659134,
+     "dp_flux_Pa": 0.09379208110248222,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       19,
+       30
+      ],
+      "sym_2_4": [
+       19,
+       21
+      ],
+      "sym_3_6": [
+       29,
+       30
+      ],
+      "sym_4_7": [
+       30,
+       32
+      ],
+      "sym_5_8": [
+       28,
+       33
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 0.9276291594409973,
+     "dp_shipped_sym_2_4_Pa": 0.8304702932522559,
+     "dp_shipped_sym_3_6_Pa": 0.9870242771342994,
+     "dp_shipped_sym_4_7_Pa": 1.1191725733384361,
+     "dp_shipped_sym_5_8_Pa": 1.231792175117508,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 0.9276291594409978,
+     "dp_src_neutral_sym_2_4_Pa": 0.8304702932522565,
+     "dp_src_neutral_sym_3_6_Pa": 0.9870242771342999,
+     "dp_src_neutral_sym_4_7_Pa": 1.1191725733384366,
+     "dp_src_neutral_sym_5_8_Pa": 1.231792175117509,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 0.9316472312652437,
+     "dp_traction_balanced_sym_2_4_Pa": 0.8346477636949008,
+     "dp_traction_balanced_sym_3_6_Pa": 0.9911249493457808,
+     "dp_traction_balanced_sym_4_7_Pa": 1.1230274050835152,
+     "dp_traction_balanced_sym_5_8_Pa": 1.2354147073193746
+    },
+    {
+     "station": 8,
+     "t_deg": 119.99999999999999,
+     "kappa_exact_window_per_m": 14.188046313036272,
+     "dp_theory_Pa": 1.0215393345386115,
+     "dp_flux_Pa": 0.9122442888803055,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       17,
+       29
+      ],
+      "sym_2_4": [
+       17,
+       19
+      ],
+      "sym_3_6": [
+       27,
+       29
+      ],
+      "sym_4_7": [
+       27,
+       29
+      ],
+      "sym_5_8": [
+       27,
+       31
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.4516074487985051,
+     "dp_shipped_sym_2_4_Pa": 1.3466586236931821,
+     "dp_shipped_sym_3_6_Pa": 1.5593586913172848,
+     "dp_shipped_sym_4_7_Pa": 1.6697444975492792,
+     "dp_shipped_sym_5_8_Pa": 1.7505912495253269,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.4516074487985051,
+     "dp_src_neutral_sym_2_4_Pa": 1.346658623693182,
+     "dp_src_neutral_sym_3_6_Pa": 1.5593586913172852,
+     "dp_src_neutral_sym_4_7_Pa": 1.6697444975492803,
+     "dp_src_neutral_sym_5_8_Pa": 1.7505912495253269,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.456090792150138,
+     "dp_traction_balanced_sym_2_4_Pa": 1.3513855578202136,
+     "dp_traction_balanced_sym_3_6_Pa": 1.5639714679208963,
+     "dp_traction_balanced_sym_4_7_Pa": 1.6740859150352523,
+     "dp_traction_balanced_sym_5_8_Pa": 1.7546660180067404
+    },
+    {
+     "station": 9,
+     "t_deg": 135.0,
+     "kappa_exact_window_per_m": 23.627980993191493,
+     "dp_theory_Pa": 1.7012146315097874,
+     "dp_flux_Pa": 1.7403167275798805,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       15,
+       26
+      ],
+      "sym_2_4": [
+       15,
+       16
+      ],
+      "sym_3_6": [
+       20,
+       26
+      ],
+      "sym_4_7": [
+       19,
+       27
+      ],
+      "sym_5_8": [
+       17,
+       27
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 2.4727353957559943,
+     "dp_shipped_sym_2_4_Pa": 2.342640538743952,
+     "dp_shipped_sym_3_6_Pa": 2.6130734504920854,
+     "dp_shipped_sym_4_7_Pa": 2.7016392793475035,
+     "dp_shipped_sym_5_8_Pa": 2.750744399677781,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 2.4727353957559948,
+     "dp_src_neutral_sym_2_4_Pa": 2.3426405387439524,
+     "dp_src_neutral_sym_3_6_Pa": 2.6130734504920867,
+     "dp_src_neutral_sym_4_7_Pa": 2.7016392793475044,
+     "dp_src_neutral_sym_5_8_Pa": 2.7507443996777825,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 2.4775185620885827,
+     "dp_traction_balanced_sym_2_4_Pa": 2.3477632623925673,
+     "dp_traction_balanced_sym_3_6_Pa": 2.6179906907063804,
+     "dp_traction_balanced_sym_4_7_Pa": 2.7062341785465964,
+     "dp_traction_balanced_sym_5_8_Pa": 2.7550071571074
+    },
+    {
+     "station": 10,
+     "t_deg": 150.00000000000003,
+     "kappa_exact_window_per_m": 51.15501036572656,
+     "dp_theory_Pa": 3.683160746332312,
+     "dp_flux_Pa": 3.673772369741667,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       10,
+       48
+      ],
+      "sym_2_4": [
+       10,
+       14
+      ],
+      "sym_3_6": [
+       13,
+       48
+      ],
+      "sym_4_7": [
+       10,
+       59
+      ],
+      "sym_5_8": [
+       9,
+       56
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 4.957196777623631,
+     "dp_shipped_sym_2_4_Pa": 4.601850306860716,
+     "dp_shipped_sym_3_6_Pa": 4.93498959282389,
+     "dp_shipped_sym_4_7_Pa": 4.802303147719009,
+     "dp_shipped_sym_5_8_Pa": 4.555616113968317,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 4.957196777623635,
+     "dp_src_neutral_sym_2_4_Pa": 4.601850306860719,
+     "dp_src_neutral_sym_3_6_Pa": 4.934989592823893,
+     "dp_src_neutral_sym_4_7_Pa": 4.8023031477190115,
+     "dp_src_neutral_sym_5_8_Pa": 4.555616113968321,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 4.960064969307486,
+     "dp_traction_balanced_sym_2_4_Pa": 4.607221886726818,
+     "dp_traction_balanced_sym_3_6_Pa": 4.938089244313351,
+     "dp_traction_balanced_sym_4_7_Pa": 4.8050484578178585,
+     "dp_traction_balanced_sym_5_8_Pa": 4.558402356933925
+    },
+    {
+     "station": 11,
+     "t_deg": 164.99999999999997,
+     "kappa_exact_window_per_m": 136.89020438378395,
+     "dp_theory_Pa": 9.856094715632445,
+     "dp_flux_Pa": 8.661318513892502,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       5,
+       38
+      ],
+      "sym_2_4": [
+       5,
+       15
+      ],
+      "sym_3_6": [
+       4,
+       38
+      ],
+      "sym_4_7": [
+       4,
+       38
+      ],
+      "sym_5_8": [
+       3,
+       26
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 7.532918953458871,
+     "dp_shipped_sym_2_4_Pa": 7.748915102393318,
+     "dp_shipped_sym_3_6_Pa": 7.027543473654177,
+     "dp_shipped_sym_4_7_Pa": 6.021739628633845,
+     "dp_shipped_sym_5_8_Pa": 5.67125336254504,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 7.532918953458873,
+     "dp_src_neutral_sym_2_4_Pa": 7.748915102393319,
+     "dp_src_neutral_sym_3_6_Pa": 7.027543473654179,
+     "dp_src_neutral_sym_4_7_Pa": 6.0217396286338465,
+     "dp_src_neutral_sym_5_8_Pa": 5.671253362545042,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 7.536686299634898,
+     "dp_traction_balanced_sym_2_4_Pa": 7.753986235343441,
+     "dp_traction_balanced_sym_3_6_Pa": 7.0316150013650285,
+     "dp_traction_balanced_sym_4_7_Pa": 6.025300225377568,
+     "dp_traction_balanced_sym_5_8_Pa": 5.674557231374716
+    },
+    {
+     "station": 14,
+     "t_deg": 209.99999999999997,
+     "kappa_exact_window_per_m": 51.1550103657266,
+     "dp_theory_Pa": 3.683160746332315,
+     "dp_flux_Pa": 4.68674258089696,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       11,
+       50
+      ],
+      "sym_2_4": [
+       11,
+       14
+      ],
+      "sym_3_6": [
+       13,
+       50
+      ],
+      "sym_4_7": [
+       10,
+       61
+      ],
+      "sym_5_8": [
+       6,
+       54
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 5.451842363558853,
+     "dp_shipped_sym_2_4_Pa": 5.115207299598529,
+     "dp_shipped_sym_3_6_Pa": 5.261462096253043,
+     "dp_shipped_sym_4_7_Pa": 5.033983268262698,
+     "dp_shipped_sym_5_8_Pa": 4.890025204480481,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 5.451842363558856,
+     "dp_src_neutral_sym_2_4_Pa": 5.11520729959853,
+     "dp_src_neutral_sym_3_6_Pa": 5.261462096253046,
+     "dp_src_neutral_sym_4_7_Pa": 5.033983268262702,
+     "dp_src_neutral_sym_5_8_Pa": 4.890025204480484,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 5.452341632859522,
+     "dp_traction_balanced_sym_2_4_Pa": 5.11549278717677,
+     "dp_traction_balanced_sym_3_6_Pa": 5.2621123388567534,
+     "dp_traction_balanced_sym_4_7_Pa": 5.034714655024378,
+     "dp_traction_balanced_sym_5_8_Pa": 4.890765675012824
+    },
+    {
+     "station": 15,
+     "t_deg": 224.99999999999997,
+     "kappa_exact_window_per_m": 23.627980993191525,
+     "dp_theory_Pa": 1.7012146315097896,
+     "dp_flux_Pa": 1.5317591597406186,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       14,
+       28
+      ],
+      "sym_2_4": [
+       14,
+       17
+      ],
+      "sym_3_6": [
+       22,
+       28
+      ],
+      "sym_4_7": [
+       21,
+       27
+      ],
+      "sym_5_8": [
+       20,
+       27
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 2.521027099367242,
+     "dp_shipped_sym_2_4_Pa": 2.3063741350529403,
+     "dp_shipped_sym_3_6_Pa": 2.600654071195841,
+     "dp_shipped_sym_4_7_Pa": 2.6946412404754017,
+     "dp_shipped_sym_5_8_Pa": 2.7579567201227535,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 2.521027099367243,
+     "dp_src_neutral_sym_2_4_Pa": 2.3063741350529403,
+     "dp_src_neutral_sym_3_6_Pa": 2.600654071195842,
+     "dp_src_neutral_sym_4_7_Pa": 2.6946412404754025,
+     "dp_src_neutral_sym_5_8_Pa": 2.7579567201227544,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 2.5198775955235373,
+     "dp_traction_balanced_sym_2_4_Pa": 2.3051909154222296,
+     "dp_traction_balanced_sym_3_6_Pa": 2.599690371724045,
+     "dp_traction_balanced_sym_4_7_Pa": 2.6938423440360566,
+     "dp_traction_balanced_sym_5_8_Pa": 2.757309139123638
+    },
+    {
+     "station": 16,
+     "t_deg": 239.99999999999997,
+     "kappa_exact_window_per_m": 14.188046313036292,
+     "dp_theory_Pa": 1.021539334538613,
+     "dp_flux_Pa": 1.642997702692591,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       17,
+       28
+      ],
+      "sym_2_4": [
+       17,
+       18
+      ],
+      "sym_3_6": [
+       25,
+       28
+      ],
+      "sym_4_7": [
+       25,
+       32
+      ],
+      "sym_5_8": [
+       25,
+       31
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.5529152675307272,
+     "dp_shipped_sym_2_4_Pa": 1.443487819071468,
+     "dp_shipped_sym_3_6_Pa": 1.6121368576580342,
+     "dp_shipped_sym_4_7_Pa": 1.6859403396808195,
+     "dp_shipped_sym_5_8_Pa": 1.7466868182317465,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.552915267530728,
+     "dp_src_neutral_sym_2_4_Pa": 1.4434878190714686,
+     "dp_src_neutral_sym_3_6_Pa": 1.6121368576580355,
+     "dp_src_neutral_sym_4_7_Pa": 1.6859403396808195,
+     "dp_src_neutral_sym_5_8_Pa": 1.7466868182317472,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.5507841413724341,
+     "dp_traction_balanced_sym_2_4_Pa": 1.4413911152067047,
+     "dp_traction_balanced_sym_3_6_Pa": 1.6101592390631267,
+     "dp_traction_balanced_sym_4_7_Pa": 1.6841590823359365,
+     "dp_traction_balanced_sym_5_8_Pa": 1.7451111245021458
+    },
+    {
+     "station": 17,
+     "t_deg": 255.0,
+     "kappa_exact_window_per_m": 10.641144759248801,
+     "dp_theory_Pa": 0.7661624226659136,
+     "dp_flux_Pa": 0.5743142516800821,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       19,
+       32
+      ],
+      "sym_2_4": [
+       19,
+       21
+      ],
+      "sym_3_6": [
+       28,
+       32
+      ],
+      "sym_4_7": [
+       29,
+       33
+      ],
+      "sym_5_8": [
+       28,
+       32
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.2057137238758344,
+     "dp_shipped_sym_2_4_Pa": 1.039741219269405,
+     "dp_shipped_sym_3_6_Pa": 1.2575084055372383,
+     "dp_shipped_sym_4_7_Pa": 1.3189286548649901,
+     "dp_shipped_sym_5_8_Pa": 1.3640536946577357,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.205713723875835,
+     "dp_src_neutral_sym_2_4_Pa": 1.0397412192694058,
+     "dp_src_neutral_sym_3_6_Pa": 1.2575084055372385,
+     "dp_src_neutral_sym_4_7_Pa": 1.3189286548649903,
+     "dp_src_neutral_sym_5_8_Pa": 1.364053694657736,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.2028170182459634,
+     "dp_traction_balanced_sym_2_4_Pa": 1.03690407834531,
+     "dp_traction_balanced_sym_3_6_Pa": 1.2547513951354703,
+     "dp_traction_balanced_sym_4_7_Pa": 1.3163486940538078,
+     "dp_traction_balanced_sym_5_8_Pa": 1.361679634621158
+    },
+    {
+     "station": 18,
+     "t_deg": 270.0,
+     "kappa_exact_window_per_m": 9.696802978259642,
+     "dp_theory_Pa": 0.6981698144346942,
+     "dp_flux_Pa": 0.08582540019148349,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       27,
+       38
+      ],
+      "sym_2_4": [
+       27,
+       26
+      ],
+      "sym_3_6": [
+       29,
+       38
+      ],
+      "sym_4_7": [
+       25,
+       30
+      ],
+      "sym_5_8": [
+       26,
+       29
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 0.9497318695863712,
+     "dp_shipped_sym_2_4_Pa": 0.8225578671647966,
+     "dp_shipped_sym_3_6_Pa": 1.0038508206679202,
+     "dp_shipped_sym_4_7_Pa": 1.127222109762578,
+     "dp_shipped_sym_5_8_Pa": 1.1986163840309907,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 0.9497318695863721,
+     "dp_src_neutral_sym_2_4_Pa": 0.8225578671647977,
+     "dp_src_neutral_sym_3_6_Pa": 1.0038508206679202,
+     "dp_src_neutral_sym_4_7_Pa": 1.1272221097625776,
+     "dp_src_neutral_sym_5_8_Pa": 1.198616384030991,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 0.9462084467191489,
+     "dp_traction_balanced_sym_2_4_Pa": 0.8190586222947833,
+     "dp_traction_balanced_sym_3_6_Pa": 1.0004584582792446,
+     "dp_traction_balanced_sym_4_7_Pa": 1.1240386399023985,
+     "dp_traction_balanced_sym_5_8_Pa": 1.1956177117430178
+    },
+    {
+     "station": 19,
+     "t_deg": 285.0,
+     "kappa_exact_window_per_m": 10.641144759248798,
+     "dp_theory_Pa": 0.7661624226659134,
+     "dp_flux_Pa": 0.8964447645020861,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       18,
+       33
+      ],
+      "sym_2_4": [
+       18,
+       20
+      ],
+      "sym_3_6": [
+       28,
+       33
+      ],
+      "sym_4_7": [
+       29,
+       34
+      ],
+      "sym_5_8": [
+       29,
+       34
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.2106162110825032,
+     "dp_shipped_sym_2_4_Pa": 1.0692856499158394,
+     "dp_shipped_sym_3_6_Pa": 1.2564845366398536,
+     "dp_shipped_sym_4_7_Pa": 1.314261039462614,
+     "dp_shipped_sym_5_8_Pa": 1.3589711970244402,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.2106162110825032,
+     "dp_src_neutral_sym_2_4_Pa": 1.0692856499158392,
+     "dp_src_neutral_sym_3_6_Pa": 1.2564845366398545,
+     "dp_src_neutral_sym_4_7_Pa": 1.3142610394626142,
+     "dp_src_neutral_sym_5_8_Pa": 1.358971197024441,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.206433115273677,
+     "dp_traction_balanced_sym_2_4_Pa": 1.0650993982250876,
+     "dp_traction_balanced_sym_3_6_Pa": 1.2524342695732318,
+     "dp_traction_balanced_sym_4_7_Pa": 1.3104311832936935,
+     "dp_traction_balanced_sym_5_8_Pa": 1.3553609385038092
+    },
+    {
+     "station": 20,
+     "t_deg": 300.00000000000006,
+     "kappa_exact_window_per_m": 14.188046313036287,
+     "dp_theory_Pa": 1.0215393345386126,
+     "dp_flux_Pa": 1.8200344327328273,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       18,
+       30
+      ],
+      "sym_2_4": [
+       18,
+       19
+      ],
+      "sym_3_6": [
+       25,
+       30
+      ],
+      "sym_4_7": [
+       24,
+       30
+      ],
+      "sym_5_8": [
+       25,
+       31
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.6381810768097758,
+     "dp_shipped_sym_2_4_Pa": 1.5488057072359267,
+     "dp_shipped_sym_3_6_Pa": 1.6732898275770465,
+     "dp_shipped_sym_4_7_Pa": 1.763657892473782,
+     "dp_shipped_sym_5_8_Pa": 1.8461426394905285,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.638181076809775,
+     "dp_src_neutral_sym_2_4_Pa": 1.548805707235926,
+     "dp_src_neutral_sym_3_6_Pa": 1.6732898275770471,
+     "dp_src_neutral_sym_4_7_Pa": 1.7636578924737822,
+     "dp_src_neutral_sym_5_8_Pa": 1.846142639490529,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.6334466854005287,
+     "dp_traction_balanced_sym_2_4_Pa": 1.544044432603092,
+     "dp_traction_balanced_sym_3_6_Pa": 1.6686798532575293,
+     "dp_traction_balanced_sym_4_7_Pa": 1.7593098957966289,
+     "dp_traction_balanced_sym_5_8_Pa": 1.8420555592498662
+    },
+    {
+     "station": 21,
+     "t_deg": 315.0,
+     "kappa_exact_window_per_m": 23.62798099319149,
+     "dp_theory_Pa": 1.7012146315097871,
+     "dp_flux_Pa": 1.9173814914122098,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       14,
+       27
+      ],
+      "sym_2_4": [
+       14,
+       16
+      ],
+      "sym_3_6": [
+       21,
+       27
+      ],
+      "sym_4_7": [
+       20,
+       28
+      ],
+      "sym_5_8": [
+       19,
+       28
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 2.843864208282245,
+     "dp_shipped_sym_2_4_Pa": 2.6678233699325693,
+     "dp_shipped_sym_3_6_Pa": 2.851765392388836,
+     "dp_shipped_sym_4_7_Pa": 2.9329966574952464,
+     "dp_shipped_sym_5_8_Pa": 2.9873518137528983,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 2.8438642082822456,
+     "dp_src_neutral_sym_2_4_Pa": 2.6678233699325693,
+     "dp_src_neutral_sym_3_6_Pa": 2.8517653923888373,
+     "dp_src_neutral_sym_4_7_Pa": 2.9329966574952473,
+     "dp_src_neutral_sym_5_8_Pa": 2.9873518137529005,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 2.8387316015330946,
+     "dp_traction_balanced_sym_2_4_Pa": 2.662571886448532,
+     "dp_traction_balanced_sym_3_6_Pa": 2.846754718467629,
+     "dp_traction_balanced_sym_4_7_Pa": 2.9283109910508225,
+     "dp_traction_balanced_sym_5_8_Pa": 2.9830067915273757
+    },
+    {
+     "station": 22,
+     "t_deg": 329.99999999999994,
+     "kappa_exact_window_per_m": 51.155010365726454,
+     "dp_theory_Pa": 3.6831607463323044,
+     "dp_flux_Pa": 4.283316544291604,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       11,
+       49
+      ],
+      "sym_2_4": [
+       11,
+       15
+      ],
+      "sym_3_6": [
+       13,
+       49
+      ],
+      "sym_4_7": [
+       10,
+       58
+      ],
+      "sym_5_8": [
+       6,
+       52
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 5.113594268964269,
+     "dp_shipped_sym_2_4_Pa": 4.735687402650487,
+     "dp_shipped_sym_3_6_Pa": 5.38885930823833,
+     "dp_shipped_sym_4_7_Pa": 5.18638918939494,
+     "dp_shipped_sym_5_8_Pa": 5.055759537321851,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 5.113594268964272,
+     "dp_src_neutral_sym_2_4_Pa": 4.7356874026504885,
+     "dp_src_neutral_sym_3_6_Pa": 5.388859308238332,
+     "dp_src_neutral_sym_4_7_Pa": 5.186389189394943,
+     "dp_src_neutral_sym_5_8_Pa": 5.055759537321854,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 5.110414667427553,
+     "dp_traction_balanced_sym_2_4_Pa": 4.730375767999749,
+     "dp_traction_balanced_sym_3_6_Pa": 5.38573030586737,
+     "dp_traction_balanced_sym_4_7_Pa": 5.183646032677552,
+     "dp_traction_balanced_sym_5_8_Pa": 5.052874257282794
+    }
+   ]
+  },
+  {
+   "aspect_ratio": 3.0,
+   "r_eq_over_dx": 40.0,
+   "r_curv_min_over_dx": 4.543480893291927,
+   "n_particles": 30644,
+   "n_free": 29256,
+   "n_active": 1590,
+   "dx_m": 0.0005,
+   "h_m": 0.0006500000000000001,
+   "half_window_deg": 7.499999999999999,
+   "min_theory_signal_Pa": 0.6981698144346942,
+   "max_theory_signal_Pa": 17.5181868379377,
+   "net_traction": {
+    "rel_shipped": 0.0019531624715455526,
+    "abs_shipped_N_per_m": 0.0013794491902242943,
+    "rel_balanced": 1.5440001777616182e-17,
+    "torque_rel_shipped": -1.0,
+    "torque_abs_change": 1.556487119862835e-07
+   },
+   "flux_err": {
+    "n": 24,
+    "mean": -0.045251070179485854,
+    "rms": 38.95429061605973,
+    "max_abs": 101.53328567540055
+   },
+   "arms": {
+    "shipped": {
+     "n_cg": 382,
+     "cg_rel_residual": 9.87297287822916e-11,
+     "source_charge_rel": 2.653889869962452e-16,
+     "charge_after_rel": 1.0,
+     "removed_constant": 0.0,
+     "vapour_tail_Pa": [
+      {
+       "s_lo_dx": 2.0,
+       "s_hi_dx": 4.0,
+       "n": 761,
+       "p_mean": 0.88441645771324,
+       "p_std": 1.0705510931307112
+      },
+      {
+       "s_lo_dx": 4.0,
+       "s_hi_dx": 6.0,
+       "n": 785,
+       "p_mean": 0.7778493263358246,
+       "p_std": 0.8878583495135698
+      },
+      {
+       "s_lo_dx": 6.0,
+       "s_hi_dx": 8.0,
+       "n": 814,
+       "p_mean": 0.7541373260037024,
+       "p_std": 0.7229062042669586
+      },
+      {
+       "s_lo_dx": 8.0,
+       "s_hi_dx": 10.0,
+       "n": 924,
+       "p_mean": 0.6813158654751059,
+       "p_std": 0.5953177977640038
+      },
+      {
+       "s_lo_dx": 10.0,
+       "s_hi_dx": 12.0,
+       "n": 860,
+       "p_mean": 0.7317858836857759,
+       "p_std": 0.45643719990254566
+      }
+     ],
+     "tail_6_8_dx_Pa": 0.7541373260037024,
+     "tail_9_12_dx_Pa": 0.7317858836857759,
+     "tail_over_signal_6_8": 1.0801631786592276,
+     "readout": {
+      "shipped_asymmetric_2_4__3_6": {
+       "n": 24,
+       "mean": 15.93708585717463,
+       "rms": 30.063279434533822,
+       "max_abs": 61.97018238788552
+      },
+      "sym_2_4": {
+       "n": 24,
+       "mean": 10.319437906109338,
+       "rms": 24.515016414094898,
+       "max_abs": 50.18131381693187
+      },
+      "sym_3_6": {
+       "n": 24,
+       "mean": 17.465753195946103,
+       "rms": 31.89999571601623,
+       "max_abs": 59.54811467370711
+      },
+      "sym_4_7": {
+       "n": 24,
+       "mean": 20.73377574763403,
+       "rms": 36.509064461297946,
+       "max_abs": 60.726154876425944
+      },
+      "sym_5_8": {
+       "n": 24,
+       "mean": 23.279653980340715,
+       "rms": 40.5615097309974,
+       "max_abs": 61.8373237907778
+      }
+     },
+     "readout_shipped_probes": {
+      "n": 24,
+      "mean": 15.93708585717463,
+      "rms": 30.063279434533822,
+      "max_abs": 61.97018238788552
+     }
+    },
+    "src_neutral": {
+     "n_cg": 382,
+     "cg_rel_residual": 9.872964230339257e-11,
+     "source_charge_rel": 2.653889869962452e-16,
+     "charge_after_rel": 0.19930675909878684,
+     "removed_constant": 3.6608591769476355e-11,
+     "vapour_tail_Pa": [
+      {
+       "s_lo_dx": 2.0,
+       "s_hi_dx": 4.0,
+       "n": 761,
+       "p_mean": 0.88441645771323,
+       "p_std": 1.0705510931307083
+      },
+      {
+       "s_lo_dx": 4.0,
+       "s_hi_dx": 6.0,
+       "n": 785,
+       "p_mean": 0.7778493263358147,
+       "p_std": 0.8878583495135668
+      },
+      {
+       "s_lo_dx": 6.0,
+       "s_hi_dx": 8.0,
+       "n": 814,
+       "p_mean": 0.7541373260036932,
+       "p_std": 0.722906204266955
+      },
+      {
+       "s_lo_dx": 8.0,
+       "s_hi_dx": 10.0,
+       "n": 924,
+       "p_mean": 0.6813158654750978,
+       "p_std": 0.5953177977639998
+      },
+      {
+       "s_lo_dx": 10.0,
+       "s_hi_dx": 12.0,
+       "n": 860,
+       "p_mean": 0.7317858836857674,
+       "p_std": 0.4564371999025415
+      }
+     ],
+     "tail_6_8_dx_Pa": 0.7541373260036932,
+     "tail_9_12_dx_Pa": 0.7317858836857674,
+     "tail_over_signal_6_8": 1.0801631786592145,
+     "readout": {
+      "shipped_asymmetric_2_4__3_6": {
+       "n": 24,
+       "mean": 15.93708585717458,
+       "rms": 30.06327943453377,
+       "max_abs": 61.970182387885366
+      },
+      "sym_2_4": {
+       "n": 24,
+       "mean": 10.319437906109295,
+       "rms": 24.51501641409486,
+       "max_abs": 50.18131381693172
+      },
+      "sym_3_6": {
+       "n": 24,
+       "mean": 17.465753195946032,
+       "rms": 31.899995716016164,
+       "max_abs": 59.548114673706884
+      },
+      "sym_4_7": {
+       "n": 24,
+       "mean": 20.733775747633967,
+       "rms": 36.50906446129789,
+       "max_abs": 60.72615487642583
+      },
+      "sym_5_8": {
+       "n": 24,
+       "mean": 23.279653980340612,
+       "rms": 40.561509730997315,
+       "max_abs": 61.837323790777646
+      }
+     },
+     "readout_shipped_probes": {
+      "n": 24,
+      "mean": 15.93708585717458,
+      "rms": 30.06327943453377,
+      "max_abs": 61.970182387885366
+     }
+    },
+    "traction_balanced": {
+     "n_cg": 382,
+     "cg_rel_residual": 9.896706446656048e-11,
+     "source_charge_rel": 2.5567443784002894e-16,
+     "charge_after_rel": 1.0,
+     "removed_constant": 0.0,
+     "vapour_tail_Pa": [
+      {
+       "s_lo_dx": 2.0,
+       "s_hi_dx": 4.0,
+       "n": 761,
+       "p_mean": 0.8842675222750129,
+       "p_std": 1.070680968275168
+      },
+      {
+       "s_lo_dx": 4.0,
+       "s_hi_dx": 6.0,
+       "n": 785,
+       "p_mean": 0.7778704589394733,
+       "p_std": 0.8878595870624837
+      },
+      {
+       "s_lo_dx": 6.0,
+       "s_hi_dx": 8.0,
+       "n": 814,
+       "p_mean": 0.7542133818642495,
+       "p_std": 0.7230132963473301
+      },
+      {
+       "s_lo_dx": 8.0,
+       "s_hi_dx": 10.0,
+       "n": 924,
+       "p_mean": 0.6813507106610609,
+       "p_std": 0.5954013035853338
+      },
+      {
+       "s_lo_dx": 10.0,
+       "s_hi_dx": 12.0,
+       "n": 860,
+       "p_mean": 0.7317863361917553,
+       "p_std": 0.4565034833187803
+      }
+     ],
+     "tail_6_8_dx_Pa": 0.7542133818642495,
+     "tail_9_12_dx_Pa": 0.7317863361917553,
+     "tail_over_signal_6_8": 1.0802721147074135,
+     "readout": {
+      "shipped_asymmetric_2_4__3_6": {
+       "n": 24,
+       "mean": 15.92560850123568,
+       "rms": 30.021905491788313,
+       "max_abs": 61.01218777891919
+      },
+      "sym_2_4": {
+       "n": 24,
+       "mean": 10.31783313754747,
+       "rms": 24.512017227718808,
+       "max_abs": 49.24271524226715
+      },
+      "sym_3_6": {
+       "n": 24,
+       "mean": 17.465401512327755,
+       "rms": 31.869169232862703,
+       "max_abs": 58.60242626911871
+      },
+      "sym_4_7": {
+       "n": 24,
+       "mean": 20.73337911025807,
+       "rms": 36.49618550250714,
+       "max_abs": 59.80834548579481
+      },
+      "sym_5_8": {
+       "n": 24,
+       "mean": 23.27949156759694,
+       "rms": 40.55491792002453,
+       "max_abs": 60.94978620851903
+      }
+     },
+     "readout_shipped_probes": {
+      "n": 24,
+      "mean": 15.92560850123568,
+      "rms": 30.021905491788313,
+      "max_abs": 61.01218777891919
+     }
+    }
+   },
+   "stations": [
+    {
+     "station": 0,
+     "t_deg": 0.0,
+     "kappa_exact_window_per_m": 243.30815052691253,
+     "dp_theory_Pa": 17.5181868379377,
+     "dp_flux_Pa": 21.115938830989027,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       10,
+       33
+      ],
+      "sym_2_4": [
+       10,
+       21
+      ],
+      "sym_3_6": [
+       11,
+       33
+      ],
+      "sym_4_7": [
+       8,
+       33
+      ],
+      "sym_5_8": [
+       6,
+       32
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 12.415097706400338,
+     "dp_shipped_sym_2_4_Pa": 13.065074884371741,
+     "dp_shipped_sym_3_6_Pa": 11.365059129289268,
+     "dp_shipped_sym_4_7_Pa": 10.129835151852703,
+     "dp_shipped_sym_5_8_Pa": 9.38401922502629,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 12.415097706400338,
+     "dp_src_neutral_sym_2_4_Pa": 13.065074884371743,
+     "dp_src_neutral_sym_3_6_Pa": 11.365059129289268,
+     "dp_src_neutral_sym_4_7_Pa": 10.1298351518527,
+     "dp_src_neutral_sym_5_8_Pa": 9.384019225026284,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 12.416519063087257,
+     "dp_traction_balanced_sym_2_4_Pa": 13.066875551821022,
+     "dp_traction_balanced_sym_3_6_Pa": 11.366651761699123,
+     "dp_traction_balanced_sym_4_7_Pa": 10.131252765595557,
+     "dp_traction_balanced_sym_5_8_Pa": 9.385190607363885
+    },
+    {
+     "station": 1,
+     "t_deg": 14.999999999999998,
+     "kappa_exact_window_per_m": 136.89020438378407,
+     "dp_theory_Pa": 9.856094715632452,
+     "dp_flux_Pa": 8.193955473428227,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       15,
+       34
+      ],
+      "sym_2_4": [
+       15,
+       22
+      ],
+      "sym_3_6": [
+       19,
+       34
+      ],
+      "sym_4_7": [
+       15,
+       34
+      ],
+      "sym_5_8": [
+       12,
+       40
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 8.222981627475427,
+     "dp_shipped_sym_2_4_Pa": 8.316505864399756,
+     "dp_shipped_sym_3_6_Pa": 8.322417810844215,
+     "dp_shipped_sym_4_7_Pa": 8.016477767629679,
+     "dp_shipped_sym_5_8_Pa": 7.564863762983672,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 8.222981627475425,
+     "dp_src_neutral_sym_2_4_Pa": 8.316505864399756,
+     "dp_src_neutral_sym_3_6_Pa": 8.322417810844211,
+     "dp_src_neutral_sym_4_7_Pa": 8.016477767629677,
+     "dp_src_neutral_sym_5_8_Pa": 7.564863762983668,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 8.227053164472744,
+     "dp_traction_balanced_sym_2_4_Pa": 8.321158572052157,
+     "dp_traction_balanced_sym_3_6_Pa": 8.326744856467693,
+     "dp_traction_balanced_sym_4_7_Pa": 8.020312415008712,
+     "dp_traction_balanced_sym_5_8_Pa": 7.56813988723527
+    },
+    {
+     "station": 2,
+     "t_deg": 29.999999999999996,
+     "kappa_exact_window_per_m": 51.155010365726554,
+     "dp_theory_Pa": 3.6831607463323115,
+     "dp_flux_Pa": 3.3400071273399017,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       22,
+       41
+      ],
+      "sym_2_4": [
+       22,
+       26
+      ],
+      "sym_3_6": [
+       33,
+       41
+      ],
+      "sym_4_7": [
+       32,
+       42
+      ],
+      "sym_5_8": [
+       30,
+       42
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 4.303850011579643,
+     "dp_shipped_sym_2_4_Pa": 4.1674204185657775,
+     "dp_shipped_sym_3_6_Pa": 4.476437058790041,
+     "dp_shipped_sym_4_7_Pa": 4.619350799533189,
+     "dp_shipped_sym_5_8_Pa": 4.688698421993422,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 4.303850011579644,
+     "dp_src_neutral_sym_2_4_Pa": 4.167420418565779,
+     "dp_src_neutral_sym_3_6_Pa": 4.47643705879004,
+     "dp_src_neutral_sym_4_7_Pa": 4.619350799533189,
+     "dp_src_neutral_sym_5_8_Pa": 4.688698421993422,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 4.309441843249817,
+     "dp_traction_balanced_sym_2_4_Pa": 4.173439494901705,
+     "dp_traction_balanced_sym_3_6_Pa": 4.482266274141631,
+     "dp_traction_balanced_sym_4_7_Pa": 4.6248211995389354,
+     "dp_traction_balanced_sym_5_8_Pa": 4.69380950376731
+    },
+    {
+     "station": 3,
+     "t_deg": 45.0,
+     "kappa_exact_window_per_m": 23.627980993191507,
+     "dp_theory_Pa": 1.7012146315097885,
+     "dp_flux_Pa": 1.6934854854871222,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       29,
+       50
+      ],
+      "sym_2_4": [
+       29,
+       32
+      ],
+      "sym_3_6": [
+       43,
+       50
+      ],
+      "sym_4_7": [
+       44,
+       49
+      ],
+      "sym_5_8": [
+       44,
+       51
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 2.2265214926753893,
+     "dp_shipped_sym_2_4_Pa": 2.128141847937221,
+     "dp_shipped_sym_3_6_Pa": 2.3195763049652838,
+     "dp_shipped_sym_4_7_Pa": 2.4323146136061577,
+     "dp_shipped_sym_5_8_Pa": 2.536943770998838,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 2.2265214926753885,
+     "dp_src_neutral_sym_2_4_Pa": 2.1281418479372207,
+     "dp_src_neutral_sym_3_6_Pa": 2.3195763049652833,
+     "dp_src_neutral_sym_4_7_Pa": 2.4323146136061564,
+     "dp_src_neutral_sym_5_8_Pa": 2.536943770998837,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 2.2330437021835103,
+     "dp_traction_balanced_sym_2_4_Pa": 2.1349594700665326,
+     "dp_traction_balanced_sym_3_6_Pa": 2.326332245317877,
+     "dp_traction_balanced_sym_4_7_Pa": 2.438782479378246,
+     "dp_traction_balanced_sym_5_8_Pa": 2.543120249821186
+    },
+    {
+     "station": 4,
+     "t_deg": 59.99999999999999,
+     "kappa_exact_window_per_m": 14.188046313036288,
+     "dp_theory_Pa": 1.0215393345386128,
+     "dp_flux_Pa": 1.4224401913465603,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       37,
+       56
+      ],
+      "sym_2_4": [
+       37,
+       38
+      ],
+      "sym_3_6": [
+       54,
+       56
+      ],
+      "sym_4_7": [
+       51,
+       58
+      ],
+      "sym_5_8": [
+       52,
+       60
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.3345361004620502,
+     "dp_shipped_sym_2_4_Pa": 1.2854125229667552,
+     "dp_shipped_sym_3_6_Pa": 1.3651434122940183,
+     "dp_shipped_sym_4_7_Pa": 1.4214689180457403,
+     "dp_shipped_sym_5_8_Pa": 1.486263299764573,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.3345361004620486,
+     "dp_src_neutral_sym_2_4_Pa": 1.2854125229667537,
+     "dp_src_neutral_sym_3_6_Pa": 1.365143412294018,
+     "dp_src_neutral_sym_4_7_Pa": 1.4214689180457396,
+     "dp_src_neutral_sym_5_8_Pa": 1.4862632997645726,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.3414302059165284,
+     "dp_traction_balanced_sym_2_4_Pa": 1.2925233508263059,
+     "dp_traction_balanced_sym_3_6_Pa": 1.3723114209253968,
+     "dp_traction_balanced_sym_4_7_Pa": 1.4284087210963297,
+     "dp_traction_balanced_sym_5_8_Pa": 1.4929605713643044
+    },
+    {
+     "station": 5,
+     "t_deg": 75.00000000000001,
+     "kappa_exact_window_per_m": 10.641144759248798,
+     "dp_theory_Pa": 0.7661624226659134,
+     "dp_flux_Pa": 0.6153318662066656,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       38,
+       62
+      ],
+      "sym_2_4": [
+       38,
+       40
+      ],
+      "sym_3_6": [
+       58,
+       62
+      ],
+      "sym_4_7": [
+       60,
+       63
+      ],
+      "sym_5_8": [
+       60,
+       64
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 0.9563942934807093,
+     "dp_shipped_sym_2_4_Pa": 0.9298967116480525,
+     "dp_shipped_sym_3_6_Pa": 0.9128613207018927,
+     "dp_shipped_sym_4_7_Pa": 0.9617355657681521,
+     "dp_shipped_sym_5_8_Pa": 1.0217043186354158,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 0.9563942934807081,
+     "dp_src_neutral_sym_2_4_Pa": 0.9298967116480514,
+     "dp_src_neutral_sym_3_6_Pa": 0.9128613207018921,
+     "dp_src_neutral_sym_4_7_Pa": 0.961735565768151,
+     "dp_src_neutral_sym_5_8_Pa": 1.0217043186354147,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 0.9634182495047181,
+     "dp_traction_balanced_sym_2_4_Pa": 0.937112980726128,
+     "dp_traction_balanced_sym_3_6_Pa": 0.9201298747327251,
+     "dp_traction_balanced_sym_4_7_Pa": 0.9688020873344871,
+     "dp_traction_balanced_sym_5_8_Pa": 1.0285548904606174
+    },
+    {
+     "station": 6,
+     "t_deg": 90.0,
+     "kappa_exact_window_per_m": 9.696802978259646,
+     "dp_theory_Pa": 0.6981698144346944,
+     "dp_flux_Pa": 0.14217833292107485,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       53,
+       74
+      ],
+      "sym_2_4": [
+       53,
+       50
+      ],
+      "sym_3_6": [
+       63,
+       74
+      ],
+      "sym_4_7": [
+       53,
+       61
+      ],
+      "sym_5_8": [
+       53,
+       57
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 0.8470071779538388,
+     "dp_shipped_sym_2_4_Pa": 0.765236147708366,
+     "dp_shipped_sym_3_6_Pa": 0.9042481656324348,
+     "dp_shipped_sym_4_7_Pa": 1.0071859122515363,
+     "dp_shipped_sym_5_8_Pa": 1.0330795715612302,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 0.847007177953838,
+     "dp_src_neutral_sym_2_4_Pa": 0.7652361477083649,
+     "dp_src_neutral_sym_3_6_Pa": 0.9042481656324339,
+     "dp_src_neutral_sym_4_7_Pa": 1.0071859122515354,
+     "dp_src_neutral_sym_5_8_Pa": 1.0330795715612282,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 0.8540647523607359,
+     "dp_traction_balanced_sym_2_4_Pa": 0.7724337719230325,
+     "dp_traction_balanced_sym_3_6_Pa": 0.9114963734143593,
+     "dp_traction_balanced_sym_4_7_Pa": 1.0142059660995326,
+     "dp_traction_balanced_sym_5_8_Pa": 1.0399029208546453
+    },
+    {
+     "station": 7,
+     "t_deg": 104.99999999999999,
+     "kappa_exact_window_per_m": 10.641144759248798,
+     "dp_theory_Pa": 0.7661624226659134,
+     "dp_flux_Pa": 0.6761961415142718,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       37,
+       62
+      ],
+      "sym_2_4": [
+       37,
+       41
+      ],
+      "sym_3_6": [
+       59,
+       62
+      ],
+      "sym_4_7": [
+       59,
+       64
+      ],
+      "sym_5_8": [
+       60,
+       63
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.0159900373582618,
+     "dp_shipped_sym_2_4_Pa": 0.9108398904169488,
+     "dp_shipped_sym_3_6_Pa": 1.0157306718224501,
+     "dp_shipped_sym_4_7_Pa": 1.0698847350908718,
+     "dp_shipped_sym_5_8_Pa": 1.1234873323854289,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.0159900373582609,
+     "dp_src_neutral_sym_2_4_Pa": 0.9108398904169477,
+     "dp_src_neutral_sym_3_6_Pa": 1.0157306718224492,
+     "dp_src_neutral_sym_4_7_Pa": 1.0698847350908711,
+     "dp_src_neutral_sym_5_8_Pa": 1.1234873323854284,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.0230366983013193,
+     "dp_traction_balanced_sym_2_4_Pa": 0.9180500086809451,
+     "dp_traction_balanced_sym_3_6_Pa": 1.022951127540472,
+     "dp_traction_balanced_sym_4_7_Pa": 1.0768980136080604,
+     "dp_traction_balanced_sym_5_8_Pa": 1.130269698412302
+    },
+    {
+     "station": 8,
+     "t_deg": 119.99999999999999,
+     "kappa_exact_window_per_m": 14.188046313036272,
+     "dp_theory_Pa": 1.0215393345386115,
+     "dp_flux_Pa": 1.4998055751061212,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       38,
+       58
+      ],
+      "sym_2_4": [
+       38,
+       37
+      ],
+      "sym_3_6": [
+       52,
+       58
+      ],
+      "sym_4_7": [
+       52,
+       58
+      ],
+      "sym_5_8": [
+       52,
+       57
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.2803550019017667,
+     "dp_shipped_sym_2_4_Pa": 1.2225538432419496,
+     "dp_shipped_sym_3_6_Pa": 1.3361738709490345,
+     "dp_shipped_sym_4_7_Pa": 1.4038600116911732,
+     "dp_shipped_sym_5_8_Pa": 1.4638642800329476,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.2803550019017664,
+     "dp_src_neutral_sym_2_4_Pa": 1.2225538432419496,
+     "dp_src_neutral_sym_3_6_Pa": 1.336173870949033,
+     "dp_src_neutral_sym_4_7_Pa": 1.4038600116911715,
+     "dp_src_neutral_sym_5_8_Pa": 1.4638642800329464,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.2870374720956288,
+     "dp_traction_balanced_sym_2_4_Pa": 1.2294203506294352,
+     "dp_traction_balanced_sym_3_6_Pa": 1.343118161764257,
+     "dp_traction_balanced_sym_4_7_Pa": 1.4105755923093957,
+     "dp_traction_balanced_sym_5_8_Pa": 1.4703254856388814
+    },
+    {
+     "station": 9,
+     "t_deg": 135.0,
+     "kappa_exact_window_per_m": 23.627980993191493,
+     "dp_theory_Pa": 1.7012146315097874,
+     "dp_flux_Pa": 1.8065852050308007,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       30,
+       50
+      ],
+      "sym_2_4": [
+       30,
+       32
+      ],
+      "sym_3_6": [
+       45,
+       50
+      ],
+      "sym_4_7": [
+       44,
+       50
+      ],
+      "sym_5_8": [
+       43,
+       48
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 2.141806105985933,
+     "dp_shipped_sym_2_4_Pa": 2.051094750326679,
+     "dp_shipped_sym_3_6_Pa": 2.2329692147560554,
+     "dp_shipped_sym_4_7_Pa": 2.3289974825124924,
+     "dp_shipped_sym_5_8_Pa": 2.4221823957988287,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 2.1418061059859324,
+     "dp_src_neutral_sym_2_4_Pa": 2.051094750326679,
+     "dp_src_neutral_sym_3_6_Pa": 2.2329692147560545,
+     "dp_src_neutral_sym_4_7_Pa": 2.3289974825124924,
+     "dp_src_neutral_sym_5_8_Pa": 2.4221823957988278,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 2.147748344930983,
+     "dp_traction_balanced_sym_2_4_Pa": 2.0572365992558037,
+     "dp_traction_balanced_sym_3_6_Pa": 2.2390712385969564,
+     "dp_traction_balanced_sym_4_7_Pa": 2.3348526004707217,
+     "dp_traction_balanced_sym_5_8_Pa": 2.427753550820804
+    },
+    {
+     "station": 10,
+     "t_deg": 150.00000000000003,
+     "kappa_exact_window_per_m": 51.15501036572656,
+     "dp_theory_Pa": 3.683160746332312,
+     "dp_flux_Pa": 3.5038815439941993,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       22,
+       40
+      ],
+      "sym_2_4": [
+       22,
+       26
+      ],
+      "sym_3_6": [
+       31,
+       40
+      ],
+      "sym_4_7": [
+       30,
+       41
+      ],
+      "sym_5_8": [
+       30,
+       43
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 4.3089738022120505,
+     "dp_shipped_sym_2_4_Pa": 4.215026718180171,
+     "dp_shipped_sym_3_6_Pa": 4.372238270488784,
+     "dp_shipped_sym_4_7_Pa": 4.413211744024193,
+     "dp_shipped_sym_5_8_Pa": 4.485433365730999,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 4.30897380221205,
+     "dp_src_neutral_sym_2_4_Pa": 4.215026718180171,
+     "dp_src_neutral_sym_3_6_Pa": 4.372238270488783,
+     "dp_src_neutral_sym_4_7_Pa": 4.41321174402419,
+     "dp_src_neutral_sym_5_8_Pa": 4.485433365730995,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 4.313461343559816,
+     "dp_traction_balanced_sym_2_4_Pa": 4.219786649932563,
+     "dp_traction_balanced_sym_3_6_Pa": 4.376896045661542,
+     "dp_traction_balanced_sym_4_7_Pa": 4.417575580509912,
+     "dp_traction_balanced_sym_5_8_Pa": 4.4894706527163315
+    },
+    {
+     "station": 11,
+     "t_deg": 164.99999999999997,
+     "kappa_exact_window_per_m": 136.89020438378395,
+     "dp_theory_Pa": 9.856094715632445,
+     "dp_flux_Pa": 9.245927145634434,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       12,
+       35
+      ],
+      "sym_2_4": [
+       12,
+       19
+      ],
+      "sym_3_6": [
+       17,
+       35
+      ],
+      "sym_4_7": [
+       17,
+       39
+      ],
+      "sym_5_8": [
+       15,
+       45
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 8.257109232553113,
+     "dp_shipped_sym_2_4_Pa": 8.303925127914802,
+     "dp_shipped_sym_3_6_Pa": 8.085924775549318,
+     "dp_shipped_sym_4_7_Pa": 7.770558495214267,
+     "dp_shipped_sym_5_8_Pa": 7.547069799152036,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 8.257109232553113,
+     "dp_src_neutral_sym_2_4_Pa": 8.303925127914802,
+     "dp_src_neutral_sym_3_6_Pa": 8.085924775549314,
+     "dp_src_neutral_sym_4_7_Pa": 7.770558495214265,
+     "dp_src_neutral_sym_5_8_Pa": 7.547069799152032,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 8.259134830194201,
+     "dp_traction_balanced_sym_2_4_Pa": 8.306210906795616,
+     "dp_traction_balanced_sym_3_6_Pa": 8.087952262723732,
+     "dp_traction_balanced_sym_4_7_Pa": 7.772327626689025,
+     "dp_traction_balanced_sym_5_8_Pa": 7.548552077638167
+    },
+    {
+     "station": 12,
+     "t_deg": 180.0,
+     "kappa_exact_window_per_m": 243.30815052691253,
+     "dp_theory_Pa": 17.5181868379377,
+     "dp_flux_Pa": 14.593179554945833,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       9,
+       32
+      ],
+      "sym_2_4": [
+       9,
+       19
+      ],
+      "sym_3_6": [
+       10,
+       32
+      ],
+      "sym_4_7": [
+       8,
+       33
+      ],
+      "sym_5_8": [
+       6,
+       33
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 11.292650732994717,
+     "dp_shipped_sym_2_4_Pa": 11.595961718685071,
+     "dp_shipped_sym_3_6_Pa": 10.54299313615072,
+     "dp_shipped_sym_4_7_Pa": 9.749838737063545,
+     "dp_shipped_sym_5_8_Pa": 9.045597082813368,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 11.292650732994714,
+     "dp_src_neutral_sym_2_4_Pa": 11.595961718685068,
+     "dp_src_neutral_sym_3_6_Pa": 10.542993136150722,
+     "dp_src_neutral_sym_4_7_Pa": 9.749838737063543,
+     "dp_src_neutral_sym_5_8_Pa": 9.045597082813364,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 11.291062060560769,
+     "dp_traction_balanced_sym_2_4_Pa": 11.59405443869357,
+     "dp_traction_balanced_sym_3_6_Pa": 10.541451153358203,
+     "dp_traction_balanced_sym_4_7_Pa": 9.748618615456213,
+     "dp_traction_balanced_sym_5_8_Pa": 9.044610719152523
+    },
+    {
+     "station": 13,
+     "t_deg": 195.00000000000003,
+     "kappa_exact_window_per_m": 136.8902043837841,
+     "dp_theory_Pa": 9.856094715632453,
+     "dp_flux_Pa": 13.201619831046244,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       14,
+       36
+      ],
+      "sym_2_4": [
+       14,
+       18
+      ],
+      "sym_3_6": [
+       18,
+       36
+      ],
+      "sym_4_7": [
+       15,
+       40
+      ],
+      "sym_5_8": [
+       13,
+       43
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 9.316604035005634,
+     "dp_shipped_sym_2_4_Pa": 9.387865917254885,
+     "dp_shipped_sym_3_6_Pa": 8.79089958919648,
+     "dp_shipped_sym_4_7_Pa": 8.437505896796774,
+     "dp_shipped_sym_5_8_Pa": 7.94094967753049,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 9.316604035005632,
+     "dp_src_neutral_sym_2_4_Pa": 9.387865917254882,
+     "dp_src_neutral_sym_3_6_Pa": 8.790899589196478,
+     "dp_src_neutral_sym_4_7_Pa": 8.437505896796772,
+     "dp_src_neutral_sym_5_8_Pa": 7.940949677530486,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 9.3121921976722,
+     "dp_traction_balanced_sym_2_4_Pa": 9.382939040826919,
+     "dp_traction_balanced_sym_3_6_Pa": 8.786584073852417,
+     "dp_traction_balanced_sym_4_7_Pa": 8.433702160042682,
+     "dp_traction_balanced_sym_5_8_Pa": 7.937685521117214
+    },
+    {
+     "station": 14,
+     "t_deg": 209.99999999999997,
+     "kappa_exact_window_per_m": 51.1550103657266,
+     "dp_theory_Pa": 3.683160746332315,
+     "dp_flux_Pa": 3.569378509115017,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       23,
+       41
+      ],
+      "sym_2_4": [
+       23,
+       26
+      ],
+      "sym_3_6": [
+       31,
+       41
+      ],
+      "sym_4_7": [
+       30,
+       42
+      ],
+      "sym_5_8": [
+       30,
+       42
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 4.242306769780661,
+     "dp_shipped_sym_2_4_Pa": 4.059895199244957,
+     "dp_shipped_sym_3_6_Pa": 4.318394821889347,
+     "dp_shipped_sym_4_7_Pa": 4.464772674042637,
+     "dp_shipped_sym_5_8_Pa": 4.5490634353820925,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 4.242306769780658,
+     "dp_src_neutral_sym_2_4_Pa": 4.059895199244955,
+     "dp_src_neutral_sym_3_6_Pa": 4.3183948218893455,
+     "dp_src_neutral_sym_4_7_Pa": 4.464772674042636,
+     "dp_src_neutral_sym_5_8_Pa": 4.549063435382089,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 4.236084965841805,
+     "dp_traction_balanced_sym_2_4_Pa": 4.053714041625987,
+     "dp_traction_balanced_sym_3_6_Pa": 4.31235061139815,
+     "dp_traction_balanced_sym_4_7_Pa": 4.459101182841451,
+     "dp_traction_balanced_sym_5_8_Pa": 4.543780878160709
+    },
+    {
+     "station": 15,
+     "t_deg": 224.99999999999997,
+     "kappa_exact_window_per_m": 23.627980993191525,
+     "dp_theory_Pa": 1.7012146315097896,
+     "dp_flux_Pa": 1.6279158112586838,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       31,
+       50
+      ],
+      "sym_2_4": [
+       31,
+       32
+      ],
+      "sym_3_6": [
+       46,
+       50
+      ],
+      "sym_4_7": [
+       44,
+       50
+      ],
+      "sym_5_8": [
+       43,
+       49
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 2.261822730062926,
+     "dp_shipped_sym_2_4_Pa": 2.125039543371591,
+     "dp_shipped_sym_3_6_Pa": 2.3383837132908454,
+     "dp_shipped_sym_4_7_Pa": 2.4411756276504732,
+     "dp_shipped_sym_5_8_Pa": 2.5270694042908595,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 2.2618227300629252,
+     "dp_src_neutral_sym_2_4_Pa": 2.1250395433715905,
+     "dp_src_neutral_sym_3_6_Pa": 2.3383837132908436,
+     "dp_src_neutral_sym_4_7_Pa": 2.4411756276504724,
+     "dp_src_neutral_sym_5_8_Pa": 2.5270694042908577,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 2.254812301840114,
+     "dp_traction_balanced_sym_2_4_Pa": 2.1181332400388935,
+     "dp_traction_balanced_sym_3_6_Pa": 2.3315396433784548,
+     "dp_traction_balanced_sym_4_7_Pa": 2.434606316548897,
+     "dp_traction_balanced_sym_5_8_Pa": 2.520802901393607
+    },
+    {
+     "station": 16,
+     "t_deg": 239.99999999999997,
+     "kappa_exact_window_per_m": 14.188046313036292,
+     "dp_theory_Pa": 1.021539334538613,
+     "dp_flux_Pa": 0.6999674459463341,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       38,
+       59
+      ],
+      "sym_2_4": [
+       38,
+       39
+      ],
+      "sym_3_6": [
+       52,
+       59
+      ],
+      "sym_4_7": [
+       52,
+       56
+      ],
+      "sym_5_8": [
+       51,
+       57
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.2979213297748093,
+     "dp_shipped_sym_2_4_Pa": 1.183120645052488,
+     "dp_shipped_sym_3_6_Pa": 1.337458259253863,
+     "dp_shipped_sym_4_7_Pa": 1.419588762467008,
+     "dp_shipped_sym_5_8_Pa": 1.4883682187831364,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.2979213297748093,
+     "dp_src_neutral_sym_2_4_Pa": 1.1831206450524878,
+     "dp_src_neutral_sym_3_6_Pa": 1.3374582592538622,
+     "dp_src_neutral_sym_4_7_Pa": 1.419588762467006,
+     "dp_src_neutral_sym_5_8_Pa": 1.4883682187831346,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.2905650173090764,
+     "dp_traction_balanced_sym_2_4_Pa": 1.1759641138423298,
+     "dp_traction_balanced_sym_3_6_Pa": 1.3302410052207896,
+     "dp_traction_balanced_sym_4_7_Pa": 1.4126032750975919,
+     "dp_traction_balanced_sym_5_8_Pa": 1.4816242605742753
+    },
+    {
+     "station": 17,
+     "t_deg": 255.0,
+     "kappa_exact_window_per_m": 10.641144759248801,
+     "dp_theory_Pa": 0.7661624226659136,
+     "dp_flux_Pa": 1.5440723040088655,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       42,
+       64
+      ],
+      "sym_2_4": [
+       42,
+       42
+      ],
+      "sym_3_6": [
+       59,
+       64
+      ],
+      "sym_4_7": [
+       57,
+       63
+      ],
+      "sym_5_8": [
+       59,
+       61
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.2298176057009265,
+     "dp_shipped_sym_2_4_Pa": 1.1278502382903448,
+     "dp_shipped_sym_3_6_Pa": 1.2129369515273285,
+     "dp_shipped_sym_4_7_Pa": 1.222828714340541,
+     "dp_shipped_sym_5_8_Pa": 1.2235318742132184,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.2298176057009256,
+     "dp_src_neutral_sym_2_4_Pa": 1.1278502382903441,
+     "dp_src_neutral_sym_3_6_Pa": 1.212936951527328,
+     "dp_src_neutral_sym_4_7_Pa": 1.2228287143405403,
+     "dp_src_neutral_sym_5_8_Pa": 1.223531874213218,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.2224045493083122,
+     "dp_traction_balanced_sym_2_4_Pa": 1.1206107122052504,
+     "dp_traction_balanced_sym_3_6_Pa": 1.2056366910384058,
+     "dp_traction_balanced_sym_4_7_Pa": 1.2157351359665827,
+     "dp_traction_balanced_sym_5_8_Pa": 1.216658205325173
+    },
+    {
+     "station": 18,
+     "t_deg": 270.0,
+     "kappa_exact_window_per_m": 9.696802978259642,
+     "dp_theory_Pa": 0.6981698144346942,
+     "dp_flux_Pa": 4.319372097834007e-06,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       38,
+       55
+      ],
+      "sym_2_4": [
+       38,
+       41
+      ],
+      "sym_3_6": [
+       72,
+       55
+      ],
+      "sym_4_7": [
+       69,
+       56
+      ],
+      "sym_5_8": [
+       59,
+       65
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 0.5594935611808209,
+     "dp_shipped_sym_2_4_Pa": 0.46479256106250055,
+     "dp_shipped_sym_3_6_Pa": 0.6334264650712407,
+     "dp_shipped_sym_4_7_Pa": 0.7156639894098034,
+     "dp_shipped_sym_5_8_Pa": 0.7974377696279569,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 0.5594935611808203,
+     "dp_src_neutral_sym_2_4_Pa": 0.4647925610624999,
+     "dp_src_neutral_sym_3_6_Pa": 0.6334264650712396,
+     "dp_src_neutral_sym_4_7_Pa": 0.715663989409802,
+     "dp_src_neutral_sym_5_8_Pa": 0.7974377696279555,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 0.552135161053311,
+     "dp_traction_balanced_sym_2_4_Pa": 0.4574138159586858,
+     "dp_traction_balanced_sym_3_6_Pa": 0.6261861968558227,
+     "dp_traction_balanced_sym_4_7_Pa": 0.7086084370686319,
+     "dp_traction_balanced_sym_5_8_Pa": 0.7906002556790992
+    },
+    {
+     "station": 19,
+     "t_deg": 285.0,
+     "kappa_exact_window_per_m": 10.641144759248798,
+     "dp_theory_Pa": 0.7661624226659134,
+     "dp_flux_Pa": 0.9498625179030457,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       40,
+       64
+      ],
+      "sym_2_4": [
+       40,
+       42
+      ],
+      "sym_3_6": [
+       56,
+       64
+      ],
+      "sym_4_7": [
+       57,
+       63
+      ],
+      "sym_5_8": [
+       58,
+       63
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.2409546733794223,
+     "dp_shipped_sym_2_4_Pa": 1.1506327923313033,
+     "dp_shipped_sym_3_6_Pa": 1.222397700701864,
+     "dp_shipped_sym_4_7_Pa": 1.2314234020589931,
+     "dp_shipped_sym_5_8_Pa": 1.2399367607331018,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.240954673379421,
+     "dp_src_neutral_sym_2_4_Pa": 1.1506327923313022,
+     "dp_src_neutral_sym_3_6_Pa": 1.2223977007018623,
+     "dp_src_neutral_sym_4_7_Pa": 1.2314234020589923,
+     "dp_src_neutral_sym_5_8_Pa": 1.2399367607331007,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.233614878674357,
+     "dp_traction_balanced_sym_2_4_Pa": 1.1434416027525445,
+     "dp_traction_balanced_sym_3_6_Pa": 1.2151521915103989,
+     "dp_traction_balanced_sym_4_7_Pa": 1.2243914913962783,
+     "dp_traction_balanced_sym_5_8_Pa": 1.2331367812907976
+    },
+    {
+     "station": 20,
+     "t_deg": 300.00000000000006,
+     "kappa_exact_window_per_m": 14.188046313036287,
+     "dp_theory_Pa": 1.0215393345386126,
+     "dp_flux_Pa": 1.3183056054907283,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       36,
+       56
+      ],
+      "sym_2_4": [
+       36,
+       39
+      ],
+      "sym_3_6": [
+       55,
+       56
+      ],
+      "sym_4_7": [
+       54,
+       58
+      ],
+      "sym_5_8": [
+       52,
+       57
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.3715971258650732,
+     "dp_shipped_sym_2_4_Pa": 1.2551820193251235,
+     "dp_shipped_sym_3_6_Pa": 1.4018425293163224,
+     "dp_shipped_sym_4_7_Pa": 1.4672490367541544,
+     "dp_shipped_sym_5_8_Pa": 1.525335281688635,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.3715971258650728,
+     "dp_src_neutral_sym_2_4_Pa": 1.2551820193251235,
+     "dp_src_neutral_sym_3_6_Pa": 1.4018425293163215,
+     "dp_src_neutral_sym_4_7_Pa": 1.4672490367541535,
+     "dp_src_neutral_sym_5_8_Pa": 1.5253352816886336,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.3645398865048508,
+     "dp_traction_balanced_sym_2_4_Pa": 1.2483114157547461,
+     "dp_traction_balanced_sym_3_6_Pa": 1.3948934269842928,
+     "dp_traction_balanced_sym_4_7_Pa": 1.4605384211946668,
+     "dp_traction_balanced_sym_5_8_Pa": 1.5188856210729595
+    },
+    {
+     "station": 21,
+     "t_deg": 315.0,
+     "kappa_exact_window_per_m": 23.62798099319149,
+     "dp_theory_Pa": 1.7012146315097871,
+     "dp_flux_Pa": 1.6859635123364731,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       29,
+       50
+      ],
+      "sym_2_4": [
+       29,
+       32
+      ],
+      "sym_3_6": [
+       43,
+       50
+      ],
+      "sym_4_7": [
+       43,
+       51
+      ],
+      "sym_5_8": [
+       43,
+       53
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 2.184978026865738,
+     "dp_shipped_sym_2_4_Pa": 2.062469056507366,
+     "dp_shipped_sym_3_6_Pa": 2.2503808019373315,
+     "dp_shipped_sym_4_7_Pa": 2.344560466808649,
+     "dp_shipped_sym_5_8_Pa": 2.4605992652788418,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 2.1849780268657377,
+     "dp_src_neutral_sym_2_4_Pa": 2.062469056507366,
+     "dp_src_neutral_sym_3_6_Pa": 2.2503808019373297,
+     "dp_src_neutral_sym_4_7_Pa": 2.344560466808648,
+     "dp_src_neutral_sym_5_8_Pa": 2.46059926527884,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 2.1788459786566534,
+     "dp_traction_balanced_sym_2_4_Pa": 2.056336150420523,
+     "dp_traction_balanced_sym_3_6_Pa": 2.2443567688840194,
+     "dp_traction_balanced_sym_4_7_Pa": 2.3387984959410493,
+     "dp_traction_balanced_sym_5_8_Pa": 2.455120554350283
+    },
+    {
+     "station": 22,
+     "t_deg": 329.99999999999994,
+     "kappa_exact_window_per_m": 51.155010365726454,
+     "dp_theory_Pa": 3.6831607463323044,
+     "dp_flux_Pa": 4.44541677087699,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       22,
+       40
+      ],
+      "sym_2_4": [
+       22,
+       26
+      ],
+      "sym_3_6": [
+       34,
+       40
+      ],
+      "sym_4_7": [
+       33,
+       41
+      ],
+      "sym_5_8": [
+       30,
+       42
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 4.858850403185539,
+     "dp_shipped_sym_2_4_Pa": 4.700094394950217,
+     "dp_shipped_sym_3_6_Pa": 4.933071736956948,
+     "dp_shipped_sym_4_7_Pa": 4.959316100538485,
+     "dp_shipped_sym_5_8_Pa": 4.944126949230175,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 4.858850403185536,
+     "dp_src_neutral_sym_2_4_Pa": 4.700094394950216,
+     "dp_src_neutral_sym_3_6_Pa": 4.933071736956944,
+     "dp_src_neutral_sym_4_7_Pa": 4.959316100538483,
+     "dp_src_neutral_sym_5_8_Pa": 4.9441269492301725,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 4.854242389259058,
+     "dp_traction_balanced_sym_2_4_Pa": 4.695355736293403,
+     "dp_traction_balanced_sym_3_6_Pa": 4.928603796309829,
+     "dp_traction_balanced_sym_4_7_Pa": 4.955179884559279,
+     "dp_traction_balanced_sym_5_8_Pa": 4.94030959054342
+    },
+    {
+     "station": 23,
+     "t_deg": 344.99999999999994,
+     "kappa_exact_window_per_m": 136.89020438378367,
+     "dp_theory_Pa": 9.856094715632423,
+     "dp_flux_Pa": 8.096543638845647,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       14,
+       33
+      ],
+      "sym_2_4": [
+       14,
+       21
+      ],
+      "sym_3_6": [
+       18,
+       33
+      ],
+      "sym_4_7": [
+       16,
+       34
+      ],
+      "sym_5_8": [
+       14,
+       42
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 8.637381174167,
+     "dp_shipped_sym_2_4_Pa": 8.649223627652795,
+     "dp_shipped_sym_3_6_Pa": 8.600571852989962,
+     "dp_shipped_sym_4_7_Pa": 8.339336726008455,
+     "dp_shipped_sym_5_8_Pa": 7.941652191408101,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 8.637381174167,
+     "dp_src_neutral_sym_2_4_Pa": 8.649223627652797,
+     "dp_src_neutral_sym_3_6_Pa": 8.600571852989962,
+     "dp_src_neutral_sym_4_7_Pa": 8.339336726008455,
+     "dp_src_neutral_sym_5_8_Pa": 7.941652191408098,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 8.63567570379316,
+     "dp_traction_balanced_sym_2_4_Pa": 8.647407802051017,
+     "dp_traction_balanced_sym_3_6_Pa": 8.598938159755118,
+     "dp_traction_balanced_sym_4_7_Pa": 8.337946182104291,
+     "dp_traction_balanced_sym_5_8_Pa": 7.9405887170504
+    }
+   ]
+  },
+  {
+   "aspect_ratio": 2.0,
+   "r_eq_over_dx": 20.0,
+   "r_curv_min_over_dx": 5.263187911711319,
+   "n_particles": 7614,
+   "n_free": 6930,
+   "n_active": 712,
+   "dx_m": 0.001,
+   "h_m": 0.0013000000000000002,
+   "half_window_deg": 7.499999999999999,
+   "min_theory_signal_Pa": 1.2810719432386113,
+   "max_theory_signal_Pa": 9.927564846502213,
+   "net_traction": {
+    "rel_shipped": 0.0011751763955832938,
+    "abs_shipped_N_per_m": 0.0005415679960780876,
+    "rel_balanced": 2.3151958292909056e-17,
+    "torque_rel_shipped": -1.0,
+    "torque_abs_change": 2.7750325104997444e-07
+   },
+   "flux_err": {
+    "n": 24,
+    "mean": 0.9742121289925135,
+    "rms": 41.69556418777556,
+    "max_abs": 98.52385436609411
+   },
+   "arms": {
+    "shipped": {
+     "n_cg": 194,
+     "cg_rel_residual": 9.431400034048375e-11,
+     "source_charge_rel": -1.1790245888013447e-16,
+     "charge_after_rel": 1.0,
+     "removed_constant": 0.0,
+     "vapour_tail_Pa": [
+      {
+       "s_lo_dx": 2.0,
+       "s_hi_dx": 4.0,
+       "n": 365,
+       "p_mean": 0.3298015255620463,
+       "p_std": 0.7297352789094675
+      },
+      {
+       "s_lo_dx": 4.0,
+       "s_hi_dx": 6.0,
+       "n": 385,
+       "p_mean": 0.2708611929707154,
+       "p_std": 0.5733564248507627
+      },
+      {
+       "s_lo_dx": 6.0,
+       "s_hi_dx": 8.0,
+       "n": 440,
+       "p_mean": 0.2504328595044743,
+       "p_std": 0.4436935160905101
+      },
+      {
+       "s_lo_dx": 8.0,
+       "s_hi_dx": 10.0,
+       "n": 583,
+       "p_mean": 0.18944286237816,
+       "p_std": 0.3129996133226105
+      },
+      {
+       "s_lo_dx": 10.0,
+       "s_hi_dx": 12.0,
+       "n": 471,
+       "p_mean": 0.24159410119191607,
+       "p_std": 0.23373140234157744
+      }
+     ],
+     "tail_6_8_dx_Pa": 0.2504328595044743,
+     "tail_9_12_dx_Pa": 0.24159410119191607,
+     "tail_over_signal_6_8": 0.1954869598278517,
+     "readout": {
+      "shipped_asymmetric_2_4__3_6": {
+       "n": 24,
+       "mean": 10.73883568273209,
+       "rms": 28.005978052346354,
+       "max_abs": 51.139770906244266
+      },
+      "sym_2_4": {
+       "n": 24,
+       "mean": 7.698681342800576,
+       "rms": 24.554029323925906,
+       "max_abs": 47.7299526585498
+      },
+      "sym_3_6": {
+       "n": 24,
+       "mean": 13.186624769125542,
+       "rms": 31.500825997174054,
+       "max_abs": 53.00443184528365
+      },
+      "sym_4_7": {
+       "n": 24,
+       "mean": 14.948263828591017,
+       "rms": 36.03163205784185,
+       "max_abs": 56.704349399428146
+      },
+      "sym_5_8": {
+       "n": 24,
+       "mean": 16.444785424182953,
+       "rms": 40.17613214527728,
+       "max_abs": 60.595353927145254
+      }
+     },
+     "readout_shipped_probes": {
+      "n": 24,
+      "mean": 10.73883568273209,
+      "rms": 28.005978052346354,
+      "max_abs": 51.139770906244266
+     }
+    },
+    "src_neutral": {
+     "n_cg": 194,
+     "cg_rel_residual": 9.431393022014431e-11,
+     "source_charge_rel": -1.1790245888013447e-16,
+     "charge_after_rel": 0.39705882352941174,
+     "removed_constant": -5.9131592039078e-12,
+     "vapour_tail_Pa": [
+      {
+       "s_lo_dx": 2.0,
+       "s_hi_dx": 4.0,
+       "n": 365,
+       "p_mean": 0.3298015255620481,
+       "p_std": 0.7297352789094679
+      },
+      {
+       "s_lo_dx": 4.0,
+       "s_hi_dx": 6.0,
+       "n": 385,
+       "p_mean": 0.270861192970717,
+       "p_std": 0.5733564248507631
+      },
+      {
+       "s_lo_dx": 6.0,
+       "s_hi_dx": 8.0,
+       "n": 440,
+       "p_mean": 0.25043285950447575,
+       "p_std": 0.44369351609051055
+      },
+      {
+       "s_lo_dx": 8.0,
+       "s_hi_dx": 10.0,
+       "n": 583,
+       "p_mean": 0.189442862378161,
+       "p_std": 0.31299961332261095
+      },
+      {
+       "s_lo_dx": 10.0,
+       "s_hi_dx": 12.0,
+       "n": 471,
+       "p_mean": 0.24159410119191715,
+       "p_std": 0.23373140234157813
+      }
+     ],
+     "tail_6_8_dx_Pa": 0.25043285950447575,
+     "tail_9_12_dx_Pa": 0.24159410119191715,
+     "tail_over_signal_6_8": 0.1954869598278528,
+     "readout": {
+      "shipped_asymmetric_2_4__3_6": {
+       "n": 24,
+       "mean": 10.73883568273211,
+       "rms": 28.005978052346364,
+       "max_abs": 51.13977090624433
+      },
+      "sym_2_4": {
+       "n": 24,
+       "mean": 7.698681342800588,
+       "rms": 24.554029323925906,
+       "max_abs": 47.72995265854982
+      },
+      "sym_3_6": {
+       "n": 24,
+       "mean": 13.186624769125563,
+       "rms": 31.500825997174072,
+       "max_abs": 53.004431845283676
+      },
+      "sym_4_7": {
+       "n": 24,
+       "mean": 14.948263828591054,
+       "rms": 36.031632057841875,
+       "max_abs": 56.704349399428146
+      },
+      "sym_5_8": {
+       "n": 24,
+       "mean": 16.444785424182978,
+       "rms": 40.17613214527731,
+       "max_abs": 60.59535392714535
+      }
+     },
+     "readout_shipped_probes": {
+      "n": 24,
+      "mean": 10.73883568273211,
+      "rms": 28.005978052346364,
+      "max_abs": 51.13977090624433
+     }
+    },
+    "traction_balanced": {
+     "n_cg": 194,
+     "cg_rel_residual": 9.411603354071169e-11,
+     "source_charge_rel": -1.2058124144261802e-16,
+     "charge_after_rel": 1.0,
+     "removed_constant": 0.0,
+     "vapour_tail_Pa": [
+      {
+       "s_lo_dx": 2.0,
+       "s_hi_dx": 4.0,
+       "n": 365,
+       "p_mean": 0.32981617857406714,
+       "p_std": 0.7297308701791065
+      },
+      {
+       "s_lo_dx": 4.0,
+       "s_hi_dx": 6.0,
+       "n": 385,
+       "p_mean": 0.27086729226263107,
+       "p_std": 0.573370189260243
+      },
+      {
+       "s_lo_dx": 6.0,
+       "s_hi_dx": 8.0,
+       "n": 440,
+       "p_mean": 0.2504358913719522,
+       "p_std": 0.4437086875463187
+      },
+      {
+       "s_lo_dx": 8.0,
+       "s_hi_dx": 10.0,
+       "n": 583,
+       "p_mean": 0.189442936658587,
+       "p_std": 0.3130066581976157
+      },
+      {
+       "s_lo_dx": 10.0,
+       "s_hi_dx": 12.0,
+       "n": 471,
+       "p_mean": 0.24159603994347978,
+       "p_std": 0.23373765535651236
+      }
+     ],
+     "tail_6_8_dx_Pa": 0.2504358913719522,
+     "tail_9_12_dx_Pa": 0.24159603994347978,
+     "tail_over_signal_6_8": 0.19548932649234224,
+     "readout": {
+      "shipped_asymmetric_2_4__3_6": {
+       "n": 24,
+       "mean": 10.739446028357277,
+       "rms": 28.004549986702266,
+       "max_abs": 51.09698310080113
+      },
+      "sym_2_4": {
+       "n": 24,
+       "mean": 7.69890092035254,
+       "rms": 24.5513072728089,
+       "max_abs": 47.6842035775354
+      },
+      "sym_3_6": {
+       "n": 24,
+       "mean": 13.18667374350126,
+       "rms": 31.498833579859923,
+       "max_abs": 53.04420671737924
+      },
+      "sym_4_7": {
+       "n": 24,
+       "mean": 14.948128821167595,
+       "rms": 36.02992382512805,
+       "max_abs": 56.74354161009898
+      },
+      "sym_5_8": {
+       "n": 24,
+       "mean": 16.444763367184116,
+       "rms": 40.17466468936137,
+       "max_abs": 60.5779104151883
+      }
+     },
+     "readout_shipped_probes": {
+      "n": 24,
+      "mean": 10.739446028357277,
+      "rms": 28.004549986702266,
+      "max_abs": 51.09698310080113
+     }
+    }
+   },
+   "stations": [
+    {
+     "station": 0,
+     "t_deg": 0.0,
+     "kappa_exact_window_per_m": 137.8828450903085,
+     "dp_theory_Pa": 9.927564846502213,
+     "dp_flux_Pa": 11.050704479782036,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       4,
+       19
+      ],
+      "sym_2_4": [
+       4,
+       12
+      ],
+      "sym_3_6": [
+       6,
+       19
+      ],
+      "sym_4_7": [
+       5,
+       19
+      ],
+      "sym_5_8": [
+       3,
+       19
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 6.891618153346495,
+     "dp_shipped_sym_2_4_Pa": 7.215500059146418,
+     "dp_shipped_sym_3_6_Pa": 6.496303685049703,
+     "dp_shipped_sym_4_7_Pa": 6.029443778165655,
+     "dp_shipped_sym_5_8_Pa": 5.693354260739306,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 6.891618153346497,
+     "dp_src_neutral_sym_2_4_Pa": 7.215500059146419,
+     "dp_src_neutral_sym_3_6_Pa": 6.496303685049705,
+     "dp_src_neutral_sym_4_7_Pa": 6.029443778165657,
+     "dp_src_neutral_sym_5_8_Pa": 5.693354260739308,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 6.8896624626263065,
+     "dp_traction_balanced_sym_2_4_Pa": 7.213107656960092,
+     "dp_traction_balanced_sym_3_6_Pa": 6.4941611827676295,
+     "dp_traction_balanced_sym_4_7_Pa": 6.027587753961917,
+     "dp_traction_balanced_sym_5_8_Pa": 5.691775716644296
+    },
+    {
+     "station": 1,
+     "t_deg": 14.999999999999998,
+     "kappa_exact_window_per_m": 106.5113627527318,
+     "dp_theory_Pa": 7.668818118196689,
+     "dp_flux_Pa": 4.2676498520194315,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       6,
+       20
+      ],
+      "sym_2_4": [
+       6,
+       11
+      ],
+      "sym_3_6": [
+       7,
+       20
+      ],
+      "sym_4_7": [
+       7,
+       25
+      ],
+      "sym_5_8": [
+       6,
+       30
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 5.555661229980686,
+     "dp_shipped_sym_2_4_Pa": 5.621904865865209,
+     "dp_shipped_sym_3_6_Pa": 5.534024603338775,
+     "dp_shipped_sym_4_7_Pa": 5.227871660878144,
+     "dp_shipped_sym_5_8_Pa": 5.016931182753852,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 5.555661229980686,
+     "dp_src_neutral_sym_2_4_Pa": 5.621904865865209,
+     "dp_src_neutral_sym_3_6_Pa": 5.534024603338775,
+     "dp_src_neutral_sym_4_7_Pa": 5.227871660878145,
+     "dp_src_neutral_sym_5_8_Pa": 5.0169311827538525,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 5.553885236288819,
+     "dp_traction_balanced_sym_2_4_Pa": 5.619838662426031,
+     "dp_traction_balanced_sym_3_6_Pa": 5.532094151874004,
+     "dp_traction_balanced_sym_4_7_Pa": 5.22617007926485,
+     "dp_traction_balanced_sym_5_8_Pa": 5.015459596239893
+    },
+    {
+     "station": 2,
+     "t_deg": 29.999999999999996,
+     "kappa_exact_window_per_m": 61.49656320927877,
+     "dp_theory_Pa": 4.427752551068071,
+     "dp_flux_Pa": 4.545461794713572,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       9,
+       23
+      ],
+      "sym_2_4": [
+       9,
+       15
+      ],
+      "sym_3_6": [
+       11,
+       23
+      ],
+      "sym_4_7": [
+       9,
+       24
+      ],
+      "sym_5_8": [
+       8,
+       25
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 4.356322237605351,
+     "dp_shipped_sym_2_4_Pa": 4.373279581946386,
+     "dp_shipped_sym_3_6_Pa": 4.4647118859572394,
+     "dp_shipped_sym_4_7_Pa": 4.417721762547032,
+     "dp_shipped_sym_5_8_Pa": 4.298487756519664,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 4.356322237605352,
+     "dp_src_neutral_sym_2_4_Pa": 4.373279581946386,
+     "dp_src_neutral_sym_3_6_Pa": 4.4647118859572394,
+     "dp_src_neutral_sym_4_7_Pa": 4.417721762547034,
+     "dp_src_neutral_sym_5_8_Pa": 4.298487756519666,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 4.3547988313268,
+     "dp_traction_balanced_sym_2_4_Pa": 4.371546582811715,
+     "dp_traction_balanced_sym_3_6_Pa": 4.463011514431526,
+     "dp_traction_balanced_sym_4_7_Pa": 4.416135748653885,
+     "dp_traction_balanced_sym_5_8_Pa": 4.297045008800412
+    },
+    {
+     "station": 3,
+     "t_deg": 45.0,
+     "kappa_exact_window_per_m": 36.11100059518003,
+     "dp_theory_Pa": 2.599992042852962,
+     "dp_flux_Pa": 3.066944261342455,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       13,
+       23
+      ],
+      "sym_2_4": [
+       13,
+       15
+      ],
+      "sym_3_6": [
+       19,
+       23
+      ],
+      "sym_4_7": [
+       18,
+       23
+      ],
+      "sym_5_8": [
+       16,
+       25
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 3.0607625463676005,
+     "dp_shipped_sym_2_4_Pa": 3.037034037437344,
+     "dp_shipped_sym_3_6_Pa": 3.2226211701933742,
+     "dp_shipped_sym_4_7_Pa": 3.2368334386379236,
+     "dp_shipped_sym_5_8_Pa": 3.231761162662256,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 3.060762546367601,
+     "dp_src_neutral_sym_2_4_Pa": 3.0370340374373446,
+     "dp_src_neutral_sym_3_6_Pa": 3.2226211701933742,
+     "dp_src_neutral_sym_4_7_Pa": 3.2368334386379245,
+     "dp_src_neutral_sym_5_8_Pa": 3.231761162662256,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 3.0595102083592565,
+     "dp_traction_balanced_sym_2_4_Pa": 3.035690786075987,
+     "dp_traction_balanced_sym_3_6_Pa": 3.221270432089282,
+     "dp_traction_balanced_sym_4_7_Pa": 3.235514937452827,
+     "dp_traction_balanced_sym_5_8_Pa": 3.230523661158474
+    },
+    {
+     "station": 4,
+     "t_deg": 59.99999999999999,
+     "kappa_exact_window_per_m": 24.334393846914345,
+     "dp_theory_Pa": 1.7520763569778328,
+     "dp_flux_Pa": 1.1877020039597719,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       15,
+       27
+      ],
+      "sym_2_4": [
+       15,
+       17
+      ],
+      "sym_3_6": [
+       21,
+       27
+      ],
+      "sym_4_7": [
+       20,
+       28
+      ],
+      "sym_5_8": [
+       19,
+       29
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 2.2249130928820313,
+     "dp_shipped_sym_2_4_Pa": 2.097581802636882,
+     "dp_shipped_sym_3_6_Pa": 2.3635943107301722,
+     "dp_shipped_sym_4_7_Pa": 2.505684529758266,
+     "dp_shipped_sym_5_8_Pa": 2.647306016286123,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 2.224913092882031,
+     "dp_src_neutral_sym_2_4_Pa": 2.0975818026368813,
+     "dp_src_neutral_sym_3_6_Pa": 2.3635943107301722,
+     "dp_src_neutral_sym_4_7_Pa": 2.505684529758266,
+     "dp_src_neutral_sym_5_8_Pa": 2.6473060162861235,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 2.2239696185225717,
+     "dp_traction_balanced_sym_2_4_Pa": 2.096539407014026,
+     "dp_traction_balanced_sym_3_6_Pa": 2.362577788073113,
+     "dp_traction_balanced_sym_4_7_Pa": 2.504714529210263,
+     "dp_traction_balanced_sym_5_8_Pa": 2.6464032215362607
+    },
+    {
+     "station": 5,
+     "t_deg": 75.00000000000001,
+     "kappa_exact_window_per_m": 19.231422493714422,
+     "dp_theory_Pa": 1.3846624195474384,
+     "dp_flux_Pa": 2.425214759949596,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       17,
+       27
+      ],
+      "sym_2_4": [
+       17,
+       19
+      ],
+      "sym_3_6": [
+       23,
+       27
+      ],
+      "sym_4_7": [
+       21,
+       27
+      ],
+      "sym_5_8": [
+       21,
+       27
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 2.092775608728857,
+     "dp_shipped_sym_2_4_Pa": 2.045561136878161,
+     "dp_shipped_sym_3_6_Pa": 2.109808992245167,
+     "dp_shipped_sym_4_7_Pa": 2.151525506166877,
+     "dp_shipped_sym_5_8_Pa": 2.2148242024656724,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 2.092775608728858,
+     "dp_src_neutral_sym_2_4_Pa": 2.0455611368781614,
+     "dp_src_neutral_sym_3_6_Pa": 2.109808992245167,
+     "dp_src_neutral_sym_4_7_Pa": 2.1515255061668785,
+     "dp_src_neutral_sym_5_8_Pa": 2.2148242024656737,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 2.092183142066737,
+     "dp_traction_balanced_sym_2_4_Pa": 2.0449276665460663,
+     "dp_traction_balanced_sym_3_6_Pa": 2.109175818696437,
+     "dp_traction_balanced_sym_4_7_Pa": 2.150908144044449,
+     "dp_traction_balanced_sym_5_8_Pa": 2.2142347291607245
+    },
+    {
+     "station": 6,
+     "t_deg": 90.0,
+     "kappa_exact_window_per_m": 17.792665878314047,
+     "dp_theory_Pa": 1.2810719432386113,
+     "dp_flux_Pa": 0.018910487557310143,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       14,
+       24
+      ],
+      "sym_2_4": [
+       14,
+       16
+      ],
+      "sym_3_6": [
+       28,
+       24
+      ],
+      "sym_4_7": [
+       28,
+       24
+      ],
+      "sym_5_8": [
+       25,
+       30
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.301375404398772,
+     "dp_shipped_sym_2_4_Pa": 1.1804286716404806,
+     "dp_shipped_sym_3_6_Pa": 1.5360303369059563,
+     "dp_shipped_sym_4_7_Pa": 1.6938625256251942,
+     "dp_shipped_sym_5_8_Pa": 1.8441192612074047,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.3013754043987729,
+     "dp_src_neutral_sym_2_4_Pa": 1.1804286716404815,
+     "dp_src_neutral_sym_3_6_Pa": 1.5360303369059563,
+     "dp_src_neutral_sym_4_7_Pa": 1.6938625256251956,
+     "dp_src_neutral_sym_5_8_Pa": 1.844119261207405,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.301188982488097,
+     "dp_traction_balanced_sym_2_4_Pa": 1.1802217749910993,
+     "dp_traction_balanced_sym_3_6_Pa": 1.5358274568293737,
+     "dp_traction_balanced_sym_4_7_Pa": 1.6936642775753978,
+     "dp_traction_balanced_sym_5_8_Pa": 1.8439362783722109
+    },
+    {
+     "station": 7,
+     "t_deg": 104.99999999999999,
+     "kappa_exact_window_per_m": 19.231422493714422,
+     "dp_theory_Pa": 1.3846624195474384,
+     "dp_flux_Pa": 1.9838878118769239,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       15,
+       27
+      ],
+      "sym_2_4": [
+       15,
+       18
+      ],
+      "sym_3_6": [
+       22,
+       27
+      ],
+      "sym_4_7": [
+       22,
+       27
+      ],
+      "sym_5_8": [
+       21,
+       28
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 2.020755628159064,
+     "dp_shipped_sym_2_4_Pa": 1.974226206028335,
+     "dp_shipped_sym_3_6_Pa": 2.054364187474136,
+     "dp_shipped_sym_4_7_Pa": 2.114827823829148,
+     "dp_shipped_sym_5_8_Pa": 2.187396027691353,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 2.020755628159065,
+     "dp_src_neutral_sym_2_4_Pa": 1.974226206028336,
+     "dp_src_neutral_sym_3_6_Pa": 2.0543641874741367,
+     "dp_src_neutral_sym_4_7_Pa": 2.1148278238291485,
+     "dp_src_neutral_sym_5_8_Pa": 2.1873960276913533,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 2.0209883236006188,
+     "dp_traction_balanced_sym_2_4_Pa": 1.9744270694023522,
+     "dp_traction_balanced_sym_3_6_Pa": 2.0545948721863097,
+     "dp_traction_balanced_sym_4_7_Pa": 2.1150666447497066,
+     "dp_traction_balanced_sym_5_8_Pa": 2.1876384377449862
+    },
+    {
+     "station": 8,
+     "t_deg": 119.99999999999999,
+     "kappa_exact_window_per_m": 24.334393846914335,
+     "dp_theory_Pa": 1.752076356977832,
+     "dp_flux_Pa": 1.8118550962840425,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       14,
+       26
+      ],
+      "sym_2_4": [
+       14,
+       16
+      ],
+      "sym_3_6": [
+       20,
+       26
+      ],
+      "sym_4_7": [
+       19,
+       28
+      ],
+      "sym_5_8": [
+       20,
+       28
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 2.263523617348719,
+     "dp_shipped_sym_2_4_Pa": 2.1706238144827017,
+     "dp_shipped_sym_3_6_Pa": 2.3766764580763997,
+     "dp_shipped_sym_4_7_Pa": 2.487822156584814,
+     "dp_shipped_sym_5_8_Pa": 2.5887836086132454,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 2.2635236173487194,
+     "dp_src_neutral_sym_2_4_Pa": 2.170623814482702,
+     "dp_src_neutral_sym_3_6_Pa": 2.376676458076401,
+     "dp_src_neutral_sym_4_7_Pa": 2.487822156584815,
+     "dp_src_neutral_sym_5_8_Pa": 2.588783608613246,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 2.2642428324886037,
+     "dp_traction_balanced_sym_2_4_Pa": 2.1713598793028797,
+     "dp_traction_balanced_sym_3_6_Pa": 2.3774256574681294,
+     "dp_traction_balanced_sym_4_7_Pa": 2.4885598416223007,
+     "dp_traction_balanced_sym_5_8_Pa": 2.589483390293254
+    },
+    {
+     "station": 9,
+     "t_deg": 135.0,
+     "kappa_exact_window_per_m": 36.111000595180016,
+     "dp_theory_Pa": 2.599992042852961,
+     "dp_flux_Pa": 2.0245169469066564,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       12,
+       25
+      ],
+      "sym_2_4": [
+       12,
+       17
+      ],
+      "sym_3_6": [
+       17,
+       25
+      ],
+      "sym_4_7": [
+       16,
+       25
+      ],
+      "sym_5_8": [
+       15,
+       26
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 2.8669385006971138,
+     "dp_shipped_sym_2_4_Pa": 2.7749998827948548,
+     "dp_shipped_sym_3_6_Pa": 3.010041550994564,
+     "dp_shipped_sym_4_7_Pa": 3.1245637106756625,
+     "dp_shipped_sym_5_8_Pa": 3.193581501597198,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 2.866938500697114,
+     "dp_src_neutral_sym_2_4_Pa": 2.774999882794855,
+     "dp_src_neutral_sym_3_6_Pa": 3.0100415509945644,
+     "dp_src_neutral_sym_4_7_Pa": 3.124563710675664,
+     "dp_src_neutral_sym_5_8_Pa": 3.193581501597198,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 2.8681789338028403,
+     "dp_traction_balanced_sym_2_4_Pa": 2.776301337853062,
+     "dp_traction_balanced_sym_3_6_Pa": 3.011335182549927,
+     "dp_traction_balanced_sym_4_7_Pa": 3.1257788516954332,
+     "dp_traction_balanced_sym_5_8_Pa": 3.194728105447001
+    },
+    {
+     "station": 10,
+     "t_deg": 150.00000000000003,
+     "kappa_exact_window_per_m": 61.49656320927877,
+     "dp_theory_Pa": 4.427752551068071,
+     "dp_flux_Pa": 3.807869528602303,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       9,
+       22
+      ],
+      "sym_2_4": [
+       9,
+       13
+      ],
+      "sym_3_6": [
+       12,
+       22
+      ],
+      "sym_4_7": [
+       11,
+       23
+      ],
+      "sym_5_8": [
+       10,
+       26
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 4.15921364715894,
+     "dp_shipped_sym_2_4_Pa": 4.0950531319815315,
+     "dp_shipped_sym_3_6_Pa": 4.239030925979669,
+     "dp_shipped_sym_4_7_Pa": 4.255844579089902,
+     "dp_shipped_sym_5_8_Pa": 4.222286970633396,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 4.159213647158941,
+     "dp_src_neutral_sym_2_4_Pa": 4.0950531319815315,
+     "dp_src_neutral_sym_3_6_Pa": 4.2390309259796695,
+     "dp_src_neutral_sym_4_7_Pa": 4.255844579089902,
+     "dp_src_neutral_sym_5_8_Pa": 4.222286970633397,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 4.16079225797312,
+     "dp_traction_balanced_sym_2_4_Pa": 4.096782019500039,
+     "dp_traction_balanced_sym_3_6_Pa": 4.2407233151465515,
+     "dp_traction_balanced_sym_4_7_Pa": 4.257428650362992,
+     "dp_traction_balanced_sym_5_8_Pa": 4.223714060951192
+    },
+    {
+     "station": 11,
+     "t_deg": 164.99999999999997,
+     "kappa_exact_window_per_m": 106.51136275273178,
+     "dp_theory_Pa": 7.668818118196688,
+     "dp_flux_Pa": 9.205670925874406,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       9,
+       24
+      ],
+      "sym_2_4": [
+       9,
+       13
+      ],
+      "sym_3_6": [
+       6,
+       24
+      ],
+      "sym_4_7": [
+       4,
+       25
+      ],
+      "sym_5_8": [
+       3,
+       24
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 6.205035822645044,
+     "dp_shipped_sym_2_4_Pa": 6.402325079347487,
+     "dp_shipped_sym_3_6_Pa": 5.860249696347539,
+     "dp_shipped_sym_4_7_Pa": 5.466931148869987,
+     "dp_shipped_sym_5_8_Pa": 5.108570177579892,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 6.205035822645046,
+     "dp_src_neutral_sym_2_4_Pa": 6.402325079347488,
+     "dp_src_neutral_sym_3_6_Pa": 5.860249696347541,
+     "dp_src_neutral_sym_4_7_Pa": 5.466931148869989,
+     "dp_src_neutral_sym_5_8_Pa": 5.1085701775798915,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 6.207088692501808,
+     "dp_traction_balanced_sym_2_4_Pa": 6.404650152598995,
+     "dp_traction_balanced_sym_3_6_Pa": 5.862403632672871,
+     "dp_traction_balanced_sym_4_7_Pa": 5.468808696587878,
+     "dp_traction_balanced_sym_5_8_Pa": 5.11019115177171
+    },
+    {
+     "station": 12,
+     "t_deg": 180.0,
+     "kappa_exact_window_per_m": 137.8828450903085,
+     "dp_theory_Pa": 9.927564846502213,
+     "dp_flux_Pa": 8.249423805561973,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       4,
+       18
+      ],
+      "sym_2_4": [
+       4,
+       12
+      ],
+      "sym_3_6": [
+       6,
+       18
+      ],
+      "sym_4_7": [
+       5,
+       18
+      ],
+      "sym_5_8": [
+       3,
+       20
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 6.579031521612689,
+     "dp_shipped_sym_2_4_Pa": 6.788563838404124,
+     "dp_shipped_sym_3_6_Pa": 6.1212119437983885,
+     "dp_shipped_sym_4_7_Pa": 5.723339876084603,
+     "dp_shipped_sym_5_8_Pa": 5.4050299508011515,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 6.5790315216126904,
+     "dp_src_neutral_sym_2_4_Pa": 6.788563838404125,
+     "dp_src_neutral_sym_3_6_Pa": 6.121211943798389,
+     "dp_src_neutral_sym_4_7_Pa": 5.723339876084604,
+     "dp_src_neutral_sym_5_8_Pa": 5.405029950801152,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 6.5813622269703025,
+     "dp_traction_balanced_sym_2_4_Pa": 6.791263382533,
+     "dp_traction_balanced_sym_3_6_Pa": 6.123535806154036,
+     "dp_traction_balanced_sym_4_7_Pa": 5.725334942399359,
+     "dp_traction_balanced_sym_5_8_Pa": 5.4066876938618345
+    },
+    {
+     "station": 13,
+     "t_deg": 195.00000000000003,
+     "kappa_exact_window_per_m": 106.51136275273181,
+     "dp_theory_Pa": 7.66881811819669,
+     "dp_flux_Pa": 7.187889224409436,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       6,
+       20
+      ],
+      "sym_2_4": [
+       6,
+       12
+      ],
+      "sym_3_6": [
+       8,
+       20
+      ],
+      "sym_4_7": [
+       7,
+       23
+      ],
+      "sym_5_8": [
+       6,
+       29
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 5.952556720028746,
+     "dp_shipped_sym_2_4_Pa": 6.091518808436455,
+     "dp_shipped_sym_3_6_Pa": 5.622890194599836,
+     "dp_shipped_sym_4_7_Pa": 5.293096567625985,
+     "dp_shipped_sym_5_8_Pa": 5.030479251213617,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 5.952556720028748,
+     "dp_src_neutral_sym_2_4_Pa": 6.091518808436456,
+     "dp_src_neutral_sym_3_6_Pa": 5.622890194599837,
+     "dp_src_neutral_sym_4_7_Pa": 5.293096567625986,
+     "dp_src_neutral_sym_5_8_Pa": 5.030479251213618,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 5.954742776758008,
+     "dp_traction_balanced_sym_2_4_Pa": 6.09403032456712,
+     "dp_traction_balanced_sym_3_6_Pa": 5.6250734205688095,
+     "dp_traction_balanced_sym_4_7_Pa": 5.29501149646322,
+     "dp_traction_balanced_sym_5_8_Pa": 5.032113860477207
+    },
+    {
+     "station": 14,
+     "t_deg": 209.99999999999997,
+     "kappa_exact_window_per_m": 61.4965632092788,
+     "dp_theory_Pa": 4.427752551068073,
+     "dp_flux_Pa": 5.461795822523307,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       9,
+       22
+      ],
+      "sym_2_4": [
+       9,
+       14
+      ],
+      "sym_3_6": [
+       11,
+       22
+      ],
+      "sym_4_7": [
+       10,
+       24
+      ],
+      "sym_5_8": [
+       9,
+       25
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 4.797075684037962,
+     "dp_shipped_sym_2_4_Pa": 4.798938405654328,
+     "dp_shipped_sym_3_6_Pa": 4.676914251137522,
+     "dp_shipped_sym_4_7_Pa": 4.524038573571956,
+     "dp_shipped_sym_5_8_Pa": 4.357156026667612,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 4.797075684037963,
+     "dp_src_neutral_sym_2_4_Pa": 4.7989384056543285,
+     "dp_src_neutral_sym_3_6_Pa": 4.676914251137523,
+     "dp_src_neutral_sym_4_7_Pa": 4.524038573571957,
+     "dp_src_neutral_sym_5_8_Pa": 4.357156026667613,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 4.799049722755749,
+     "dp_traction_balanced_sym_2_4_Pa": 4.801057631833892,
+     "dp_traction_balanced_sym_3_6_Pa": 4.6788616469089686,
+     "dp_traction_balanced_sym_4_7_Pa": 4.525813175307329,
+     "dp_traction_balanced_sym_5_8_Pa": 4.358780143499883
+    },
+    {
+     "station": 15,
+     "t_deg": 224.99999999999997,
+     "kappa_exact_window_per_m": 36.11100059518006,
+     "dp_theory_Pa": 2.599992042852964,
+     "dp_flux_Pa": 2.703499543040177,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       13,
+       24
+      ],
+      "sym_2_4": [
+       13,
+       14
+      ],
+      "sym_3_6": [
+       19,
+       24
+      ],
+      "sym_4_7": [
+       18,
+       25
+      ],
+      "sym_5_8": [
+       16,
+       26
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 3.0561987328177964,
+     "dp_shipped_sym_2_4_Pa": 2.9188997378362957,
+     "dp_shipped_sym_3_6_Pa": 3.1610129145937034,
+     "dp_shipped_sym_4_7_Pa": 3.164336897928107,
+     "dp_shipped_sym_5_8_Pa": 3.1554392829540463,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 3.0561987328177964,
+     "dp_src_neutral_sym_2_4_Pa": 2.9188997378362957,
+     "dp_src_neutral_sym_3_6_Pa": 3.1610129145937043,
+     "dp_src_neutral_sym_4_7_Pa": 3.1643368979281075,
+     "dp_src_neutral_sym_5_8_Pa": 3.1554392829540463,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 3.0576134627377134,
+     "dp_traction_balanced_sym_2_4_Pa": 2.9203942328354846,
+     "dp_traction_balanced_sym_3_6_Pa": 3.162439664776633,
+     "dp_traction_balanced_sym_4_7_Pa": 3.165688277987373,
+     "dp_traction_balanced_sym_5_8_Pa": 3.156745530920807
+    },
+    {
+     "station": 16,
+     "t_deg": 239.99999999999997,
+     "kappa_exact_window_per_m": 24.334393846914356,
+     "dp_theory_Pa": 1.7520763569778335,
+     "dp_flux_Pa": 1.6470486366894774,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       15,
+       25
+      ],
+      "sym_2_4": [
+       15,
+       18
+      ],
+      "sym_3_6": [
+       20,
+       25
+      ],
+      "sym_4_7": [
+       18,
+       26
+      ],
+      "sym_5_8": [
+       19,
+       27
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 2.2865173239221717,
+     "dp_shipped_sym_2_4_Pa": 2.131159679157686,
+     "dp_shipped_sym_3_6_Pa": 2.365116401172516,
+     "dp_shipped_sym_4_7_Pa": 2.515768745046526,
+     "dp_shipped_sym_5_8_Pa": 2.602818166755264,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 2.2865173239221717,
+     "dp_src_neutral_sym_2_4_Pa": 2.131159679157686,
+     "dp_src_neutral_sym_3_6_Pa": 2.365116401172516,
+     "dp_src_neutral_sym_4_7_Pa": 2.5157687450465263,
+     "dp_src_neutral_sym_5_8_Pa": 2.602818166755264,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 2.2875654715459524,
+     "dp_traction_balanced_sym_2_4_Pa": 2.132220848243504,
+     "dp_traction_balanced_sym_3_6_Pa": 2.3661692644051096,
+     "dp_traction_balanced_sym_4_7_Pa": 2.516745544720558,
+     "dp_traction_balanced_sym_5_8_Pa": 2.6037545710776255
+    },
+    {
+     "station": 17,
+     "t_deg": 255.0,
+     "kappa_exact_window_per_m": 19.231422493714422,
+     "dp_theory_Pa": 1.3846624195474384,
+     "dp_flux_Pa": 2.4520511129547837,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       17,
+       28
+      ],
+      "sym_2_4": [
+       17,
+       19
+      ],
+      "sym_3_6": [
+       23,
+       28
+      ],
+      "sym_4_7": [
+       22,
+       27
+      ],
+      "sym_5_8": [
+       21,
+       27
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 2.089213921524353,
+     "dp_shipped_sym_2_4_Pa": 1.9989541982996244,
+     "dp_shipped_sym_3_6_Pa": 2.118594868003716,
+     "dp_shipped_sym_4_7_Pa": 2.1698262359301936,
+     "dp_shipped_sym_5_8_Pa": 2.2104546356405463,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 2.089213921524353,
+     "dp_src_neutral_sym_2_4_Pa": 1.9989541982996242,
+     "dp_src_neutral_sym_3_6_Pa": 2.1185948680037163,
+     "dp_src_neutral_sym_4_7_Pa": 2.1698262359301936,
+     "dp_src_neutral_sym_5_8_Pa": 2.210454635640547,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 2.0897499512001763,
+     "dp_traction_balanced_sym_2_4_Pa": 1.9994768298757162,
+     "dp_traction_balanced_sym_3_6_Pa": 2.1191456157100466,
+     "dp_traction_balanced_sym_4_7_Pa": 2.1703689157427424,
+     "dp_traction_balanced_sym_5_8_Pa": 2.2109822251251616
+    },
+    {
+     "station": 18,
+     "t_deg": 270.0,
+     "kappa_exact_window_per_m": 17.792665878314047,
+     "dp_theory_Pa": 1.2810719432386113,
+     "dp_flux_Pa": 0.045885209281329276,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       14,
+       24
+      ],
+      "sym_2_4": [
+       14,
+       17
+      ],
+      "sym_3_6": [
+       28,
+       24
+      ],
+      "sym_4_7": [
+       27,
+       24
+      ],
+      "sym_5_8": [
+       23,
+       29
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.3996123993896317,
+     "dp_shipped_sym_2_4_Pa": 1.2429233764393692,
+     "dp_shipped_sym_3_6_Pa": 1.5589457123600077,
+     "dp_shipped_sym_4_7_Pa": 1.7040646729959943,
+     "dp_shipped_sym_5_8_Pa": 1.8547599394037615,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.3996123993896312,
+     "dp_src_neutral_sym_2_4_Pa": 1.2429233764393688,
+     "dp_src_neutral_sym_3_6_Pa": 1.5589457123600077,
+     "dp_src_neutral_sym_4_7_Pa": 1.7040646729959947,
+     "dp_src_neutral_sym_5_8_Pa": 1.8547599394037617,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.3997991525207578,
+     "dp_traction_balanced_sym_2_4_Pa": 1.2431216017112396,
+     "dp_traction_balanced_sym_3_6_Pa": 1.5591284785659851,
+     "dp_traction_balanced_sym_4_7_Pa": 1.7042382578906667,
+     "dp_traction_balanced_sym_5_8_Pa": 1.8549171086366525
+    },
+    {
+     "station": 19,
+     "t_deg": 285.0,
+     "kappa_exact_window_per_m": 19.231422493714422,
+     "dp_theory_Pa": 1.3846624195474384,
+     "dp_flux_Pa": 1.9381383510775172,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       16,
+       27
+      ],
+      "sym_2_4": [
+       16,
+       18
+      ],
+      "sym_3_6": [
+       22,
+       27
+      ],
+      "sym_4_7": [
+       21,
+       28
+      ],
+      "sym_5_8": [
+       21,
+       27
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 2.0772213193852815,
+     "dp_shipped_sym_2_4_Pa": 1.9899647296965797,
+     "dp_shipped_sym_3_6_Pa": 2.109863318046303,
+     "dp_shipped_sym_4_7_Pa": 2.168529739373806,
+     "dp_shipped_sym_5_8_Pa": 2.2237035133683816,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 2.0772213193852815,
+     "dp_src_neutral_sym_2_4_Pa": 1.989964729696579,
+     "dp_src_neutral_sym_3_6_Pa": 2.109863318046304,
+     "dp_src_neutral_sym_4_7_Pa": 2.1685297393738074,
+     "dp_src_neutral_sym_5_8_Pa": 2.223703513368383,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 2.077000879041093,
+     "dp_traction_balanced_sym_2_4_Pa": 1.9897662792513553,
+     "dp_traction_balanced_sym_3_6_Pa": 2.1096361466794673,
+     "dp_traction_balanced_sym_4_7_Pa": 2.168292010857673,
+     "dp_traction_balanced_sym_5_8_Pa": 2.2234619796136643
+    },
+    {
+     "station": 20,
+     "t_deg": 300.00000000000006,
+     "kappa_exact_window_per_m": 24.33439384691435,
+     "dp_theory_Pa": 1.752076356977833,
+     "dp_flux_Pa": 2.388009193881663,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       14,
+       26
+      ],
+      "sym_2_4": [
+       14,
+       15
+      ],
+      "sym_3_6": [
+       21,
+       26
+      ],
+      "sym_4_7": [
+       20,
+       28
+      ],
+      "sym_5_8": [
+       20,
+       29
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 2.3789659512500574,
+     "dp_shipped_sym_2_4_Pa": 2.2711840321081502,
+     "dp_shipped_sym_3_6_Pa": 2.458543870146766,
+     "dp_shipped_sym_4_7_Pa": 2.582280449994099,
+     "dp_shipped_sym_5_8_Pa": 2.653187814307253,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 2.378965951250059,
+     "dp_src_neutral_sym_2_4_Pa": 2.2711840321081516,
+     "dp_src_neutral_sym_3_6_Pa": 2.458543870146767,
+     "dp_src_neutral_sym_4_7_Pa": 2.5822804499941,
+     "dp_src_neutral_sym_5_8_Pa": 2.6531878143072545,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 2.3781887702445226,
+     "dp_traction_balanced_sym_2_4_Pa": 2.2703966959223942,
+     "dp_traction_balanced_sym_3_6_Pa": 2.4577627262453494,
+     "dp_traction_balanced_sym_4_7_Pa": 2.5815327594823922,
+     "dp_traction_balanced_sym_5_8_Pa": 2.652467075228455
+    },
+    {
+     "station": 21,
+     "t_deg": 315.0,
+     "kappa_exact_window_per_m": 36.11100059518001,
+     "dp_theory_Pa": 2.5999920428529606,
+     "dp_flux_Pa": 2.037011522832046,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       12,
+       25
+      ],
+      "sym_2_4": [
+       12,
+       17
+      ],
+      "sym_3_6": [
+       16,
+       25
+      ],
+      "sym_4_7": [
+       15,
+       24
+      ],
+      "sym_5_8": [
+       15,
+       25
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 3.0663493504862998,
+     "dp_shipped_sym_2_4_Pa": 2.9298712980911312,
+     "dp_shipped_sym_3_6_Pa": 3.183498587326142,
+     "dp_shipped_sym_4_7_Pa": 3.2803356283918252,
+     "dp_shipped_sym_5_8_Pa": 3.3390374273335457,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 3.066349350486301,
+     "dp_src_neutral_sym_2_4_Pa": 2.9298712980911326,
+     "dp_src_neutral_sym_3_6_Pa": 3.1834985873261434,
+     "dp_src_neutral_sym_4_7_Pa": 3.2803356283918252,
+     "dp_src_neutral_sym_5_8_Pa": 3.339037427333546,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 3.065018820367008,
+     "dp_traction_balanced_sym_2_4_Pa": 2.928544411520315,
+     "dp_traction_balanced_sym_3_6_Pa": 3.18217844509107,
+     "dp_traction_balanced_sym_4_7_Pa": 3.2790538652032635,
+     "dp_traction_balanced_sym_5_8_Pa": 3.3378454283635075
+    },
+    {
+     "station": 22,
+     "t_deg": 329.99999999999994,
+     "kappa_exact_window_per_m": 61.4965632092787,
+     "dp_theory_Pa": 4.427752551068066,
+     "dp_flux_Pa": 5.16284957086651,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       10,
+       21
+      ],
+      "sym_2_4": [
+       10,
+       13
+      ],
+      "sym_3_6": [
+       13,
+       21
+      ],
+      "sym_4_7": [
+       11,
+       23
+      ],
+      "sym_5_8": [
+       10,
+       26
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 4.839911150555605,
+     "dp_shipped_sym_2_4_Pa": 4.798803686592128,
+     "dp_shipped_sym_3_6_Pa": 4.7500917132862615,
+     "dp_shipped_sym_4_7_Pa": 4.626414757885916,
+     "dp_shipped_sym_5_8_Pa": 4.521721190499437,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 4.839911150555607,
+     "dp_src_neutral_sym_2_4_Pa": 4.798803686592129,
+     "dp_src_neutral_sym_3_6_Pa": 4.750091713286263,
+     "dp_src_neutral_sym_4_7_Pa": 4.626414757885919,
+     "dp_src_neutral_sym_5_8_Pa": 4.521721190499439,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 4.838059900316276,
+     "dp_traction_balanced_sym_2_4_Pa": 4.7968080026371815,
+     "dp_traction_balanced_sym_3_6_Pa": 4.7482371000935055,
+     "dp_traction_balanced_sym_4_7_Pa": 4.624706892361516,
+     "dp_traction_balanced_sym_5_8_Pa": 4.520172257158934
+    },
+    {
+     "station": 23,
+     "t_deg": 344.99999999999994,
+     "kappa_exact_window_per_m": 106.51136275273164,
+     "dp_theory_Pa": 7.668818118196677,
+     "dp_flux_Pa": 8.492650749488686,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       8,
+       24
+      ],
+      "sym_2_4": [
+       8,
+       14
+      ],
+      "sym_3_6": [
+       5,
+       24
+      ],
+      "sym_4_7": [
+       5,
+       24
+      ],
+      "sym_5_8": [
+       4,
+       25
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 6.621597394967715,
+     "dp_shipped_sym_2_4_Pa": 6.79006530699978,
+     "dp_shipped_sym_3_6_Pa": 6.188317418684526,
+     "dp_shipped_sym_4_7_Pa": 5.686483084868073,
+     "dp_shipped_sym_5_8_Pa": 5.339963639326136,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 6.621597394967715,
+     "dp_src_neutral_sym_2_4_Pa": 6.79006530699978,
+     "dp_src_neutral_sym_3_6_Pa": 6.188317418684527,
+     "dp_src_neutral_sym_4_7_Pa": 5.686483084868074,
+     "dp_src_neutral_sym_5_8_Pa": 5.339963639326137,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 6.619484879814155,
+     "dp_traction_balanced_sym_2_4_Pa": 6.787678512650759,
+     "dp_traction_balanced_sym_3_6_Pa": 6.186106083687645,
+     "dp_traction_balanced_sym_4_7_Pa": 5.684592850111574,
+     "dp_traction_balanced_sym_5_8_Pa": 5.338342924639427
+    }
+   ]
+  },
+  {
+   "aspect_ratio": 2.0,
+   "r_eq_over_dx": 40.0,
+   "r_curv_min_over_dx": 7.25114606566887,
+   "n_particles": 21863,
+   "n_free": 20770,
+   "n_active": 1424,
+   "dx_m": 0.0005,
+   "h_m": 0.0006500000000000001,
+   "half_window_deg": 7.499999999999999,
+   "min_theory_signal_Pa": 1.2810719432386113,
+   "max_theory_signal_Pa": 9.927564846502213,
+   "net_traction": {
+    "rel_shipped": 0.0007905445401743018,
+    "abs_shipped_N_per_m": 0.0004561885042459467,
+    "rel_balanced": 9.394517900041411e-18,
+    "torque_rel_shipped": -1.0,
+    "torque_abs_change": 1.5583431621274993e-08
+   },
+   "flux_err": {
+    "n": 24,
+    "mean": 0.931476467009723,
+    "rms": 35.02040580333116,
+    "max_abs": 97.31899701565763
+   },
+   "arms": {
+    "shipped": {
+     "n_cg": 324,
+     "cg_rel_residual": 9.564136714152816e-11,
+     "source_charge_rel": -3.594551990335223e-17,
+     "charge_after_rel": 1.0,
+     "removed_constant": 0.0,
+     "vapour_tail_Pa": [
+      {
+       "s_lo_dx": 2.0,
+       "s_hi_dx": 4.0,
+       "n": 682,
+       "p_mean": 0.4987047466274268,
+       "p_std": 0.7970440920914164
+      },
+      {
+       "s_lo_dx": 4.0,
+       "s_hi_dx": 6.0,
+       "n": 694,
+       "p_mean": 0.4359290428625313,
+       "p_std": 0.6329027617405119
+      },
+      {
+       "s_lo_dx": 6.0,
+       "s_hi_dx": 8.0,
+       "n": 740,
+       "p_mean": 0.4222260150798234,
+       "p_std": 0.5222099811338818
+      },
+      {
+       "s_lo_dx": 8.0,
+       "s_hi_dx": 10.0,
+       "n": 772,
+       "p_mean": 0.4071889094882221,
+       "p_std": 0.4278714417417605
+      },
+      {
+       "s_lo_dx": 10.0,
+       "s_hi_dx": 12.0,
+       "n": 786,
+       "p_mean": 0.40498556793089585,
+       "p_std": 0.3414837117300247
+      }
+     ],
+     "tail_6_8_dx_Pa": 0.4222260150798234,
+     "tail_9_12_dx_Pa": 0.40498556793089585,
+     "tail_over_signal_6_8": 0.3295880588973136,
+     "readout": {
+      "shipped_asymmetric_2_4__3_6": {
+       "n": 24,
+       "mean": 6.796452798144909,
+       "rms": 19.24174089428432,
+       "max_abs": 41.1413194973415
+      },
+      "sym_2_4": {
+       "n": 24,
+       "mean": 3.922441859784584,
+       "rms": 16.81680990325946,
+       "max_abs": 39.162170133762665
+      },
+      "sym_3_6": {
+       "n": 24,
+       "mean": 8.062149821621306,
+       "rms": 20.25554064936824,
+       "max_abs": 39.64721666946143
+      },
+      "sym_4_7": {
+       "n": 24,
+       "mean": 9.51453396472559,
+       "rms": 23.192559459010578,
+       "max_abs": 45.306171192102006
+      },
+      "sym_5_8": {
+       "n": 24,
+       "mean": 10.66470813472624,
+       "rms": 25.813200702213805,
+       "max_abs": 44.611637422477024
+      }
+     },
+     "readout_shipped_probes": {
+      "n": 24,
+      "mean": 6.796452798144909,
+      "rms": 19.24174089428432,
+      "max_abs": 41.1413194973415
+     }
+    },
+    "src_neutral": {
+     "n_cg": 324,
+     "cg_rel_residual": 9.564139678166688e-11,
+     "source_charge_rel": -3.594551990335223e-17,
+     "charge_after_rel": 0.45588235294117646,
+     "removed_constant": -5.784333756639226e-12,
+     "vapour_tail_Pa": [
+      {
+       "s_lo_dx": 2.0,
+       "s_hi_dx": 4.0,
+       "n": 682,
+       "p_mean": 0.49870474662742814,
+       "p_std": 0.7970440920914168
+      },
+      {
+       "s_lo_dx": 4.0,
+       "s_hi_dx": 6.0,
+       "n": 694,
+       "p_mean": 0.4359290428625324,
+       "p_std": 0.6329027617405122
+      },
+      {
+       "s_lo_dx": 6.0,
+       "s_hi_dx": 8.0,
+       "n": 740,
+       "p_mean": 0.4222260150798244,
+       "p_std": 0.5222099811338823
+      },
+      {
+       "s_lo_dx": 8.0,
+       "s_hi_dx": 10.0,
+       "n": 772,
+       "p_mean": 0.4071889094882232,
+       "p_std": 0.4278714417417609
+      },
+      {
+       "s_lo_dx": 10.0,
+       "s_hi_dx": 12.0,
+       "n": 786,
+       "p_mean": 0.4049855679308968,
+       "p_std": 0.341483711730025
+      }
+     ],
+     "tail_6_8_dx_Pa": 0.4222260150798244,
+     "tail_9_12_dx_Pa": 0.4049855679308968,
+     "tail_over_signal_6_8": 0.32958805889731435,
+     "readout": {
+      "shipped_asymmetric_2_4__3_6": {
+       "n": 24,
+       "mean": 6.7964527981449185,
+       "rms": 19.24174089428432,
+       "max_abs": 41.1413194973415
+      },
+      "sym_2_4": {
+       "n": 24,
+       "mean": 3.9224418597845943,
+       "rms": 16.81680990325946,
+       "max_abs": 39.162170133762665
+      },
+      "sym_3_6": {
+       "n": 24,
+       "mean": 8.062149821621325,
+       "rms": 20.255540649368253,
+       "max_abs": 39.64721666946145
+      },
+      "sym_4_7": {
+       "n": 24,
+       "mean": 9.51453396472561,
+       "rms": 23.192559459010596,
+       "max_abs": 45.30617119210205
+      },
+      "sym_5_8": {
+       "n": 24,
+       "mean": 10.664708134726265,
+       "rms": 25.813200702213823,
+       "max_abs": 44.61163742247707
+      }
+     },
+     "readout_shipped_probes": {
+      "n": 24,
+      "mean": 6.7964527981449185,
+      "rms": 19.24174089428432,
+      "max_abs": 41.1413194973415
+     }
+    },
+    "traction_balanced": {
+     "n_cg": 324,
+     "cg_rel_residual": 9.550799227579093e-11,
+     "source_charge_rel": -3.566712401853053e-17,
+     "charge_after_rel": 1.0,
+     "removed_constant": 0.0,
+     "vapour_tail_Pa": [
+      {
+       "s_lo_dx": 2.0,
+       "s_hi_dx": 4.0,
+       "n": 682,
+       "p_mean": 0.4986640581545027,
+       "p_std": 0.7970995330221218
+      },
+      {
+       "s_lo_dx": 4.0,
+       "s_hi_dx": 6.0,
+       "n": 694,
+       "p_mean": 0.43595743807126236,
+       "p_std": 0.6329328231431204
+      },
+      {
+       "s_lo_dx": 6.0,
+       "s_hi_dx": 8.0,
+       "n": 740,
+       "p_mean": 0.42221834728719737,
+       "p_std": 0.5222476423976673
+      },
+      {
+       "s_lo_dx": 8.0,
+       "s_hi_dx": 10.0,
+       "n": 772,
+       "p_mean": 0.40719899651196445,
+       "p_std": 0.4278954256843215
+      },
+      {
+       "s_lo_dx": 10.0,
+       "s_hi_dx": 12.0,
+       "n": 786,
+       "p_mean": 0.40500533641778097,
+       "p_std": 0.34152952675517023
+      }
+     ],
+     "tail_6_8_dx_Pa": 0.42221834728719737,
+     "tail_9_12_dx_Pa": 0.40500533641778097,
+     "tail_over_signal_6_8": 0.32958207344687385,
+     "readout": {
+      "shipped_asymmetric_2_4__3_6": {
+       "n": 24,
+       "mean": 6.793375850662673,
+       "rms": 19.230556258448434,
+       "max_abs": 41.32079080055693
+      },
+      "sym_2_4": {
+       "n": 24,
+       "mean": 3.921758604479703,
+       "rms": 16.817305029923588,
+       "max_abs": 39.34770850813973
+      },
+      "sym_3_6": {
+       "n": 24,
+       "mean": 8.06172566423774,
+       "rms": 20.248604797086895,
+       "max_abs": 39.44160188589896
+      },
+      "sym_4_7": {
+       "n": 24,
+       "mean": 9.51415291129757,
+       "rms": 23.185370721644908,
+       "max_abs": 45.10730982588667
+      },
+      "sym_5_8": {
+       "n": 24,
+       "mean": 10.66435412467412,
+       "rms": 25.808296750749676,
+       "max_abs": 44.420023270055786
+      }
+     },
+     "readout_shipped_probes": {
+      "n": 24,
+      "mean": 6.793375850662673,
+      "rms": 19.230556258448434,
+      "max_abs": 41.32079080055693
+     }
+    }
+   },
+   "stations": [
+    {
+     "station": 0,
+     "t_deg": 0.0,
+     "kappa_exact_window_per_m": 137.8828450903085,
+     "dp_theory_Pa": 9.927564846502213,
+     "dp_flux_Pa": 10.85706498127465,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       13,
+       34
+      ],
+      "sym_2_4": [
+       13,
+       21
+      ],
+      "sym_3_6": [
+       17,
+       34
+      ],
+      "sym_4_7": [
+       16,
+       35
+      ],
+      "sym_5_8": [
+       14,
+       38
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 8.067729340575829,
+     "dp_shipped_sym_2_4_Pa": 8.346848683907357,
+     "dp_shipped_sym_3_6_Pa": 7.739927399578552,
+     "dp_shipped_sym_4_7_Pa": 7.277194421134779,
+     "dp_shipped_sym_5_8_Pa": 6.864315969457458,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 8.06772934057583,
+     "dp_src_neutral_sym_2_4_Pa": 8.346848683907357,
+     "dp_src_neutral_sym_3_6_Pa": 7.739927399578553,
+     "dp_src_neutral_sym_4_7_Pa": 7.27719442113478,
+     "dp_src_neutral_sym_5_8_Pa": 6.86431596945746,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 8.068447286501534,
+     "dp_traction_balanced_sym_2_4_Pa": 8.347708590884851,
+     "dp_traction_balanced_sym_3_6_Pa": 7.740688244389236,
+     "dp_traction_balanced_sym_4_7_Pa": 7.277865332035219,
+     "dp_traction_balanced_sym_5_8_Pa": 6.864896708554281
+    },
+    {
+     "station": 1,
+     "t_deg": 14.999999999999998,
+     "kappa_exact_window_per_m": 106.5113627527318,
+     "dp_theory_Pa": 7.668818118196689,
+     "dp_flux_Pa": 6.642423858022845,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       14,
+       32
+      ],
+      "sym_2_4": [
+       14,
+       20
+      ],
+      "sym_3_6": [
+       22,
+       32
+      ],
+      "sym_4_7": [
+       23,
+       38
+      ],
+      "sym_5_8": [
+       21,
+       41
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 6.454447460600209,
+     "dp_shipped_sym_2_4_Pa": 6.5342754590544825,
+     "dp_shipped_sym_3_6_Pa": 6.417858966098967,
+     "dp_shipped_sym_4_7_Pa": 6.215219637946347,
+     "dp_shipped_sym_5_8_Pa": 6.0386384280234,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 6.4544474606002105,
+     "dp_src_neutral_sym_2_4_Pa": 6.534275459054484,
+     "dp_src_neutral_sym_3_6_Pa": 6.417858966098967,
+     "dp_src_neutral_sym_4_7_Pa": 6.215219637946344,
+     "dp_src_neutral_sym_5_8_Pa": 6.0386384280234005,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 6.455967359326022,
+     "dp_traction_balanced_sym_2_4_Pa": 6.535995967468304,
+     "dp_traction_balanced_sym_3_6_Pa": 6.419455647476534,
+     "dp_traction_balanced_sym_4_7_Pa": 6.216656397334998,
+     "dp_traction_balanced_sym_5_8_Pa": 6.039930269173818
+    },
+    {
+     "station": 2,
+     "t_deg": 29.999999999999996,
+     "kappa_exact_window_per_m": 61.49656320927877,
+     "dp_theory_Pa": 4.427752551068071,
+     "dp_flux_Pa": 3.9626564602958454,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       22,
+       37
+      ],
+      "sym_2_4": [
+       22,
+       24
+      ],
+      "sym_3_6": [
+       29,
+       37
+      ],
+      "sym_4_7": [
+       28,
+       39
+      ],
+      "sym_5_8": [
+       27,
+       40
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 4.361552926488986,
+     "dp_shipped_sym_2_4_Pa": 4.329281004308462,
+     "dp_shipped_sym_3_6_Pa": 4.504302136114209,
+     "dp_shipped_sym_4_7_Pa": 4.546885167372538,
+     "dp_shipped_sym_5_8_Pa": 4.526987332412278,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 4.361552926488985,
+     "dp_src_neutral_sym_2_4_Pa": 4.329281004308461,
+     "dp_src_neutral_sym_3_6_Pa": 4.504302136114208,
+     "dp_src_neutral_sym_4_7_Pa": 4.546885167372537,
+     "dp_src_neutral_sym_5_8_Pa": 4.526987332412278,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 4.363527572889108,
+     "dp_traction_balanced_sym_2_4_Pa": 4.331410624620937,
+     "dp_traction_balanced_sym_3_6_Pa": 4.506404926391321,
+     "dp_traction_balanced_sym_4_7_Pa": 4.5488595420352524,
+     "dp_traction_balanced_sym_5_8_Pa": 4.528838448702596
+    },
+    {
+     "station": 3,
+     "t_deg": 45.0,
+     "kappa_exact_window_per_m": 36.11100059518003,
+     "dp_theory_Pa": 2.599992042852962,
+     "dp_flux_Pa": 3.104468420239216,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       25,
+       45
+      ],
+      "sym_2_4": [
+       25,
+       30
+      ],
+      "sym_3_6": [
+       36,
+       45
+      ],
+      "sym_4_7": [
+       36,
+       45
+      ],
+      "sym_5_8": [
+       36,
+       45
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 3.00327504588137,
+     "dp_shipped_sym_2_4_Pa": 2.962435305853145,
+     "dp_shipped_sym_3_6_Pa": 3.0810514992777414,
+     "dp_shipped_sym_4_7_Pa": 3.116850799361528,
+     "dp_shipped_sym_5_8_Pa": 3.158168314147553,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 3.0032750458813693,
+     "dp_src_neutral_sym_2_4_Pa": 2.9624353058531447,
+     "dp_src_neutral_sym_3_6_Pa": 3.0810514992777414,
+     "dp_src_neutral_sym_4_7_Pa": 3.1168507993615275,
+     "dp_src_neutral_sym_5_8_Pa": 3.1581683141475527,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 3.0055239804748832,
+     "dp_traction_balanced_sym_2_4_Pa": 2.9647979686893424,
+     "dp_traction_balanced_sym_3_6_Pa": 3.083426362311115,
+     "dp_traction_balanced_sym_4_7_Pa": 3.1191292047861943,
+     "dp_traction_balanced_sym_5_8_Pa": 3.1603417088372487
+    },
+    {
+     "station": 4,
+     "t_deg": 59.99999999999999,
+     "kappa_exact_window_per_m": 24.334393846914345,
+     "dp_theory_Pa": 1.7520763569778328,
+     "dp_flux_Pa": 1.7229743639993982,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       29,
+       49
+      ],
+      "sym_2_4": [
+       29,
+       32
+      ],
+      "sym_3_6": [
+       43,
+       49
+      ],
+      "sym_4_7": [
+       43,
+       49
+      ],
+      "sym_5_8": [
+       43,
+       51
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.9728788140364273,
+     "dp_shipped_sym_2_4_Pa": 1.9043095331920412,
+     "dp_shipped_sym_3_6_Pa": 2.0624667718762724,
+     "dp_shipped_sym_4_7_Pa": 2.149651297286144,
+     "dp_shipped_sym_5_8_Pa": 2.218009707354306,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.972878814036427,
+     "dp_src_neutral_sym_2_4_Pa": 1.9043095331920408,
+     "dp_src_neutral_sym_3_6_Pa": 2.062466771876273,
+     "dp_src_neutral_sym_4_7_Pa": 2.1496512972861446,
+     "dp_src_neutral_sym_5_8_Pa": 2.2180097073543066,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.9753428864782139,
+     "dp_traction_balanced_sym_2_4_Pa": 1.906869444626512,
+     "dp_traction_balanced_sym_3_6_Pa": 2.065014528373894,
+     "dp_traction_balanced_sym_4_7_Pa": 2.152107170278254,
+     "dp_traction_balanced_sym_5_8_Pa": 2.220370175900177
+    },
+    {
+     "station": 5,
+     "t_deg": 75.00000000000001,
+     "kappa_exact_window_per_m": 19.231422493714422,
+     "dp_theory_Pa": 1.3846624195474384,
+     "dp_flux_Pa": 1.7852968208290758,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       33,
+       54
+      ],
+      "sym_2_4": [
+       33,
+       35
+      ],
+      "sym_3_6": [
+       47,
+       54
+      ],
+      "sym_4_7": [
+       46,
+       53
+      ],
+      "sym_5_8": [
+       47,
+       52
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.8793420857122751,
+     "dp_shipped_sym_2_4_Pa": 1.862170384941325,
+     "dp_shipped_sym_3_6_Pa": 1.8297497011236585,
+     "dp_shipped_sym_4_7_Pa": 1.8589329939965813,
+     "dp_shipped_sym_5_8_Pa": 1.903603425371986,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.8793420857122753,
+     "dp_src_neutral_sym_2_4_Pa": 1.8621703849413254,
+     "dp_src_neutral_sym_3_6_Pa": 1.8297497011236588,
+     "dp_src_neutral_sym_4_7_Pa": 1.8589329939965817,
+     "dp_src_neutral_sym_5_8_Pa": 1.9036034253719856,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.8818510349235917,
+     "dp_traction_balanced_sym_2_4_Pa": 1.864767430626128,
+     "dp_traction_balanced_sym_3_6_Pa": 1.8323670086659898,
+     "dp_traction_balanced_sym_4_7_Pa": 1.8614621758587804,
+     "dp_traction_balanced_sym_5_8_Pa": 1.9060390775074956
+    },
+    {
+     "station": 6,
+     "t_deg": 90.0,
+     "kappa_exact_window_per_m": 17.792665878314047,
+     "dp_theory_Pa": 1.2810719432386113,
+     "dp_flux_Pa": 0.03434557702979994,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       31,
+       47
+      ],
+      "sym_2_4": [
+       31,
+       36
+      ],
+      "sym_3_6": [
+       57,
+       47
+      ],
+      "sym_4_7": [
+       55,
+       46
+      ],
+      "sym_5_8": [
+       47,
+       54
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.1498490140814184,
+     "dp_shipped_sym_2_4_Pa": 1.0693987082862662,
+     "dp_shipped_sym_3_6_Pa": 1.2955014111940115,
+     "dp_shipped_sym_4_7_Pa": 1.3993856971728387,
+     "dp_shipped_sym_5_8_Pa": 1.5076221661529892,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.149849014081419,
+     "dp_src_neutral_sym_2_4_Pa": 1.0693987082862668,
+     "dp_src_neutral_sym_3_6_Pa": 1.2955014111940109,
+     "dp_src_neutral_sym_4_7_Pa": 1.399385697172839,
+     "dp_src_neutral_sym_5_8_Pa": 1.50762216615299,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.1523349409167005,
+     "dp_traction_balanced_sym_2_4_Pa": 1.0719673763645905,
+     "dp_traction_balanced_sym_3_6_Pa": 1.2980997970287655,
+     "dp_traction_balanced_sym_4_7_Pa": 1.4019122295239057,
+     "dp_traction_balanced_sym_5_8_Pa": 1.5100515780466086
+    },
+    {
+     "station": 7,
+     "t_deg": 104.99999999999999,
+     "kappa_exact_window_per_m": 19.231422493714422,
+     "dp_theory_Pa": 1.3846624195474384,
+     "dp_flux_Pa": 2.4788506993742567,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       32,
+       52
+      ],
+      "sym_2_4": [
+       32,
+       36
+      ],
+      "sym_3_6": [
+       47,
+       52
+      ],
+      "sym_4_7": [
+       47,
+       52
+      ],
+      "sym_5_8": [
+       47,
+       51
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.9543308095330691,
+     "dp_shipped_sym_2_4_Pa": 1.9269262720688807,
+     "dp_shipped_sym_3_6_Pa": 1.9222214462620957,
+     "dp_shipped_sym_4_7_Pa": 1.936568842921228,
+     "dp_shipped_sym_5_8_Pa": 1.9679765487354626,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.9543308095330691,
+     "dp_src_neutral_sym_2_4_Pa": 1.9269262720688807,
+     "dp_src_neutral_sym_3_6_Pa": 1.9222214462620966,
+     "dp_src_neutral_sym_4_7_Pa": 1.9365688429212289,
+     "dp_src_neutral_sym_5_8_Pa": 1.9679765487354635,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.9568158812225653,
+     "dp_traction_balanced_sym_2_4_Pa": 1.9294953522127192,
+     "dp_traction_balanced_sym_3_6_Pa": 1.9247980354170555,
+     "dp_traction_balanced_sym_4_7_Pa": 1.939052997904418,
+     "dp_traction_balanced_sym_5_8_Pa": 1.9703605559787771
+    },
+    {
+     "station": 8,
+     "t_deg": 119.99999999999999,
+     "kappa_exact_window_per_m": 24.334393846914335,
+     "dp_theory_Pa": 1.752076356977832,
+     "dp_flux_Pa": 0.9917906280255648,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       29,
+       49
+      ],
+      "sym_2_4": [
+       29,
+       30
+      ],
+      "sym_3_6": [
+       44,
+       49
+      ],
+      "sym_4_7": [
+       44,
+       53
+      ],
+      "sym_5_8": [
+       43,
+       53
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.8860146910104456,
+     "dp_shipped_sym_2_4_Pa": 1.7901293969153016,
+     "dp_shipped_sym_3_6_Pa": 2.012380071786662,
+     "dp_shipped_sym_4_7_Pa": 2.1101380563952117,
+     "dp_shipped_sym_5_8_Pa": 2.189419495155115,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.886014691010446,
+     "dp_src_neutral_sym_2_4_Pa": 1.7901293969153018,
+     "dp_src_neutral_sym_3_6_Pa": 2.0123800717866627,
+     "dp_src_neutral_sym_4_7_Pa": 2.110138056395212,
+     "dp_src_neutral_sym_5_8_Pa": 2.189419495155116,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.888323526456515,
+     "dp_traction_balanced_sym_2_4_Pa": 1.7925208428875241,
+     "dp_traction_balanced_sym_3_6_Pa": 2.0147491841807295,
+     "dp_traction_balanced_sym_4_7_Pa": 2.1124134393772676,
+     "dp_traction_balanced_sym_5_8_Pa": 2.191603744734536
+    },
+    {
+     "station": 9,
+     "t_deg": 135.0,
+     "kappa_exact_window_per_m": 36.111000595180016,
+     "dp_theory_Pa": 2.599992042852961,
+     "dp_flux_Pa": 3.5806296686750567,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       25,
+       44
+      ],
+      "sym_2_4": [
+       25,
+       28
+      ],
+      "sym_3_6": [
+       36,
+       44
+      ],
+      "sym_4_7": [
+       36,
+       45
+      ],
+      "sym_5_8": [
+       36,
+       46
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 3.0027287449548465,
+     "dp_shipped_sym_2_4_Pa": 2.9489268846227086,
+     "dp_shipped_sym_3_6_Pa": 3.0486208108550183,
+     "dp_shipped_sym_4_7_Pa": 3.0821789986161265,
+     "dp_shipped_sym_5_8_Pa": 3.117965561765769,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 3.002728744954847,
+     "dp_src_neutral_sym_2_4_Pa": 2.948926884622709,
+     "dp_src_neutral_sym_3_6_Pa": 3.048620810855018,
+     "dp_src_neutral_sym_4_7_Pa": 3.082178998616128,
+     "dp_src_neutral_sym_5_8_Pa": 3.1179655617657698,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 3.0046299555697225,
+     "dp_traction_balanced_sym_2_4_Pa": 2.9509324330516145,
+     "dp_traction_balanced_sym_3_6_Pa": 3.050593794089278,
+     "dp_traction_balanced_sym_4_7_Pa": 3.084053670298909,
+     "dp_traction_balanced_sym_5_8_Pa": 3.1197418948687337
+    },
+    {
+     "station": 10,
+     "t_deg": 150.00000000000003,
+     "kappa_exact_window_per_m": 61.49656320927877,
+     "dp_theory_Pa": 4.427752551068071,
+     "dp_flux_Pa": 3.9304886922390794,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       21,
+       41
+      ],
+      "sym_2_4": [
+       21,
+       27
+      ],
+      "sym_3_6": [
+       28,
+       41
+      ],
+      "sym_4_7": [
+       27,
+       39
+      ],
+      "sym_5_8": [
+       26,
+       39
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 4.422796703017372,
+     "dp_shipped_sym_2_4_Pa": 4.340372886077433,
+     "dp_shipped_sym_3_6_Pa": 4.451243904978757,
+     "dp_shipped_sym_4_7_Pa": 4.473805255668459,
+     "dp_shipped_sym_5_8_Pa": 4.46764892151214,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 4.422796703017373,
+     "dp_src_neutral_sym_2_4_Pa": 4.340372886077434,
+     "dp_src_neutral_sym_3_6_Pa": 4.451243904978757,
+     "dp_src_neutral_sym_4_7_Pa": 4.47380525566846,
+     "dp_src_neutral_sym_5_8_Pa": 4.467648921512141,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 4.424091593309693,
+     "dp_traction_balanced_sym_2_4_Pa": 4.341773776902261,
+     "dp_traction_balanced_sym_3_6_Pa": 4.452568176998232,
+     "dp_traction_balanced_sym_4_7_Pa": 4.475018945653209,
+     "dp_traction_balanced_sym_5_8_Pa": 4.468775457328384
+    },
+    {
+     "station": 11,
+     "t_deg": 164.99999999999997,
+     "kappa_exact_window_per_m": 106.51136275273178,
+     "dp_theory_Pa": 7.668818118196688,
+     "dp_flux_Pa": 5.648722722077142,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       16,
+       33
+      ],
+      "sym_2_4": [
+       16,
+       21
+      ],
+      "sym_3_6": [
+       25,
+       33
+      ],
+      "sym_4_7": [
+       22,
+       33
+      ],
+      "sym_5_8": [
+       20,
+       39
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 6.247592368343272,
+     "dp_shipped_sym_2_4_Pa": 6.2667436268535885,
+     "dp_shipped_sym_3_6_Pa": 6.147029639265552,
+     "dp_shipped_sym_4_7_Pa": 5.966337190619763,
+     "dp_shipped_sym_5_8_Pa": 5.813863745887482,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 6.247592368343273,
+     "dp_src_neutral_sym_2_4_Pa": 6.266743626853589,
+     "dp_src_neutral_sym_3_6_Pa": 6.147029639265553,
+     "dp_src_neutral_sym_4_7_Pa": 5.966337190619764,
+     "dp_src_neutral_sym_5_8_Pa": 5.813863745887482,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 6.247920249798135,
+     "dp_traction_balanced_sym_2_4_Pa": 6.267133699216727,
+     "dp_traction_balanced_sym_3_6_Pa": 6.1473649740169565,
+     "dp_traction_balanced_sym_4_7_Pa": 5.966644593417666,
+     "dp_traction_balanced_sym_5_8_Pa": 5.814133755031986
+    },
+    {
+     "station": 12,
+     "t_deg": 180.0,
+     "kappa_exact_window_per_m": 137.8828450903085,
+     "dp_theory_Pa": 9.927564846502213,
+     "dp_flux_Pa": 9.810118274560057,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       14,
+       33
+      ],
+      "sym_2_4": [
+       14,
+       21
+      ],
+      "sym_3_6": [
+       18,
+       33
+      ],
+      "sym_4_7": [
+       16,
+       34
+      ],
+      "sym_5_8": [
+       15,
+       36
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 7.700424741200145,
+     "dp_shipped_sym_2_4_Pa": 7.857152614090862,
+     "dp_shipped_sym_3_6_Pa": 7.39116961067818,
+     "dp_shipped_sym_4_7_Pa": 6.977662888687561,
+     "dp_shipped_sym_5_8_Pa": 6.597885759954594,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 7.700424741200146,
+     "dp_src_neutral_sym_2_4_Pa": 7.857152614090863,
+     "dp_src_neutral_sym_3_6_Pa": 7.391169610678182,
+     "dp_src_neutral_sym_4_7_Pa": 6.977662888687563,
+     "dp_src_neutral_sym_5_8_Pa": 6.597885759954597,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 7.699740490734144,
+     "dp_traction_balanced_sym_2_4_Pa": 7.856397799270466,
+     "dp_traction_balanced_sym_3_6_Pa": 7.390492983673374,
+     "dp_traction_balanced_sym_4_7_Pa": 6.977084414042541,
+     "dp_traction_balanced_sym_5_8_Pa": 6.597383309240929
+    },
+    {
+     "station": 13,
+     "t_deg": 195.00000000000003,
+     "kappa_exact_window_per_m": 106.51136275273181,
+     "dp_theory_Pa": 7.66881811819669,
+     "dp_flux_Pa": 8.707471026025475,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       15,
+       33
+      ],
+      "sym_2_4": [
+       15,
+       23
+      ],
+      "sym_3_6": [
+       23,
+       33
+      ],
+      "sym_4_7": [
+       21,
+       35
+      ],
+      "sym_5_8": [
+       15,
+       35
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 6.852041755469623,
+     "dp_shipped_sym_2_4_Pa": 6.907097851086467,
+     "dp_shipped_sym_3_6_Pa": 6.63850213094526,
+     "dp_shipped_sym_4_7_Pa": 6.414951187339458,
+     "dp_shipped_sym_5_8_Pa": 6.150104718192699,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 6.852041755469623,
+     "dp_src_neutral_sym_2_4_Pa": 6.907097851086468,
+     "dp_src_neutral_sym_3_6_Pa": 6.638502130945261,
+     "dp_src_neutral_sym_4_7_Pa": 6.414951187339458,
+     "dp_src_neutral_sym_5_8_Pa": 6.150104718192702,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 6.850492244420037,
+     "dp_traction_balanced_sym_2_4_Pa": 6.90539935357802,
+     "dp_traction_balanced_sym_3_6_Pa": 6.636992994053233,
+     "dp_traction_balanced_sym_4_7_Pa": 6.413593836802425,
+     "dp_traction_balanced_sym_5_8_Pa": 6.148892639351352
+    },
+    {
+     "station": 14,
+     "t_deg": 209.99999999999997,
+     "kappa_exact_window_per_m": 61.4965632092788,
+     "dp_theory_Pa": 4.427752551068073,
+     "dp_flux_Pa": 4.742175379111537,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       22,
+       38
+      ],
+      "sym_2_4": [
+       22,
+       24
+      ],
+      "sym_3_6": [
+       29,
+       38
+      ],
+      "sym_4_7": [
+       28,
+       40
+      ],
+      "sym_5_8": [
+       27,
+       41
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 4.723453518065844,
+     "dp_shipped_sym_2_4_Pa": 4.611736545498374,
+     "dp_shipped_sym_3_6_Pa": 4.677456760377655,
+     "dp_shipped_sym_4_7_Pa": 4.6586899319053625,
+     "dp_shipped_sym_5_8_Pa": 4.633583164068289,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 4.723453518065845,
+     "dp_src_neutral_sym_2_4_Pa": 4.611736545498375,
+     "dp_src_neutral_sym_3_6_Pa": 4.677456760377656,
+     "dp_src_neutral_sym_4_7_Pa": 4.658689931905364,
+     "dp_src_neutral_sym_5_8_Pa": 4.63358316406829,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 4.721271869387408,
+     "dp_traction_balanced_sym_2_4_Pa": 4.609516534399607,
+     "dp_traction_balanced_sym_3_6_Pa": 4.67532526165924,
+     "dp_traction_balanced_sym_4_7_Pa": 4.656690141072921,
+     "dp_traction_balanced_sym_5_8_Pa": 4.631720710989495
+    },
+    {
+     "station": 15,
+     "t_deg": 224.99999999999997,
+     "kappa_exact_window_per_m": 36.11100059518006,
+     "dp_theory_Pa": 2.599992042852964,
+     "dp_flux_Pa": 2.8581889821537825,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       25,
+       46
+      ],
+      "sym_2_4": [
+       25,
+       30
+      ],
+      "sym_3_6": [
+       36,
+       46
+      ],
+      "sym_4_7": [
+       36,
+       46
+      ],
+      "sym_5_8": [
+       36,
+       46
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 2.9419480812359637,
+     "dp_shipped_sym_2_4_Pa": 2.8467654879289155,
+     "dp_shipped_sym_3_6_Pa": 2.998617610934513,
+     "dp_shipped_sym_4_7_Pa": 3.062981228209397,
+     "dp_shipped_sym_5_8_Pa": 3.1189559265109934,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 2.9419480812359646,
+     "dp_src_neutral_sym_2_4_Pa": 2.8467654879289164,
+     "dp_src_neutral_sym_3_6_Pa": 2.9986176109345135,
+     "dp_src_neutral_sym_4_7_Pa": 3.062981228209396,
+     "dp_src_neutral_sym_5_8_Pa": 3.1189559265109943,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 2.9394621874403155,
+     "dp_traction_balanced_sym_2_4_Pa": 2.8443152753936096,
+     "dp_traction_balanced_sym_3_6_Pa": 2.9961796551215265,
+     "dp_traction_balanced_sym_4_7_Pa": 3.060648920300409,
+     "dp_traction_balanced_sym_5_8_Pa": 3.116732352205517
+    },
+    {
+     "station": 16,
+     "t_deg": 239.99999999999997,
+     "kappa_exact_window_per_m": 24.334393846914356,
+     "dp_theory_Pa": 1.7520763569778335,
+     "dp_flux_Pa": 1.4583694765376907,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       29,
+       49
+      ],
+      "sym_2_4": [
+       29,
+       32
+      ],
+      "sym_3_6": [
+       45,
+       49
+      ],
+      "sym_4_7": [
+       44,
+       49
+      ],
+      "sym_5_8": [
+       41,
+       50
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.9706768840916755,
+     "dp_shipped_sym_2_4_Pa": 1.8636183852513724,
+     "dp_shipped_sym_3_6_Pa": 2.0318871164267662,
+     "dp_shipped_sym_4_7_Pa": 2.1136746510485462,
+     "dp_shipped_sym_5_8_Pa": 2.1930399641782072,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.9706768840916755,
+     "dp_src_neutral_sym_2_4_Pa": 1.8636183852513726,
+     "dp_src_neutral_sym_3_6_Pa": 2.0318871164267662,
+     "dp_src_neutral_sym_4_7_Pa": 2.1136746510485462,
+     "dp_src_neutral_sym_5_8_Pa": 2.1930399641782072,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.9680197351340487,
+     "dp_traction_balanced_sym_2_4_Pa": 1.8609954694985302,
+     "dp_traction_balanced_sym_3_6_Pa": 2.0292818303381184,
+     "dp_traction_balanced_sym_4_7_Pa": 2.11116128006851,
+     "dp_traction_balanced_sym_5_8_Pa": 2.1906269028597825
+    },
+    {
+     "station": 17,
+     "t_deg": 255.0,
+     "kappa_exact_window_per_m": 19.231422493714422,
+     "dp_theory_Pa": 1.3846624195474384,
+     "dp_flux_Pa": 1.6620040886001795,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       31,
+       50
+      ],
+      "sym_2_4": [
+       31,
+       33
+      ],
+      "sym_3_6": [
+       47,
+       50
+      ],
+      "sym_4_7": [
+       48,
+       53
+      ],
+      "sym_5_8": [
+       49,
+       54
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.6838898590784002,
+     "dp_shipped_sym_2_4_Pa": 1.559073260156186,
+     "dp_shipped_sym_3_6_Pa": 1.7362478685935345,
+     "dp_shipped_sym_4_7_Pa": 1.797184354829623,
+     "dp_shipped_sym_5_8_Pa": 1.8596957805605974,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.6838898590784002,
+     "dp_src_neutral_sym_2_4_Pa": 1.5590732601561859,
+     "dp_src_neutral_sym_3_6_Pa": 1.7362478685935345,
+     "dp_src_neutral_sym_4_7_Pa": 1.7971843548296234,
+     "dp_src_neutral_sym_5_8_Pa": 1.8596957805605978,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.6811751549564073,
+     "dp_traction_balanced_sym_2_4_Pa": 1.5564150676530273,
+     "dp_traction_balanced_sym_3_6_Pa": 1.733582473640415,
+     "dp_traction_balanced_sym_4_7_Pa": 1.7946054754669993,
+     "dp_traction_balanced_sym_5_8_Pa": 1.8572120080554178
+    },
+    {
+     "station": 18,
+     "t_deg": 270.0,
+     "kappa_exact_window_per_m": 17.792665878314047,
+     "dp_theory_Pa": 1.2810719432386113,
+     "dp_flux_Pa": 1.8763725065547443,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       40,
+       62
+      ],
+      "sym_2_4": [
+       40,
+       39
+      ],
+      "sym_3_6": [
+       47,
+       62
+      ],
+      "sym_4_7": [
+       42,
+       53
+      ],
+      "sym_5_8": [
+       41,
+       47
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.7827384434750195,
+     "dp_shipped_sym_2_4_Pa": 1.6756018485228512,
+     "dp_shipped_sym_3_6_Pa": 1.7889813122661034,
+     "dp_shipped_sym_4_7_Pa": 1.8614765909362845,
+     "dp_shipped_sym_5_8_Pa": 1.852579113677301,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.78273844347502,
+     "dp_src_neutral_sym_2_4_Pa": 1.6756018485228517,
+     "dp_src_neutral_sym_3_6_Pa": 1.7889813122661038,
+     "dp_src_neutral_sym_4_7_Pa": 1.861476590936285,
+     "dp_src_neutral_sym_5_8_Pa": 1.8525791136773018,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.780063920488634,
+     "dp_traction_balanced_sym_2_4_Pa": 1.6729791732234318,
+     "dp_traction_balanced_sym_3_6_Pa": 1.7863472389627337,
+     "dp_traction_balanced_sym_4_7_Pa": 1.8589290337677586,
+     "dp_traction_balanced_sym_5_8_Pa": 1.8501243985313582
+    },
+    {
+     "station": 19,
+     "t_deg": 285.0,
+     "kappa_exact_window_per_m": 19.231422493714422,
+     "dp_theory_Pa": 1.3846624195474384,
+     "dp_flux_Pa": 1.226022900249578,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       31,
+       51
+      ],
+      "sym_2_4": [
+       31,
+       32
+      ],
+      "sym_3_6": [
+       46,
+       51
+      ],
+      "sym_4_7": [
+       47,
+       54
+      ],
+      "sym_5_8": [
+       48,
+       54
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.68229617391053,
+     "dp_shipped_sym_2_4_Pa": 1.5445398535737067,
+     "dp_shipped_sym_3_6_Pa": 1.7221332480652722,
+     "dp_shipped_sym_4_7_Pa": 1.7863187217039989,
+     "dp_shipped_sym_5_8_Pa": 1.8528469389546935,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.6822961739105304,
+     "dp_src_neutral_sym_2_4_Pa": 1.5445398535737067,
+     "dp_src_neutral_sym_3_6_Pa": 1.7221332480652736,
+     "dp_src_neutral_sym_4_7_Pa": 1.7863187217039997,
+     "dp_src_neutral_sym_5_8_Pa": 1.8528469389546944,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.679651769071068,
+     "dp_traction_balanced_sym_2_4_Pa": 1.5419297817448658,
+     "dp_traction_balanced_sym_3_6_Pa": 1.7195278146243322,
+     "dp_traction_balanced_sym_4_7_Pa": 1.7838059276234606,
+     "dp_traction_balanced_sym_5_8_Pa": 1.8504357292396465
+    },
+    {
+     "station": 20,
+     "t_deg": 300.00000000000006,
+     "kappa_exact_window_per_m": 24.33439384691435,
+     "dp_theory_Pa": 1.752076356977833,
+     "dp_flux_Pa": 1.006301267170251,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       30,
+       47
+      ],
+      "sym_2_4": [
+       30,
+       33
+      ],
+      "sym_3_6": [
+       45,
+       47
+      ],
+      "sym_4_7": [
+       44,
+       48
+      ],
+      "sym_5_8": [
+       43,
+       51
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 1.8447618251711395,
+     "dp_shipped_sym_2_4_Pa": 1.7161418865522418,
+     "dp_shipped_sym_3_6_Pa": 1.9249873579068217,
+     "dp_shipped_sym_4_7_Pa": 2.0322494815096617,
+     "dp_shipped_sym_5_8_Pa": 2.1243343327999726,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 1.8447618251711395,
+     "dp_src_neutral_sym_2_4_Pa": 1.7161418865522415,
+     "dp_src_neutral_sym_3_6_Pa": 1.9249873579068226,
+     "dp_src_neutral_sym_4_7_Pa": 2.0322494815096626,
+     "dp_src_neutral_sym_5_8_Pa": 2.1243343327999735,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 1.8423687490489402,
+     "dp_traction_balanced_sym_2_4_Pa": 1.7137560494881492,
+     "dp_traction_balanced_sym_3_6_Pa": 1.9226291560743793,
+     "dp_traction_balanced_sym_4_7_Pa": 2.0299832893916863,
+     "dp_traction_balanced_sym_5_8_Pa": 2.1221593285582694
+    },
+    {
+     "station": 21,
+     "t_deg": 315.0,
+     "kappa_exact_window_per_m": 36.11100059518001,
+     "dp_theory_Pa": 2.5999920428529606,
+     "dp_flux_Pa": 2.701153601814109,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       24,
+       45
+      ],
+      "sym_2_4": [
+       24,
+       29
+      ],
+      "sym_3_6": [
+       36,
+       45
+      ],
+      "sym_4_7": [
+       36,
+       45
+      ],
+      "sym_5_8": [
+       37,
+       45
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 2.9917245240172576,
+     "dp_shipped_sym_2_4_Pa": 2.8924077776444603,
+     "dp_shipped_sym_3_6_Pa": 3.036131339850657,
+     "dp_shipped_sym_4_7_Pa": 3.101858332800308,
+     "dp_shipped_sym_5_8_Pa": 3.1548325409722215,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 2.9917245240172567,
+     "dp_src_neutral_sym_2_4_Pa": 2.89240777764446,
+     "dp_src_neutral_sym_3_6_Pa": 3.036131339850658,
+     "dp_src_neutral_sym_4_7_Pa": 3.101858332800309,
+     "dp_src_neutral_sym_5_8_Pa": 3.1548325409722215,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 2.9897019268633023,
+     "dp_traction_balanced_sym_2_4_Pa": 2.890384567856839,
+     "dp_traction_balanced_sym_3_6_Pa": 3.0341377363055497,
+     "dp_traction_balanced_sym_4_7_Pa": 3.099966508922152,
+     "dp_traction_balanced_sym_5_8_Pa": 3.153044682359692
+    },
+    {
+     "station": 22,
+     "t_deg": 329.99999999999994,
+     "kappa_exact_window_per_m": 61.4965632092787,
+     "dp_theory_Pa": 4.427752551068066,
+     "dp_flux_Pa": 6.530166869962881,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       21,
+       39
+      ],
+      "sym_2_4": [
+       21,
+       24
+      ],
+      "sym_3_6": [
+       30,
+       39
+      ],
+      "sym_4_7": [
+       30,
+       40
+      ],
+      "sym_5_8": [
+       29,
+       41
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 5.0555604619966115,
+     "dp_shipped_sym_2_4_Pa": 5.074514864378669,
+     "dp_shipped_sym_3_6_Pa": 4.962061594920882,
+     "dp_shipped_sym_4_7_Pa": 4.877729344185788,
+     "dp_shipped_sym_5_8_Pa": 4.804081979713924,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 5.055560461996613,
+     "dp_src_neutral_sym_2_4_Pa": 5.07451486437867,
+     "dp_src_neutral_sym_3_6_Pa": 4.9620615949208835,
+     "dp_src_neutral_sym_4_7_Pa": 4.87772934418579,
+     "dp_src_neutral_sym_5_8_Pa": 4.804081979713925,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 5.054318501576109,
+     "dp_traction_balanced_sym_2_4_Pa": 5.073225275106845,
+     "dp_traction_balanced_sym_3_6_Pa": 4.960828859623608,
+     "dp_traction_balanced_sym_4_7_Pa": 4.876581435534749,
+     "dp_traction_balanced_sym_5_8_Pa": 4.803018358829535
+    },
+    {
+     "station": 23,
+     "t_deg": 344.99999999999994,
+     "kappa_exact_window_per_m": 106.51136275273164,
+     "dp_theory_Pa": 7.668818118196677,
+     "dp_flux_Pa": 5.77243888678196,
+     "n_probe": {
+      "shipped_asymmetric_2_4__3_6": [
+       16,
+       32
+      ],
+      "sym_2_4": [
+       16,
+       22
+      ],
+      "sym_3_6": [
+       26,
+       32
+      ],
+      "sym_4_7": [
+       22,
+       33
+      ],
+      "sym_5_8": [
+       19,
+       38
+      ]
+     },
+     "dp_shipped_shipped_asymmetric_2_4__3_6_Pa": 6.436343626657397,
+     "dp_shipped_sym_2_4_Pa": 6.443550119022997,
+     "dp_shipped_sym_3_6_Pa": 6.3591925090058385,
+     "dp_shipped_sym_4_7_Pa": 6.1666632629801565,
+     "dp_shipped_sym_5_8_Pa": 6.029834009336589,
+     "dp_src_neutral_shipped_asymmetric_2_4__3_6_Pa": 6.436343626657397,
+     "dp_src_neutral_sym_2_4_Pa": 6.443550119022998,
+     "dp_src_neutral_sym_3_6_Pa": 6.35919250900584,
+     "dp_src_neutral_sym_4_7_Pa": 6.166663262980158,
+     "dp_src_neutral_sym_5_8_Pa": 6.029834009336592,
+     "dp_traction_balanced_shipped_asymmetric_2_4__3_6_Pa": 6.436044771140821,
+     "dp_traction_balanced_sym_2_4_Pa": 6.44321362441876,
+     "dp_traction_balanced_sym_3_6_Pa": 6.35890576708451,
+     "dp_traction_balanced_sym_4_7_Pa": 6.1664145381805815,
+     "dp_traction_balanced_sym_5_8_Pa": 6.029623241529178
+    }
+   ]
+  }
+ ],
+ "best_symmetric_probe_set": "sym_2_4",
+ "resolved_subset": {
+  "r_curv_min_dx_threshold": 5.0,
+  "n_levels": 2,
+  "max_abs_bias_pct": 7.698681342800576
+ },
+ "gate_verdicts": {
+  "h1_source_charge_rel_shipped": {
+   "passed": false,
+   "value": 2.653889869962452e-16,
+   "limit": 0.001
+  },
+  "h1_source_charge_rel_neutral": {
+   "passed": false,
+   "value": 0.45588235294117646,
+   "limit": 1e-12
+  },
+  "h2_net_traction_rel_shipped": {
+   "passed": true,
+   "value": 0.0021600562809267966,
+   "limit": 0.01
+  },
+  "h2_net_traction_rel_balanced": {
+   "passed": true,
+   "value": 3.0460384010601684e-17,
+   "limit": 1e-12
+  },
+  "vapour_tail_reduction_source_cure_min": {
+   "passed": false,
+   "value": [
+    0.9999999999999919,
+    1.0000000000000122,
+    0.9999999999999942,
+    0.9999999999999977
+   ],
+   "limit": 4.0
+  },
+  "vapour_tail_reduction_source_cure_max_if_h1_false": {
+   "passed": true,
+   "value": [
+    0.9999999999999919,
+    1.0000000000000122,
+    0.9999999999999942,
+    0.9999999999999977
+   ],
+   "limit": 1.1
+  },
+  "vapour_tail_reduction_traction_cure_min": {
+   "passed": false,
+   "value": [
+    0.9999371920730984,
+    0.9998991586964964,
+    0.9999878936383227,
+    1.0000181607281524
+   ],
+   "limit": 4.0
+  },
+  "h3_tail_resolution_ratio_band": {
+   "passed": true,
+   "value": 1.5853712556604906,
+   "limit": [
+    0.5,
+    2.0
+   ]
+  },
+  "i1_symmetric_probes_beat_shipped": {
+   "passed": true,
+   "value": {
+    "sym": 29.494375690333786,
+    "asym": 38.57390062997057,
+    "best_per_level": [
+     "sym_2_4",
+     "sym_2_4",
+     "sym_2_4",
+     "sym_2_4"
+    ],
+    "per_level_pairs": [
+     {
+      "sym": 29.494375690333786,
+      "asym": 38.57390062997057
+     },
+     {
+      "sym": 10.319437906109338,
+      "asym": 15.93708585717463
+     },
+     {
+      "sym": 7.698681342800576,
+      "asym": 10.73883568273209
+     },
+     {
+      "sym": 3.922441859784584,
+      "asym": 6.796452798144909
+     }
+    ]
+   },
+   "limit": true
+  },
+  "readout_bias_pct_owner_gate": {
+   "passed": false,
+   "value": 29.494375690333786,
+   "limit": 15.0
+  },
+  "readout_bias_pct_claim_line": {
+   "passed": false,
+   "value": 29.494375690333786,
+   "limit": 3.0
+  },
+  "readout_bias_pct_owner_gate_resolved": {
+   "passed": true,
+   "value": 7.698681342800576,
+   "limit": 15.0
+  },
+  "readout_bias_pct_claim_line_resolved": {
+   "passed": false,
+   "value": 7.698681342800576,
+   "limit": 3.0
+  },
+  "flux_bias_change_pp_max": {
+   "passed": true,
+   "value": 0.0,
+   "limit": 0.01
+  }
+ }
+}
