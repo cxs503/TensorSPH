@@ -217,3 +217,24 @@ def test_prior_verdict_is_recorded_not_overwritten():
     """honest-FAIL / honest-NOT_DECIDABLE must stay visible in the new artifact."""
     reg = json.loads((ROOT / "docs/artifacts/case_sph_wedge_entry_2d_regrade/regrade.json").read_text())
     assert reg["ladder_reported_by_previous_rule"]["verdict"] == "NOT_DECIDABLE"
+
+# --------------------------------------------------------------------------- #
+# 5. the case driver's reference handling (verification-debt closure)
+# --------------------------------------------------------------------------- #
+
+def test_driver_refs_derived_wires_the_mission_designated_reference():
+    """The primary driver (run.py refs_derived) must no longer report Z&F as
+    WITHHELD: the open-access Jain et al. (2022) Table-1 COM value is now
+    registered and must be wired in, in the case's q = rho V^2/2 units."""
+    import run as R
+    ref = R.refs_derived()
+    zf = ref["zhao_faltinsen_1993"]
+    assert zf["status"] == "REAL"
+    # the wired value must equal the literature module's COM in q units
+    assert zf["cp_max"] == pytest.approx(L.cp_q_units(
+        L.table_ref(L.load_refs())["cp_max_rho_v2"]["30"]["COM"]))
+    assert zf["cp_max"] == pytest.approx(6.92)
+    # and the rho V^2 form must be the table's own digitised value
+    assert zf["cp_max_rho_v2"] == pytest.approx(3.46)
+    # the Wagner machine-checkable anchor must still be present and unchanged
+    assert ref["wagner"]["cp_max"] == pytest.approx(8.402203300817021)
