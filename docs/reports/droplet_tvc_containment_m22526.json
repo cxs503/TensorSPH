@@ -1,0 +1,233 @@
+{
+  "anchor": "XVAL-SPH-METHOD-SELECTION-2026-11-12",
+  "mission": 22526,
+  "question": "can transport-velocity correction make the dynamic Rayleigh-Lamb drop oscillation a usable measurement?",
+  "gate_pct": 15.0,
+  "arms": [
+    {
+      "arm": "repro_baseline_no_tvc",
+      "radius_over_dx": 10,
+      "tvc_alpha": 0.0,
+      "tvc_every": 1,
+      "requested_periods": 1.0,
+      "particles": 315,
+      "steps": 1040,
+      "period_err_pct": -9.840091236756388,
+      "dp_err_pct": -30.19029663684742,
+      "zero_crossings": 2,
+      "containment_max_r_over_R": 4.2607739303181065,
+      "escaped_particles": 39,
+      "t_first_escape_s": 1.728999999999989,
+      "tvc_shift_peak_over_h": 0.0,
+      "gates": {
+        "contained": false,
+        "multi_period": false,
+        "signal": true
+      },
+      "usable_measurement": false
+    },
+    {
+      "arm": "tvc_a002_e1",
+      "radius_over_dx": 10,
+      "tvc_alpha": 0.02,
+      "tvc_every": 1,
+      "requested_periods": 1.0,
+      "particles": 315,
+      "steps": 1040,
+      "period_err_pct": -22.356327783596864,
+      "dp_err_pct": -70.46933295970025,
+      "zero_crossings": 2,
+      "containment_max_r_over_R": 52.607441049495215,
+      "escaped_particles": 208,
+      "t_first_escape_s": 1.0367499999999943,
+      "tvc_shift_peak_over_h": 0.04504029096330093,
+      "gates": {
+        "contained": false,
+        "multi_period": false,
+        "signal": true
+      },
+      "usable_measurement": false
+    },
+    {
+      "arm": "tvc_a005_e1",
+      "radius_over_dx": 10,
+      "tvc_alpha": 0.05,
+      "tvc_every": 1,
+      "requested_periods": 1.0,
+      "particles": 315,
+      "steps": 1040,
+      "period_err_pct": NaN,
+      "dp_err_pct": -100.0,
+      "zero_crossings": 1,
+      "containment_max_r_over_R": 4.637467846462988,
+      "escaped_particles": 291,
+      "t_first_escape_s": 0.8319999999999957,
+      "tvc_shift_peak_over_h": 0.07425782750218617,
+      "gates": {
+        "contained": false,
+        "multi_period": false,
+        "signal": true
+      },
+      "usable_measurement": false
+    },
+    {
+      "arm": "tvc_a010_e1",
+      "radius_over_dx": 10,
+      "tvc_alpha": 0.1,
+      "tvc_every": 1,
+      "requested_periods": 1.0,
+      "particles": 315,
+      "steps": 1040,
+      "period_err_pct": NaN,
+      "dp_err_pct": -100.0,
+      "zero_crossings": 1,
+      "containment_max_r_over_R": 3.2537686381000372,
+      "escaped_particles": 230,
+      "t_first_escape_s": 0.3932499999999991,
+      "tvc_shift_peak_over_h": 0.14851565500437233,
+      "gates": {
+        "contained": false,
+        "multi_period": false,
+        "signal": true
+      },
+      "usable_measurement": false
+    },
+    {
+      "arm": "tvc_a200_e1",
+      "radius_over_dx": 10,
+      "tvc_alpha": 0.2,
+      "tvc_every": 1,
+      "requested_periods": 1.0,
+      "particles": 315,
+      "steps": 1040,
+      "period_err_pct": NaN,
+      "dp_err_pct": -100.0,
+      "zero_crossings": 1,
+      "containment_max_r_over_R": 3.4337302552579843,
+      "escaped_particles": 284,
+      "t_first_escape_s": 0.20475000000000015,
+      "tvc_shift_peak_over_h": 0.29703131000874466,
+      "gates": {
+        "contained": false,
+        "multi_period": false,
+        "signal": true
+      },
+      "usable_measurement": false
+    },
+    {
+      "arm": "tvc_a025_e1",
+      "radius_over_dx": 10,
+      "tvc_alpha": 0.25,
+      "tvc_every": 1,
+      "requested_periods": 1.0,
+      "particles": 315,
+      "steps": 1040,
+      "period_err_pct": NaN,
+      "dp_err_pct": -100.0,
+      "zero_crossings": 1,
+      "containment_max_r_over_R": 3.4702793217403816,
+      "escaped_particles": 280,
+      "t_first_escape_s": 0.16900000000000012,
+      "tvc_shift_peak_over_h": 0.3712891375109308,
+      "gates": {
+        "contained": false,
+        "multi_period": false,
+        "signal": true
+      },
+      "usable_measurement": false
+    },
+    {
+      "arm": "tvc_a050_e1",
+      "radius_over_dx": 10,
+      "tvc_alpha": 0.5,
+      "tvc_every": 1,
+      "requested_periods": 1.0,
+      "particles": 315,
+      "steps": 1040,
+      "period_err_pct": NaN,
+      "dp_err_pct": -100.0,
+      "zero_crossings": 0,
+      "containment_max_r_over_R": 3.0755875798129404,
+      "escaped_particles": 236,
+      "t_first_escape_s": 0.09100000000000005,
+      "tvc_shift_peak_over_h": 0.9074953940188439,
+      "gates": {
+        "contained": false,
+        "multi_period": false,
+        "signal": false
+      },
+      "usable_measurement": false
+    },
+    {
+      "arm": "tvc_a010_e1_cap005",
+      "radius_over_dx": 10,
+      "tvc_alpha": 0.1,
+      "tvc_every": 1,
+      "requested_periods": 1.0,
+      "particles": 315,
+      "steps": 1040,
+      "period_err_pct": NaN,
+      "dp_err_pct": -100.0,
+      "zero_crossings": 1,
+      "containment_max_r_over_R": 17.149478553257968,
+      "escaped_particles": 221,
+      "t_first_escape_s": 0.42574999999999885,
+      "tvc_shift_peak_over_h": 0.05000000000000002,
+      "gates": {
+        "contained": false,
+        "multi_period": false,
+        "signal": true
+      },
+      "usable_measurement": false
+    },
+    {
+      "arm": "tvc_a025_e1_cap010",
+      "radius_over_dx": 10,
+      "tvc_alpha": 0.25,
+      "tvc_every": 1,
+      "requested_periods": 1.0,
+      "particles": 315,
+      "steps": 1040,
+      "period_err_pct": NaN,
+      "dp_err_pct": -100.0,
+      "zero_crossings": 1,
+      "containment_max_r_over_R": 3.641720413747814,
+      "escaped_particles": 286,
+      "t_first_escape_s": 0.19500000000000015,
+      "tvc_shift_peak_over_h": 0.10000000000000003,
+      "gates": {
+        "contained": false,
+        "multi_period": false,
+        "signal": true
+      },
+      "usable_measurement": false
+    },
+    {
+      "arm": "tvc_a010_e1_lin",
+      "radius_over_dx": 10,
+      "tvc_alpha": 0.1,
+      "tvc_every": 1,
+      "requested_periods": 1.0,
+      "particles": 315,
+      "steps": 1040,
+      "period_err_pct": NaN,
+      "dp_err_pct": -100.0,
+      "zero_crossings": 1,
+      "containment_max_r_over_R": 3.0823496031475863,
+      "escaped_particles": 263,
+      "t_first_escape_s": 0.4289999999999988,
+      "tvc_shift_peak_over_h": 0.14851565500437233,
+      "gates": {
+        "contained": false,
+        "multi_period": false,
+        "signal": true
+      },
+      "usable_measurement": false
+    }
+  ],
+  "counts": {
+    "arms": 10,
+    "tvc_arms": 9,
+    "usable_measurements": 0
+  }
+}
