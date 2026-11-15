@@ -155,6 +155,30 @@ class MorrisConfig:
     sample_fractions: tuple = (0.1, 0.2, 0.4)   # of tau, start-up snapshots
     wall_model: str = "mirror_no_slip"
     slip: str = "no_slip"
+
+    # -- transport-velocity correction (TVC, ported in
+    # ``tensorsph.transport_velocity_correction``), *off* by default so every
+    # published baseline number of this case is reproduced bit for bit.
+    # ``tvc_alpha = None`` disables it; the correction moves positions only
+    # (mass and velocity untouched), exactly as the upstream ``update()``.
+    tvc_alpha: float | None = None
+    tvc_every: int = 1
+    # Weight of a wall (mirror-ghost) neighbour.  Upstream's literal value is
+    # 2.0; a fluid/fluid pair carries ``C_i + C_j = 2`` under
+    # ``NoKernelCorrection``, so 2.0 is what makes the weights uniform -- see
+    # ``benchmarks/xval_sphinx_tvc/channel.py`` for the exact lattice anchor
+    # that discriminates it (1.0 leaves a residual of order 1 at the wall row).
+    tvc_wall_factor: float = 2.0
+    # Particle scope of the correction (upstream's ``ParticleScope``):
+    # "all" = ``AllParticles``, "interior" = only particles more than
+    # ``tvc_interior_rows`` spacings away from either plane, the analogue of
+    # upstream's inner-particle scope.  The mirror ghosts always participate.
+    tvc_scope: str = "all"
+    tvc_interior_rows: float = 1.0
+    # Hard cap on one correction, as a fraction of ``h`` (upstream's
+    # ``TruncatedLinear`` limiter caps at ``h``; ``None`` = ``NoLimiter``).
+    tvc_max_shift_fraction: float | None = None
+
     device: str = "cpu"
 
     # -- derived ---------------------------------------------------------- #
@@ -421,6 +445,70 @@ def _periodic_images(pos, length: float):
     return torch.cat((pos, pos + shift, pos - shift), dim=0)
 
 
+def channel_tvc_shift(pos, mass, cfg: MorrisConfig, wall_factor: float | None = None):
+    """One TVC application on the periodic channel: shift + diagnostics.
+
+    The correction is a *sum over neighbours*, so the two truncated directions
+    of this case have to be completed in the same way the SPH solver does it:
+    ``x`` periodicity through the two periodic images, the two planes through
+    the mirror ghosts (which is the boundary condition this case runs with, see
+    :mod:`tensorsph.wall_mirror`).  The three copies of every fluid particle are
+    then recombined, i.e. the neighbour sum of copy ``k`` is added to the real
+    particle (the standard periodic-image quadrature).
+
+    Returns a dict with the shift of the real particles and the measured
+    diagnostics; nothing is assumed about its magnitude.
+    """
+    from .transport_velocity_correction import kernel_gradient_integral
+
+    wall_factor = (cfg.tvc_wall_factor if wall_factor is None
+                   else float(wall_factor))
+    h = cfg.h
+    volume = mass / cfg.rho0
+    shift = torch.tensor([cfg.length, 0.0], dtype=pos.dtype, device=pos.device)
+    pos_ext = torch.cat((pos, pos + shift, pos - shift), dim=0)
+    mass_ext = mass.repeat(3)
+    planes = [(0.0, +1), (cfg.height, -1)]
+    ghost_pos, _, ghost_mass = plane_walls(pos_ext, torch.zeros_like(pos_ext),
+                                          mass_ext, planes, 2.0 * h,
+                                          slip=cfg.slip)
+    n_ext = int(pos_ext.shape[0])
+    n_ghost = int(ghost_pos.shape[0])
+    all_pos = torch.cat((pos_ext, ghost_pos), dim=0)
+    all_vol = torch.cat((volume.repeat(3), ghost_mass / cfg.rho0), dim=0)
+    g = kernel_gradient_integral(all_pos, all_vol, h, pairs=None,
+                                 wall_count=n_ghost, wall_factor=wall_factor)
+    # The real cloud (first block) is the only one whose own neighbourhood is
+    # complete: its left neighbours come from the image at ``x - L`` and its
+    # right ones from the image at ``x + L``.  *Summing* the three copies instead
+    # adds the two images, whose own neighbourhoods are truncated by the extent
+    # of the cloud, and leaves a spurious h|grad-1| = 1.17 in the two columns
+    # next to the periodic seam -- the perfect-lattice anchor exposes it, see
+    # ``tests/test_tvc_channel_leg.py``.
+    g_real = g[:pos.shape[0]]
+    alpha = cfg.tvc_alpha
+    delta = (float(alpha) * h * h) * g_real
+    clipped = 0.0
+    if cfg.tvc_max_shift_fraction is not None:
+        cap = float(cfg.tvc_max_shift_fraction) * h
+        norm = torch.linalg.vector_norm(delta, dim=1)
+        over = norm > cap
+        clipped = float(over.to(norm.dtype).mean())
+        delta = delta * torch.where(over, cap / norm.clamp_min(1e-300),
+                                    torch.ones_like(norm))[:, None]
+    return {
+        "shift": delta,
+        "gradient_integral": g_real,
+        "h_grad1_max": float((h * torch.linalg.vector_norm(g_real, dim=1)).max()),
+        "h_grad1_median": float((h * torch.linalg.vector_norm(g_real, dim=1)).median()),
+        "shift_max_over_dx": float(torch.linalg.vector_norm(delta, dim=1).max()
+                                   / cfg.dx) if delta.numel() else 0.0,
+        "clipped_fraction": clipped,
+        "wall_factor": wall_factor,
+        "n_ghost": n_ghost,
+    }
+
+
 def _bin_rows(pos, u_mean, dx: float, height: float) -> list:
     """Average ``u_x`` on the lattice rows (the flow is invariant in ``x``)."""
     y = np.asarray(pos[:, 1].detach().cpu().numpy(), dtype=np.float64)
@@ -472,6 +560,10 @@ def run_case(cfg: MorrisConfig, device=None, verbose: bool = False) -> dict:
     n_avg = 0
     wall_clock = time.time()
     n_ghost = 0
+    tvc_count = 0
+    tvc_shift_peak = 0.0
+    tvc_hgrad_peak = 0.0
+    tvc_clip_peak = 0.0
     for step in range(steps):
         pos_ext = _periodic_images(pos, cfg.length)
         vel_ext = torch.cat((vel, vel, vel), dim=0)
@@ -506,6 +598,24 @@ def run_case(cfg: MorrisConfig, device=None, verbose: bool = False) -> dict:
         vel = vel + dt * acc
         pos = pos + dt * vel
         pos[:, 0] = torch.remainder(pos[:, 0], cfg.length)
+        if cfg.tvc_alpha is not None and step % max(1, cfg.tvc_every) == 0:
+            # Positions only: mass and velocity are untouched by the
+            # correction, exactly as upstream's ``update()``.
+            tvc = channel_tvc_shift(pos, mass, cfg)
+            delta = tvc["shift"]
+            if cfg.tvc_scope != "all":
+                if cfg.tvc_scope != "interior":
+                    raise ValueError(f"unknown tvc_scope {cfg.tvc_scope!r}")
+                margin = cfg.tvc_interior_rows * cfg.dx
+                y = pos[:, 1]
+                active = (y > margin) & (y < cfg.height - margin)
+                delta = delta * active[:, None].to(delta.dtype)
+            pos = pos + delta
+            pos[:, 0] = torch.remainder(pos[:, 0], cfg.length)
+            tvc_count += 1
+            tvc_shift_peak = max(tvc_shift_peak, tvc["shift_max_over_dx"])
+            tvc_hgrad_peak = max(tvc_hgrad_peak, tvc["h_grad1_max"])
+            tvc_clip_peak = max(tvc_clip_peak, tvc["clipped_fraction"])
 
         if step % max(1, steps // 8) == 0 or step == steps - 1:
             ux = vel[:, 0]
@@ -532,6 +642,17 @@ def run_case(cfg: MorrisConfig, device=None, verbose: bool = False) -> dict:
     return {
         "n_fluid": n,
         "n_ghost": n_ghost,
+        "final_positions": pos.detach().clone(),
+        "mass": mass.detach().clone(),
+        "tvc": {
+            "enabled": cfg.tvc_alpha is not None,
+            "alpha": None if cfg.tvc_alpha is None else float(cfg.tvc_alpha),
+            "applications": int(tvc_count),
+            "wall_factor": float(cfg.tvc_wall_factor),
+            "shift_max_over_dx": float(tvc_shift_peak),
+            "h_grad1_max": float(tvc_hgrad_peak),
+            "clipped_fraction_max": float(tvc_clip_peak),
+        },
         "dt": dt,
         "steps": steps,
         "n_averaged_samples": n_avg,
