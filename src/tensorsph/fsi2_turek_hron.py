@@ -1055,10 +1055,15 @@ class FSI2State:
     cylinder_normals: Optional[torch.Tensor] = None
     #: tributary arc length per cylinder station [m]
     cylinder_tributary: Optional[torch.Tensor] = None
-    #: inflow volume accumulated since the last injected column, in metres of
-    #: channel travel (``U_mean * dt`` summed).  Drives the open-boundary
-    #: injection by mass flux instead of by a geometric front.
+    #: mean over the inlet rows of the per-row inflow accumulators, in metres of
+    #: channel travel.  Kept as a scalar for logging/back-compat; the injection
+    #: itself is driven by ``inflow_deficit_rows``.
     inflow_deficit: float = 0.0
+    #: per-row (per-streamline) inflow volume accumulated since the last particle
+    #: laid in that row, in metres.  Row ``j`` sits at ``y_j = (j + 1/2) dx`` and
+    #: carries its local inlet speed ``u(y_j)``, so the injected mass flux equals
+    #: the flux the inlet profile delivers on that streamline.
+    inflow_deficit_rows: Optional[torch.Tensor] = None
 
 
 def initial_state(case: FSI2Case) -> FSI2State:
@@ -1120,9 +1125,13 @@ def _apply_open_boundaries(state: "FSI2State", case: FSI2Case,
     particle methods:
 
     * particles that reach the downstream end (``x > L - dx/4``) are deleted;
-    * a fresh column of fluid particles is laid at ``x = dx/2`` with the
-      parabolic inlet velocity once the *prescribed inflow volume* has filled
-      one lattice column, ``sum(U_mean dt) >= dx``.
+    * a fresh particle is laid at ``x = dx/2`` on inlet row ``j`` once that
+      row's *locally delivered* inflow volume has filled one spacing,
+      ``sum(u(y_j) dt) >= dx``.  The clock is per streamline, not global: with a
+      single global ``U_mean`` clock the near-wall rows (``u = 0.14 U_mean`` at
+      ``y = dx/2``) are over-fed by ``U_mean / u(y_j)`` ~ 7x and their particles
+      stack up at the inlet corner, which is a density/pressure spike, not the
+      benchmark's through-flow (``redistribute defect``, this round).
 
     The second rule used to be geometric -- "inject when ``min x > 1.5 dx``" --
     and that clock is pinned by the slowest particle in the domain: the inlet
@@ -1154,25 +1163,37 @@ def _apply_open_boundaries(state: "FSI2State", case: FSI2Case,
         return {"injected": 0, "removed": removed}
 
     dt = case.dt() if dt is None else float(dt)
-    state.inflow_deficit += case.inlet_u_mean() * dt
-    if state.inflow_deficit >= dx:
-        state.inflow_deficit -= dx
-        ys = torch.arange(0.5 * dx, case.channel_height, dx,
-                          dtype=state.fluid_pos.dtype, device=state.fluid_pos.device)
-        xs = torch.full_like(ys, 0.5 * dx)
-        col = torch.stack((xs, ys), dim=-1)
-        # keep the inlet column clear of the cylinder / beam footprint
+    dtype, device = state.fluid_pos.dtype, state.fluid_pos.device
+    ys = torch.arange(0.5 * dx, case.channel_height, dx, dtype=dtype, device=device)
+    n_rows = int(ys.numel())
+    if state.inflow_deficit_rows is None or state.inflow_deficit_rows.numel() != n_rows:
+        state.inflow_deficit_rows = torch.zeros(n_rows, dtype=dtype, device=device)
+    # local inlet speed of every row: u(y_j) = U_max 4 y (H - y) / H^2
+    H = case.channel_height
+    u_row = case.inlet_u_max * 4.0 * ys * (H - ys) / (H * H)
+    state.inflow_deficit_rows += u_row * dt * _inlet_ramp(case, state.time)
+    fired = state.inflow_deficit_rows >= dx
+    if bool(fired.any()):
         cx, cy = case.cylinder_x, case.cylinder_y
         r = 0.5 * case.cylinder_d + 0.5 * dx
-        col = col[((col[:, 0] - cx) ** 2 + (col[:, 1] - cy) ** 2) > r ** 2]
-        if col.shape[0]:
-            vel = set_inlet_velocity(case, col) * _inlet_ramp(case, state.time)
-            mass = torch.full((col.shape[0],), di.lattice_mass_unit(case.fluid_config()),
-                              dtype=state.fluid_pos.dtype, device=state.fluid_pos.device)
-            state.fluid_pos = torch.cat((state.fluid_pos, col), dim=0)
-            state.fluid_vel = torch.cat((state.fluid_vel, vel), dim=0)
-            state.fluid_mass = torch.cat((state.fluid_mass, mass), dim=0)
-            injected = int(col.shape[0])
+        while bool(fired.any()):
+            state.inflow_deficit_rows = torch.where(
+                fired, state.inflow_deficit_rows - dx, state.inflow_deficit_rows)
+            rows = torch.nonzero(fired, as_tuple=False).flatten()
+            col = torch.stack((torch.full((rows.numel(),), 0.5 * dx,
+                                          dtype=dtype, device=device), ys[rows]), dim=-1)
+            # keep the inlet row clear of the cylinder / beam footprint
+            col = col[((col[:, 0] - cx) ** 2 + (col[:, 1] - cy) ** 2) > r ** 2]
+            if col.shape[0]:
+                vel = set_inlet_velocity(case, col) * _inlet_ramp(case, state.time)
+                mass = torch.full((col.shape[0],), di.lattice_mass_unit(case.fluid_config()),
+                                  dtype=dtype, device=device)
+                state.fluid_pos = torch.cat((state.fluid_pos, col), dim=0)
+                state.fluid_vel = torch.cat((state.fluid_vel, vel), dim=0)
+                state.fluid_mass = torch.cat((state.fluid_mass, mass), dim=0)
+                injected += int(col.shape[0])
+            fired = state.inflow_deficit_rows >= dx
+    state.inflow_deficit = float(state.inflow_deficit_rows.mean())
 
     # imposed inlet velocity in the inlet buffer zone
     zone = case.inlet_zone * dx

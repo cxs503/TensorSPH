@@ -28,6 +28,11 @@ def _case(dx: float = 0.05) -> FSI2Case:
     case.dx = dx
     case.open_boundaries = True
     case.n_beam_nodes = 8
+    # The start-up ramp is a separate feature and delivers *zero* flux at
+    # t = 0, so it would mask the clock invariant these tests pin.  Disable it
+    # here (the ramped flux is guarded separately in
+    # ``test_injected_flux_matches_the_ramped_inlet_profile``).
+    case.inlet_ramp_time = 0.0
     return case
 
 
