@@ -1,0 +1,24 @@
+{
+ "requested": [
+  0.08,
+  0.05,
+  0.04,
+  0.03
+ ],
+ "valid": [
+  0.05,
+  0.04,
+  0.03
+ ],
+ "rejected": [
+  {
+   "dx": 0.08,
+   "valid": false,
+   "why": "obstacle length 0.161 m is under-resolved at dx=0.08"
+  }
+ ],
+ "max_admissible_dx": 0.05366666666666667,
+ "n_levels": 3,
+ "usable": true,
+ "note": "rung admissibility judged by tensorsph.kleefsman_obstacle_3d.validate_case; dx=0.08 (cj3758) rejected at 0 s of compute"
+}
