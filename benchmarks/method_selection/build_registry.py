@@ -65,6 +65,16 @@ def x_conduction(doc: dict) -> float:
     return abs(float(doc["main_run"]["max_normalised_error"])) * 100.0
 
 
+def x_conduction_2d(doc: dict) -> float:
+    """Max normalised field error of the 2-D mode-decay family (RK4, 2-D-calibrated)."""
+    return abs(float(doc["main_run"]["max_normalised_error"])) * 100.0
+
+
+def x_conduction_2d_one_d_calibration(doc: dict) -> float:
+    """The same 2-D family with the *1-D* calibration factor -- a documented misuse."""
+    return abs(float(doc["arms_summary"]["lattice_1d_worst_error"])) * 100.0
+
+
 def x_laplace_pressure(doc: dict) -> float:
     return abs(float(doc["laplace"]["rel_error_pct"]))
 
@@ -269,6 +279,41 @@ SOURCES: tuple[Source, ...] = (
         gate_pct=3.0,
         path="benchmarks/case_conduction_1d/result.json",
         fn=x_conduction,
+    ),
+    Source(
+        extractor="x_conduction_2d",
+        method="heat_conduction_operator",
+        case="CASE-SPH-CONDUCTION-2D (Fourier mode decay)",
+        quantity="max normalised field error vs exp(-alpha (kx^2+ky^2) t) cos(kx x) "
+                 "cos(ky y) on a periodic square, n=128, RK4 time stepping, 2-D "
+                 "k->0 lattice calibration (gate 3 %)",
+        gate_pct=3.0,
+        path="benchmarks/case_conduction_2d/result.json",
+        fn=x_conduction_2d,
+        precondition=(
+            "second benchmark family for this operator (the 1-D erfc similarity "
+            "profile is the first); the operator is the shipped Cleary-Monaghan pair "
+            "sum, lifted to 2-D with the *vector* pair distance. The calibration is "
+            "redone in 2-D -- the 1-D lattice factor does not transfer, see the "
+            "refuted record and docs/case-conduction-2d.md"
+        ),
+    ),
+    Source(
+        extractor="x_conduction_2d_one_d_calibration",
+        method="heat_conduction_operator",
+        case="CASE-SPH-CONDUCTION-2D (1-D calibration lifted to 2-D)",
+        quantity="same family and resolution, but the 1-D lattice factor (1.0218) "
+                 "applied in 2-D: ~870 % -- O(dx) dimensional mismatch",
+        gate_pct=3.0,
+        path="benchmarks/case_conduction_2d/result.json",
+        fn=x_conduction_2d_one_d_calibration,
+        status="refuted",
+        precondition=(
+            "refuted by construction: the raw 2-D operator's effective diffusivity is "
+            "alpha_eff/alpha ~ 1.93 dx (O(dx)), so a 1-D dimensional factor mis-scales "
+            "the 2-D run by ~1/dx. Kept in the registry so the trap is on the record "
+            "and cannot be rediscovered as an accuracy claim"
+        ),
     ),
     Source(
         extractor="x_laplace_pressure",

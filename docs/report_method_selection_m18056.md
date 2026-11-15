@@ -99,6 +99,8 @@ python -m tensorsph.method_selection --json /tmp/prof.json     # CLI 判型（�
 | `wcsph_delta_sph` | CASE-WAVE-FLUME | max gauge wave-height error vs piston-transfer target (H/dx=3.2, delta=0.1) | 2.968 | 10 | ✔ | ✔ | `docs/reports/wave_flume_numbers.json` |
 | `compressible_riemann` | CASE-SPH-SOD-SHOCK-COMPRESSIBLE | max abs relative error over the gated shock quantities (rho*, p*, u*, wave positions) | 0.7768 | 5 | ✔ | ✔ | `benchmarks/case_sod_shock_compressible/result.json` |
 | `heat_conduction_operator` | CASE-SPH-CONDUCTION-1D | max normalised error vs the erfc similarity solution | 0.0002181 | 3 | ✔ | ✔ | `benchmarks/case_conduction_1d/result.json` |
+| `heat_conduction_operator` | CASE-SPH-CONDUCTION-2D (Fourier mode decay) | max normalised field error vs exp(-alpha (kx^2+ky^2) t) cos(kx x) cos(ky y) on a periodic square, n=128, RK4 time stepping, 2-D k->0 lattice calibration (gate 3 %) | 0.1504 | 3 | ✔ | ✔ | `benchmarks/case_conduction_2d/result.json` |
+| `heat_conduction_operator` | CASE-SPH-CONDUCTION-2D (1-D calibration lifted to 2-D) | same family and resolution, but the 1-D lattice factor (1.0218) applied in 2-D: ~870 % -- O(dx) dimensional mismatch | 834.6 | 3 | ✘ | ✘ | `benchmarks/case_conduction_2d/result.json` |
 | `csf_surface_tension` | CASE-LAPLACE-SPH | Laplace pressure jump rel. error (delta_p vs 2*sigma/R) | 5.599 | 15 | ✔ | ✔ | `benchmarks/laplace_law/validation_report.json` |
 | `csf_surface_tension` | CASE-LAPLACE-SPH (consistent CSF) | delta_s-weighted mean curvature rel. error | 23.8 | 15 | ✘ | ✘ | `benchmarks/csf_consistent/validation_report.json` |
 | `density_diffusion` | plane density wave decay | max relative error of the decay rate vs the analytic gamma = D k^2 | 1.021 | 3 | ✔ | ✔ | `benchmarks/density_diffusion_decay/decay_rate.json` |
@@ -123,7 +125,7 @@ python -m tensorsph.method_selection --json /tmp/prof.json     # CLI 判型（�
 | `transport_velocity_correction` | XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.03 m) | mean relative error of the front position Z/a vs the Martin & Moyce (1952) digitised points, alpha=0.10 over all particles | 10.81 | 15 | ✔ | ✔ | `docs/xval_sphinx_tvc/data/grid_dx003.json` |
 | `transport_velocity_correction` | XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.04 m) | same quantity on the coarser rung: records the alpha=0.10 arm is resolution-sensitive (kept in the registry, fails the owner standard) | 16.96 | 15 | ✘ | ✘ | `docs/xval_sphinx_tvc/data/grid_dx004.json` |
 
-登记记录 26 条，覆盖 10 个方法；最坏误差 32.65%。缺失源文件：无。
+登记记录 28 条，覆盖 10 个方法；最坏误差 834.6%。缺失源文件：无。
 
 
 ### 3.2 路由矩阵（候选算例画像 → 选定方法）
@@ -135,7 +137,7 @@ python -m tensorsph.method_selection --json /tmp/prof.json     # CLI 判型（�
 | capillary droplet (Laplace law) | csf_surface_tension | SELECTED | 5.987 | 23.8 | ✘ | density_diffusion=SELECTED, compression_regularization=SELECTED |
 | planar Couette channel | isph_projection | SELECTED | 0.8666 | 0.8666 | ✔ | - |
 | Gresho vortex (smooth inviscid, periodic) | （无） | NONE | - | - | ✘ | - |
-| 1-D transient conduction | heat_conduction_operator | SELECTED | 0.0002181 | 0.0002181 | ✔ | - |
+| 1-D transient conduction | heat_conduction_operator | SELECTED | 0.1504 | 0.1504 | ✔ | - |
 | breaking wave over a slope | wcsph_delta_sph | SELECTED | 2.968 | 16.96 | ✘ | density_diffusion=SELECTED, transport_velocity_correction=SELECTED, particle_shifting=SELECTED, compression_regularization=SELECTED |
 
 7 个画像中 6 个给出证据背书的方案；与预期不一致者：无。
@@ -154,7 +156,7 @@ python -m tensorsph.method_selection --json /tmp/prof.json     # CLI 判型（�
 | `compression_regularization` | 5.533 | 5.533 | +0 | - | 1 | ✔ |
 | `csf_surface_tension` | 5.987 | 23.8 | +17.81 | - | 3 | ✘ |
 | `density_diffusion` | 1.021 | 1.021 | +0 | - | 2 | ✔ |
-| `heat_conduction_operator` | 0.0002181 | 0.0002181 | +0 | - | 1 | ✔ |
+| `heat_conduction_operator` | 0.1504 | 0.1504 | +0 | - | 2 | ✔ |
 | `isph_projection` | 0.8666 | 0.8666 | +0 | - | 2 | ✔ |
 | `particle_shifting` | 8.833 | 8.833 | +0 | - | 1 | ✔ |
 | `transport_velocity_correction` | 10.81 | 16.96 | +6.152 | - | 2 | ✘ |
