@@ -64,14 +64,14 @@ Reference: the periodic state of the same equation,
 | 12 | 4.7 | 1.625e-04 | 11851 | 96 | 144 | +0.25 % | 0.58 % | -0.08 deg (0.09 % of pi/2) | 0.34 % of pi/2 |
 | 16 | 6.3 | 1.219e-04 | 15801 | 128 | 144 | +0.07 % | 0.39 % | +0.12 deg (0.13 % of pi/2) | 0.21 % of pi/2 |
 
-At the finest resolution the centre-line amplitude is 0.7354 m/s against 0.7348 m/s analytic, and the centre-line phase is -0.95 deg against -0.96 deg.
+At the finest resolution the centre-line amplitude is 0.7354 m/s against 0.7348 m/s analytic, and the centre-line phase is -54.70 deg against -54.81 deg.
 
 ### 3.1 Frequency discrimination (G6)
 
 | quantity | measured | analytic |
 |---|---|---|
 | A(omega=31.4) / A(omega=13.0) at centre | 0.4892 | 0.4851 |
-| phase difference between the two frequencies [deg] | -0.39 | -0.39 |
+| phase difference between the two frequencies [deg] | -22.33 | -22.14 |
 
 A quasi-steady solver — one that follows `g(t)` with the steady parabola —
 would return a ratio of 1.00. The
