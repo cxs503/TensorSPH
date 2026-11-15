@@ -755,3 +755,104 @@ def _control(state, cfg: LakeConfig, mass: torch.Tensor) -> dict:
             "p_max": report["p_max"],
             "rho_over_rho0_min": report["rho_over_rho0_min"],
             "rho_over_rho0_max": report["rho_over_rho0_max"]}
+
+# ---------------------------------------------------------------------------
+# Gate tables of the case-pool anchor
+# ---------------------------------------------------------------------------
+# Every threshold is relative to the *analytic identity* (``u = 0``, ``eta =
+# const``); there is no experimental tolerance and no fitted constant, so the
+# ``1e-9`` limit below is "machine precision, with room for the double
+# precision pair sums" rather than a physics claim.  The tables live here (not
+# in the runner) so that the runner, the freeze tool and the evidence tests all
+# grade the *same* thresholds: a test that re-graded a shipped record with its
+# own copy of the table could drift from the runner and still pass.
+
+#: Wall-bounded tank: ``G2``/``G3``/``G4``/``G5`` are expected to FAIL (honest
+#: FAIL, see ``docs/verification_lake_at_rest.md``); ``G1`` and the controls pass.
+GATES_WALL = [
+    ("G1", "vertical equilibrium max|a_y|/g", 1.0e-9, "lt"),
+    ("G2", "horizontal residual, side-wall band max|a_x|/g", 1.0e-9, "lt"),
+    ("G3", "rest preservation max|v|/c0", 1.0e-9, "lt"),
+    ("G4", "surface invariance max|dy|/H", 1.0e-9, "lt"),
+    ("G5", "density invariance max|drho|/rho0", 1.0e-9, "lt"),
+    ("G3i", "interior rest max|v|/c0 (>= 2h from side walls)", 1.0e-9, "lt"),
+    ("G4i", "interior surface invariance max|dy|/H", 1.0e-9, "lt"),
+    ("G6", "negative control uniform lattice mass max|a|/g", 0.5, "gt"),
+    ("G7", "negative control analytic profile max|a_y|/g", 0.05, "gt"),
+    ("G8", "linear response r(1e-4)/r(1e-3)", 0.05, "gt"),
+    ("G8", "linear response r(1e-4)/r(1e-3)", 0.15, "lt"),
+]
+
+#: Laterally periodic tank: the horizontal equation is part of the problem
+#: instead of a side-wall artefact, so ``G2`` is a maximum over every particle
+#: and there is no wall band to single out.  This is the configuration where the
+#: anchor's machine-precision tolerance is met.
+GATES_PERIODIC = [
+    ("G1", "vertical equilibrium max|a_y|/g", 1.0e-9, "lt"),
+    ("G2", "horizontal equilibrium max|a_x|/g", 1.0e-9, "lt"),
+    ("G3", "rest preservation max|v|/c0", 1.0e-9, "lt"),
+    ("G4", "surface invariance max|dy|/H", 1.0e-9, "lt"),
+    ("G5", "density invariance max|drho|/rho0", 1.0e-9, "lt"),
+    ("G6", "negative control uniform lattice mass max|a|/g", 0.5, "gt"),
+    ("G7", "negative control analytic profile max|a_y|/g", 0.05, "gt"),
+    ("G8", "linear response r(1e-4)/r(1e-3)", 0.05, "gt"),
+    ("G8", "linear response r(1e-4)/r(1e-3)", 0.15, "lt"),
+]
+
+
+def gate_table(periodic_x: bool) -> list:
+    """The gate table that applies to a run geometry."""
+    return GATES_PERIODIC if periodic_x else GATES_WALL
+
+
+def evaluate_gates(result: dict) -> dict:
+    """Grade a :func:`run_case` record against the anchor's gate table.
+
+    Pure function of the record: no re-simulation, so the shipped evidence of
+    the case can be re-graded where it is read (a report whose rows disagree
+    with its own numbers fails).
+    """
+    equilibrium = result["equilibrium"]
+    rest = result["rest"]
+    controls = result["controls"]
+    perturb = result["perturbation_response"]
+    ratio = None
+    small = perturb.get(1.0e-4) or perturb.get("0.0001")
+    large = perturb.get(1.0e-3) or perturb.get("0.001")
+    if small and large:
+        ratio = small / large
+    periodic = bool(result["geometry"].get("periodic_x"))
+    gates = gate_table(periodic)
+    measured = {
+        "G1": equilibrium["a_max_over_g"],
+        "G2": (equilibrium["a_max_over_g_horizontal"] if periodic
+               else equilibrium["a_max_over_g_horizontal_wall_band"]),
+        "G3": rest["max_v_over_c0"],
+        "G4": rest["max_dy_over_H"],
+        "G5": rest["max_drho_over_rho0"],
+        "G6": controls["uniform_lattice_mass"]["a_max_over_g"],
+        "G7": controls["analytic_hydrostatic_profile"]["a_max_over_g"],
+        "G8": ratio,
+        "G3i": rest["max_v_over_c0_interior"],
+        "G4i": rest["max_dy_over_H_interior"],
+    }
+    rows = []
+    for identifier, description, threshold, comparison in gates:
+        value = measured[identifier]
+        if value is None:
+            passed = None
+        elif comparison == "lt":
+            passed = bool(value < threshold)
+        else:
+            passed = bool(value > threshold)
+        rows.append({"gate": identifier, "quantity": description,
+                     "measured": value, "threshold": threshold,
+                     "comparison": comparison, "passed": passed})
+    # G6/G8 need both of their two-sided rows; report the pair as one verdict.
+    verdict = {}
+    for row in rows:
+        current = verdict.get(row["gate"])
+        verdict[row["gate"]] = row["passed"] if current is None else (
+            bool(current) and bool(row["passed"]))
+    return {"rows": rows, "verdicts": verdict,
+            "all_passed": all(v for v in verdict.values() if v is not None)}

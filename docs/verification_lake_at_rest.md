@@ -1,5 +1,14 @@
 # Lake at rest: does the shipped WCSPH hold a still lake still?
 
+> **Evidence channel (m21078).** The numbers in this document are now
+> machine-decidable on a fresh checkout: the text records ship in
+> `tests/data/lake_at_rest/` (manifest + re-graded gate table) and
+> `tests/test_lake_at_rest_evidence.py` re-derives the geometry and the
+> `G7` control from source. See
+> `docs/verification_lake_at_rest_evidence_channel.md`. Note there: the
+> rounding-level entries are reproducible as a *scale*, not as digits
+> (run-to-run spread ~1.3x on `max|a|/g`).
+
 > **Update (2026-11-14, m20689).** The FAIL below stands for this wall-bounded
 > tank. The truncation that causes it is now removed rather than argued about:
 > `LakeConfig(periodic_x=True)` drives the shipped `rhs` with a minimum image in
