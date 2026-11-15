@@ -32,6 +32,9 @@ transport_velocity_correction.hpp``                                   da3979...
 ``.../Dambreak.cpp``                                                  39db69...
   reference test case and time-stepping context (no TVC block in the current
   master example -- see the difference table in the report)
+``src/shared/common/common_functors.h``                               c6ccd39c...
+  the limiter objects ``NoLimiter`` / ``TruncatedLinear`` (transcribed in
+  :func:`no_limiter` / :func:`truncated_linear`)
 ===========================  ========================================  ========
 
 Sign mapping (derivation, not a quotation)
@@ -74,10 +77,18 @@ What this module does *not* do
   point of the formulation).
 * The adaptive-smoothing-length rescaling ``h_ratio`` of upstream is not
   ported (TensorSPH has a single ``h``); the ratio is 1 in every run here.
-* The ``TruncatedLinear`` limiter variants of upstream are exposed as a
-  pluggable callable but not shipped: the upstream default is ``NoLimiter``
-  for the complex types in ``transport_velocity_correction.h`` and that is
-  what the cross-validation runs use.
+* Two of upstream's limiter objects are shipped -- ``no_limiter``
+  (``NoLimiter``) and ``truncated_linear`` (``TruncatedLinear``, slope 100) --
+  because both are in use in upstream's own examples: ``NoLimiter`` is the
+  limiter of ``TransportVelocityCorrectionComplex`` (and its ``Corrected`` /
+  ``Adaptive`` siblings), ``TruncatedLinear`` of the three
+  ``TransportVelocityLimitedCorrection*Complex`` aliases used by the corrected
+  lid-driven cavity, the non-Newtonian lid-driven cavity and the throat
+  example.  Upstream's ``common_functors.h`` in this revision defines exactly
+  those two limiters and nothing else (there is no ``ModifiedTruncatedLinear``
+  in it -- an earlier revision of this docstring said there was, from memory;
+  the fetched source is the authority).  Effect of the limiter, measured:
+  ``docs/xval_sphinx_tvc/LIMITER_LEG.md``.
 
 References
     Adami, S., Hu, X.Y. & Adams, N.A. (2013), "A transport-velocity
@@ -101,9 +112,11 @@ __all__ = [
     "TVCResult",
     "kernel_gradient_integral",
     "no_limiter",
+    "truncated_linear",
     "transport_velocity_correction",
     "SPHINXSYS_DEFAULT_COEFFICIENT",
     "SPHINXSYS_SINGLE_STEP_FRACTION",
+    "TRUNCATED_LINEAR_DEFAULT_SLOPE",
 ]
 
 #: ``TransportVelocityCorrection(..., Real coefficient = 0.2)`` in the upstream
@@ -150,6 +163,56 @@ class TVCResult:
 def no_limiter(squared_norm: torch.Tensor) -> torch.Tensor:
     """``NoLimiter`` of upstream: the correction is never damped."""
     return torch.ones_like(squared_norm)
+
+
+#: ``TruncatedLinear(Real slope = 100.0)`` -- ``common_functors.h``.
+TRUNCATED_LINEAR_DEFAULT_SLOPE = 100.0
+
+
+def truncated_linear(
+    slope: float = TRUNCATED_LINEAR_DEFAULT_SLOPE,
+) -> Callable[[torch.Tensor], torch.Tensor]:
+    """Upstream ``TruncatedLinear`` limiter, as a callable factory.
+
+    ``common_functors.h``::
+
+        class TruncatedLinear : public Limiter
+        {
+            Real slope_;
+          public:
+            TruncatedLinear(Real slope = 100.0) : Limiter(), slope_(slope) {};
+            Real operator()(Real dimensionless_measure) const
+            { return SMIN(slope_ * dimensionless_measure, Real(1)); };
+        };
+
+    with ``SMIN(a, b) = (a <= b ? a : b)`` (``scalar_functions.h``).  The
+    argument is ``h_ref**2 |inconsistency_i|**2`` (``|grad-1|`` squared times
+    ``h_ref`` squared, dimensionless), so the limiter is
+
+        ``min(slope * h_ref**2 |g_i|**2, 1)``
+
+    -- it is *not* a cap on large inconsistencies: for ``h_ref |g_i| >=
+    sqrt(1/slope) = 0.1`` (slope 100) it returns 1 and leaves upstream's
+    uncorrected displacement, while below that threshold it *attenuates* the
+    correction quadratically, i.e. it is a noise floor that keeps the
+    correction from acting on barely-inconsistent (well ordered) regions.
+    The free-surface branch of the operator sits far above the threshold
+    (``|g| h_ref = 30/(7 pi) ~ 1.364`` on the production lattice, see
+    ``docs/xval_sphinx_tvc/SURFACE_ANCHOR.md``), so a free-surface run is
+    limiter-insensitive by construction.
+
+    ``slope <= 0`` or a non-finite slope is rejected: upstream would return a
+    negative or NaN damping factor there, which is outside its valid domain.
+    """
+    if not math.isfinite(slope) or slope <= 0.0:
+        raise ValueError("TruncatedLinear slope must be finite and positive")
+
+    def limiter(squared_norm: torch.Tensor) -> torch.Tensor:
+        return torch.minimum(slope * squared_norm,
+                             torch.ones_like(squared_norm))
+
+    limiter.__name__ = f"truncated_linear({slope:g})"
+    return limiter
 
 
 def kernel_gradient_integral(

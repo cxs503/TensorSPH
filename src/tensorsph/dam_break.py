@@ -25,7 +25,8 @@ import torch
 
 from .particle_shifting import (concentration, estimate_reference_concentration,
                                 shift_positions)
-from .transport_velocity_correction import transport_velocity_correction
+from .transport_velocity_correction import (transport_velocity_correction,
+                                           truncated_linear)
 from .droplet_impact import (
     Config,
     apply_boundary,
@@ -93,6 +94,13 @@ class DamBreakConfig(Config):
     # Safety cap on the per-step displacement in units of h; None keeps the
     # upstream behaviour (no cap).
     tvc_max_shift: float | None = None
+    # Limiter applied to the correction: None/"none" = upstream ``NoLimiter``
+    # (the alias ``TransportVelocityCorrectionComplex`` of most upstream
+    # examples); "truncated_linear" = upstream ``TruncatedLinear`` used by the
+    # ``TransportVelocityLimitedCorrection*Complex`` examples.
+    tvc_limiter: str | None = None
+    # ``TruncatedLinear(Real slope = 100.0)`` argument.
+    tvc_limiter_slope: float = 100.0
 
     def tank_top(self) -> float:
         return float(self.tank_height)
@@ -260,6 +268,22 @@ class DamBreakRun:
                 [z / scale for z in self.front])
 
 
+def tvc_limiter_callable(cfg: "DamBreakConfig"):
+    """Resolve ``cfg.tvc_limiter`` to the limiter callable of the operator.
+
+    ``None``/``"none"`` is upstream's ``NoLimiter`` (the operator's own
+    default); ``"truncated_linear"`` is upstream's ``TruncatedLinear``.  An
+    unknown name raises instead of silently falling back, so a variant label in
+    a benchmark payload can never disagree with the run it names.
+    """
+    name = cfg.tvc_limiter
+    if name is None or str(name).lower() in ("none", "no_limiter", "nolimiter"):
+        return None
+    if str(name).lower() in ("truncated_linear", "truncatedlinear"):
+        return truncated_linear(cfg.tvc_limiter_slope)
+    raise ValueError(f"unknown tvc_limiter {name!r}")
+
+
 def run_case(cfg: DamBreakConfig, pair_skin_factor: float | None = None,
              snapshot_times=None):
     """Integrate the dam break and return the measured trajectory.
@@ -393,8 +417,9 @@ def run_case(cfg: DamBreakConfig, pair_skin_factor: float | None = None,
             tvc = transport_velocity_correction(
                 all_positions, torch.cat((volume, wall_volume_p)), h,
                 alpha=cfg.tvc_alpha, pairs=pairs, wall_count=wall.shape[0],
-                limiter=None, max_shift=(None if cfg.tvc_max_shift is None
-                                         else cfg.tvc_max_shift * h),
+                limiter=tvc_limiter_callable(cfg),
+                max_shift=(None if cfg.tvc_max_shift is None
+                           else cfg.tvc_max_shift * h),
                 active=active)
             positions = positions + tvc.shift
             tvc_shift_peak = max(tvc_shift_peak, tvc.max_shift)
