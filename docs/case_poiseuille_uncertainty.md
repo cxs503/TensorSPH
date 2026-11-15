@@ -31,6 +31,17 @@ Gates G1–G9 grade the *point* error at the finest rung against the analytic re
 | `phase_profile_l2` | H/dx=12 | 0.584277 | 0.581488 | 0.2789 |
 | `phase_profile_l2` | H/dx=8 | 0.588915 | 0.581488 | 0.7426 |
 
+### R1 constant-forcing ladder (previously a single rung)
+
+| functional | H/dx | value | reference | error % |
+|---|---|---|---|---|
+| `r1_steady_profile_rms` | H/dx=16 | 0.00410523 | 0 | 0.4105 |
+| `r1_steady_profile_rms` | H/dx=12 | 0.00956822 | 0 | 0.9568 |
+| `r1_steady_profile_rms` | H/dx=8 | 0.0268993 | 0 | 2.6899 |
+| `r1_startup_profile_rms_at_0.40s` | H/dx=16 | 0.00479497 | 0 | 0.4795 |
+| `r1_startup_profile_rms_at_0.40s` | H/dx=12 | 0.00916489 | 0 | 0.9165 |
+| `r1_startup_profile_rms_at_0.40s` | H/dx=8 | 0.026454 | 0 | 2.6454 |
+
 ## 4. Uncertainty and validation
 
 | functional | order status | pair orders (r:p) | p used | U_num % | U_input % | E % | U_V % | E/U_V | ≤5 %? | band ≤5 %? | verdict |
@@ -39,6 +50,8 @@ Gates G1–G9 grade the *point* error at the finest rung against the analytic re
 | `amp_profile_l2` | order_unresolved | 1.33:2.95, 1.5:2.14 | 2.14 | 0.938 | 0.017 | 0.1880 | 0.938 | 0.20 | True | True | validated |
 | `phase_centre` | oscillatory | 1.5:5.87 | 1.00 | 0.619 | 0.023 | 0.1287 | 0.619 | 0.21 | True | True | validated |
 | `phase_profile_l2` | order_unresolved | 1.33:3.00, 1.5:2.42 | 2.42 | 0.605 | 0.023 | 0.1176 | 0.605 | 0.19 | True | True | validated |
+| `r1_steady_profile_rms` | converging | 1.33:2.94, 1.5:2.55 | 2.55 | 2.049 | 44.911 | 0.4105 | 44.958 | 0.01 | True | False | validated |
+| `r1_startup_profile_rms_at_0.40s` | converging | 1.33:2.25, 1.5:2.61 | 2.25 | 1.639 | 0.000 | 0.4795 | 1.639 | 0.29 | True | True | validated |
 
 ### Status narrative (honest)
 
@@ -46,6 +59,8 @@ Gates G1–G9 grade the *point* error at the finest rung against the analytic re
 * **`amp_profile_l2`** — order_unresolved: pair orders disagree by 0.81 order units (2.14..2.95); finest-rung error 0.1880 % vs repeatability floor 0.0168 % (ratio 11.16).
 * **`phase_centre`** — oscillatory: the error changes sign between rungs; finest-rung error 0.1287 % vs repeatability floor 0.0232 % (ratio 5.54).
 * **`phase_profile_l2`** — order_unresolved: pair orders disagree by 0.59 order units (2.42..3.00); finest-rung error 0.1176 % vs repeatability floor 0.0232 % (ratio 5.06).
+* **`r1_steady_profile_rms`** — converging: pair orders agree within 0.5 (spread 0.39); finest-rung error 0.4105 % vs repeatability floor 44.9108 % (ratio 0.01).
+* **`r1_startup_profile_rms_at_0.40s`** — converging: pair orders agree within 0.5 (spread 0.36).
 
 Reading: an error several times the repeatability floor is real discretization error and a finer rung would reduce it; an error at the floor is measurement scatter and refinement cannot fix it.
 
@@ -54,21 +69,30 @@ Reading: an error several times the repeatability floor is real discretization e
 * `U0_reference_matches_closed_form`: PASS
 * `U1_all_rungs_within_5pct`: PASS
 * `U1b_R1_anchor_within_5pct`: PASS
+* `U1c_R1_ladder_all_rungs_within_5pct`: PASS
 * `U2_validation_E_leq_U_V`: PASS
 * `U3_band_supports_5pct`: PASS
+* `U2b_R1_validation_E_leq_U_V`: PASS
+* `U3b_R1_band_supports_5pct`: FAIL
 
-`U1` = the acceptance holds at *every* rung, not only the finest one chosen for grading; `U2` = the residual is inside the uncertainty band; `U3` = the band itself is narrower than the 5 % tolerance, so the case can certify 5 % rather than merely happen to hit it.
+`U1` = the acceptance holds at *every* rung, not only the finest one chosen for grading; `U2` = the residual is inside the uncertainty band; `U3` = the band itself is narrower than the 5 % tolerance, so the case can certify 5 % rather than merely happen to hit it. The `b`/`c` variants ask the same three questions of the R1 constant-forcing ladder (steady parabola and Boussinesq start-up), which until now had a single rung.
 
-## 6. R1 anchors (single rung)
+## 6. R1 anchors and their ladder
 
-* steady profile RMS: 0.8775 % (≤ 5 %: True)
-* start-up profile RMS at t = 0.40 s: 0.8659 % (≤ 5 %: True)
-* status: **insufficient** — the committed R1 artifacts contain a single resolution (H/dx=12): neither an order nor a GCI can be estimated, so the R1 anchor is graded against the tolerance only
+* steady profile RMS (anchor rung): 0.8775 % (≤ 5 %: True)
+* start-up profile RMS at t = 0.40 s (anchor rung): 0.8659 % (≤ 5 %: True)
+* status: **ladder** — R1 is now graded on a resolution ladder, so the steady and start-up anchors carry an observed order, a GCI band and the V&V-20 comparison instead of a tolerance-only check; the H/dx=12 numbers above remain the G7/G8 anchor
+
+* ladder rungs: [8, 12, 16]
+* `U_input` (steady): half range of 11 in-run measurement samples = 44.9108 %
+* `U_input` (start-up): 0 % — the start-up functional is read at a single instant (t = 0.40 s): no between-window repeatability exists inside the run, so U_input = 0 and U_V = U_num
 
 ## 7. Limits
 
 * three rungs with unequal ratios (H/dx = 8,12,16 -> r = 1.5 and 1.333) leave the observed order only loosely identified: a monotone ladder can still show pair orders 1.9 and 4.2 because each pair samples a different interval of a staircase error, so no order is quoted when they disagree
 * the GCI band is a bound on the graded *functional*, not a pointwise field bound; the pointwise profile error is larger near the walls
+* the R1 steady band does NOT support the 5 % acceptance: its U_input is the half range of the in-run samples of the functional over the 0.80..1.00 s window, which measures the residual fill of the channel rather than pure measurement scatter; the window mean is inside the tolerance (U1c) but the band is wider than it (U3b), so no 5 % certification is claimed for the steady anchor -- closing it needs a longer integration (stationary window) or a sub-window repeatability, which needs the per-sample profiles that this artifact does not store
+* the R1 start-up functional is read at a single instant (t = 0.40 s), so its U_input is 0 by declaration and its band is U_num alone: the start-up row of the V&V table is optimistic relative to the steady row
 * U_input is the between-window repeatability of one run, not a run-to-run ensemble: it captures the sampling window, not reproducibility across hardware or thread counts
 * the phase functional is oscillatory (the error changes sign between H/dx=12 and 16), so its band uses the conservative p=1 convention and no order of accuracy is claimed for the phase
 
