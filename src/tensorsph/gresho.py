@@ -39,9 +39,18 @@ The reference is **derived in code**, never transcribed:
   integration at all;
 * the run then reports how long the balance survives: relative L2 velocity
   error against the *same steady field*, energy ratio, the equivalent numerical
-  viscosity extracted from the discrete enstrophy, angular momentum ``L_z``
-  (a pairwise central-force scheme must conserve it to round-off -- any drift is
-  a bug, not truncation) and linear momentum.
+  viscosity extracted from the discrete enstrophy, linear momentum (a pairwise
+  central-force scheme conserves it to round-off) and angular momentum ``L_z``.
+
+  ``L_z`` about a fixed point is **not** an invariant of a periodic box: the
+  pressure term is an exact central pair force with respect to the minimum-image
+  separation, so each pair's torque about the centre is ``-n L x F`` and only the
+  ``n = 0`` (in-box) pairs cancel.  The old gate demanded round-off drift and
+  therefore reported a FAIL that belonged to the geometry of the box, not to the
+  scheme (mission m21457, :func:`pair_torque_split`,
+  ``docs/xval_gresho_lz_invariant_m21457.md``).  What is gated instead: the
+  in-box torque must be round-off, and the drift must be *reproduced* by the
+  discrete torque integral (``lz_ledger_closure_pct``).
 
 What is *not* claimed
 ---------------------
@@ -60,7 +69,7 @@ import math
 
 import torch
 
-from .droplet_impact import Config, calibrated_particle_mass
+from .droplet_impact import Config, calibrated_particle_mass, pair_kernels
 from .vv.tgv import (TGVConfig, density, minimum_image, periodic_pairs,
                      tgv_rhs)
 
@@ -68,6 +77,7 @@ __all__ = [
     "GreshoConfig", "analytic_reference", "radius", "u_theta",
     "analytic_velocity", "analytic_pressure", "lattice", "make_state",
     "spurious_acceleration", "enstrophy_lattice", "angular_momentum",
+    "pair_torque_split",
     "kinetic_energy", "velocity_error_pct", "run_gresho", "convergence_study",
     "accept", "REFERENCE",
 ]
@@ -459,6 +469,63 @@ def torque_sum(pos: torch.Tensor, acc: torch.Tensor, mass: torch.Tensor,
             "relative": torque / scale if scale > 0 else float("nan")}
 
 
+def pair_torque_split(pos: torch.Tensor, pos_abs: torch.Tensor, mass: torch.Tensor,
+                      cfg: GreshoConfig, rho: torch.Tensor, pressure: torch.Tensor,
+                      pairs=None) -> dict:
+    """Split the discrete torque about the centre by whether the pair wraps.
+
+    The pressure term of :func:`~tensorsph.vv.tgv.tgv_rhs` is an exact central
+    pair force: the contribution of pair ``(i, j)`` to the torque about a fixed
+    point is ``m_i m_j (x_j - x_i) x F_ij`` with ``F_ij`` parallel to the
+    **minimum-image** separation.  In a *periodic* box the unwrapped separation
+    differs from that minimum image by a lattice vector ``n L`` whenever the pair
+    straddles the boundary, so the pair's torque is ``-n L x F_ij`` and does not
+    vanish.  Hence
+
+    * the part of the torque carried by in-box pairs (``n = 0``) must be
+      round-off -- that is the real, checkable statement that the force is
+      central;
+    * the part carried by wrapping pairs (``n != 0``) is geometry, not a scheme
+      defect: a periodic box has no continuous rotational symmetry, so Noether's
+      theorem gives no conserved ``L_z``.  The drift it produces is expected and
+      must instead be *reproduced* by the discrete torque integral (the ledger
+      gate ``lz_ledger_closure_pct``).
+
+    Returns absolute torques (N m) plus ``*_rel`` versions normalised by the
+    magnitude sum ``sum_pairs m_i m_j |term grad_w| |lever|``, so a round-off
+    reading is recognisable independently of the case scale.
+    """
+    if pairs is None:
+        h = cfg.h()
+        pairs = periodic_pairs(pos, 2.0 * h + cfg.skin_factor * h, cfg.L)
+    i, j = pairs
+    if i.numel() == 0:
+        return {"tau_total": 0.0, "tau_in_box": 0.0, "tau_wrap": 0.0,
+                "tau_in_box_rel": 0.0, "tau_wrap_rel": 0.0,
+                "wrap_pairs": 0, "pairs": 0, "scale": 0.0}
+    delta = minimum_image(pos[i] - pos[j], cfg.L)
+    _w, grad_w = pair_kernels(delta, cfg.h())
+    term = (pressure[i] / rho[i].square() + pressure[j] / rho[j].square())[:, None]
+    force_pair = mass[i, None] * mass[j, None] * term * grad_w      # (n_pairs, 2)
+    lever = pos_abs[j] - pos_abs[i]                                 # true, unwrapped
+    cross = lever[:, 0] * force_pair[:, 1] - lever[:, 1] * force_pair[:, 0]
+    # winding number of the *wrapped* separation: non-zero <=> the pair wraps
+    winding = torch.round((pos[j] - pos[i]) / cfg.L)
+    wraps = winding.abs().sum(dim=1) > 0
+    scale = float((mass[i] * mass[j]
+                   * torch.linalg.vector_norm(term * grad_w, dim=1)
+                   * torch.linalg.vector_norm(lever, dim=1)).sum())
+    tau_total = float(cross.sum())
+    tau_wrap = float(cross[wraps].sum())
+    tau_in_box = float(cross[~wraps].sum())
+    return {
+        "tau_total": tau_total, "tau_in_box": tau_in_box, "tau_wrap": tau_wrap,
+        "tau_in_box_rel": tau_in_box / scale if scale > 0.0 else float("nan"),
+        "tau_wrap_rel": tau_wrap / scale if scale > 0.0 else float("nan"),
+        "wrap_pairs": int(wraps.sum()), "pairs": int(i.numel()), "scale": scale,
+    }
+
+
 def tangential_velocity(pos: torch.Tensor, vel: torch.Tensor,
                         cfg: GreshoConfig) -> torch.Tensor:
     """Signed azimuthal component ``v . e_theta`` at each particle."""
@@ -561,9 +628,14 @@ def run_gresho(cfg: GreshoConfig, *, t_end: float | None = None,
     profile_rows: list = []
     migration: list = []
     t = 0.0
+    tau_series: list = []
+    ledger_pct = 0.0                      # running integral of the torque / |L_z0|
+    prev_tau = None
+    prev_t = 0.0
     for step in range(steps + 1):
         if step % cfg.rebuild_every == 0:
             pairs = periodic_pairs(pos, cutoff, cfg.L)
+        rho_step, pressure_step, acc = tgv_rhs(pos, vel, mass, cfg, pairs=pairs)
         if step % cfg.sample_every == 0 or step == steps:
             times.append(t)
             errors.append(velocity_error_pct(
@@ -579,13 +651,22 @@ def run_gresho(cfg: GreshoConfig, *, t_end: float | None = None,
             peak_series.append(float(torch.linalg.vector_norm(vel, dim=-1).max()))
             rho_rms.append(float((density(pos, mass, cfg, pairs=pairs)
                                   / cfg.rho0 - 1.0).square().mean().sqrt()))
+            tau = pair_torque_split(pos, pos_abs, mass, cfg, rho_step,
+                                    pressure_step, pairs=pairs)
+            tau_series.append(tau)
+            # trapezoid over the sampled interval: the ledger is an integral,
+            # not a pointwise check, so it stays exact up to O(dt^2) even though
+            # the torque is only sampled every ``sample_every`` steps
+            if prev_tau is not None:
+                ledger_pct += (0.5 * (prev_tau["tau_total"] + tau["tau_total"])
+                               * (t - prev_t) / max(abs(lz0), 1e-300) * 100.0)
+            prev_tau, prev_t = tau, t
             mig = (torch.linalg.vector_norm(pos_abs - torch.tensor(
                 cfg.centre, dtype=pos.dtype, device=pos.device), dim=-1) - r0)
             migration.append({"rms": float(mig.square().mean().sqrt()),
                               "max_abs": float(mig.abs().max())})
         if step == steps:
             break
-        _rho, _p, acc = tgv_rhs(pos, vel, mass, cfg, pairs=pairs)
         vel = vel + dt * acc
         pos_abs = pos_abs + dt * vel
         pos = torch.remainder(pos + dt * vel, cfg.L)
@@ -644,6 +725,18 @@ def run_gresho(cfg: GreshoConfig, *, t_end: float | None = None,
             "equivalent_reynolds": (cfg.u_max * cfg.r_outer / nu_eff
                                     if nu_eff > 0.0 else float("inf")),
             "angular_momentum_drift_rel": lz_drift,
+            "torque_in_box_rel_max": max((tq["tau_in_box_rel"] for tq in tau_series),
+                                         default=float("nan")),
+            "torque_wrap_rel_max": max((abs(tq["tau_wrap_rel"]) for tq in tau_series),
+                                       default=float("nan")),
+            "torque_wrap_pairs_max": max((tq["wrap_pairs"] for tq in tau_series),
+                                         default=0),
+            "torque_pairs": tau_series[-1]["pairs"] if tau_series else 0,
+            "lz_ledger_pct": ledger_pct,
+            "lz_ledger_closure_pct": abs(lz_drift * 100.0 - ledger_pct),
+            # NOT a gate: L_z is not an invariant of a periodic box (see
+            # pair_torque_split).  Kept as a reported quantity only.
+            "angular_momentum_drift_pct": lz_drift * 100.0,
             "linear_momentum_drift_rel": mom_drift,
             "peak_speed_ratio": (peak_series[-1] / peak_series[0]
                                  if peak_series[0] else float("nan")),
@@ -658,6 +751,9 @@ def run_gresho(cfg: GreshoConfig, *, t_end: float | None = None,
         "series": {
             "time": times, "velocity_error_pct": errors, "energy": energies,
             "angular_momentum": lz_series, "momentum": p_series,
+            "torque_in_box_rel": [tq["tau_in_box_rel"] for tq in tau_series],
+            "torque_wrap_rel": [tq["tau_wrap_rel"] for tq in tau_series],
+            "torque_total": [tq["tau_total"] for tq in tau_series],
             "peak_speed": peak_series, "density_rms": rho_rms,
             "profile_error_pct": profile_rms,
             "profile_bins_initial": profile_rows,
@@ -674,8 +770,14 @@ GATES = {
     "spurious_acceleration_pct": 5.0,
     # survival of the balance over ~1 core turnover at the finest resolution
     "velocity_error_pct_end": 10.0,
-    # angular momentum is conserved to round-off by a pairwise central scheme
-    "angular_momentum_drift_rel": 1.0e-6,
+    # the *in-box* part of the torque must be round-off: this is the real,
+    # checkable central-force property (the wrapping part is box geometry)
+    "torque_in_box_rel": 1.0e-9,
+    # ... and the L_z drift must be reproduced by the discrete torque integral
+    # (percentage points).  L_z itself is NOT an invariant of a periodic box:
+    # there is no continuous rotational symmetry, so no rotational Noether
+    # charge (see pair_torque_split and docs/xval_gresho_lz_invariant_m21457.md)
+    "lz_ledger_closure_pct": 0.5,
     # observed order of the truncation error across the ladder
     "min_observed_order": 0.8,
     # an exact state must be non-trivial: the initial field has to be moving
@@ -712,6 +814,12 @@ def convergence_study(dxs=(0.025, 0.02, 0.0125), *, t_end: float = 1.0,
             "equivalent_viscosity": run["measured"]["equivalent_viscosity"],
             "equivalent_reynolds": run["measured"]["equivalent_reynolds"],
             "angular_momentum_drift_rel": run["measured"]["angular_momentum_drift_rel"],
+            "angular_momentum_drift_pct": run["measured"]["angular_momentum_drift_pct"],
+            "torque_in_box_rel_max": run["measured"]["torque_in_box_rel_max"],
+            "torque_wrap_rel_max": run["measured"]["torque_wrap_rel_max"],
+            "torque_wrap_pairs_max": run["measured"]["torque_wrap_pairs_max"],
+            "lz_ledger_pct": run["measured"]["lz_ledger_pct"],
+            "lz_ledger_closure_pct": run["measured"]["lz_ledger_closure_pct"],
             "linear_momentum_drift_rel": run["measured"]["linear_momentum_drift_rel"],
             "peak_speed_ratio": run["measured"]["peak_speed_ratio"],
             "profile_error_pct_rms": run["measured"]["profile_error_pct_rms"],
@@ -741,9 +849,9 @@ def accept(rows: list, *, controls: dict | None = None) -> dict:
                        and math.isnan(r["observed_order_acceleration"]))]
     checks = []
 
-    def check(name, measured, limit, ok, direction="<="):
+    def check(name, measured, limit, ok, direction="<=", gate=True):
         checks.append({"name": name, "measured": measured, "limit": limit,
-                       "direction": direction, "pass": bool(ok)})
+                       "direction": direction, "pass": bool(ok), "gate": bool(gate)})
 
     check("spurious_acceleration_pct (finest dx)",
           finest["spurious_acceleration_pct"],
@@ -753,10 +861,18 @@ def accept(rows: list, *, controls: dict | None = None) -> dict:
           finest["velocity_error_pct_end"],
           GATES["velocity_error_pct_end"],
           finest["velocity_error_pct_end"] <= GATES["velocity_error_pct_end"])
-    check("angular_momentum_drift_rel (drift must be round-off)",
-          finest["angular_momentum_drift_rel"],
-          GATES["angular_momentum_drift_rel"],
-          finest["angular_momentum_drift_rel"] <= GATES["angular_momentum_drift_rel"])
+    check("torque_in_box_rel (in-box pairs: the force must be central)",
+          finest.get("torque_in_box_rel_max", float("nan")),
+          GATES["torque_in_box_rel"],
+          finest.get("torque_in_box_rel_max", float("inf")) <= GATES["torque_in_box_rel"])
+    check("lz_ledger_closure_pct (drift must equal the integrated torque)",
+          finest.get("lz_ledger_closure_pct", float("nan")),
+          GATES["lz_ledger_closure_pct"],
+          finest.get("lz_ledger_closure_pct", float("inf")) <= GATES["lz_ledger_closure_pct"])
+    # reported, never gates the verdict: in a periodic box the size of the L_z
+    # drift is a property of the box, not of the scheme's quality
+    check("angular_momentum_drift_rel (diagnostic, not a gate: periodic box)",
+          finest["angular_momentum_drift_rel"], float("nan"), True, gate=False)
     best_order = max([o for o in orders if not math.isnan(o)], default=float("nan"))
     check("observed_order_acceleration (best pair)",
           best_order, GATES["min_observed_order"],
@@ -779,7 +895,7 @@ def accept(rows: list, *, controls: dict | None = None) -> dict:
                 h_pct = _pct(half)
                 check("sensitivity control (half pressure is worse)",
                       h_pct, f_pct, h_pct > f_pct, direction=">")
-    passed = all(c["pass"] for c in checks)
+    passed = all(c["pass"] for c in checks if c["gate"])
     return {
         "case": "gresho_chan_vortex_2d_periodic",
         "verdict": "PASS" if passed else "FAIL",
