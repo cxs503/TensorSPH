@@ -37,6 +37,10 @@ gates G1–G9 and their thresholds are predeclared in `DESIGN.md`.
 | `out/steady_drift.json` | baseline/window fits, null distribution, sensitivity to block length, gates D1-D4 |
 | `../../docs/case_poiseuille_steady_drift.md` | generated note: trend-vs-noise verdict and the acceptance bound it implies |
 | `../../tests/test_case_poiseuille_steady_drift.py` | estimator/bootstap tests on synthetic series + artifact and note consistency |
+| `wall_shear_harmonic.py` | oscillatory wall shear (pulsatile drag) from the momentum budget, gates W0-W6; post-processes `out/result.json`, no solver run |
+| `out/wall_shear_harmonic.json` | `tau_hat` per rung at both frequencies, estimator controls, gates W0-W6 |
+| `make_wall_shear_harmonic_doc.py` | figure + `../../docs/case_poiseuille_wall_shear_harmonic.md` generator |
+| `../../tests/test_case_poiseuille_wall_shear_harmonic.py` | closed-form/estimator/control tests + artifact and note binding |
 
 ## Run
 
@@ -47,6 +51,8 @@ PYTHONPATH=.:src python3 benchmarks/case_poiseuille/make_doc.py         # figure
 PYTHONPATH=.:src python3 benchmarks/case_poiseuille/uncertainty.py      # GCI/V&V-20 layer, ~2 s
 PYTHONPATH=.:src python3 benchmarks/case_poiseuille/steady_drift.py     # trend-vs-noise audit, ~1 s (post-process)
 PYTHONPATH=.:src python3 benchmarks/case_poiseuille/steady_drift.py --extend  # + window at t ~ 3.5 s, ~4 min
+PYTHONPATH=.:src python3 benchmarks/case_poiseuille/wall_shear_harmonic.py  # pulsatile drag, ~1 s (post-process)
+PYTHONPATH=.:src python3 benchmarks/case_poiseuille/make_wall_shear_harmonic_doc.py
 ```
 
 Exit status is non-zero when a gate fails; `--quick` grades one resolution and
@@ -125,6 +131,42 @@ evaluated per rung (row centres move with `dx`, so one reference value invents a
 order), and the profile norm must be taken on a common grid with a 5-point
 Lagrange stencil (linear interpolation floors the norm error at ~0.11 %, where
 the functional stops measuring the solver).
+
+### Oscillatory wall shear (pulsatile drag)
+
+The graded ladder certifies the *kinematics* of the Womersley state (amplitude and
+phase of every row). `wall_shear_harmonic.py` adds the quantity a duct designer
+asks for — the complex wall shear `tau_hat` — from the momentum budget
+
+```
+tau_hat = rho H ( g_hat - i omega <u>_hat ) / 2
+```
+
+which is exact for the periodic state, contains **no kernel and no wall normal**,
+and needs only the cross-section mean velocity already committed in
+`out/result.json`. Headline, finest rung (`H/dx = 16`, `Wo = 1.8`):
+
+| quantity | measured | analytic | error |
+|---|---|---|---|
+| `|tau_hat|` | 309.3794 Pa | 309.7224 Pa | -0.111 % |
+| `arg tau_hat` | -40.358 deg | -39.986 deg | -0.372 deg (0.41 % of pi/2) |
+| `|tau_fast|/|tau_slow|` (`H/dx = 12`) | 0.5732 | 0.5801 | -1.183 % |
+
+Two pitfalls are guarded by tests, because both are silent otherwise:
+
+* the steady wall-shear estimator of `combined.py` (interior quadratic fit) is
+  **not transferable** to the harmonic regime: on the analytic Womersley profile
+  it is biased by 5.3 % in amplitude and -23 deg in phase at `Wo = 1.8`, and the
+  bias is resolution-independent (0.07 % spread over `H/dx = 8..16`) — model
+  bias, not discretisation. It is kept as the *control* of gate `W5`;
+* a quasi-steady channel (steady parabola following `g(t)`) passes a *mean*
+  momentum balance but is rejected here at +133 % in amplitude, which is what
+  makes `W1`-`W4` a test of the unsteady Stokes layer rather than of mass
+  conservation.
+
+See `../../docs/case_poiseuille_wall_shear_harmonic.md`; gates `W0`-`W6` are
+declared in the module docstring (post-hoc extension of `DESIGN.md`, thresholds
+are the case's own 5 % convention).
 
 ## Limits
 

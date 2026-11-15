@@ -109,3 +109,48 @@ graded at `H/dx = 12`.
 | `benchmarks/case_poiseuille/make_doc.py` | figures + verification note generator |
 | `docs/verification_case_poiseuille.md` | generated verification note |
 | `tests/test_case_poiseuille.py` | reference/estimator unit tests + one SPH smoke run |
+## 7. Addendum (post-hoc, m22483): oscillatory wall shear as a graded quantity
+
+Sections 1–6 were written before the ladder and are unchanged.  The gates
+G1–G9 grade the *kinematics* of the Womersley state (amplitude and phase of
+every row).  They do not grade the **oscillatory wall shear** — the pulsatile
+drag — which is the engineering output of a pulsatile duct.
+
+This addendum was written *after* the ladder, and is labelled as such rather
+than back-dated.  Declaration discipline: the thresholds are copied from this
+document (§3: 5 % amplitude, 5 % of a quarter turn = 4.5 deg phase) and were
+not moved to fit the numbers; an exploratory probe on the committed artifact
+came first and is recorded in
+`docs/case_poiseuille_wall_shear_harmonic.md` §1.  The layer is post-processing
+of the *existing* `out/result.json` — no SPH run, no solver parameter, and
+therefore no way for it to influence the graded ladder.
+
+| gate | metric | threshold |
+|---|---|---|
+| **W0 / W0b** | cross-section mean velocity `\|\<u\>_hat\|` / `arg \<u\>_hat`, finest rung | 5 % / 4.5 deg |
+| **W1 / W2** | oscillatory wall shear `\|\tau_hat\|` / `arg \tau_hat`, finest rung | 5 % / 4.5 deg |
+| **W3** | W1/W2 at *every* rung (8/12/16) | same |
+| **W4** | two-frequency drag ratio `\|\tau_fast\|/\|\tau_slow\|` and phase difference, `H/dx = 12` | 5 % / 4.5 deg |
+| **W5** | control: the interior quadratic estimator of the steady case, applied to the *analytic* harmonic profile, must be biased by > 5 % | pass |
+| **W6** | reference self-check: budget closed form == `mu alpha (g_hat/i omega) tanh(alpha H/2)`, and the `omega -> 0` limit == `rho g H / 2` | 1e-10 |
+
+Estimator: `tau_hat = rho H (g_hat - i omega \<u\>_hat)/2`, the exact momentum
+budget of the periodic state, with `\<u\>_hat` the cross-section mean of the
+committed per-row harmonic fits.  Two facts make this more than a restatement
+of G1–G9:
+
+* the steady wall-shear estimator validated in
+  `docs/verification_poiseuille_wall_shear_estimator.md` (interior quadratic
+  fit) is biased by 5.3 % / -23 deg at `Wo = 1.8` on the analytic harmonic
+  profile, resolution-independently — it is exact only because the steady
+  profile is a parabola.  Hence W5 is a control, not a gate on the physics;
+* a quasi-steady channel (steady parabola following `g(t)`) passes a mean
+  momentum balance and is rejected here at +133 % amplitude, so W1–W4 test the
+  unsteady Stokes layer.
+
+Implementation: `benchmarks/case_poiseuille/wall_shear_harmonic.py`,
+`benchmarks/case_poiseuille/make_wall_shear_harmonic_doc.py`,
+`benchmarks/case_poiseuille/out/wall_shear_harmonic.json`,
+`docs/case_poiseuille_wall_shear_harmonic.md`,
+`docs/figures/case_poiseuille_wall_shear_harmonic.png`,
+`tests/test_case_poiseuille_wall_shear_harmonic.py`.
