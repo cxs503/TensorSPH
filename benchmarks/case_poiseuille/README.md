@@ -32,6 +32,11 @@ gates G1–G9 and their thresholds are predeclared in `DESIGN.md`.
 | `uncertainty.py` | discretization-uncertainty + validation layer (GCI, ASME V&V 20); post-processes `out/result.json`, no solver run |
 | `out/uncertainty.json` | observed orders, GCI bands, `E` vs `U_V`, repeatability floor, gates U0-U3 |
 | `../../docs/case_poiseuille_uncertainty.md` | generated note: is the residual discretization error or a floor, and does the band certify 5 %? |
+| `steady_window.py` | is the committed steady window stationary vs. residual fill? (gates S1-S4, needs one integration) |
+| `steady_drift.py` | is the late decline of the steady functional signal or noise? block bootstrap + AR(1) t, gates D1-D4; `--extend` adds a window at t ~ 3.5 s |
+| `out/steady_drift.json` | baseline/window fits, null distribution, sensitivity to block length, gates D1-D4 |
+| `../../docs/case_poiseuille_steady_drift.md` | generated note: trend-vs-noise verdict and the acceptance bound it implies |
+| `../../tests/test_case_poiseuille_steady_drift.py` | estimator/bootstap tests on synthetic series + artifact and note consistency |
 
 ## Run
 
@@ -40,6 +45,8 @@ PYTHONPATH=.:src python3 benchmarks/case_poiseuille/run.py --quick      # smoke,
 PYTHONPATH=.:src python3 benchmarks/case_poiseuille/run.py              # ladder 8/12/16, ~9 min
 PYTHONPATH=.:src python3 benchmarks/case_poiseuille/make_doc.py         # figures + note
 PYTHONPATH=.:src python3 benchmarks/case_poiseuille/uncertainty.py      # GCI/V&V-20 layer, ~2 s
+PYTHONPATH=.:src python3 benchmarks/case_poiseuille/steady_drift.py     # trend-vs-noise audit, ~1 s (post-process)
+PYTHONPATH=.:src python3 benchmarks/case_poiseuille/steady_drift.py --extend  # + window at t ~ 3.5 s, ~4 min
 ```
 
 Exit status is non-zero when a gate fails; `--quick` grades one resolution and
@@ -85,17 +92,33 @@ grades; a test pins that identity to round-off. `U_input` for the start-up row i
 declared `0` (a single instant has no repeatability) instead of being invented,
 which makes that row's band optimistic — stated in the note.
 
-The ladder also *found* something: `U3b` **FAILS** for the steady functional
-(exact numbers in `docs/case_poiseuille_uncertainty.md`, read from
-`out/uncertainty.json`). Its point error is well inside 5 % and every rung passes
-(`U1c` PASS), but the band does not support the acceptance: `U_input` is the half
-range of the in-run samples of the functional over the 0.80–1.00 s window, i.e.
-the fill of the channel is still visible there, so the "steady" window is not
-stationary at the 5 % level. No 5 % certification is claimed for the steady
-anchor; closing it needs a longer integration (a genuinely stationary window) or
-a sub-window repeatability estimator, which needs the per-sample profiles that
-this artifact does not store. The start-up functional passes all three
-(`U2b`/`U3b`).
+The ladder also *found* something, and then closed it. `U3b` first **failed**
+for the steady functional: `U_input` was the half range of the in-run samples
+divided by their *mean*, i.e. by the very functional that decays to zero under
+refinement, so the estimator was anti-convergent and mixed units with `E`
+(percent of scale). That estimator is kept in the artifact for audit
+(`steady_half_range_percent_of_mean`) but no longer grades anything; the
+published band uses the same percent-of-scale normalisation as `E`, which keeps
+the *conservative* single-sample value rather than the smaller between-window
+one. Two independent artifacts now back the steady anchor:
+
+* `steady_window.py` → `docs/case_poiseuille_steady_window.md`: re-integrating to
+  t = 1.8 s reproduces the committed window (gate `S1`), the window level is
+  stable (`S2`), the surviving Boussinesq fill cannot explain its scatter (`S3`)
+  and the between-window band is inside 5 % (`S4`);
+* `steady_drift.py` → `docs/case_poiseuille_steady_drift.md`: the level test
+  above cannot see a trend *inside* a window, and the committed series has one.
+  A block bootstrap of the pre-window samples asks whether that late decline is
+  distinguishable from the noise (`D1`/`D2`), adds the drift to the committed
+  error (`D3`) and, with `--extend`, grades a third window at t ≈ 3.5 s (`D4`
+  "the decay keeps going", which is what turns the committed value into an
+  upper bound).
+
+With that, all nine uncertainty gates (`U0`–`U4`, `U1b/c`, `U2b`, `U3b`) PASS and
+the start-up functional passes its own three (`U2b`/`U3b`) as well. Honest
+residual: `U_input` is the between-sample repeatability *inside* one run, not a
+run-to-run ensemble, so it captures the sampling window, not reproducibility
+across machines.
 
 Two pitfalls are documented and guarded by tests: the analytic reference must be
 evaluated per rung (row centres move with `dx`, so one reference value invents an
