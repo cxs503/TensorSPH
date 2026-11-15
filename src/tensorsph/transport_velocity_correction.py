@@ -307,6 +307,7 @@ def transport_velocity_correction(
     limiter: Callable[[torch.Tensor], torch.Tensor] | None = None,
     max_shift: float | None = None,
     active: torch.Tensor | None = None,
+    scope_tol: float | None = None,
 ) -> TVCResult:
     """One upstream ``TransportVelocityCorrection`` application.
 
@@ -320,6 +321,18 @@ def transport_velocity_correction(
     ``active`` (bool, (N,)) restricts the correction to a particle scope, the
     analogue of upstream's ``ParticleScope`` template parameter
     (``AllParticles`` / ``InnerParticles``).
+
+    ``scope_tol`` is the *first-moment* scope criterion:
+    ``|g_i| h_ref <= scope_tol`` keeps a particle, everything above it is
+    masked out.  Use it when the scope must mean "particles whose kernel
+    support is complete": the zeroth moment (``sum_j V_j W_ij``, the particle
+    concentration ``C_i``) reaches its full-support value while the kernel
+    support is still truncated, because ``grad W`` is far more sensitive to a
+    missing neighbour shell than ``W`` is.  Measured consequence in the
+    hydrostatic column of ``tests/test_tvc_hydrostatic.py``: a ``C_i >= 0.95
+    c_ref`` criterion admits particles an order of magnitude closer to the
+    free surface than full support allows, and their ``|g| h`` is ~10^2 times
+    the true interior value (``benchmarks/xval_sphinx_tvc/bulk_scope_criterion.py``).
     """
     if alpha is None:
         alpha = SPHINXSYS_DEFAULT_COEFFICIENT * SPHINXSYS_SINGLE_STEP_FRACTION
@@ -336,6 +349,13 @@ def transport_velocity_correction(
         if active.shape != squared.shape:
             raise ValueError("active must be (N,) over the fluid particles")
         shift = shift * active[:, None].to(shift.dtype)
+    kept_fraction = None
+    if scope_tol is not None:
+        if not math.isfinite(scope_tol) or scope_tol < 0.0:
+            raise ValueError("scope_tol must be finite and non-negative")
+        keep = torch.linalg.vector_norm(g, dim=1) * h_ref <= scope_tol
+        kept_fraction = float(keep.to(shift.dtype).mean()) if keep.numel() else 0.0
+        shift = shift * keep[:, None].to(shift.dtype)
     clipped = 0.0
     if max_shift is not None:
         norm = torch.linalg.vector_norm(shift, dim=1)
@@ -348,6 +368,8 @@ def transport_velocity_correction(
                      limiter=fac, alpha=float(alpha), h_ref=float(h_ref),
                      clipped=clipped,
                      extras={"max_shift": max_shift,
+                             "scope_tol": scope_tol,
+                             "scope_tol_kept_fraction": kept_fraction,
                              "scope_active_fraction": (
                                  1.0 if active is None else
                                  float(active.to(torch.float64).mean()))})
