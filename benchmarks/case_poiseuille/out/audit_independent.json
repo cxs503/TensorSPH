@@ -1,0 +1,372 @@
+{
+  "audit": "CASE-POISEUILLE-SPH independent re-derivation",
+  "source": "benchmarks/case_poiseuille/out/result.json",
+  "source_sha256": "740c748b870eef76825fa656557df2dd6e51945da9fc3ee29a41ec39371b5194",
+  "imports_of_case_code": [],
+  "parameters_read_from_artifact": {
+    "height": 0.1,
+    "viscosity": 0.01,
+    "rho0": 1000.0,
+    "body_force": 9.81
+  },
+  "reference_provenance": {
+    "omega": {
+      "omega": 13.0,
+      "closed_form_vs_bvp_rel": 4.227315095410379e-08,
+      "committed_amp_vs_bvp_rel": 3.4701598786579345e-08,
+      "committed_phase_vs_bvp_deg": 1.6479577685464723e-06,
+      "marched_fd_vs_bvp_amp_rel": 1.3874894741720184e-06,
+      "marched_fd_vs_bvp_phase_deg": 5.6460417139001785e-05,
+      "centre_amplitude_bvp": 0.7265333499453532,
+      "centre_phase_deg_bvp": -54.635498084722336
+    },
+    "omega_fast": {
+      "omega": 31.4,
+      "closed_form_vs_bvp_rel": 1.6935959608934672e-07,
+      "committed_amp_vs_bvp_rel": 1.2158677972085006e-07,
+      "committed_phase_vs_bvp_deg": 3.466751151665478e-05,
+      "marched_fd_vs_bvp_amp_rel": 0.0001304720251784137,
+      "marched_fd_vs_bvp_phase_deg": 0.0009555687801306488,
+      "centre_amplitude_bvp": 0.35543818483081174,
+      "centre_phase_deg_bvp": -76.90704712002825
+    }
+  },
+  "harmonic_gate_audit": [
+    {
+      "resolution_H_over_dx": 8,
+      "omega": 13.0,
+      "published": {
+        "amp_centre_pct": 0.5555553545260175,
+        "amp_profile_rms_pct": 1.732672437995222,
+        "phase_centre_pct_of_quarter_turn": 0.9472689277343445,
+        "phase_profile_rms_pct_of_quarter_turn": 0.7720132122290935,
+        "gates": {
+          "G1_amp_centre_5pct": true,
+          "G2_amp_profile_rms_5pct": true,
+          "G3_phase_centre_5pct_of_quarter_turn": true,
+          "G4_phase_profile_rms_5pct_of_quarter_turn": true,
+          "G5_window_stability_5pct": true
+        }
+      },
+      "recomputed_committed_analytic": {
+        "amp_centre_pct": 0.5555553545260175,
+        "amp_profile_rms_pct": 1.732672437995222,
+        "amp_profile_worst_pct": 2.8080627969864898,
+        "phase_centre_deg": -0.8525420349609101,
+        "phase_centre_pct_of_quarter_turn": 0.9472689277343445,
+        "phase_profile_rms_pct_of_quarter_turn": 0.7720132122290935,
+        "amp_wall_pct": 10.091407913084574,
+        "interior_rows": 6,
+        "centre_y_over_H": 0.4375,
+        "centre_is_half": false
+      },
+      "recomputed_independent_analytic": {
+        "amp_centre_pct": 0.5555588439645551,
+        "amp_profile_rms_pct": 1.732674958612029,
+        "amp_profile_worst_pct": 2.808065717410637,
+        "phase_centre_deg": -0.8525406517473479,
+        "phase_centre_pct_of_quarter_turn": 0.9472673908303866,
+        "phase_profile_rms_pct_of_quarter_turn": 0.7720117617107431,
+        "amp_wall_pct": 10.091410378737502,
+        "interior_rows": 6,
+        "centre_y_over_H": 0.4375,
+        "centre_is_half": false
+      },
+      "refit_from_centre_series": {
+        "amplitude": 0.7305696702253268,
+        "phase_deg": -55.48803873646969,
+        "residual": 0.005643960596729821,
+        "dc_mean": -0.0016825801001824046,
+        "window_span_periods": 1.9996376257824875,
+        "cos_sin_orthogonality": 0.0003303151429526797,
+        "amplitude_vs_published_rel": 3.039335110319417e-16,
+        "phase_vs_published_deg": 0.0
+      },
+      "gates": {
+        "G1_amp_centre_5pct": true,
+        "G2_amp_profile_rms_5pct": true,
+        "G3_phase_centre_5pct_of_quarter_turn": true,
+        "G4_phase_profile_rms_5pct_of_quarter_turn": true
+      }
+    },
+    {
+      "resolution_H_over_dx": 12,
+      "omega": 13.0,
+      "published": {
+        "amp_centre_pct": 0.2517495110624761,
+        "amp_profile_rms_pct": 0.5784500457732047,
+        "phase_centre_pct_of_quarter_turn": 0.08759724456751743,
+        "phase_profile_rms_pct_of_quarter_turn": 0.33999718862498957,
+        "gates": {
+          "G1_amp_centre_5pct": true,
+          "G2_amp_profile_rms_5pct": true,
+          "G3_phase_centre_5pct_of_quarter_turn": true,
+          "G4_phase_profile_rms_5pct_of_quarter_turn": true,
+          "G5_window_stability_5pct": true
+        }
+      },
+      "recomputed_committed_analytic": {
+        "amp_centre_pct": 0.2517495110624761,
+        "amp_profile_rms_pct": 0.5784500457732047,
+        "amp_profile_worst_pct": 0.9577670400174173,
+        "phase_centre_deg": -0.07883752011076568,
+        "phase_centre_pct_of_quarter_turn": 0.08759724456751743,
+        "phase_profile_rms_pct_of_quarter_turn": 0.33999718862498957,
+        "amp_wall_pct": 7.6806671032963845,
+        "interior_rows": 8,
+        "centre_y_over_H": 0.5416666666666666,
+        "centre_is_half": false
+      },
+      "recomputed_independent_analytic": {
+        "amp_centre_pct": 0.25175838252267624,
+        "amp_profile_rms_pct": 0.5784586971605263,
+        "amp_profile_worst_pct": 0.9577789867668728,
+        "phase_centre_deg": -0.0788369607619823,
+        "phase_centre_pct_of_quarter_turn": 0.08759662306886923,
+        "phase_profile_rms_pct_of_quarter_turn": 0.33999593383783533,
+        "amp_wall_pct": 7.68071361616742,
+        "interior_rows": 8,
+        "centre_y_over_H": 0.5416666666666666,
+        "centre_is_half": false
+      },
+      "refit_from_centre_series": {
+        "amplitude": 0.7345079525607788,
+        "phase_deg": -54.846186000456115,
+        "residual": 0.003643743352233537,
+        "dc_mean": 0.001531661573714266,
+        "window_span_periods": 1.999805733191129,
+        "cos_sin_orthogonality": 8.929182891368776e-06,
+        "amplitude_vs_published_rel": 1.662671347301192e-15,
+        "phase_vs_published_deg": 1.0177774980683254e-13
+      },
+      "gates": {
+        "G1_amp_centre_5pct": true,
+        "G2_amp_profile_rms_5pct": true,
+        "G3_phase_centre_5pct_of_quarter_turn": true,
+        "G4_phase_profile_rms_5pct_of_quarter_turn": true
+      }
+    },
+    {
+      "resolution_H_over_dx": 16,
+      "omega": 13.0,
+      "published": {
+        "amp_centre_pct": 0.07415828724653513,
+        "amp_profile_rms_pct": 0.3910953875929452,
+        "phase_centre_pct_of_quarter_turn": 0.1286727630052008,
+        "phase_profile_rms_pct_of_quarter_turn": 0.20752591512121796,
+        "gates": {
+          "G1_amp_centre_5pct": true,
+          "G2_amp_profile_rms_5pct": true,
+          "G3_phase_centre_5pct_of_quarter_turn": true,
+          "G4_phase_profile_rms_5pct_of_quarter_turn": true,
+          "G5_window_stability_5pct": true
+        }
+      },
+      "recomputed_committed_analytic": {
+        "amp_centre_pct": 0.07415828724653513,
+        "amp_profile_rms_pct": 0.3910953875929452,
+        "amp_profile_worst_pct": 0.7195174435273103,
+        "phase_centre_deg": 0.11580548670468073,
+        "phase_centre_pct_of_quarter_turn": 0.1286727630052008,
+        "phase_profile_rms_pct_of_quarter_turn": 0.20752591512121793,
+        "amp_wall_pct": 5.722269731362974,
+        "interior_rows": 12,
+        "centre_y_over_H": 0.46875000000000006,
+        "centre_is_half": false
+      },
+      "recomputed_independent_analytic": {
+        "amp_centre_pct": 0.0741617801289766,
+        "amp_profile_rms_pct": 0.3910975732992177,
+        "amp_profile_worst_pct": 0.7195201698139477,
+        "phase_centre_deg": 0.11580686602532021,
+        "phase_centre_pct_of_quarter_turn": 0.12867429558368912,
+        "phase_profile_rms_pct_of_quarter_turn": 0.20752498929586555,
+        "amp_wall_pct": 5.722271912921947,
+        "interior_rows": 12,
+        "centre_y_over_H": 0.46875000000000006,
+        "centre_is_half": false
+      },
+      "refit_from_centre_series": {
+        "amplitude": 0.7353529645916366,
+        "phase_deg": -54.697702065402176,
+        "residual": 0.0036238065615527763,
+        "dc_mean": -0.0005862784595285362,
+        "window_span_periods": 2.00014194800841,
+        "cos_sin_orthogonality": 1.009191674564988e-05,
+        "amplitude_vs_published_rel": 4.529347448439391e-16,
+        "phase_vs_published_deg": 0.0
+      },
+      "gates": {
+        "G1_amp_centre_5pct": true,
+        "G2_amp_profile_rms_5pct": true,
+        "G3_phase_centre_5pct_of_quarter_turn": true,
+        "G4_phase_profile_rms_5pct_of_quarter_turn": true
+      }
+    }
+  ],
+  "frequency_discrimination": {
+    "ratio_measured": 0.49183227009462194,
+    "ratio_analytic_independent": 0.4844830371472361,
+    "ratio_quasi_steady": 1.0,
+    "error_vs_analytic_pct": 1.5169226544359615,
+    "quasi_steady_rejection_pct": 106.40557528871675,
+    "steady_centre_amplitude": 1.2262500000000003,
+    "steady_would_be_error_pct_of_analytic_harmonic": 66.2566270808614,
+    "G6": true
+  },
+  "falsifiability": {
+    "baseline_metrics": {
+      "amp_centre_pct": 0.07415828724653513,
+      "amp_profile_rms_pct": 0.3910953875929452,
+      "amp_profile_worst_pct": 0.7195174435273103,
+      "phase_centre_deg": 0.11580548670468073,
+      "phase_centre_pct_of_quarter_turn": 0.1286727630052008,
+      "phase_profile_rms_pct_of_quarter_turn": 0.20752591512121793,
+      "amp_wall_pct": 5.722269731362974,
+      "interior_rows": 12,
+      "centre_y_over_H": 0.46875000000000006,
+      "centre_is_half": false
+    },
+    "baseline_gates": {
+      "G1_amp_centre_5pct": true,
+      "G2_amp_profile_rms_5pct": true,
+      "G3_phase_centre_5pct_of_quarter_turn": true,
+      "G4_phase_profile_rms_5pct_of_quarter_turn": true
+    },
+    "mutations": {
+      "amplitude_plus_6pct": {
+        "metrics": {
+          "amp_centre_pct": 6.078607784481329,
+          "amp_profile_rms_pct": 6.313042205886522,
+          "amp_profile_worst_pct": 6.762688490138958,
+          "phase_centre_deg": 0.11580548670468073,
+          "phase_centre_pct_of_quarter_turn": 0.1286727630052008,
+          "phase_profile_rms_pct_of_quarter_turn": 0.20752591512121793,
+          "amp_wall_pct": 12.065605915244763,
+          "interior_rows": 12,
+          "centre_y_over_H": 0.46875000000000006,
+          "centre_is_half": false
+        },
+        "gates": {
+          "G1_amp_centre_5pct": false,
+          "G2_amp_profile_rms_5pct": false,
+          "G3_phase_centre_5pct_of_quarter_turn": true,
+          "G4_phase_profile_rms_5pct_of_quarter_turn": true
+        },
+        "all_pass": false
+      },
+      "amplitude_minus_6pct": {
+        "metrics": {
+          "amp_centre_pct": -5.930291209988258,
+          "amp_profile_rms_pct": 5.733185270312421,
+          "amp_profile_worst_pct": 5.979358527947372,
+          "phase_centre_deg": 0.11580548670468073,
+          "phase_centre_pct_of_quarter_turn": 0.1286727630052008,
+          "phase_profile_rms_pct_of_quarter_turn": 0.20752591512121793,
+          "amp_wall_pct": 0.6210943114029424,
+          "interior_rows": 12,
+          "centre_y_over_H": 0.46875000000000006,
+          "centre_is_half": false
+        },
+        "gates": {
+          "G1_amp_centre_5pct": false,
+          "G2_amp_profile_rms_5pct": false,
+          "G3_phase_centre_5pct_of_quarter_turn": true,
+          "G4_phase_profile_rms_5pct_of_quarter_turn": true
+        },
+        "all_pass": false
+      },
+      "phase_shift_5.5pct_quarter_turn": {
+        "metrics": {
+          "amp_centre_pct": 0.07415828724653513,
+          "amp_profile_rms_pct": 0.3910953875929452,
+          "amp_profile_worst_pct": 0.7195174435273103,
+          "phase_centre_deg": 5.0658054867046785,
+          "phase_centre_pct_of_quarter_turn": 5.628672763005198,
+          "phase_profile_rms_pct_of_quarter_turn": 5.3825446770938346,
+          "amp_wall_pct": 5.722269731362974,
+          "interior_rows": 12,
+          "centre_y_over_H": 0.46875000000000006,
+          "centre_is_half": false
+        },
+        "gates": {
+          "G1_amp_centre_5pct": true,
+          "G2_amp_profile_rms_5pct": true,
+          "G3_phase_centre_5pct_of_quarter_turn": false,
+          "G4_phase_profile_rms_5pct_of_quarter_turn": false
+        },
+        "all_pass": false
+      },
+      "amplitude_plus_2pct_control": {
+        "metrics": {
+          "amp_centre_pct": 2.0756414529914613,
+          "amp_profile_rms_pct": 2.310921780022799,
+          "amp_profile_worst_pct": 2.733907792397864,
+          "phase_centre_deg": 0.11580548670468073,
+          "phase_centre_pct_of_quarter_turn": 0.1286727630052008,
+          "phase_profile_rms_pct_of_quarter_turn": 0.20752591512121793,
+          "amp_wall_pct": 7.8367151259902315,
+          "interior_rows": 12,
+          "centre_y_over_H": 0.46875000000000006,
+          "centre_is_half": false
+        },
+        "gates": {
+          "G1_amp_centre_5pct": true,
+          "G2_amp_profile_rms_5pct": true,
+          "G3_phase_centre_5pct_of_quarter_turn": true,
+          "G4_phase_profile_rms_5pct_of_quarter_turn": true
+        },
+        "all_pass": true
+      }
+    },
+    "no_mutation_passes": true,
+    "control_passes": true
+  },
+  "wall_band_disclosure": {
+    "rows": [
+      {
+        "resolution_H_over_dx": 8,
+        "worst_excluded_amp_pct": 10.091407913084574,
+        "excluded_rows": 2,
+        "interior_worst_amp_pct": 2.8080627969864898,
+        "gate_band": [
+          0.15,
+          0.85
+        ]
+      },
+      {
+        "resolution_H_over_dx": 12,
+        "worst_excluded_amp_pct": 7.6806671032963845,
+        "excluded_rows": 4,
+        "interior_worst_amp_pct": 0.9577670400174173,
+        "gate_band": [
+          0.15,
+          0.85
+        ]
+      },
+      {
+        "resolution_H_over_dx": 16,
+        "worst_excluded_amp_pct": 5.722269731362974,
+        "excluded_rows": 4,
+        "interior_worst_amp_pct": 0.7195174435273103,
+        "gate_band": [
+          0.15,
+          0.85
+        ]
+      }
+    ],
+    "statement": "the <5 % acceptance holds on the predeclared interior band 0.15 <= y/H <= 0.85 only; wall-adjacent rows carry up to 10.09 % amplitude error and are outside the graded set"
+  },
+  "not_run": [
+    "the WCSPH solver was not re-executed: the committed trajectories are the object of the audit, so solver-side claims are inherited, not re-measured",
+    "the R1 (constant-force) ladder was recomputed only for its published steady_rows table, not re-marched"
+  ],
+  "verdict": {
+    "reference_provenance_independently_confirmed": true,
+    "gate_arithmetic_reproduced": true,
+    "gates_reject_degraded_data": true,
+    "acceptance_5pct_holds_interior_band": true,
+    "wall_band_caveat_published": true,
+    "disposition": "approve with notes"
+  }
+}
