@@ -170,11 +170,20 @@ def test_uniform_density_initial_state_is_a_worse_balance(truncation_ladder):
 
 
 def test_short_run_conserves_energy_and_angular_momentum():
+    """Short run: energy holds, momentum bookkeeping is clean.
+
+    ``L_z`` is *not* an invariant of a periodic box (missions m21457): the gate is
+    that the in-box part of the torque is round-off and that the drift is
+    reproduced by the torque integral.  The drift itself is reported, not bounded
+    by round-off, because it is a property of the box geometry.
+    """
     cfg = GreshoConfig(dx=0.05, t_end=0.05, sample_every=5)
     run = run_gresho(cfg)
     measured = run["measured"]
     assert measured["energy_ratio"] > 0.98
-    assert measured["angular_momentum_drift_rel"] < 1e-3
+    assert measured["torque_in_box_rel_max"] < 1e-12
+    assert measured["lz_ledger_closure_pct"] <= GATES["lz_ledger_closure_pct"]
+    assert measured["angular_momentum_drift_rel"] < 1.0
     assert measured["linear_momentum_drift_rel"] < 1e-12
     assert measured["profile_error_pct_rms"] < 15.0
     assert run["config"]["particles"] == 400
@@ -198,7 +207,8 @@ def test_profile_error_is_zero_for_the_exact_field():
 def test_accept_verdict_is_driven_by_the_gates():
     good = {"dx": 0.0125, "particles": 6400, "steps": 10,
             "spurious_acceleration_pct": 1.0, "velocity_error_pct_end": 5.0,
-            "profile_error_pct_rms": 5.0, "angular_momentum_drift_rel": 1e-9,
+            "profile_error_pct_rms": 5.0, "angular_momentum_drift_rel": 1e-2,
+            "torque_in_box_rel_max": 1e-15, "lz_ledger_closure_pct": 0.01,
             "observed_order_acceleration": 1.9, "init_density_rel_error_max": 1e-5,
             "spurious_acceleration_max_pct": 1.0, "velocity_error_pct_max": 5.0,
             "energy_ratio": 0.95, "equivalent_viscosity": 1e-4,
