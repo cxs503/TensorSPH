@@ -1096,6 +1096,173 @@ CLOSURE_BENCH = "benchmarks/laplace_pressure_closure"
 ADMISSIBILITY_LIMIT = 0.1
 
 
+def tvc_convergence_claims() -> list[dict]:
+    """Resolution-ladder claims for the TVC dam-break closure (four rungs).
+
+    The ledger used to carry a single ``dam_break.tvc_alpha010.mae`` reading, taken
+    from ``results[0]`` of the cross-validation report -- i.e. the *best* rung of a
+    four-level ladder.  Reading only the best rung makes a non-monotone ladder look
+    like a converged closure, so every rung of
+    ``docs/xval_sphinx_tvc/data/ladder_dense.json`` is graded here, through the
+    generated ``convergence`` block of ``benchmarks/xval_sphinx_tvc/validation_report.json``
+    (``benchmarks/xval_sphinx_tvc/build_convergence_block.py`` recomputes that block
+    from the data; ``tests/test_tvc_convergence_analysis.py`` fails when the two
+    disagree).
+
+    Each rung carries **two** acceptance criteria (owner: mean relative error < 15 %;
+    ledger: MAE < 0.15 Z/a), so the graded reading is their worst normalised value,
+    ``max(MAE/0.15, mean_rel_error/0.15)``: ``>= 1`` means the rung is outside the
+    standard.  Grading a rung on the MAE alone would credit ``dx = 0.04`` (MAE
+    0.147 < 0.15) although its 17.1 % relative error misses the owner gate.
+    """
+    rel = "benchmarks/xval_sphinx_tvc/validation_report.json"
+    d = _load(rel)
+    conv = d["convergence"]
+    abs_gate = conv["gates"]["abs_mae"]
+    rel_gate = conv["gates"]["rel"]
+    variant = conv["reference_variant"]["variant"]
+    alpha = conv["reference_variant"]["alpha"]
+    out: list[dict] = []
+    summary = conv["ladder_summary"]
+    best_dx = summary["best_dx"]
+
+    for lvl in conv["levels"]:
+        dx = lvl["dx"]
+        row = lvl["variants"][variant]
+        both = lvl["tvc_meets_both_gates"]
+        by_mae = row["mae"] / abs_gate
+        by_rel = row["mean_rel_error"] / rel_gate
+        worst = max(by_mae, by_rel)
+        binding = "absolute MAE gate" if by_mae >= by_rel else "owner relative gate"
+        out.append(
+            _entry(
+                claim_id=f"dam_break.tvc_alpha010.ladder_dx{dx:g}",
+                quantity_id=f"dam_break_front_position_tvc_dx{dx:g}",
+                quantity=(
+                    f"dam-break front position vs Martin & Moyce (1952) with TVC "
+                    f"(alpha={alpha:g}, dx={dx:g} m): worst of the two normalised "
+                    f"acceptance criteria"
+                ),
+                artifact=rel,
+                json_path=f"convergence.levels[dx={dx:g}].variants.{variant}",
+                reference=(
+                    1.0,
+                    "-",
+                    "both gates met: max(MAE/0.15, mean_rel_error/0.15) < 1",
+                ),
+                measured=(
+                    worst,
+                    "-",
+                    f"MAE {row['mae']:.4f}/0.15 = {by_mae:.3f}, "
+                    f"mean relative error {row['mean_rel_error'] * 100:.1f} %/15 % = "
+                    f"{by_rel:.3f}; binding criterion = {binding}",
+                ),
+                rel_error_pct=(worst - 1.0) * 100.0,
+                guarding_test=(
+                    "tests/test_tvc_convergence_analysis.py"
+                    "::test_ledger_grades_every_ladder_rung"
+                ),
+                artifact_status="PASS" if both else "FAIL",
+                backlog_ref="docs/xval_sphinx_tvc/RESOLUTION_LADDER.md",
+                claim_type="gate",
+                gate_result="pass" if both else "fail",
+                gate_limit=1.0,
+                notes=(
+                    f"MAE {row['mae']:.6f} Z/a vs {abs_gate:g} "
+                    f"({'met' if row['gate_abs_pass'] else 'missed'}); mean relative error "
+                    f"{row['mean_rel_error'] * 100:.1f} % vs {rel_gate * 100:.0f} % "
+                    f"({'met' if row['gate_rel_pass'] else 'missed'}); density compression "
+                    f"{row['max_density_compression'] * 100:.2f} %, mass drift "
+                    f"{row['mass_drift']}. "
+                    + (
+                        "This is the only rung that meets both gates (minimum of the ladder)."
+                        if abs(dx - best_dx) < 1e-12 else
+                        f"Not the quoted point: the ladder minimum is dx={best_dx:g} m, and "
+                        "the fixed-alpha ladder is non-monotone in dx -- see "
+                        "dam_break.tvc_alpha010.ladder_gate_coverage."
+                    )
+                ),
+            )
+        )
+
+    n_meet = summary["n_levels_meeting_both_gates"]
+    n_lvl = summary["n_levels"]
+    out.append(
+        _entry(
+            claim_id="dam_break.tvc_alpha010.ladder_gate_coverage",
+            quantity_id="dam_break_tvc_ladder_gate_coverage",
+            quantity=(
+                "fraction of the refinement ladder on which the fixed-alpha TVC closure "
+                "meets both the owner relative gate and the ledger absolute gate"
+            ),
+            artifact=rel,
+            json_path="convergence.ladder_summary",
+            reference=(1.0, "fraction", "a verification ladder needs every rung inside the gates"),
+            measured=(
+                n_meet / n_lvl,
+                "fraction",
+                f"{n_meet} of {n_lvl} rungs inside both gates "
+                f"(dx = {', '.join(f'{dx:g}' for dx in summary['levels_meeting_both_gates'])} m)",
+            ),
+            rel_error_pct=(n_meet / n_lvl - 1.0) * 100.0,
+            guarding_test=(
+                "tests/test_tvc_convergence_analysis.py"
+                "::test_ledger_grades_every_ladder_rung"
+            ),
+            artifact_status="PASS" if n_meet == n_lvl else "FAIL",
+            backlog_ref="docs/xval_sphinx_tvc/RESOLUTION_LADDER.md",
+            claim_type="gate",
+            gate_result="pass" if n_meet == n_lvl else "fail",
+            gate_limit=1.0,
+            notes=conv["convergence_verdict"]["statement"] + " Mechanism: "
+            + conv["convergence_verdict"]["mechanism"] + ".",
+        )
+    )
+
+    cauchy = conv["self_convergence"][variant]["cauchy_l2"]
+    ratio = cauchy[-1]["cauchy_l2"] / cauchy[-2]["cauchy_l2"]
+    out.append(
+        _entry(
+            claim_id="dam_break.tvc_alpha010.self_convergence",
+            quantity_id="dam_break_tvc_cauchy_self_convergence",
+            quantity=(
+                "Cauchy self-convergence of the TVC front history: ratio of the L2 "
+                "level-to-level difference on the finest pair to the previous pair "
+                "(no experimental input)"
+            ),
+            artifact=rel,
+            json_path=f"convergence.self_convergence.{variant}.cauchy_l2",
+            reference=(1.0, "-", "the level-to-level difference must shrink: ratio < 1"),
+            measured=(
+                ratio,
+                "-",
+                f"L2 Cauchy difference {cauchy[-1]['cauchy_l2']:.4f} "
+                f"({cauchy[-1]['dx_coarse']:g}->{cauchy[-1]['dx_fine']:g} m) over "
+                f"{cauchy[-2]['cauchy_l2']:.4f} "
+                f"({cauchy[-2]['dx_coarse']:g}->{cauchy[-2]['dx_fine']:g} m)",
+            ),
+            rel_error_pct=(ratio - 1.0) * 100.0,
+            guarding_test=(
+                "tests/test_tvc_convergence_analysis.py"
+                "::test_ledger_grades_every_ladder_rung"
+            ),
+            artifact_status="PASS" if ratio < 1.0 else "FAIL",
+            backlog_ref="docs/xval_sphinx_tvc/RESOLUTION_LADDER.md",
+            claim_type="gate",
+            gate_result="pass" if ratio < 1.0 else "fail",
+            gate_limit=1.0,
+            notes=(
+                "Independent of the digitisation: the finest pair of the reference variant "
+                "diverges instead of converging (observed order "
+                f"{conv['self_convergence'][variant]['observed_order_l2'][-1]['observed_order_l2']:+.2f}, "
+                "same signature as the fixed-alpha decay), so no Richardson limit exists "
+                "for the corrected run and the ladder may not be quoted as convergent."
+            ),
+        )
+    )
+    return out
+
+
 def quiescence_claims() -> list[dict]:
     """Resting-pool / flume noise floor — the defect register entry ``F1``.
 
@@ -2662,6 +2829,7 @@ PRODUCERS = (
     operator_level_claims,
     model_level_claims,
     other_physics_claims,
+    tvc_convergence_claims,
     kernel_claims,
     threed_claims,
     closure_claims,
