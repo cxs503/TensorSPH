@@ -1,0 +1,159 @@
+{
+ "case": "CASE-SPH-WEDGE-ENTRY-2D",
+ "script": "benchmarks/case_sph_wedge_entry_2d/footprint_ledger.py",
+ "design": {
+  "gate": 0.15,
+  "phi_m": 0.008,
+  "metric": "Cp_Phi = max mean(p/q) over sliding windows of width Phi",
+  "reference": "Wagner field through the same footprint operator",
+  "residual": "obs/synth - 1",
+  "uncertainty": "frame bootstrap 5..95 %",
+  "verdict_rule": "ladder_closure.py rule, unchanged"
+ },
+ "wagner_cp_max_point": 8.402203300817021,
+ "designated": {
+  "model": "COM",
+  "cp_q": 6.92
+ },
+ "exact": {
+  "model": "EIM",
+  "cp_q": 6.9
+ },
+ "reference_half_spread_rel": 0.42774566473988435,
+ "grids": [
+  {
+   "tag": "dx4mm",
+   "dx_m": 0.004,
+   "phi_m": 0.008,
+   "footprint_cells": 2.0,
+   "delta_tau": 0.16,
+   "obs_cp": 11.868580061886295,
+   "synth_cp": 6.887692747979871,
+   "bootstrap": {
+    "n_valid": 400,
+    "p05": 8.343203507497266,
+    "p50": 11.93458721728203,
+    "p95": 15.675216583884483,
+    "rel_half_width": 0.307174975677835
+   },
+   "uncertainty": 0.307174975677835,
+   "residual": 0.7231575937192168,
+   "judgeable": false,
+   "obs_vs_wagner_point": 0.412555687712556,
+   "obs_vs_designated": 0.7151127257061121,
+   "all_footprints": [
+    {
+     "footprint_cells": 2.0,
+     "footprint_m": 0.008,
+     "delta_tau": 0.16,
+     "window_fine_bins": 32,
+     "cp_peak": 11.868580061886295,
+     "tau_at_peak": 0.995,
+     "samples_in_window": 28
+    },
+    {
+     "footprint_cells": 4.0,
+     "footprint_m": 0.016,
+     "delta_tau": 0.32,
+     "window_fine_bins": 64,
+     "cp_peak": 9.029849568330837,
+     "tau_at_peak": 1.0,
+     "samples_in_window": 88
+    },
+    {
+     "footprint_cells": 8.0,
+     "footprint_m": 0.032,
+     "delta_tau": 0.64,
+     "window_fine_bins": 128,
+     "cp_peak": 6.711779589043528,
+     "tau_at_peak": 0.88,
+     "samples_in_window": 332
+    },
+    {
+     "footprint_cells": 16.0,
+     "footprint_m": 0.064,
+     "delta_tau": 1.28,
+     "window_fine_bins": 256,
+     "cp_peak": NaN,
+     "tau_at_peak": NaN,
+     "samples_in_window": 0
+    }
+   ]
+  },
+  {
+   "tag": "dx2mm",
+   "dx_m": 0.002,
+   "phi_m": 0.008,
+   "footprint_cells": 4.0,
+   "delta_tau": 0.16,
+   "obs_cp": 5.998991067581018,
+   "synth_cp": 7.406435910026123,
+   "bootstrap": {
+    "n_valid": 400,
+    "p05": 5.6248752366129375,
+    "p50": 6.506221371435685,
+    "p95": 7.5485416376090395,
+    "rel_half_width": 0.14783284268819916
+   },
+   "uncertainty": 0.14783284268819916,
+   "residual": -0.1900299765694105,
+   "judgeable": true,
+   "obs_vs_wagner_point": -0.28602167160158065,
+   "obs_vs_designated": -0.13309377636112452,
+   "all_footprints": [
+    {
+     "footprint_cells": 2.0,
+     "footprint_m": 0.004,
+     "delta_tau": 0.08,
+     "window_fine_bins": 16,
+     "cp_peak": 6.400685582868286,
+     "tau_at_peak": 0.735,
+     "samples_in_window": 128
+    },
+    {
+     "footprint_cells": 4.0,
+     "footprint_m": 0.008,
+     "delta_tau": 0.16,
+     "window_fine_bins": 32,
+     "cp_peak": 5.998991067581018,
+     "tau_at_peak": 0.6950000000000001,
+     "samples_in_window": 262
+    },
+    {
+     "footprint_cells": 8.0,
+     "footprint_m": 0.016,
+     "delta_tau": 0.32,
+     "window_fine_bins": 64,
+     "cp_peak": 5.849658305746039,
+     "tau_at_peak": 0.81,
+     "samples_in_window": 522
+    },
+    {
+     "footprint_cells": 16.0,
+     "footprint_m": 0.032,
+     "delta_tau": 0.64,
+     "window_fine_bins": 128,
+     "cp_peak": 5.344850607083016,
+     "tau_at_peak": 0.67,
+     "samples_in_window": 1070
+    }
+   ]
+  }
+ ],
+ "missing_grids": [
+  "dx1mm",
+  "dx0.5mm"
+ ],
+ "verdict": {
+  "verdict": "NOT_DECIDABLE",
+  "reason": "only 1 judgeable grid(s) (U > 15%)",
+  "grids_judgeable": [
+   "dx2mm"
+  ]
+ },
+ "figures": [
+  "figures/fig1_footprint_ladder.png",
+  "figures/fig2_footprint_residual.png",
+  "figures/fig3_footprint_sensitivity.png"
+ ]
+}
