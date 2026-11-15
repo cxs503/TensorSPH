@@ -18,6 +18,12 @@
 > `artifacts/lake_at_rest/rest_dx020_periodic.json`. The numbers below are
 > reproduced unchanged by `artifacts/lake_at_rest/rest_dx020_wall.json`.
 
+> **Update (m21223).** Why this FAIL cannot be refined away, and the measured
+> rejection of four wall-pressure fields, three wall-mass conventions and three
+> shipped operator options, is in `docs/verification_lake_at_rest_wall_gap.md`
+> (runner `benchmarks/lake_at_rest/wall_gap.py`, evidence
+> `tests/data/lake_at_rest/wall_gap.json`). The verdict below is unchanged.
+
 Case-pool anchor `CASE-SPH-LAKE-AT-REST`. Reference: the analytic hydrostatic
 identity (`u = 0`, flat free surface) — no experimental uncertainty, no fitted
 constant. Artefact: `artifacts/lake_at_rest/rest_dx020.json`; code
