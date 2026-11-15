@@ -99,15 +99,48 @@ def test_stress_flux_conserves_momentum_without_hourglass():
     assert float(torch.linalg.vector_norm(net)) / scale < 1e-12
 
 
-def test_hourglass_penalty_breaks_momentum_conservation():
-    """Documented consequence of the upstream penalty term (measured, not assumed)."""
+def test_hourglass_penalty_conserves_momentum():
+    """The penalty is conservative *if* the pair is assembled antisymmetrically.
+
+    ``H_ij`` is even under ``i <-> j`` (both ``T_i + T_j`` and ``M ∝ (g.e) g (x) e``
+    are), so ``H . grad W`` is odd -- the same parity as ``(S_i + S_j) . grad W``.
+    Both terms must therefore enter the ``j`` end with the same sign; upstream does
+    exactly that (its symmetric loop plays the ``j`` role), so a residual here is a
+    port defect, not a property of the model.  Before the round-3 fix this test
+    measured 0.73 (see ``out_single_phase_completion/gate.json``,
+    ``hourglass_pair_order.pair_assembly.legacy_pair_order_leak``).
+    """
     pos, _r, _phase, rho0, vol, pw, pa, frac = _setup()
     mass = rho0 * vol
-    acc, _fields = sc.surface_tension_acceleration(
-        pos, mass, rho0, vol, pw, pa, SIGMA, H, frac=frac, hourglass=True)
+    for hourglass in (False, True):
+        acc, _fields = sc.surface_tension_acceleration(
+            pos, mass, rho0, vol, pw, pa, SIGMA, H, frac=frac, hourglass=hourglass)
+        net = (mass[:, None] * acc).sum(dim=0)
+        scale = float((mass * torch.linalg.vector_norm(acc, dim=1)).sum())
+        assert float(torch.linalg.vector_norm(net)) / scale < 1e-12, hourglass
+
+
+def test_pair_penalty_is_antisymmetric_for_any_state():
+    """Structural: a *pair* cancels for a generic (non-physical) field state.
+
+    Three particles, two pairs, arbitrary colour gradients and no interface: the
+    hourglass flux of the two ends must cancel to round-off.  This is the property
+    the pre-round-3 ``-w (flux - hg)`` assembly violated.
+    """
+    h = H
+    pos = torch.tensor([[0.0, 0.0], [0.8 * h, 0.0], [0.0, 0.6 * h]], dtype=torch.float64)
+    vol = torch.full((3,), DX * DX, dtype=torch.float64)
+    rho = torch.full((3,), RHO_W, dtype=torch.float64)
+    mass = rho * vol
+    pairs = torch.tensor([[0, 1], [2, 0]], dtype=torch.long)
+    grad = torch.tensor([[1.0, 0.3], [-0.2, 1.0], [0.5, -0.7]],
+                        dtype=torch.float64) * 1.0e3
+    fields = sc.surface_stress(grad, SIGMA)
+    acc = sc.inner_stress_force(pos, mass, rho, vol, pairs, fields, SIGMA, h,
+                               hourglass=True)
     net = (mass[:, None] * acc).sum(dim=0)
     scale = float((mass * torch.linalg.vector_norm(acc, dim=1)).sum())
-    assert float(torch.linalg.vector_norm(net)) / scale > 0.1
+    assert float(torch.linalg.vector_norm(net)) / scale < 1e-14
 
 
 def test_stress_reading_reproduces_laplace_within_gate():

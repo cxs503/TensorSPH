@@ -28,6 +28,21 @@ Artefacts: `benchmarks/surface_tension/sphinxys_lamb.py`,
 
 ---
 
+**Round 3 correction (hourglass pair order).** The ported hourglass penalty used
+to be assembled with the ``j`` end of a pair on the wrong side of the bracket
+(``-w (flux - hg)`` instead of ``-w (flux + hg)``, plus an un-flipped ``e``-odd term
+in the contact loop). Since ``H_ij`` is *even* under ``i <-> j``, the scalar
+``H . grad W`` is odd and both terms belong in the antisymmetric bracket; upstream
+runs the symmetric loop and is conservative, so the residual recorded here earlier
+was the port's. With the pair order fixed (momentum residual 0.73 -> 1e-17,
+``benchmarks/surface_tension/out_single_phase_completion/gate.json``,
+``hourglass_pair_order``) the inner penalty no longer cancels itself across a pair
+and its bias becomes visible: the spurious mode-2 pressure on a circle at
+R/dx = 24 drops from 2.10 to 0.395 ``sigma/R``, while the *two-phase* Lamb
+frequency with the penalty on moves from -4.2 % to +49.7 % -- hence
+``hourglass_scope="contact"`` (-2.2 %) is the configuration that passes the gate.
+All gated (penalty-off) numbers in this document are unaffected.
+
 ## 1. Case introduction
 
 **Physics.** A 2-D inviscid drop at rest with a small shape perturbation

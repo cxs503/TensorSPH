@@ -112,10 +112,17 @@ def test_css_bookkeeping_identity_upstream_vs_consistent():
 
 def test_two_phase_mixture_lamb_frequency_within_gate():
     """The mixture path (contact fraction 1000:1, contact stress flux) must also
-    reproduce the Lamb frequency."""
+    reproduce the Lamb frequency.
+
+    The configuration carries ``hourglass_scope="contact"``: the *inner* penalty is
+    a phase-mixing term that biases the mode-2 force (see
+    ``test_inner_hourglass_penalty_biases_the_two_phase_lamb_frequency``), and
+    since round 3 -- where the pair assembly of the penalty was made exactly
+    antisymmetric -- that bias is no longer masked by a momentum leak.
+    """
     dx = RADIUS / 16
     g = L.two_phase_lobe_geometry(2, 0.10, RADIUS, dx, rings=6)
-    row = L.css_two_phase(g, hourglass=True)
+    row = L.css_two_phase(g, hourglass=True, hourglass_scope="contact")
     assert abs(row["omega_error_pct"]) < GATE_PCT, row
     # contact fraction of the water phase in a 1000:1 pair
     assert abs(row["contact_fraction_water"] - 1000.0 / 1001.0) < 1e-12
@@ -154,28 +161,38 @@ def test_hourglass_scope_contact_passes_the_lamb_gate_at_every_level():
         assert abs(row["omega_error_pct"]) < GATE_PCT, (ppd, row)
 
 
-def test_hourglass_scope_contact_is_inert_on_the_two_phase_path():
-    """The contact (cross-phase) hourglass penalty is the one that upstream
-    actually uses -- it is suppressed by ``4 f (1-f)`` -- so restricting the
-    scope must leave the two-phase answer unchanged."""
+def test_inner_hourglass_penalty_biases_the_two_phase_lamb_frequency():
+    """The inner penalty is *not* inert on the two-phase path once the pair is
+    assembled antisymmetrically (round 3).
+
+    Before the fix the hourglass contribution did not cancel across a pair, so the
+    penalty could not act as a net force on the mode and the two-phase Lamb
+    frequency read −4.2 % with the penalty on.  With the pair order corrected the
+    penalty is conservative and its bias becomes visible: +49.7 % with
+    ``scope="all"`` versus −2.2 % with ``scope="contact"`` (the gated
+    configuration).  The residual difference also shows that the cross-phase
+    penalty alone is small but not zero.
+    """
     dx = RADIUS / 16
     g = L.two_phase_lobe_geometry(2, 0.10, RADIUS, dx, rings=6)
     all_ = L.css_two_phase(g, hourglass=True, hourglass_scope="all")
     contact = L.css_two_phase(g, hourglass=True, hourglass_scope="contact")
-    assert abs(all_["omega_ratio"] - contact["omega_ratio"]) < 5e-3, (all_, contact)
+    assert all_["omega_error_pct"] > 25.0, all_
     assert abs(contact["omega_error_pct"]) < GATE_PCT, contact
+    assert contact["omega_ratio"] < all_["omega_ratio"]
 
 
 def test_upstream_inner_hourglass_defect_stays_pinned():
-    """Regression pin on the *literal* upstream transcription (scope="all"): the
-    spurious mode-2 pressure on a circle is ~2 sigma/R, which is what
-    ``docs/xval_sphinxys_surface_tension/LAMB.md`` reports.  If the ported inner
-    hourglass is ever rewritten, this test must be updated together with the
-    document -- the record must not drift silently."""
+    """Regression pin on the *literal* upstream inner penalty (scope="all"): the
+    spurious mode-2 pressure on a circle is a finite fraction of ``sigma/R`` and
+    must not silently become zero.  Measured 2.10 before the round-3 pair-order
+    fix and 0.395 with the antisymmetric assembly; both are far from the physical
+    zero, so the defect stands and `docs/xval_sphinxys_surface_tension/LAMB.md`
+    carries the matching correction note."""
     circle = L.lobe_geometry(2, 0.0, RADIUS, RADIUS / 24)
     row = L.css_single_phase(circle, hourglass=True)
     spurious = abs(row["dp_measured_pa"]) * RADIUS / SIGMA
-    assert 1.5 < spurious < 3.0, (spurious, row)
+    assert 0.25 < spurious < 0.6, (spurious, row)
 
 
 def test_invalid_hourglass_scope_is_rejected():

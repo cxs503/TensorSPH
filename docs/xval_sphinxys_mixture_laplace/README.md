@@ -117,9 +117,12 @@ effect is measured in §4.
 
 ### 2.5 Gated configuration
 
-`assembly="consistent"` (`V_j/ρ_i`), `bracket="symmetric"`, `hourglass=False` (the upstream
-hourglass penalty is antisymmetric under i↔j by construction and breaks momentum conservation —
-0.73 relative residual; with it off the residual is < 1e−16 and the Laplace error is unchanged).
+`assembly="consistent"` (`V_j/ρ_i`), `bracket="symmetric"`, `hourglass=False` (as a
+convection-free *setting*, not because the model is non-conservative: the upstream hourglass
+penalty is even under i↔j and conserves momentum in upstream's symmetric loop. The 0.73
+relative residual this round recorded was the **port's** pair order — corrected in round 3,
+see [`single_phase_completion.md`](single_phase_completion.md) T7, after which the residual is
+1e−17 with the penalty on and the Laplace error with it off is unchanged).
 
 ## 3. Results
 
