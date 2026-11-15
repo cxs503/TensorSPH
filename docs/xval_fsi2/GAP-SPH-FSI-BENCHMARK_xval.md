@@ -222,3 +222,42 @@ as the blocker for the coupled fsi2 transient was **falsified** in
 error is +2.55 % at n=25, converging).  The coupled transient is therefore blocked
 by cost/resolution and by the still-open solid-model question (discrete rod vs
 TLSPH), not by a rod accuracy defect -- it remains the round-2 target.
+
+## 12. Update (round 3, same anchor): a second, independent force channel -- and the near-field arms fail the gate at the coupled scale
+
+Every load channel the repository uses integrates the body surface (``pair``,
+``panel``), so neither can detect its own reconstruction bias.  Round 3 adds the
+control-volume (far-field) identity as a channel that never touches the body,
+``src/tensorsph/farfield_force.py`` (circular surface + wake plane, linear-exact
+surface reconstruction), and uses it to arbitrate the load channel at the
+coupled ``fsi2`` spacing.
+
+Result (``artifacts/xval_fsi2/farfield_force.json``, driver
+``benchmarks/xval_fsi2/farfield_force_audit.py``, document
+``FARFIELD_FORCE_CHANNEL.md``, guards ``tests/test_farfield_force.py``):
+
+| leg | reference | worst error |
+|---|---|---|
+| G1a closed surface, uniform flow + constant p | 0 | 1.3e-13 |
+| G1b closed surface, linear p | `-A grad p` | 1.4e-11 (plain bin average: 1.9e-3) |
+| G2 potential flow about a cylinder, `R/a = 3..10`, `dx/a = 0.08..0.02` | `F_y = -rho U Gamma`, `F_x = 0` | 4.5e-4 lift, 1.9e-4 drag/lift |
+| G3 Gaussian wake, momentum-deficit plane | closed form | 5.7e-4 |
+| G4 far-field at the coupled spacing, `dx = 0.02`, `h/R = 0.52` | same potential-flow field | +0.020 % (10R), +0.183 % (3R, fits the channel) |
+| G4 **near-field kernel arm**, same field | same | **+48.0 %** (`3h` annulus) / +46.2 % (`5h`) |
+| G4 **near-field plane-fit arm**, same field | same | **+35.7 %** (`3h`) / +31.3 % (`5h`) |
+
+Read-out: at the resolution the coupled run actually uses, **both** near-field
+arms are 36..48 % off on a curved body -- including the plane-fit arm the driver
+reports by default (`cylinder_load_arm = "fit"`), whose exactness was only ever
+established for linear fields on flat walls / large radii.  The far-field channel
+holds the 3 % gate on the same field at the same spacing.  Consequence for the
+``Cd_mean = 0.052`` verdict of ``VIV_PERIODIC_VERDICT.md``: the coupled load has
+a +36 % order channel bias of its own on top of whatever the fluid solve does, so
+the -98 % deficit must not be read as a pure fluid-solver error.
+
+Not done (honest): the unsteady term ``-d/dt int rho u dV`` of the identity is
+**not** implemented (its uniform part diverges like ``R^2`` in 2-D and must be
+discretised together with the pressure flux), so only steady / time-averaged
+loads are covered; the viscous flux is a caller-supplied hook; and no transient
+SPH field was involved, so the comparison against Turek-Hron / Schaefer-Turek
+``Cd``/``Cl`` remains **not_run**.
