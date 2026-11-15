@@ -174,17 +174,17 @@
         }
       ],
       "expected_primary": "heat_conduction_operator",
-      "headline_bound_pct": 0.00021805730765489528,
-      "headline_quantity": "heat_conduction_operator: max normalised error vs the erfc similarity solution",
+      "headline_bound_pct": 0.15037283680667207,
+      "headline_quantity": "heat_conduction_operator: max normalised field error vs exp(-alpha (kx^2+ky^2) t) cos(kx x) cos(ky y) on a periodic square, n=128, RK4 time stepping, 2-D k->0 lattice calibration (gate 3 %)",
       "label": "1-D transient conduction",
       "modifiers": [],
       "notes": [],
-      "primary_accuracy_pct": 0.00021805730765489528,
+      "primary_accuracy_pct": 0.15037283680667207,
       "primary_method": "heat_conduction_operator",
       "primary_robustness_pct": null,
       "primary_status": "SELECTED",
-      "primary_worst_banked_pct": 0.00021805730765489528,
-      "primary_worst_pct": 0.00021805730765489528,
+      "primary_worst_banked_pct": 834.6029833103374,
+      "primary_worst_pct": 0.15037283680667207,
       "profile": {
         "domain": "closed",
         "thermal_transport": true
