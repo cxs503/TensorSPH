@@ -1,0 +1,155 @@
+{
+ "case": "CASE-SPH-WEDGE-ENTRY-2D",
+ "comparisons": [
+  {
+   "closest_estimator": "footprint_median",
+   "closest_rel_gap_to_table": 0.2731457435641007,
+   "committed": {
+    "alpha_visc": 0.03,
+    "artifact": "docs/artifacts/case_sph_wedge_entry_2d_ensemble/ensemble_dx2mm_c0v20.json",
+    "c0_factor": 20.0,
+    "cp": {
+     "footprint_max": 35.30814511495503,
+     "footprint_median": 12.843494261074648,
+     "resolved_band": 6.070821030113392
+    },
+    "cp_err_vs_table": {
+     "footprint_max": 2.5000143849083103,
+     "footprint_median": 0.2731457435641007,
+     "resolved_band": -0.3982136171576732
+    },
+    "cp_err_vs_wagner": {
+     "footprint_max": 3.202248368772713,
+     "footprint_median": 0.5285864672931397,
+     "resolved_band": -0.2774727279542174
+    },
+    "frames": 61,
+    "steps": 587
+   },
+   "dx": 0.002,
+   "match": "unreproducible",
+   "table_c_over_Vt": 2.6124,
+   "table_cp": 10.088,
+   "table_cp_err_recomputed": 0.20063745648942488,
+   "table_pmax_err_printed": 20.1,
+   "table_pmax_kpa": 5.044,
+   "table_steps": 637
+  },
+  {
+   "committed": null,
+   "dx": 0.00133,
+   "match": "no committed artefact at this dx",
+   "table_c_over_Vt": 2.6142,
+   "table_cp": 10.71,
+   "table_cp_err_recomputed": 0.2746656581088167,
+   "table_pmax_err_printed": 27.5,
+   "table_pmax_kpa": 5.355,
+   "table_steps": 922
+  },
+  {
+   "closest_estimator": "resolved_band",
+   "closest_rel_gap_to_table": 0.28892723442234325,
+   "committed": {
+    "alpha_visc": 0.03,
+    "artifact": "docs/artifacts/case_sph_wedge_entry_2d_ensemble/ensemble_dx1mm_c0v20.json",
+    "c0_factor": 20.0,
+    "cp": {
+     "footprint_max": 37.09515388320636,
+     "footprint_median": 13.708037975934198,
+     "resolved_band": 6.804966366578175
+    },
+    "cp_err_vs_table": {
+     "footprint_max": 2.8761916283392224,
+     "footprint_median": 0.43239686268904887,
+     "resolved_band": -0.28892723442234325
+    },
+    "cp_err_vs_wagner": {
+     "footprint_max": 3.414931721492536,
+     "footprint_median": 0.6314813490172564,
+     "resolved_band": -0.190097391964264
+    },
+    "frames": 61,
+    "steps": 1076
+   },
+   "dx": 0.001,
+   "match": "unreproducible",
+   "table_c_over_Vt": 2.6454,
+   "table_cp": 9.57,
+   "table_cp_err_recomputed": 0.13898696060703797,
+   "table_pmax_err_printed": 13.9,
+   "table_pmax_kpa": 4.785,
+   "table_steps": 1210
+  },
+  {
+   "committed": null,
+   "dx": 0.0005,
+   "match": "no committed artefact at this dx",
+   "table_c_over_Vt": 2.6859,
+   "table_cp": 8.49,
+   "table_cp_err_recomputed": 0.01044924718430007,
+   "table_pmax_err_printed": 1.1,
+   "table_pmax_kpa": 4.245,
+   "table_steps": 2352
+  }
+ ],
+ "design": {
+  "estimators": [
+   "resolved_band (binned, 61 frames)",
+   "footprint_max (max over frames)",
+   "footprint_median (median over frames)"
+  ],
+  "gate": 0.15,
+  "q_pa": 500.0,
+  "rho": 1000.0,
+  "velocity": 1.0,
+  "wagner_cp_max": 8.402203300817021
+ },
+ "doc": "docs/verification_wedge_entry.md",
+ "doc_config_vs_committed": {
+  "alpha_mismatch": true,
+  "c0_mismatch": false,
+  "committed_runs": {
+   "dx1mm": {
+    "alpha_visc": 0.03,
+    "c0_factor": 20.0,
+    "steps": 1076
+   },
+   "dx2mm": {
+    "alpha_visc": 0.03,
+    "c0_factor": 20.0,
+    "steps": 587
+   },
+   "dx4mm": {
+    "alpha_visc": 0.03,
+    "c0_factor": 20.0,
+    "steps": 329
+   }
+  },
+  "doc_declared": {
+   "alpha_visc": 0.1,
+   "c0_over_V": 20.0,
+   "c_end_m": 0.05,
+   "gamma": 7.0
+  }
+ },
+ "script": "benchmarks/case_sph_wedge_entry_2d/table_erratum.py",
+ "section": "### 3.2",
+ "summary": {
+  "no_committed_artifact": [
+   0.00133,
+   0.0005
+  ],
+  "reproduced": [],
+  "rows_in_table": 4,
+  "rows_with_committed_artifact": 2,
+  "unreproducible": [
+   0.002,
+   0.001
+  ],
+  "verdict": {
+   "reason": "2/4 table rows are not reproduced by any committed estimator within 15%; worst dx=1 mm, closest estimator resolved_band off by 28.9%",
+   "usable_as_acceptance": false,
+   "worst_row": 0.001
+  }
+ }
+}
