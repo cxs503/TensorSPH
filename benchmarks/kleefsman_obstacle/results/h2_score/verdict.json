@@ -1,0 +1,205 @@
+{
+  "case": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST",
+  "reference": {
+    "peak_height_m": 0.37,
+    "peak_time_s": 1.7027,
+    "arrival_time_s": 0.3591,
+    "probe": "H2",
+    "source": "Kleefsman, Fekken, Veldman, Iwanowski & Buchner (2005) J. Comput. Phys. 206:363-393, doi:10.1016/j.jcp.2004.12.007, Fig. 19 right panel"
+  },
+  "runs": {
+    "dx0.02": {
+      "t_end_s": 1.2002,
+      "window_covers_experimental_peak": false,
+      "front_arrival_at_box_face_s": 0.45449124562281146,
+      "front_arrival_err_rel": 0.2656397817399373,
+      "cells": [
+        {
+          "operator": "height",
+          "station_x_m": 2.228,
+          "peak_m": 0.180698,
+          "peak_time_s": 1.2002,
+          "arrival_s": 0.3997810718358039,
+          "peak_err_rel": 0.511627027027027,
+          "arrival_err_rel": 0.11328619280368683,
+          "peak_pass": false,
+          "arrival_pass": false
+        },
+        {
+          "operator": "height",
+          "station_x_m": 2.426,
+          "peak_m": 0.517466,
+          "peak_time_s": 0.716,
+          "arrival_s": 0.4540684757798631,
+          "peak_err_rel": 0.3985567567567567,
+          "arrival_err_rel": 0.264462477805244,
+          "peak_pass": false,
+          "arrival_pass": false
+        },
+        {
+          "operator": "slab",
+          "station_x_m": 2.228,
+          "peak_m": 0.203617,
+          "peak_time_s": 1.2002,
+          "arrival_s": 0.3893124393288032,
+          "peak_err_rel": 0.4496837837837838,
+          "arrival_err_rel": 0.08413377702256543,
+          "peak_pass": false,
+          "arrival_pass": true
+        },
+        {
+          "operator": "slab",
+          "station_x_m": 2.426,
+          "peak_m": 0.476818,
+          "peak_time_s": 1.104,
+          "arrival_s": 0.44091977333730986,
+          "peak_err_rel": 0.2886972972972974,
+          "arrival_err_rel": 0.22784676507187382,
+          "peak_pass": false,
+          "arrival_pass": false
+        },
+        {
+          "operator": "surface",
+          "station_x_m": 2.228,
+          "peak_m": 0.200698,
+          "peak_time_s": 1.2002,
+          "arrival_s": 0.3869385836027035,
+          "peak_err_rel": 0.457572972972973,
+          "arrival_err_rel": 0.07752320691368289,
+          "peak_pass": false,
+          "arrival_pass": true
+        },
+        {
+          "operator": "surface",
+          "station_x_m": 2.426,
+          "peak_m": 0.537466,
+          "peak_time_s": 0.716,
+          "arrival_s": 0.4355690385902298,
+          "peak_err_rel": 0.45261081081081084,
+          "arrival_err_rel": 0.21294636198894404,
+          "peak_pass": false,
+          "arrival_pass": false
+        }
+      ]
+    },
+    "dx0.04": {
+      "t_end_s": 1.2002,
+      "window_covers_experimental_peak": false,
+      "front_arrival_at_box_face_s": 0.5361061480138454,
+      "front_arrival_err_rel": 0.49291603456932725,
+      "cells": [
+        {
+          "operator": "height",
+          "station_x_m": 2.228,
+          "peak_m": 0.177761,
+          "peak_time_s": 1.152,
+          "arrival_s": 0.43580196170014013,
+          "peak_err_rel": 0.5195648648648649,
+          "arrival_err_rel": 0.21359499220311934,
+          "peak_pass": false,
+          "arrival_pass": false
+        },
+        {
+          "operator": "height",
+          "station_x_m": 2.426,
+          "peak_m": 0.425458,
+          "peak_time_s": 0.92,
+          "arrival_s": 0.48414582084182756,
+          "peak_err_rel": 0.1498864864864865,
+          "arrival_err_rel": 0.34822005246958393,
+          "peak_pass": false,
+          "arrival_pass": false
+        },
+        {
+          "operator": "slab",
+          "station_x_m": 2.228,
+          "peak_m": 0.201019,
+          "peak_time_s": 1.152,
+          "arrival_s": 0.40739362618432384,
+          "peak_err_rel": 0.4567054054054054,
+          "arrival_err_rel": 0.13448517455952066,
+          "peak_pass": false,
+          "arrival_pass": false
+        },
+        {
+          "operator": "slab",
+          "station_x_m": 2.426,
+          "peak_m": 0.433823,
+          "peak_time_s": 0.912,
+          "arrival_s": 0.4603949539979133,
+          "peak_err_rel": 0.17249459459459465,
+          "arrival_err_rel": 0.2820800723974195,
+          "peak_pass": false,
+          "arrival_pass": false
+        },
+        {
+          "operator": "surface",
+          "station_x_m": 2.228,
+          "peak_m": 0.217761,
+          "peak_time_s": 1.152,
+          "arrival_s": 0.4017932796843828,
+          "peak_err_rel": 0.41145675675675675,
+          "arrival_err_rel": 0.1188896677370727,
+          "peak_pass": false,
+          "arrival_pass": false
+        },
+        {
+          "operator": "surface",
+          "station_x_m": 2.426,
+          "peak_m": 0.465458,
+          "peak_time_s": 0.92,
+          "arrival_s": 0.46580876800289406,
+          "peak_err_rel": 0.25799459459459456,
+          "arrival_err_rel": 0.29715613478945724,
+          "peak_pass": false,
+          "arrival_pass": false
+        }
+      ]
+    }
+  },
+  "envelope": {
+    "height": {
+      "peak_err_rel_min": 0.1498864864864865,
+      "peak_err_rel_max": 0.5195648648648649,
+      "arrival_err_rel_min": 0.11328619280368683,
+      "arrival_err_rel_max": 0.34822005246958393,
+      "any_peak_pass": false,
+      "any_arrival_pass": false,
+      "n_cells": 4
+    },
+    "slab": {
+      "peak_err_rel_min": 0.17249459459459465,
+      "peak_err_rel_max": 0.4567054054054054,
+      "arrival_err_rel_min": 0.08413377702256543,
+      "arrival_err_rel_max": 0.2820800723974195,
+      "any_peak_pass": false,
+      "any_arrival_pass": true,
+      "n_cells": 4
+    },
+    "surface": {
+      "peak_err_rel_min": 0.25799459459459456,
+      "peak_err_rel_max": 0.457572972972973,
+      "arrival_err_rel_min": 0.07752320691368289,
+      "arrival_err_rel_max": 0.29715613478945724,
+      "any_peak_pass": false,
+      "any_arrival_pass": true,
+      "n_cells": 4
+    }
+  },
+  "verdict": {
+    "verdict": "WINDOW_LIMITED",
+    "n_cells": 0,
+    "reason": "no run reaches the experimental global peak at t=1.2002 s"
+  },
+  "obstacle_blockage": {
+    "box_width_m": 0.403,
+    "tank_width_m": 1.0,
+    "blocked_fraction_3d_experiment": 0.403,
+    "blocked_fraction_2d_model": 1.0,
+    "note": "the 2D model makes the 0.403 m box span the whole 1.0 m width, so 100 % of the flow must climb the 0.161 m step while the experiment lets 60 % of the width bypass it laterally; this bounds how far a 2D solution can agree with the H2 trace inside the run-up zone"
+  },
+  "figures": [
+    "/root/tp-agent/work/m21586/benchmarks/kleefsman_obstacle/results/h2_score/h2_timeseries.png",
+    "/root/tp-agent/work/m21586/benchmarks/kleefsman_obstacle/results/h2_score/h2_error_envelope.png"
+  ]
+}
