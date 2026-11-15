@@ -40,6 +40,7 @@ from benchmarks.poiseuille.run import (
     periodic_images,
 )
 from tensorsph.droplet_impact import resolve_device, rhs
+from tensorsph.wall_mirror import plane_walls
 
 
 def boussinesq_series(y, t, height: float, body_force: float,
@@ -56,22 +57,24 @@ def boussinesq_series(y, t, height: float, body_force: float,
 
 
 def run_startup_case(cfg, height: float, length: float, body_force: float,
-                     t_end: float, sample_times, device):
+                     t_end: float, sample_times, device,
+                     slip: str = "no_slip", wallless: bool = False):
     """Integrate from rest and sample the velocity profile at target times."""
     dx = cfg.dx
     pos, mass = build_fluid(cfg, height, length, device)
     n = pos.shape[0]
-    wall = build_mirror_walls(cfg, height, length, device)
 
     vel = torch.zeros_like(pos)
     h = cfg.h_factor * dx
+    support = 2.0 * h
+    planes = [(0.0, +1), (height, -1)]
     dt_acoustic = 0.3 * h / cfg.sound_speed
     dt_viscous = 0.125 * h * h / cfg.viscosity
     dt = min(dt_acoustic, dt_viscous)
     steps = int(round(t_end / dt))
 
     sample_window = 0.005
-    samples_at_time = {t: {"u_sum": torch.zeros(n, device=device), "count": 0}
+    samples_at_time = {t: {"u_sum": torch.zeros_like(pos), "count": 0}
                        for t in sample_times}
 
     trace = []
@@ -81,7 +84,13 @@ def run_startup_case(cfg, height: float, length: float, body_force: float,
         pos_ext = periodic_images(pos, length)
         vel_ext = torch.cat((vel, vel, vel), dim=0)
         mass_ext = torch.cat((mass, mass, mass), dim=0)
-        _, _, acc = rhs(pos_ext, vel_ext, mass_ext, cfg, wall=wall)
+        if wallless:
+            ghost_pos = ghost_vel = None
+        else:
+            ghost_pos, ghost_vel, _ = plane_walls(pos_ext, vel_ext, mass_ext,
+                                                  planes, support, slip=slip)
+        _, _, acc = rhs(pos_ext, vel_ext, mass_ext, cfg,
+                        wall=ghost_pos, wall_vel=ghost_vel)
         acc = acc[:n].clone()
         acc[:, 0] += body_force
 
@@ -121,11 +130,6 @@ def run_startup_case(cfg, height: float, length: float, body_force: float,
         "trace": trace,
         "wall_clock_s": time.time() - wall_clock,
     }
-
-
-def build_mirror_walls(cfg, height: float, length: float, device):
-    """Mirror (ghost) walls: velocity negated, no static particles."""
-    return torch.empty((0, 2), device=device)
 
 
 def compare_profile(profile, t: float, height: float, body_force: float,
