@@ -296,13 +296,37 @@ def r1_quantities(result: dict, common_grid: bool = True) -> dict:
 
 
 def r1_input_uncertainty(result: dict) -> dict:
-    """U_input for the R1 functionals, from the finest rung of the ladder.
+    """``U_input`` for the R1 functionals, from the finest rung of the ladder.
 
-    The steady functional has several measurement samples inside one run (rows
-    0.80..1.00), so their half range is a genuine between-window repeatability.
-    The start-up functional is read at a single instant; no repeatability exists
-    inside the run, so ``U_input = 0`` is declared instead of invented, which
-    makes the start-up band optimistic by construction.
+    Scale discipline (the fix this function exists to carry)
+    -------------------------------------------------------
+    Both R1 functionals are RMS values of the *relative deviation* from the
+    analytic profile, so their declared ``scale`` is ``1.0`` (the value already
+    is a fraction) and their truth is ``0``.  The comparison error is therefore
+    ``E = 100 * |S - 0| / 1.0``: a plain percentage point of that scale.
+
+    ``U_input`` must be expressed in the *same* unit or ``E`` and ``U_V`` are
+    not comparable.  The earlier implementation normalised the scatter by the
+    `mean of the samples`, i.e. by the functional itself -- which is the
+    quantity that decays to zero under refinement.  That estimator is
+    **anti-convergent**: on the committed ladder it reads 6.02 % -> 17.01 % ->
+    44.91 % as H/dx goes 8 -> 12 -> 16, while the absolute scatter
+    (percent of scale) stays at 0.165 -> 0.154 -> 0.216 pp, i.e. at a noise
+    floor.  Refining the mesh therefore made the "uncertainty" grow without
+    bound, and gate U3b could never pass however good the solver was.  The
+    published band is now built from the scatter in percent of the declared
+    scale; the old number is retained under
+    ``steady_half_range_percent_of_mean`` (with its diagnosis, and it is the
+    *more* conservative one by construction -- see the rung table) so the
+    change is auditable rather than silent.
+
+    The steady functional has several measurement samples inside one run
+    (0.80..1.00 s), so their half range is a genuine within-run repeatability.
+    Using the half range of *individual* samples for a functional that is graded
+    as their window mean over-states ``U_input`` (the mean of n samples scatters
+    less than a single sample), which is the conservative direction; the
+    between-window estimator that the R2 rows use is applied separately in
+    ``benchmarks/case_poiseuille/steady_window.py``.
     """
     runs = ((result.get("constant_ladder") or {}).get("runs") or [])
     if not runs:
@@ -312,11 +336,61 @@ def r1_input_uncertainty(result: dict) -> dict:
     finest = max(runs, key=lambda r: r["resolution_H_over_dx"])
     samples = finest.get("steady_rms_samples_pct") or []
     rep = repeatability(samples) if len(samples) > 1 else {
-        "n": len(samples), "half_range_percent_of_mean": 0.0}
+        "n": len(samples), "half_range": 0.0,
+        "half_range_percent_of_mean": 0.0}
+
+    # the samples are stored already in per cent of the functional scale, so the
+    # half range returned by repeatability() is that same percentage point -- the
+    # unit E is measured in. No second normalisation is applied.
+    u_scale = float(rep.get("half_range", 0.0))
+    u_mean = float(rep.get("half_range_percent_of_mean", 0.0))
+
+    rung_table = []
+    for run in sorted(runs, key=lambda r: r["resolution_H_over_dx"]):
+        s = run.get("steady_rms_samples_pct") or []
+        if len(s) < 2:
+            continue
+        rr = repeatability(s)
+        rung_table.append({
+            "resolution_H_over_dx": run["resolution_H_over_dx"],
+            "n": rr["n"],
+            "mean_percent_of_scale": rr["mean"],
+            "half_range_percent_of_scale": rr["half_range"],
+            "half_range_percent_of_mean": rr["half_range_percent_of_mean"],
+        })
+
+    anti = [row["half_range_percent_of_mean"] for row in rung_table]
+    consistent = [row["half_range_percent_of_scale"] for row in rung_table]
+
     return {
         "resolution_H_over_dx": finest["resolution_H_over_dx"],
+        "scale": 1.0,
+        "scale_text": ("RMS of the relative deviation from the analytic profile "
+                       "(fraction); truth = 0, scale = 1.0, so every percentage "
+                       "here is a percentage point of that scale"),
         "steady_samples": rep,
-        "steady_half_range_percent_of_mean": rep.get("half_range_percent_of_mean", 0.0),
+        # the value that grades the band: same normalisation as E
+        "steady_half_range_percent_of_scale": u_scale,
+        "normalization": "percent of the declared functional scale (scale = 1.0)",
+        # retained for audit only: normalising by the sample mean mixes scales
+        "steady_half_range_percent_of_mean": u_mean,
+        "legacy_normalization": {
+            "value_percent": u_mean,
+            "used_for_grading": False,
+            "reason": (
+                "halves the range of the samples and divides by their mean, i.e. "
+                "by the functional that decays to zero under refinement; E is a "
+                "percent of scale, so the two are not the same unit and the band "
+                "grows as the solver converges (anti-convergent estimator)"),
+        },
+        "rung_table": rung_table,
+        "anti_convergence_evidence": {
+            "half_range_percent_of_mean_per_rung": anti,
+            "half_range_percent_of_scale_per_rung": consistent,
+            "reading": ("the mean-normalised scatter increases with refinement "
+                        "while the scale-normalised scatter stays at the noise "
+                        "floor: the former measures the functional, not its scatter"),
+        },
         "startup": 0.0,
         "startup_reason": ("the start-up functional is read at a single instant "
                            "(t = 0.40 s): no between-window repeatability exists "
@@ -410,9 +484,16 @@ def analyse(result: dict, common_grid: bool = True) -> dict:
     r1_input = r1_input_uncertainty(result)
     r1 = {}
     for key, spec in r1_quantities(result, common_grid=common_grid).items():
-        u_in = (r1_input.get("steady_half_range_percent_of_mean", 0.0)
+        # the R1 functionals have truth 0 and scale 1.0, so their U_input must be
+        # the scatter in per cent of that scale -- feeding the mean-normalised
+        # half range here mixes two units and poisons the band (see
+        # r1_input_uncertainty)
+        u_in = (r1_input.get("steady_half_range_percent_of_scale", 0.0)
                 if key.startswith("r1_steady") else 0.0)
         r1[key] = _grade(key, spec, u_in)
+        r1[key]["u_input_normalization"] = (
+            "percent of scale" if key.startswith("r1_steady")
+            else "0 by declaration (single-instant functional)")
     if r1:
         single["status"] = "ladder"
         single["reason"] = (
@@ -452,6 +533,15 @@ def analyse(result: dict, common_grid: bool = True) -> dict:
         "U3b_R1_band_supports_5pct": (
             all((v.get("validation") or {}).get("supports_tolerance") is True
                 for v in r1.values()) if r1 else None),
+        # invariant, not a fit: U_input and E must be the same unit. Guards the
+        # mean-normalised band (anti-convergent, see r1_input_uncertainty) from
+        # ever grading an R1 row again.
+        "U4_r1_u_input_shares_the_scale_of_E": (
+            all((v.get("validation") or {}).get("U_input_percent")
+                == r1_input.get("steady_half_range_percent_of_scale")
+                for k, v in r1.items() if k.startswith("r1_steady"))
+            if r1 and "steady_half_range_percent_of_scale" in r1_input
+            else None),
     }
 
     return {
@@ -471,6 +561,9 @@ def analyse(result: dict, common_grid: bool = True) -> dict:
         "interpolation": "5-point Lagrange on the rung rows" if common_grid else "none (own rows)",
         "reference_consistency": ref,
         "input_uncertainty": u_in,
+        "input_uncertainty_normalization": (
+            "R1 rows: per cent of the functional scale (scale = 1.0); "
+            "R2 rows: per cent of the measured amplitude / quarter turn"),
         "quantities": quantities_out,
         "r1_quantities": r1,
         "r1_input_uncertainty": r1_input,
@@ -486,14 +579,19 @@ def analyse(result: dict, common_grid: bool = True) -> dict:
             "interval of a staircase error, so no order is quoted when they disagree",
             "the GCI band is a bound on the graded *functional*, not a pointwise field "
             "bound; the pointwise profile error is larger near the walls",
-            "the R1 steady band does NOT support the 5 % acceptance: its U_input is "
-            "the half range of the in-run samples of the functional over the "
-            "0.80..1.00 s window, which measures the residual fill of the channel "
-            "rather than pure measurement scatter; the window mean is inside the "
-            "tolerance (U1c) but the band is wider than it (U3b), so no 5 % "
-            "certification is claimed for the steady anchor -- closing it needs a "
-            "longer integration (stationary window) or a sub-window repeatability, "
-            "which needs the per-sample profiles that this artifact does not store",
+            "the R1 steady band used to FAIL (U3b): U_input was the half range of "
+            "the in-run samples divided by their MEAN, i.e. by the functional that "
+            "decays to zero under refinement (6.02 -> 17.01 -> 44.91 % over "
+            "H/dx = 8,12,16) while the absolute scatter stayed at 0.165 -> 0.154 -> "
+            "0.216 pp. That estimator is anti-convergent and mixes units with E "
+            "(percent of scale), so it is no longer used for grading (kept as "
+            "steady_half_range_percent_of_mean for audit); the published band now "
+            "uses the same per-cent-of-scale normalisation as E, and the window's "
+            "stationarity is verified independently in "
+            "benchmarks/case_poiseuille/steady_window.py. With the corrected "
+            "normalisation the mean-normalised value would be the conservative "
+            "one, so the earlier FAIL is explained, not overwritten: the old "
+            "number is larger than the new one by construction",
             "the R1 start-up functional is read at a single instant (t = 0.40 s), so "
             "its U_input is 0 by declaration and its band is U_num alone: the "
             "start-up row of the V&V table is optimistic relative to the steady row",

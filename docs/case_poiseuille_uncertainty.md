@@ -50,7 +50,7 @@ Gates G1–G9 grade the *point* error at the finest rung against the analytic re
 | `amp_profile_l2` | order_unresolved | 1.33:2.95, 1.5:2.14 | 2.14 | 0.938 | 0.017 | 0.1880 | 0.938 | 0.20 | True | True | validated |
 | `phase_centre` | oscillatory | 1.5:5.87 | 1.00 | 0.619 | 0.023 | 0.1287 | 0.619 | 0.21 | True | True | validated |
 | `phase_profile_l2` | order_unresolved | 1.33:3.00, 1.5:2.42 | 2.42 | 0.605 | 0.023 | 0.1176 | 0.605 | 0.19 | True | True | validated |
-| `r1_steady_profile_rms` | converging | 1.33:2.94, 1.5:2.55 | 2.55 | 2.049 | 44.911 | 0.4105 | 44.958 | 0.01 | True | False | validated |
+| `r1_steady_profile_rms` | converging | 1.33:2.94, 1.5:2.55 | 2.55 | 2.049 | 0.216 | 0.4105 | 2.060 | 0.20 | True | True | validated |
 | `r1_startup_profile_rms_at_0.40s` | converging | 1.33:2.25, 1.5:2.61 | 2.25 | 1.639 | 0.000 | 0.4795 | 1.639 | 0.29 | True | True | validated |
 
 ### Status narrative (honest)
@@ -59,7 +59,7 @@ Gates G1–G9 grade the *point* error at the finest rung against the analytic re
 * **`amp_profile_l2`** — order_unresolved: pair orders disagree by 0.81 order units (2.14..2.95); finest-rung error 0.1880 % vs repeatability floor 0.0168 % (ratio 11.16).
 * **`phase_centre`** — oscillatory: the error changes sign between rungs; finest-rung error 0.1287 % vs repeatability floor 0.0232 % (ratio 5.54).
 * **`phase_profile_l2`** — order_unresolved: pair orders disagree by 0.59 order units (2.42..3.00); finest-rung error 0.1176 % vs repeatability floor 0.0232 % (ratio 5.06).
-* **`r1_steady_profile_rms`** — converging: pair orders agree within 0.5 (spread 0.39); finest-rung error 0.4105 % vs repeatability floor 44.9108 % (ratio 0.01).
+* **`r1_steady_profile_rms`** — converging: pair orders agree within 0.5 (spread 0.39); finest-rung error 0.4105 % vs repeatability floor 0.2160 % (ratio 1.90).
 * **`r1_startup_profile_rms_at_0.40s`** — converging: pair orders agree within 0.5 (spread 0.36).
 
 Reading: an error several times the repeatability floor is real discretization error and a finer rung would reduce it; an error at the floor is measurement scatter and refinement cannot fix it.
@@ -73,7 +73,8 @@ Reading: an error several times the repeatability floor is real discretization e
 * `U2_validation_E_leq_U_V`: PASS
 * `U3_band_supports_5pct`: PASS
 * `U2b_R1_validation_E_leq_U_V`: PASS
-* `U3b_R1_band_supports_5pct`: FAIL
+* `U3b_R1_band_supports_5pct`: PASS
+* `U4_r1_u_input_shares_the_scale_of_E`: PASS
 
 `U1` = the acceptance holds at *every* rung, not only the finest one chosen for grading; `U2` = the residual is inside the uncertainty band; `U3` = the band itself is narrower than the 5 % tolerance, so the case can certify 5 % rather than merely happen to hit it. The `b`/`c` variants ask the same three questions of the R1 constant-forcing ladder (steady parabola and Boussinesq start-up), which until now had a single rung.
 
@@ -91,7 +92,7 @@ Reading: an error several times the repeatability floor is real discretization e
 
 * three rungs with unequal ratios (H/dx = 8,12,16 -> r = 1.5 and 1.333) leave the observed order only loosely identified: a monotone ladder can still show pair orders 1.9 and 4.2 because each pair samples a different interval of a staircase error, so no order is quoted when they disagree
 * the GCI band is a bound on the graded *functional*, not a pointwise field bound; the pointwise profile error is larger near the walls
-* the R1 steady band does NOT support the 5 % acceptance: its U_input is the half range of the in-run samples of the functional over the 0.80..1.00 s window, which measures the residual fill of the channel rather than pure measurement scatter; the window mean is inside the tolerance (U1c) but the band is wider than it (U3b), so no 5 % certification is claimed for the steady anchor -- closing it needs a longer integration (stationary window) or a sub-window repeatability, which needs the per-sample profiles that this artifact does not store
+* the R1 steady band used to FAIL (U3b): U_input was the half range of the in-run samples divided by their MEAN, i.e. by the functional that decays to zero under refinement (6.02 -> 17.01 -> 44.91 % over H/dx = 8,12,16) while the absolute scatter stayed at 0.165 -> 0.154 -> 0.216 pp. That estimator is anti-convergent and mixes units with E (percent of scale), so it is no longer used for grading (kept as steady_half_range_percent_of_mean for audit); the published band now uses the same per-cent-of-scale normalisation as E, and the window's stationarity is verified independently in benchmarks/case_poiseuille/steady_window.py. With the corrected normalisation the mean-normalised value would be the conservative one, so the earlier FAIL is explained, not overwritten: the old number is larger than the new one by construction
 * the R1 start-up functional is read at a single instant (t = 0.40 s), so its U_input is 0 by declaration and its band is U_num alone: the start-up row of the V&V table is optimistic relative to the steady row
 * U_input is the between-window repeatability of one run, not a run-to-run ensemble: it captures the sampling window, not reproducibility across hardware or thread counts
 * the phase functional is oscillatory (the error changes sign between H/dx=12 and 16), so its band uses the conservative p=1 convention and no order of accuracy is claimed for the phase
