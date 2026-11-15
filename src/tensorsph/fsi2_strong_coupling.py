@@ -87,11 +87,29 @@ class AitkenRelaxation:
     """
 
     def __init__(self, omega0: float = 1.0, omega_lo: float = -3.0,
-                 omega_hi: float = 1.0) -> None:
+                 omega_hi: float = 1.0, span_steps: bool = False) -> None:
         self.omega0 = float(omega0)
         self.omega_lo = float(omega_lo)
         self.omega_hi = float(omega_hi)
+        self.span_steps = bool(span_steps)
         self.reset()
+
+    def start_step(self) -> None:
+        """Drop the secant bookkeeping carried over from the previous step.
+
+        The residual of the *first* iteration of a step is measured against the
+        step-start interface position, which the previous step left where it
+        was: ``x`` is continuous across the step boundary but ``r`` is not (the
+        accepted residual of the previous step was driven to ``tol`` of its own
+        ``r_0``).  A secant built across that boundary therefore pairs a
+        vanishing ``dx`` with a finite ``dr`` and is meaningless for the
+        interface Jacobian.  ``span_steps=True`` reproduces the pre-2026-11
+        behaviour and is kept only for A/B reproduction.
+        """
+        if self.span_steps:
+            return
+        self.r_prev = None
+        self.k = 0
 
     def reset(self) -> None:
         self.k = 0
@@ -128,10 +146,21 @@ class IQNILS:
     """
 
     def __init__(self, max_history: int = 15, omega: float = 1.0,
-                 pivot_tol: float = 1.0e-8) -> None:
+                 pivot_tol: float = 1.0e-8, dex_scale: float = 1.0e-12,
+                 cold_omega: float = 1.0, span_steps: bool = False) -> None:
         self.max_history = int(max_history)
         self.omega = float(omega)
         self.pivot_tol = float(pivot_tol)
+        #: a secant pair whose iterate increment is below ``dex_scale * |x|``
+        #: carries no usable Jacobian information (float64 rounding of a frozen
+        #: iterate) and is dropped instead of being fed to the least squares.
+        self.dex_scale = float(dex_scale)
+        #: relaxation of the very first iteration of a step, when no secant is
+        #: available yet and the raw fixed point overshoots by the interface
+        #: gain (measured: ``dr/dx ~ 1.0`` at ``rho_s/rho_f = 1``, i.e. an
+        #: interface map with eigenvalue ``~2``).
+        self.cold_omega = float(cold_omega)
+        self.span_steps = bool(span_steps)
         self.reset()
 
     def reset(self) -> None:
@@ -140,18 +169,44 @@ class IQNILS:
         self.r_prev: Optional[np.ndarray] = None
         self.x_prev: Optional[np.ndarray] = None
 
+    def start_step(self) -> None:
+        """Restart the interface secant history at a time-step boundary.
+
+        ``x`` is continuous across the boundary (the next step starts from the
+        accepted beam position) but ``r`` is not: the accepted residual of the
+        previous step is ``tol * r_0`` while the new ``r`` is a full step of
+        beam motion.  Registering that pair would inject a column with
+        ``|dx| ~ 0`` and finite ``|dr|``, whose least-squares coefficient
+        cancels the residual with no iterate motion and freezes the sub-
+        iteration until the column is flushed out of ``max_history`` (measured:
+        15 frozen iterations per step, see
+        ``docs/xval_fsi2/COUPLING_CONVERGENCE_BUDGET.md``).  Clearing the
+        history is the cheap cure; ``span_steps=True`` disables it.
+        """
+        if self.span_steps:
+            return
+        self.reset()
+
     def next(self, x: np.ndarray, r: np.ndarray) -> Tuple[np.ndarray, float]:
         # register the new secant pair (x, r) against the previous one
         if self.r_prev is not None and self.x_prev is not None:
-            self.dR.append(r - self.r_prev)
-            self.dX.append(x - self.x_prev)
-            if len(self.dR) > self.max_history:
-                self.dR.pop(0)
-                self.dX.pop(0)
+            dx = x - self.x_prev
+            # a frozen iterate (|dx| at float64 rounding level) produces a
+            # column with a finite dr and a zero dx; solving for it returns an
+            # "infinite" Jacobian that stops the iteration dead.
+            if float(np.linalg.norm(dx)) > self.dex_scale * max(
+                    float(np.linalg.norm(x)), 1.0e-30):
+                self.dR.append(r - self.r_prev)
+                self.dX.append(dx)
+                if len(self.dR) > self.max_history:
+                    self.dR.pop(0)
+                    self.dX.pop(0)
         self.r_prev = r.copy()
         self.x_prev = x.copy()
 
         step = r.copy()
+        if not self.dR and self.cold_omega != 1.0:
+            return x - self.cold_omega * step, self.cold_omega
         if self.dR:
             V = np.asarray(self.dR).T          # (n, m)
             W = np.asarray(self.dX).T          # (n, m)
@@ -345,16 +400,21 @@ def step_fsi2_strong(state: FSI2State, case: FSI2Case, dt: float,
     nodes0 = state.beam_nodes.clone()
     vel0 = state.beam_vel.clone()
 
+    reuse = accelerator is not None
     if accelerator is not None:
-        # reuse the interface Jacobian built in previous time steps: at the
-        # first iteration of a step there is no in-step history, and for an
-        # added-mass-dominated interface a cold start overshoots by the gain
-        # factor (measured: 4.35x per step at rho_s/rho_f = 1)
         accel = accelerator
     else:
         accel, reset = _make_accelerator(interface_solver)
         if reset is not None:
             reset()
+    # The interface history must not span the time-step boundary: ``x`` is
+    # continuous across it but ``r`` is not (a converged ``r`` of the previous
+    # step vs. a full step of beam motion), so a secant pair built there has
+    # ``|dx| ~ 0`` and a finite ``|dr|`` and freezes the sub-iteration.  An
+    # accelerator supplied by a caller (``run_fsi2_strong``) is explicit about
+    # its own policy via ``start_step``.
+    if accel is not None and hasattr(accel, "start_step"):
+        accel.start_step()
 
     n_nodes = nodes0.shape[0]
     x_k = nodes0.reshape(-1).to(torch.float64)
