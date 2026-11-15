@@ -20,6 +20,16 @@ Key finding (2026-11-14, XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION):
     uncorrected creates a mismatch that drives spurious motion.  The
     ``all`` scope is the safe default for general use.
 
+    Mechanism (measured later, not assumed):
+    ``docs/xval_sphinx_tvc/BULK_SCOPE_CRITERION.md`` shows that the
+    concentration criterion is the *defect*, not the scope idea -- it is a
+    zeroth moment (``sum_j V_j W_ij``) selecting particles for a first-moment
+    (``grad``) correction, so it admits a tail with ``|g| h`` up to 0.20 vs
+    6.7e-5 for genuinely full support.  ``tvc_scope="bulk_g"`` (criterion
+    ``|g| h <= tvc_bulk_g``) brings the column back to the no-TVC noise floor;
+    the legacy concentration criterion is left unchanged below so this test
+    keeps guarding the regression.
+
 Reference: Adami, Hu & Adams (2013) JCP 241:292-307, §3.1 — the
 transport-velocity formulation is designed to preserve equilibrium states.
 """
