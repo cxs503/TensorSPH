@@ -134,10 +134,13 @@ def _write_run(d: Path, tag: str, dx: float, peak: float, arrival: float,
 
 
 def test_analyse_builds_a_three_grid_ladder_and_keeps_bypass(tmp_path):
-    for tag, dx, peak in (("dx0.08", 0.08, 0.20), ("dx0.04", 0.04, 0.30),
+    # dx = 0.05, not the 0.08 this test used to carry: 0.08 is inadmissible for
+    # this case (3-cell rule on the 0.161 m box), so a ladder starting there can
+    # never be built from real runs -- see test_kleefsman_obstacle_3d_rung_gate.
+    for tag, dx, peak in (("dx0.05", 0.05, 0.28), ("dx0.04", 0.04, 0.30),
                           ("dx0.03", 0.03, 0.35)):
         _write_run(tmp_path, tag, dx, peak, 0.50)
-    rep = ladder.analyse(tmp_path, ["dx0.08", "dx0.04", "dx0.03"])
+    rep = ladder.analyse(tmp_path, ["dx0.05", "dx0.04", "dx0.03"])
     assert rep["status"] == "OK"
     assert rep["protocol_comparable"] is True
     assert len(rep["runs"]) == 3
