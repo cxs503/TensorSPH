@@ -209,6 +209,16 @@ def main() -> int:
                      f"→ 周期性判据 `regime_ok = {v['regime_ok']}`")
         lines.append(f"* 力系数标度 `0.5 ρ U_mean² D` = {v['coefficients']['scale_0.5_rho_U2_D']:.4g}"
                      f"（U_mean = {v['coefficients']['u_mean']:.3g} m/s）")
+        adm = v.get("admissibility", {})
+        lines.append(f"* **可判定性筛检** `admissible = {adm.get('admissible')}`"
+                     f"（已核 {', '.join(adm.get('checked', [])) or '无'}；"
+                     f"未核 {', '.join(adm.get('skipped', [])) or '无'}）")
+        for r in adm.get("reasons", []):
+            lines.append(f"    * ⛔ {r}")
+        if not v["gates"]["tip"].get("comparable", True):
+            lines.append("")
+            lines.append("> 下表相对误差**不是**精度判定：本算例不满足可判定性条件，"
+                         "判定降级为 `WITHHELD`，数值仅作取证保留。")
         lines.append("")
         lines.append(_row_table(v["gates"]["tip"]["rows"], "梁尖位移"))
         lines.append("")
@@ -223,6 +233,9 @@ def main() -> int:
                      f"力系数 **{v['gates']['fit_arm']['verdict']}**；"
                      f"最坏相对误差 {_rel(v['gates']['tip']['worst_rel_error'])} / "
                      f"{_rel(v['gates']['fit_arm']['worst_rel_error'])}")
+        if v.get("withheld_reason"):
+            lines.append(f"")
+            lines.append(f"`withheld_reason = {v['withheld_reason']}`")
         lines.append("")
     if fig_names:
         lines.append("### 结果图")
@@ -232,14 +245,19 @@ def main() -> int:
             lines.append("")
     lines.append("## ④ 误差判定（显式回答「是否 <3 %」）")
     lines.append("")
-    lines.append("| 量 | 门槛 | 本次最坏相对误差 | <15 % | <3 % |")
-    lines.append("|---|---|---|---|---|")
+    lines.append("| 量 | 门槛 | 本次最坏相对误差 | <15 % | <3 % | 可判定 |")
+    lines.append("|---|---|---|---|---|---|")
     for dx, v in verdicts.items():
         for group in ("tip", "fit_arm"):
             g = v["gates"][group]
+            comparable = g.get("comparable", True)
+            # a non-comparable row is not an accuracy answer, in either direction
+            p15 = "否" if not comparable else (
+                "是" if (g['worst_rel_error'] is not None and abs(g['worst_rel_error']) <= 0.15) else "否")
+            p3 = "否" if not comparable else (
+                "是" if (g['worst_rel_error'] is not None and abs(g['worst_rel_error']) <= 0.03) else "否")
             lines.append(f"| dx={dx} {group} | 15 % | {_rel(g['worst_rel_error'])} | "
-                         f"{'是' if (g['worst_rel_error'] is not None and abs(g['worst_rel_error']) <= 0.15) else '否'} "
-                         f"| {'是' if (g['worst_rel_error'] is not None and abs(g['worst_rel_error']) <= 0.03) else '否'} |")
+                         f"{p15} | {p3} | {'是' if comparable else '否（非物理解）'} |")
     lines.append("")
     lines.append(Path(args.out_md).parent.joinpath("_viv_notes.md").exists()
                  and Path(args.out_md).parent.joinpath("_viv_notes.md").read_text()
