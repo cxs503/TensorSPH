@@ -133,7 +133,7 @@ def make_case_config(dx: float, viscosity: float, device, friction: float = 1.0,
 
 def drive(cfg, height: float, length: float, forcing, t_end: float,
           sample_times, device, samples_per_period: float | None = None,
-          omega: float | None = None) -> dict:
+          omega: float | None = None, planes=None) -> dict:
     """Integrate the channel from rest and record row-mean profiles.
 
     ``forcing(t)`` returns the body force per unit mass along ``x``.  Profiles
@@ -148,7 +148,8 @@ def drive(cfg, height: float, length: float, forcing, t_end: float,
 
     h = cfg.h_factor * dx
     support = 2.0 * h
-    planes = [(0.0, +1), (height, -1)]
+    if planes is None:
+        planes = [(0.0, +1), (height, -1)]
 
     dt = min(0.3 * h / cfg.sound_speed, 0.125 * h * h / cfg.viscosity)
     steps = int(round(t_end / dt))

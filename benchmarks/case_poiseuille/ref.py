@@ -77,10 +77,13 @@ def _thomas_solve(cp, dp, rhs, sub: float):
 
 def cn_solve(forcing: Callable[[float], float], height: float, viscosity: float,
              t_end: float, sample_times: Sequence[float], nx: int = 401,
-             n_steps: int = 20000) -> dict:
-    """Integrate the channel from rest with Crank-Nicolson; sample the profile.
+             n_steps: int = 20000, wall_values=(0.0, 0.0)) -> dict:
+    """Integrate the channel with Crank-Nicolson; sample the profile.
 
-    ``forcing(t)`` is the body force per unit mass along ``x`` (SI).  The
+    ``forcing(t)`` is the body force per unit mass along ``x`` (SI).
+    ``wall_values = (u_bottom, u_top)`` are the Dirichlet data: the default
+    ``(0, 0)`` is the two-static-wall problem every earlier result used, and a
+    nonzero top value is the moving wall of a Couette-Poiseuille channel.  The
     returned ``samples`` array has one row per requested time, ``y`` is the
     node grid including both walls.
     """
@@ -92,7 +95,10 @@ def cn_solve(forcing: Callable[[float], float], height: float, viscosity: float,
     cp, dp = _thomas_factor(nx + 1, r)
 
     y = np.linspace(0.0, height, nx + 1)
-    u = np.zeros(nx + 1)                      # state: full grid, walls stay 0
+    u_bottom, u_top = float(wall_values[0]), float(wall_values[1])
+    # state: full grid; start from the linear profile the Dirichlet data imply
+    u = u_bottom + (u_top - u_bottom) * (y / height)
+    u[0], u[-1] = u_bottom, u_top
     interior = slice(1, nx)
 
     times = sorted(float(s) for s in sample_times)
@@ -108,10 +114,16 @@ def cn_solve(forcing: Callable[[float], float], height: float, viscosity: float,
                          - 2.0 * ui
                          + np.concatenate((ui[1:], [u[-1]])))
                + 0.5 * dt * (g_prev + g_new))
+        if u_bottom or u_top:
+            # inhomogeneous Dirichlet data: the known wall value that the
+            # factorised implicit operator used to multiply by zero moves to the
+            # right-hand side (row 1 picks up ``r u_bottom``, row m ``r u_top``)
+            rhs[0] += r * u_bottom
+            rhs[-1] += r * u_top
         sol = _thomas_solve(cp, dp, rhs, -r)
         u[interior] = sol
-        u[0] = 0.0
-        u[-1] = 0.0
+        u[0] = u_bottom
+        u[-1] = u_top
         g_prev = g_new
 
         while times and t_new >= times[0] - 0.5 * dt:
