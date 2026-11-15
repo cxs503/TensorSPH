@@ -205,3 +205,26 @@ one and closes the question "would a finer grid help?" — it would not.
   entry: `FEAT-SPH-WELL-BALANCED-WALL-GRADIENT`, acceptance "closed-tank
   `CASE-SPH-LAKE-AT-REST` `max |a_x|/g < 1e-9` at `dx = 0.02`, with the dam-break /
   hydrostatic gates unchanged".
+
+## Update (closure attempt): the named cure, implemented and measured
+
+The "out of scope" sentence in section 1 promised that "a well-balanced /
+consistent momentum operator (kernel gradient correction ...) is required".
+That operator now exists (`src/tensorsph/wellbalanced.py`) and the promise has
+been kept and measured (`docs/verification_lake_at_rest_wellbalanced.md`):
+
+* on a **strictly linear** pressure field the consistent operator returns
+  `a_x/g < 1e-15` in the wall band at every resolution, where the shipped pair
+  form returns `5.4e-3 ... 1.0e-1` -- **the operator claim in this document is
+  correct, and now exact rather than plausible**;
+* on the **shipped equilibrium** (Tait pressure of the reconstructed mass
+  field) the same operator is *worse* (`0.301` vs `0.109 g`), because the field
+  it must differentiate departs from a plane by `0.49 ... 0.56 p_max` across
+  the wall-band supports -- the free-surface `max(p,0)` clamp, not the gradient
+  operator, is what re-introduces the force;
+* a mass field fitted against *both* acceleration components still cannot
+  close it (`a_x` `0.097 g` only by giving up `a_y` to `0.122 g`), a set-level
+  confirmation of section 4.3.
+
+So the FAIL below stands, and the next attack is the density/pressure field
+(well-balanced density decomposition), not another gradient operator.
