@@ -273,6 +273,7 @@ def csf_fields(
     curvature_stencil: float = 4.0,
     curvature_color_smoothing: int = 0,
     delta_normalization: str = "legacy",
+    contact_angle_model: str = "rotate",
 ) -> CSFState:
     """Colour, its gradient, the outward normal, curvature and delta_s.
 
@@ -394,6 +395,7 @@ def surface_tension_acceleration(
     curvature_scheme: str = "mls",
     curvature_stencil: float = 4.0,
     delta_normalization: str = "legacy",
+    contact_angle_model: str = "rotate",
 ) -> tuple[torch.Tensor, CSFState | None]:
     """CSF acceleration ``a = -sigma kappa delta_s n / rho`` and its fields."""
     if sigma <= 0.0:
@@ -406,8 +408,17 @@ def surface_tension_acceleration(
         # step and is only paid when the fit operator is selected.
         from .neighbor_search import cell_linked_pairs
         pairs = cell_linked_pairs(pos, curvature_stencil * h)
+    # "young" / "brackbill" replace the normal-rotation BC by a wall-adhesion
+    # *traction* (tensorsph.contact_angle_isph): the colour gradient is left
+    # alone and the per-unit-contact-line force of Young's equation is applied
+    # explicitly.  The default stays the shipped rotation BC, bit for bit.
+    adhesion_model = contact_angle_model if contact_angle is not None else None
+    if adhesion_model is not None and adhesion_model not in ("rotate", "young",
+                                                             "brackbill"):
+        raise ValueError(f"unknown contact_angle_model {contact_angle_model!r}")
+    rotate = adhesion_model in (None, "rotate")
     state = csf_fields(pos, mass, pairs, h, rho0, wall=wall,
-                       contact_angle=contact_angle,
+                       contact_angle=contact_angle if rotate else None,
                        contact_angle_reach=contact_angle_reach,
                        curvature_scheme=curvature_scheme,
                        curvature_stencil=curvature_stencil,
@@ -422,6 +433,14 @@ def surface_tension_acceleration(
     d_s[flat] = 0.0
     state.delta_s = d_s
     force = (-sigma * state.kappa * state.delta_s)[:, None] * state.normal
+    if adhesion_model in ("young", "brackbill") and wall is not None:
+        from .contact_angle_isph import (DEFAULT_TRACTION_CALIBRATION,
+                                         wall_adhesion_force)
+        adhesion, _diag = wall_adhesion_force(
+            pos, wall, state.normal, float(contact_angle), float(sigma),
+            state.delta_s, h, wall_area=None,
+            calibration=DEFAULT_TRACTION_CALIBRATION, model=adhesion_model)
+        force = force + adhesion
     return force / density[:, None], state
 
 # --------------------------------------------------------------------------- #
