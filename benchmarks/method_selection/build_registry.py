@@ -138,6 +138,20 @@ def x_isph_wall_shear(doc: dict) -> float:
     return abs(float(finest["gates"]["wall_shear_budget"]["rel_error_pct"]))
 
 
+def x_csf_laplace_quasistatic(doc: dict) -> float:
+    """End-to-end Laplace jump, worst rung of the quasi-static ladder.
+
+    Estimand: ``mean(p, r < 0.6 R) - p_ambient`` with ``p_ambient = 0`` (vacuum),
+    time-averaged over the 4..6 t_sigma window.  Analytic value = ``sigma / R``.
+    The legacy snapshot record scored ``mean(p, r<0.5R) - mean(p, 0.80R<r<0.95R)``
+    against ``sigma/R``; both of its bands sit inside the liquid, where the exact
+    solution is uniform, so that difference has analytic value 0 and the -78.6 %
+    it reported is interior non-uniformity, not a jump error
+    (docs/verification_csf_laplace_quasistatic.md).
+    """
+    return max(abs(float(c["laplace"]["rel_error_pct"])) for c in doc["cases"])
+
+
 def x_csf_cut_force(doc: dict) -> float:
     """Cut-force error of the consistent-CSF arm (the Laplace pressure companion)."""
     entry = doc["instant"]["consistent"][0]
@@ -541,6 +555,24 @@ SOURCES: tuple[Source, ...] = (
         gate_pct=15.0,
         path="benchmarks/csf_consistent/validation_report.json",
         fn=x_csf_cut_force,
+    ),
+    Source(
+        extractor="x_csf_laplace_quasistatic",
+        method="csf_surface_tension",
+        case="CASE-LAPLACE-SPH (quasi-static, time-averaged)",
+        quantity="bulk pressure vs vacuum over the 4-6 t_sigma window, worst rung "
+                 "of dx = 3/2/1.5 mm (analytic value sigma/R)",
+        gate_pct=15.0,
+        path="benchmarks/csf_consistent/relax_quasistatic.json",
+        fn=x_csf_laplace_quasistatic,
+        precondition=(
+            "dynamic, end-to-end record: it is the only csf_surface_tension entry "
+            "whose quantity is the Young-Laplace jump itself rather than a static "
+            "field diagnostic (curvature / cut force). It supersedes the committed "
+            "-78.6 % snapshot: that record compared two *interior* pressure bands, "
+            "whose analytic difference is 0 Pa, against sigma/R; the same run is "
+            "reproduced here as legacy_estimator for the artefact to stay falsifiable"
+        ),
     ),
     Source(
         extractor="x_transport_velocity",

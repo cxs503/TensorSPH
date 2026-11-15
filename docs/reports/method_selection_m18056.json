@@ -74,8 +74,8 @@
         }
       ],
       "expected_primary": "csf_surface_tension",
-      "headline_bound_pct": 23.79926667246913,
-      "headline_quantity": "csf_surface_tension: delta_s-weighted mean curvature rel. error",
+      "headline_bound_pct": 45.69297615786225,
+      "headline_quantity": "csf_surface_tension: bulk pressure vs vacuum over the 4-6 t_sigma window, worst rung of dx = 3/2/1.5 mm (analytic value sigma/R)",
       "label": "capillary droplet (Laplace law)",
       "modifiers": [
         {
@@ -88,11 +88,11 @@
         }
       ],
       "notes": [],
-      "primary_accuracy_pct": 23.79926667246913,
+      "primary_accuracy_pct": 45.69297615786225,
       "primary_method": "csf_surface_tension",
       "primary_robustness_pct": null,
       "primary_status": "SELECTED",
-      "primary_worst_banked_pct": 23.79926667246913,
+      "primary_worst_banked_pct": 45.69297615786225,
       "primary_worst_pct": 5.986710404320461,
       "profile": {
         "acoustic_mach": 0.05,
