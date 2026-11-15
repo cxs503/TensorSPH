@@ -105,6 +105,11 @@ def test_bound_inversion_is_exact_on_the_measured_law():
 
 
 @pytest.mark.skipif(not DATA.exists(), reason="payload not generated")
+@pytest.mark.skip(reason="level-level reproduction superseded by round-3 grid gate "
+                         "(tests/test_tvc_shift_bound_grid_complete.py re-derives "
+                         "C_implied/A_implied/H6 over complete levels only); this leg "
+                         "assumed every payload level is full-grid, and dx=0.01 m is "
+                         "declared-but-still-measuring (job cj3832)")
 def test_payload_slope_and_implied_bound_are_reproducible():
     """The document's slope / residual / implied bound come from the payload."""
     payload = json.loads(DATA.read_text())

@@ -98,6 +98,33 @@ C_GRID = (0.05, 0.075, 0.10, 0.125, 0.15, 0.175, 0.20, 0.225, 0.25, 0.275, 0.30)
 SECONDS = 0.45
 OUTPUT_SAMPLES = 240
 
+# ---------------------------------------------------------------------------
+# Hypotheses added after the 3-level grid (dx = 0.04/0.03/0.02) was already
+# measured, and *before* the dx = 0.01 level and the dx = 0.02 tail were run.
+# The pre-registration is therefore only partial for the three coarse levels,
+# which is stated in the document; the fourth level is a genuine hold-out.
+#
+# H5 (accumulated correction).  The per-step bound ``s(alpha) <= C`` of H1 is a
+#     *rate* criterion.  The mechanism the correction acts through -- lattice
+#     regularisation -- accumulates once per step, so the quantity the accuracy
+#     optimum should sit on is the accumulated displacement over the whole run,
+#     ``A(alpha, dx) = N_steps(dx) * s(alpha, dx)`` (upper bound, in units of
+#     ``dx``).  H5: ``A_implied = A(alpha_opt, dx)`` is level independent within
+#     +-25 %, and an ``A`` calibrated on one level predicts ``alpha`` on another
+#     within 25 % while still reaching the owner gate.
+# H6 (indifference).  The 3-level data shows the error-vs-alpha curve is flat
+#     near its minimum, so a *point* estimate of ``alpha_opt`` is not resolvable
+#     at the 0.025 grid step.  H6: define the indifference interval
+#     ``I(dx) = {alpha : err(alpha) <= err_min + tol}`` with the tolerance
+#     pre-declared as ``tol = 1.0 pp`` (absolute) and, as a second reading,
+#     ``tol = 15 % * err_min`` (relative).  H6 holds if ``I(dx)`` is non-empty
+#     and the four levels share a common alpha, i.e. the data do **not** support
+#     "``alpha`` is resolution dependent"; H6 is rejected if the intervals are
+#     disjoint.
+# ---------------------------------------------------------------------------
+INDIFF_ABS = 0.01    # 1.0 percentage point in mean relative front error
+INDIFF_REL = 0.15    # 15 % of the level's own minimum error
+
 
 def variant_for(alpha: float) -> dict:
     """Solver config of one grid point (``alpha = 0`` is the baseline)."""
@@ -189,6 +216,18 @@ def analyse_level(points: list[dict]) -> dict:
     mono = all(shifts[i + 1] >= shifts[i] for i in range(len(shifts) - 1))
     # upstream-rate row, for the "shipped coefficient" comparison
     shipped = next((p for p in grid if abs(p["alpha"] - 0.05) < 1e-9), None)
+    # H5 statistic: accumulated displacement over the run, in units of dx.
+    cum = [p["steps"] * p["max_shift_over_dx"] for p in pts]
+    a_implied = _interp(best["alpha"], alphas, cum)
+    # H6 statistic: the alpha interval indistinguishable from the optimum.
+    errs = [p["rel_error"] for p in pts]
+
+    def indiff(tol: float):
+        keep = [p["alpha"] for p in pts if p["rel_error"] <= best["rel_error"] + tol]
+        return (min(keep), max(keep)) if keep else (None, None)
+
+    lo_abs, hi_abs = indiff(INDIFF_ABS)
+    lo_rel, hi_rel = indiff(INDIFF_REL * best["rel_error"])
     return {
         "dx": pts[0]["dx"],
         "alpha_opt": best["alpha"],
@@ -196,6 +235,12 @@ def analyse_level(points: list[dict]) -> dict:
         "mae_at_opt": best["mae"],
         "verdict_at_opt": best["verdict"],
         "C_implied": c_implied,
+        "cum_at_opt_over_dx": a_implied,
+        "steps": pts[0]["steps"] if len({p["steps"] for p in pts}) == 1 else
+                 [p["steps"] for p in pts],
+        "indiff_abs": [lo_abs, hi_abs],
+        "indiff_rel": [lo_rel, hi_rel],
+        "indiff_abs_width": (hi_abs - lo_abs) if lo_abs is not None else None,
         "shift_curve_monotone": mono,
         "shift_at_opt_over_dx": best["max_shift_over_dx"],
         "shipped_alpha": 0.05,
@@ -233,6 +278,34 @@ def holdout(levels: dict[float, dict], points: dict[float, list[dict]],
     }
 
 
+def cumulative_holdout(levels: dict[float, dict], points: dict[float, list[dict]],
+                       cal_dx: float, target_dx: float) -> dict:
+    """H5 transfer test: predict ``alpha`` at ``target_dx`` from the accumulated
+    correction ``A`` calibrated at ``cal_dx``."""
+    a_cal = levels[cal_dx]["cum_at_opt_over_dx"]
+    pts = sorted(points[target_dx], key=lambda p: p["alpha"])
+    pairs = sorted((p["steps"] * p["max_shift_over_dx"], p["alpha"]) for p in pts)
+    cums = [c for c, _ in pairs]
+    alphas = [a for _, a in pairs]
+    monotone = all(cums[i + 1] >= cums[i] for i in range(len(cums) - 1))
+    a_pred = _interp(a_cal, cums, alphas) if monotone and a_cal is not None else None
+    errs = [p["rel_error"] for p in sorted(pts, key=lambda p: p["alpha"])]
+    grid = [p["alpha"] for p in sorted(pts, key=lambda p: p["alpha"])]
+    e_pred = _interp(a_pred, grid, errs) if a_pred is not None else None
+    a_opt = levels[target_dx]["alpha_opt"]
+    return {
+        "calibration_dx": cal_dx,
+        "target_dx": target_dx,
+        "A_calibrated": a_cal,
+        "alpha_pred": a_pred,
+        "alpha_opt_target": a_opt,
+        "alpha_rel_dev": (abs(a_pred - a_opt) / a_opt
+                          if a_pred is not None and a_opt else None),
+        "rel_error_pred_interp": e_pred,
+        "reaches_owner_gate": (e_pred is not None and e_pred <= OWNER_GATE_REL),
+    }
+
+
 def summarise(payload: dict) -> dict:
     points = {}
     for rec in payload["records"]:
@@ -265,6 +338,50 @@ def summarise(payload: dict) -> dict:
             "all_reach_owner_gate": all(h["reaches_owner_gate"] for h in hold),
             "n": len(hold),
         }
+    # H5: is the *accumulated* correction at the optimum level independent?
+    As = [lv["cum_at_opt_over_dx"] for lv in levels.values()
+          if lv.get("cum_at_opt_over_dx") is not None]
+    if len(As) >= 2:
+        hold5 = []
+        for cal in dxs:
+            for tgt in dxs:
+                if tgt == cal:
+                    continue
+                hold5.append(cumulative_holdout(levels, points, cal, tgt))
+        devs5 = [h["alpha_rel_dev"] for h in hold5 if h["alpha_rel_dev"] is not None]
+        out["H5"] = {
+            "A_implied": As,
+            "mean": sum(As) / len(As),
+            "spread_over_mean": (max(As) - min(As)) / (sum(As) / len(As)),
+            "holds_25pct": (max(As) - min(As)) / (sum(As) / len(As)) <= 0.25,
+            "holdout": hold5,
+            "max_alpha_rel_dev": max(devs5) if devs5 else None,
+            "all_reach_owner_gate": all(h["reaches_owner_gate"] for h in hold5),
+        }
+    # H6: indifference intervals over alpha, and their common intersection.
+    ii = {f"{dx:g}": lv["indiff_abs"] for dx, lv in sorted(levels.items())}
+    iir = {f"{dx:g}": lv["indiff_rel"] for dx, lv in sorted(levels.items())}
+    if ii and all(lo is not None for lo, _ in ii.values()):
+        lo = max(lo for lo, _ in ii.values())
+        hi = min(hi for _, hi in ii.values())
+        out["H6"] = {
+            "tolerance_abs": INDIFF_ABS,
+            "tolerance_rel": INDIFF_REL,
+            "intervals_abs": ii,
+            "intervals_rel": iir,
+            "common_intersection_abs": [lo, hi] if lo <= hi else None,
+            "holds": lo <= hi,
+            "err_min": {f"{dx:g}": lv["rel_error_at_opt"] for dx, lv in sorted(levels.items())},
+        }
+        if lo <= hi:
+            errs_common = {}
+            for dx, lv in levels.items():
+                pts = sorted(points[dx], key=lambda p: p["alpha"])
+                errs_common[f"{dx:g}"] = _interp(lo, [p["alpha"] for p in pts],
+                                                 [p["rel_error"] for p in pts])
+            out["H6"]["rel_error_at_common_alpha"] = errs_common
+            out["H6"]["gate_at_common_alpha"] = {
+                k: (v is not None and v <= OWNER_GATE_REL) for k, v in errs_common.items()}
     return out
 
 
@@ -286,7 +403,14 @@ def main(argv=None) -> int:
             "seconds": SECONDS,
             "output_samples": OUTPUT_SAMPLES,
             "hypotheses": ("H1: C_implied = s(alpha_opt) is level independent; "
-                           "H2: C calibrated on one dx predicts alpha at the others"),
+                           "H2: C calibrated on one dx predicts alpha at the others; "
+                           "H5: A_implied = N_steps*s(alpha_opt) is level independent and "
+                           "transfers (declared after dx=0.04/0.03/0.02, before dx=0.01); "
+                           "H6: the per-level alpha indifference intervals "
+                           "(tol = 1.0 pp / 15 % rel) share a common alpha, i.e. the data do "
+                           "not resolve a resolution-dependent optimum"),
+            "alpha_grid_full": list(ALPHA_GRID),
+            "frames_measured_before_H5_H6": [0.04, 0.03, 0.02],
         },
         "gates": {"owner_rel": OWNER_GATE_REL, "ledger_abs": LEDGER_GATE_ABS,
                   "band": BAND, "holdout_alpha_dev": 0.25},
