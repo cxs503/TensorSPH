@@ -73,6 +73,9 @@ sys.path.insert(0, str(ROOT / "src"))
 
 import torch  # noqa: E402
 
+from literature_refs import (
+    cp_q_units, load_refs, table_ref,
+)
 from tensorsph.wedge_entry import (
     wagner_p_over_q,  # noqa: E402
     WedgeConfig,
@@ -249,9 +252,25 @@ def refs_derived() -> dict:
             "source": "tensorsph.wedge_entry.wagner_c_coeff / wagner_peak_over_q",
         },
         "zhao_faltinsen_1993": {
-            "status": "WITHHELD",
-            "cp_max": None,
-            "reason": "closed access; see refs.json zhao_faltinsen_1993.withheld_reason",
+            # Mission-designated reference (Zhao & Faltinsen 1993, beta = 30 deg
+            # peak slamming pressure coefficient).  The paper itself is closed
+            # access, but its composite-solution value is now registered in the
+            # ecosystem through the peer-reviewed open-access Table 1 of
+            # Jain, Novakovic, Bogaert & van der Meer (2022) JFM 934 A26
+            # (DOI 10.1017/jfm.2021.1129), column COM -- see
+            # benchmarks/case_sph_wedge_entry_2d/refs.json and
+            # literature_refs.py.  The value is read out of refs.json (never
+            # typed) and converted to the case's q = rho V^2 / 2 units by
+            # literature_refs.cp_q_units (Table 1 is P/(rho V^2), so x2).
+            "status": "REAL",
+            "cp_max": float(cp_q_units(
+                table_ref(load_refs())["cp_max_rho_v2"]["30"]["COM"])),
+            "cp_max_rho_v2": float(
+                table_ref(load_refs())["cp_max_rho_v2"]["30"]["COM"]),
+            "source": "Jain et al. 2022 JFM 934 A26 Table 1 column COM "
+                      "(reproduces Zhao & Faltinsen 1993 composite solution)",
+            "doi": "10.1017/jfm.2021.1129",
+            "normalisation": "Table 1 P/(rho V^2) -> case q = rho V^2/2 (x2)",
         },
     }
 
