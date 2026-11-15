@@ -374,7 +374,17 @@ def evaluate_constant(case: dict, height: float, resolution: int,
             "profile_worst_pct": 100.0 * float(np.max(np.abs(rel_s[interior]))),
             "u_max_measured": float(u[k].max()),
             "u_max_series": float(u_ref.max()),
+            # rows are kept so the *same* functional can be recomputed on a common
+            # y grid across rungs (the R1 ladder in uncertainty.py needs it)
+            "rows": [{"y_over_H": float(y[i] / height),
+                      "u_measured": float(u[k][i]),
+                      "u_analytic": float(u_ref[i])} for i in range(y.size)],
         })
+    # per-sample value of the steady functional: the between-sample half range is
+    # the run's own repeatability floor (U_input for the steady R1 ladder)
+    steady_rms_samples = [
+        100.0 * _rms(((u[k] - u_parabola) / u_parabola)[interior])
+        for k in np.where(steady_sel)[0]]
 
     out = {
         "resolution_H_over_dx": resolution,
@@ -387,6 +397,7 @@ def evaluate_constant(case: dict, height: float, resolution: int,
         "steady_from": steady_from,
         "steady_rows_used": int(steady_sel.sum()),
         "steady_profile_rms_pct": steady_rms,
+        "steady_rms_samples_pct": steady_rms_samples,
         "steady_centre_pct": 100.0 * float(
             (u_steady[np.argmin(np.abs(y - height / 2))]
              - wm.steady_velocity([height / 2], height, BODY_FORCE, VISCOSITY)[0])
@@ -486,6 +497,92 @@ def run_constant(resolution: int, device, t_end: float = 1.0) -> dict:
     return res
 
 
+CONSTANT_RESOLUTIONS = (8, 12, 16)
+
+
+def run_constant_ladder(resolutions, device, t_end: float = 1.0) -> dict:
+    """R1 on a resolution ladder: steady parabola + Boussinesq start-up per rung.
+
+    The single rung of the original R1 anchor (G7/G8 at H/dx = 12) can only be
+    compared against the 5 % tolerance: one number carries no order and no
+    uncertainty band, so the acceptance cannot be *certified* for R1 the way it
+    already is for R2.  Three rungs make the same two functionals gradeable by
+    the order/GCI/validation layer in ``uncertainty.py``.
+    """
+    runs = []
+    for r in resolutions:
+        print(f"[{TAG}] constant R1 H/dx={r} (start-up + steady anchors) ...", flush=True)
+        res = run_constant(r, device, t_end=t_end)
+        print(f"[{TAG}]   steady {res['steady_profile_rms_pct']:.2f}%  "
+              f"startup(t=0.40) {res['startup_rms_pct_at_040']:.2f}%  "
+              f"({res['wall_clock_s']:.0f}s)", flush=True)
+        runs.append(res)
+    return assemble_constant_ladder(runs)
+
+
+def assemble_constant_ladder(runs) -> dict:
+    """Assemble the R1 ladder payload from already-integrated rungs."""
+    if not runs:
+        raise SystemExit("no R1 rungs to assemble")
+    runs = sorted(runs, key=lambda r: r["resolution_H_over_dx"])
+    missing = {8, 12, 16} - {r["resolution_H_over_dx"] for r in runs}
+    anchor = next((r for r in runs if r["resolution_H_over_dx"] == 12), runs[-1])
+    ladder = {
+        "resolutions": [r["resolution_H_over_dx"] for r in runs],
+        "anchor_resolution_H_over_dx": anchor["resolution_H_over_dx"],
+        "runs": runs,
+        "gates": {
+            "G7b_all_rungs_steady_5pct": all(
+                r["steady_profile_rms_pct"] <= GATES["G7_steady_anchor_rms_pct"]
+                for r in runs),
+            "G8b_all_rungs_startup_5pct": all(
+                r["startup_rms_pct_at_040"] <= GATES["G8_startup_anchor_rms_pct"]
+                for r in runs),
+        },
+        "note": ("R1 ladder: the anchor rung grades G7/G8, all rungs are graded by "
+                 "G7b/G8b, and the ladder itself feeds uncertainty.py"),
+    }
+    if missing:
+        ladder["missing_resolutions_H_over_dx"] = sorted(missing)
+    return {"anchor": anchor, "ladder": ladder}
+
+
+def main_constant_only(args, device) -> int:
+    """Run only the R1 ladder and merge it into an existing artifact.
+
+    The R2 section of ``out/result.json`` costs ~9 min of integration and is
+    already committed; re-deriving the R1 rungs must not require re-running it.
+    Only the R1 keys are replaced, everything else is carried over verbatim.
+    """
+    target = args.out / "result.json"
+    if not target.exists():
+        print(f"[{TAG}] {target} missing: --constant-only merges into an existing "
+              f"artifact; run the full driver once", flush=True)
+        return 2
+    payload = json.loads(target.read_text())
+    built = run_constant_ladder(args.constant_resolutions, device)
+    payload["constant_run"] = built["anchor"]
+    payload["constant_ladder"] = built["ladder"]
+    payload["constant_ladder_provenance"] = {
+        "driver": "benchmarks/case_poiseuille/run.py --constant-only",
+        "resolutions_H_over_dx": built["ladder"]["resolutions"],
+        "note": ("only the R1 constant-forcing rungs were integrated in this run; "
+                 "the R2 harmonic sections are carried over untouched"),
+    }
+    payload["gates"].update(built["anchor"]["gates"])
+    payload["gates"].update(built["ladder"]["gates"])
+    payload["gates_graded"] = {k: v for k, v in payload["gates"].items() if v is not None}
+    payload["gates_not_graded"] = [k for k, v in payload["gates"].items() if v is None]
+    payload["all_gates_pass"] = bool(
+        all(v for v in payload["gates"].values() if v is not None))
+    target.write_text(json.dumps(payload, indent=2))
+    print(f"[{TAG}] updated {target} (R1 ladder "
+          f"{built['ladder']['resolutions']})", flush=True)
+    for name, ok in {**built["anchor"]["gates"], **built["ladder"]["gates"]}.items():
+        print(f"[{TAG}] {'PASS' if ok else 'FAIL'} {name}")
+    return 0 if all(built["ladder"]["gates"].values()) else 1
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path,
@@ -493,6 +590,15 @@ def main(argv=None) -> int:
     parser.add_argument("--resolutions", type=int, nargs="+", default=[8, 12, 16])
     parser.add_argument("--device", default="auto")
     parser.add_argument("--threads", type=int, default=1)
+    parser.add_argument("--constant-resolutions", type=int, nargs="+",
+                        default=list(CONSTANT_RESOLUTIONS),
+                        help="R1 resolutions for the constant-forcing ladder")
+    parser.add_argument("--constant-rung", type=int, default=None,
+                        help="integrate ONE R1 rung and cache it in out/r1_rung_<R>.json")
+    parser.add_argument("--constant-assemble", action="store_true",
+                        help="assemble cached R1 rungs into --out/result.json")
+    parser.add_argument("--constant-only", action="store_true",
+                        help="run only the R1 ladder and merge it into --out/result.json")
     parser.add_argument("--quick", action="store_true",
                         help="one coarse resolution, shorter window (smoke)")
     parser.add_argument("--no-reference", action="store_true")
@@ -503,6 +609,55 @@ def main(argv=None) -> int:
     device = resolve_device(args.device)
     if args.quick:
         args.resolutions = [8]
+        args.constant_resolutions = args.constant_resolutions[:1]
+
+    if args.constant_rung is not None:
+        rung = run_constant(args.constant_rung, device, t_end=1.0)
+        cache = args.out / f"r1_rung_{args.constant_rung}.json"
+        args.out.mkdir(parents=True, exist_ok=True)
+        cache.write_text(json.dumps(rung, indent=1))
+        print(f"[{TAG}] cached {cache} (steady "
+              f"{rung['steady_profile_rms_pct']:.4f}% / start-up "
+              f"{rung['startup_rms_pct_at_040']:.4f}%)")
+        return 0
+
+    if args.constant_assemble:
+        cached = sorted(args.out.glob("r1_rung_*.json"))
+        if not cached:
+            print(f"[{TAG}] no cached rungs under {args.out}", flush=True)
+            return 2
+        runs = [json.loads(p.read_text()) for p in cached]
+        built = assemble_constant_ladder(runs)
+        target = args.out / "result.json"
+        payload = json.loads(target.read_text()) if target.exists() else {}
+        payload["constant_run"] = built["anchor"]
+        payload["constant_ladder"] = built["ladder"]
+        payload["constant_ladder_provenance"] = {
+            "driver": "benchmarks/case_poiseuille/run.py --constant-rung/--constant-assemble",
+            "resolutions_H_over_dx": built["ladder"]["resolutions"],
+            "cached_rungs": [p.name for p in cached],
+            "note": ("each R1 rung was integrated once and cached (resumable "
+                     "across a queue wait); the R2 harmonic sections of "
+                     "result.json are carried over untouched"),
+        }
+        payload.setdefault("gates", {}).update(built["anchor"]["gates"])
+        payload["gates"].update(built["ladder"]["gates"])
+        payload["gates_graded"] = {k: v for k, v in payload["gates"].items()
+                                   if v is not None}
+        payload["gates_not_graded"] = [k for k, v in payload["gates"].items()
+                                       if v is None]
+        payload["all_gates_pass"] = bool(
+            all(v for v in payload["gates"].values() if v is not None))
+        target.write_text(json.dumps(payload, indent=2))
+        print(f"[{TAG}] assembled R1 ladder "
+              f"{built['ladder']['resolutions']} into {target}")
+        for name, ok in {**built["anchor"]["gates"],
+                         **built["ladder"]["gates"]}.items():
+            print(f"[{TAG}] {'PASS' if ok else 'FAIL'} {name}")
+        return 0 if all(built["ladder"]["gates"].values()) else 1
+
+    if args.constant_only:
+        return main_constant_only(args, device)
 
     settle, window = (1, 1) if args.quick else (2, 2)
     y_rows_ladder = {}
@@ -529,12 +684,9 @@ def main(argv=None) -> int:
               f"profile {fast['amp_profile_rms_pct']:.2f}%  "
               f"({fast['wall_clock_s']:.0f}s)", flush=True)
 
-    const = None
-    print(f"[{TAG}] constant R1 H/dx=12 (start-up + steady anchors) ...", flush=True)
-    const = run_constant(12, device, t_end=1.0)
-    print(f"[{TAG}]   steady {const['steady_profile_rms_pct']:.2f}%  "
-          f"startup(t=0.40) {const['startup_rms_pct_at_040']:.2f}%  "
-          f"({const['wall_clock_s']:.0f}s)", flush=True)
+    built_const = run_constant_ladder(args.constant_resolutions, device)
+    const = built_const["anchor"]
+    const_ladder = built_const["ladder"]
 
     # G6: the measured frequency response must follow the analytic ratio, which
     # a quasi-steady (omega-independent) solver cannot do.
@@ -581,6 +733,7 @@ def main(argv=None) -> int:
     if freq:
         gates.update(freq["gates"])
     gates.update(const["gates"])
+    gates.update(const_ladder["gates"])
     if reference:
         gates.update(reference["gates"])
 
@@ -611,6 +764,7 @@ def main(argv=None) -> int:
         "harmonic_fast": fast,
         "frequency_discrimination": freq,
         "constant_run": const,
+        "constant_ladder": const_ladder,
         "reference_check": reference,
         "gates": gates,
         "gates_graded": {k: v for k, v in gates.items() if v is not None},
@@ -620,7 +774,7 @@ def main(argv=None) -> int:
         "torch": torch.__version__,
         "wall_clock_s": (sum(r["wall_clock_s"] for r in harmonic)
                          + (fast["wall_clock_s"] if fast else 0.0)
-                         + const["wall_clock_s"]),
+                         + sum(r["wall_clock_s"] for r in const_ladder["runs"])),
         "generated_by": "benchmarks/case_poiseuille/run.py",
     }
     args.out.mkdir(parents=True, exist_ok=True)

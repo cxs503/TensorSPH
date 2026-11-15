@@ -68,8 +68,34 @@ happens to be under 5 %"). Headline, finest rung `H/dx = 16` (numbers read from 
 All four pass U1 (every rung, not just the finest, is inside 5 %), U2
 (`E <= U_V`) and U3 (band < 5 %). No order of accuracy is quoted: three rungs
 with unequal ratios (r = 1.5, 1.333) cannot pin the order down, and the phase
-error changes sign. The R1 steady/start-up anchors have a single committed
-resolution, so they are reported as `insufficient` rather than given a band.
+error changes sign.
+
+### R1 ladder (steady parabola + Boussinesq start-up)
+
+R1 used to carry a single committed resolution (`H/dx = 12`), so its two anchors
+could only be compared with the tolerance and was reported as `insufficient`.
+The driver now integrates R1 on the same three rungs (`--constant-resolutions`,
+default 8/12/16; `--constant-only` merges the ladder into an existing artifact
+without re-running the 9 min harmonic section), and `uncertainty.py` grades the
+two R1 functionals with the same order/GCI/V&V machinery (gates `U1c`, `U2b`,
+`U3b`, plus `G7b`/`G8b` = every rung inside tolerance). The functional is the
+band-RMS of the relative deviation from the analytic profile — an *error* whose
+truth is exactly zero — so the published per-cent is the same number gate G7/G8
+grades; a test pins that identity to round-off. `U_input` for the start-up row is
+declared `0` (a single instant has no repeatability) instead of being invented,
+which makes that row's band optimistic — stated in the note.
+
+The ladder also *found* something: `U3b` **FAILS** for the steady functional
+(exact numbers in `docs/case_poiseuille_uncertainty.md`, read from
+`out/uncertainty.json`). Its point error is well inside 5 % and every rung passes
+(`U1c` PASS), but the band does not support the acceptance: `U_input` is the half
+range of the in-run samples of the functional over the 0.80–1.00 s window, i.e.
+the fill of the channel is still visible there, so the "steady" window is not
+stationary at the 5 % level. No 5 % certification is claimed for the steady
+anchor; closing it needs a longer integration (a genuinely stationary window) or
+a sub-window repeatability estimator, which needs the per-sample profiles that
+this artifact does not store. The start-up functional passes all three
+(`U2b`/`U3b`).
 
 Two pitfalls are documented and guarded by tests: the analytic reference must be
 evaluated per rung (row centres move with `dx`, so one reference value invents an

@@ -212,7 +212,10 @@ def test_published_verdict_reproduces_from_the_artifact(payload: dict,
         assert got["error_percent_per_rung"] == pytest.approx(
             pub["error_percent_per_rung"], rel=1e-12)
     assert payload["gates"] == published["gates"]
-    assert payload["all_gates_pass"] is True
+    # honest FAIL: the R1 steady band does not support the 5 % acceptance
+    # (U3b), while every graded R2 band and every R1 point/rung check passes
+    assert payload["all_gates_pass"] is False
+    assert payload["gates"]["U3b_R1_band_supports_5pct"] is False
 
 
 def test_reference_matches_the_library_closed_form(payload: dict) -> None:
@@ -292,12 +295,26 @@ def test_every_graded_functional_is_inside_the_5pct_acceptance(published: dict) 
         assert q["validation"]["supports_tolerance"] is True, key
 
 
-def test_single_rung_anchor_is_reported_as_insufficient(published: dict) -> None:
+def test_r1_anchor_is_graded_on_a_ladder(published: dict) -> None:
+    """R1 used to be a single rung ("status: insufficient"); it is a ladder now.
+
+    The anchor rung is still H/dx = 12 and still has to be inside the tolerance,
+    but the status must no longer claim that no order/band can be estimated.
+    """
     single = published["single_rung"]
-    assert single["status"] == "insufficient"
-    assert "single resolution" in single["reason"]
+    assert single["status"] == "ladder"
+    assert "single resolution" not in single["reason"]
+    assert single["ladder_resolutions_H_over_dx"] == [8, 12, 16]
     assert single["steady_profile_rms"]["within_tolerance"] is True
     assert single["startup_profile_rms_at_0.40s"]["within_tolerance"] is True
+    assert published["r1_quantities"], "R1 ladder must be published"
+
+
+def test_legacy_artifact_without_ladder_is_still_insufficient() -> None:
+    """The honest fallback must survive: no ladder -> no order claim, no pass."""
+    legacy = {"constant_run": {"resolution_H_over_dx": 12}}
+    assert case_unc.r1_quantities(legacy) == {}
+    assert case_unc.r1_input_uncertainty(legacy) == {}
 
 
 def test_gci_band_is_never_narrower_than_the_conservative_band(published: dict) -> None:

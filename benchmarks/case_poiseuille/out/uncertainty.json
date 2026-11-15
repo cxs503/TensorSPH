@@ -2,7 +2,7 @@
  "case": "CASE-POISEUILLE-SPH",
  "generated_by": "benchmarks/case_poiseuille/uncertainty.py",
  "source_artifact": "benchmarks/case_poiseuille/out/result.json",
- "source_sha256": "6ac2c5cc613c0c2ec0999936817e41e47210b2c6df5045ac4934897c6bdaef65",
+ "source_sha256": "740c748b870eef76825fa656557df2dd6e51945da9fc3ee29a41ec39371b5194",
  "tolerance_percent": 5.0,
  "safety_factor": 1.25,
  "conservative_order": 1.0,
@@ -18,26 +18,7 @@
   "pass": true,
   "note": "stored row analytic values vs tensorsph.womersley closed form"
  },
- "input_uncertainty": {
-  "resolution_H_over_dx": 16,
-  "amplitude": {
-   "n": 2,
-   "mean": 0.7353530095876659,
-   "half_range": 0.000123894990106177,
-   "std": 0.00017521397531823594,
-   "half_range_percent_of_mean": 0.016848369217343458
-  },
-  "phase_quarter_turns": {
-   "n": 2,
-   "mean": -0.6077523789115332,
-   "half_range": 0.0002323225459025524,
-   "std": 0.0003285536952604355,
-   "half_range_percent_of_mean": 0.038226513620339145,
-   "half_range_percent": 0.02323225459025524
-  },
-  "fit_residual_max": 0.007369942636373993,
-  "note": "half-range of the two measurement windows of the finest rung, in per cent of the measured value (amplitude) or of a quarter turn (phase); U_input, not U_num"
- },
+ "input_uncertainty": 0.0,
  "quantities": {
   "amp_centre": {
    "n_rungs": 3,
@@ -523,6 +504,267 @@
    "error_over_floor": 5.062879008676495
   }
  },
+ "r1_quantities": {
+  "r1_steady_profile_rms": {
+   "n_rungs": 3,
+   "spacings": [
+    0.00625,
+    0.008333333333333333,
+    0.0125
+   ],
+   "values": [
+    0.004105229685364704,
+    0.009568216625594613,
+    0.026899316473111314
+   ],
+   "labels": [
+    "H/dx=16",
+    "H/dx=12",
+    "H/dx=8"
+   ],
+   "truth": 0.0,
+   "truth_per_rung": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": 1.0,
+   "tolerance_percent": 5.0,
+   "order_analysis": {
+    "status": "converging",
+    "reason": "pair orders agree within 0.5 (spread 0.39)",
+    "errors": [
+     0.004105229685364704,
+     0.009568216625594613,
+     0.026899316473111314
+    ],
+    "abs_errors": [
+     0.004105229685364704,
+     0.009568216625594613,
+     0.026899316473111314
+    ],
+    "pair_orders": [
+     {
+      "fine": "H/dx=16",
+      "coarse": "H/dx=12",
+      "r": 1.3333333333333333,
+      "e_fine": 0.004105229685364704,
+      "e_coarse": 0.009568216625594613,
+      "p": 2.941389904662195
+     },
+     {
+      "fine": "H/dx=12",
+      "coarse": "H/dx=8",
+      "r": 1.5,
+      "e_fine": 0.009568216625594613,
+      "e_coarse": 0.026899316473111314,
+      "p": 2.5493045347340475
+     }
+    ],
+    "p_best": 2.5493045347340475,
+    "p_mean": 2.7453472196981212,
+    "order_spread": 0.39208536992814746,
+    "monotone_magnitude": true
+   },
+   "p_used": 2.5493045347340475,
+   "p_identified": true,
+   "gci_fine_pairs": {
+    "observed_order": {
+     "gci_percent": 0.6310482597776815,
+     "order_used": 2.5493045347340475,
+     "order_observed": 2.5493045347340475,
+     "order_convention": "observed p",
+     "safety": 1.25,
+     "r": 1.3333333333333333,
+     "pair_diff_over_scale": 0.005462986940229909,
+     "scale": 1.0,
+     "scale_basis": "declared",
+     "fine": 0.004105229685364704,
+     "coarse": 0.009568216625594613
+    },
+    "conservative": {
+     "gci_percent": 2.0486201025862165,
+     "order_used": 1.0,
+     "order_observed": 1.0,
+     "order_convention": "observed p",
+     "safety": 1.25,
+     "r": 1.3333333333333333,
+     "pair_diff_over_scale": 0.005462986940229909,
+     "scale": 1.0,
+     "scale_basis": "declared",
+     "fine": 0.004105229685364704,
+     "coarse": 0.009568216625594613
+    }
+   },
+   "richardson": -0.0009431563928567468,
+   "U_num_percent": 2.0486201025862165,
+   "U_num_basis": "observed p",
+   "U_num_spread_percent": [
+    0.6310482597776815,
+    2.0486201025862165
+   ],
+   "validation": {
+    "comparison": 0.004105229685364704,
+    "truth": 0.0,
+    "E_percent": 0.4105229685364704,
+    "U_num_percent": 2.0486201025862165,
+    "U_input_percent": 44.910832791074256,
+    "U_V_percent": 44.95753269823146,
+    "E_over_U_V": 0.00913135005188173,
+    "verdict": "validated",
+    "scale_basis": "declared",
+    "tolerance_percent": 5.0,
+    "within_tolerance": true,
+    "supports_tolerance": false
+   },
+   "scale_text": "RMS of the relative deviation from the analytic profile (fraction); truth = 0, reported per cent = 100 x value",
+   "error_percent_per_rung": [
+    0.4105229685364704,
+    0.9568216625594613,
+    2.6899316473111314
+   ],
+   "worst_rung_error_percent": 2.6899316473111314,
+   "worst_rung_within_tolerance": true,
+   "repeatability_floor_percent": 44.910832791074256,
+   "error_over_floor": 0.009140845159701854
+  },
+  "r1_startup_profile_rms_at_0.40s": {
+   "n_rungs": 3,
+   "spacings": [
+    0.00625,
+    0.008333333333333333,
+    0.0125
+   ],
+   "values": [
+    0.004794973218066375,
+    0.009164890941063935,
+    0.026454000946609962
+   ],
+   "labels": [
+    "H/dx=16",
+    "H/dx=12",
+    "H/dx=8"
+   ],
+   "truth": 0.0,
+   "truth_per_rung": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": 1.0,
+   "tolerance_percent": 5.0,
+   "order_analysis": {
+    "status": "converging",
+    "reason": "pair orders agree within 0.5 (spread 0.36)",
+    "errors": [
+     0.004794973218066375,
+     0.009164890941063935,
+     0.026454000946609962
+    ],
+    "abs_errors": [
+     0.004794973218066375,
+     0.009164890941063935,
+     0.026454000946609962
+    ],
+    "pair_orders": [
+     {
+      "fine": "H/dx=16",
+      "coarse": "H/dx=12",
+      "r": 1.3333333333333333,
+      "e_fine": 0.004794973218066375,
+      "e_coarse": 0.009164890941063935,
+      "p": 2.2518325638634944
+     },
+     {
+      "fine": "H/dx=12",
+      "coarse": "H/dx=8",
+      "r": 1.5,
+      "e_fine": 0.009164890941063935,
+      "e_coarse": 0.026454000946609962,
+      "p": 2.6143493200048114
+     }
+    ],
+    "p_best": 2.2518325638634944,
+    "p_mean": 2.433090941934153,
+    "order_spread": 0.36251675614131695,
+    "monotone_magnitude": true
+   },
+   "p_used": 2.2518325638634944,
+   "p_identified": true,
+   "gci_fine_pairs": {
+    "observed_order": {
+     "gci_percent": 0.5993716522582968,
+     "order_used": 2.2518325638634944,
+     "order_observed": 2.2518325638634944,
+     "order_convention": "observed p",
+     "safety": 1.25,
+     "r": 1.3333333333333333,
+     "pair_diff_over_scale": 0.00436991772299756,
+     "scale": 1.0,
+     "scale_basis": "declared",
+     "fine": 0.004794973218066375,
+     "coarse": 0.009164890941063935
+    },
+    "conservative": {
+     "gci_percent": 1.6387191461240853,
+     "order_used": 1.0,
+     "order_observed": 1.0,
+     "order_convention": "observed p",
+     "safety": 1.25,
+     "r": 1.3333333333333333,
+     "pair_diff_over_scale": 0.00436991772299756,
+     "scale": 1.0,
+     "scale_basis": "declared",
+     "fine": 0.004794973218066375,
+     "coarse": 0.009164890941063935
+    }
+   },
+   "richardson": 0.0,
+   "U_num_percent": 1.6387191461240853,
+   "U_num_basis": "observed p",
+   "U_num_spread_percent": [
+    0.5993716522582968,
+    1.6387191461240853
+   ],
+   "validation": {
+    "comparison": 0.004794973218066375,
+    "truth": 0.0,
+    "E_percent": 0.4794973218066375,
+    "U_num_percent": 1.6387191461240853,
+    "U_input_percent": 0.0,
+    "U_V_percent": 1.6387191461240853,
+    "E_over_U_V": 0.29260494267168924,
+    "verdict": "validated",
+    "scale_basis": "declared",
+    "tolerance_percent": 5.0,
+    "within_tolerance": true,
+    "supports_tolerance": true
+   },
+   "scale_text": "RMS of the relative deviation from the analytic profile (fraction); truth = 0, reported per cent = 100 x value",
+   "error_percent_per_rung": [
+    0.4794973218066375,
+    0.9164890941063936,
+    2.6454000946609963
+   ],
+   "worst_rung_error_percent": 2.6454000946609963,
+   "worst_rung_within_tolerance": true,
+   "repeatability_floor_percent": 0.0,
+   "error_over_floor": null
+  }
+ },
+ "r1_input_uncertainty": {
+  "resolution_H_over_dx": 16,
+  "steady_samples": {
+   "n": 11,
+   "mean": 0.48093061684108707,
+   "half_range": 0.21598994517058262,
+   "std": 0.11982335171345854,
+   "half_range_percent_of_mean": 44.910832791074256
+  },
+  "steady_half_range_percent_of_mean": 44.910832791074256,
+  "startup": 0.0,
+  "startup_reason": "the start-up functional is read at a single instant (t = 0.40 s): no between-window repeatability exists inside the run, so U_input = 0 and U_V = U_num"
+ },
  "single_rung": {
   "steady_profile_rms": {
    "resolution_H_over_dx": 12,
@@ -531,11 +773,16 @@
   },
   "startup_profile_rms_at_0.40s": {
    "resolution_H_over_dx": 12,
-   "error_percent": 0.8659265872680739,
+   "error_percent": 0.8659265872679378,
    "within_tolerance": true
   },
-  "status": "insufficient",
-  "reason": "the committed R1 artifacts contain a single resolution (H/dx=12): neither an order nor a GCI can be estimated, so the R1 anchor is graded against the tolerance only"
+  "status": "ladder",
+  "reason": "R1 is now graded on a resolution ladder, so the steady and start-up anchors carry an observed order, a GCI band and the V&V-20 comparison instead of a tolerance-only check; the H/dx=12 numbers above remain the G7/G8 anchor",
+  "ladder_resolutions_H_over_dx": [
+   8,
+   12,
+   16
+  ]
  },
  "order_status": {
   "amp_centre": "order_unresolved",
@@ -547,13 +794,18 @@
   "U0_reference_matches_closed_form": true,
   "U1_all_rungs_within_5pct": true,
   "U1b_R1_anchor_within_5pct": true,
+  "U1c_R1_ladder_all_rungs_within_5pct": true,
   "U2_validation_E_leq_U_V": true,
-  "U3_band_supports_5pct": true
+  "U3_band_supports_5pct": true,
+  "U2b_R1_validation_E_leq_U_V": true,
+  "U3b_R1_band_supports_5pct": false
  },
- "all_gates_pass": true,
+ "all_gates_pass": false,
  "honest_limits": [
   "three rungs with unequal ratios (H/dx = 8,12,16 -> r = 1.5 and 1.333) leave the observed order only loosely identified: a monotone ladder can still show pair orders 1.9 and 4.2 because each pair samples a different interval of a staircase error, so no order is quoted when they disagree",
   "the GCI band is a bound on the graded *functional*, not a pointwise field bound; the pointwise profile error is larger near the walls",
+  "the R1 steady band does NOT support the 5 % acceptance: its U_input is the half range of the in-run samples of the functional over the 0.80..1.00 s window, which measures the residual fill of the channel rather than pure measurement scatter; the window mean is inside the tolerance (U1c) but the band is wider than it (U3b), so no 5 % certification is claimed for the steady anchor -- closing it needs a longer integration (stationary window) or a sub-window repeatability, which needs the per-sample profiles that this artifact does not store",
+  "the R1 start-up functional is read at a single instant (t = 0.40 s), so its U_input is 0 by declaration and its band is U_num alone: the start-up row of the V&V table is optimistic relative to the steady row",
   "U_input is the between-window repeatability of one run, not a run-to-run ensemble: it captures the sampling window, not reproducibility across hardware or thread counts",
   "the phase functional is oscillatory (the error changes sign between H/dx=12 and 16), so its band uses the conservative p=1 convention and no order of accuracy is claimed for the phase"
  ]
