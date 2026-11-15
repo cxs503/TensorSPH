@@ -1,0 +1,405 @@
+{
+ "case": "CASE-SPH-WEDGE-ENTRY-2D",
+ "script": "benchmarks/case_sph_wedge_entry_2d/footprint_reference_ledger.py",
+ "design": {
+  "phi_m": 0.008,
+  "metric": "R(eps) = max window mean of Wagner p/q / point Cp_max, closed form",
+  "eps_definition": "Phi / c_end",
+  "beta_deg": 30.0,
+  "verdict_rule_changed": false
+ },
+ "ratio_curve": [
+  {
+   "beta_deg": 10,
+   "eps": 0.01,
+   "footprint_ratio": 0.9611779879408027
+  },
+  {
+   "beta_deg": 10,
+   "eps": 0.02,
+   "footprint_ratio": 0.8989628920124938
+  },
+  {
+   "beta_deg": 10,
+   "eps": 0.05,
+   "footprint_ratio": 0.7601629352764829
+  },
+  {
+   "beta_deg": 10,
+   "eps": 0.08,
+   "footprint_ratio": 0.6753396391879963
+  },
+  {
+   "beta_deg": 10,
+   "eps": 0.1,
+   "footprint_ratio": 0.6344830186185352
+  },
+  {
+   "beta_deg": 10,
+   "eps": 0.12,
+   "footprint_ratio": 0.6014007889870417
+  },
+  {
+   "beta_deg": 10,
+   "eps": 0.16,
+   "footprint_ratio": 0.5504606032335269
+  },
+  {
+   "beta_deg": 10,
+   "eps": 0.2,
+   "footprint_ratio": 0.5125120890845308
+  },
+  {
+   "beta_deg": 10,
+   "eps": 0.25,
+   "footprint_ratio": 0.47630888432814167
+  },
+  {
+   "beta_deg": 10,
+   "eps": 0.3,
+   "footprint_ratio": 0.44818323912247127
+  },
+  {
+   "beta_deg": 10,
+   "eps": 0.4,
+   "footprint_ratio": 0.40681259935385183
+  },
+  {
+   "beta_deg": 10,
+   "eps": 0.5,
+   "footprint_ratio": 0.37745865888890495
+  },
+  {
+   "beta_deg": 20,
+   "eps": 0.01,
+   "footprint_ratio": 0.9974506108651768
+  },
+  {
+   "beta_deg": 20,
+   "eps": 0.02,
+   "footprint_ratio": 0.9903696104999525
+  },
+  {
+   "beta_deg": 20,
+   "eps": 0.05,
+   "footprint_ratio": 0.9542829373772285
+  },
+  {
+   "beta_deg": 20,
+   "eps": 0.08,
+   "footprint_ratio": 0.9135845219363726
+  },
+  {
+   "beta_deg": 20,
+   "eps": 0.1,
+   "footprint_ratio": 0.8882058271308741
+  },
+  {
+   "beta_deg": 20,
+   "eps": 0.12,
+   "footprint_ratio": 0.8648519645218987
+  },
+  {
+   "beta_deg": 20,
+   "eps": 0.16,
+   "footprint_ratio": 0.8239911573026288
+  },
+  {
+   "beta_deg": 20,
+   "eps": 0.2,
+   "footprint_ratio": 0.7897367544464149
+  },
+  {
+   "beta_deg": 20,
+   "eps": 0.25,
+   "footprint_ratio": 0.7540799209767753
+  },
+  {
+   "beta_deg": 20,
+   "eps": 0.3,
+   "footprint_ratio": 0.7244506327267679
+  },
+  {
+   "beta_deg": 20,
+   "eps": 0.4,
+   "footprint_ratio": 0.677863767727523
+  },
+  {
+   "beta_deg": 20,
+   "eps": 0.5,
+   "footprint_ratio": 0.6427519252301297
+  },
+  {
+   "beta_deg": 30,
+   "eps": 0.01,
+   "footprint_ratio": 0.9996529713018125
+  },
+  {
+   "beta_deg": 30,
+   "eps": 0.02,
+   "footprint_ratio": 0.9986255691142586
+  },
+  {
+   "beta_deg": 30,
+   "eps": 0.05,
+   "footprint_ratio": 0.9919194872612904
+  },
+  {
+   "beta_deg": 30,
+   "eps": 0.08,
+   "footprint_ratio": 0.9812124179299944
+  },
+  {
+   "beta_deg": 30,
+   "eps": 0.1,
+   "footprint_ratio": 0.9727704291668707
+  },
+  {
+   "beta_deg": 30,
+   "eps": 0.12,
+   "footprint_ratio": 0.9637871682236627
+  },
+  {
+   "beta_deg": 30,
+   "eps": 0.16,
+   "footprint_ratio": 0.9453052760846111
+  },
+  {
+   "beta_deg": 30,
+   "eps": 0.2,
+   "footprint_ratio": 0.9271840125936539
+  },
+  {
+   "beta_deg": 30,
+   "eps": 0.25,
+   "footprint_ratio": 0.9059040839564826
+  },
+  {
+   "beta_deg": 30,
+   "eps": 0.3,
+   "footprint_ratio": 0.8864503532878798
+  },
+  {
+   "beta_deg": 30,
+   "eps": 0.4,
+   "footprint_ratio": 0.8528570887605834
+  },
+  {
+   "beta_deg": 30,
+   "eps": 0.5,
+   "footprint_ratio": 0.8253232474495409
+  },
+  {
+   "beta_deg": 40,
+   "eps": 0.01,
+   "footprint_ratio": 0.9999431369730623
+  },
+  {
+   "beta_deg": 40,
+   "eps": 0.02,
+   "footprint_ratio": 0.9997729770861588
+  },
+  {
+   "beta_deg": 40,
+   "eps": 0.05,
+   "footprint_ratio": 0.9986019198800216
+  },
+  {
+   "beta_deg": 40,
+   "eps": 0.08,
+   "footprint_ratio": 0.9965122235286328
+  },
+  {
+   "beta_deg": 40,
+   "eps": 0.1,
+   "footprint_ratio": 0.9946727252513701
+  },
+  {
+   "beta_deg": 40,
+   "eps": 0.12,
+   "footprint_ratio": 0.9925289393928425
+  },
+  {
+   "beta_deg": 40,
+   "eps": 0.16,
+   "footprint_ratio": 0.9875142429465277
+  },
+  {
+   "beta_deg": 40,
+   "eps": 0.2,
+   "footprint_ratio": 0.9818159424623206
+  },
+  {
+   "beta_deg": 40,
+   "eps": 0.25,
+   "footprint_ratio": 0.9741613046594522
+  },
+  {
+   "beta_deg": 40,
+   "eps": 0.3,
+   "footprint_ratio": 0.9662892140525581
+  },
+  {
+   "beta_deg": 40,
+   "eps": 0.4,
+   "footprint_ratio": 0.9508602661007537
+  },
+  {
+   "beta_deg": 40,
+   "eps": 0.5,
+   "footprint_ratio": 0.936646493726757
+  }
+ ],
+ "grids": [
+  {
+   "tag": "dx4mm",
+   "dx_m": 0.004,
+   "phi_m": 0.008,
+   "c_end_m": 0.05,
+   "eps": 0.16,
+   "footprint_ratio": 0.9453052760846111,
+   "point_wagner": 8.402203300817021,
+   "tau_peak": 0.9300027357362358,
+   "denominator_designated": 6.541512510505509,
+   "point_designated": 6.92,
+   "point_exact": 6.9,
+   "denominator_exact": 6.522606404983817,
+   "point_wagner_reported": 8.402203300817021,
+   "denominator_wagner": 7.942647110997865,
+   "sampled_reference_cp": 6.887692747979871,
+   "continuum_reference_cp": 7.942647110997865,
+   "sampled_reference_bias": -0.13282150752451793
+  },
+  {
+   "tag": "dx2mm",
+   "dx_m": 0.002,
+   "phi_m": 0.008,
+   "c_end_m": 0.05,
+   "eps": 0.16,
+   "footprint_ratio": 0.9453052760846111,
+   "point_wagner": 8.402203300817021,
+   "tau_peak": 0.9300027357362358,
+   "denominator_designated": 6.541512510505509,
+   "point_designated": 6.92,
+   "point_exact": 6.9,
+   "denominator_exact": 6.522606404983817,
+   "point_wagner_reported": 8.402203300817021,
+   "denominator_wagner": 7.942647110997865,
+   "sampled_reference_cp": 7.406435910026123,
+   "continuum_reference_cp": 7.942647110997865,
+   "sampled_reference_bias": -0.067510389606668
+  },
+  {
+   "tag": "dx1mm",
+   "dx_m": 0.001,
+   "phi_m": 0.008,
+   "t_end_s": 0.01837762984739307,
+   "c_end_source": "case definition (run missing)",
+   "c_end_m": 0.05,
+   "eps": 0.16,
+   "footprint_ratio": 0.9453052760846111,
+   "point_wagner": 8.402203300817021,
+   "tau_peak": 0.9300027357362358,
+   "denominator_designated": 6.541512510505509,
+   "point_designated": 6.92,
+   "point_exact": 6.9,
+   "denominator_exact": 6.522606404983817,
+   "point_wagner_reported": 8.402203300817021,
+   "denominator_wagner": 7.942647110997865,
+   "sampled_reference_cp": 7.6866533007677,
+   "continuum_reference_cp": 7.942647110997865,
+   "sampled_reference_bias": -0.032230288800782825
+  },
+  {
+   "tag": "dx0.5mm",
+   "dx_m": 0.0005,
+   "phi_m": 0.008,
+   "t_end_s": 0.01837762984739307,
+   "c_end_source": "case definition (run missing)",
+   "c_end_m": 0.05,
+   "eps": 0.16,
+   "footprint_ratio": 0.9453052760846111,
+   "point_wagner": 8.402203300817021,
+   "tau_peak": 0.9300027357362358,
+   "denominator_designated": 6.541512510505509,
+   "point_designated": 6.92,
+   "point_exact": 6.9,
+   "denominator_exact": 6.522606404983817,
+   "point_wagner_reported": 8.402203300817021,
+   "denominator_wagner": 7.942647110997865,
+   "sampled_reference_cp": 7.854342569100404,
+   "continuum_reference_cp": 7.942647110997865,
+   "sampled_reference_bias": -0.011117772282138727
+  }
+ ],
+ "solver_health": [
+  {
+   "tag": "dx4mm",
+   "status": "OK",
+   "max_rho_ratio": 1.0589600791171045,
+   "max_rho_ratio_last_frame": 1.0476831779305291,
+   "density_compression_max": 0.05896007911710455,
+   "steps": 329,
+   "wall_seconds": 15.9,
+   "within_1pct": false
+  },
+  {
+   "tag": "dx2mm",
+   "status": "OK",
+   "max_rho_ratio": 1.055770872903543,
+   "max_rho_ratio_last_frame": 1.0273743183101358,
+   "density_compression_max": 0.0557708729035431,
+   "steps": 587,
+   "wall_seconds": 52.4,
+   "within_1pct": false
+  },
+  {
+   "tag": "dx1mm",
+   "status": "MISSING"
+  },
+  {
+   "tag": "dx0.5mm",
+   "status": "MISSING"
+  }
+ ],
+ "sensor_anchor": {
+  "beta_deg": 10.0,
+  "source": "Jain et al. 2022 Table 1 (refs.json)",
+  "note": "space-averaged transducer readings are 0.46-0.51 of the point COM value at beta=10, i.e. a finite footprint is a first-order effect at small deadrise; the implied eps cannot be converted to a physical sensor width without the source's c(t) at the peak instant, which refs.json does not carry.",
+  "rows": [
+   {
+    "sensor": "Sensor1",
+    "cp_rho_v2": 17.74,
+    "sigma": 1.54,
+    "com_point_rho_v2": 38.92,
+    "ratio_to_com": 0.4558067831449126,
+    "implied_eps": 0.2852676046013194
+   },
+   {
+    "sensor": "Sensor2",
+    "cp_rho_v2": 19.79,
+    "sigma": 2.36,
+    "com_point_rho_v2": 38.92,
+    "ratio_to_com": 0.5084789311408016,
+    "implied_eps": 0.2049227199416615
+   }
+  ]
+ },
+ "figures": [
+  "fig4_footprint_ratio.png",
+  "fig5_reference_denominators.png",
+  "fig6_sampled_reference_bias.png",
+  "fig7_sensor_anchor.png"
+ ],
+ "pending_runs": {
+  "reason": "the two finest ladder rungs were not measured when this ledger was built",
+  "jobs": {
+   "dx1mm": "cj3667",
+   "dx0.5mm": "cj3668"
+  },
+  "submitted": "2026-11-15T10:29Z",
+  "command": "python benchmarks/case_sph_wedge_entry_2d/run_ladder_shard.py --shard {2,3} --of 4 --threads 8/12 --out docs/artifacts/case_sph_wedge_entry_2d_footprint",
+  "state_at_write": "queued (15.7 min, cluster queue depth > 50)",
+  "effect": "R, the denominators and the three-bias decomposition do NOT depend on these runs; only the SPH side of the ladder is incomplete"
+ }
+}
