@@ -1,0 +1,257 @@
+{
+  "series": "/root/tp-agent/work/m21534/benchmarks/kleefsman_obstacle/results/peak_horizon/dx0.04_time_series.csv",
+  "t_end_s": 2.6002,
+  "samples": 652,
+  "threshold_m": 0.02,
+  "rows": [
+    {
+      "landmark": "BOX_FIRST_IMPACT",
+      "station_m": 2.426,
+      "column": "slab_x2.426",
+      "proxy": true,
+      "station_bias_m": 0.04999999999999982,
+      "measured_s": 0.4603949539979133,
+      "value_m": 0.02,
+      "ref_s": 0.48,
+      "tol_s": 0.08,
+      "window_s": [
+        0.2,
+        1.2
+      ],
+      "verdict": "PASS",
+      "why": "measured instant inside the wording's tolerance"
+    },
+    {
+      "landmark": "BOX_FIRST_IMPACT",
+      "station_m": 2.426,
+      "column": "slab_x2.426",
+      "proxy": false,
+      "station_bias_m": 0.0,
+      "measured_s": 0.4603949539979133,
+      "value_m": 0.02,
+      "ref_s": 0.48,
+      "tol_s": 0.08,
+      "window_s": [
+        0.2,
+        1.2
+      ],
+      "verdict": "PASS",
+      "why": "measured instant inside the wording's tolerance"
+    },
+    {
+      "landmark": "BACKWALL_RETURN_AT_H2",
+      "station_m": 2.426,
+      "column": "slab_x2.426",
+      "proxy": false,
+      "station_bias_m": 0.0,
+      "measured_s": 1.4,
+      "value_m": 0.401126,
+      "ref_s": 1.8,
+      "tol_s": 0.2,
+      "window_s": [
+        1.4,
+        2.4
+      ],
+      "verdict": "FAIL",
+      "why": "outside the wording's tolerance"
+    },
+    {
+      "landmark": "BACKWALL_RETURN_AT_H2",
+      "station_m": 2.228,
+      "column": "slab_x2.228",
+      "proxy": false,
+      "station_bias_m": 0.0,
+      "measured_s": 1.544,
+      "value_m": 0.401237,
+      "ref_s": 1.8,
+      "tol_s": 0.2,
+      "window_s": [
+        1.4,
+        2.4
+      ],
+      "verdict": "FAIL",
+      "why": "outside the wording's tolerance"
+    },
+    {
+      "landmark": "RETURN_IMPACT_ON_BOX",
+      "station_m": 2.426,
+      "column": "slab_x2.426",
+      "proxy": true,
+      "station_bias_m": 0.04999999999999982,
+      "measured_s": NaN,
+      "value_m": NaN,
+      "ref_s": 4.7,
+      "tol_s": 0.3,
+      "window_s": [
+        4.3,
+        5.1
+      ],
+      "verdict": "UNKNOWN",
+      "why": "record ends at 2.60 s, before the window opens at 4.30 s"
+    },
+    {
+      "landmark": "RETURN_IMPACT_ON_BOX",
+      "station_m": 2.426,
+      "column": "slab_x2.426",
+      "proxy": false,
+      "station_bias_m": 0.0,
+      "measured_s": NaN,
+      "value_m": NaN,
+      "ref_s": 4.7,
+      "tol_s": 0.3,
+      "window_s": [
+        4.3,
+        5.1
+      ],
+      "verdict": "UNKNOWN",
+      "why": "record ends at 2.60 s, before the window opens at 4.30 s"
+    },
+    {
+      "landmark": "SECOND_WAVE_AT_H2",
+      "station_m": 2.426,
+      "column": "slab_x2.426",
+      "proxy": false,
+      "station_bias_m": 0.0,
+      "measured_s": NaN,
+      "value_m": NaN,
+      "ref_s": 5.0,
+      "tol_s": 0.3,
+      "window_s": [
+        4.6,
+        5.4
+      ],
+      "verdict": "UNKNOWN",
+      "why": "record ends at 2.60 s, before the window opens at 4.60 s"
+    },
+    {
+      "landmark": "SECOND_WAVE_AT_H2",
+      "station_m": 2.228,
+      "column": "slab_x2.228",
+      "proxy": false,
+      "station_bias_m": 0.0,
+      "measured_s": NaN,
+      "value_m": NaN,
+      "ref_s": 5.0,
+      "tol_s": 0.3,
+      "window_s": [
+        4.6,
+        5.4
+      ],
+      "verdict": "UNKNOWN",
+      "why": "record ends at 2.60 s, before the window opens at 4.60 s"
+    }
+  ],
+  "verdict": "FAIL",
+  "quotes": {
+    "first_hit_same": {
+      "id": "first_hit_same",
+      "source": "K2005",
+      "printed_page": 382,
+      "text": "The time instant when the water is first hitting the box is the same."
+    },
+    "fig18_snapshots": {
+      "id": "fig18_snapshots",
+      "source": "K2005",
+      "printed_page": 382,
+      "text": "Fig. 18. Snapshots of a dambreak simulation with a box in the flow compared with experiment at time 0.4 and 0.56 s."
+    },
+    "backwall_return_1p8s": {
+      "id": "backwall_return_1p8s",
+      "source": "K2005",
+      "printed_page": 382,
+      "text": "The agreement in both pictures is very good until the water has returned from the back wall (after about 1.8 s)."
+    },
+    "return_impact_box_4p7s": {
+      "id": "return_impact_box_4p7s",
+      "source": "K2005",
+      "printed_page": 384,
+      "text": "The moment the return wave hits the box again (at about 4.7 s) is again visible in the graphs."
+    },
+    "second_wave_h2_5s": {
+      "id": "second_wave_h2_5s",
+      "source": "K2005",
+      "printed_page": 382,
+      "text": "The moment that this second wave meets the height probe at H2 again (after about 5 s) is almost exactly the same in simulation and experiment."
+    }
+  },
+  "landmarks": [
+    {
+      "id": "BOX_FIRST_IMPACT",
+      "quote_ids": [
+        "first_hit_same",
+        "fig18_snapshots"
+      ],
+      "kind": "arrival",
+      "window": [
+        0.2,
+        1.2
+      ],
+      "ref_s": 0.48,
+      "tol_s": 0.08,
+      "statement": "first arrival of the surge at the box front, inside the 0.40-0.56 s snapshot bracket",
+      "stations": [
+        2.476,
+        2.426
+      ]
+    },
+    {
+      "id": "BACKWALL_RETURN_AT_H2",
+      "quote_ids": [
+        "backwall_return_1p8s"
+      ],
+      "kind": "peak_in",
+      "window": [
+        1.4,
+        2.4
+      ],
+      "ref_s": 1.8,
+      "tol_s": 0.2,
+      "statement": "largest water height at H2 after the surge returns from the back wall",
+      "stations": [
+        2.426,
+        2.228
+      ]
+    },
+    {
+      "id": "RETURN_IMPACT_ON_BOX",
+      "quote_ids": [
+        "return_impact_box_4p7s"
+      ],
+      "kind": "peak_in",
+      "window": [
+        4.3,
+        5.1
+      ],
+      "ref_s": 4.7,
+      "tol_s": 0.3,
+      "statement": "second impact of the return wave on the box",
+      "stations": [
+        2.476,
+        2.426
+      ]
+    },
+    {
+      "id": "SECOND_WAVE_AT_H2",
+      "quote_ids": [
+        "second_wave_h2_5s"
+      ],
+      "kind": "peak_in",
+      "window": [
+        4.6,
+        5.4
+      ],
+      "ref_s": 5.0,
+      "tol_s": 0.3,
+      "statement": "second meeting of the return wave with probe H2",
+      "stations": [
+        2.426,
+        2.228
+      ]
+    }
+  ],
+  "tag": "dx0.04_t26",
+  "kind": "legacy t=2.6 s",
+  "dx": null,
+  "wall_clock_s": null,
+  "compression": null
+}
