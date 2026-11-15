@@ -25,6 +25,7 @@ OUT = ROOT / "docs" / "xval_sphinx_tvc" / "SHIFT_BOUND_PREDICTION.md"
 FIG1 = ROOT / "docs" / "xval_sphinx_tvc" / "figure_shift_bound.png"
 FIG2 = ROOT / "docs" / "xval_sphinx_tvc" / "figure_shift_bound_error.png"
 FIG3 = ROOT / "docs" / "xval_sphinx_tvc" / "figure_shift_bound_C.png"
+FIG4 = ROOT / "docs" / "xval_sphinx_tvc" / "figure_shift_bound_indifference.png"
 H_OVER_DX = 1.3
 
 
@@ -142,12 +143,66 @@ def make_figures(levels: dict[float, list[dict]], fits: dict[float, dict],
     fig.savefig(FIG3, dpi=160)
     plt.close(fig)
 
+    # Figure 4: H5 (accumulated correction) and H6 (indifference intervals)
+    fig, (axL, axR) = plt.subplots(1, 2, figsize=(9.4, 3.9))
+    dxs = sorted(levels)
+    if "H5" in summary:
+        As = summary["H5"]["A_implied"]
+        axL.plot(dxs, As, "s-", color="tab:purple")
+        for x, y in zip(dxs, As):
+            axL.annotate(f"{y:.1f}", (x, y), textcoords="offset points",
+                         xytext=(0, 7), fontsize=7)
+        mean = summary["H5"]["mean"]
+        axL.axhline(mean, color="grey", ls="--", lw=1,
+                    label=f"mean {mean:.1f}, spread {pct(summary['H5']['spread_over_mean'], 1)}")
+        axL.fill_between([min(dxs) * 0.9, max(dxs) * 1.1], 0.75 * mean, 1.25 * mean,
+                         color="grey", alpha=0.15, label="H5 tolerance (+-25 %)")
+        axL.legend(fontsize=7)
+    axL.set_xscale("log")
+    axL.invert_xaxis()
+    axL.set_xlabel(r"$\Delta x$ [m]  (finer to the right)")
+    axL.set_ylabel(r"$A_{\rm implied} = N_{\rm steps}\, s(\alpha_{\rm opt})$  [$\Delta x$]")
+    axL.set_title("H5: accumulated correction at the optimum")
+    axL.grid(alpha=0.3)
+
+    if "H6" in summary:
+        for i, dx in enumerate(dxs):
+            lo, hi = summary["H6"]["intervals_abs"][f"{dx:g}"]
+            opt = summary["levels"][f"{dx:g}"]["alpha_opt"]
+            axR.plot([lo, hi], [i, i], lw=6, alpha=0.45, color="tab:green",
+                     solid_capstyle="butt")
+            axR.plot([opt], [i], "o", color="tab:red", ms=5)
+            e_min = summary["H6"]["err_min"][f"{dx:g}"]
+            axR.annotate(f"{pct(e_min, 1)}", (hi, i), textcoords="offset points",
+                         xytext=(6, -3), fontsize=7)
+        common = summary["H6"].get("common_intersection_abs")
+        if common:
+            axR.axvspan(common[0], common[1], color="tab:blue", alpha=0.12,
+                        label=f"common alpha [{common[0]:g}, {common[1]:g}]")
+            axR.legend(fontsize=7)
+        axR.set_yticks(range(len(dxs)))
+        axR.set_yticklabels([f"dx={dx:g}" for dx in dxs])
+        axR.set_xlabel(r"$\alpha$")
+        axR.set_title("H6: alpha indifference intervals (tol = 1.0 pp)")
+        axR.grid(alpha=0.3, axis="x")
+    fig.tight_layout()
+    fig.savefig(FIG4, dpi=160)
+    plt.close(fig)
+
 
 def main() -> int:
     payload = json.loads((DATA / "shift_bound.json").read_text())
     summary = dict(payload["summary"])
     summary["gates"] = payload["gates"]
-    levels = level_tables(payload["records"])
+    levels_all = level_tables(payload["records"])
+    grid_decl = sorted(set(payload["predeclared"]["alpha_grid"]))
+    levels, pending = {}, {}
+    for dx, pts in levels_all.items():
+        measured = sorted(round(r["alpha"], 6) for r in pts)
+        if measured == [round(a, 6) for a in grid_decl]:
+            levels[dx] = pts
+        else:
+            pending[dx] = [a for a in grid_decl if round(a, 6) not in set(measured)]
     anchor = planar_anchor()
 
     fits = {}
@@ -309,6 +364,72 @@ def main() -> int:
         w(f"最大 α 偏差 {pct(h2['max_alpha_rel_dev'], 1)}（H2 门 25 %）；"
           f"全部预测点达 15 % 门：**{'是' if h2['all_reach_owner_gate'] else '否'}**。")
     w("")
+    w("### 表 E：H5 累计修正假说（`A = N_steps · s(α_opt)`，单位 Δx）")
+    w("")
+    w("H5 的物理动机：`s(α)` 是**速率**量（每步位移上界），而 TVC 对格点分布的作用"
+      "是**逐步累积**的，因此精度最优应落在「整段模拟累计位移」而不是「单步位移」"
+      "的某个固定值上。")
+    w("")
+    if "H5" in summary:
+        h5 = summary["H5"]
+        w("| Δx [m] | `N_steps` | `s(α_opt)` | `A_implied` |")
+        w("|---|---|---|---|")
+        for dx in sorted(levels):
+            lv = best[f"{dx:g}"]
+            w(f"| {dx:g} | {lv['steps']} | {num(lv['C_implied'], 4)} | "
+              f"{num(lv['cum_at_opt_over_dx'], 2)} |")
+        w("")
+        w(f"`A_implied` 均值 {h5['mean']:.2f}，离散度 {pct(h5['spread_over_mean'], 1)}"
+          f"（H5 容差 25 %）→ **H5 {'成立' if h5['holds_25pct'] else '被否证'}**；"
+          f"留一分辨率预测的最大 α 偏差 {pct(h5['max_alpha_rel_dev'], 1)}，"
+          f"全部预测点达 15 % 门：**{'是' if h5['all_reach_owner_gate'] else '否'}**。")
+        w("")
+        w("| 标定 Δx [m] | 目标 Δx [m] | `A` | 预测 `α` | 实际 `α_opt` | α 偏差 | 预测点相对误差 | 达 15 % 门 |")
+        w("|---|---|---|---|---|---|---|---|")
+        for h in h5["holdout"]:
+            w(f"| {h['calibration_dx']:g} | {h['target_dx']:g} | {num(h['A_calibrated'], 2)} | "
+              f"{num(h['alpha_pred'], 4)} | {h['alpha_opt_target']:g} | "
+              f"{pct(h['alpha_rel_dev'], 1)} | {pct(h['rel_error_pred_interp'], 2)} | "
+              f"{'YES' if h['reaches_owner_gate'] else 'NO'} |")
+        w("")
+    w("### 表 F：H6 无差别区间——「α 随分辨率漂移」这个说法本身可分辨吗？")
+    w("")
+    w("既有的 `RESOLUTION_LADDER.md` / `VALIDATION_REPORT.md` 把「α 非分辨率独立、细化时"
+      "需增到 ~0.15」写进局限。但误差-α 曲线在最优点附近是**平**的，网格步长 0.025，"
+      "因此「最优点位置」的**可分辨性**必须先检验，否则「漂移」可能只是量化噪声。"
+      "无差别区间定义为 `I(Δx) = {α : err(α) ≤ err_min + tol}`，`tol` 预登记为 "
+      "1.0 pp（绝对）与 15 %·err_min（相对）两种读数。")
+    w("")
+    if "H6" in summary:
+        h6 = summary["H6"]
+        w("| Δx [m] | `err_min` | `I`（tol = 1.0 pp） | 宽度 | `I`（tol = 15 % rel） |")
+        w("|---|---|---|---|---|")
+        for dx in sorted(levels):
+            k = f"{dx:g}"
+            lo, hi = h6["intervals_abs"][k]
+            lo2, hi2 = h6["intervals_rel"][k]
+            w(f"| {dx:g} | {pct(h6['err_min'][k], 2)} | [{lo:g}, {hi:g}] | "
+              f"{hi - lo:g} | "
+              f"[{lo2:g}, {hi2:g}] |")
+        w("")
+        common = h6.get("common_intersection_abs")
+        if common:
+            w(f"四个分辨率的无差别区间**有公共交集** `α ∈ [{common[0]:g}, {common[1]:g}]`"
+              f" → **H6 成立**：在 1.0 pp 判据下，数据**不能**分辨出「最优点随分辨率漂移」。")
+            w("")
+            w("| 公共 α | " + " | ".join(f"Δx={dx:g}" for dx in sorted(levels)) + " |")
+            w("|---|" + "---|" * len(levels))
+            w(f"| 相对误差 @ α={common[0]:g} | "
+              + " | ".join(pct(h6["rel_error_at_common_alpha"][f"{dx:g}"], 2)
+                           for dx in sorted(levels)) + " |")
+            w(f"| 达 15 % 门 | "
+              + " | ".join("YES" if h6["gate_at_common_alpha"][f"{dx:g}"] else "NO"
+                           for dx in sorted(levels)) + " |")
+            w("")
+        else:
+            w("无公共交集 → **H6 被否证**：Δx 与 α 的无差别区间互不相交，"
+              "「最优点随分辨率漂移」是可分辨的。")
+            w("")
     w("## ④ 结果图")
     w("")
     w(f"![shift bound](figure_shift_bound.png)")
@@ -326,10 +447,26 @@ def main() -> int:
     w("图 3：最优点所处的位移上界 `C_implied` vs Δx。若 H1 成立，这些点应在 25 % 带内水平；"
       "实际走势决定 H1 的去留。")
     w("")
-    w("> **待办（honest）**：`dx = 0.01 m` 与 `dx = 0.02 m` 的剩余 α 点已递交调度器"
-      "（job `cj3673`），本文件写作时仍在排队；payload 的写入是增量的"
-      "（`shift_bound.py` 会跳过已测点），作业回传后重跑本生成器即可扩表，"
-      "无需改代码。")
+    w("![indifference](figure_shift_bound_indifference.png)")
+    w("")
+    w("图 4：左＝H5 的累计修正 `A_implied` vs Δx（若 H5 成立应在 25 % 带内水平）；"
+      "右＝H6 的 α 无差别区间（绿条，tol = 1.0 pp）与各分辨率最优点（红点），"
+      "蓝带是四级的公共交集。")
+    w("")
+    n_grid = len(grid_decl)
+    have = sum(1 for r in payload["records"] if round(r["alpha"], 6) in
+               {round(a, 6) for a in grid_decl})
+    w(f"> **补账状态（honest）**：预登记网格 {len(levels_all)} 个分辨率 × {n_grid} 个 α，"
+      f"payload 实测 {have} 个单元；完整分辨率 = "
+      f"{', '.join(f'{dx:g}' for dx in sorted(levels))} m。")
+    if pending:
+        w(">")
+        for dx, miss in sorted(pending.items()):
+            w(f"> **未测格（未合入本版结论）**：Δx = {dx:g} m 缺 "
+              f"α = {', '.join(f'{a:g}' for a in miss)}"
+              f"（调度器作业 `cj3832`，单点本机 ~100 s 受 120 s 本机闸限制，"
+              f"本轮只拿到基线点；生成器的补账闸 `tests/test_tvc_shift_bound_grid_complete.py` "
+              f"要求每个进入结论的分辨率是满格，故该级不参与表/图与 H 判定）。")
     w("")
     w("## ⑤ 注意点")
     w("")
