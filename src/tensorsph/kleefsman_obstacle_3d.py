@@ -44,6 +44,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import math
+import os
+from pathlib import Path
 
 import torch
 
@@ -350,6 +352,7 @@ class Kleefsman3DRun:
     steps: int = 0
     simulated_time: float = 0.0
     wall_clock_s: float = 0.0
+    resumed: bool = False
 
     # ---- derived ----------------------------------------------------------
     def peak(self):
@@ -408,11 +411,94 @@ class Kleefsman3DRun:
 
 
 # --------------------------------------------------------------------------- #
+# Crash-safe checkpointing
+# --------------------------------------------------------------------------- #
+#
+# The production rungs of this case die intermittently of a glibc heap abort
+# (``free(): corrupted unsorted chunks``) after 1-2 s of simulated time; the
+# abort takes the whole process down, so no Python-level ``except`` can save the
+# run and every restart began again at ``t = 0``.  The solver state needed to
+# continue is small (positions, velocities, elapsed time, the gauge series and
+# the running diagnostics), so it is checkpointed here with an atomic replace:
+# a checkpoint written by a process that is killed *while writing* is either the
+# previous one or the new one, never a truncated file.
+#
+# ``t_end`` is deliberately **not** part of the fingerprint: it is a stopping
+# criterion, not physics, and a run has to be resumable with a longer horizon
+# precisely because the crash usually happens before the requested end.
+
+CHECKPOINT_VERSION = 1
+
+#: config fields that make a checkpoint of another run useless
+CHECKPOINT_FINGERPRINT_FIELDS = (
+    "dx", "sound_speed", "gamma", "rho0", "h_factor", "wall_layers",
+    "obstacle_z", "obstacle_width", "station_offset", "gauge_aperture",
+    "arrival_threshold", "pair_skin_factor", "density_diffusion",
+    "surface_pressure_closure", "adaptive_dt", "max_courant", "viscosity",
+    "pool_width", "tank_depth", "tank_height", "column_width",
+    "column_height", "column_depth", "obstacle_x", "obstacle_length",
+    "obstacle_height",
+)
+
+
+def checkpoint_fingerprint(cfg) -> dict:
+    """The subset of ``cfg`` that decides whether a checkpoint is reusable."""
+    return {name: getattr(cfg, name) for name in CHECKPOINT_FINGERPRINT_FIELDS}
+
+
+def save_checkpoint(path, cfg, *, step, elapsed, dt, positions, velocity,
+                    run, speeds, compression, escapes, clamps) -> None:
+    """Write the integration state atomically (``tmp`` + ``os.replace``)."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "version": CHECKPOINT_VERSION,
+        "fingerprint": checkpoint_fingerprint(cfg),
+        "step": int(step),
+        "elapsed": float(elapsed),
+        "dt": float(dt),
+        "positions": positions.detach().to("cpu").clone(),
+        "velocity": velocity.detach().to("cpu").clone(),
+        "times": list(run.times),
+        "height": list(run.height),
+        "front": list(run.front),
+        "bypass": list(run.bypass),
+        "speeds": float(speeds),
+        "compression": float(compression),
+        "escapes": int(escapes),
+        "clamps": int(clamps),
+    }
+    if hasattr(run, "slab"):
+        payload["slab"] = list(run.slab)
+    tmp = path.with_name(path.name + ".tmp")
+    torch.save(payload, tmp)
+    os.replace(tmp, path)
+
+
+def load_checkpoint(path, cfg) -> dict:
+    """Load a checkpoint, refusing one written for different physics."""
+    payload = torch.load(path, map_location="cpu", weights_only=False)
+    if payload.get("version") != CHECKPOINT_VERSION:
+        raise ValueError(
+            f"checkpoint version {payload.get('version')} != {CHECKPOINT_VERSION}")
+    got = payload.get("fingerprint", {})
+    want = checkpoint_fingerprint(cfg)
+    diff = {k: (got.get(k), want[k]) for k in want if got.get(k) != want[k]}
+    if diff:
+        raise ValueError(
+            "checkpoint was written for a different configuration: "
+            + ", ".join(f"{k}: {g!r} -> {w!r}" for k, (g, w) in diff.items()))
+    return payload
+
+
+# --------------------------------------------------------------------------- #
 # Driver
 # --------------------------------------------------------------------------- #
 
 def run_case(cfg: Kleefsman3DConfig, device: str | torch.device = "cpu",
-             progress=None, on_sample=None) -> Kleefsman3DRun:
+             progress=None, on_sample=None,
+             checkpoint_path=None, checkpoint_every: int = 0,
+             resume: bool = True) -> Kleefsman3DRun:
     """Integrate the 3-D case to ``cfg.t_end`` and record the gauge series.
 
     ``on_sample(i, sample)`` is called once per stored output sample with a dict
@@ -455,8 +541,41 @@ def run_case(cfg: Kleefsman3DConfig, device: str | torch.device = "cpu",
     compression = 0.0
     escapes = 0
     clamps = 0
+    start_step = 0
+    resumed = False
 
-    for step in range(max_steps + 1):
+    if checkpoint_path is not None and resume and Path(checkpoint_path).exists():
+        state = load_checkpoint(checkpoint_path, cfg)
+        if state["positions"].shape != positions.shape:
+            raise ValueError(
+                f"checkpoint holds {tuple(state['positions'].shape)} particles, "
+                f"this configuration builds {tuple(positions.shape)}")
+        positions = state["positions"].to(dev).clone()
+        velocity = state["velocity"].to(dev).clone()
+        dt = state["dt"]
+        elapsed = state["elapsed"]
+        start_step = state["step"] + 1
+        run.times = list(state["times"])
+        run.height = list(state["height"])
+        run.front = list(state["front"])
+        run.bypass = list(state["bypass"])
+        if hasattr(run, "slab"):
+            run.slab = list(state.get("slab", []))
+        speeds = state["speeds"]
+        compression = state["compression"]
+        escapes = state["escapes"]
+        clamps = state["clamps"]
+        resumed = True
+        if progress is not None:
+            progress(elapsed, run.slab[-1] if getattr(run, "slab", None) else 0.0)
+
+    def _checkpoint(step: int) -> None:
+        save_checkpoint(checkpoint_path, cfg, step=step, elapsed=elapsed, dt=dt,
+                        positions=positions, velocity=velocity, run=run,
+                        speeds=speeds, compression=compression,
+                        escapes=escapes, clamps=clamps)
+
+    for step in range(start_step, max_steps + 1):
         all_positions[:fluid_count] = positions
         pairs, _ = cache.get(all_positions)
         density, _, acc = rhs_3d(positions, velocity, mass, cfg, pairs=pairs,
@@ -495,6 +614,9 @@ def run_case(cfg: Kleefsman3DConfig, device: str | torch.device = "cpu",
         elapsed += dt
         if cfg.adaptive_dt:
             dt = next_dt(cfg, dt, speed_now)
+        if checkpoint_path is not None and checkpoint_every > 0 and \
+                step % checkpoint_every == 0:
+            _checkpoint(step)
 
     run.max_speed = speeds
     run.max_density_compression = compression
@@ -504,6 +626,14 @@ def run_case(cfg: Kleefsman3DConfig, device: str | torch.device = "cpu",
     run.steps = step
     run.simulated_time = elapsed
     run.wall_clock_s = _time.time() - t_start
+    run.resumed = resumed
+    if checkpoint_path is not None:
+        # a completed run must not be resumed by the next attempt of the
+        # wrapper loop: drop the state file once t_end has been reached
+        try:
+            os.unlink(checkpoint_path)
+        except FileNotFoundError:
+            pass
     return run
 
 
