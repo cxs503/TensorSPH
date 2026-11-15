@@ -608,24 +608,59 @@ def fit_window(times, values, t0: float, t1: float) -> dict:
             "v_end": float(v[mask][-1])}
 
 
-def fit_growth_rate(times, amplitudes, lo: float, hi: float) -> dict:
-    """Least-squares slope of ``ln a`` over ``lo <= a <= hi`` (single mode)."""
+def fit_growth_rate(times, amplitudes, lo=None, hi=None) -> dict:
+    """Least-squares slope of ``ln a`` over ``lo <= a <= hi`` (single mode).
+
+    The window is a **declared absolute amplitude** window (the linear regime of
+    the mode, before the nonlinear turnover), which is the right *form*; what it
+    still needs is proof that the window is not the answer.  Pass ``lo=None,
+    hi=None`` to let :mod:`tensorsph.rate_fit` pick the band from the series, or
+    read ``band_rule`` in the returned record, which carries the verdict of the
+    band rule (``declared_band_legal``) computed on the same series whenever a
+    window is declared.  Without that check a fit to a transient or to the
+    saturated part is indistinguishable from a rate.
+    """
     import numpy as _np
     t = _np.asarray(times, dtype=float)
     a = _np.asarray(amplitudes, dtype=float)
+    from . import rate_fit as _rf
+    declared = None
+    if lo is None or hi is None:
+        band = _rf.auto_band(t, a)
+        if band is None:
+            return {"sigma": float("nan"), "r2": float("nan"),
+                    "n_fit": int(a.size), "window": [float("nan")] * 2,
+                    "band_source": "none",
+                    "band_rule": "no amplitude band on which the growth is "
+                                 "exponential: no rate to quote"}
+        lo, hi = band
+        source = "auto"
+    else:
+        source = "declared"
+        declared = (lo, hi)
     mask = (a >= lo) & (a <= hi)
     if mask.sum() < 6:
         return {"sigma": float("nan"), "r2": float("nan"),
-                "n_fit": int(mask.sum()), "window": [lo, hi]}
+                "n_fit": int(mask.sum()), "window": [lo, hi],
+                "band_source": source}
     tt, la = t[mask], _np.log(a[mask])
     slope, intercept = _np.polyfit(tt, la, 1)
     pred = slope * tt + intercept
     ss_res = float(((la - pred) ** 2).sum())
     ss_tot = float(((la - la.mean()) ** 2).sum())
-    return {"sigma": float(slope), "r2": 1.0 - ss_res / max(ss_tot, 1e-300),
-            "n_fit": int(mask.sum()), "window": [lo, hi],
-            "t_start": float(tt[0]), "t_end": float(tt[-1]),
-            "a_start": float(a[mask][0]), "a_end": float(a[mask][-1])}
+    out = {"sigma": float(slope), "r2": 1.0 - ss_res / max(ss_tot, 1e-300),
+           "n_fit": int(mask.sum()), "window": [lo, hi],
+           "t_start": float(tt[0]), "t_end": float(tt[-1]),
+           "a_start": float(a[mask][0]), "a_end": float(a[mask][-1]),
+           "band_source": source}
+    if declared is not None:
+        v = _rf.verdict(_rf.report(t, a, declared=declared))
+        out["band_rule"] = {"declared_band_legal": v["declared_band_legal"],
+                            "why": v["declared_legal_reason"],
+                            "plateau_sigma": v["plateau_sigma"],
+                            "plateau_band": v["plateau_band"],
+                            "bias_rel": v["declared_bias_rel"]}
+    return out
 
 
 # --------------------------------------------------------------------------- #
