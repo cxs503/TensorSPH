@@ -21,15 +21,22 @@ parser.add_argument("--no-plot", action="store_true",
                     help="skip the snapshot figure (saves ~1.5 s)")
 parser.add_argument("--case", default="droplet",
                     choices=("droplet", "hydrostatic", "taylor_green", "compressible_sod",
-                             "stokes_second", "poiseuille_morris"),
+                             "stokes_second", "poiseuille_morris", "lake_at_rest"),
                     help="case to run: the droplet impact example (default), the "
                          "CASE-HYDROSTATIC still-water pressure-profile case, the "
-                         "CASE-TAYLOR-GREEN-SPH vortex-decay benchmark, or the "
-                         "CASE-SPH-SOD-SHOCK-COMPRESSIBLE 1-D shock tube.")
+                         "CASE-TAYLOR-GREEN-SPH vortex-decay benchmark, the "
+                         "CASE-SPH-SOD-SHOCK-COMPRESSIBLE 1-D shock tube, or the "
+                         "CASE-SPH-LAKE-AT-REST still-lake conservation case.")
 parser.add_argument("--json-out", default=None,
-                    help="hydrostatic case: write the case record here")
+                    help="case: write the case record here")
 parser.add_argument("--quick", action="store_true",
-                    help="hydrostatic case: CI-sized smoke configuration")
+                    help="case: CI-sized smoke configuration")
+parser.add_argument("--no-periodic-x", action="store_true",
+                    help="lake_at_rest: use solid side walls instead of lateral "
+                         "periodicity (the wall-bounded tank is an honest FAIL: "
+                         "the side-wall truncation cannot be balanced; the "
+                         "periodic configuration is where the anchor's "
+                         "machine-precision tolerance is met)")
 parser.add_argument("--version", action="version", version=f"tensorsph {__version__}")
 args = parser.parse_args()
 
@@ -93,6 +100,54 @@ if args.case == "stokes_second":
           f"delta_ratio={m['delta_ratio']:.5f}  "
           f"rows_in_layer={m['n_rows_stokes_layer']}")
     raise SystemExit(0 if m["amplitude_l2_half_space_pct"] < 5.0 else 1)
+
+if args.case == "lake_at_rest":
+    from .lake_at_rest import LakeConfig, evaluate_gates, run_case
+    import json
+    import os
+    import torch
+    torch.set_num_threads(1)
+
+    # The case-pool anchor CASE-SPH-LAKE-AT-REST: a still lake must stay at
+    # rest to machine precision.  The wall-bounded tank is an honest FAIL (the
+    # side-wall truncation cannot be balanced), so the CLI defaults to the
+    # laterally periodic configuration in which the anchor's tolerance is met;
+    # ``--no-periodic-x`` keeps the wall-bounded run as the honest FAIL /
+    # truncation measurement.
+    periodic = not args.no_periodic_x
+    if args.quick:
+        # CI-sized smoke: 7 x 10 fluid columns/rows, still with a non-empty
+        # interior band (2 h from wall and free surface) so the profile
+        # comparison is decidable.
+        cfg = LakeConfig(dx=0.04, depth=0.28, width=0.40, t_end=0.08,
+                         periodic_x=periodic)
+    else:
+        cfg = LakeConfig(periodic_x=periodic)
+    result = run_case(cfg)
+    gates = evaluate_gates(result)
+    result["gates"] = {"rows": gates["rows"], "verdicts": gates["verdicts"],
+                       "all_passed": gates["all_passed"]}
+    result["parameters"] = {"periodic_x": bool(cfg.periodic_x),
+                            "dx": cfg.dx, "depth": cfg.depth, "width": cfg.width,
+                            "t_end": cfg.t_end}
+    if args.json_out:
+        os.makedirs(os.path.dirname(args.json_out) or ".", exist_ok=True)
+        with open(args.json_out, "w") as fh:
+            json.dump(result, fh, indent=2, sort_keys=True, default=float)
+        print(f"wrote {args.json_out}")
+    print(f"\ncase CASE-SPH-LAKE-AT-REST  dx={cfg.dx} H={cfg.depth} "
+          f"periodic_x={cfg.periodic_x} "
+          f"N={result['geometry']['particles']} pairs={result['geometry']['pairs']}")
+    print(f"reconstruction: {result['equilibrium']['iterations']} Newton "
+          f"iterations, converged={result['equilibrium']['converged']}")
+    print(f"{'gate':5s} {'quantity':48s} {'measured':>12s} {'threshold':>10s}  ok")
+    for row in gates["rows"]:
+        value = row["measured"]
+        text = "n/a" if value is None else f"{value:.3e}"
+        print(f"{row['gate']:5s} {row['quantity'][:48]:48s} {text:>12s} "
+              f"{row['threshold']:10.1e}  {row['passed']}")
+    print(f"\nALL GATES PASSED: {gates['all_passed']}")
+    raise SystemExit(0 if gates["all_passed"] else 1)
 
 cfg = Config(device=args.device)
 if args.steps is not None:
