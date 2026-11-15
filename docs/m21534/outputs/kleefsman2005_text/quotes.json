@@ -1,0 +1,82 @@
+{
+  "sources": {
+    "kleefsman2005": {
+      "citation": "Kleefsman K.M.T., Fekken G., Veldman A.E.P., Iwanowski B., Buchner B. (2005) A Volume-of-Fluid based simulation method for wave impact problems. J. Comput. Phys. 206:363-393.",
+      "doi": "10.1016/j.jcp.2004.12.007",
+      "url": "https://pure.rug.nl/ws/files/2941055/2005JCompPhysKleefsman.pdf",
+      "sha256": "d794e69a3c618ea589299f545275684191325ee1b0abf3969018db0d16226195",
+      "bytes": 1347715,
+      "pdf_pages": 32,
+      "note": "research.rug.nl is Cloudflare-gated; the pure.rug.nl mirror serves the same file (HTTP 200). printed_page = pdf_page_index + 363."
+    },
+    "amaro2023": {
+      "citation": "Amaro Junior R.A., Cheng L.-Y., Buruchenko S.K. (2020) A comparison between WCSPH and MPS methods for 3D dam-break flows. Int. J. Offshore Polar Eng. 30(4); open preprint arXiv:2306.01959.",
+      "doi": "10.1142/s021987622050036x",
+      "url": "https://arxiv.org/pdf/2306.01959",
+      "sha256": "24a661d1f03e45ba937ae650df9ede00d07326c6ddf816342d252f735ede3bc0"
+    }
+  },
+  "normalisation": "ligatures folded (fi/fl/ff/ffi/ffl), line-break hyphenation removed, whitespace collapsed; wording unchanged.",
+  "quotes": [
+    {
+      "id": "h2_probe_identity",
+      "source": "K2005",
+      "printed_page": 382,
+      "text": "In Fig. 19 time histories of the water height at two locations are shown: in the reservoir, and in the tank just in front of the box."
+    },
+    {
+      "id": "fig18_snapshots",
+      "source": "K2005",
+      "printed_page": 382,
+      "text": "Fig. 18. Snapshots of a dambreak simulation with a box in the flow compared with experiment at time 0.4 and 0.56 s."
+    },
+    {
+      "id": "first_hit_same",
+      "source": "K2005",
+      "printed_page": 382,
+      "text": "The time instant when the water is first hitting the box is the same."
+    },
+    {
+      "id": "backwall_return_1p8s",
+      "source": "K2005",
+      "printed_page": 382,
+      "text": "The agreement in both pictures is very good until the water has returned from the back wall (after about 1.8 s)."
+    },
+    {
+      "id": "second_wave_h2_5s",
+      "source": "K2005",
+      "printed_page": 382,
+      "text": "The moment that this second wave meets the height probe at H2 again (after about 5 s) is almost exactly the same in simulation and experiment."
+    },
+    {
+      "id": "return_impact_box_4p7s",
+      "source": "K2005",
+      "printed_page": 384,
+      "text": "The moment the return wave hits the box again (at about 4.7 s) is again visible in the graphs."
+    },
+    {
+      "id": "coarse_grid_late_front",
+      "source": "K2005",
+      "printed_page": 384,
+      "text": "Although the water reaches the box earlier in the finer grids, there is still a small difference between simulation and experiment."
+    },
+    {
+      "id": "gate_release",
+      "source": "K2005",
+      "printed_page": 381,
+      "text": "This is done by releasing a weight, which almost instantaneously pulls the door up."
+    },
+    {
+      "id": "splash_band_075_105",
+      "source": "AJ2023",
+      "printed_page": null,
+      "text": "The high values of the computed wave heights from t = 0.75s to t = 1.05s reflect the splashing fluid particles that reach the top of the domain."
+    },
+    {
+      "id": "wcsp_delay",
+      "source": "AJ2023",
+      "printed_page": null,
+      "text": "However, exceptions occur around the second wave impact, t = 4.8s, where the WCSPH with α0 ≤0.01 leads to higher waves and, as previous observed, there is a delay in relation to the experimental data."
+    }
+  ]
+}
