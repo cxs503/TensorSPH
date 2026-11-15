@@ -128,6 +128,13 @@ class LakeConfig:
     solver_tol: float = 1.0e-11  # |a_y| / g at which Newton stops
     prior_weight: float = 1.0e-8  # Tikhonov pull towards the analytic profile
     surface_closure: bool = False  # shipped Adami closure: see the docstring
+    # Shipped closures, exposed for the mechanism study
+    # (``benchmarks/lake_at_rest/mechanism.py``) and for any A/B on this case.
+    # Every default here is the shipped default of :class:`Config`, so the
+    # published numbers of this case are unchanged.
+    density_renormalization: bool = False   # Shepard summation density
+    boundary_consistent_density: bool = False
+    density_diffusion: float = 0.0          # delta-SPH (Antuono et al. 2010)
     dtype: str = "float64"
     device: str = "cpu"
 
@@ -154,7 +161,10 @@ class LakeConfig:
                       gravity=self.gravity, viscosity=self.viscosity,
                       wall_layers=self.wall_layers, boundary="wall",
                       density_calibration=True,
-                      surface_pressure_closure=self.surface_closure)
+                      surface_pressure_closure=self.surface_closure,
+                      density_renormalization=self.density_renormalization,
+                      boundary_consistent_density=self.boundary_consistent_density,
+                      density_diffusion=self.density_diffusion)
 
 
 def build_state(cfg: LakeConfig):
