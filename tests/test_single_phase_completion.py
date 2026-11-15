@@ -146,3 +146,103 @@ def test_closed_flux_conserves_momentum(closure_fit):
     alpha = closure_fit["alpha_star"]
     rec = SPC.measure(SPC.RADIUS, SPC.RADIUS / 32, alpha)
     assert rec["momentum_residual"] < 1e-12
+
+# --------------------------------------------------------------------------- #
+# 4. the document is derived from gate.json, and it points at files that exist
+# --------------------------------------------------------------------------- #
+def test_document_is_rendered_from_gate_json():
+    """The XVAL document must be a function of gate.json, not a hand copy.
+
+    ``emit_single_phase_tables.py`` renders the whole document from
+    ``out_single_phase_completion/gate.json``.  If the CSS model, the ladder or
+    the closure changes and ``gate.json`` is regenerated, the document has to be
+    re-emitted; a hand-edited (or stale) document is a documentation defect that
+    silently survives review.  This test makes that drift a failure: it
+    re-renders in memory and demands a byte-identical match.
+    """
+    import emit_single_phase_tables as EMIT
+
+    rendered, verdict = EMIT.render_doc()
+    committed = EMIT.DOC.read_text()
+    assert verdict == "pass"
+    if rendered != committed:
+        import difflib
+        diff = "".join(difflib.unified_diff(
+            committed.splitlines(True), rendered.splitlines(True),
+            fromfile="committed", tofile="render(gate.json)", n=2))
+        pytest.fail("document is stale vs gate.json; run "
+                    "`emit_single_phase_tables.py --write`:\n" + diff[:4000])
+
+
+def test_document_artifact_paths_exist():
+    """Every repository path the document advertises must be present.
+
+    The task that produced this document shipped its tables generator under
+    ``runs/``; ``runs/`` was not carried by the merge gate, so the published
+    document ended up pointing at a generator and a figure that do not exist in
+    the repository.  A dangling artifact table is exactly the kind of "done"
+    that is not done, so it is locked here.
+    """
+    import re
+
+    doc = (ROOT / "docs" / "xval_sphinxys_mixture_laplace"
+           / "single_phase_completion.md").read_text()
+    roots = ("src/", "benchmarks/", "tests/", "docs/")
+    figures = (".png", ".svg", ".pdf", ".jpg")
+    refs = {m for m in re.findall(r"`([^`\n]+)`", doc)
+            if m.startswith(roots) and "*" not in m and "<" not in m
+            and not m.endswith(figures)}
+    assert refs, "no artifact paths found in the document"
+    # a reference may pin a pytest node id (``file.py::test_name``)
+    missing = sorted(m for m in refs if not (ROOT / m.split("::")[0]).exists())
+    assert not missing, missing
+    # and the document must not resurrect the un-merged runs/ generator
+    assert "runs/m20035" not in doc
+
+
+# --------------------------------------------------------------------------- #
+# 5. gate.json is still the output of *this* benchmark, and the figure draws
+# --------------------------------------------------------------------------- #
+def test_gate_json_is_self_consistent_with_the_benchmark():
+    """``gate.json`` must come from the current benchmark, not from an older run.
+
+    The document is only as trustworthy as the JSON it is rendered from, so the
+    JSON is pinned to the source: the case constants, the gate, the ladder and
+    the fitted closure coefficient must all be reproducible from the module.  A
+    changed ``SIGMA`` / ``H_OVER_DX`` / ladder without a re-run is the classic
+    way a "zero hand-copy" pipeline still ends up publishing stale numbers.
+    """
+    import json
+
+    P = json.loads((SPC.OUT / "gate.json").read_text())
+    case = P["case"]
+    assert case["sigma_nm"] == SPC.SIGMA
+    assert case["radius_m"] == SPC.RADIUS
+    assert case["rho_water"] == SPC.RHO_WATER
+    assert case["h_over_dx"] == SPC.H_OVER_DX
+    assert P["gate_pct"] == SPC.GATE * 100.0
+    assert P["fit_rung"] == SPC.FIT_RUNG
+    assert P["ladder"] == list(SPC.LADDER)
+    # the fitted coefficient is a function of the stored sweep, nothing else
+    refit = SPC.fit_alpha(P["sweep"])
+    assert refit["alpha_star"] == pytest.approx(P["fit"]["alpha_star"], abs=1e-12)
+    assert refit["bracket"] == P["fit"]["bracket"]
+
+
+def test_figure_renders(tmp_path):
+    """The 3-panel figure is committed as code, so it must still draw.
+
+    Images are not carried by the merge gate, therefore the deliverable is the
+    drawing code plus the numbers, and this test is what keeps the figure
+    reproducible: it renders the panels from the *committed* ``gate.json`` and
+    checks the three panel titles are present.
+    """
+    import json
+
+    P = json.loads((SPC.OUT / "gate.json").read_text())
+    target = tmp_path / "gate.svg"
+    SPC.plot(P, target)
+    svg = target.read_text()
+    assert len(svg) > 10_000
+    for title in ("closure scan", "baseline vs closure", "smoothing-width transfer"):
+        assert title in svg, title
