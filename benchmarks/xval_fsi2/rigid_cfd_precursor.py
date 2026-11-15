@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -52,13 +53,66 @@ from tensorsph.fsi2_turek_hron import (  # noqa: E402
 from tensorsph.neighbor_search import cell_linked_pairs  # noqa: E402
 
 
+def _apply_open_boundaries_global(state, case, dt: float) -> dict:
+    """Pre-fix open boundary: **one global** flux clock (``U_mean``) feeding a
+    whole column at a time.
+
+    Kept verbatim (behaviourally) as the *control arm* of the clock comparison:
+    it delivers the right total volume but over-feeds the slow near-wall rows by
+    ``U_mean / u(y_j)`` (7x at ``y = dx/2``), so their particles stack up at the
+    inlet corner.  Never used in production.
+    """
+    dx = case.dx
+    injected = removed = 0
+    keep = state.fluid_pos[:, 0] < case.channel_length - 0.25 * dx
+    if not bool(keep.all()):
+        removed = int((~keep).sum())
+        state.fluid_pos = state.fluid_pos[keep]
+        state.fluid_vel = state.fluid_vel[keep]
+        state.fluid_mass = state.fluid_mass[keep]
+    if state.fluid_pos.shape[0] == 0:
+        return {"injected": 0, "removed": removed}
+    dtype, device = state.fluid_pos.dtype, state.fluid_pos.device
+    state.inflow_deficit += case.inlet_u_mean() * dt
+    if state.inflow_deficit >= dx:
+        state.inflow_deficit -= dx
+        ys = torch.arange(0.5 * dx, case.channel_height, dx, dtype=dtype, device=device)
+        col = torch.stack((torch.full_like(ys, 0.5 * dx), ys), dim=-1)
+        cx, cy = case.cylinder_x, case.cylinder_y
+        r = 0.5 * case.cylinder_d + 0.5 * dx
+        col = col[((col[:, 0] - cx) ** 2 + (col[:, 1] - cy) ** 2) > r ** 2]
+        if col.shape[0]:
+            from tensorsph.fsi2_turek_hron import _inlet_ramp, set_inlet_velocity
+            vel = set_inlet_velocity(case, col) * _inlet_ramp(case, state.time)
+            mass = torch.full((col.shape[0],), di.lattice_mass_unit(case.fluid_config()),
+                              dtype=dtype, device=device)
+            state.fluid_pos = torch.cat((state.fluid_pos, col), dim=0)
+            state.fluid_vel = torch.cat((state.fluid_vel, vel), dim=0)
+            state.fluid_mass = torch.cat((state.fluid_mass, mass), dim=0)
+            injected = int(col.shape[0])
+    from tensorsph.fsi2_turek_hron import _inlet_ramp, set_inlet_velocity
+    on_inlet = state.fluid_pos[:, 0] < case.inlet_zone * dx
+    if bool(on_inlet.any()):
+        state.fluid_vel[on_inlet] = (set_inlet_velocity(case, state.fluid_pos[on_inlet])
+                                     * _inlet_ramp(case, state.time))
+    return {"injected": injected, "removed": removed}
+
+
+#: Injection clock actually used by :func:`rigid_step`.  ``row`` is the
+#: production per-streamline clock; ``global`` is the control arm above.
+CLOCK = os.environ.get("FSI2_INFLOW_CLOCK", "row").strip().lower()
+
+
 def rigid_step(state, case, dt: float) -> dict:
     """One fluid step with the whole structure frozen."""
     cfg = case.fluid_config()
     cfg.dt = dt
     counters = {"injected": 0, "removed": 0}
     if case.open_boundaries:
-        counters = _apply_open_boundaries(state, case, dt)
+        if CLOCK == "global":
+            counters = _apply_open_boundaries_global(state, case, dt)
+        else:
+            counters = _apply_open_boundaries(state, case, dt)
 
     beam_boundary, beam_normals, _beam_interp, tributary = beam_boundary_geometry(
         state.beam_nodes, case)
@@ -129,6 +183,17 @@ def rigid_step(state, case, dt: float) -> dict:
                    else torch.zeros(2)) + (f_visc_beam.sum(dim=0)
                                            if f_visc_beam.numel()
                                            else torch.zeros(2))
+    # inlet-corner stacking census: max number of particles sharing one inlet
+    # row inside the first lattice spacing.  A clock that over-feeds the slow
+    # near-wall rows piles them up here (>= 3 means stacking).
+    strip = x < dx
+    if bool(strip.any()):
+        rid = torch.round(y[strip] / dx - 0.5).long()
+        counts = torch.bincount(rid - rid.min(),
+                                minlength=int(rid.max() - rid.min() + 1))
+        strip_max_per_row, strip_n = float(counts.max()), int(strip.sum())
+    else:
+        strip_max_per_row, strip_n = 0.0, 0
     scale = 0.5 * case.rho0 * case.inlet_u_mean() ** 2 * case.cylinder_d
     return {
         "t": float(state.time),
@@ -151,6 +216,8 @@ def rigid_step(state, case, dt: float) -> dict:
         "bulk_speed_mean": float(speed[bulk].mean()) if bool(bulk.any()) else float("nan"),
         "bulk_ux_mean": float(vel[bulk, 0].mean()) if bool(bulk.any()) else float("nan"),
         "flux_ratio": float(flux_x / flux_in),
+        "inlet_strip_max_per_row": strip_max_per_row,
+        "inlet_strip_n": strip_n,
         "ux_ahead": float(vel[ahead, 0].mean()) if bool(ahead.any()) else float("nan"),
         "ux_behind": float(vel[behind, 0].mean()) if bool(behind.any()) else float("nan"),
         "u_mean_ref": float(case.inlet_u_mean()),
@@ -178,7 +245,8 @@ def main() -> int:
             "drag_total", "lift_total", "cd_press", "cd_total", "cl_total",
             "cd_fit", "cyl_coverage", "max_speed", "mass_total", "n_fluid",
             "injected", "removed", "bulk_speed_mean", "bulk_ux_mean",
-            "flux_ratio", "ux_ahead", "ux_behind")
+            "flux_ratio", "ux_ahead", "ux_behind",
+            "inlet_strip_max_per_row", "inlet_strip_n")
     hist = {k: [] for k in keys}
     injected_total = 0
     removed_total = 0
@@ -207,7 +275,8 @@ def main() -> int:
                  "dt": dt, "steps": args.steps, "h": case.h(),
                  "drag_scale_0.5_rho_U2_D": 0.5 * case.rho0
                  * case.inlet_u_mean() ** 2 * case.cylinder_d,
-                 "structure": "rigid (cylinder + beam boundary frozen)"},
+                 "structure": "rigid (cylinder + beam boundary frozen)",
+                 "inflow_clock": CLOCK},
         "history": hist,
     }
     path = Path(args.out)
