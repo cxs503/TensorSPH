@@ -27,7 +27,7 @@
 | capillary droplet (Laplace law) | csf_surface_tension | 23.80 | ✘ | （无） | -- | ✘ | `csf_surface_tension` 23.80% |
 | planar Couette channel | isph_projection | 0.87 | ✔ | isph_projection | 0.87 | ✔ | `wcsph_wall_no_slip` 17.08% |
 | Gresho vortex (smooth inviscid, periodic) | （无） | -- | ✘ | （无） | -- | ✘ | — |
-| 1-D transient conduction | heat_conduction_operator | 0.00 | ✔ | heat_conduction_operator | 0.00 | ✔ | — |
+| 1-D transient conduction | heat_conduction_operator | 0.15 | ✔ | heat_conduction_operator | 0.15 | ✔ | — |
 | breaking wave over a slope | wcsph_delta_sph | 16.96 | ✘ | wcsph_delta_sph | 8.83 | ✔ | `transport_velocity_correction` 16.96% |
 
 - 宽松模式：4/7 画像整份推荐在 15 % 内；严格模式：5/7 在 15 % 内、2 画像被如实留空（`WITHHELD`）。

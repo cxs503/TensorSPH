@@ -183,8 +183,8 @@
         "primary": "heat_conduction_operator",
         "primary_status": "SELECTED",
         "modifiers": [],
-        "headline_bound_pct": 0.00021805730765489528,
-        "headline_quantity": "heat_conduction_operator: CASE-SPH-CONDUCTION-1D",
+        "headline_bound_pct": 0.15037283680667207,
+        "headline_quantity": "heat_conduction_operator: CASE-SPH-CONDUCTION-2D (Fourier mode decay)",
         "within_owner_standard": true,
         "endorsed_above_tolerance": []
       },
@@ -192,12 +192,12 @@
         "primary": "heat_conduction_operator",
         "primary_status": "SELECTED",
         "modifiers": [],
-        "headline_bound_pct": 0.00021805730765489528,
+        "headline_bound_pct": 0.15037283680667207,
         "within_owner_standard": true,
         "endorsed_above_tolerance": [],
         "excluded": []
       },
-      "card": "# method-selection decision\n\n## profile\n- acoustic_mach: 0.01\n- has_free_surface: False\n- gravity_waves: False\n- shock_advection: False\n- capillary_dominated: False\n- density_ratio: 1.0\n- reynolds: 100.0\n- thermal_transport: True\n- tensile_stretching: False\n- smooth_inviscid_vortex: False\n- domain: closed\n\n## verdict\n- accuracy bound: 0.000218% over every live accuracy record of the schemes put forward (owner standard 15%) -- set by heat_conduction_operator (CASE-SPH-CONDUCTION-1D)\n- within owner standard: YES\n\n## primary scheme\n- heat_conduction_operator: SELECTED\n- why: [thermal] thermal_transport=True: the SPH Laplacian with flux-normalised stencil is the validated conduction operator\n- claimed bound: 0.000218% (owner standard 15%; passing records only)\n- reference: Cleary & Monaghan (1999) J. Comput. Phys. 148:227\n\n## modifiers\n- none\n\n## strict bound (worst live accuracy record <= 15%)\n- nothing excluded: every scheme put forward is inside the owner standard\n\n## evidence depth\n- heat_conduction_operator: SINGLE SOURCE (1 benchmark family)\n- caveat: the bound of heat_conduction_operator has not been reproduced on a second benchmark family -- treat it as a measured data point, not an independently confirmed bound\n"
+      "card": "# method-selection decision\n\n## profile\n- acoustic_mach: 0.01\n- has_free_surface: False\n- gravity_waves: False\n- shock_advection: False\n- capillary_dominated: False\n- density_ratio: 1.0\n- reynolds: 100.0\n- thermal_transport: True\n- tensile_stretching: False\n- smooth_inviscid_vortex: False\n- domain: closed\n\n## verdict\n- accuracy bound: 0.15% over every live accuracy record of the schemes put forward (owner standard 15%) -- set by heat_conduction_operator (CASE-SPH-CONDUCTION-2D (Fourier mode decay))\n- within owner standard: YES\n\n## primary scheme\n- heat_conduction_operator: SELECTED\n- why: [thermal] thermal_transport=True: the SPH Laplacian with flux-normalised stencil is the validated conduction operator\n- claimed bound: 0.15% (owner standard 15%; passing records only)\n- worst banked record: 835% (CASE-SPH-CONDUCTION-2D (1-D calibration lifted to 2-D): same family and resolution, but the 1-D lattice factor (1.0218) applied in 2-D: ~870 % -- O(dx) dimensional mismatch) -- outside the owner standard, so the claim above is NOT a bound on this scheme's worst measured error\n- reference: Cleary & Monaghan (1999) J. Comput. Phys. 148:227\n- caveat: refuted record, excluded from the accuracy claim: CASE-SPH-CONDUCTION-2D (1-D calibration lifted to 2-D): same family and resolution, but the 1-D lattice factor (1.0218) applied in 2-D: ~870 % -- O(dx) dimensional mismatch = 835% -- refuted by construction: the raw 2-D operator's effective diffusivity is alpha_eff/alpha ~ 1.93 dx (O(dx)), so a 1-D dimensional factor mis-scales the 2-D run by ~1/dx. Kept in the registry so the trap is on the record and cannot be rediscovered as an accuracy claim (benchmarks/case_conduction_2d/result.json)\n\n## modifiers\n- none\n\n## strict bound (worst live accuracy record <= 15%)\n- nothing excluded: every scheme put forward is inside the owner standard\n\n## evidence depth\n- heat_conduction_operator: 2 benchmark families, 2 records; spread 0.15 pp over live records\n"
     },
     {
       "label": "breaking wave over a slope",
