@@ -57,11 +57,13 @@ import math
 import platform
 import statistics
 import sys
+import random
 import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
+sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(ROOT / "src"))
 
 import torch  # noqa: E402
@@ -80,6 +82,9 @@ BIN_GRID = (6, 8, 10, 12, 16, 20, 30)
 MIN_BIN_SAMPLES = 4                  # a bin needs >= 4 pooled samples
 TAU_MAX = 1.2
 SPREAD_TOL = 0.15                    # acceptance tolerance of the case (15 %)
+BOOT_RESAMPLES = 400                 # frame bootstrap for the matched reading
+BOOT_SEED = 20261113
+FOOTPRINT_CELLS = (2.0, 4.0, 8.0, 16.0)   # sensor footprints, in cells
 # Startup-window rule: a frame is "acoustically relaxed" when the pressure wave
 # has crossed the wetted width at least once, t >= c(t) / c0 -> tau_relax =
 # t c0 / c = c0 / (C V), which for c0/V = 20, C = 2.72 gives t/t_end ~ 3.7/none
@@ -229,8 +234,9 @@ def collect(dx: float, velocity: float, frames: int, c0_factor: float,
             "shots": shots}
 
 
-def analyse(case: dict) -> dict:
+def analyse(case: dict, bin_grid=None) -> dict:
     """Estimator spread for a growing frame count + per-frame scan + jackknife."""
+    grid = tuple(bin_grid) if bin_grid else tuple(BIN_GRID)
     shots = case["shots"]
     C = case["C"]
     ref = case["wagner_cp_max"]
@@ -243,7 +249,7 @@ def analyse(case: dict) -> dict:
         sel = shots[-n_frames:]          # last n_frames of the window
         taus, cps = pooled(sel)
         peaks, rows = [], []
-        for n_bins in BIN_GRID:
+        for n_bins in grid:
             centres, means, cnts = binned(taus, cps, n_bins)
             peak, tau_at, n_at = gated_peak(centres, means, cnts)
             peaks.append(peak)
@@ -285,6 +291,78 @@ def analyse(case: dict) -> dict:
             "judgeable": bool(rel == rel and rel < SPREAD_TOL),
         }
 
+    # ---- matched-bandwidth reading (m21677) ---------------------------- #
+    # The committed BIN_GRID stops at 30 bins.  A bin one *surface cell* wide
+    # (the natural measurement cell) needs n_bins = TAU_MAX c_end / dx, i.e. 60
+    # bins at dx = 1 mm and 120 at dx = 0.5 mm, so the two finest grids could
+    # never be read at matched bandwidth and were silently over-smoothed.  The
+    # block below records that reading for every grid, whatever the grid list
+    # is, plus a frame bootstrap (resampling the 61 self-similar frames with
+    # replacement) so the number carries its own uncertainty.
+    sel = shots[-FRAME_COUNTS[-1]:] if len(shots) > FRAME_COUNTS[-1] else list(shots)
+    c_end = C * case["cfg"]["velocity"] * case["t_end"]
+    n_cells = TAU_MAX * c_end / case["cfg"]["dx"]
+    n_bins_m = max(4, int(round(n_cells)))
+    taus, cps = pooled(sel)
+    peak_m, tau_m, n_at_m = gated_peak(*binned(taus, cps, n_bins_m))
+    boot = []
+    n_f = len(sel)
+    if n_f >= 8:
+        rng = random.Random(BOOT_SEED)
+        for _ in range(BOOT_RESAMPLES):
+            sample = [sel[rng.randrange(n_f)] for _ in range(n_f)]
+            t2, c2 = pooled(sample)
+            pk = gated_peak(*binned(t2, c2, n_bins_m))[0]
+            if pk == pk:
+                boot.append(pk)
+    boot_sorted = sorted(boot)
+    def _q(f):
+        return (boot_sorted[min(len(boot_sorted) - 1, int(round(f * (len(boot_sorted) - 1))))]
+                if boot_sorted else float("nan"))
+    sweep_bins = sorted({int(n) for n in list(grid) + [n_bins_m // 2, n_bins_m,
+                                                       int(round(1.5 * n_bins_m))]})
+    matched = {
+        "n_cells": n_cells,
+        "n_bins_matched": n_bins_m,
+        "peak": peak_m, "tau_at_peak": tau_m, "samples_at_peak": n_at_m,
+        "err_vs_wagner_point": ((peak_m - ref) / ref if peak_m == peak_m
+                                else float("nan")),
+        "bootstrap": {"resamples": BOOT_RESAMPLES, "seed": BOOT_SEED,
+                      "n_valid": len(boot), "p05": _q(0.05), "p50": _q(0.5),
+                      "p95": _q(0.95),
+                      "rel_half_width": ((_q(0.95) - _q(0.05)) / 2.0 / _q(0.5)
+                                         if _q(0.5) == _q(0.5) and _q(0.5) else
+                                         float("nan"))},
+        "bandwidth_sweep": [
+            {"n_bins": nb,
+             "bin_width_cells": TAU_MAX * c_end / nb / case["cfg"]["dx"],
+             "cp_peak_gated": gated_peak(*binned(taus, cps, nb))[0]}
+            for nb in sweep_bins],
+    }
+
+    # ---- finite-area-averaged peak (m21677) ---------------------------- #
+    # A point maximum of a square-root-singular field is not a measurable
+    # quantity; a transducer reports a finite-area average.  Same operator on
+    # both sides (see footprint_peak.py), sliding window so the reading is not
+    # an artefact of where the bin edges fall.
+    import footprint_peak as _fpm
+    fp_rows = _fpm.footprint_peaks(taus, cps, case["cfg"]["dx"], c_end,
+                                   FOOTPRINT_CELLS)
+    fp_boot = []
+    if n_f >= 8:
+        rng = random.Random(BOOT_SEED)
+        for _ in range(BOOT_RESAMPLES):
+            sample = [sel[rng.randrange(n_f)] for _ in range(n_f)]
+            t2, c2 = pooled(sample)
+            fp_boot.append(_fpm.footprint_peaks(t2, c2, case["cfg"]["dx"], c_end,
+                                                FOOTPRINT_CELLS))
+    footprint = {"footprints_cells": list(FOOTPRINT_CELLS), "rows": fp_rows,
+                 "bootstrap": {str(r["footprint_cells"]):
+                               _fpm.footprint_uncertainty(fp_rows,
+                                                          r["footprint_cells"],
+                                                          fp_boot)
+                               for r in fp_rows}}
+
     # per-frame scan: which frames carry the spike (startup question)
     scan = []
     for shot in shots:
@@ -300,6 +378,8 @@ def analyse(case: dict) -> dict:
     t_ac = ACOUSTIC_CROSSINGS * case["cfg"]["dx"] / case["c0"]
     scan_sorted = sorted(scan, key=lambda r: r["cp_peak_single_frame"], reverse=True)
     return {"by_frames": by_frames, "frame_scan": scan,
+            "matched_bandwidth": matched,
+            "footprint_peak": footprint,
             "t_acoustic_relax": t_ac,
             "t_end": case["t_end"],
             "acoustic_relax_fraction_of_window": t_ac / case["t_end"],
@@ -317,6 +397,8 @@ def main(argv=None) -> int:
     ap.add_argument("--frames", type=int, default=61)
     ap.add_argument("--c0-factor", type=float, default=20.0)
     ap.add_argument("--threads", type=int, default=4)
+    ap.add_argument("--bin-grid", default=None,
+                    help="comma separated bin counts (default: BIN_GRID)")
     ap.add_argument("--out", type=Path,
                     default=ROOT / "artifacts" / "case_sph_wedge_entry_2d_ensemble")
     args = ap.parse_args(argv)
@@ -325,12 +407,14 @@ def main(argv=None) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     case = collect(args.dx, args.velocity, args.frames, args.c0_factor,
                    args.threads)
-    result = analyse(case)
+    bin_grid = ([int(v) for v in args.bin_grid.split(",") if v.strip()]
+                if args.bin_grid else None)
+    result = analyse(case, bin_grid)
     payload = {
         "case": "CASE-SPH-WEDGE-ENTRY-2D",
         "script": "benchmarks/case_sph_wedge_entry_2d/ensemble_peak.py",
         "design": {"frame_counts": list(FRAME_COUNTS),
-                   "bin_grid": list(BIN_GRID),
+                   "bin_grid": list(bin_grid or BIN_GRID),
                    "min_bin_samples": MIN_BIN_SAMPLES,
                    "spread_tolerance": SPREAD_TOL,
                    "tau_max": TAU_MAX},
