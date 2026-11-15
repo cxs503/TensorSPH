@@ -1,0 +1,165 @@
+{
+ "case": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST",
+ "repo": "TensorSPH",
+ "purpose": "attribute the arrival-time bias to the laminar-viscosity setting",
+ "experiment": {
+  "peak_height_m": 0.37,
+  "arrival_time_s": 0.3591,
+  "probe_x_m": 2.426
+ },
+ "tolerance_relative": 0.1,
+ "reference": {
+  "citation": "Kleefsman K.M.T., Fekken G., Veldman A.E.P., Iwanowski B., Buchner B. (2005) A Volume-of-Fluid based simulation method for wave impact problems. J. Comput. Phys. 206:363-393.",
+  "doi": "10.1016/j.jcp.2004.12.007"
+ },
+ "runs": [
+  {
+   "dx": 0.04,
+   "viscosity": 0.01,
+   "tag": "dx0.04_nu0.01",
+   "finished": true,
+   "t_end": 1.2,
+   "simulated_time_s": 1.2001999999999005,
+   "steps": 6001,
+   "dt": 0.0002,
+   "sound_speed": 20.0,
+   "peak_height_m": 0.4254579544067383,
+   "peak_time_s": 0.9199999999999313,
+   "arrival_time_s": 0.48414603344528545,
+   "max_speed": 5.977508544921875,
+   "max_density_compression": 0.14149401855468757,
+   "mass_error_rel": 0.0,
+   "boundary_escapes": 0,
+   "mean_front_speed": 2.474460012560217,
+   "reynolds": 296.44030950471404,
+   "boundary_layer_m": 0.0695806031480962,
+   "boundary_layer_over_dx": 1.7395150787024052,
+   "wall_clock_s": 32.0715580098331,
+   "rel_error": {
+    "peak_height": 0.14988636326145482,
+    "arrival_time": 0.34822064451485796
+   },
+   "pass": {
+    "peak_height": false,
+    "arrival_time": false
+   }
+  },
+  {
+   "dx": 0.04,
+   "viscosity": 0.003,
+   "tag": "dx0.04_nu0.003",
+   "finished": true,
+   "t_end": 1.2,
+   "simulated_time_s": 1.2001999999999005,
+   "steps": 6001,
+   "dt": 0.0002,
+   "sound_speed": 20.0,
+   "peak_height_m": 0.4621497690677643,
+   "peak_time_s": 1.1199999999999093,
+   "arrival_time_s": 0.4698895847240681,
+   "max_speed": 5.612090587615967,
+   "max_density_compression": 0.1278206787109375,
+   "mass_error_rel": 0.0,
+   "boundary_escapes": 0,
+   "mean_front_speed": 2.549535122604384,
+   "reynolds": 1018.1143589600176,
+   "boundary_layer_m": 0.03754555571798351,
+   "boundary_layer_over_dx": 0.9386388929495877,
+   "wall_clock_s": 30.871234823018312,
+   "rel_error": {
+    "peak_height": 0.24905342991287646,
+    "arrival_time": 0.3085201468228018
+   },
+   "pass": {
+    "peak_height": false,
+    "arrival_time": false
+   }
+  },
+  {
+   "dx": 0.04,
+   "viscosity": 0.001,
+   "tag": "dx0.04_nu0.001",
+   "finished": true,
+   "t_end": 1.2,
+   "simulated_time_s": 1.2001999999999005,
+   "steps": 6001,
+   "dt": 0.0002,
+   "sound_speed": 20.0,
+   "peak_height_m": 0.46153879165649414,
+   "peak_time_s": 1.0239999999999199,
+   "arrival_time_s": 0.45103148241111046,
+   "max_speed": 6.558343887329102,
+   "max_density_compression": 0.1334462890624999,
+   "mass_error_rel": 0.0,
+   "boundary_escapes": 0,
+   "mean_front_speed": 2.656133876943064,
+   "reynolds": 3182.0483845777912,
+   "boundary_layer_m": 0.02123750179308081,
+   "boundary_layer_over_dx": 0.5309375448270202,
+   "wall_clock_s": 31.692219961434603,
+   "rel_error": {
+    "peak_height": 0.24740213961214635,
+    "arrival_time": 0.2560052420248134
+   },
+   "pass": {
+    "peak_height": false,
+    "arrival_time": false
+   }
+  },
+  {
+   "dx": 0.04,
+   "viscosity": 0.0001,
+   "tag": "dx0.04_nu0.0001",
+   "finished": true,
+   "t_end": 1.2,
+   "simulated_time_s": 1.2001999999999005,
+   "steps": 6001,
+   "dt": 0.0002,
+   "sound_speed": 20.0,
+   "peak_height_m": 0.4481262266635895,
+   "peak_time_s": 1.1079999999999106,
+   "arrival_time_s": 0.453358880921209,
+   "max_speed": 6.735612392425537,
+   "max_density_compression": 0.14976708984374998,
+   "mass_error_rel": 0.0,
+   "boundary_escapes": 0,
+   "mean_front_speed": 2.642498140911472,
+   "reynolds": 31657.127728119438,
+   "boundary_layer_m": 0.006733193008678787,
+   "boundary_layer_over_dx": 0.16832982521696968,
+   "wall_clock_s": 31.09887521713972,
+   "rel_error": {
+    "peak_height": 0.21115196395564725,
+    "arrival_time": 0.2624864408833446
+   },
+   "pass": {
+    "peak_height": false,
+    "arrival_time": false
+   }
+  }
+ ],
+ "monotonic_checks": {
+  "dx0.04": {
+   "viscosity_desc": [
+    0.01,
+    0.003,
+    0.001,
+    0.0001
+   ],
+   "arrival_s": [
+    0.48414603344528545,
+    0.4698895847240681,
+    0.45103148241111046,
+    0.453358880921209
+   ],
+   "peak_m": [
+    0.4254579544067383,
+    0.4621497690677643,
+    0.46153879165649414,
+    0.4481262266635895
+   ],
+   "arrival_monotonically_decreasing_in_1_over_nu": false,
+   "arrival_span_s": 0.03311455103417499
+  }
+ }
+}
