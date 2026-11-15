@@ -54,6 +54,7 @@ import torch
 from .droplet_impact import (
     Config,
     apply_boundary,
+    boundary_box,
     cell_centres,
     hydrostatic_density,
     next_dt,
@@ -132,7 +133,9 @@ class KleefsmanRun:
     series: dict[str, list[float]] = field(default_factory=dict)   # gauge series
     metrics: dict[str, dict] = field(default_factory=dict)         # gauge metrics
     column: list[float] = field(default_factory=list)      # mass-based slab level
-    front: list[float] = field(default_factory=list)       # max fluid x
+    front: list[float] = field(default_factory=list)       # legacy: raw max fluid x
+    front_robust: list[float] = field(default_factory=list)  # max x of the clean body
+    excluded: list[float] = field(default_factory=list)    # wall-crossed particles
     mass_error: float = 0.0
     peak_height: float = float("nan")
     peak_time: float = float("nan")
@@ -347,6 +350,53 @@ def slab_level(pos: torch.Tensor, cfg: KleefsmanConfig, x: float | None = None,
     return volume / (2.0 * a)
 
 
+def boundary_crossing_mask(pos: torch.Tensor, cfg: KleefsmanConfig,
+                           top: float | None = None) -> torch.Tensor:
+    """Particles that are outside the fluid box *before* ``apply_boundary`` clamps them.
+
+    ``apply_boundary`` is a safety net: it clamps a crossing particle back onto
+    the wall and zeroes its normal velocity, so the fluid mass is conserved but
+    the particle stays *on* the wall for the rest of the run.  For the leading
+    edge metric that is fatal, because the front is a maximum over particles:
+    one clamped particle pins it at the far wall for ever (observed on the
+    ``dx = 0.01`` long-horizon run of m21324: ``front_x_m`` jumps from 1.215 m
+    to 3.21 m inside the first 0.3 s while the surge is still near 1.9 m, with
+    ``boundary_escapes = 5``).
+
+    The predicate is evaluated on the positions that ``apply_boundary`` is
+    about to clamp, with the same box and the same ``0.25 dx`` tolerance, so the
+    mask marks exactly the particles the clamp touches.
+    """
+    x_min, x_max, y_min, y_max = boundary_box(
+        cfg, cfg.tank_height if top is None else float(top))
+    tol = 0.25 * cfg.dx
+    return ((pos[:, 0] < x_min - tol) | (pos[:, 0] > x_max + tol)
+            | (pos[:, 1] < y_min - tol) | (pos[:, 1] > y_max + tol))
+
+
+def front_position(pos: torch.Tensor, exclude: torch.Tensor | None = None) -> float:
+    """Leading-edge x of the fluid body [m], optionally excluding flagged particles.
+
+    ``exclude`` is the cumulative wall-crossing mask from
+    :func:`boundary_crossing_mask`.  With ``exclude=None`` the result is bit-wise
+    the historical metric (bare ``max`` of all fluid x), which keeps every
+    committed time series reproducible.
+
+    The metric is *not* a spray filter: ballistic droplets thrown ahead of the
+    sheet are genuine SPH kinematics and stay in the maximum.  What is removed
+    is the numerical artefact -- a particle whose position was overwritten by
+    the boundary clamp.
+    """
+    if pos.numel() == 0:
+        return 0.0
+    xs = pos[:, 0]
+    if exclude is not None and bool(exclude.any()):
+        keep = ~exclude
+        if bool(keep.any()):
+            xs = xs[keep]
+    return float(xs.max())
+
+
 def gauge_series(pos: torch.Tensor, cfg: KleefsmanConfig) -> dict[str, float]:
     """All gauge readings of one snapshot, keyed by ``operator@x``.
 
@@ -419,6 +469,14 @@ def run_case(cfg: KleefsmanConfig, resume: dict | None = None,
                    for k in ("times", "height", "column", "front", "max_speed", "compression",
                              "escaped", "dt", "elapsed")}
         carried["series"] = {k: list(v) for k, v in (resume.get("series") or {}).items()}
+        # the front columns are part of the restart state too: a chunked run
+        # must not restart them empty (otherwise the record loses its prefix)
+        carried["front_robust"] = list(resume.get("front_robust") or [])
+        carried["excluded"] = list(resume.get("excluded") or [])
+    if resume is None or resume.get("escape_mask") is None:
+        escape_mask = torch.zeros(positions.shape[0], dtype=torch.bool, device=device)
+    else:
+        escape_mask = resume["escape_mask"].clone()
     wall = torch.cat((wall_lattice(cfg, device, top=top),
                       obstacle_lattice(cfg, device)), dim=0)
     h = cfg.h_factor * cfg.dx
@@ -433,6 +491,8 @@ def run_case(cfg: KleefsmanConfig, resume: dict | None = None,
     run.height = list(carried["height"])
     run.column = list(carried["column"] if isinstance(carried["column"], list) else [])
     run.front = list(carried["front"])
+    run.front_robust = list(carried.get("front_robust") or [])
+    run.excluded = list(carried.get("excluded") or [])
     run.series = {k: list(v) for k, v in carried.get("series", {}).items()}
     run.max_speed = carried["max_speed"]
     run.dt_min = run.dt_max = dt
@@ -459,7 +519,9 @@ def run_case(cfg: KleefsmanConfig, resume: dict | None = None,
             run.column.append(column_level(positions, cfg))
             for key, value in gauge_series(positions, cfg).items():
                 run.series.setdefault(key, []).append(value)
-            run.front.append(float(positions[:, 0].max()) if positions.numel() else 0.0)
+            run.front.append(front_position(positions))
+            run.front_robust.append(front_position(positions, exclude=escape_mask))
+            run.excluded.append(float(escape_mask.sum()))
         if elapsed >= cfg.t_end:
             break
         if (time_budget is not None and step >= 1
@@ -468,6 +530,9 @@ def run_case(cfg: KleefsmanConfig, resume: dict | None = None,
             break
         velocity = velocity + step_dt * acc
         positions = positions + step_dt * velocity
+        crossed = boundary_crossing_mask(positions, cfg, top=top)
+        if bool(crossed.any()):
+            escape_mask |= crossed
         escaped += apply_boundary(positions, velocity, cfg, top=top)
         elapsed += step_dt
         if cfg.adaptive_dt:
@@ -490,7 +555,9 @@ def run_case(cfg: KleefsmanConfig, resume: dict | None = None,
         "positions": positions.detach().clone(), "velocity": velocity.detach().clone(),
         "mass": mass, "initial_mass": initial_mass, "dt": dt, "elapsed": elapsed,
         "times": run.times, "height": run.height, "column": run.column,
-        "front": run.front, "series": run.series,
+        "front": run.front, "front_robust": run.front_robust,
+        "excluded": run.excluded, "escape_mask": escape_mask,
+        "series": run.series,
         "max_speed": run.max_speed, "compression": float(compression),
         "escaped": escaped, "steps_done": run.steps_taken,
         "finished": run.finished,
@@ -501,6 +568,7 @@ def run_case(cfg: KleefsmanConfig, resume: dict | None = None,
 __all__ = [
     "KleefsmanConfig", "KleefsmanRun", "column_level", "make_water",
     "obstacle_lattice",
-    "gauge_series", "run_case", "slab_level", "surface_level", "validate_case",
+    "boundary_crossing_mask", "front_position", "gauge_series", "run_case",
+    "slab_level", "surface_level", "validate_case",
     "water_height_at",
 ]

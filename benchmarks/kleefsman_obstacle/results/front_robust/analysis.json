@@ -1,0 +1,86 @@
+{
+  "mission": "m21404",
+  "grids": {
+    "dx0.04": {
+      "peak_horizon": {
+        "csv": "benchmarks/kleefsman_obstacle/results/peak_horizon/dx0.04_time_series.csv",
+        "fronts": {
+          "front_x_m": {
+            "max_m": 3.22,
+            "at_t0_m": 1.18,
+            "cross_box_face_s": 0.4666602304177126,
+            "final_m": 3.208039
+          }
+        },
+        "scores": {
+          "x2.426": {
+            "station_m": 2.426,
+            "peak_m": 0.42717371428571427,
+            "peak_time_s": 0.904,
+            "arrival_s": 0.4598177385754178,
+            "peak_err_rel": 0.1545235521235521,
+            "arrival_err_rel_interp": 0.32093576149215103,
+            "arrival_err_rel_firsts": 0.2804726777371702,
+            "t_end_s": 2.6002,
+            "pass": false
+          },
+          "x2.228": {
+            "station_m": 2.228,
+            "peak_m": 0.40026642857142863,
+            "peak_time_s": 1.536,
+            "arrival_s": 0.4064904016337645,
+            "peak_err_rel": 0.08180115830115849,
+            "arrival_err_rel_interp": 0.16774030920357502,
+            "arrival_err_rel_firsts": 0.13196992936163887,
+            "t_end_s": 2.6002,
+            "pass": false
+          }
+        }
+      },
+      "front_robust": null
+    },
+    "dx0.02": {
+      "peak_horizon": null,
+      "front_robust": null
+    },
+    "dx0.01": {
+      "peak_horizon": {
+        "csv": "benchmarks/kleefsman_obstacle/results/peak_horizon/dx0.01_time_series.csv",
+        "fronts": {
+          "front_x_m": {
+            "max_m": 3.22,
+            "at_t0_m": 1.215,
+            "cross_box_face_s": 0.11727733610181075,
+            "final_m": 3.216951
+          }
+        },
+        "scores": {
+          "x2.426": {
+            "station_m": 2.426,
+            "peak_m": 0.48129863636363646,
+            "peak_time_s": 1.1518,
+            "arrival_s": 0.437424026912353,
+            "peak_err_rel": 0.30080712530712556,
+            "arrival_err_rel_interp": 0.2566045013282188,
+            "arrival_err_rel_firsts": 0.21811202147689507,
+            "t_end_s": 2.600098,
+            "pass": false
+          },
+          "x2.228": {
+            "station_m": 2.228,
+            "peak_m": 0.36741227272727267,
+            "peak_time_s": 1.436751,
+            "arrival_s": 0.38680495504402906,
+            "peak_err_rel": -0.0069938574938576345,
+            "arrival_err_rel_interp": 0.11118918426897167,
+            "arrival_err_rel_firsts": 0.07715108617106402,
+            "t_end_s": 2.600098,
+            "pass": false
+          }
+        }
+      },
+      "front_robust": null
+    }
+  },
+  "sources": {}
+}
