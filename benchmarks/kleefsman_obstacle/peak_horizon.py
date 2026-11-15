@@ -84,8 +84,13 @@ def main() -> int:
                     help="wall-clock budget [s] per invocation; 0 = run to completion")
     ap.add_argument("--output-every", type=int, default=20)
     ap.add_argument("--sound-speed", type=float, default=20.0)
+    ap.add_argument("--out-dir", default="",
+                    help="output directory name under results/ (default: peak_horizon)")
     args = ap.parse_args()
 
+    global OUT
+    if args.out_dir:
+        OUT = OUT.parent / args.out_dir
     OUT.mkdir(parents=True, exist_ok=True)
     ref = json.loads((HERE / "reference.json").read_text())
     geom = ref["geometry_m"]
@@ -108,11 +113,16 @@ def main() -> int:
 
     series_keys = sorted(run.series)
     with (OUT / f"{tag}_time_series.csv").open("w") as fh:
-        fh.write("t_s,height_m,front_x_m,column_level_m,"
+        fh.write("t_s,height_m,front_x_m,front_x_robust_m,excluded,column_level_m,"
                  + ",".join(k.replace("@", "_") for k in series_keys) + "\n")
         cols = run.column if len(run.column) == len(run.times) else [float("nan")] * len(run.times)
-        for idx, (t, hh, fr, cl) in enumerate(zip(run.times, run.height, run.front, cols)):
-            row = [f"{t:.6f}", f"{hh:.6f}", f"{fr:.6f}", f"{cl:.6f}"]
+        robust = (run.front_robust if len(run.front_robust) == len(run.times)
+                  else [float("nan")] * len(run.times))
+        excl = (run.excluded if len(run.excluded) == len(run.times)
+                else [float("nan")] * len(run.times))
+        for idx, (t, hh, fr, rb, ex, cl) in enumerate(
+                zip(run.times, run.height, run.front, robust, excl, cols)):
+            row = [f"{t:.6f}", f"{hh:.6f}", f"{fr:.6f}", f"{rb:.6f}", f"{ex:.0f}", f"{cl:.6f}"]
             for k in series_keys:
                 v = run.series[k]
                 row.append(f"{v[idx]:.6f}" if idx < len(v) else "nan")
@@ -136,6 +146,8 @@ def main() -> int:
         "max_density_compression": run.max_density_compression,
         "max_speed": run.max_speed, "mass_error_rel": run.mass_error,
         "boundary_escapes": run.escaped,
+        "front_metric": "front_x_m = legacy bare max (saturates after a clamp); "
+                        "front_x_robust_m = max excluding wall-crossed particles",
         "wall_clock_s": round(wall, 1),
         "time_series_csv": f"{tag}_time_series.csv",
     }
