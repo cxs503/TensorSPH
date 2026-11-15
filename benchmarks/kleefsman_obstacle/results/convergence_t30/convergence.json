@@ -1,0 +1,393 @@
+{
+  "case": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST",
+  "mission": "m21718",
+  "protocol": {
+    "operator": "slab",
+    "column": "slab_x2.426",
+    "aperture_m": 0.08,
+    "station_offset_m": 0.05,
+    "peak_window_s": 0.03,
+    "arrival_threshold_m": 0.02
+  },
+  "reference": {
+    "peak_height_m": 0.37,
+    "peak_time_s": 1.7027,
+    "arrival_time_s": 0.3481,
+    "tolerance_rel": 0.1,
+    "u_exp": {
+      "peak_height_m": 0.005,
+      "arrival_time_s": 0.01,
+      "reason": "1 px = 0.0038 m vertical, 0.0116 s horizontal; line thickness 3-6 px"
+    }
+  },
+  "gci_reference_band": 0.1,
+  "horizon_check": {
+    "primary": {
+      "ok": true,
+      "t_end_s": 2.600098,
+      "t_ends": [
+        3.0002,
+        3.0002,
+        2.600098
+      ],
+      "uniform": false
+    },
+    "secondary": {
+      "ok": true,
+      "t_end_s": 2.600098,
+      "t_ends": [
+        3.0002,
+        3.0002,
+        2.600098
+      ],
+      "uniform": false
+    }
+  },
+  "stations": {
+    "primary": {
+      "station_x_m": 2.426,
+      "rows": [
+        {
+          "dx": 0.04,
+          "station": "primary",
+          "station_x_m": 2.426,
+          "column": "slab_x2.426",
+          "path": "results/audit_t30/dx0.04/time_series.csv",
+          "t_end_s": 3.0002,
+          "peak_m": 0.42717371428571427,
+          "peak_time_s": 0.904,
+          "arrival_s": 0.4603949539979133,
+          "peak_rel_error": 0.1545235521235521,
+          "arrival_rel_error": 0.3225939500083691,
+          "censored": false
+        },
+        {
+          "dx": 0.02,
+          "station": "primary",
+          "station_x_m": 2.426,
+          "column": "slab_x2.426",
+          "path": "results/audit_t30/dx0.02/time_series.csv",
+          "t_end_s": 3.0002,
+          "peak_m": 0.47670571428571423,
+          "peak_time_s": 1.116,
+          "arrival_s": 0.44091977333730986,
+          "peak_rel_error": 0.2883938223938223,
+          "arrival_rel_error": 0.2666468639394135,
+          "censored": false
+        },
+        {
+          "dx": 0.01,
+          "station": "primary",
+          "station_x_m": 2.426,
+          "column": "slab_x2.426",
+          "path": "results/peak_horizon/dx0.01_time_series.csv",
+          "t_end_s": 2.600098,
+          "peak_m": 0.48129863636363646,
+          "peak_time_s": 1.1518,
+          "arrival_s": 0.4378479407704297,
+          "peak_rel_error": 0.30080712530712556,
+          "arrival_rel_error": 0.2578222946579422,
+          "censored": false
+        }
+      ],
+      "verdicts": {
+        "n_grids": 3,
+        "peak": {
+          "metric": "peak_m",
+          "dx": [
+            0.04,
+            0.02,
+            0.01
+          ],
+          "values": [
+            0.42717371428571427,
+            0.47670571428571423,
+            0.48129863636363646
+          ],
+          "n_grids": 3,
+          "monotone": true,
+          "p": 3.4308766626317984,
+          "richardson": 0.4817680481582096,
+          "gci_fine": 0.0012191282062414268,
+          "convergence": "CONVERGED",
+          "spread_rel": 0.11245600545817687,
+          "p_effective": 2.0,
+          "gci_fine_conservative": 0.003976154071256745,
+          "order_capped": true,
+          "u_num_rel": 0.003976154071256745,
+          "u_num_rel_source": "GCI(p_eff)",
+          "gci_below_reference_band": true
+        },
+        "arrival": {
+          "metric": "arrival_s",
+          "dx": [
+            0.04,
+            0.02,
+            0.01
+          ],
+          "values": [
+            0.4603949539979133,
+            0.44091977333730986,
+            0.4378479407704297
+          ],
+          "n_grids": 3,
+          "monotone": true,
+          "p": 2.664465223576003,
+          "richardson": 0.43727268288618376,
+          "gci_fine": 0.0016422878546424138,
+          "convergence": "CONVERGED",
+          "spread_rel": 0.048973197972073744,
+          "p_effective": 2.0,
+          "gci_fine_conservative": 0.0029232300006890965,
+          "order_capped": true,
+          "u_num_rel": 0.0029232300006890965,
+          "u_num_rel_source": "GCI(p_eff)",
+          "gci_below_reference_band": true
+        },
+        "peak_time": {
+          "metric": "peak_time_s",
+          "dx": [
+            0.04,
+            0.02,
+            0.01
+          ],
+          "values": [
+            0.904,
+            1.116,
+            1.1518
+          ],
+          "n_grids": 3,
+          "monotone": true,
+          "p": 2.5660327721863125,
+          "richardson": 1.1590737797956865,
+          "gci_fine": 0.007893926675298056,
+          "convergence": "CONVERGED",
+          "spread_rel": 0.21514151762458752,
+          "p_effective": 2.0,
+          "gci_fine_conservative": 0.012950743763384787,
+          "order_capped": true,
+          "u_num_rel": 0.012950743763384787,
+          "u_num_rel_source": "GCI(p_eff)",
+          "gci_below_reference_band": true
+        },
+        "u_num_peak_src": "GCI(p_eff)",
+        "u_num_arrival_src": "GCI(p_eff)",
+        "vv20_peak_fine": {
+          "E": 0.11129863636363646,
+          "E_rel": 0.30080712530712556,
+          "U_V": 0.005353719715681225,
+          "U_V_rel": 0.014469512745084392,
+          "verdict": "MODEL_ERROR_EXCEEDS_U_V"
+        },
+        "vv20_peak_continuum": {
+          "E": 0.11176804815820962,
+          "E_rel": 0.302075805832999,
+          "U_V": 0.005,
+          "U_V_rel": 0.013513513513513514,
+          "verdict": "MODEL_ERROR_EXCEEDS_U_V"
+        },
+        "vv20_arrival_fine": {
+          "E": 0.08974794077042969,
+          "E_rel": 0.2578222946579422,
+          "U_V": 0.010081578319367417,
+          "U_V_rel": 0.02896173030556569,
+          "verdict": "MODEL_ERROR_EXCEEDS_U_V"
+        },
+        "peak_event": {
+          "sim_peak_time_s": 1.1518,
+          "ref_peak_time_s": 1.7027,
+          "dev_s": 0.5509000000000002,
+          "same_event": false,
+          "note": "the simulated extremum is the first-impact run-up at the gauge; the experimental maximum at H2 is the return-wave re-impingement (t = 1.703 s)"
+        },
+        "verdict": "PEAK_FAIL_MODEL_ERROR",
+        "tolerance_pass_finest": {
+          "peak": false,
+          "arrival": false,
+          "both": false
+        }
+      }
+    },
+    "secondary": {
+      "station_x_m": 2.228,
+      "rows": [
+        {
+          "dx": 0.04,
+          "station": "secondary",
+          "station_x_m": 2.228,
+          "column": "slab_x2.228",
+          "path": "results/audit_t30/dx0.04/time_series.csv",
+          "t_end_s": 3.0002,
+          "peak_m": 0.40026642857142863,
+          "peak_time_s": 1.536,
+          "arrival_s": 0.40739362618432384,
+          "peak_rel_error": 0.08180115830115849,
+          "arrival_rel_error": 0.1703350364387355,
+          "censored": false
+        },
+        {
+          "dx": 0.02,
+          "station": "secondary",
+          "station_x_m": 2.228,
+          "column": "slab_x2.228",
+          "path": "results/audit_t30/dx0.02/time_series.csv",
+          "t_end_s": 3.0002,
+          "peak_m": 0.38170400000000004,
+          "peak_time_s": 1.488,
+          "arrival_s": 0.3893124393288032,
+          "peak_rel_error": 0.031632432432432564,
+          "arrival_rel_error": 0.1183925289537581,
+          "censored": false
+        },
+        {
+          "dx": 0.01,
+          "station": "secondary",
+          "station_x_m": 2.228,
+          "column": "slab_x2.228",
+          "path": "results/peak_horizon/dx0.01_time_series.csv",
+          "t_end_s": 2.600098,
+          "peak_m": 0.36741227272727267,
+          "peak_time_s": 1.436751,
+          "arrival_s": 0.38685663372674534,
+          "peak_rel_error": 0.0069938574938576345,
+          "arrival_rel_error": 0.11133764357008133,
+          "censored": false
+        }
+      ],
+      "verdicts": {
+        "n_grids": 3,
+        "peak": {
+          "metric": "peak_m",
+          "dx": [
+            0.04,
+            0.02,
+            0.01
+          ],
+          "values": [
+            0.40026642857142863,
+            0.38170400000000004,
+            0.36741227272727267
+          ],
+          "n_grids": 3,
+          "monotone": true,
+          "p": 0.3772051858800637,
+          "richardson": 0.319585591779079,
+          "gci_fine": 0.16271462774358322,
+          "convergence": "NOT_CONVERGED",
+          "spread_rel": 0.0820807179893006,
+          "p_effective": 0.3772051858800637,
+          "gci_fine_conservative": 0.16271462774358322,
+          "order_capped": false,
+          "u_num_rel": 0.16271462774358322,
+          "u_num_rel_source": "GCI(p_eff)",
+          "gci_below_reference_band": false
+        },
+        "arrival": {
+          "metric": "arrival_s",
+          "dx": [
+            0.04,
+            0.02,
+            0.01
+          ],
+          "values": [
+            0.40739362618432384,
+            0.3893124393288032,
+            0.38685663372674534
+          ],
+          "n_grids": 3,
+          "monotone": true,
+          "p": 2.8802211111424723,
+          "richardson": 0.3864706603506549,
+          "gci_fine": 0.0012471460433939598,
+          "convergence": "CONVERGED",
+          "spread_rel": 0.050410686710858396,
+          "p_effective": 2.0,
+          "gci_fine_conservative": 0.0026450427496444435,
+          "order_capped": true,
+          "u_num_rel": 0.0026450427496444435,
+          "u_num_rel_source": "GCI(p_eff)",
+          "gci_below_reference_band": true
+        },
+        "peak_time": {
+          "metric": "peak_time_s",
+          "dx": [
+            0.04,
+            0.02,
+            0.01
+          ],
+          "values": [
+            1.536,
+            1.488,
+            1.436751
+          ],
+          "n_grids": 3,
+          "monotone": true,
+          "p": -0.09448944836251288,
+          "richardson": NaN,
+          "gci_fine": NaN,
+          "convergence": "NOT_CONVERGED",
+          "spread_rel": 0.0646152343750001,
+          "p_effective": NaN,
+          "gci_fine_conservative": NaN,
+          "order_capped": false,
+          "u_num_rel": 0.0646152343750001,
+          "u_num_rel_source": "grid_spread(no order)",
+          "gci_below_reference_band": true
+        },
+        "u_num_peak_src": "GCI(p_eff)",
+        "u_num_arrival_src": "GCI(p_eff)",
+        "vv20_peak_fine": {
+          "E": -0.002587727272727325,
+          "E_rel": 0.0069938574938576345,
+          "U_V": 0.059992075134454065,
+          "U_V_rel": 0.1621407436066326,
+          "verdict": "VALIDATED_WITHIN_U_V"
+        },
+        "vv20_peak_continuum": {
+          "E": -0.05041440822092097,
+          "E_rel": 0.13625515735384047,
+          "U_V": 0.005,
+          "U_V_rel": 0.013513513513513514,
+          "verdict": "MODEL_ERROR_EXCEEDS_U_V"
+        },
+        "vv20_arrival_fine": {
+          "E": 0.038756633726745315,
+          "E_rel": 0.11133764357008133,
+          "U_V": 0.01005221594174274,
+          "U_V_rel": 0.028877379895842402,
+          "verdict": "MODEL_ERROR_EXCEEDS_U_V"
+        },
+        "peak_event": {
+          "sim_peak_time_s": 1.436751,
+          "ref_peak_time_s": 1.7027,
+          "dev_s": 0.2659490000000002,
+          "same_event": true,
+          "note": "the simulated extremum is the first-impact run-up at the gauge; the experimental maximum at H2 is the return-wave re-impingement (t = 1.703 s)"
+        },
+        "verdict": "PEAK_NOT_CERTIFIABLE_UNCONVERGED",
+        "tolerance_pass_finest": {
+          "peak": true,
+          "arrival": false,
+          "both": false
+        }
+      }
+    }
+  },
+  "meta": {
+    "missing_dx": []
+  },
+  "verdict": {
+    "verdict": "PEAK_FAIL_RESOLVED",
+    "peak_convergence_primary": "CONVERGED",
+    "arrival_convergence_primary": "CONVERGED",
+    "peak_vv20_primary": "MODEL_ERROR_EXCEEDS_U_V",
+    "peak_vv20_secondary": "VALIDATED_WITHIN_U_V",
+    "peak_event_same_primary": false,
+    "why": "the primary-station peak deviation is measured against a converged ladder (observed order 3.43, conservative p_eff 2.00 used for the GCI), so it can be attributed",
+    "arrival_note": "arrival ladder converged"
+  },
+  "figures": [
+    "results/convergence_t30/timeseries.png",
+    "results/convergence_t30/ladder.png"
+  ]
+}
