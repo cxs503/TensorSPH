@@ -138,6 +138,7 @@ __all__ = [
     "mirror_cloud",
     "mode_amplitude",
     "summation_density",
+    "completeness",
     "initial_density",
     "run_dynamic_drop",
     "dynamic_frequency",
@@ -174,6 +175,14 @@ class DynamicConfig:
     #: sample every n-th step
     sample_every: int = 5
     calibrate_mass: bool = True
+    #: mass calibration is applied only where the kernel neighbourhood is this
+    #: complete (``>=`` Shepard volume completeness); truncated surface rows keep
+    #: the nominal lattice mass.  See :func:`completeness`.
+    completeness_gate: float = 0.97
+    #: delta-SPH diffusion is suppressed on particles less complete than this
+    #: (they sit on the free surface, where the density deficit is a truncation
+    #: deficit and diffusion would inject mass -- round 5 measured 1.7 %/25 steps)
+    fs_completeness: float = 0.95
     #: integrate to this time instead of ``periods * 2 pi / omega_ref`` (used by
     #: the diagnostics that switch surface tension off)
     t_end: float | None = None
@@ -308,6 +317,37 @@ def summation_density(pos: torch.Tensor, mass: torch.Tensor, h: float,
     return rho
 
 
+def completeness(pos: torch.Tensor, mass: torch.Tensor, rho: torch.Tensor,
+                h: float, kind: str = "quintic",
+                reference: float = 1.0) -> torch.Tensor:
+    """Shepard volume completeness ``sum_j V_j W_ij / reference``.
+
+    ``V_j = m_j / rho_j`` is the SPH particle volume, so for a complete (bulk)
+    neighbourhood the sum reproduces ``int W dV = 1`` and the reading is 1; on a
+    free surface the support is truncated and the reading falls below 1.  This
+    is the free-surface indicator of Marrone et al. (2011), *delta-SPH* /
+    *delta+-SPH* practice (Antuono et al. 2012; Sun et al. 2017): it is a purely
+    geometric measure and, unlike the density itself, it does not confuse a
+    truncation deficit with a physical gradient.
+
+    ``reference`` is the bulk reading.  It is 1 for the planar measure used
+    here (masses are planar area weights), and the mirror doubling does **not**
+    change it: a bulk particle's neighbours all sit at ``rho > 0`` already, so the
+    images add nothing (they only complete the support at the axis).  Using a
+    reference of 2 -- the obvious guess -- makes every particle look like a free
+    surface and silently disables both the calibration and the diffusion gate.
+    """
+    pairs = cell_linked_pairs(pos, kernels.SUPPORT_FACTOR[kind] * h)
+    delta = pos[pairs[:, 0]] - pos[pairs[:, 1]]
+    w, _ = kernels.kernel_pairs(delta, h, pos.shape[1], kind=kind)
+    vol = mass / rho
+    acc = _pair_accumulate(pairs, pos.shape[0], vol[pairs[:, 1]] * w)
+    self_w = kernels.kernel_pairs(
+        torch.zeros((1, pos.shape[1]), dtype=pos.dtype), h, pos.shape[1],
+        kind=kind)[0][0]
+    return (acc + vol * self_w) / reference
+
+
 def initial_density(pos: torch.Tensor, mass: torch.Tensor, h: float,
                     rho0: float, *, sigma: float, radius: float, c0: float,
                     gamma: float, passes: int = 2,
@@ -344,8 +384,20 @@ def initial_density(pos: torch.Tensor, mass: torch.Tensor, h: float,
     # p = 0, the uncompensated surface traction drives a startup acoustic pulse of
     # order sigma/R * (R/dx) and the mode signal (a ~ omega^2 eps R) is buried.
     p_laplace = 2.0 * sigma / radius if radius > 0 else 0.0
-    rho0_lap = rho0 * (1.0 + p_laplace / (rho0 * c0 * c0)) ** (1.0 / gamma)
-    return (rho / rho0) * rho0_lap
+    # Inverse Tait: p = (rho0 c0^2 / gamma)[s^gamma - 1]  =>  s = (1 + gamma p /
+    # (rho0 c0^2))^(1/gamma).  The gamma on the pressure term is *not* optional:
+    # dropping it (as rounds 2-5 did) leaves the interior at
+    # p = (rho0 c0^2/gamma)[1 + p/(rho0c0^2) - 1] = p/gamma, i.e. exactly p_lap/7
+    # = 0.286 for gamma = 7 -- measured round 6 -- so the interior pressure is 7x
+    # too small to balance the (correct) CSF traction and the drop is crushed.
+    rho0_lap = rho0 * (1.0 + gamma * p_laplace / (rho0 * c0 * c0)) ** (1.0 / gamma)
+    # The clip is not cosmetic: without it a 4 % positive excursion in the first
+    # interior shell (the fixed point of the mass calibration is only converged to
+    # a few per cent, and this lattice has R/dx = 7-9, i.e. almost no interior)
+    # becomes p = rho0 c0^2/gamma [(1.04)^7 - 1] = 18 where the physical pressure
+    # is 2 sigma / R <= 2.  Measured round 6: p_max = 18.1, |a| = 110 at t = 0 on
+    # a cloud at rest, which is the acoustic blast round 5 saw as a runaway.
+    return ((rho / rho0) * rho0_lap).clamp_max(rho0_lap)
 
 
 def _csf_fields(pos: torch.Tensor, mass: torch.Tensor, h: float, cfg: DynamicConfig):
@@ -391,6 +443,12 @@ def _accelerations(pos_p: torch.Tensor, vel_p: torch.Tensor, rho_p: torch.Tensor
         vol = mass / rho0
         diff = cfg.delta_sph * h * c0 * (rho[j] - rho[i]) * \
             (delta * grad).sum(dim=1) / r2
+        # Only complete neighbourhoods may diffuse: on the free surface the
+        # density deficit is a truncation deficit, and plain diffusion reads it as
+        # a gradient and pushes mass in (round 5 measured 1.7 % in 25 steps).
+        comp = completeness(pos, mass, rho, h, cfg.kernel, reference=1.0)
+        gate = (comp >= cfg.fs_completeness).to(diff.dtype)
+        diff = diff * gate[i] * gate[j]
         drho.index_add_(0, i, vol[j] * diff)
         drho.index_add_(0, j, vol[i] * diff)
 
@@ -461,10 +519,20 @@ def run_dynamic_drop(cfg: DynamicConfig, *, callback=None) -> dict:
     # mass calibration: 2 fixed-point sweeps so the summation density of the
     # starting lattice is exactly rho0 (same trick as wcsph.Solver.calibrate_mass)
     if cfg.calibrate_mass:
+        # Calibrate the *bulk* only.  The shipped version applied
+        # ``mass_i <- mass_i rho0 / rho_summation,i`` to every particle, surface
+        # rows included; there the truncation deficit is 10-25 %, so those masses
+        # were inflated and the first interior shell came out at 1.04 rho0 -- a
+        # p = 18 shell where the physical pressure is 2 sigma/R <= 2.  Measured
+        # round 6: |a| = 110 at t = 0 on a cloud at rest (round 5's runaway).
         for _ in range(2):
             pos_m, _, mass_m = mirror_cloud(pos, torch.zeros_like(pos), mass)
             rho_m = summation_density(pos_m, mass_m, cfg.h, cfg.kernel)
-            mass = mass * (cfg.rho0 / rho_m[:n])
+            comp = completeness(pos_m, mass_m, rho_m, cfg.h, cfg.kernel)[:n]
+            scale = torch.where(comp >= cfg.completeness_gate,
+                                cfg.rho0 / rho_m[:n],
+                                torch.ones_like(rho_m[:n]))
+            mass = mass * scale
     pos_m, vel_m, mass_m = mirror_cloud(pos, torch.zeros_like(pos), mass)
     rho = initial_density(pos_m, mass_m, cfg.h, cfg.rho0, sigma=cfg.sigma,
                           radius=cfg.radius, c0=cfg.c0, gamma=cfg.gamma)[:n]
