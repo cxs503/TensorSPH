@@ -1,0 +1,31 @@
+{
+ "dx": 0.04,
+ "viscosity": 0.003,
+ "tag": "dx0.04_nu0.003",
+ "finished": true,
+ "t_end": 1.2,
+ "simulated_time_s": 1.2001999999999005,
+ "steps": 6001,
+ "dt": 0.0002,
+ "sound_speed": 20.0,
+ "peak_height_m": 0.4621497690677643,
+ "peak_time_s": 1.1199999999999093,
+ "arrival_time_s": 0.4698895847240681,
+ "max_speed": 5.612090587615967,
+ "max_density_compression": 0.1278206787109375,
+ "mass_error_rel": 0.0,
+ "boundary_escapes": 0,
+ "mean_front_speed": 2.549535122604384,
+ "reynolds": 1018.1143589600176,
+ "boundary_layer_m": 0.03754555571798351,
+ "boundary_layer_over_dx": 0.9386388929495877,
+ "wall_clock_s": 30.871234823018312,
+ "rel_error": {
+  "peak_height": 0.24905342991287646,
+  "arrival_time": 0.3085201468228018
+ },
+ "pass": {
+  "peak_height": false,
+  "arrival_time": false
+ }
+}
