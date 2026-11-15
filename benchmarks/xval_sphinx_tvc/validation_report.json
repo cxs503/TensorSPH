@@ -87,5 +87,287 @@
       "No live SPHinXsys binary comparison (no Boost/TBB in the image); operator leg verified by exact transcription test",
       "Gate arithmetic corrected: at dx=0.02 the MAE gate (0.15) is NOT met (0.156) even though dx=0.03's nominal pass exists; the single nominal pass is also not robust to the +-0.05 digitisation bias of the reference (docs/xval_sphinx_tvc/UNCALIBRATED_DEFAULTS.md)"
     ]
+  },
+  "convergence": {
+    "schema": "tvc-convergence-ladder/1",
+    "analysis": "four-level resolution ladder of the fixed-alpha TVC closure against the Martin & Moyce (1952) front-position digitisation, plus Cauchy self-convergence and the alpha sweep at the finest level",
+    "sources": {
+      "ladder": "docs/xval_sphinx_tvc/data/ladder_dense.json",
+      "self_convergence": "docs/xval_sphinx_tvc/data/convergence_ladder.json",
+      "alpha_sweep": "docs/xval_sphinx_tvc/data/sweep_dx001_alpha.json"
+    },
+    "gates": {
+      "abs_mae": 0.15,
+      "rel": 0.15
+    },
+    "reference_variant": {
+      "variant": "tvc_a010_all",
+      "alpha": 0.1
+    },
+    "levels": [
+      {
+        "dx": 0.04,
+        "variants": {
+          "baseline": {
+            "mae": 0.591028,
+            "mean_rel_error": 0.467512,
+            "max_abs_error": 1.150771,
+            "gate_abs_pass": false,
+            "gate_rel_pass": false,
+            "max_density_compression": 0.026022,
+            "mass_drift": 0.0
+          },
+          "tvc_a010_all": {
+            "mae": 0.146964,
+            "mean_rel_error": 0.170592,
+            "max_abs_error": 0.322808,
+            "gate_abs_pass": true,
+            "gate_rel_pass": false,
+            "max_density_compression": 0.026342,
+            "mass_drift": 0.0
+          }
+        },
+        "tvc_over_baseline_mae_factor": 4.022,
+        "tvc_beats_baseline": true,
+        "tvc_meets_both_gates": false
+      },
+      {
+        "dx": 0.03,
+        "variants": {
+          "baseline": {
+            "mae": 0.621437,
+            "mean_rel_error": 0.509929,
+            "max_abs_error": 1.107281,
+            "gate_abs_pass": false,
+            "gate_rel_pass": false,
+            "max_density_compression": 0.024595,
+            "mass_drift": 0.0
+          },
+          "tvc_a010_all": {
+            "mae": 0.142263,
+            "mean_rel_error": 0.106467,
+            "max_abs_error": 0.307627,
+            "gate_abs_pass": true,
+            "gate_rel_pass": true,
+            "max_density_compression": 0.021989,
+            "mass_drift": 0.0
+          }
+        },
+        "tvc_over_baseline_mae_factor": 4.368,
+        "tvc_beats_baseline": true,
+        "tvc_meets_both_gates": true
+      },
+      {
+        "dx": 0.02,
+        "variants": {
+          "baseline": {
+            "mae": 0.575855,
+            "mean_rel_error": 0.413769,
+            "max_abs_error": 1.479367,
+            "gate_abs_pass": false,
+            "gate_rel_pass": false,
+            "max_density_compression": 0.035592,
+            "mass_drift": 0.0
+          },
+          "tvc_a010_all": {
+            "mae": 0.156188,
+            "mean_rel_error": 0.124802,
+            "max_abs_error": 0.349047,
+            "gate_abs_pass": false,
+            "gate_rel_pass": true,
+            "max_density_compression": 0.019318,
+            "mass_drift": 0.0
+          }
+        },
+        "tvc_over_baseline_mae_factor": 3.687,
+        "tvc_beats_baseline": true,
+        "tvc_meets_both_gates": false
+      },
+      {
+        "dx": 0.01,
+        "variants": {
+          "baseline": {
+            "mae": 0.571705,
+            "mean_rel_error": 0.387341,
+            "max_abs_error": 1.617446,
+            "gate_abs_pass": false,
+            "gate_rel_pass": false,
+            "max_density_compression": 0.026683,
+            "mass_drift": 0.0
+          },
+          "tvc_a010_all": {
+            "mae": 0.280096,
+            "mean_rel_error": 0.163857,
+            "max_abs_error": 0.721647,
+            "gate_abs_pass": false,
+            "gate_rel_pass": false,
+            "max_density_compression": 0.01846,
+            "mass_drift": 0.0
+          }
+        },
+        "tvc_over_baseline_mae_factor": 2.041,
+        "tvc_beats_baseline": true,
+        "tvc_meets_both_gates": false
+      }
+    ],
+    "ladder_summary": {
+      "n_levels": 4,
+      "dx_levels": [
+        0.04,
+        0.03,
+        0.02,
+        0.01
+      ],
+      "refinement_pairs_coarse_to_fine": [
+        [
+          0.04,
+          0.03
+        ],
+        [
+          0.03,
+          0.02
+        ],
+        [
+          0.02,
+          0.01
+        ]
+      ],
+      "mae_improves_at_each_refinement": [
+        true,
+        false,
+        false
+      ],
+      "mae_monotone_under_refinement": false,
+      "best_dx": 0.03,
+      "best_mae": 0.142263,
+      "worst_dx": 0.01,
+      "worst_mae": 0.280096,
+      "finest_level_is_best": false,
+      "n_levels_meeting_both_gates": 1,
+      "levels_meeting_both_gates": [
+        0.03
+      ]
+    },
+    "self_convergence": {
+      "baseline": {
+        "cauchy_l2": [
+          {
+            "dx_coarse": 0.04,
+            "dx_fine": 0.03,
+            "r": 1.3333,
+            "cauchy_l2": 0.054733
+          },
+          {
+            "dx_coarse": 0.03,
+            "dx_fine": 0.02,
+            "r": 1.5,
+            "cauchy_l2": 0.257527
+          },
+          {
+            "dx_coarse": 0.02,
+            "dx_fine": 0.01,
+            "r": 2.0,
+            "cauchy_l2": 0.098159
+          }
+        ],
+        "observed_order_l2": [
+          {
+            "dx_fine_interval": [
+              0.03,
+              0.02
+            ],
+            "observed_order_l2": -4.468
+          },
+          {
+            "dx_fine_interval": [
+              0.02,
+              0.01
+            ],
+            "observed_order_l2": 1.756
+          }
+        ],
+        "richardson_limit": {
+          "p_used": 1.756,
+          "from_levels": [
+            0.02,
+            0.01
+          ],
+          "mae_vs_experiment": 0.570475,
+          "mean_rel_error_vs_experiment": 0.376411
+        },
+        "in_asymptotic_range": false
+      },
+      "tvc_a010_all": {
+        "cauchy_l2": [
+          {
+            "dx_coarse": 0.04,
+            "dx_fine": 0.03,
+            "r": 1.3333,
+            "cauchy_l2": 0.235378
+          },
+          {
+            "dx_coarse": 0.03,
+            "dx_fine": 0.02,
+            "r": 1.5,
+            "cauchy_l2": 0.119004
+          },
+          {
+            "dx_coarse": 0.02,
+            "dx_fine": 0.01,
+            "r": 2.0,
+            "cauchy_l2": 0.190422
+          }
+        ],
+        "observed_order_l2": [
+          {
+            "dx_fine_interval": [
+              0.03,
+              0.02
+            ],
+            "observed_order_l2": 1.968
+          },
+          {
+            "dx_fine_interval": [
+              0.02,
+              0.01
+            ],
+            "observed_order_l2": -0.856
+          }
+        ],
+        "richardson_limit": null,
+        "in_asymptotic_range": false
+      }
+    },
+    "alpha_sweep_finest_level": [
+      {
+        "variant": "tvc_a015_all",
+        "dx": 0.01,
+        "mae": 0.192758,
+        "mean_rel_error": 0.14262,
+        "max_abs_error": 0.632318,
+        "gate_abs_pass": false,
+        "gate_rel_pass": true,
+        "max_density_compression": 0.026068,
+        "mass_drift": 0.0
+      },
+      {
+        "variant": "tvc_a030_all",
+        "dx": 0.01,
+        "mae": 0.409573,
+        "mean_rel_error": 0.3317,
+        "max_abs_error": 0.848,
+        "gate_abs_pass": false,
+        "gate_rel_pass": false,
+        "max_density_compression": 0.040003,
+        "mass_drift": 0.0
+      }
+    ],
+    "convergence_verdict": {
+      "fixed_alpha_convergence": "falsified",
+      "statement": "At fixed alpha = 0.10 the error against Martin & Moyce (1952) is 17.1 % / 10.6 % / 12.5 % / 16.4 % at dx = 0.04 / 0.03 / 0.02 / 0.01 m: the sequence is non-monotone, the minimum sits at dx = 0.03 m and the finest level (dx = 0.01 m, MAE 0.2801) is worse than the coarsest. Only 1 of 4 levels meet both gates.",
+      "mechanism": "the per-application shift is resolution independent (|dr| = alpha h^2 |grad-1|, h ~ dx, |grad-1| ~ 1/dx), while a fixed physical duration contains N = T/dt ~ 1/dx applications, so the cumulative regularisation rate ~ alpha dx weakens under refinement; the optimum therefore drifts up (0.10 at dx = 0.03 -> 0.15 at dx = 0.01)",
+      "may_be_quoted_as": "a calibrated point at dx = 0.03 m (MAE 0.1423 Z/a, 10.6 % of the experiment), NOT as a converged limit",
+      "data": "docs/xval_sphinx_tvc/data/ladder_dense.json"
+    }
   }
 }

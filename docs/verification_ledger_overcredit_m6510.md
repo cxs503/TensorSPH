@@ -44,21 +44,21 @@
 | `threed_shear.decay_rate.raw_laplacian` | **MARGINAL** | +11.46 % | `benchmarks/threed_shear/report.json` → `verdict = fail`（未通过项 `fourth_order_improves_on_second_order_every_rung`；缺失用例 `h1.3`、`h1.5`、`h1.8`、`order4-n16`、`order4-n20`、`order4-n24`） |
 | `threed_shear.decay_rate.worst_of_ladder` | **MARGINAL** | -12.62 % | `benchmarks/threed_shear/report.json` → `verdict = fail`（未通过项 `fourth_order_improves_on_second_order_every_rung`；缺失用例 `h1.3`、`h1.5`、`h1.8`、`order4-n16`、`order4-n20`、`order4-n24`） |
 
-合计 **5** 条；另有 **19** 条 credit 的工件根本没有声明 verdict（等级只能读成「该读数合规」，不能读成「该能力被验证」）。工件自述 `fail` 的条目共 **14** 条。
+合计 **5** 条；另有 **21** 条 credit 的工件根本没有声明 verdict（等级只能读成「该读数合规」，不能读成「该能力被验证」）。工件自述 `fail` 的条目共 **14** 条。
 
 ### 3.2 账本规模与分级分布（前 → 后）
 
 | 指标 | 基线（HEAD 提交的 ledger.json） | 本次重生成 |
 |---|---|---|
-| claims | 57 | 62 |
-| 物理量 | 36 | 40 |
-| findings | 25 | 19 |
-| PASS | 15 | 16 |
-| MARGINAL | 13 | 15 |
-| FAIL | 12 | 13 |
-| WITHHELD | 15 | 16 |
+| claims | 69 | 69 |
+| 物理量 | 47 | 47 |
+| findings | 72 | 72 |
+| PASS | 16 | 16 |
+| MARGINAL | 17 | 17 |
+| FAIL | 18 | 18 |
+| WITHHELD | 16 | 16 |
 | WITHDRAWN | 2 | 2 |
-| findings 分类 | credit_from_failing_artifact 6，declared_vs_derived 2，inadmissible_run 3，quantity_spread 4，run_validity 4，uncovered_benchmark 5，unregistered_artifact 1 | credit_from_failing_artifact 5，declared_vs_derived 3，inadmissible_run 3，quantity_spread 4，run_validity 4 |
+| findings 分类 | credit_from_failing_artifact 5，declared_vs_derived 3，inadmissible_run 3，quantity_spread 4，run_validity 4，uncovered_benchmark 28，unregistered_artifact 25 | credit_from_failing_artifact 5，declared_vs_derived 3，inadmissible_run 3，quantity_spread 4，run_validity 4，uncovered_benchmark 28，unregistered_artifact 25 |
 
 ### 3.3 误差判定（逐项回答是否 < 3%）
 
