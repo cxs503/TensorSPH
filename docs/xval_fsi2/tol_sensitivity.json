@@ -1,0 +1,87 @@
+{
+  "strict": {
+    "n_steps": 200,
+    "t_end": 0.20800000000000096,
+    "iterations_mean": 11.18,
+    "iterations_max": 12.0,
+    "iterations_at_budget": 0.92,
+    "converged_fraction": 0.08,
+    "residual_median": 0.05625882104232004,
+    "residual_p10": 0.00504211657990454,
+    "residual_min": 0.0,
+    "rho0": 1000.0,
+    "u_mean": 0.20000000000000004,
+    "D": 0.1
+  },
+  "floor": {
+    "n_steps": 200,
+    "t_end": 0.20800000000000096,
+    "iterations_mean": 3.895,
+    "iterations_max": 12.0,
+    "iterations_at_budget": 0.1,
+    "converged_fraction": 0.9,
+    "residual_median": 0.006499025167723677,
+    "residual_p10": 0.002859151155239181,
+    "residual_min": 0.0,
+    "rho0": 1000.0,
+    "u_mean": 0.20000000000000004,
+    "D": 0.1
+  },
+  "channels": {
+    "body_drag_fit": {
+      "rms_abs_diff": 0.02602662721492621,
+      "rel_rms_diff": 0.005609337088137227,
+      "strict_mean": -0.9913945681381813,
+      "floor_mean": -0.9952670022356621,
+      "strict_halfrange": 19.31914692522742,
+      "floor_halfrange": 19.30441521509905
+    },
+    "body_lift_fit": {
+      "rms_abs_diff": 0.5189152472521118,
+      "rel_rms_diff": 0.08179020716833715,
+      "strict_mean": -5.230562880258081,
+      "floor_mean": -5.217707395888316,
+      "strict_halfrange": 23.95547987894964,
+      "floor_halfrange": 23.990714414117477
+    },
+    "tip_x": {
+      "rms_abs_diff": 1.954709654933379e-07,
+      "rel_rms_diff": 0.01208571899250034,
+      "strict_mean": -1.6109078301470015e-05,
+      "floor_mean": -1.6173714250234948e-05,
+      "strict_halfrange": 4.012174136241997e-05,
+      "floor_halfrange": 4.057857470263215e-05
+    },
+    "tip_y": {
+      "rms_abs_diff": 1.539618888267208e-05,
+      "rel_rms_diff": 0.01641079709162943,
+      "strict_mean": -0.0009355827101444533,
+      "floor_mean": -0.0009291836823166667,
+      "strict_halfrange": 0.0016556414785549867,
+      "floor_halfrange": 0.0016259065543551
+    }
+  },
+  "coefficients": {
+    "cd_mean": {
+      "strict": -0.4956972840690902,
+      "floor": -0.4976335011178308,
+      "rel_diff": 0.003890849479368398
+    },
+    "cd_amplitude": {
+      "strict": 9.659573462613707,
+      "floor": 9.65220760754952,
+      "rel_diff": 0.0007631264642945924
+    },
+    "cl_amplitude": {
+      "strict": 11.977739939474814,
+      "floor": 11.995357207058735,
+      "rel_diff": -0.0014686738610463232
+    }
+  },
+  "worst_rel_diff": 0.003890849479368398,
+  "decision": "TOLERANCE_COSMETIC_ONLY",
+  "cost": {
+    "iterations_ratio": 2.8703465982028242,
+    "wall_clock_ratio": 2.9211667818305758
+  }
+}
