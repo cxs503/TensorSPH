@@ -29,6 +29,21 @@ Convention
 i.e. only the normal component is reversed -- the mirror-image free-slip
 control, which leaves the tangential shear at zero.
 
+``slip = "navier"``: partial slip with a Navier slip length ``lam``
+(``slip_length=``).  The wall condition is ``u_w = lam * du/dn|_wall``, so the
+ghost tangential velocity is *not* the mirror image but
+
+    v_t,ghost = w_t + alpha (v_t - w_t),   alpha = (lam - d) / (lam + d),
+
+with ``d`` the distance of that fluid particle to the plane.  This is the
+one-parameter family that interpolates the two limits above exactly:
+``lam = 0`` gives ``alpha = -1`` (``no_slip``) and ``lam -> inf`` gives
+``alpha = +1`` (``free_slip``).  It is consistent to first order with the
+analytic plane-Poiseuille slip solution ``u = g(H y - y^2 + lam H)/(2 nu)``:
+for a near-wall particle at ``d``, ``u(d) = U_s + G d + O(d^2)`` with
+``U_s = lam G``, and the rule returns ``lam u(d)/(d + lam) = U_s + O(d^2)``.
+See ``docs/verification_poiseuille_navier_slip.md``.
+
 The ghosts are rebuilt from the current fluid state on every step, so they
 follow the flow; ``rhs`` treats them as moving wall particles through its
 ``wall_vel`` argument (which enters the wall/fluid viscosity term).
@@ -64,7 +79,7 @@ __all__ = ["mirror_plane", "plane_walls"]
 
 def mirror_plane(pos: torch.Tensor, vel: torch.Tensor, mass: torch.Tensor,
                  plane_y: float, support: float, side: int = 1,
-                 slip: str = "no_slip", plane_vel=None):
+                 slip: str = "no_slip", plane_vel=None, slip_length=None):
     """Mirror the near-plane fluid across ``y = plane_y``.
 
     Only fluid particles within ``support`` of the plane are mirrored: a ghost
@@ -79,8 +94,15 @@ def mirror_plane(pos: torch.Tensor, vel: torch.Tensor, mass: torch.Tensor,
 
     Returns ``(ghost_pos, ghost_vel, ghost_mass)``.
     """
-    if slip not in ("no_slip", "free_slip"):
+    if slip not in ("no_slip", "free_slip", "navier"):
         raise ValueError(f"unknown slip type {slip!r}")
+    if slip == "navier":
+        if slip_length is None:
+            raise ValueError("slip='navier' requires slip_length")
+        slip_length = float(slip_length)
+        if not slip_length > 0.0:
+            raise ValueError("slip_length must be positive (no_slip is its "
+                             "lam -> 0 limit)")
     if side not in (1, -1):
         raise ValueError("side must be +1 (fluid above) or -1 (fluid below)")
     if support <= 0.0:
@@ -106,7 +128,18 @@ def mirror_plane(pos: torch.Tensor, vel: torch.Tensor, mass: torch.Tensor,
             raise ValueError(
                 f"plane_vel must have {ghost_vel.shape[1]} components, "
                 f"got {wall_v.numel()}")
-    if slip == "no_slip":
+    if slip == "navier":
+        # Partial slip: tangential component relaxed towards the wall by the
+        # factor alpha = (lam - d)/(lam + d), normal component mirrored as for
+        # no_slip.  d is the distance of the *source* particle to the plane.
+        d = dist[keep].to(ghost_vel.dtype).reshape(-1, 1)
+        lam = float(slip_length)
+        alpha = (lam - d) / (lam + d)
+        rel = ghost_vel - wall_v                      # motion relative to wall
+        ghost_vel = wall_v + rel
+        ghost_vel[:, 0] = wall_v[0] + alpha.reshape(-1) * rel[:, 0]
+        ghost_vel[:, 1] = wall_v[1] - rel[:, 1]
+    elif slip == "no_slip":
         # mirror through the wall's own motion: mean of (v, 2w - v) is w
         ghost_vel = 2.0 * wall_v - ghost_vel
     else:  # free_slip: only the normal component is mirrored about w
@@ -119,19 +152,21 @@ def mirror_plane(pos: torch.Tensor, vel: torch.Tensor, mass: torch.Tensor,
 
 def plane_walls(pos: torch.Tensor, vel: torch.Tensor, mass: torch.Tensor,
                 planes: Sequence[tuple], support: float,
-                slip: str = "no_slip"):
+                slip: str = "no_slip", slip_length=None):
     """Mirror across several planar walls; returns stacked ghosts.
 
     ``planes`` is a sequence of ``(plane_y, side)`` or ``(plane_y, side,
     plane_vel)`` entries; a per-plane velocity lets one wall move while the
     other is at rest (Stokes' second problem, an oscillating wavemaker floor).
+    ``slip_length`` is forwarded to :func:`mirror_plane` and is required when
+    ``slip == "navier"``.
     """
     gp, gv, gm = [], [], []
     for plane in planes:
         plane_y, side = plane[0], plane[1]
         plane_vel = plane[2] if len(plane) > 2 else None
         p, v, m = mirror_plane(pos, vel, mass, plane_y, support, side, slip,
-                               plane_vel=plane_vel)
+                               plane_vel=plane_vel, slip_length=slip_length)
         if p.shape[0]:
             gp.append(p)
             gv.append(v)
