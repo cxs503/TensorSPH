@@ -337,3 +337,23 @@ understate upstream, and cavity-type (bulk, well ordered) comparisons must pass
 
 Still open: a numeric diff against a live SPHinXsys build (gap 2) and the adaptive `h_ratio`
 branch (not ported).
+
+## Cadence leg (closes the coefficient-unit question)
+
+`CADENCE_INVARIANCE.md` (payload `data/cadence_invariance.json`, generator
+`benchmarks/xval_sphinx_tvc/make_cadence_doc.py`) tests the one upstream
+statement every earlier leg left untested: that the coefficient is a *rate*
+coefficient, so that ``N`` calls with ``a/N`` reproduce one call with ``a``
+(``0.2`` once per convection step == ``0.05`` once per acoustic step).
+
+Measured: the split-call composition error is first order in ``alpha``
+(``16.4 %`` of a one-call shift at ``alpha = 0.2``, ``N = 4``), yet on the dam
+break the rate-matched pair (``0.20 every 4`` vs ``0.05 every 1``) agrees to
+``2.1 %`` in ``Z/a`` at ``dx = 0.03 m`` and ``0.4 %`` at ``dx = 0.02 m``, and
+the measured equivalence ratio is ``k* = 4`` at both resolutions -- exactly the
+header's ``1/4``. Consequences: (i) the port's ``alpha`` has upstream's unit,
+so the ``alpha = 0.05`` gate failure is **not** a cadence bookkeeping artifact;
+(ii) the gate-passing run of the earlier rounds sits at ``2x`` upstream's
+shipped rate (``alpha = 0.2`` every second step: 8.2 % rel. / MAE 0.089 at
+``dx = 0.03 m``), so the dam-break acceptance is met only outside upstream's
+shipped coefficient.
