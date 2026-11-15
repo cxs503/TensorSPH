@@ -10,7 +10,7 @@
     },
     "digitization": {
       "method": "Digitized from open-access review papers, cross-referenced with multiple CFD validation studies",
-      "uncertainty": "±0.05 in Z/a"
+      "uncertainty": "\u00b10.05 in Z/a"
     }
   },
   "operator_provenance": {
@@ -30,7 +30,7 @@
       "id": "tvc_alpha010_dx003",
       "variant": "TVC alpha=0.10, all particles",
       "dx": 0.03,
-      "alpha": 0.10,
+      "alpha": 0.1,
       "scope": "all",
       "tvc_every": 1,
       "mae": 0.142531,
@@ -53,21 +53,22 @@
       "id": "tvc_alpha010_dx002",
       "variant": "TVC alpha=0.10, all particles",
       "dx": 0.02,
-      "alpha": 0.10,
+      "alpha": 0.1,
       "scope": "all",
       "tvc_every": 1,
       "mae": 0.156,
       "mean_rel_error": 0.125,
-      "gate_abs_pass": true,
+      "gate_abs_pass": false,
       "gate_rel_pass": true,
-      "source": "docs/xval_sphinx_tvc/data/ladder_dense.json"
+      "source": "docs/xval_sphinx_tvc/data/ladder_dense.json",
+      "gate_abs_note": "corrected: MAE 0.156 exceeds LEDGER_GATE_ABS 0.15 in benchmarks/xval_sphinx_tvc/run.py:score; the mean relative error 12.5 % passes the separate owner gate. See docs/xval_sphinx_tvc/UNCALIBRATED_DEFAULTS.md"
     },
     {
       "id": "baseline_dx003",
       "variant": "baseline (no correction)",
       "dx": 0.03,
       "mae": 0.621,
-      "mean_rel_error": 0.510,
+      "mean_rel_error": 0.51,
       "gate_abs_pass": false,
       "gate_rel_pass": false,
       "source": "docs/xval_sphinx_tvc/data/grid_dx003.json"
@@ -83,7 +84,8 @@
     "limitations": [
       "Fixed alpha=0.10 is calibrated for dx in [0.02, 0.03]; at dx=0.01 the error rises to 16.4% (requires alpha=0.15 for 14.3%)",
       "The 'improves convergence' claim is falsified for fixed alpha: error is non-monotone with refinement (17.1/10.6/12.5/16.4% at dx=0.04/0.03/0.02/0.01)",
-      "No live SPHinXsys binary comparison (no Boost/TBB in the image); operator leg verified by exact transcription test"
+      "No live SPHinXsys binary comparison (no Boost/TBB in the image); operator leg verified by exact transcription test",
+      "Gate arithmetic corrected: at dx=0.02 the MAE gate (0.15) is NOT met (0.156) even though dx=0.03's nominal pass exists; the single nominal pass is also not robust to the +-0.05 digitisation bias of the reference (docs/xval_sphinx_tvc/UNCALIBRATED_DEFAULTS.md)"
     ]
   }
 }
