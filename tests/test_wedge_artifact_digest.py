@@ -99,3 +99,43 @@ def test_truncated_digest_is_refused_not_laundered(tmp_path: Path):
     point = fl.eb.wagner_peak_over_q(0.5235987755982988)
     with pytest.raises(SystemExit):
         fl.grid_record(src.stem.split("_")[1], tmp_path, point)
+
+# --------------------------------------------------------------------------- #
+# compact mode (m22255): the job log keeps only the last ~8000 chars of stdout
+# --------------------------------------------------------------------------- #
+def test_full_digest_does_not_fit_the_job_stdout_tail():
+    """Negative control for the reason compact mode exists.
+
+    cj3802 (dx = 1 mm, rc 0) lost exactly the ``footprint_peak`` block to the
+    8000-char ``output_tail`` truncation, so the grid was booked MISSING.  If
+    the full digest ever gets small enough that this cannot happen again, the
+    compact path can be retired -- the test documents the failure mode.
+    """
+    big = max(ARTEFACTS, key=lambda p: len(p.read_text()))
+    dig = ad.digest(json.loads(big.read_text()), big)
+    assert len(json.dumps(dig, sort_keys=True)) > ad.STDOUT_TAIL_CHARS
+
+
+@pytest.mark.parametrize("src", ARTEFACTS, ids=[p.stem for p in ARTEFACTS])
+def test_compact_digest_fits_and_preserves_ledger_row(src: Path, tmp_path: Path):
+    art = json.loads(src.read_text())
+    dig = ad.digest(art, src, compact=True)
+    text = json.dumps(dig, sort_keys=True, separators=(",", ":"))
+    assert len(text) <= ad.STDOUT_TAIL_CHARS, len(text)
+
+    # the maxima the compressibility caveat quotes survive as summaries
+    rows = art["frame_scan"]
+    assert dig["frame_scan"]["n_frames"] == len(rows)
+    assert dig["frame_scan"]["max_rho_ratio"] == max(
+        r["max_rho_ratio"] for r in rows)
+
+    dst = tmp_path / src.name
+    ad.restore(dig, dst)
+    point = fl.eb.wagner_peak_over_q(0.5235987755982988)
+    tag = src.stem.split("_")[1]
+    want = fl.grid_record(tag, src.parent, point)
+    got = fl.grid_record(tag, tmp_path, point)
+    for key in ("dx_m", "phi_m", "footprint_cells", "delta_tau", "obs_cp",
+                "synth_cp", "uncertainty", "residual", "judgeable",
+                "bootstrap", "all_footprints", "residual_vs_designated_footprint"):
+        assert got[key] == want[key], f"{tag}: {key} changed through compact digest"
