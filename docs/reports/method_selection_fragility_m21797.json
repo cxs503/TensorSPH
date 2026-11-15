@@ -25,11 +25,11 @@
   "csf_surface_tension": {
    "best_pct": 5.59931563881463,
    "n_benchmark_families": 1,
-   "n_live_accuracy": 3,
-   "n_records": 3,
+   "n_live_accuracy": 4,
+   "n_records": 4,
    "single_source": true,
-   "spread_pct": 18.1999510336545,
-   "worst_pct": 23.79926667246913
+   "spread_pct": 40.09366051904762,
+   "worst_pct": 45.69297615786225
   },
   "density_diffusion": {
    "best_pct": 0.4819784767019315,
@@ -101,7 +101,7 @@
  "mission": 21797,
  "n_depth_mismatches": 0,
  "n_families_total": 12,
- "n_records": 28,
+ "n_records": 29,
  "owner_tolerance_pct": 15.0,
  "profiles": [
   {
