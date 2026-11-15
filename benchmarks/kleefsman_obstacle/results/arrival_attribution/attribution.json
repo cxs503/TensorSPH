@@ -1,0 +1,398 @@
+{
+  "case": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST",
+  "metric": "water level in front of the box: peak and arrival time",
+  "analysis": "arrival-deficit attribution (no new solver run)",
+  "inputs": {
+    "time_series": [
+      "benchmarks/kleefsman_obstacle/results/dx0.01_time_series.csv",
+      "benchmarks/kleefsman_obstacle/results/dx0.02_time_series.csv",
+      "benchmarks/kleefsman_obstacle/results/dx0.04_time_series.csv"
+    ],
+    "reference_curves": "docs/m20884/outputs/kleefsman_h2_ref/h2_fig19.json",
+    "reference_json": "benchmarks/kleefsman_obstacle/reference.json",
+    "c0_scan": "benchmarks/kleefsman_obstacle/results/c0_scan/c0_scan_summary.json",
+    "gauge_ladder": "benchmarks/kleefsman_obstacle/results/gauge_ladder/ladder.json"
+  },
+  "geometry": {
+    "h0_m": 0.55,
+    "gate_x_m": 1.228,
+    "station_x_m": 2.426,
+    "upstream_station_x_m": 2.228,
+    "distance_m": 1.1980000000000002,
+    "arrival_threshold_m": 0.02
+  },
+  "analytic": {
+    "ritter_front_speed_m_s": 4.6456431201718456,
+    "locus_speed_at_threshold_m_s": 3.3168090447508396,
+    "arrival_if_locus_moved_at_threshold_speed_s": 0.3611905249402124,
+    "note": "Ritter fan: sqrt(g h) = (2 sqrt(g h0) - x/t)/3, so a level threshold tracks the constant-speed locus 2 sqrt(g h0) - 3 sqrt(g h). Diagnostic gauge only: the real case has a finite reservoir and 3-D flow."
+  },
+  "canonical_reference": {
+    "arrival_time_s": 0.3591,
+    "peak_height_m": 0.37,
+    "probe_x_m": 2.426,
+    "probe_x_provenance": "paper text: 'In Fig. 19 time histories of the water height at two locations are shown: in the reservoir, and in the tank just in front of the box' -> H2 is the in-front-of-box probe; its x is not machine-readable from the raster setup figure Fig. 17, so the code convention (box upstream face 2.476 m minus 0.05 m) is used.",
+    "tolerance_rel": 0.1
+  },
+  "reference": {
+    "experiment": {
+      "arrival_time_s_recomputed": 0.34812554489973846,
+      "mean_advance_speed_m_s": 3.4412872526922116,
+      "peak_height_m": 0.37002457002457007,
+      "peak_time_s": 1.7027027027027026,
+      "samples": 380,
+      "implied_front_depth_m": 0.01642850895381834
+    },
+    "comflow": {
+      "arrival_time_s_recomputed": 0.35958011583011584,
+      "mean_advance_speed_m_s": 3.3316636467351186,
+      "peak_height_m": 0.33611793611793617,
+      "peak_time_s": 1.7722007722007722,
+      "samples": 486,
+      "implied_front_depth_m": 0.019555352323174287
+    }
+  },
+  "grids": [
+    {
+      "tag": "dx0.01",
+      "dx": 0.01,
+      "t_end_s": 1.0,
+      "arrival_level_s": 0.444281036199095,
+      "arrival_front_s": 0.43062582998187265,
+      "level_minus_front_s": 0.013655206217222327,
+      "front_speed_m_s": 3.3144439698599624,
+      "front_speed_over_ritter": 0.7134521279665922,
+      "front_speed_segments_m_s": {
+        "1.3-1.7": 2.672122460123725,
+        "1.7-2.1": 3.573346112041538,
+        "2.1-2.4": 3.9241341050165763
+      },
+      "mean_advance_speed_to_station_m_s": 2.781997540766262,
+      "level_implied_depth_m": 0.043030834402618894,
+      "front_implied_depth_m": 0.039338258530274915,
+      "peak_height_m": 0.377295,
+      "peak_time_s": 0.965859,
+      "peak_censored": true,
+      "threshold_over_dx": 2.0
+    },
+    {
+      "tag": "dx0.02",
+      "dx": 0.02,
+      "t_end_s": 1.2,
+      "arrival_level_s": 0.4540684757798631,
+      "arrival_front_s": 0.4397402175271909,
+      "level_minus_front_s": 0.014328258252672199,
+      "front_speed_m_s": 3.2834696100209797,
+      "front_speed_over_ritter": 0.7067847282034704,
+      "front_speed_segments_m_s": {
+        "1.3-1.7": 2.64494668453879,
+        "1.7-2.1": 3.5424135467980307,
+        "2.1-2.4": 3.890311842105264
+      },
+      "mean_advance_speed_to_station_m_s": 2.724335760637866,
+      "level_implied_depth_m": 0.04563541824294741,
+      "front_implied_depth_m": 0.041810193337857425,
+      "peak_height_m": 0.517466,
+      "peak_time_s": 0.716,
+      "peak_censored": false,
+      "threshold_over_dx": 1.0
+    },
+    {
+      "tag": "dx0.04",
+      "dx": 0.04,
+      "t_end_s": 1.2,
+      "arrival_level_s": 0.48414582084182756,
+      "arrival_front_s": 0.4666602304177126,
+      "level_minus_front_s": 0.01748559042411496,
+      "front_speed_m_s": 3.242214898185857,
+      "front_speed_over_ritter": 0.6979044266460841,
+      "front_speed_segments_m_s": {
+        "1.3-1.7": 2.7815589446589444,
+        "1.7-2.1": 3.4020162561576344,
+        "2.1-2.4": 3.744816917293233
+      },
+      "mean_advance_speed_to_station_m_s": 2.56717826356803,
+      "level_implied_depth_m": 0.053392585437888405,
+      "front_implied_depth_m": 0.04892984664330185,
+      "peak_height_m": 0.425458,
+      "peak_time_s": 0.92,
+      "peak_censored": false,
+      "threshold_over_dx": 0.5
+    }
+  ],
+  "resolution_test": {
+    "values_s": [
+      0.444281036199095,
+      0.4540684757798631,
+      0.48414582084182756
+    ],
+    "dx": [
+      0.01,
+      0.02,
+      0.04
+    ],
+    "observed_order": 1.6196738238412804,
+    "continuum_arrival_s": 0.4395597735182036,
+    "continuum_implied_depth_m": 0.04176153311813164,
+    "continuum_rel_error_vs_reference": 0.22405951968310667,
+    "verdict": "converged-but-wrong: the arrival converges to a value outside the tolerance, so grid refinement alone cannot close the gap"
+  },
+  "compressibility_test": {
+    "by_grid": {
+      "dx0.02": {
+        "c0_m_s": [
+          20.0,
+          40.0,
+          80.0
+        ],
+        "arrival_s": [
+          0.4540686776727774,
+          0.4533958448304394,
+          0.4529993494929768
+        ],
+        "peak_m": [
+          0.5174656510353088,
+          0.48058047890663147,
+          0.45548737049102783
+        ],
+        "compression": [
+          0.12032958984374997,
+          0.05892822265624997,
+          0.034054565429687544
+        ],
+        "arrival_change_rel": 0.0023549921683239422,
+        "peak_change_rel": 0.11977274321547571,
+        "compression_ratio": 3.533434895599959
+      },
+      "dx0.04": {
+        "c0_m_s": [
+          20.0,
+          40.0,
+          80.0
+        ],
+        "arrival_s": [
+          0.48414603344528545,
+          0.4830132983470167,
+          0.48344570110401175
+        ],
+        "peak_m": [
+          0.4254579544067383,
+          0.4475060999393463,
+          0.513088047504425
+        ],
+        "compression": [
+          0.14149401855468757,
+          0.0484450683593749,
+          0.03363037109375
+        ],
+        "arrival_change_rel": 0.0014465311969820115,
+        "peak_change_rel": 0.20596651723171758,
+        "compression_ratio": 4.207328493647915
+      }
+    },
+    "verdict": "falsified as the cause of the arrival deficit: the c0 ladder cuts the density compression by 3.5-4.2x and moves the peak by 12-21 %, yet moves the arrival by only 0.15-0.24 %"
+  },
+  "operator_spread": {
+    "dx0.02@x2.426": {
+      "operators": {
+        "height": 0.4540686776727774,
+        "surface": 0.4355690667292489,
+        "slab": 0.44092004444087324
+      },
+      "spread_rel": 0.041710952576399826,
+      "slab_arrival_s": 0.44092004444087324,
+      "slab_rel_error_vs_reference": 0.22784752002470973
+    },
+    "dx0.02@x2.228": {
+      "operators": {
+        "height": 0.3997810356124967,
+        "surface": 0.3869386347156008,
+        "slab": 0.3893126361119045
+      },
+      "spread_rel": 0.0327603268037036,
+      "slab_arrival_s": 0.3893126361119045,
+      "slab_rel_error_vs_reference": 0.08413432501226539
+    },
+    "dx0.04@x2.426": {
+      "operators": {
+        "height": 0.48414603344528545,
+        "surface": 0.4658087708469711,
+        "slab": 0.46039496901992677
+      },
+      "spread_rel": 0.050521646916522764,
+      "slab_arrival_s": 0.46039496901992677,
+      "slab_rel_error_vs_reference": 0.28208011422981566
+    },
+    "dx0.04@x2.228": {
+      "operators": {
+        "height": 0.4358024256643237,
+        "surface": 0.40179328208226006,
+        "slab": 0.4073935439619555
+      },
+      "spread_rel": 0.08195045106307171,
+      "slab_arrival_s": 0.4073935439619555,
+      "slab_rel_error_vs_reference": 0.1344849455916333
+    }
+  },
+  "station_sensitivity": {
+    "slab": {
+      "per_run": {
+        "dx0.02": {
+          "arrival_at_station_s": 0.44092004444087324,
+          "arrival_upstream_s": 0.3893126361119045,
+          "delta_arrival_s": 0.05160740832896876,
+          "d_arrival_d_x_s_per_m": 0.2606434764089332
+        },
+        "dx0.04": {
+          "arrival_at_station_s": 0.46039496901992677,
+          "arrival_upstream_s": 0.4073935439619555,
+          "delta_arrival_s": 0.053001425057971285,
+          "d_arrival_d_x_s_per_m": 0.26768396493924895
+        }
+      },
+      "deficit_budget": {
+        "dx0.02": {
+          "deficit_s": 0.08182004444087326,
+          "fraction_explained_by_shift_to_upstream_station": 0.6307428538035387,
+          "arrival_upstream_rel_error_vs_reference": 0.08413432501226539,
+          "x_needed_to_explain_deficit_m": 2.1120844339242058
+        },
+        "dx0.04": {
+          "deficit_s": 0.1012949690199268,
+          "fraction_explained_by_shift_to_upstream_station": 0.5232384744354364,
+          "arrival_upstream_rel_error_vs_reference": 0.1344849455916333,
+          "x_needed_to_explain_deficit_m": 2.0475874602615227
+        }
+      }
+    },
+    "height": {
+      "per_run": {
+        "dx0.02": {
+          "arrival_at_station_s": 0.4540686776727774,
+          "arrival_upstream_s": 0.3997810356124967,
+          "delta_arrival_s": 0.054287642060280694,
+          "d_arrival_d_x_s_per_m": 0.27418001040545814
+        },
+        "dx0.04": {
+          "arrival_at_station_s": 0.48414603344528545,
+          "arrival_upstream_s": 0.4358024256643237,
+          "delta_arrival_s": 0.04834360778096175,
+          "d_arrival_d_x_s_per_m": 0.24415963525738263
+        }
+      },
+      "deficit_budget": {
+        "dx0.02": {
+          "deficit_s": 0.09496867767277745,
+          "fraction_explained_by_shift_to_upstream_station": 0.5716373376002277,
+          "arrival_upstream_rel_error_vs_reference": 0.1132860919312079,
+          "x_needed_to_explain_deficit_m": 2.079626544355522
+        },
+        "dx0.04": {
+          "deficit_s": 0.12504603344528548,
+          "fraction_explained_by_shift_to_upstream_station": 0.38660648761893546,
+          "arrival_upstream_rel_error_vs_reference": 0.21359628422256677,
+          "x_needed_to_explain_deficit_m": 1.9138513259840544
+        }
+      }
+    },
+    "surface": {
+      "per_run": {
+        "dx0.02": {
+          "arrival_at_station_s": 0.4355690667292489,
+          "arrival_upstream_s": 0.3869386347156008,
+          "delta_arrival_s": 0.048630432013648084,
+          "d_arrival_d_x_s_per_m": 0.2456082424931722
+        },
+        "dx0.04": {
+          "arrival_at_station_s": 0.4658087708469711,
+          "arrival_upstream_s": 0.40179328208226006,
+          "delta_arrival_s": 0.06401548876471103,
+          "d_arrival_d_x_s_per_m": 0.32331054931672243
+        }
+      },
+      "deficit_budget": {
+        "dx0.02": {
+          "deficit_s": 0.07646906672924891,
+          "fraction_explained_by_shift_to_upstream_station": 0.635949071875455,
+          "arrival_upstream_rel_error_vs_reference": 0.07752334924979346,
+          "x_needed_to_explain_deficit_m": 2.1146543140693876
+        },
+        "dx0.04": {
+          "deficit_s": 0.10670877084697111,
+          "fraction_explained_by_shift_to_upstream_station": 0.5999084073090332,
+          "arrival_upstream_rel_error_vs_reference": 0.11888967441453659,
+          "x_needed_to_explain_deficit_m": 2.0959496163286753
+        }
+      }
+    }
+  },
+  "shape_test": {
+    "dx0.01": {
+      "window_s": [
+        0.36,
+        0.75
+      ],
+      "phase_lag_s": -0.2,
+      "rms_before_m": 0.14548343511856637,
+      "rms_after_m": 0.14548343511856637,
+      "decidable": false,
+      "not_decidable_reason": "the committed series is the legacy top-3 surface operator, which on this station reports a run-up jet against the box face rather than a level; no shift reduces the residual, so a phase-lag fit on it carries no information (see docs/verification_kleefsman_gauge_bias.md)",
+      "rise_slope_sim_m_s": 1.0528004828370874,
+      "rise_slope_ref_m_s": 0.2169727397396318
+    },
+    "dx0.02": {
+      "window_s": [
+        0.36,
+        0.75
+      ],
+      "phase_lag_s": -0.2,
+      "rms_before_m": 0.20344083556357617,
+      "rms_after_m": 0.20344083556357617,
+      "decidable": false,
+      "not_decidable_reason": "the committed series is the legacy top-3 surface operator, which on this station reports a run-up jet against the box face rather than a level; no shift reduces the residual, so a phase-lag fit on it carries no information (see docs/verification_kleefsman_gauge_bias.md)",
+      "rise_slope_sim_m_s": 1.5134759051699407,
+      "rise_slope_ref_m_s": 0.2169727397396318
+    },
+    "dx0.04": {
+      "window_s": [
+        0.36,
+        0.75
+      ],
+      "phase_lag_s": -0.2,
+      "rms_before_m": 0.10445734027625696,
+      "rms_after_m": 0.10445734027625696,
+      "decidable": false,
+      "not_decidable_reason": "the committed series is the legacy top-3 surface operator, which on this station reports a run-up jet against the box face rather than a level; no shift reduces the residual, so a phase-lag fit on it carries no information (see docs/verification_kleefsman_gauge_bias.md)",
+      "rise_slope_sim_m_s": 0.9621089312013466,
+      "rise_slope_ref_m_s": 0.2169727397396318
+    }
+  },
+  "decision": {
+    "reference_arrival_s": 0.3591,
+    "reference_peak_m": 0.37,
+    "arrival_errors_rel": {
+      "dx0.01": 0.23720700695932892,
+      "dx0.02": 0.264462477805244,
+      "dx0.04": 0.34822005246958393
+    },
+    "slab_operator_arrival_errors_rel": {
+      "dx0.02@x2.426": 0.22784752002470973,
+      "dx0.04@x2.426": 0.28208011422981566
+    },
+    "worst_rel_error": 0.34822005246958393,
+    "tolerance_rel": 0.1,
+    "passes": false,
+    "peak_comparable": false,
+    "peak_comparable_reason": "the reference peak is the secondary impact at t = 1.70 s; every committed run stops at 1.0-1.2 s, so the two peaks are different events and the committed peak comparison is not decidable (dx0.01 additionally ran at dt 2.5x its acoustic limit and is censored)",
+    "falsified": [
+      "acoustic compressibility: c0 20 -> 80 m/s moves the arrival by <0.3 % while cutting the density compression by 3.5-4.2x",
+      "grid resolution: the ladder is monotone with observed order ~1.6 and a continuum limit still 22 % outside the tolerance",
+      "gauge operator: height / surface / slab all fail at the box-face station (spread 4-5 % of the value, far below the 22-32 % deficit)",
+      "level-event vs kinematic-front split: the level follows the leading edge within 14-17 ms, i.e. <=20 % of the deficit"
+    ],
+    "unresolved": [
+      "probe x: the paper's H2 coordinate is not machine-readable from the accessible sources; moving the station to the committed upstream one (x=2.228 m) removes 52-63 % of the deficit and would bring the arrival inside the 10 % tolerance, so the verdict hinges on one unverified coordinate",
+      "surge-front release phase: the leading edge accelerates (2.7 -> 3.6 -> 3.9 m/s over 1.3/1.7/2.1 m) and is dx-independent (3.24-3.31 m/s mean), so the lag accrues while the column is released, not while the surge crosses the tank -- a formulation-level effect that neither dx nor c0 can remove"
+    ]
+  }
+}
