@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
@@ -347,6 +348,16 @@ def evidence_for(method: str, registry: Mapping[str, Sequence[Evidence]]) -> lis
     return list(registry.get(method, ()))
 
 
+def case_family(case: str) -> str:
+    """Coarse provenance key of an evidence record.
+
+    ``"CASE-LAPLACE-SPH (consistent CSF)"`` and ``"CASE-LAPLACE-SPH"`` are two
+    variants of *one* benchmark, not two independent measurements: a bound that
+    is only reproduced on variants of the same case has not been reproduced.
+    """
+    return re.split(r"[()\[\]]", case.strip(), maxsplit=1)[0].strip().rstrip(",;").lower()
+
+
 # --------------------------------------------------------------------------- #
 # Decision objects
 # --------------------------------------------------------------------------- #
@@ -438,6 +449,46 @@ class Decision:
         """Records kept for the audit trail but excluded from the claim."""
         return [ev for ev in self.evidence if ev.is_refuted]
 
+    @property
+    def live_accuracy_records(self) -> list[Evidence]:
+        """Accuracy records still standing (refuted and conditioning records out).
+
+        These are the records the claim above actually rests on; ``refuted`` ones
+        were invalidated by a later audit and ``kind=robustness`` ones measure
+        conditioning, not distance to a reference.
+        """
+        return [ev for ev in self.evidence if ev.is_accuracy and not ev.is_refuted]
+
+    @property
+    def evidence_depth(self) -> dict:
+        """How much independent measurement stands behind this decision.
+
+        A number measured once is a data point, not a bound.  This dict makes the
+        multiplicity explicit -- record count, distinct benchmark *families*,
+        and the spread between the best and the worst live accuracy record -- so
+        a card cannot present a one-record figure as if it had been reproduced.
+        ``single_source`` is True when every live accuracy record comes from one
+        benchmark family (or there is at most one of them).
+        """
+        live = self.live_accuracy_records
+        families = {case_family(ev.case) for ev in live}
+        values = [ev.measured_pct for ev in live]
+        return {
+            "n_records": len(self.evidence),
+            "n_live_accuracy": len(live),
+            "n_benchmark_families": len(families),
+            "benchmark_families": sorted(families),
+            "single_source": 0 < len(families) <= 1,
+            "worst_pct": max(values) if values else None,
+            "best_pct": min(values) if values else None,
+            "spread_pct": (max(values) - min(values)) if len(values) > 1 else None,
+        }
+
+    @property
+    def is_single_source(self) -> bool:
+        """True when the scheme's evidence comes from a single benchmark family."""
+        return bool(self.live_accuracy_records) and self.evidence_depth["single_source"]
+
     def as_dict(self) -> dict:
         return {
             "method": self.method,
@@ -451,6 +502,7 @@ class Decision:
             "worst_robustness_pct": self.worst_robustness_pct,
             "accuracy_within_owner_standard": self.accuracy_within_owner_standard,
             "n_refuted": len(self.refuted_evidence),
+            "evidence_depth": self.evidence_depth,
             "evidence": [ev.as_dict() for ev in self.evidence],
             "caveats": list(self.caveats),
         }
@@ -511,6 +563,27 @@ class Selection:
         return best
 
     @property
+    def single_sourced(self) -> list[str]:
+        """Schemes put forward whose bound rests on one benchmark family.
+
+        Not a defect by itself -- but the consumer of a card is entitled to know
+        which of its numbers have never been reproduced on a second benchmark.
+        """
+        return [d.method for d in self.endorsed if d.is_single_source]
+
+    @property
+    def weakest_link(self) -> dict | None:
+        """The put-forward scheme with the fewest independent measurements."""
+        endorsed = [d for d in self.endorsed if d.live_accuracy_records]
+        if not endorsed:
+            return None
+        worst = min(endorsed, key=lambda d: (d.evidence_depth["n_benchmark_families"],
+                                             d.evidence_depth["n_live_accuracy"]))
+        info = dict(worst.evidence_depth)
+        info["method"] = worst.method
+        return info
+
+    @property
     def within_owner_standard(self) -> bool:
         """The whole recommendation, not one favourable record, is inside 15 %."""
         if not self.is_verified:
@@ -543,6 +616,9 @@ class Selection:
                 else f"{headline[0]}: {headline[1].case} -- {headline[1].quantity}"
             ),
             "within_owner_standard": self.within_owner_standard,
+            "single_sourced": self.single_sourced,
+            "weakest_link": self.weakest_link,
+            "endorsed_depth": {d.method: d.evidence_depth for d in self.endorsed},
         }
 
 
@@ -650,6 +726,15 @@ RULES: tuple[Rule, ...] = (
     ),
 )
 
+
+#: Rules that identify physics a *later* rule's scheme cannot represent.  If one
+#: of them fires and none of its candidates can be put forward (no evidence, or
+#: refuted evidence), the walk must stop: continuing would replace, say, a
+#: compressible Riemann solver for an M=0.9 shock tube with an incompressible
+#: projection solver that has no shock physics at all.  Found by the
+#: leave-one-record-out audit in mission 21797 -- the substitution only appears
+#: once a record is missing, which is exactly when nobody looks.
+EXCLUSIVE_RULES = frozenset({"shock", "capillary"})
 
 @dataclass(frozen=True)
 class ModifierRule:
@@ -866,6 +951,15 @@ def select_method(profile: CaseProfile | Mapping[str, object],
             f"rule {rule.key!r} fired but no candidate is selectable "
             f"({', '.join(f'{d.method}={d.status}' for d in decisions)})"
         )
+        if rule.key in EXCLUSIVE_RULES:
+            notes.append(
+                f"regime locked: rule {rule.key!r} identifies the physics of this "
+                "case but none of its candidates can be put forward "
+                f"({', '.join(f'{d.method}={d.status}' for d in decisions)}); "
+                "no later rule is substituted, because its schemes cannot represent "
+                "this regime -- the honest answer is WITHHELD"
+            )
+            break
         if strict_bound and any(d.status == "SELECTED" for d in decisions):
             # The rule that *covers* this regime has no compliant scheme.  Walking
             # on to a later rule would substitute a scheme chosen for a different
@@ -986,6 +1080,28 @@ def render_decision(selection: Selection) -> str:
                          "the owner standard")
         for d in selection.strict_excluded:
             lines.append(f"- excluded {d.method} [{d.role}]: " + _strict_reason(d))
+    depth_rows = [d for d in selection.endorsed if d.live_accuracy_records]
+    if depth_rows:
+        lines += ["", "## evidence depth"]
+        for d in depth_rows:
+            info = d.evidence_depth
+            if info["single_source"]:
+                tag = ("SINGLE SOURCE (1 benchmark family)" if info["n_live_accuracy"] <= 1
+                       else f"single source ({info['n_live_accuracy']} records, "
+                            "1 benchmark family)")
+            else:
+                tag = (f"{info['n_benchmark_families']} benchmark families, "
+                       f"{info['n_live_accuracy']} records")
+            spread = info["spread_pct"]
+            extra = "" if spread is None else f"; spread {spread:.3g} pp over live records"
+            lines.append(f"- {d.method}: {tag}{extra}")
+        if selection.single_sourced:
+            lines.append(
+                "- caveat: the bound of "
+                + ", ".join(selection.single_sourced)
+                + " has not been reproduced on a second benchmark family -- "
+                "treat it as a measured data point, not an independently confirmed bound"
+            )
     if selection.notes:
         lines += ["", "## notes"]
         lines += [f"- {note}" for note in selection.notes]

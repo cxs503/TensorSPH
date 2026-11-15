@@ -142,10 +142,10 @@ def _fig(rows, path: Path) -> None:
                 ax.plot(1.2, i + off, "x", color=colour, ms=8)
                 ax.annotate("WITHHELD", (1.6, i + off), fontsize=7, va="center")
             else:
-                ax.annotate(f"{100 * value:.2f}%", (100 * value, i + off),
+                ax.annotate(f"{value:.2f}%", (value, i + off),
                             fontsize=7, va="center",
                             xytext=(3, 0), textcoords="offset points")
-    ax.axvline(100 * OWNER_TOLERANCE_PCT, color="C3", ls="--", lw=1.2,
+    ax.axvline(OWNER_TOLERANCE_PCT, color="C3", ls="--", lw=1.2,
                label=f"owner standard {OWNER_TOLERANCE_PCT:g}%")
     ax.set_yticks(list(y))
     ax.set_yticklabels(labels, fontsize=8)
@@ -160,7 +160,8 @@ def _fig(rows, path: Path) -> None:
 
 
 def _fmt_pct(value) -> str:
-    return "--" if value is None else f"{100 * value:.2f}"
+    """Registry bounds are already in percent; print them as they are (m21797)."""
+    return "--" if value is None else f"{value:.2f}"
 
 
 def _markdown(payload: dict) -> str:
@@ -264,7 +265,7 @@ def _markdown(payload: dict) -> str:
     A("|---|---|---|---|---|---|")
     A("| 推荐上界（破碎波画像） | 业主 15 % 线（判据，非物理基准） | "
       f"{_fmt_pct(next(r['strict']['headline_bound_pct'] for r in rows if r['label']=='breaking wave over a slope'))} % | "
-      f"余量 {15 - 100*next(r['strict']['headline_bound_pct'] for r in rows if r['label']=='breaking wave over a slope'):.2f} pp | 不适用（判据比较，非精度对标） | ✔ |")
+      f"余量 {15 - next(r['strict']['headline_bound_pct'] for r in rows if r['label']=='breaking wave over a slope'):.2f} pp | 不适用（判据比较，非精度对标） | ✔ |")
     A("| 推荐上界（毛细液滴画像） | 同上 | WITHHELD | 无可承诺值 | 不适用 | ✘（无可推荐方案） |")
     A("| 宽松/严格上界之差 | 宽松模式自身 | 见 ③ 表 | 逐画像 0 ~ 17.81 pp | 不适用 | — |")
     A("")

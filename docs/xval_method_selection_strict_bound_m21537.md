@@ -22,13 +22,13 @@
 
 | 画像 | 宽松主方案 | 宽松上界 [%] | <15% | 严格主方案 | 严格上界 [%] | <15% | 严格模式剔除 |
 |---|---|---|---|---|---|---|---|
-| regular wave in a flume | wcsph_delta_sph | 553.27 | ✔ | wcsph_delta_sph | 553.27 | ✔ | — |
-| Sod shock tube | compressible_riemann | 77.68 | ✔ | compressible_riemann | 77.68 | ✔ | — |
-| capillary droplet (Laplace law) | csf_surface_tension | 2379.93 | ✘ | （无） | -- | ✘ | `csf_surface_tension` 23.80% |
-| planar Couette channel | isph_projection | 86.66 | ✔ | isph_projection | 86.66 | ✔ | `wcsph_wall_no_slip` 17.08% |
+| regular wave in a flume | wcsph_delta_sph | 5.53 | ✔ | wcsph_delta_sph | 5.53 | ✔ | — |
+| Sod shock tube | compressible_riemann | 0.78 | ✔ | compressible_riemann | 0.78 | ✔ | — |
+| capillary droplet (Laplace law) | csf_surface_tension | 23.80 | ✘ | （无） | -- | ✘ | `csf_surface_tension` 23.80% |
+| planar Couette channel | isph_projection | 0.87 | ✔ | isph_projection | 0.87 | ✔ | `wcsph_wall_no_slip` 17.08% |
 | Gresho vortex (smooth inviscid, periodic) | （无） | -- | ✘ | （无） | -- | ✘ | — |
-| 1-D transient conduction | heat_conduction_operator | 0.02 | ✔ | heat_conduction_operator | 0.02 | ✔ | — |
-| breaking wave over a slope | wcsph_delta_sph | 1696.26 | ✘ | wcsph_delta_sph | 883.26 | ✔ | `transport_velocity_correction` 16.96% |
+| 1-D transient conduction | heat_conduction_operator | 0.00 | ✔ | heat_conduction_operator | 0.00 | ✔ | — |
+| breaking wave over a slope | wcsph_delta_sph | 16.96 | ✘ | wcsph_delta_sph | 8.83 | ✔ | `transport_velocity_correction` 16.96% |
 
 - 宽松模式：4/7 画像整份推荐在 15 % 内；严格模式：5/7 在 15 % 内、2 画像被如实留空（`WITHHELD`）。
 - 严格模式共剔除 3 个在册格式实例，每一处都带出拒它的记录（见上表最后一列）。
@@ -73,6 +73,13 @@
 ## strict bound (worst live accuracy record <= 15%)
 - excluded transport_velocity_correction [modifier]: worst live accuracy record 17% (XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.04 m): same quantity on the coarser rung: records the alpha=0.10 arm is resolution-sensitive (kept in the registry, fails the owner standard)) exceeds the 15% owner standard
 
+## evidence depth
+- wcsph_delta_sph: SINGLE SOURCE (1 benchmark family)
+- density_diffusion: single source (2 records, 1 benchmark family); spread 0.539 pp over live records
+- particle_shifting: SINGLE SOURCE (1 benchmark family)
+- compression_regularization: SINGLE SOURCE (1 benchmark family)
+- caveat: the bound of wcsph_delta_sph, density_diffusion, particle_shifting, compression_regularization has not been reproduced on a second benchmark family -- treat it as a measured data point, not an independently confirmed bound
+
 ## notes
 - strict bound: modifier transport_velocity_correction withheld -- worst live accuracy record 17% (XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.04 m): same quantity on the coarser rung: records the alpha=0.10 arm is resolution-sensitive (kept in the registry, fails the owner standard)) exceeds the 15% owner standard
 ```
@@ -113,7 +120,7 @@
 ## notes
 - strict bound: csf_surface_tension is evidence-backed (SELECTED) but worst live accuracy record 23.8% (CASE-LAPLACE-SPH (consistent CSF): delta_s-weighted mean curvature rel. error) exceeds the 15% owner standard
 - rule 'capillary' fired but no candidate is selectable (csf_surface_tension=SELECTED)
-- strict bound leaves rule 'capillary' without a compliant scheme; no later rule is substituted, because it does not cover this regime
+- regime locked: rule 'capillary' identifies the physics of this case but none of its candidates can be put forward (csf_surface_tension=SELECTED); no later rule is substituted, because its schemes cannot represent this regime -- the honest answer is WITHHELD
 - no rule produced an evidence-backed scheme: profile outside the validated regime of this repository, do not run silently
 - modifiers withheld: no primary scheme was selected, so no add-on term can be applied
 ```
@@ -137,7 +144,7 @@
 
 | 关键量 | 基准 | 严格模式值 | 与基准差 | 是否 < 3 % | 是否 < 15 % |
 |---|---|---|---|---|---|
-| 推荐上界（破碎波画像） | 业主 15 % 线（判据，非物理基准） | 883.26 % | 余量 -868.26 pp | 不适用（判据比较，非精度对标） | ✔ |
+| 推荐上界（破碎波画像） | 业主 15 % 线（判据，非物理基准） | 8.83 % | 余量 6.17 pp | 不适用（判据比较，非精度对标） | ✔ |
 | 推荐上界（毛细液滴画像） | 同上 | WITHHELD | 无可承诺值 | 不适用 | ✘（无可推荐方案） |
 | 宽松/严格上界之差 | 宽松模式自身 | 见 ③ 表 | 逐画像 0 ~ 17.81 pp | 不适用 | — |
 
