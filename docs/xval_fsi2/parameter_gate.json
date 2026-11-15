@@ -1,0 +1,342 @@
+{
+ "period": {
+  "n_samples": 107,
+  "duration": 10.700000000000001,
+  "f_peak": 3.2710280373831773,
+  "period_fft": 0.3057142857142857,
+  "period_zero_crossing": 0.6000000000000001,
+  "period_used": 0.6000000000000001,
+  "period_strouhal_expectation": 0.5,
+  "y_amplitude": 0.0796685
+ },
+ "coverage_probe_40_steps": {
+  "dt": 0.00017333333333333336,
+  "n_steps": 40,
+  "duration": 0.006933333333333335,
+  "period": 0.6000000000000001,
+  "cycles": 0.011555555555555557,
+  "min_cycles": 3.0,
+  "status": "fail"
+ },
+ "coverage_sensitivity": {
+  "period_fft": 0.0226791277258567,
+  "period_zero_crossing": 0.011555555555555557,
+  "period_used": 0.011555555555555557,
+  "period_strouhal_expectation": 0.01386666666666667
+ },
+ "matrix": {
+  "survey": {
+   "class": "SECONDARY",
+   "source": "docs/fsi2_turek_hron/01_survey.md",
+   "values": {
+    "channel_length": 2.5,
+    "channel_height": 0.41,
+    "cylinder_d": 0.1,
+    "beam_length": 0.35,
+    "beam_thickness": 0.02,
+    "rho_f": 1000.0,
+    "mu_f": 1.0,
+    "u_max": 0.3,
+    "u_mean": 0.2,
+    "Re": 100.0,
+    "rho_s": 1000.0,
+    "beam_E": 4000000.0,
+    "poisson_s": 0.3
+   },
+   "gate": {
+    "checks": [
+     {
+      "name": "reynolds",
+      "status": "fail",
+      "computed": 20.0,
+      "declared": 100.0,
+      "rel_error": -0.8,
+      "note": "Re = rho_f U_mean D / mu_f"
+     },
+     {
+      "name": "mean_of_parabola",
+      "status": "pass",
+      "computed": 0.19999999999999998,
+      "declared": 0.2,
+      "rel_error": -1.3877787807814457e-16,
+      "note": "u_mean = (2/3) u_max for u = 4 u_max y (H-y) / H^2"
+     },
+     {
+      "name": "normalised_stiffness",
+      "status": "fail",
+      "computed": 99999.99999999999,
+      "declared": 5600.0,
+      "rel_error": 16.857142857142854,
+      "note": "Ae = E / (rho_f U_mean^2)"
+     },
+     {
+      "name": "slenderness",
+      "status": "pass",
+      "computed": 17.5,
+      "declared": 17.5,
+      "rel_error": 0.0,
+      "note": "L / t"
+     },
+     {
+      "name": "density_ratio",
+      "status": "pass",
+      "computed": 1.0,
+      "declared": 1.0,
+      "rel_error": 0.0,
+      "note": "rho_s / rho_f"
+     },
+     {
+      "name": "poisson_s",
+      "status": "fail",
+      "computed": 0.3,
+      "declared": 0.4,
+      "rel_error": -0.25000000000000006,
+      "note": "nu_s"
+     }
+    ],
+    "passed": false,
+    "failed": [
+     "reynolds",
+     "normalised_stiffness",
+     "poisson_s"
+    ],
+    "not_run": []
+   }
+  },
+  "case_defaults": {
+   "class": "DEFAULT",
+   "source": "tensorsph.fsi2_turek_hron.FSI2Case()",
+   "values": {
+    "rho_f": 1000.0,
+    "mu_f": 0.2,
+    "cylinder_d": 0.1,
+    "u_max": 0.3,
+    "u_mean": 0.19999999999999998,
+    "Re": 100.0,
+    "rho_s": 1000.0,
+    "beam_E": 4000000.0,
+    "beam_length": 0.35,
+    "beam_thickness": 0.02,
+    "poisson_s": 0.3
+   },
+   "gate": {
+    "checks": [
+     {
+      "name": "reynolds",
+      "status": "pass",
+      "computed": 100.0,
+      "declared": 100.0,
+      "rel_error": 0.0,
+      "note": "Re = rho_f U_mean D / mu_f"
+     },
+     {
+      "name": "mean_of_parabola",
+      "status": "pass",
+      "computed": 0.19999999999999998,
+      "declared": 0.19999999999999998,
+      "rel_error": 0.0,
+      "note": "u_mean = (2/3) u_max for u = 4 u_max y (H-y) / H^2"
+     },
+     {
+      "name": "normalised_stiffness",
+      "status": "fail",
+      "computed": 100000.00000000001,
+      "declared": 5600.0,
+      "rel_error": 16.85714285714286,
+      "note": "Ae = E / (rho_f U_mean^2)"
+     },
+     {
+      "name": "slenderness",
+      "status": "pass",
+      "computed": 17.5,
+      "declared": 17.5,
+      "rel_error": 0.0,
+      "note": "L / t"
+     },
+     {
+      "name": "density_ratio",
+      "status": "pass",
+      "computed": 1.0,
+      "declared": 1.0,
+      "rel_error": 0.0,
+      "note": "rho_s / rho_f"
+     },
+     {
+      "name": "poisson_s",
+      "status": "fail",
+      "computed": 0.3,
+      "declared": 0.4,
+      "rel_error": -0.25000000000000006,
+      "note": "nu_s"
+     }
+    ],
+    "passed": false,
+    "failed": [
+     "normalised_stiffness",
+     "poisson_s"
+    ],
+    "not_run": []
+   }
+  },
+  "declared_target": {
+   "class": "SECONDARY",
+   "source": "tensorsph.fsi2_similarity.BENCHMARK_FSI2",
+   "values": {
+    "Re": 100.0,
+    "Ae": 5600.0,
+    "rho_s_over_rho_f": 1.0,
+    "poisson_s": 0.4,
+    "slenderness": 17.5
+   },
+   "gate": {
+    "checks": [
+     {
+      "name": "reynolds",
+      "status": "not_run",
+      "note": "dimensional row incomplete"
+     },
+     {
+      "name": "normalised_stiffness",
+      "status": "pass",
+      "computed": 5600.0,
+      "declared": 5600.0,
+      "rel_error": 0.0,
+      "note": "Ae compared with the declared target"
+     },
+     {
+      "name": "density_ratio",
+      "status": "pass",
+      "computed": 1.0,
+      "declared": 1.0,
+      "rel_error": 0.0,
+      "note": "group compared with the declared target"
+     },
+     {
+      "name": "poisson_s",
+      "status": "pass",
+      "computed": 0.4,
+      "declared": 0.4,
+      "rel_error": 0.0,
+      "note": "nu_s"
+     }
+    ],
+    "passed": false,
+    "failed": [],
+    "not_run": [
+     "reynolds"
+    ]
+   }
+  },
+  "archived_upstream": {
+   "class": "VERBATIM",
+   "source": "benchmarks/xval_fsi2/reference/oss/README.md",
+   "values": {
+    "insert_radius": 0.5,
+    "beam_thickness": 0.2,
+    "beam_length": 3.5,
+    "rho0_f": 1.0,
+    "U_f": 1.0,
+    "Re": 100.0,
+    "rho0_s": 10.0,
+    "poisson_s": 0.4,
+    "Ae": 1400.0
+   },
+   "groups": {
+    "Re": 100.0,
+    "Ae": 1400.0,
+    "rho_s_over_rho_f": 10.0,
+    "poisson_s": 0.4,
+    "slenderness": 17.5,
+    "U_f_scaled": 1.0
+   },
+   "gate": {
+    "checks": [
+     {
+      "name": "reynolds",
+      "status": "not_run",
+      "note": "dimensional row incomplete"
+     },
+     {
+      "name": "normalised_stiffness",
+      "status": "fail",
+      "computed": 1400.0,
+      "declared": 5600.0,
+      "rel_error": -0.75,
+      "note": "Ae compared with the declared target"
+     },
+     {
+      "name": "density_ratio",
+      "status": "fail",
+      "computed": 10.0,
+      "declared": 1.0,
+      "rel_error": 9.0,
+      "note": "group compared with the declared target"
+     },
+     {
+      "name": "poisson_s",
+      "status": "pass",
+      "computed": 0.4,
+      "declared": 0.4,
+      "rel_error": 0.0,
+      "note": "nu_s"
+     }
+    ],
+    "passed": false,
+    "failed": [
+     "normalised_stiffness",
+     "density_ratio"
+    ],
+    "not_run": [
+     "reynolds"
+    ]
+   }
+  }
+ },
+ "candidates": {
+  "paper_target": {
+   "class": "SECONDARY",
+   "u_mean": 1.0,
+   "u_max": 1.5,
+   "mu_f": 1.0,
+   "rho_f": 1000.0,
+   "rho_s": 1000.0,
+   "beam_E": 5600000.0,
+   "Ae": 5600.0,
+   "rho_s_over_rho_f": 1.0,
+   "poisson_s": 0.4,
+   "Re": 100.0,
+   "slenderness": 17.5,
+   "note": "declared target row"
+  },
+  "upstream_consistent": {
+   "class": "VERBATIM",
+   "u_mean": 1.0,
+   "u_max": 1.5,
+   "mu_f": 1.0,
+   "rho_f": 1000.0,
+   "rho_s": 10000.0,
+   "beam_E": 1400000.0,
+   "Ae": 1400.0,
+   "rho_s_over_rho_f": 10.0,
+   "poisson_s": 0.4,
+   "Re": 100.0,
+   "slenderness": 17.5,
+   "note": "archived upstream row (fsi2.h:36/38)"
+  }
+ },
+ "identities": {
+  "survey_failed": [
+   "reynolds",
+   "normalised_stiffness",
+   "poisson_s"
+  ],
+  "case_defaults_failed": [
+   "normalised_stiffness",
+   "poisson_s"
+  ],
+  "archived_upstream_failed": [
+   "normalised_stiffness",
+   "density_ratio"
+  ]
+ }
+}
