@@ -2426,8 +2426,38 @@
       "severity": "high"
     },
     {
+      "claim_id": "benchmarks/case_conduction_2d",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/case_poiseuille",
+      "detail": "benchmark harness (run.py, run_combined_stage.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/case_poiseuille_morris",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/case_strong_shock_contact",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/couette_transient",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
       "claim_id": "benchmarks/force_from_fluid",
-      "detail": "benchmark harness (run_budget.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "detail": "benchmark harness (run_budget.py, run_static_support.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
       "rule": "uncovered_benchmark",
       "severity": "medium"
     },
@@ -2439,7 +2469,67 @@
     },
     {
       "claim_id": "benchmarks/fsi2_turek_hron",
-      "detail": "benchmark harness (run_fsi2_benchmark.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "detail": "benchmark harness (run_curved_force_benchmark.py, run_fsi2_benchmark.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/isph_taylor_green",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/kleefsman_obstacle_3d",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/koshizuka_dam_break",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/lake_at_rest",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/lake_at_rest_bed",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/lake_at_rest_bi",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/lake_at_rest_wb",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/oscillating_drop_freq",
+      "detail": "benchmark harness (run_freq.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/poiseuille_morris",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/poiseuille_slip",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
       "rule": "uncovered_benchmark",
       "severity": "medium"
     },
@@ -2450,8 +2540,20 @@
       "severity": "medium"
     },
     {
-      "claim_id": "benchmarks/xval_fsi2",
+      "claim_id": "benchmarks/poiseuille_startup_mirror",
       "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/rate_band_audit",
+      "detail": "benchmark harness (run.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "rule": "uncovered_benchmark",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/xval_fsi2",
+      "detail": "benchmark harness (run.py, run_body_force_transient.py, run_coupled_benchmark.py, run_coupling_stability.py, run_oss_matched.py, run_similarity_corrected.py, run_strong_coupling.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
       "rule": "uncovered_benchmark",
       "severity": "medium"
     },
@@ -2463,7 +2565,7 @@
     },
     {
       "claim_id": "benchmarks/xval_method_selection",
-      "detail": "benchmark harness (run_cell.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
+      "detail": "benchmark harness (run_cell.py, run_cell_dump.py) has no ledger claim and no waiver: nothing it produces is graded, so a regression there is invisible and its published numbers are not reproducible from the repo",
       "rule": "uncovered_benchmark",
       "severity": "medium"
     },
@@ -2492,7 +2594,49 @@
       "severity": "medium"
     },
     {
+      "claim_id": "benchmarks/case_conduction_2d/result.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/case_poiseuille_morris/out/results.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/case_strong_shock_contact/result.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/couette_transient/out/results.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/csf_consistent/relax_quasistatic.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
       "claim_id": "benchmarks/isph_channel/results.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/koshizuka_dam_break/reference.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/koshizuka_dam_break/result_dx0014.json",
       "detail": "machine-readable evidence file not referenced by any ledger claim",
       "rule": "unregistered_artifact",
       "severity": "medium"
@@ -2504,13 +2648,79 @@
       "severity": "medium"
     },
     {
+      "claim_id": "benchmarks/oscillating_drop_freq/curvature_response.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/oscillating_drop_freq/diagnose.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/oscillating_drop_freq/ensemble.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/oscillating_drop_freq/interface_reconstruction.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/oscillating_drop_freq/report.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/oscillating_drop_freq/round2.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/oscillating_drop_freq/round3.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/oscillating_drop_freq/round4.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
       "claim_id": "benchmarks/poiseuille_mirror/case_verdict.json",
       "detail": "machine-readable evidence file not referenced by any ledger claim",
       "rule": "unregistered_artifact",
       "severity": "medium"
     },
     {
+      "claim_id": "benchmarks/poiseuille_morris/audit_snapshot.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/poiseuille_startup_mirror/out/results.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
       "claim_id": "benchmarks/stokes_second/case_verdict.json",
+      "detail": "machine-readable evidence file not referenced by any ledger claim",
+      "rule": "unregistered_artifact",
+      "severity": "medium"
+    },
+    {
+      "claim_id": "benchmarks/xval_method_selection/riemann_bound_transfer.json",
       "detail": "machine-readable evidence file not referenced by any ledger claim",
       "rule": "unregistered_artifact",
       "severity": "medium"
@@ -2550,14 +2760,14 @@
       "inadmissible_run": 3,
       "quantity_spread": 4,
       "run_validity": 4,
-      "uncovered_benchmark": 11,
-      "unregistered_artifact": 7
+      "uncovered_benchmark": 28,
+      "unregistered_artifact": 25
     },
     "n_artifact_verdicts_fail": 14,
     "n_claims": 63,
     "n_credits_unqualified": 5,
     "n_credits_without_declared_verdict": 20,
-    "n_findings": 37,
+    "n_findings": 72,
     "n_missing_artifacts": 0,
     "n_quantities": 41,
     "paper_criterion_pct": 3.0
