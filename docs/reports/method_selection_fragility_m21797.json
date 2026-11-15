@@ -42,12 +42,12 @@
   },
   "heat_conduction_operator": {
    "best_pct": 0.00021805730765489528,
-   "n_benchmark_families": 1,
-   "n_live_accuracy": 1,
-   "n_records": 1,
-   "single_source": true,
-   "spread_pct": null,
-   "worst_pct": 0.00021805730765489528
+   "n_benchmark_families": 2,
+   "n_live_accuracy": 2,
+   "n_records": 3,
+   "single_source": false,
+   "spread_pct": 0.15015477949901718,
+   "worst_pct": 0.15037283680667207
   },
   "isph_projection": {
    "best_pct": 0.04583375643014956,
@@ -100,8 +100,8 @@
  "invariants_ok": true,
  "mission": 21797,
  "n_depth_mismatches": 0,
- "n_families_total": 11,
- "n_records": 26,
+ "n_families_total": 12,
+ "n_records": 28,
  "owner_tolerance_pct": 15.0,
  "profiles": [
   {
@@ -320,25 +320,22 @@
   },
   {
    "baseline": {
-    "headline_bound_pct": 0.00021805730765489528,
+    "headline_bound_pct": 0.15037283680667207,
     "modifiers": [],
     "primary": "heat_conduction_operator",
     "primary_status": "SELECTED",
     "verified": true,
     "withheld": []
    },
-   "card": "# method-selection decision\n\n## profile\n- acoustic_mach: 0.01\n- has_free_surface: False\n- gravity_waves: False\n- shock_advection: False\n- capillary_dominated: False\n- density_ratio: 1.0\n- reynolds: 100.0\n- thermal_transport: True\n- tensile_stretching: False\n- smooth_inviscid_vortex: False\n- domain: closed\n\n## verdict\n- accuracy bound: 0.000218% over every live accuracy record of the schemes put forward (owner standard 15%) -- set by heat_conduction_operator (CASE-SPH-CONDUCTION-1D)\n- within owner standard: YES\n\n## primary scheme\n- heat_conduction_operator: SELECTED\n- why: [thermal] thermal_transport=True: the SPH Laplacian with flux-normalised stencil is the validated conduction operator\n- claimed bound: 0.000218% (owner standard 15%; passing records only)\n- reference: Cleary & Monaghan (1999) J. Comput. Phys. 148:227\n\n## modifiers\n- none\n\n## strict bound (worst live accuracy record <= 15%)\n- nothing excluded: every scheme put forward is inside the owner standard\n\n## evidence depth\n- heat_conduction_operator: SINGLE SOURCE (1 benchmark family)\n- caveat: the bound of heat_conduction_operator has not been reproduced on a second benchmark family -- treat it as a measured data point, not an independently confirmed bound\n",
+   "card": "# method-selection decision\n\n## profile\n- acoustic_mach: 0.01\n- has_free_surface: False\n- gravity_waves: False\n- shock_advection: False\n- capillary_dominated: False\n- density_ratio: 1.0\n- reynolds: 100.0\n- thermal_transport: True\n- tensile_stretching: False\n- smooth_inviscid_vortex: False\n- domain: closed\n\n## verdict\n- accuracy bound: 0.15% over every live accuracy record of the schemes put forward (owner standard 15%) -- set by heat_conduction_operator (CASE-SPH-CONDUCTION-2D (Fourier mode decay))\n- within owner standard: YES\n\n## primary scheme\n- heat_conduction_operator: SELECTED\n- why: [thermal] thermal_transport=True: the SPH Laplacian with flux-normalised stencil is the validated conduction operator\n- claimed bound: 0.15% (owner standard 15%; passing records only)\n- worst banked record: 835% (CASE-SPH-CONDUCTION-2D (1-D calibration lifted to 2-D): same family and resolution, but the 1-D lattice factor (1.0218) applied in 2-D: ~870 % -- O(dx) dimensional mismatch) -- outside the owner standard, so the claim above is NOT a bound on this scheme's worst measured error\n- reference: Cleary & Monaghan (1999) J. Comput. Phys. 148:227\n- caveat: refuted record, excluded from the accuracy claim: CASE-SPH-CONDUCTION-2D (1-D calibration lifted to 2-D): same family and resolution, but the 1-D lattice factor (1.0218) applied in 2-D: ~870 % -- O(dx) dimensional mismatch = 835% -- refuted by construction: the raw 2-D operator's effective diffusivity is alpha_eff/alpha ~ 1.93 dx (O(dx)), so a 1-D dimensional factor mis-scales the 2-D run by ~1/dx. Kept in the registry so the trap is on the record and cannot be rediscovered as an accuracy claim (benchmarks/case_conduction_2d/result.json)\n\n## modifiers\n- none\n\n## strict bound (worst live accuracy record <= 15%)\n- nothing excluded: every scheme put forward is inside the owner standard\n\n## evidence depth\n- heat_conduction_operator: 2 benchmark families, 2 records; spread 0.15 pp over live records\n",
    "critical_removals": [
     {
-     "bound_shift_pp": 0.8663757809164314,
-     "changes": [
-      "primary",
-      "withheld"
-     ],
-     "headline_bound_pct": 0.8665938382240863,
-     "primary": "isph_projection",
+     "bound_shift_pp": -0.15015477949901718,
+     "changes": [],
+     "headline_bound_pct": 0.00021805730765489528,
+     "primary": "heat_conduction_operator",
      "primary_status": "SELECTED",
-     "removed_case": "CASE-SPH-CONDUCTION-1D",
+     "removed_case": "CASE-SPH-CONDUCTION-2D (Fourier mode decay)",
      "removed_method": "heat_conduction_operator",
      "removed_record_kind": "accuracy",
      "removed_record_status": "banked"
@@ -347,15 +344,16 @@
    "depth": {
     "heat_conduction_operator": {
      "benchmark_families": [
-      "case-sph-conduction-1d"
+      "case-sph-conduction-1d",
+      "case-sph-conduction-2d"
      ],
      "best_pct": 0.00021805730765489528,
-     "n_benchmark_families": 1,
-     "n_live_accuracy": 1,
-     "n_records": 1,
-     "single_source": true,
-     "spread_pct": null,
-     "worst_pct": 0.00021805730765489528
+     "n_benchmark_families": 2,
+     "n_live_accuracy": 2,
+     "n_records": 3,
+     "single_source": false,
+     "spread_pct": 0.15015477949901718,
+     "worst_pct": 0.15037283680667207
     }
    },
    "expected_primary": "heat_conduction_operator",
@@ -365,9 +363,7 @@
     "domain": "closed",
     "thermal_transport": true
    },
-   "single_sourced": [
-    "heat_conduction_operator"
-   ]
+   "single_sourced": []
   },
   {
    "baseline": {

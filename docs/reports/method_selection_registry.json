@@ -64,6 +64,36 @@
       "within_owner_tolerance": true
     },
     {
+      "case": "CASE-SPH-CONDUCTION-2D (Fourier mode decay)",
+      "extractor": "x_conduction_2d",
+      "gate_pct": 3.0,
+      "kind": "accuracy",
+      "measured_pct": 0.15037283680667207,
+      "method": "heat_conduction_operator",
+      "own_gate_passed": true,
+      "precondition": "second benchmark family for this operator (the 1-D erfc similarity profile is the first); the operator is the shipped Cleary-Monaghan pair sum, lifted to 2-D with the *vector* pair distance. The calibration is redone in 2-D -- the 1-D lattice factor does not transfer, see the refuted record and docs/case-conduction-2d.md",
+      "quantity": "max normalised field error vs exp(-alpha (kx^2+ky^2) t) cos(kx x) cos(ky y) on a periodic square, n=128, RK4 time stepping, 2-D k->0 lattice calibration (gate 3 %)",
+      "source": "benchmarks/case_conduction_2d/result.json",
+      "source_sha256": "cd4b41060fba2900d57c4f74c773ce235a6436b80591be8a5afce68e69c30e69",
+      "status": "banked",
+      "within_owner_tolerance": true
+    },
+    {
+      "case": "CASE-SPH-CONDUCTION-2D (1-D calibration lifted to 2-D)",
+      "extractor": "x_conduction_2d_one_d_calibration",
+      "gate_pct": 3.0,
+      "kind": "accuracy",
+      "measured_pct": 834.6029833103374,
+      "method": "heat_conduction_operator",
+      "own_gate_passed": false,
+      "precondition": "refuted by construction: the raw 2-D operator's effective diffusivity is alpha_eff/alpha ~ 1.93 dx (O(dx)), so a 1-D dimensional factor mis-scales the 2-D run by ~1/dx. Kept in the registry so the trap is on the record and cannot be rediscovered as an accuracy claim",
+      "quantity": "same family and resolution, but the 1-D lattice factor (1.0218) applied in 2-D: ~870 % -- O(dx) dimensional mismatch",
+      "source": "benchmarks/case_conduction_2d/result.json",
+      "source_sha256": "cd4b41060fba2900d57c4f74c773ce235a6436b80591be8a5afce68e69c30e69",
+      "status": "refuted",
+      "within_owner_tolerance": false
+    },
+    {
       "case": "CASE-LAPLACE-SPH",
       "extractor": "x_laplace_pressure",
       "gate_pct": 15.0,
