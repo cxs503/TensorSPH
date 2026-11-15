@@ -52,6 +52,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 import estimator_bias as eb  # noqa: E402
 import footprint_peak as fpm  # noqa: E402
+import footprint_reference as fref  # noqa: E402
 import literature_refs as lr  # noqa: E402
 
 GATE = 0.15
@@ -101,6 +102,16 @@ def grid_record(tag: str, art_dir: Path, point: float) -> dict:
     obs = row["cp_peak"]
     u = boot.get("rel_half_width", float("nan"))
     residual = (obs - synth) / synth if _finite(obs) and _finite(synth) and synth else float("nan")
+    # secondary, metric-consistent read-out (does not enter the verdict): the
+    # designated acceptance target is a *point* maximum, so the same footprint has
+    # to be applied to it before a finite-area reading is compared with it.
+    den = fref.reference_denominators(BETA_DEG, PHI_M, c_end,
+                                      lr.designated_cp_max(BETA_DEG),
+                                      exact_cp=lr.cp_max_model(lr.EXACT_MODEL, BETA_DEG),
+                                      wagner_cp=point)
+    designated_phi = den["denominator_designated"]
+    r_desig = ((obs - designated_phi) / designated_phi
+               if _finite(obs) and designated_phi else float("nan"))
     return {
         "tag": tag, "dx_m": dx, "phi_m": PHI_M, "footprint_cells": row["footprint_cells"],
         "delta_tau": row["delta_tau"], "obs_cp": obs, "synth_cp": synth,
@@ -109,6 +120,8 @@ def grid_record(tag: str, art_dir: Path, point: float) -> dict:
         "obs_vs_wagner_point": obs / point - 1.0 if _finite(obs) else float("nan"),
         "obs_vs_designated": (obs / lr.designated_cp_max(BETA_DEG) - 1.0
                               if _finite(obs) else float("nan")),
+        "designated_footprint_cp": designated_phi,
+        "residual_vs_designated_footprint": r_desig,
         "all_footprints": fp["rows"],
     }
 
@@ -157,6 +170,49 @@ def build(art_dir: Path) -> dict:
         "grids": rows,
         "missing_grids": missing,
         "verdict": verdict(rows),
+        # secondary read-out, added m21953: the mission's acceptance target is the
+        # designated *point* maximum, so it is reported through the same footprint
+        # operator.  It is explicitly NOT the verdict (the verdict rule above is
+        # unchanged) — it answers a different, legitimate question: is the SPH
+        # reading inside the 15 % gate of the designated reference once the
+        # measurement口径 has been matched?
+        "designated_readout": designated_readout(rows, GATE),
+    }
+
+
+def designated_readout(rows: list[dict], gate: float = GATE) -> dict:
+    """Metric-consistent comparison against the designated acceptance target.
+
+    Predeclared interpretation, fixed before the finest grids existed:
+
+    * a grid is usable here when it is *judgeable* under the primary rule
+      (bootstrap half-width <= gate), so the secondary read-out cannot be scored
+      on grids the primary rule already refuses;
+    * ``inside_gate`` = every usable grid has ``|r_designated| <= gate``;
+    * ``brackets_target`` = the usable grids' residuals change sign, i.e. the
+      refinement sequence passes through the reference.  A bracket is *stronger*
+      evidence than two same-sign residuals (the reference lies between two
+      measured values), and it is reported as such, not as a pass.
+    """
+    usable = [r for r in rows if r.get("judgeable")
+              and _finite(r.get("residual_vs_designated_footprint", float("nan")))]
+    if not usable:
+        return {"usable_grids": [], "inside_gate": None, "brackets_target": None,
+                "reference": "no judgeable grid", "gate": gate}
+    rs = [r["residual_vs_designated_footprint"] for r in usable]
+    signs = {(x < 0.0) for x in rs}
+    return {
+        "reference": "designated point maximum x continuum footprint ratio",
+        "designated_point_cp": usable[0].get("designated_footprint_cp", float("nan")),
+        "gate": gate,
+        "usable_grids": [r["tag"] for r in usable],
+        "residuals": {r["tag"]: r["residual_vs_designated_footprint"] for r in usable},
+        "inside_gate": bool(all(abs(x) <= gate for x in rs)),
+        "brackets_target": bool(len(signs) > 1),
+        "max_abs_residual": max(abs(x) for x in rs),
+        "note": ("sign change across the usable grids: the refinement sequence "
+                 "passes through the reference" if len(signs) > 1 else
+                 "single-signed residuals: no bracket"),
     }
 
 

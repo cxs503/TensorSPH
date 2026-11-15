@@ -28,6 +28,7 @@ sys.path.insert(0, str(BENCH))
 sys.path.insert(0, str(ROOT / "src"))
 
 import footprint_peak as fpm  # noqa: E402
+import footprint_ledger as fl  # noqa: E402
 
 
 def _profile_linear(a: float, b: float, n: int = 2000, tau_max: float = 1.0):
@@ -114,3 +115,22 @@ def test_footprint_ledger_is_recomputable_and_not_overstated():
         judged = [r for r in rep["grids"] if r["judgeable"]]
         assert len(judged) >= 2
         assert all(abs(r["residual"]) <= fl.GATE for r in judged)
+
+
+@pytest.mark.skipif(not (FP / "footprint_ledger.json").exists(),
+                    reason="footprint ladder artefacts absent")
+def test_designated_readout_is_recomputable_and_separate_from_the_verdict():
+    """Secondary metric-consistent read-out (m21953) must be derived, not asserted."""
+    rep = json.loads((FP / "footprint_ledger.json").read_text())
+    d = rep["designated_readout"]
+    for tag, r in d["residuals"].items():
+        row = next(g for g in rep["grids"] if g["tag"] == tag)
+        assert row["judgeable"] is True            # only judgeable grids are usable
+        assert r == pytest.approx(row["obs_cp"] / row["designated_footprint_cp"] - 1.0, rel=1e-12)
+        assert abs(r) <= fl.GATE or d["inside_gate"] is False
+    # the primary verdict is unchanged by the secondary read-out: recompute it
+    import footprint_ledger as fl2
+    assert fl2.verdict(rep["grids"])["verdict"] == rep["verdict"]["verdict"]
+    # and it must never claim a bracket it does not have
+    signs = {(x < 0.0) for x in d["residuals"].values()}
+    assert d["brackets_target"] == (len(signs) > 1)

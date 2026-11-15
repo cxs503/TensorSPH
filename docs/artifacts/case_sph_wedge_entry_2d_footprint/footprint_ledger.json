@@ -41,6 +41,8 @@
    "judgeable": false,
    "obs_vs_wagner_point": 0.412555687712556,
    "obs_vs_designated": 0.7151127257061121,
+   "designated_footprint_cp": 6.541512510505509,
+   "residual_vs_designated_footprint": 0.8143479879959942,
    "all_footprints": [
     {
      "footprint_cells": 2.0,
@@ -100,6 +102,8 @@
    "judgeable": true,
    "obs_vs_wagner_point": -0.28602167160158065,
    "obs_vs_designated": -0.13309377636112452,
+   "designated_footprint_cp": 6.541512510505509,
+   "residual_vs_designated_footprint": -0.0829351685949105,
    "all_footprints": [
     {
      "footprint_cells": 2.0,
@@ -150,6 +154,21 @@
   "grids_judgeable": [
    "dx2mm"
   ]
+ },
+ "designated_readout": {
+  "reference": "designated point maximum x continuum footprint ratio",
+  "designated_point_cp": 6.541512510505509,
+  "gate": 0.15,
+  "usable_grids": [
+   "dx2mm"
+  ],
+  "residuals": {
+   "dx2mm": -0.0829351685949105
+  },
+  "inside_gate": true,
+  "brackets_target": false,
+  "max_abs_residual": 0.0829351685949105,
+  "note": "single-signed residuals: no bracket"
  },
  "figures": [
   "figures/fig1_footprint_ladder.png",
