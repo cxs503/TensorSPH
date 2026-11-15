@@ -102,5 +102,24 @@
   ],
   "pending_job": "cluster cj1576 (queued); rerun benchmarks/kleefsman_obstacle/gauge_convergence.py after it lands",
   "pair_spread": "peak 21.6 % (height@x2.426) -> 9.9 % (slab@x2.426) -> 1.3 % (slab@x2.228); arrival 6.2 % -> 4.2 % -> 4.4 %"
+ },
+ "arrival_attribution": {
+  "what": "attribution of the 22-34 % late surge (m21173): gauge-vs-front split, fan-locus depth mapping, Richardson limit, c0 falsification, station sensitivity",
+  "verdict": "arrival FAIL on every grid and every gauge operator; peak NOT COMPARABLE (all committed runs end at 1.0-1.2 s, the reference peak is the t=1.70 s secondary impact)",
+  "falsified_causes": [
+   "acoustic compressibility (c0 20->80 moves the arrival <0.3 %)",
+   "grid resolution (Richardson continuum 0.4396 s, +22.4 %)",
+   "gauge operator (all three operators outside the tolerance)",
+   "level-event vs front split (<=20 % of the deficit)"
+  ],
+  "open_causes": [
+   "probe x: H2 coordinate unverified; the committed 2.228 m station would remove 52-63 % of the deficit",
+   "surge-front release phase: leading edge accelerates 2.7->3.9 m/s and its mean speed is dx-independent"
+  ],
+  "evidence": [
+   "docs/benchmarks/kleefsman-arrival-attribution-m21173.md",
+   "benchmarks/kleefsman_obstacle/results/arrival_attribution/attribution.json",
+   "tests/test_kleefsman_arrival_attribution.py"
+  ]
  }
 }
