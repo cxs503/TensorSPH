@@ -101,7 +101,7 @@ Fitted at the **middle rung** only (R/Δx = 32), by linear interpolation of the 
 | control | value |
 |---|---|
 | hourglass off, α\* | error +0.00 %, momentum 2.9e-17 |
-| hourglass on, α\* | error -345.10 %, momentum 7.5e-01 |
+| hourglass on, α\* | error -89.07 %, momentum 8.8e-18 |
 | momentum residual, α = 0 | 5.1e-17 |
 | momentum residual, α = α\* | 2.9e-17 |
 | two-phase gate (unchanged, closure off) | R/Δx=16: -4.69 %, R/Δx=32: -5.80 %, R/Δx=64: -6.21 % |
@@ -112,6 +112,41 @@ Fitted at the **middle rung** only (R/Δx = 32), by linear interpolation of the 
 |---|---|---|
 | full mirror (α = 1) is the right closure | Laplace error at R/Δx = 32 | +40.38 % — over-restores, rejected |
 | α\* = mass fraction of the delta living beyond the free surface | air/water delta mass in the two-phase run | 0.0010 (6.28e-04 vs 6.14e-01) — two orders below α\* = 0.426, rejected |
+
+### T7 — hourglass pair order: the penalty conserves momentum (round 3)
+
+The hourglass penalty is the one term that was transcribed asymmetrically: the
+inner loop gave the `j` end `-w (flux - hg)` (the penalty was *added* on both ends
+instead of cancelling) and the contact loop kept an `e`-odd term un-flipped.  But
+`H_ij` is **even** under `i <-> j` (`T_i + T_j` and `M ∝ (g·e) g (x) e` both are),
+so the scalar `H·grad W` is odd — the same parity as `(S_i + S_j)·grad W` — and
+both terms must enter the antisymmetric bracket with the same sign.  Upstream
+satisfies that identity (its `j` end is run by the symmetric loop), so the
+residual recorded in round 2 (0.73) was the **port's**, not the model's:
+`2 w hg` per pair.  T7 reconstructs it from the current API and reproduces it
+exactly (0.7534 relative: the number the pre-fix code measured); the corrected assembly
+makes it vanish (9.2e-18).
+
+Consequences, all with the penalty **on**.  Nothing else moves: every gated number
+of T1–T6 runs with the penalty off and is bit-identical.
+
+* the free-surface reading at α = 0 moves from −375 % to -119.07 % at
+  R/Δx = 32; the ladder (-45.0 %, -119.1 %, -573.9 %) still diverges with resolution, so the
+  round-2 conclusion stands — the penalty must stay off on a free surface.  It is
+  now *biased*, not non-conservative;
+* the two-phase reading at R/Δx = 32 moves from −5.82 % (asymmetrically assembled)
+  to -12.75 %: the faithful number is worse, which is the point — part of the old
+  agreement was the leak cancelling a real penalty bias;
+* the momentum of the penalty alone is 2.9e-18 on a star of pairs, and the audit's
+  re-implementation of the term agrees with the model to 4.6e-17, so the
+  reconstruction is a measurement, not a guess.
+
+In the dynamic test (`docs/xval_sphinxys_surface_tension/LAMB.md`) the same
+correction is why the two-phase Lamb frequency with the penalty on now reads
++49.7 % at R/Δx = 16 (it read −4.2 % with the asymmetric assembly): the inner
+penalty is a *phase-mixing* term that biases the mode-2 force, and
+`hourglass_scope="contact"` (which drops it) is the setting that passes the gate.
+
 
 Figure (panel a: closure scan with the gate band; panel b: baseline vs closure
 on the ladder; panel c: smoothing-ratio transfer): regenerate with
@@ -153,7 +188,10 @@ Worst |error| over the validation ladder with α = α\* is **0.731 %** at the re
    and -0.18 %.
 3. **Hourglass penalty must stay off on a free surface** — the upstream penalty
    is unbalanced without a second phase and diverges with resolution (round-2
-   §5.2).  The closure does not change that: see T5.
+   §5.2).  The closure does not change that: see T5.  Round 3 corrected its
+   *assembly* (T7): the pair is now exactly antisymmetric, so the penalty
+   conserves momentum and the divergence above is a genuine model bias rather
+   than a conservation error.
 4. **The pair-averaged normal is ill-defined in the deep bulk** (`∇c → 0`, the
    direction is numerical noise).  This is harmless because the flux is
    multiplied by `S ≈ 0` there, and

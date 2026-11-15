@@ -42,8 +42,12 @@ The upstream model in three steps
    with the zero-surface-energy ("hourglass") penalty
    ``H_ij = 4.5 sigma/2 (T_i + T_j) M_ij /(r_ij + Eps)``,
    ``T = I - n (x) n``, ``M_ij = -(g.e) g (x) e /(|g.e| |g|)``,
-   ``g = (grad c_i + grad c_j)/2``.  ``H`` is antisymmetric under ``i <-> j``,
-   the stress flux is symmetric, so the stress part conserves momentum exactly.
+   ``g = (grad c_i + grad c_j)/2``.  ``H_ij`` is *even* under ``i <-> j`` (both
+   ``T_i + T_j`` and ``M_ij ∝ (g.e) g (x) e`` are), so ``H_ij . grad_i W_ij`` is
+   antisymmetric -- the same parity as the symmetric stress flux
+   ``(S_i + S_j) . grad_i W_ij``.  Both terms therefore cancel pairwise, i.e. the
+   stress *and* the hourglass parts conserve momentum exactly, provided the pair
+   is assembled antisymmetrically (:func:`inner_stress_force`).
 
 3. **Contact force** (``SurfaceStressForce<Contact<>>``) for the other phase::
 
@@ -398,9 +402,18 @@ def inner_stress_force(
     :data:`HOURGLASS_SCOPES`); it is the recommended setting for
     ``mode="single_phase"``.
 
-    The pair list is stored once, so the ``j`` end is assembled explicitly:
-    ``H`` flips sign under ``i <-> j`` (``e_ji = -e_ij``) while ``S_i + S_j``
-    does not, which is what makes the stress part conserve momentum.
+    The pair list is stored once, so the ``j`` end is assembled explicitly.  The
+    tensor ``H_ij`` itself is *invariant* under ``i <-> j`` (its two factors
+    ``T_i + T_j`` and ``M_ij ∝ (g.e) g (x) e`` are both even in ``e``), so the
+    scalar ``H_ij . grad_i W_ij`` flips sign only through ``grad_j W_ji =
+    -grad_i W_ij`` -- exactly like ``(S_i + S_j) . grad W``.  Hence both terms
+    enter the ``j`` end with the *same* sign inside the antisymmetric bracket,
+    ``-w_j (flux + hg)``, and the whole pair -- stress divergence *and* hourglass
+    penalty -- is equal and opposite.  (Upstream satisfies the same identity: its
+    ``j`` end runs the symmetric loop, so its hourglass is momentum conserving
+    too.  A ``-w_j (flux - hg)`` assembly leaks ``2 w hg`` per pair, measured as
+    a 0.73 relative momentum residual; see
+    ``docs/xval_sphinxys_mixture_laplace/single_phase_completion.md``.)
     """
     acc = torch.zeros_like(pos)
     if pairs.numel() == 0:
@@ -448,7 +461,7 @@ def inner_stress_force(
     w_i = pair_weight(mass[i], rho[i], vol[j], assembly)[:, None]
     w_j = pair_weight(mass[j], rho[j], vol[i], assembly)[:, None]
     acc = acc.index_add(0, i, w_i * (flux_s + hg))
-    acc = acc.index_add(0, j, -w_j * (flux_s - hg))
+    acc = acc.index_add(0, j, -w_j * (flux_s + hg))
     return acc
 
 
@@ -517,8 +530,10 @@ def contact_stress_force(
         nn_g = (n_i * (n_i * g_avg).sum(dim=1)[:, None]
                 + n_j * (n_j * g_avg).sum(dim=1)[:, None])
         hg_ij = pref[:, None] * (nn_gw - coef[:, None] * nn_g)
-        # partner end: e -> -e inside the ``I - sign(g.e) g e^T/|g|`` bracket
-        hg_ji = pref[:, None] * (nn_gw + coef[:, None] * nn_g)
+        # partner end: every e-odd factor flips (g.e -> -g.e, gw -> -gw), so the
+        # partner value is exactly -hg_ij; keeping both ends antisymmetric is what
+        # makes the contact penalty momentum conserving as well.
+        hg_ji = -hg_ij
     else:
         hg_ij = torch.zeros_like(s_ij)
         hg_ji = hg_ij
