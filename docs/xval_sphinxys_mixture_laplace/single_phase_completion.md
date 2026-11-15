@@ -1,7 +1,8 @@
 # Single-phase free-surface surface tension: interface-completion closure
 
 **Anchor** `XVAL-SPH-MIXTURE-MATERIAL-AND-SURFACE-TENSION` · **Repository** TensorSPH
-· **Task** m20035 · **Gate** |error| < 15 % vs the exact 2-D
+· **Task** m20035 (delivery/provenance restored under m22119) · **Gate**
+|error| < 15 % vs the exact 2-D
 Young-Laplace law · **Verdict** `pass`
 
 Supersedes nothing: it closes the item that
@@ -112,9 +113,19 @@ Fitted at the **middle rung** only (R/Δx = 32), by linear interpolation of the 
 | full mirror (α = 1) is the right closure | Laplace error at R/Δx = 32 | +40.38 % — over-restores, rejected |
 | α\* = mass fraction of the delta living beyond the free surface | air/water delta mass in the two-phase run | 0.0010 (6.28e-04 vs 6.14e-01) — two orders below α\* = 0.426, rejected |
 
-Figure: `benchmarks/surface_tension/out_single_phase_completion/gate.png`
-(panel a: closure scan with the gate band; panel b: baseline vs closure on the
-ladder; panel c: smoothing-ratio transfer).
+Figure (panel a: closure scan with the gate band; panel b: baseline vs closure
+on the ladder; panel c: smoothing-ratio transfer): regenerate with
+
+```bash
+PYTHONPATH=src python benchmarks/surface_tension/emit_single_phase_tables.py     --write --figure svg     # -> out_single_phase_completion/gate.svg (or --figure png)
+```
+
+The figure is a *generated* artifact and is deliberately not committed: the
+merge gate does not carry raster/vector images, so a committed image would be
+dropped from `main` and leave a dangling reference (that is exactly what
+happened to the raster copy of this figure in the first delivery).  What is
+committed is the drawing code and every number it plots (`gate.json`), plus the
+test that the figure still renders.
 
 ## 4. Error judgement
 
@@ -161,9 +172,16 @@ Worst |error| over the validation ladder with α = α\* is **0.731 %** at the re
 
 ```bash
 PYTHONPATH=src python benchmarks/surface_tension/single_phase_completion.py   # ~20 s, CPU
-python runs/m20035/emit_tables.py                                            # JSON -> this doc
-python -m pytest tests/test_single_phase_completion.py -q                     # 7 passed
+PYTHONPATH=src python benchmarks/surface_tension/emit_single_phase_tables.py --write  # JSON -> this doc
+PYTHONPATH=src python benchmarks/surface_tension/emit_single_phase_tables.py  # check only (default)
+python -m pytest tests/test_single_phase_completion.py -q                     # 11 passed
 ```
+
+The document itself is generated: `emit_single_phase_tables.py` renders it from
+`gate.json`, and `tests/test_single_phase_completion.py::
+test_document_is_rendered_from_gate_json` re-renders it in memory and requires a
+byte-identical match.  Editing a number in this file by hand therefore fails the
+suite instead of silently documenting a stale run.
 
 ## 7. Artifacts
 
@@ -172,6 +190,7 @@ python -m pytest tests/test_single_phase_completion.py -q                     # 
 | `src/tensorsph/sphinxys_css.py` | `interface_completion`, `COMPLETIONS`, `completion` / `completion_weight` on `inner_stress_force` and `surface_tension_acceleration` (all additive, default off) |
 | `benchmarks/surface_tension/single_phase_completion.py` | ladder, closure scan, fit, transfer, hourglass, momentum, two-phase regression |
 | `benchmarks/surface_tension/out_single_phase_completion/gate.json` | every number above |
-| `benchmarks/surface_tension/out_single_phase_completion/gate.png` | 3-panel figure |
-| `tests/test_single_phase_completion.py` | 7 tests: reflection identity, no bulk force, default off, baseline lock, gate, transfer, momentum |
-| `runs/m20035/emit_tables.py`, `runs/m20035/tables.md` | JSON → tables (zero hand-copy) |
+| figure (not committed) | `emit_single_phase_tables.py --write --figure svg` / `--figure png` → `out_single_phase_completion/gate.{svg,png}`; `tests/test_single_phase_completion.py::test_figure_renders` draws it and checks the three panels |
+| `benchmarks/surface_tension/emit_single_phase_tables.py` | `gate.json` → this document + `tables.md` + figure; `--check` is the staleness gate |
+| `benchmarks/surface_tension/out_single_phase_completion/tables.md` | T1–T6 as standalone tables (generated) |
+| `tests/test_single_phase_completion.py` | 11 tests: reflection identity, no bulk force, default off, baseline lock, gate, transfer, momentum, document-in-sync, no dangling artifact path, `gate.json` self-consistency, figure renders |
