@@ -1,0 +1,144 @@
+{
+ "case": "CASE-LAPLACE-SPH-DYNAMIC-SOLENOID",
+ "anchor": "XVAL-SPH-PROJECTION-SPH-YOUNG-LAPLACE",
+ "title": "The solenoidal part of the lattice CSF traction: does it scale with dx?",
+ "setup": {
+  "radius_m": 0.02,
+  "sigma_N_per_m": 0.072,
+  "rho0": 1000.0,
+  "outer_carrier_m": 0.012,
+  "h_over_dx": 1.3,
+  "levels_R_over_dx": [
+   8,
+   12
+  ],
+  "curvature": "mls (div n of the twice-smoothed normal)",
+  "split": "helmholtz_split, A = D D^T PCG rel_tol 1e-10",
+  "v_ref_m_per_s": 0.06
+ },
+ "gates_declared": {
+  "adjoint_exact": {
+   "op": "<=",
+   "value": 1e-10,
+   "unit": "relative defect"
+  },
+  "reconstruction_exact": {
+   "op": "<=",
+   "value": 1e-06,
+   "unit": "relative defect"
+  },
+  "solenoidal_decay_order_min": {
+   "op": ">=",
+   "value": 0.5,
+   "unit": "decay order (-slope in R/dx)"
+  },
+  "solenoidal_fraction_finest": {
+   "op": "<=",
+   "value": 0.1,
+   "unit": "fraction"
+  },
+  "consistency_with_march": {
+   "op": "<=",
+   "value": 3.0,
+   "unit": "factor"
+  }
+ },
+ "levels": [
+  {
+   "R_over_dx": 8.0,
+   "dx_m": 0.0025,
+   "h_m": 0.0032500000000000003,
+   "n_particles": 780,
+   "n_pairs": 6498,
+   "n_liquid": 232,
+   "a_norm": 6.119479745449071,
+   "solenoidal_fraction": 0.15698882520638974,
+   "solenoidal_abs": 0.9606899361123465,
+   "irrotational_abs": 6.04360051637491,
+   "irrotationality": 0.15698882520640053,
+   "adjointness_defect": 4.0075275063087988e-16,
+   "reconstruction_defect": 3.1491726246655883e-18,
+   "orthogonality": 1.1588133660347105e-12,
+   "cg_iterations": 1133,
+   "v_ref_m_per_s": 0.06,
+   "dt_s": 0.002183528140164191,
+   "t_ref_s": 0.33333333333333337,
+   "umax_over_vref_predicted": 0.9193103072591544,
+   "wall_s": 40.4545214176178
+  },
+  {
+   "R_over_dx": 12.0,
+   "dx_m": 0.0016666666666666668,
+   "h_m": 0.002166666666666667,
+   "n_particles": 1733,
+   "n_pairs": 14813,
+   "n_liquid": 520,
+   "a_norm": 11.613575640348785,
+   "solenoidal_fraction": 0.26713871140192147,
+   "solenoidal_abs": 3.1024356313315193,
+   "irrotational_abs": 11.191516086188404,
+   "irrotationality": 0.2671387114019407,
+   "adjointness_defect": 1.7333761568743933e-15,
+   "reconstruction_defect": 7.088037703667767e-18,
+   "orthogonality": 4.949286822508788e-13,
+   "cg_iterations": 1786,
+   "v_ref_m_per_s": 0.06,
+   "dt_s": 0.0011885621738690257,
+   "t_ref_s": 0.33333333333333337,
+   "umax_over_vref_predicted": 2.0665484590529166,
+   "wall_s": 69.75950860977173
+  }
+ ],
+ "orders": {
+  "solenoidal_fraction_decay_order": -1.3110706826319913,
+  "solenoidal_abs_decay_order": -2.891225499514438,
+  "solenoidal_fraction_slope": 1.3110706826319913,
+  "solenoidal_abs_slope": 2.891225499514438,
+  "H1_artifact_hypothesis_supported": false
+ },
+ "levels_not_measured": [
+  16,
+  24
+ ],
+ "march_reference": {
+  "R_over_dx": 8.0,
+  "umax_over_vref": 0.1790878949903455,
+  "nu_factor": 0.01,
+  "steps": 60
+ },
+ "predicted_over_recorded_at_Rdx8": 5.133291154651819,
+ "gate_verdicts": {
+  "adjoint_exact": {
+   "measured": 1.7333761568743933e-15,
+   "declared": 1e-10,
+   "op": "<=",
+   "pass": true
+  },
+  "reconstruction_exact": {
+   "measured": 7.088037703667767e-18,
+   "declared": 1e-06,
+   "op": "<=",
+   "pass": true
+  },
+  "solenoidal_decay_order_min": {
+   "measured": -1.3110706826319913,
+   "declared": 0.5,
+   "op": ">=",
+   "pass": false
+  },
+  "solenoidal_fraction_finest": {
+   "measured": 0.26713871140192147,
+   "declared": 0.1,
+   "op": "<=",
+   "pass": false
+  },
+  "consistency_with_march": {
+   "measured": 5.133291154651819,
+   "declared": 3.0,
+   "op": "<=",
+   "pass": false,
+   "note": "predicted/recorded spurious current at R/dx = 8"
+  }
+ },
+ "wall_s_total": 110.21403002738953
+}
