@@ -235,6 +235,10 @@ class Source:
     fn: object
     status: str = "banked"
     precondition: str = ""
+    #: ``accuracy`` (error vs a reference) or ``robustness`` (conditioning of a
+    #: reading).  Conditioning records are shipped so the reading's fragility is
+    #: visible, but they may never be summed into an accuracy bound.
+    kind: str = "accuracy"
 
 
 SOURCES: tuple[Source, ...] = (
@@ -392,6 +396,7 @@ SOURCES: tuple[Source, ...] = (
     ),
     Source(
         extractor="x_couette_viscous_time_mobility_h8",
+        kind="robustness",
         method="wcsph_wall_no_slip",
         case="CASE-COUETTE-VISCOUS-TIME (reading mobility, H/dx=8)",
         quantity="mobility of the wall-shear reading across the admissible viscous-time "
@@ -416,6 +421,7 @@ SOURCES: tuple[Source, ...] = (
     ),
     Source(
         extractor="x_couette_viscous_time_mobility_h16",
+        kind="robustness",
         method="wcsph_wall_no_slip",
         case="CASE-COUETTE-VISCOUS-TIME (reading mobility, H/dx=16)",
         quantity="mobility of the wall-shear reading across the admissible viscous-time "
@@ -544,6 +550,7 @@ def build_registry() -> dict:
                 "extractor": source.extractor,
                 "status": source.status,
                 "precondition": source.precondition,
+                "kind": source.kind,
             }
         )
     evidenced = sorted({r["method"] for r in records})
@@ -605,22 +612,31 @@ PROFILES: tuple[tuple[str, dict, str], ...] = (
 )
 
 
+def _evidence_from_record(raw: dict):
+    from tensorsph.method_selection import Evidence
+
+    # Every field the selector reads has to travel with the record.  Dropping
+    # ``status``/``precondition``/``kind`` here silently re-banks refuted records
+    # and turns conditioning records into accuracy evidence, so the published
+    # matrix would disagree with the decision card it is supposed to show (m21115).
+    return Evidence(
+        method=raw["method"],
+        case=raw["case"],
+        quantity=raw["quantity"],
+        measured_pct=raw["measured_pct"],
+        gate_pct=raw["gate_pct"],
+        source=raw["source"],
+        source_sha256=raw["source_sha256"],
+        status=raw.get("status", "banked"),
+        precondition=raw.get("precondition", ""),
+        kind=raw.get("kind", "accuracy"),
+    )
+
+
 def build_matrix(registry: dict) -> dict:
     by_method: dict[str, list] = {}
     for raw in registry["records"]:
-        from tensorsph.method_selection import Evidence
-
-        by_method.setdefault(raw["method"], []).append(
-            Evidence(
-                method=raw["method"],
-                case=raw["case"],
-                quantity=raw["quantity"],
-                measured_pct=raw["measured_pct"],
-                gate_pct=raw["gate_pct"],
-                source=raw["source"],
-                source_sha256=raw["source_sha256"],
-            )
-        )
+        by_method.setdefault(raw["method"], []).append(_evidence_from_record(raw))
     rows = []
     for label, fields, expected in PROFILES:
         selection = select_method(CaseProfile.from_mapping(fields), registry=by_method)
@@ -637,6 +653,19 @@ def build_matrix(registry: dict) -> dict:
                 "primary_worst_banked_pct": (
                     selection.primary.worst_banked_pct if selection.primary else None
                 ),
+                "primary_accuracy_pct": (
+                    selection.primary.worst_accuracy_pct if selection.primary else None
+                ),
+                "primary_robustness_pct": (
+                    selection.primary.worst_robustness_pct if selection.primary else None
+                ),
+                "headline_bound_pct": selection.headline_bound_pct,
+                "headline_quantity": (
+                    None if selection.headline_record is None
+                    else f"{selection.headline_record[0]}: "
+                         f"{selection.headline_record[1].quantity}"
+                ),
+                "within_owner_standard": selection.within_owner_standard,
                 "modifiers": [
                     {"method": d.method, "status": d.status} for d in selection.modifiers
                 ],
@@ -658,6 +687,75 @@ def build_matrix(registry: dict) -> dict:
             if row["primary_method"] != row["expected_primary"]
         ],
     }
+
+
+def claim_bound_rows(registry: dict) -> list[dict]:
+    """Per method: the advertised bound vs the worst live accuracy record.
+
+    ``claim_pct`` is what a decision card used to quote (max over the records
+    that individually pass the owner standard); ``accuracy_pct`` is the worst
+    accuracy record over *all* live records, i.e. the number that is actually a
+    bound.  ``gap_pp`` is how much the advertisement undercuts the bound.
+    """
+    from tensorsph.method_selection import Decision, OWNER_TOLERANCE_PCT
+
+    by_method: dict[str, list] = {}
+    for raw in registry["records"]:
+        by_method.setdefault(raw["method"], []).append(_evidence_from_record(raw))
+    rows = []
+    for method in sorted(by_method):
+        decision = Decision(method=method, status="SELECTED", role="primary",
+                            rationale="", evidence=by_method[method])
+        claim = decision.worst_measured_pct
+        accuracy = decision.worst_accuracy_pct
+        robustness = decision.worst_robustness_pct
+        record = decision.worst_accuracy_record
+        rows.append({
+            "method": method,
+            "claim_pct": claim,
+            "accuracy_pct": accuracy,
+            "robustness_pct": robustness,
+            "gap_pp": (None if claim is None or accuracy is None
+                       else accuracy - claim),
+            "n_live_accuracy": sum(1 for ev in by_method[method]
+                                   if ev.is_accuracy and not ev.is_refuted),
+            "worst_case": None if record is None else record.case,
+            "within_owner_standard": (None if accuracy is None
+                                      else accuracy <= OWNER_TOLERANCE_PCT),
+        })
+    return rows
+
+
+def figure_claim_bounds(registry: dict, out: Path) -> Path:
+    """Advertised bound vs worst live accuracy record, per method."""
+    rows = [r for r in claim_bound_rows(registry) if r["accuracy_pct"] is not None]
+    fig, ax = plt.subplots(figsize=(9.4, 0.55 * len(rows) + 1.8))
+    y = range(len(rows))
+    for index, row in enumerate(rows):
+        claim = row["claim_pct"] if row["claim_pct"] is not None else 0.0
+        ax.plot([claim, row["accuracy_pct"]], [index, index],
+                color="#8a8f98", lw=1.1, zorder=1)
+    ax.scatter([row["claim_pct"] or 0.0 for row in rows], list(y), s=46,
+               color="#2f6fb0", zorder=2, label="claimed bound (passing records only)")
+    ax.scatter([row["accuracy_pct"] for row in rows], list(y), s=52, marker="D",
+               color=["#2a7f62" if row["within_owner_standard"] else "#b23b3b"
+                      for row in rows],
+               zorder=3, label="worst live accuracy record (the real bound)")
+    ax.axvline(15.0, color="black", ls="--", lw=1.2, label="owner standard 15 %")
+    ax.set_yticks(list(y))
+    ax.set_yticklabels([row["method"] for row in rows], fontsize=8.5)
+    ax.set_xscale("symlog", linthresh=0.5)
+    ax.set_xlabel("error [%] (symlog)")
+    ax.set_xlim(0, None)
+    ax.invert_yaxis()
+    ax.grid(axis="x", color="#d9dde3", lw=0.6, zorder=0)
+    ax.legend(fontsize=7.6, loc="lower right")
+    ax.set_title("Does the advertised accuracy bound survive its own registry?",
+                 fontsize=9.6)
+    fig.tight_layout()
+    fig.savefig(out, dpi=160)
+    plt.close(fig)
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -777,10 +875,14 @@ def build_tables(registry: dict, matrix: dict, figures: list[Path]) -> str:
             row["primary_status"],
             "-" if row["primary_worst_pct"] is None
             else f"{row['primary_worst_pct']:.4g}",
+            "-" if row.get("headline_bound_pct") is None
+            else f"{row['headline_bound_pct']:.4g}",
+            "✔" if row.get("within_owner_standard") else "✘",
             ", ".join(f"{m['method']}={m['status']}" for m in row["modifiers"]) or "-",
         ])
     parts.append(_table(
-        ["算例画像", "选定方法", "状态", "最坏实测误差 [%]", "附加项（modifier）"],
+        ["算例画像", "选定方法", "状态", "宣称上界 [%]", "精度上界 [%]（整份推荐）",
+         "<15%", "附加项（modifier）"],
         rows,
     ))
     parts.append(
@@ -796,11 +898,40 @@ def build_tables(registry: dict, matrix: dict, figures: list[Path]) -> str:
         rows.append([f"`{key}`", spec.family, "无机器可读验证记录", spec.citation])
     parts.append(_table(["方法", "族", "状态", "文献出处"], rows))
 
+    parts.append("\n### 3.5 宣称上界 vs 真实精度上界（逐方法）\n")
+    bound_rows = claim_bound_rows(registry)
+    rows = []
+    for row in bound_rows:
+        rows.append([
+            f"`{row['method']}`",
+            "-" if row["claim_pct"] is None else f"{row['claim_pct']:.4g}",
+            "-" if row["accuracy_pct"] is None else f"{row['accuracy_pct']:.4g}",
+            "-" if row["gap_pp"] is None else f"{row['gap_pp']:+.4g}",
+            "-" if row["robustness_pct"] is None else f"{row['robustness_pct']:.4g}",
+            row["n_live_accuracy"],
+            "✔" if row["within_owner_standard"] else "✘",
+        ])
+    parts.append(_table(
+        ["方法", "宣称上界 [%]（仅过 15% 的记录）", "真实精度上界 [%]（全部 live accuracy）",
+         "差额 [pp]", "条件数记录 [%]（不计入）", "live accuracy 记录数", "<15%"],
+        rows,
+    ))
+    gaps = [row for row in bound_rows if row["gap_pp"] is not None and row["gap_pp"] > 1e-12]
+    outside = [row for row in bound_rows if row["within_owner_standard"] is False]
+    parts.append(
+        f"\n{len(bound_rows)} 个有证据的方法中，{len(gaps)} 个的宣称上界**低于**自己最差的活"
+        f"accuracy 记录（最大差额 {max((r['gap_pp'] for r in gaps), default=0.0):.4g} pp）；"
+        f"{len(outside)} 个方法的真实精度上界超出 15% owner 标准："
+        f"{', '.join('`' + r['method'] + '`' for r in outside) or '无'}。\n"
+    )
+
     parts.append("\n### 3.4 图\n")
     captions = [
         "图 1 证据登记表：每个方法的实测误差（对数轴），虚线=owner 15% 精度标准，"
         "蓝色刻度=该算例自己的验收门。",
         "图 2 路由矩阵：算例画像 → 选定方法；绿底=证据背书（SELECTED），红底=无可选方法。",
+        "图 3 逐方法：圆点=宣称上界（只取过 15% 的记录），菱形=全部 live accuracy 记录的最坏值"
+        "（绿=在 15% 内，红=超出），灰线=两者差额；虚线=owner 15% 标准。",
     ]
     for figure, caption in zip(figures, captions):
         rel = figure.relative_to(ROOT)
@@ -833,12 +964,14 @@ def main(argv: list[str] | None = None) -> int:
     figures = [
         FIG_DIR / "evidence_registry.png",
         FIG_DIR / "routing_matrix.png",
+        FIG_DIR / "claim_bounds.png",
     ]
     tables = build_tables(registry, matrix, figures)
     if not args.check:
         FIG_DIR.mkdir(parents=True, exist_ok=True)
         figure_evidence(registry, figures[0])
         figure_matrix(matrix, figures[1])
+        figure_claim_bounds(registry, figures[2])
 
     registry_text = json.dumps(registry, indent=2, sort_keys=True) + "\n"
     matrix_text = json.dumps(matrix, indent=2, sort_keys=True) + "\n"
