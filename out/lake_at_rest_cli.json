@@ -1,0 +1,292 @@
+{
+  "case": "CASE-SPH-LAKE-AT-REST",
+  "controls": {
+    "analytic_hydrostatic_profile": {
+      "a_max_over_g": 0.24988019823117616,
+      "a_max_over_g_horizontal": 1.9329876922117914e-13,
+      "a_max_over_g_interior": 0.14737843379616425,
+      "p_max": 2558.647011521626,
+      "rho_over_rho0_max": 1.00627716465894,
+      "rho_over_rho0_min": 1.0004898996038787
+    },
+    "uniform_lattice_mass": {
+      "a_max_over_g": 1.0000000000000482,
+      "a_max_over_g_horizontal": 1.2333560956729238e-13,
+      "a_max_over_g_interior": 1.0000000000000357,
+      "p_max": 1.7763568394002505e-10,
+      "rho_over_rho0_max": 1.0000000000000004,
+      "rho_over_rho0_min": 0.7632666782411125
+    }
+  },
+  "equilibrium": {
+    "a_max_over_g": 1.6731434450620096e-13,
+    "a_max_over_g_horizontal": 2.444527760642546e-13,
+    "a_max_over_g_horizontal_interior": 2.444527760642546e-13,
+    "a_max_over_g_horizontal_wall_band": null,
+    "a_max_over_g_interior": 1.1606979959791645e-13,
+    "converged": true,
+    "iterations": 11,
+    "mass_over_unit_max": 1.4079485277585637,
+    "mass_over_unit_min": 0.8051477534721373,
+    "p_max": 2641.3459419428395,
+    "residual_history": [
+      2.451324744647734,
+      2.3590673176266375,
+      1.7736429931505153,
+      1.7208666653320357,
+      1.546813813144956,
+      1.45306766777386,
+      0.9243208731971269,
+      0.012050575398797392,
+      7.618540546694419e-05,
+      6.974509858537203e-11,
+      1.6413537196058314e-12
+    ],
+    "rho_over_rho0_max": 1.0064761754005438,
+    "rho_over_rho0_min": 0.9347512514225821
+  },
+  "gates": {
+    "all_passed": true,
+    "rows": [
+      {
+        "comparison": "lt",
+        "gate": "G1",
+        "measured": 1.6731434450620096e-13,
+        "passed": true,
+        "quantity": "vertical equilibrium max|a_y|/g",
+        "threshold": 1e-09
+      },
+      {
+        "comparison": "lt",
+        "gate": "G2",
+        "measured": 2.444527760642546e-13,
+        "passed": true,
+        "quantity": "horizontal equilibrium max|a_x|/g",
+        "threshold": 1e-09
+      },
+      {
+        "comparison": "lt",
+        "gate": "G3",
+        "measured": 1.814111527664864e-15,
+        "passed": true,
+        "quantity": "rest preservation max|v|/c0",
+        "threshold": 1e-09
+      },
+      {
+        "comparison": "lt",
+        "gate": "G4",
+        "measured": 6.443258625056711e-16,
+        "passed": true,
+        "quantity": "surface invariance max|dy|/H",
+        "threshold": 1e-09
+      },
+      {
+        "comparison": "lt",
+        "gate": "G5",
+        "measured": 1.7053025658242404e-15,
+        "passed": true,
+        "quantity": "density invariance max|drho|/rho0",
+        "threshold": 1e-09
+      },
+      {
+        "comparison": "gt",
+        "gate": "G6",
+        "measured": 1.0000000000000482,
+        "passed": true,
+        "quantity": "negative control uniform lattice mass max|a|/g",
+        "threshold": 0.5
+      },
+      {
+        "comparison": "gt",
+        "gate": "G7",
+        "measured": 0.24988019823117616,
+        "passed": true,
+        "quantity": "negative control analytic profile max|a_y|/g",
+        "threshold": 0.05
+      },
+      {
+        "comparison": "gt",
+        "gate": "G8",
+        "measured": 0.09981943702342039,
+        "passed": true,
+        "quantity": "linear response r(1e-4)/r(1e-3)",
+        "threshold": 0.05
+      },
+      {
+        "comparison": "lt",
+        "gate": "G8",
+        "measured": 0.09981943702342039,
+        "passed": true,
+        "quantity": "linear response r(1e-4)/r(1e-3)",
+        "threshold": 0.15
+      }
+    ],
+    "verdicts": {
+      "G1": true,
+      "G2": true,
+      "G3": true,
+      "G4": true,
+      "G5": true,
+      "G6": true,
+      "G7": true,
+      "G8": true
+    }
+  },
+  "geometry": {
+    "acoustic_mach": 12.06747690426661,
+    "depth": 0.28,
+    "dx": 0.04,
+    "gamma": 7.0,
+    "gravity": 9.81,
+    "h": 0.052000000000000005,
+    "h_factor": 1.3,
+    "pairs": 700,
+    "particles": 70,
+    "periodic_x": true,
+    "sound_speed": 20.0,
+    "tie": "row",
+    "wall_particles": 30,
+    "width": 0.4
+  },
+  "parameters": {
+    "depth": 0.28,
+    "dx": 0.04,
+    "periodic_x": true,
+    "t_end": 0.08,
+    "width": 0.4
+  },
+  "perturbation_response": {
+    "0.0001": 0.04298550632124302,
+    "0.001": 0.4306326263006015,
+    "0.01": 4.38524169943326
+  },
+  "profiles": {
+    "band_count": 10,
+    "band_y_max": 0.14,
+    "band_y_min": 0.14,
+    "density_vs_eos_max_rel": 0.0005193066604056736,
+    "eos_pressure_bias_at_bottom": 0.001707017589700236,
+    "pressure_vs_eos_max_rel": 0.1551298895586535,
+    "pressure_vs_rho0gh_max_rel": 0.15683690714835374,
+    "row_profiles": [
+      {
+        "count": 10,
+        "mass_over_unit": 1.624076591897087,
+        "mass_spread": 0.0,
+        "pressure": 2641.3459419426526,
+        "rho_over_rho0": 1.0064761754005433,
+        "y": 0.02
+      },
+      {
+        "count": 10,
+        "mass_over_unit": 1.5881644707148428,
+        "mass_spread": 0.0,
+        "pressure": 2263.4126091520584,
+        "rho_over_rho0": 1.0055647652651702,
+        "y": 0.06
+      },
+      {
+        "count": 10,
+        "mass_over_unit": 1.6458896914191758,
+        "mass_spread": 0.0,
+        "pressure": 1808.479864914847,
+        "rho_over_rho0": 1.0044610508562077,
+        "y": 0.1
+      },
+      {
+        "count": 10,
+        "mass_over_unit": 1.5295582415331153,
+        "mass_spread": 0.0,
+        "pressure": 1588.7998082774782,
+        "rho_over_rho0": 1.0039254679902843,
+        "y": 0.14
+      },
+      {
+        "count": 10,
+        "mass_over_unit": 1.759029272837396,
+        "mass_spread": 0.0,
+        "pressure": 886.7149215417946,
+        "rho_over_rho0": 1.0022021849318983,
+        "y": 0.18
+      },
+      {
+        "count": 10,
+        "mass_over_unit": 1.2883049833748383,
+        "mass_spread": 0.0,
+        "pressure": 1070.4597753744824,
+        "rho_over_rho0": 1.0026549099822986,
+        "y": 0.22
+      },
+      {
+        "count": 10,
+        "mass_over_unit": 2.252837565309551,
+        "mass_spread": 0.0,
+        "pressure": 0.0,
+        "rho_over_rho0": 0.9347512514225822,
+        "y": 0.26
+      }
+    ]
+  },
+  "reference": "analytic hydrostatic identity (u = 0, eta = const)",
+  "rest": {
+    "centre_of_mass_y": 0.14479028129742763,
+    "centre_of_mass_y_initial": 0.1447902812974276,
+    "dt": 0.0007800000000000001,
+    "interior_particles": 70,
+    "max_drho_over_rho0": 1.7053025658242404e-15,
+    "max_drho_over_rho0_interior": 1.7053025658242404e-15,
+    "max_dy_over_H": 6.443258625056711e-16,
+    "max_dy_over_H_interior": 6.443258625056711e-16,
+    "max_v_over_c0": 1.814111527664864e-15,
+    "max_v_over_c0_interior": 1.814111527664864e-15,
+    "samples": [
+      {
+        "drho_over_rho0": 9.094947017729283e-16,
+        "dy_over_H": 2.9738116731030977e-16,
+        "t": 0.015600000000000003,
+        "v_over_c0": 1.1983694037098757e-15
+      },
+      {
+        "drho_over_rho0": 9.094947017729283e-16,
+        "dy_over_H": 5.947623346206195e-16,
+        "t": 0.031200000000000006,
+        "v_over_c0": 1.6036452166190427e-15
+      },
+      {
+        "drho_over_rho0": 1.1368683772161603e-15,
+        "dy_over_H": 5.947623346206195e-16,
+        "t": 0.04680000000000001,
+        "v_over_c0": 1.731255139247878e-15
+      },
+      {
+        "drho_over_rho0": 1.7053025658242404e-15,
+        "dy_over_H": 5.947623346206195e-16,
+        "t": 0.06240000000000001,
+        "v_over_c0": 1.457676646055007e-15
+      },
+      {
+        "drho_over_rho0": 1.5916157281026244e-15,
+        "dy_over_H": 6.443258625056711e-16,
+        "t": 0.07800000000000001,
+        "v_over_c0": 1.5293100119606621e-15
+      },
+      {
+        "drho_over_rho0": 1.7053025658242404e-15,
+        "dy_over_H": 6.443258625056711e-16,
+        "t": 0.08034000000000001,
+        "v_over_c0": 1.6533174829191933e-15
+      }
+    ],
+    "steps": 103,
+    "t_end": 0.08034000000000001,
+    "total_mass": 116.87860817086008,
+    "wall_band_particles": 0
+  },
+  "wall_model": {
+    "case_wall_unpaired": 0,
+    "periodic_x": true,
+    "shipped_wall_columns": 16,
+    "shipped_wall_columns_with_partner": 16,
+    "unpaired": 0
+  }
+}
