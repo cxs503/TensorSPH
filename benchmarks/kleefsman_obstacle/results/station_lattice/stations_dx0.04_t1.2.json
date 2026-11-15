@@ -1,0 +1,56 @@
+{
+ "dx": 0.04,
+ "t_end": 1.2,
+ "sound_speed": 20.0,
+ "wall_time_s": 34.9,
+ "dt": 0.0002,
+ "aperture_m": 0.08,
+ "reference": {
+  "peak_height_m": 0.37,
+  "arrival_time_s": 0.3591,
+  "arrival_time_s_interpolated": 0.3481
+ },
+ "tolerance": 0.1,
+ "stations": {
+  "1.328": {
+   "x_m": 1.328,
+   "slab_peak_m": 0.22021976470947266,
+   "slab_peak_time_s": 0.6399999999999622,
+   "slab_arrival_s": 0.10969858994379214,
+   "peak_rel_error": 0.404811446731155,
+   "arrival_rel_error": 0.6945179895745136,
+   "arrival_pass": false,
+   "peak_pass": false
+  },
+  "1.574": {
+   "x_m": 1.574,
+   "slab_peak_m": 0.1832887034946018,
+   "slab_peak_time_s": 0.8599999999999379,
+   "slab_arrival_s": 0.2078536944675597,
+   "peak_rel_error": 0.5046251256902654,
+   "arrival_rel_error": 0.42118158043007603,
+   "arrival_pass": false,
+   "peak_pass": false
+  },
+  "2.220": {
+   "x_m": 2.22,
+   "slab_peak_m": 0.19024835162692602,
+   "slab_peak_time_s": 1.1359999999999075,
+   "slab_arrival_s": 0.4034170730480096,
+   "peak_rel_error": 0.4858152658731729,
+   "arrival_rel_error": 0.1234115094625721,
+   "arrival_pass": false,
+   "peak_pass": false
+  },
+  "2.426": {
+   "x_m": 2.426,
+   "slab_peak_m": 0.4254970169067383,
+   "slab_peak_time_s": 0.8999999999999335,
+   "slab_arrival_s": 0.4591802770658614,
+   "peak_rel_error": 0.1499919375857792,
+   "arrival_rel_error": 0.27869751341092014,
+   "arrival_pass": false,
+   "peak_pass": false
+  }
+ }
+}

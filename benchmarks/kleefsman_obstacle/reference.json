@@ -1,161 +1,305 @@
 {
-  "case": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST",
-  "repo": "TensorSPH",
-  "reference": {
-    "citation": "Kleefsman K.M.T., Fekken G., Veldman A.E.P., Iwanowski B., Buchner B. (2005) A Volume-of-Fluid based simulation method for wave impact problems. J. Comput. Phys. 206:363-393.",
-    "doi": "10.1016/j.jcp.2004.12.007",
-    "measured_quantity": "water height in front of the obstacle, peak value and arrival time"
+ "case": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST",
+ "repo": "TensorSPH",
+ "reference": {
+  "citation": "Kleefsman K.M.T., Fekken G., Veldman A.E.P., Iwanowski B., Buchner B. (2005) A Volume-of-Fluid based simulation method for wave impact problems. J. Comput. Phys. 206:363-393.",
+  "doi": "10.1016/j.jcp.2004.12.007",
+  "measured_quantity": "water height in front of the obstacle, peak value and arrival time"
+ },
+ "geometry_m": {
+  "tank_length": 3.22,
+  "tank_height": 1.0,
+  "column_length": 1.228,
+  "column_height": 0.55,
+  "obstacle_length": 0.161,
+  "obstacle_height": 0.161,
+  "obstacle_upstream_face_x": 2.476,
+  "downstream_gap": 0.744
+ },
+ "geometry_provenance": {
+  "primary_strings": [
+   "1.000",
+   "1.228",
+   "1.248",
+   "0.744",
+   "0.550",
+   "0.161",
+   "0.403"
+  ],
+  "reading": "tank 3.22 x 1.00 m; column 1.228 x 0.550 m at the closed end; box 0.161 m (streamwise) x 0.161 m high, 0.403 m wide, upstream face at 1.228 + 1.248 = 2.476 m",
+  "consistency_check": "1.228 + 1.248 + 0.744 = 3.220 m = tank length (exact, residuals 0)",
+  "secondary_source": "Amaro Junior R.A., Cheng L.-Y., Buruchenko S.K. (2020) A comparison between WCSPH and MPS methods for 3D dam-break flows. Int. J. Offshore Polar Eng. 30(4), doi:10.1142/s021987622050036x; open preprint arXiv:2306.01959, Fig. 2 (dimensioned setup reproduced from Kleefsman et al. 2005) and Sec. 'Computational domain and model parameters'.",
+  "verified_against": [
+   "3.22 m tank, 1.22 m column, 0.55 m column height, 0.40 x 0.16 x 0.16 m box placed 1.248 m downstream (A. English et al. 2021, doi:10.1007/s40571-021-00403-3, Sec. 'Three-dimensional dam-break flow with a fixed structure')"
+  ]
+ },
+ "experimental_values": {
+  "status": "ANCHORED",
+  "peak_height_m": 0.37,
+  "peak_time_s": 1.7027,
+  "arrival_time_s": 0.3591,
+  "probe_x_m": 2.426,
+  "probe_id": "H2",
+  "probe_note": "paper text: 'In Fig. 19 time histories of the water height at two locations are shown: in the reservoir, and in the tank just in front of the box' -> H2 is the in-front-of-box probe; its x is not machine-readable from the raster setup figure Fig. 17, so the code convention (box upstream face 2.476 m minus 0.05 m) is used.",
+  "source": "Kleefsman, Fekken, Veldman, Iwanowski & Buchner (2005) J. Comput. Phys. 206:363-393, doi:10.1016/j.jcp.2004.12.007, Fig. 19 right panel",
+  "source_pdf": "https://pure.rug.nl/ws/files/2941055/2005JCompPhysKleefsman.pdf (research.rug.nl mirror is Cloudflare-gated; the pure.rug.nl mirror serves the same file)",
+  "digitisation": "raster JPEG 1182x450 (page 22 image xref 314); x 0..6 s over px 661..1179, y 0.4..0.0 m over px 6.5..413.5",
+  "digitised_series": "docs/m20884/outputs/kleefsman_h2_ref/h2_fig19.csv",
+  "digitisation_cross_check": {
+   "comflow_peak_height_m": 0.3361,
+   "comflow_peak_time_s": 1.7722,
+   "comflow_arrival_time_s": 0.3707,
+   "arrival_agreement_rel": 0.0323,
+   "why": "two curves traced independently by continuity; the paper states the impact instant is 'perfectly captured', so a digitisation that reproduces that agreement (<5 %) is self-consistent"
   },
-  "geometry_m": {
-    "tank_length": 3.22,
-    "tank_height": 1.0,
-    "column_length": 1.228,
-    "column_height": 0.55,
-    "obstacle_length": 0.161,
-    "obstacle_height": 0.161,
-    "obstacle_upstream_face_x": 2.476,
-    "downstream_gap": 0.744
+  "uncertainty": {
+   "peak_height_m": 0.005,
+   "arrival_time_s": 0.01,
+   "reason": "1 px = 0.0038 m vertical, 0.0116 s horizontal; line thickness 3-6 px"
   },
-  "geometry_provenance": {
-    "primary_strings": [
-      "1.000",
-      "1.228",
-      "1.248",
-      "0.744",
-      "0.550",
-      "0.161",
-      "0.403"
-    ],
-    "reading": "tank 3.22 x 1.00 m; column 1.228 x 0.550 m at the closed end; box 0.161 m (streamwise) x 0.161 m high, 0.403 m wide, upstream face at 1.228 + 1.248 = 2.476 m",
-    "consistency_check": "1.228 + 1.248 + 0.744 = 3.220 m = tank length (exact, residuals 0)",
-    "secondary_source": "Amaro Junior R.A., Cheng L.-Y., Buruchenko S.K. (2020) A comparison between WCSPH and MPS methods for 3D dam-break flows. Int. J. Offshore Polar Eng. 30(4), doi:10.1142/s021987622050036x; open preprint arXiv:2306.01959, Fig. 2 (dimensioned setup reproduced from Kleefsman et al. 2005) and Sec. 'Computational domain and model parameters'.",
-    "verified_against": [
-      "3.22 m tank, 1.22 m column, 0.55 m column height, 0.40 x 0.16 x 0.16 m box placed 1.248 m downstream (A. English et al. 2021, doi:10.1007/s40571-021-00403-3, Sec. 'Three-dimensional dam-break flow with a fixed structure')"
-    ]
+  "previous_status_note": "until this mission the field was WITHHELD because the paper PDF was believed unreachable; the pure.rug.nl mirror resolves that.",
+  "peak_time_derivation": "peak_time_s is the argmax of the committed digitised H2 series (docs/m20884/outputs/kleefsman_h2_ref/h2_fig19.csv, 380 samples, t=0.3475..5.9653 s); the field was missing from this file until m21324, which blocked an event-window peak comparison even though the frozen protocol references the 1.703 s maximum. digitised_series is now a repo-root-relative path: the previous value \"../../outputs/kleefsman_h2_ref/h2_fig19.csv\" resolved to <repo>/outputs/, which does not exist.",
+  "arrival_time_s_interpolated": 0.3481,
+  "arrival_time_definition": "arrival_time_s = 0.3591 is the first DIGITISED SAMPLE whose level reaches the 0.02 m threshold; arrival_time_s_interpolated = 0.3481 is the linearly interpolated crossing of the same threshold, which is the operator the solver reports (tensorsph.kleefsman_obstacle._peak_metrics interpolates between the bracketing samples). The two readings of the same curve differ by 3.1 %, i.e. 0 % of the 10 % case tolerance. Both are scored (m21324) and a PASS must hold against both."
+ },
+ "tolerance": {
+  "relative": 0.1,
+  "rule": "|got - ref| / |ref| < 0.10 for both the peak height and the arrival time"
+ },
+ "metric_definition": {
+  "operators": {
+   "height": "legacy top-3 particle-centre mean (water_height_at); systematic bias -0.38..-1.33 dx",
+   "surface": "same with the (k-1)/2 dx row offset removed (surface_level); residual +/-0.5 dx",
+   "slab": "fixed physical aperture volume gauge (slab_level); dx-independent for a planar surface"
   },
-  "experimental_values": {
-    "status": "ANCHORED",
-    "peak_height_m": 0.37,
-    "peak_time_s": 1.7027,
-    "arrival_time_s": 0.3591,
-    "probe_x_m": 2.426,
-    "probe_id": "H2",
-    "probe_note": "paper text: 'In Fig. 19 time histories of the water height at two locations are shown: in the reservoir, and in the tank just in front of the box' -> H2 is the in-front-of-box probe; its x is not machine-readable from the raster setup figure Fig. 17, so the code convention (box upstream face 2.476 m minus 0.05 m) is used.",
-    "source": "Kleefsman, Fekken, Veldman, Iwanowski & Buchner (2005) J. Comput. Phys. 206:363-393, doi:10.1016/j.jcp.2004.12.007, Fig. 19 right panel",
-    "source_pdf": "https://pure.rug.nl/ws/files/2941055/2005JCompPhysKleefsman.pdf (research.rug.nl mirror is Cloudflare-gated; the pure.rug.nl mirror serves the same file)",
-    "digitisation": "raster JPEG 1182x450 (page 22 image xref 314); x 0..6 s over px 661..1179, y 0.4..0.0 m over px 6.5..413.5",
-    "digitised_series": "docs/m20884/outputs/kleefsman_h2_ref/h2_fig19.csv",
-    "digitisation_cross_check": {
-      "comflow_peak_height_m": 0.3361,
-      "comflow_peak_time_s": 1.7722,
-      "comflow_arrival_time_s": 0.3707,
-      "arrival_agreement_rel": 0.0323,
-      "why": "two curves traced independently by continuity; the paper states the impact instant is 'perfectly captured', so a digitisation that reproduces that agreement (<5 %) is self-consistent"
-    },
-    "uncertainty": {
-      "peak_height_m": 0.005,
-      "arrival_time_s": 0.01,
-      "reason": "1 px = 0.0038 m vertical, 0.0116 s horizontal; line thickness 3-6 px"
-    },
-    "previous_status_note": "until this mission the field was WITHHELD because the paper PDF was believed unreachable; the pure.rug.nl mirror resolves that.",
-    "peak_time_derivation": "peak_time_s is the argmax of the committed digitised H2 series (docs/m20884/outputs/kleefsman_h2_ref/h2_fig19.csv, 380 samples, t=0.3475..5.9653 s); the field was missing from this file until m21324, which blocked an event-window peak comparison even though the frozen protocol references the 1.703 s maximum. digitised_series is now a repo-root-relative path: the previous value \"../../outputs/kleefsman_h2_ref/h2_fig19.csv\" resolved to <repo>/outputs/, which does not exist.",
-    "arrival_time_s_interpolated": 0.3481,
-    "arrival_time_definition": "arrival_time_s = 0.3591 is the first DIGITISED SAMPLE whose level reaches the 0.02 m threshold; arrival_time_s_interpolated = 0.3481 is the linearly interpolated crossing of the same threshold, which is the operator the solver reports (tensorsph.kleefsman_obstacle._peak_metrics interpolates between the bracketing samples). The two readings of the same curve differ by 3.1 %, i.e. 0 % of the 10 % case tolerance. Both are scored (m21324) and a PASS must hold against both."
-  },
-  "tolerance": {
-    "relative": 0.1,
-    "rule": "|got - ref| / |ref| < 0.10 for both the peak height and the arrival time"
-  },
-  "metric_definition": {
-    "operators": {
-      "height": "legacy top-3 particle-centre mean (water_height_at); systematic bias -0.38..-1.33 dx",
-      "surface": "same with the (k-1)/2 dx row offset removed (surface_level); residual +/-0.5 dx",
-      "slab": "fixed physical aperture volume gauge (slab_level); dx-independent for a planar surface"
-    },
-    "aperture_m": 0.08,
-    "stations_offset_m": [
-      0.05,
-      0.248
-    ],
-    "arrival_threshold_m": 0.02,
-    "why": "the case-pool tolerance is 10 %, so the gauge itself must not carry a resolution-dependent bias of that size; measured on a still lattice, the historical operator is 1.8-2.7 cm low at dx=0.02 and 1.5-5.3 cm low at dx=0.04, i.e. it exceeds its own 0.02 m arrival threshold",
-    "evidence": "docs/verification_kleefsman_gauge_bias.md, results/gauge_ladder/analysis.json, tests/test_kleefsman_gauge_bias.py",
-    "frozen_primary": {
-      "operator": "slab",
-      "aperture_m": 0.08,
-      "station_offset_m": 0.05,
-      "peak_filter_window_s": 0.03,
-      "arrival_threshold_m": 0.02,
-      "why": "the audit of the committed bundle (docs/benchmarks/kleefsman-decidability-audit-m20773.md) measured a 9-20 % peak spread across the three water-level operators at the probe station, which is the same size as the 10 % case tolerance. The acceptance metric therefore cannot be evaluated until one operator is frozen: the fixed-aperture slab gauge is chosen because it is the only one of the three that is dx-independent for a planar surface, and the peak is taken after a 30 ms symmetric moving average because the particle-stack peak is set by ballistic spray (gauge-equivalent level, see convergence_analysis.py).",
-      "frozen_by": "m20773",
-      "frozen_on": "2026-11-14",
-      "evidence": [
-        "docs/benchmarks/kleefsman-decidability-audit-m20773.md",
-        "results/audit_protocol/decidability.json",
-        "tests/test_kleefsman_decidability.py"
-      ]
-    }
-  },
-  "gauge_ladder_status": {
-    "grids_completed": [
-      0.02,
-      0.04
-    ],
-    "grids_pending": [
-      0.01
-    ],
-    "pending_job": "cluster cj1576 (queued); rerun benchmarks/kleefsman_obstacle/gauge_convergence.py after it lands",
-    "pair_spread": "peak 21.6 % (height@x2.426) -> 9.9 % (slab@x2.426) -> 1.3 % (slab@x2.228); arrival 6.2 % -> 4.2 % -> 4.4 %"
-  },
-  "arrival_attribution": {
-    "what": "attribution of the 22-34 % late surge (m21173): gauge-vs-front split, fan-locus depth mapping, Richardson limit, c0 falsification, station sensitivity",
-    "verdict": "arrival FAIL on every grid and every gauge operator; peak NOT COMPARABLE (all committed runs end at 1.0-1.2 s, the reference peak is the t=1.70 s secondary impact)",
-    "falsified_causes": [
-      "acoustic compressibility (c0 20->80 moves the arrival <0.3 %)",
-      "grid resolution (Richardson continuum 0.4396 s, +22.4 %)",
-      "gauge operator (all three operators outside the tolerance)",
-      "level-event vs front split (<=20 % of the deficit)"
-    ],
-    "open_causes": [
-      "probe x: H2 coordinate unverified; the committed 2.228 m station would remove 52-63 % of the deficit",
-      "surge-front release phase: leading edge accelerates 2.7->3.9 m/s and its mean speed is dx-independent"
-    ],
-    "evidence": [
-      "docs/benchmarks/kleefsman-arrival-attribution-m21173.md",
-      "benchmarks/kleefsman_obstacle/results/arrival_attribution/attribution.json",
-      "tests/test_kleefsman_arrival_attribution.py"
-    ]
-  },
-  "convergence_t30": {
-    "what": "three-grid (dx=0.04/0.02/0.01) measured-order convergence of the frozen acceptance metric + ASME V&V 20 comparison-error criterion",
-    "verdict": "PEAK_FAIL_RESOLVED",
-    "primary_station": {
-      "peak_ladder_convergence": "CONVERGED",
-      "p_observed": 3.4308766626317984,
-      "p_effective": 2.0,
-      "gci_fine_conservative": 0.003976154071256745,
-      "richardson_peak_m": 0.4817680481582096,
-      "peak_rel_error_continuum": 0.302075805832999,
-      "vv20": "MODEL_ERROR_EXCEEDS_U_V",
-      "arrival_richardson_s": 0.43727268288618376,
-      "arrival_rel_error_fine": 0.2578222946579422,
-      "same_event_as_experiment": false,
-      "station_verdict": "PEAK_FAIL_MODEL_ERROR"
-    },
-    "secondary_station": {
-      "peak_ladder_convergence": "NOT_CONVERGED",
-      "p_observed": 0.3772051858800637,
-      "gci_fine_conservative": 0.16271462774358322,
-      "peak_rel_error_continuum": 0.13625515735384047,
-      "station_verdict": "PEAK_NOT_CERTIFIABLE_UNCONVERGED",
-      "why": "finest-grid peak sits inside the 10 % tolerance but the ladder is unconverged, so no PASS is issued"
-    },
-    "evidence": [
-      "benchmarks/kleefsman_obstacle/results/convergence_t30/convergence.json",
-      "docs/benchmarks/kleefsman-convergence-t30-m21718.md",
-      "tests/test_kleefsman_convergence_t30.py",
-      "platform report 19608"
-    ],
-    "horizon_note": "dx0.01 record used here ends at t_end=2.6 s (dx0.04/0.02 at 3.0 s); every compared extremum (<=1.55 s) lies inside its own record (checked by _uniform_horizon). A uniform t_end=3.0 s dx0.01 run is submitted as cluster job cj3647; convergence_t30.py prefers results/gap_t30/ once it lands."
+  "aperture_m": 0.08,
+  "stations_offset_m": [
+   0.05,
+   0.248
+  ],
+  "arrival_threshold_m": 0.02,
+  "why": "the case-pool tolerance is 10 %, so the gauge itself must not carry a resolution-dependent bias of that size; measured on a still lattice, the historical operator is 1.8-2.7 cm low at dx=0.02 and 1.5-5.3 cm low at dx=0.04, i.e. it exceeds its own 0.02 m arrival threshold",
+  "evidence": "docs/verification_kleefsman_gauge_bias.md, results/gauge_ladder/analysis.json, tests/test_kleefsman_gauge_bias.py",
+  "frozen_primary": {
+   "operator": "slab",
+   "aperture_m": 0.08,
+   "station_offset_m": 0.05,
+   "peak_filter_window_s": 0.03,
+   "arrival_threshold_m": 0.02,
+   "why": "the audit of the committed bundle (docs/benchmarks/kleefsman-decidability-audit-m20773.md) measured a 9-20 % peak spread across the three water-level operators at the probe station, which is the same size as the 10 % case tolerance. The acceptance metric therefore cannot be evaluated until one operator is frozen: the fixed-aperture slab gauge is chosen because it is the only one of the three that is dx-independent for a planar surface, and the peak is taken after a 30 ms symmetric moving average because the particle-stack peak is set by ballistic spray (gauge-equivalent level, see convergence_analysis.py).",
+   "frozen_by": "m20773",
+   "frozen_on": "2026-11-14",
+   "evidence": [
+    "docs/benchmarks/kleefsman-decidability-audit-m20773.md",
+    "results/audit_protocol/decidability.json",
+    "tests/test_kleefsman_decidability.py"
+   ]
   }
+ },
+ "gauge_ladder_status": {
+  "grids_completed": [
+   0.02,
+   0.04
+  ],
+  "grids_pending": [
+   0.01
+  ],
+  "pending_job": "cluster cj1576 (queued); rerun benchmarks/kleefsman_obstacle/gauge_convergence.py after it lands",
+  "pair_spread": "peak 21.6 % (height@x2.426) -> 9.9 % (slab@x2.426) -> 1.3 % (slab@x2.228); arrival 6.2 % -> 4.2 % -> 4.4 %"
+ },
+ "arrival_attribution": {
+  "what": "attribution of the 22-34 % late surge (m21173): gauge-vs-front split, fan-locus depth mapping, Richardson limit, c0 falsification, station sensitivity",
+  "verdict": "arrival FAIL on every grid and every gauge operator; peak NOT COMPARABLE (all committed runs end at 1.0-1.2 s, the reference peak is the t=1.70 s secondary impact)",
+  "falsified_causes": [
+   "acoustic compressibility (c0 20->80 moves the arrival <0.3 %)",
+   "grid resolution (Richardson continuum 0.4396 s, +22.4 %)",
+   "gauge operator (all three operators outside the tolerance)",
+   "level-event vs front split (<=20 % of the deficit)"
+  ],
+  "open_causes": [
+   "probe x: H2 coordinate unverified; the committed 2.228 m station would remove 52-63 % of the deficit",
+   "surge-front release phase: leading edge accelerates 2.7->3.9 m/s and its mean speed is dx-independent"
+  ],
+  "evidence": [
+   "docs/benchmarks/kleefsman-arrival-attribution-m21173.md",
+   "benchmarks/kleefsman_obstacle/results/arrival_attribution/attribution.json",
+   "tests/test_kleefsman_arrival_attribution.py"
+  ]
+ },
+ "convergence_t30": {
+  "what": "three-grid (dx=0.04/0.02/0.01) measured-order convergence of the frozen acceptance metric + ASME V&V 20 comparison-error criterion",
+  "verdict": "PEAK_FAIL_RESOLVED",
+  "primary_station": {
+   "peak_ladder_convergence": "CONVERGED",
+   "p_observed": 3.4308766626317984,
+   "p_effective": 2.0,
+   "gci_fine_conservative": 0.003976154071256745,
+   "richardson_peak_m": 0.4817680481582096,
+   "peak_rel_error_continuum": 0.302075805832999,
+   "vv20": "MODEL_ERROR_EXCEEDS_U_V",
+   "arrival_richardson_s": 0.43727268288618376,
+   "arrival_rel_error_fine": 0.2578222946579422,
+   "same_event_as_experiment": false,
+   "station_verdict": "PEAK_FAIL_MODEL_ERROR"
+  },
+  "secondary_station": {
+   "peak_ladder_convergence": "NOT_CONVERGED",
+   "p_observed": 0.3772051858800637,
+   "gci_fine_conservative": 0.16271462774358322,
+   "peak_rel_error_continuum": 0.13625515735384047,
+   "station_verdict": "PEAK_NOT_CERTIFIABLE_UNCONVERGED",
+   "why": "finest-grid peak sits inside the 10 % tolerance but the ladder is unconverged, so no PASS is issued"
+  },
+  "evidence": [
+   "benchmarks/kleefsman_obstacle/results/convergence_t30/convergence.json",
+   "docs/benchmarks/kleefsman-convergence-t30-m21718.md",
+   "tests/test_kleefsman_convergence_t30.py",
+   "platform report 19608"
+  ],
+  "horizon_note": "dx0.01 record used here ends at t_end=2.6 s (dx0.04/0.02 at 3.0 s); every compared extremum (<=1.55 s) lies inside its own record (checked by _uniform_horizon). A uniform t_end=3.0 s dx0.01 run is submitted as cluster job cj3647; convergence_t30.py prefers results/gap_t30/ once it lands."
+ },
+ "probe_station_lattice": {
+  "what": "is the committed 2.426 m station admissible for gauge H2?",
+  "evidence": {
+   "probe_spacing_m": 0.496,
+   "probe_spacing_source": "Amaro Junior, Cheng & Buruchenko (2020) Fig. 2a, three equal 0.496 m strings between the four wave probes",
+   "one_probe_in_reservoir": "Kleefsman et al. (2005) p.381 (probes H1..H4); Fig. 19 caption p.383 names H4 as the reservoir probe",
+   "h2_location": "Kleefsman et al. (2005) p.382: 'in the tank just in front of the box'",
+   "unused_strings": [
+    "1.150",
+    "0.496",
+    "0.496",
+    "0.496"
+   ],
+   "why_now": "the committed provenance chain (geometry_provenance) reads only 1.228/1.248/0.744/0.161 and therefore never constrained the probe station: probe_offset = 0.05 m is a convention, not a measurement"
+  },
+  "constraints": {
+   "H4_in_reservoir": "0 <= a <= 1.228",
+   "H1_inside_tank": "a + 3S <= 3.22 -> a <= 1.7320000000000002",
+   "H2_in_tank_downstream_of_gate": "a + 2S > 1.228 -> a > 0.236",
+   "admissible_a_interval": [
+    0.236,
+    1.228
+   ],
+   "admissible_H2_interval": [
+    1.228,
+    2.2199999999999998
+   ]
+  },
+  "committed_station": {
+   "x_m": 2.426,
+   "implied_a_m": 1.4340000000000002,
+   "admissible": false,
+   "verdict": "EXCLUDED_BY_LATTICE",
+   "why": "the committed station needs a = 1.434 m > column_length 1.228 m, i.e. H4 inside the tank, contradicting the primary source"
+  },
+  "anchors": {
+   "anchor_gate": {
+    "H2_m": 2.2199999999999998,
+    "a_m": 1.228,
+    "why": "the only string that fixes H4 absolutely is the reservoir length: H4 sits at the reservoir/tank gate 1.228 m from the closed end"
+   },
+   "anchor_far_wall": {
+    "H2_m": 1.5740000000000003,
+    "a_m": 0.5820000000000003,
+    "why": "the five figure strings must all dimension something; 1.150 m from the far (open) wall to H1 puts H1 at 2.070 m and H4 at 0.582 m, i.e. inside the reservoir"
+   }
+  },
+  "measured": {
+   "dx0.02_t1.2": {
+    "t_end_s": 1.2,
+    "stations": {
+     "1.328": {
+      "slab_peak_m": 0.2410519133673774,
+      "slab_arrival_s": 0.09562011661034342,
+      "peak_rel_error": 0.3485083422503313,
+      "arrival_rel_error": 0.7337228721516473
+     },
+     "1.574": {
+      "slab_peak_m": 0.18921319961547853,
+      "slab_arrival_s": 0.19625235414537717,
+      "peak_rel_error": 0.4886129740122202,
+      "arrival_rel_error": 0.45348829254977113
+     },
+     "2.220": {
+      "slab_peak_m": 0.1922503598531087,
+      "slab_arrival_s": 0.3870653950067547,
+      "peak_rel_error": 0.4804044328294359,
+      "arrival_rel_error": 0.07787634365568007
+     },
+     "2.426": {
+      "slab_peak_m": 0.47496668921576607,
+      "slab_arrival_s": 0.44069334927174747,
+      "peak_rel_error": 0.2836937546372056,
+      "arrival_rel_error": 0.2272162330040309
+     }
+    }
+   },
+   "dx0.04_t1.2": {
+    "t_end_s": 1.2,
+    "stations": {
+     "1.328": {
+      "slab_peak_m": 0.22021976470947266,
+      "slab_arrival_s": 0.10969858994379214,
+      "peak_rel_error": 0.404811446731155,
+      "arrival_rel_error": 0.6945179895745136
+     },
+     "1.574": {
+      "slab_peak_m": 0.1832887034946018,
+      "slab_arrival_s": 0.2078536944675597,
+      "peak_rel_error": 0.5046251256902654,
+      "arrival_rel_error": 0.42118158043007603
+     },
+     "2.220": {
+      "slab_peak_m": 0.19024835162692602,
+      "slab_arrival_s": 0.4034170730480096,
+      "peak_rel_error": 0.4858152658731729,
+      "arrival_rel_error": 0.1234115094625721
+     },
+     "2.426": {
+      "slab_peak_m": 0.4254970169067383,
+      "slab_arrival_s": 0.4591802770658614,
+      "peak_rel_error": 0.1499919375857792,
+      "arrival_rel_error": 0.27869751341092014
+     }
+    }
+   },
+   "dx0.04_t3.0": {
+    "t_end_s": 3.0,
+    "stations": {
+     "1.328": {
+      "slab_peak_m": 0.2287846794128418,
+      "slab_arrival_s": 0.10969858994379214,
+      "peak_rel_error": 0.3816630286139411,
+      "arrival_rel_error": 0.6945179895745136
+     },
+     "1.574": {
+      "slab_peak_m": 0.2609555435180664,
+      "slab_arrival_s": 0.2078536944675597,
+      "peak_rel_error": 0.29471474724846924,
+      "arrival_rel_error": 0.42118158043007603
+     },
+     "2.220": {
+      "slab_peak_m": 0.4011390516493056,
+      "slab_arrival_s": 0.4034170730480096,
+      "peak_rel_error": 0.08415959905217725,
+      "arrival_rel_error": 0.1234115094625721
+     },
+     "2.426": {
+      "slab_peak_m": 0.4254970169067383,
+      "slab_arrival_s": 0.4591802770658614,
+      "peak_rel_error": 0.1499919375857792,
+      "arrival_rel_error": 0.27869751341092014
+     }
+    }
+   }
+  },
+  "verdict": "COMMITTED_STATION_EXCLUDED; at the admissible gate anchor (2.220 m) arrival +7.8% (dx0.02) / +12.3% (dx0.04) and peak +8.4% (dx0.04, t=3 s) -- the case first reaches the tolerance band, but no PASS is issued until the full-horizon dx0.01 ladder lands (jobs cj4153 dx0.01/t3.0, cj4154 dx0.02/t3.0)",
+  "evidence_files": [
+   "docs/benchmarks/kleefsman-probe-station-m22476.md",
+   "benchmarks/kleefsman_obstacle/station_lattice.py",
+   "benchmarks/kleefsman_obstacle/results/station_lattice/lattice.json",
+   "tests/test_kleefsman_station_lattice.py"
+  ]
+ }
 }
