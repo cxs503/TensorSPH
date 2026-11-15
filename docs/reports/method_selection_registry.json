@@ -409,6 +409,21 @@
       "within_owner_tolerance": true
     },
     {
+      "case": "CASE-LAPLACE-SPH (quasi-static, time-averaged)",
+      "extractor": "x_csf_laplace_quasistatic",
+      "gate_pct": 15.0,
+      "kind": "accuracy",
+      "measured_pct": 45.69297615786225,
+      "method": "csf_surface_tension",
+      "own_gate_passed": false,
+      "precondition": "dynamic, end-to-end record: it is the only csf_surface_tension entry whose quantity is the Young-Laplace jump itself rather than a static field diagnostic (curvature / cut force). It supersedes the committed -78.6 % snapshot: that record compared two *interior* pressure bands, whose analytic difference is 0 Pa, against sigma/R; the same run is reproduced here as legacy_estimator for the artefact to stay falsifiable",
+      "quantity": "bulk pressure vs vacuum over the 4-6 t_sigma window, worst rung of dx = 3/2/1.5 mm (analytic value sigma/R)",
+      "source": "benchmarks/csf_consistent/relax_quasistatic.json",
+      "source_sha256": "3bc05eb4b2c59844dbfc1c9b6c3b80bba8472f043f6163481ea56e9c1e3fa1d2",
+      "status": "banked",
+      "within_owner_tolerance": false
+    },
+    {
       "case": "XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.03 m)",
       "extractor": "x_transport_velocity",
       "gate_pct": 15.0,

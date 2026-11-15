@@ -122,10 +122,11 @@ python -m tensorsph.method_selection --json /tmp/prof.json     # CLI 判型（�
 | `wcsph_wall_no_slip` | plane Couette channel (design-time run) | cross-channel mass-flux error \|1 - Q_SPH/Q_exact\| at t_end = 1.2 H^2/nu per DESIGN.md (finest rung) | 4.415 | 5 | ✔ | ✔ | `benchmarks/couette/out_design/results.json` |
 | `isph_projection` | CASE-ISPH-CHANNEL (GAP-SPH-ISPH-PROJECTION ladder) | momentum-budget wall shear vs rho g H/2 on the finest rung (artefact gate 3 %) | 0.04583 | 3 | ✔ | ✔ | `benchmarks/isph_channel/results.json` |
 | `csf_surface_tension` | CASE-LAPLACE-SPH (consistent CSF) | cut-force \|F_SPH - sigma\| error of the consistent-CSF arm | 5.987 | 15 | ✔ | ✔ | `benchmarks/csf_consistent/validation_report.json` |
+| `csf_surface_tension` | CASE-LAPLACE-SPH (quasi-static, time-averaged) | bulk pressure vs vacuum over the 4-6 t_sigma window, worst rung of dx = 3/2/1.5 mm (analytic value sigma/R) | 45.69 | 15 | ✘ | ✘ | `benchmarks/csf_consistent/relax_quasistatic.json` |
 | `transport_velocity_correction` | XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.03 m) | mean relative error of the front position Z/a vs the Martin & Moyce (1952) digitised points, alpha=0.10 over all particles | 10.81 | 15 | ✔ | ✔ | `docs/xval_sphinx_tvc/data/grid_dx003.json` |
 | `transport_velocity_correction` | XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.04 m) | same quantity on the coarser rung: records the alpha=0.10 arm is resolution-sensitive (kept in the registry, fails the owner standard) | 16.96 | 15 | ✘ | ✘ | `docs/xval_sphinx_tvc/data/grid_dx004.json` |
 
-登记记录 28 条，覆盖 10 个方法；最坏误差 834.6%。缺失源文件：无。
+登记记录 29 条，覆盖 10 个方法；最坏误差 834.6%。缺失源文件：无。
 
 
 ### 3.2 路由矩阵（候选算例画像 → 选定方法）
@@ -134,7 +135,7 @@ python -m tensorsph.method_selection --json /tmp/prof.json     # CLI 判型（�
 |---|---|---|---|---|---|---|
 | regular wave in a flume | wcsph_delta_sph | SELECTED | 2.968 | 5.533 | ✔ | density_diffusion=SELECTED, compression_regularization=SELECTED |
 | Sod shock tube | compressible_riemann | SELECTED | 0.7768 | 0.7768 | ✔ | - |
-| capillary droplet (Laplace law) | csf_surface_tension | SELECTED | 5.987 | 23.8 | ✘ | density_diffusion=SELECTED, compression_regularization=SELECTED |
+| capillary droplet (Laplace law) | csf_surface_tension | SELECTED | 5.987 | 45.69 | ✘ | density_diffusion=SELECTED, compression_regularization=SELECTED |
 | planar Couette channel | isph_projection | SELECTED | 0.8666 | 0.8666 | ✔ | - |
 | Gresho vortex (smooth inviscid, periodic) | （无） | NONE | - | - | ✘ | - |
 | 1-D transient conduction | heat_conduction_operator | SELECTED | 0.1504 | 0.1504 | ✔ | - |
@@ -154,7 +155,7 @@ python -m tensorsph.method_selection --json /tmp/prof.json     # CLI 判型（�
 |---|---|---|---|---|---|---|
 | `compressible_riemann` | 0.7768 | 0.7768 | +0 | - | 1 | ✔ |
 | `compression_regularization` | 5.533 | 5.533 | +0 | - | 1 | ✔ |
-| `csf_surface_tension` | 5.987 | 23.8 | +17.81 | - | 3 | ✘ |
+| `csf_surface_tension` | 5.987 | 45.69 | +39.71 | - | 4 | ✘ |
 | `density_diffusion` | 1.021 | 1.021 | +0 | - | 2 | ✔ |
 | `heat_conduction_operator` | 0.1504 | 0.1504 | +0 | - | 2 | ✔ |
 | `isph_projection` | 0.8666 | 0.8666 | +0 | - | 2 | ✔ |
@@ -163,7 +164,7 @@ python -m tensorsph.method_selection --json /tmp/prof.json     # CLI 判型（�
 | `wcsph_delta_sph` | 2.968 | 2.968 | +0 | - | 1 | ✔ |
 | `wcsph_wall_no_slip` | 14.2 | 17.08 | +2.873 | 18.26 | 7 | ✘ |
 
-10 个有证据的方法中，3 个的宣称上界**低于**自己最差的活accuracy 记录（最大差额 17.81 pp）；3 个方法的真实精度上界超出 15% owner 标准：`csf_surface_tension`, `transport_velocity_correction`, `wcsph_wall_no_slip`。
+10 个有证据的方法中，3 个的宣称上界**低于**自己最差的活accuracy 记录（最大差额 39.71 pp）；3 个方法的真实精度上界超出 15% owner 标准：`csf_surface_tension`, `transport_velocity_correction`, `wcsph_wall_no_slip`。
 
 
 ### 3.4 图
