@@ -391,6 +391,19 @@ class Kleefsman3DRun:
             "simulated_time_s": self.simulated_time,
             "wall_clock_s": self.wall_clock_s,
             "max_bypass_particles": max(self.bypass) if self.bypass else 0.0,
+            # Every field the ladder compares runs on.  Written here (and not
+            # reconstructed downstream) because a missing key makes
+            # ladder.check_protocol() skip that key, which silently turns a
+            # comparability guard into a vacuous one.
+            "fingerprint": {
+                "t_end": self.cfg.t_end,
+                "sound_speed": self.cfg.sound_speed,
+                "wall_layers": self.cfg.wall_layers,
+                "obstacle_z": self.cfg.obstacle_z,
+                "station_offset": self.cfg.station_offset,
+                "gauge_aperture": self.cfg.gauge_aperture,
+                "arrival_threshold": self.cfg.arrival_threshold,
+            },
         }
 
 
@@ -399,8 +412,16 @@ class Kleefsman3DRun:
 # --------------------------------------------------------------------------- #
 
 def run_case(cfg: Kleefsman3DConfig, device: str | torch.device = "cpu",
-             progress=None) -> Kleefsman3DRun:
-    """Integrate the 3-D case to ``cfg.t_end`` and record the gauge series."""
+             progress=None, on_sample=None) -> Kleefsman3DRun:
+    """Integrate the 3-D case to ``cfg.t_end`` and record the gauge series.
+
+    ``on_sample(i, sample)`` is called once per stored output sample with a dict
+    of that sample.  It exists so a driver can persist the series *as it is
+    produced*: these 3-D runs are half-hour cluster jobs and the two production
+    rungs submitted on 11-15 died of a glibc abort (``free(): corrupted unsorted
+    chunks``) at t = 2.04 s and t = 0.58 s, throwing away every sample because
+    the series was only written after the loop returned.
+    """
     import time as _time
 
     validate_case(cfg)
@@ -453,6 +474,14 @@ def run_case(cfg: Kleefsman3DConfig, device: str | torch.device = "cpu",
             run.height.append(peak_height(positions, cfg))
             run.front.append(float(positions[:, 0].max()))
             run.bypass.append(float(bypass_count(positions, cfg)))
+            if on_sample is not None:
+                on_sample(len(run.times) - 1, {
+                    "t_s": elapsed,
+                    "slab_height_m": run.slab[-1],
+                    "height_operator_m": run.height[-1],
+                    "front_x_m": run.front[-1],
+                    "n_bypass": run.bypass[-1],
+                })
             if progress is not None and step % (cfg.output_every * 20) == 0:
                 progress(elapsed, run.slab[-1])
 

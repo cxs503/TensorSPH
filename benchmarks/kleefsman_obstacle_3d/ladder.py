@@ -18,7 +18,7 @@ compare runs whose protocol fingerprints differ, and then
    Fig. 19, per grid;
 2. fits ``f(dx) = f_inf + C dx^p`` through the ladder (a generalisation of
    Richardson extrapolation that admits a non-uniform refinement ratio, which
-   is what dx = 0.08 / 0.04 / 0.03 is) and reports the extrapolated continuum
+   is what dx = 0.05 / 0.04 / 0.03 is) and reports the extrapolated continuum
    value together with the observed order ``p``;
 3. decides whether the 3-D arm *converges toward* the experimental value or
    away from it -- i.e. whether the blockage explanation survives being
@@ -69,6 +69,47 @@ FROZEN_PROTOCOL = {
 
 
 # --------------------------------------------------------------------------- #
+# rung admissibility: the case's own validator has the last word
+# --------------------------------------------------------------------------- #
+MAX_ADMISSIBLE_DX = 0.161 / 3.0     # box must be >= 3 cells across
+
+
+def rung_validity(dx: float) -> dict:
+    """Is ``dx`` admissible for this case, judged by ``validate_case`` itself?
+
+    A ladder is only as good as its coarsest rung, and the rung that was
+    actually submitted on 11-15 (dx = 0.08) is rejected by the case validator:
+    a 0.161 m box cannot be resolved by 3 cells of 0.08 m.  The job died on the
+    first call with ``ValueError`` after 0 s of compute, so asking the validator
+    -- instead of trusting the assumption "the 2-D ladder's rungs transfer" --
+    is the difference between a three-level fit and a two-level one.
+    """
+    from tensorsph.kleefsman_obstacle_3d import Kleefsman3DConfig, validate_case
+
+    cfg = Kleefsman3DConfig(dx=float(dx))
+    cfg.dt = 0.9 * cfg.dt_from_courant()
+    try:
+        validate_case(cfg)
+    except ValueError as exc:
+        return {"dx": float(dx), "valid": False, "why": str(exc)}
+    return {"dx": float(dx), "valid": True, "why": None}
+
+
+def valid_rungs(dxs: list[float], min_levels: int = 3) -> dict:
+    """Split candidate rungs into the admissible ones and the rejected ones."""
+    rows = [rung_validity(d) for d in dxs]
+    ok = [r["dx"] for r in rows if r["valid"]]
+    return {
+        "requested": [float(d) for d in dxs],
+        "valid": sorted(ok, reverse=True),
+        "rejected": [r for r in rows if not r["valid"]],
+        "max_admissible_dx": MAX_ADMISSIBLE_DX,
+        "n_levels": len(ok),
+        "usable": len(ok) >= min_levels,
+    }
+
+
+# --------------------------------------------------------------------------- #
 # pure numerics
 # --------------------------------------------------------------------------- #
 def check_protocol(entries: list[dict]) -> tuple[bool, dict]:
@@ -77,6 +118,7 @@ def check_protocol(entries: list[dict]) -> tuple[bool, dict]:
         return True, {}
     keys = sorted(FROZEN_PROTOCOL)
     bad: dict[str, dict] = {}
+    checked: list[str] = []
     for key in keys:
         values = {}
         for e in entries:
@@ -84,8 +126,22 @@ def check_protocol(entries: list[dict]) -> tuple[bool, dict]:
             if v is None:
                 continue
             values[e["tag"]] = round(float(v), 12) if isinstance(v, (int, float)) else v
+        if not values:
+            continue                    # nobody recorded it: not comparable-on
+        checked.append(key)
+        if len(values) < len(entries):
+            # recorded by some runs only: a mismatch cannot be excluded
+            bad[key] = {**values, "_missing": [e["tag"] for e in entries
+                                               if e["tag"] not in values]}
+            continue
         if len(set(values.values())) > 1:
             bad[key] = values
+    if len(checked) < 2 and not bad:
+        # a guard that compared nothing is not a passing guard
+        bad["_fingerprint"] = {"_checked": checked,
+                              "_why": "fewer than 2 protocol keys are present "
+                                      "in the run records; comparability "
+                                      "cannot be established"}
     return not bad, bad
 
 
@@ -202,6 +258,24 @@ def load_run(results_dir: Path, tag: str) -> dict:
                 height.append(float(row["height_operator_m"]))
                 bypass.append(int(float(row["n_bypass"])))
     run = meta.get("run", {})
+    fp = run.get("fingerprint") or {
+        "t_end": run.get("t_end"),
+        "sound_speed": run.get("sound_speed"),
+        "wall_layers": run.get("wall_layers"),
+        "obstacle_z": run.get("obstacle_z"),
+        "station_offset": run.get("station_offset"),
+        "gauge_aperture": run.get("gauge_aperture"),
+        "arrival_threshold": run.get("arrival_threshold"),
+    }
+    # Completeness is decided from the evidence, not from a promise: a record
+    # that says nothing about it is complete only if its series actually
+    # reaches the requested t_end.  The 11-15 production rungs died at
+    # t = 2.04 s / 0.58 s of a 2.6 s window and would otherwise have entered
+    # the ladder as ordinary levels.
+    t_end = fp.get("t_end")
+    reached = bool(times and t_end is not None
+                   and times[-1] >= float(t_end) - max(1e-6, 1e-3 * float(t_end)))
+    complete = bool(meta["complete"]) if "complete" in meta else reached
     entry = {
         "tag": tag,
         "dx": float(run.get("dx", meta.get("dx", float("nan")))),
@@ -216,15 +290,9 @@ def load_run(results_dir: Path, tag: str) -> dict:
         "max_bypass": max(bypass) if bypass else None,
         "wall_clock_s": run.get("wall_clock_s"),
         "rows": meta.get("rows", []),
-        "fingerprint": {
-            "t_end": run.get("t_end"),
-            "sound_speed": run.get("sound_speed"),
-            "wall_layers": run.get("wall_layers"),
-            "obstacle_z": run.get("obstacle_z"),
-            "station_offset": run.get("station_offset"),
-            "gauge_aperture": run.get("gauge_aperture"),
-            "arrival_threshold": run.get("arrival_threshold"),
-        },
+        "complete": complete,
+        "reached_t_end": reached,
+        "fingerprint": fp,
         "_series": (times, slab, height, bypass),
     }
     return entry
@@ -255,6 +323,13 @@ def analyse(results_dir: Path, tags: list[str]) -> dict:
     if not entries:
         return {"status": "NO_RUNS", "tags": tags}
     comparable, bad = check_protocol(entries)
+    inadmissible = {}
+    for e in entries:
+        v = rung_validity(e["dx"]) if e["dx"] == e["dx"] else {
+            "dx": None, "valid": False, "why": "dx not recorded"}
+        if not v["valid"]:
+            inadmissible[e["tag"]] = v["why"]
+    incomplete = [e["tag"] for e in entries if not e.get("complete", True)]
     rows = []
     for e in entries:
         g = gauge_peaks(e)
@@ -277,10 +352,21 @@ def analyse(results_dir: Path, tags: list[str]) -> dict:
         "arm": "3-D (0.403 m box in 1.00 m tank, 40 % blockage)",
         "protocol_comparable": comparable,
         "protocol_disagreements": bad,
+        "inadmissible_rungs": inadmissible,
+        "incomplete_runs": incomplete,
+        "max_admissible_dx": MAX_ADMISSIBLE_DX,
         "runs": rows,
     }
     if not comparable:
         out["status"] = "INCOMPARABLE"
+        return out
+    if inadmissible or incomplete:
+        # a run that the case validator rejects, or that never reached its
+        # t_end, is not a level of the ladder
+        out["status"] = "RUNGS_REJECTED"
+        out["usable_rungs"] = [r["tag"] for r in rows
+                               if r["tag"] not in inadmissible
+                               and r["tag"] not in incomplete]
         return out
     have = [r for r in rows if r["peak_m"] is not None and r["dx"] == r["dx"]]
     if len(have) >= 2:

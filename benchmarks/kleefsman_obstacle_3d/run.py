@@ -78,25 +78,72 @@ def main(argv: list[str] | None = None) -> int:
     def progress(t: float, h: float) -> None:
         print(f"  t={t:7.3f} slab={h:6.3f} m", flush=True)
 
+    # The series is streamed to disk sample by sample.  These grids are
+    # half-hour cluster jobs and the production rungs have already been killed
+    # mid-run by a glibc heap abort ("free(): corrupted unsorted chunks"), which
+    # discarded every sample because the whole series used to be written only
+    # after the loop returned.
+    csv_path = out_dir / f"{tag}_time_series.csv"
+    csv_fh = csv_path.open("w", newline="")
+    writer = csv.writer(csv_fh)
+    writer.writerow(["t_s", "slab_height_m", "height_operator_m",
+                     "front_x_m", "n_bypass"])
+    csv_fh.flush()
+
+    def on_sample(_i: int, row: dict) -> None:
+        writer.writerow([f"{r:.6f}" if isinstance(r, float) else r
+                         for r in (row["t_s"], row["slab_height_m"],
+                                   row["height_operator_m"], row["front_x_m"],
+                                   row["n_bypass"])])
+        csv_fh.flush()
+
+    # fingerprint written before the run, so a run that never returns still
+    # leaves the protocol it was run under (the ladder refuses to compare a
+    # series whose protocol cannot be established).
+    meta_path = out_dir / f"{tag}_meta.json"
+    meta_path.write_text(json.dumps({
+        "tag": tag, "dx": cfg.dx, "t_end": cfg.t_end, "dt": None,
+        "sound_speed": cfg.sound_speed, "wall_layers": cfg.wall_layers,
+        "obstacle_z": cfg.obstacle_z, "station_offset": cfg.station_offset,
+        "gauge_aperture": cfg.gauge_aperture,
+        "arrival_threshold": cfg.arrival_threshold,
+        "output_every": cfg.output_every,
+        "threads": torch.get_num_threads(),
+        "complete": False,
+    }, indent=1) + "\n")
+
     t0 = time.time()
-    run = run_case(cfg, device="cpu", progress=progress)
+    try:
+        run = run_case(cfg, device="cpu", progress=progress, on_sample=on_sample)
+    except BaseException as exc:            # noqa: BLE001 - want the evidence
+        csv_fh.close()
+        meta = json.loads(meta_path.read_text())
+        meta.update({"complete": False, "aborted": True,
+                     "error": f"{type(exc).__name__}: {exc}",
+                     "wall_clock_s": round(time.time() - t0, 1)})
+        meta_path.write_text(json.dumps(meta, indent=1) + "\n")
+        print(f"[{tag}] ABORTED after {meta['wall_clock_s']:.0f} s: {meta['error']}",
+              flush=True)
+        print(f"[{tag}] partial series kept in {csv_path}", flush=True)
+        raise
+    csv_fh.close()
+
     verdict = score(run)
     verdict["tag"] = tag
+    verdict["complete"] = True
     verdict["host"] = {
         "threads": torch.get_num_threads(),
         "wall_clock_s": round(time.time() - t0, 1),
     }
 
-    csv_path = out_dir / f"{tag}_time_series.csv"
-    with csv_path.open("w", newline="") as fh:
-        writer = csv.writer(fh)
-        writer.writerow(["t_s", "slab_height_m", "height_operator_m",
-                         "front_x_m", "n_bypass"])
-        for row in zip(run.times, run.slab, run.height, run.front, run.bypass):
-            writer.writerow([f"{v:.6f}" if isinstance(v, float) else v for v in row])
-
     json_path = out_dir / f"{tag}.json"
     json_path.write_text(json.dumps(verdict, indent=1) + "\n")
+
+    meta = json.loads(meta_path.read_text())
+    meta.update({"complete": True, "aborted": False, "dt": cfg.dt,
+                 "steps": run.steps, "simulated_time_s": run.simulated_time,
+                 "wall_clock_s": round(time.time() - t0, 1)})
+    meta_path.write_text(json.dumps(meta, indent=1) + "\n")
 
     print(f"[{tag}] verdict={verdict['verdict']} "
           f"peak={verdict['run']['peak_height_m']:.4f} m "
