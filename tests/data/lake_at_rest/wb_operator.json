@@ -1,0 +1,523 @@
+{
+ "case": "CASE-SPH-LAKE-AT-REST",
+ "geometry": {
+  "periodic_x": false,
+  "depth": 0.3,
+  "width": 0.4,
+  "c0": 20.0,
+  "rho0": 1000.0,
+  "gravity": 9.81,
+  "wall_layers": 3
+ },
+ "anchor_tolerance": 1e-09,
+ "question": "does a consistent/well-balanced pressure gradient close the closed-tank rest gap demanded by verification_lake_at_rest_wall_gap.md",
+ "ladder": [
+  {
+   "dx": 0.05,
+   "h": 0.065,
+   "fluid_particles": 48,
+   "wall_particles": 90,
+   "unknowns": 24,
+   "shipped": {
+    "converged": true,
+    "iterations": 11,
+    "max_a_over_g": 1.4757704629064261e-13,
+    "max_ax_over_g": 0.10919297870601832,
+    "max_ax_over_g_wall_band": 0.10919297870601832,
+    "max_ax_over_g_interior": 0.010488750247021924
+   },
+   "variants": [
+    {
+     "name": "shipped_reimplementation",
+     "form": "symmetrised",
+     "own_pressure": "eos",
+     "corrected_gradient": false,
+     "description": "the shipped form through this code path (implementation control: must reproduce residual_report)",
+     "at_shipped_mass": {
+      "max_ax_over_g": 0.10919297870601832,
+      "max_ay_over_g": 1.4775812242106057e-13,
+      "max_a_over_g": 0.10919297870601832
+     },
+     "retuned": {
+      "converged": true,
+      "iterations": 1,
+      "max_ax_over_g": 0.10919297870601832,
+      "max_ay_over_g": 1.4775812242106057e-13,
+      "max_a_over_g": 0.10919297870601832,
+      "residual_history": [
+       1.4775812242106057e-13
+      ],
+      "seconds": 0.04
+     }
+    },
+    {
+     "name": "own_pressure_reconstructed",
+     "form": "symmetrised",
+     "own_pressure": "reconstructed",
+     "corrected_gradient": false,
+     "description": "shipped form, but the free-surface particle's clamped p=0 replaced by its support's least-squares hydrostatic value",
+     "at_shipped_mass": {
+      "max_ax_over_g": 0.1408198368075003,
+      "max_ay_over_g": 0.2181373505044786,
+      "max_a_over_g": 0.25964231189003995
+     },
+     "retuned": {
+      "converged": true,
+      "iterations": 6,
+      "max_ax_over_g": 0.09285102120957912,
+      "max_ay_over_g": 3.6957638218306943e-13,
+      "max_a_over_g": 0.09285102120957912,
+      "residual_history": [
+       0.2181373505044786,
+       0.17555067114991074,
+       0.09411233363873771,
+       0.0008997790205298237,
+       1.6528873171962382e-06,
+       3.6957638218306943e-13
+      ],
+      "seconds": 0.92
+     }
+    },
+    {
+     "name": "corrected_gradient",
+     "form": "symmetrised",
+     "own_pressure": "eos",
+     "corrected_gradient": true,
+     "description": "shipped form with the Randles-Libersky first-order moment correction M_i^-1",
+     "at_shipped_mass": {
+      "max_ax_over_g": 0.28344203841221344,
+      "max_ay_over_g": 1.2363876449100328,
+      "max_a_over_g": 1.2363879625837046
+     },
+     "retuned": {
+      "converged": false,
+      "iterations": 12,
+      "max_ax_over_g": 0.19734371748311613,
+      "max_ay_over_g": 2.3849356061219938e-11,
+      "max_a_over_g": 0.19734371748311613,
+      "residual_history": [
+       1.2363876449100328,
+       1.1745426317291932,
+       1.109104624942499,
+       1.0417866443363817,
+       1.031394742428617,
+       0.9478587112929535,
+       0.8360875573343727,
+       0.7785982005379358,
+       0.5875816541684717,
+       0.049202308455922994,
+       0.005028512711503133,
+       2.8582804235359254e-06
+      ],
+      "seconds": 3.04
+     }
+    },
+    {
+     "name": "corrected_gradient_own_reconstructed",
+     "form": "symmetrised",
+     "own_pressure": "reconstructed",
+     "corrected_gradient": true,
+     "description": "both of the above",
+     "at_shipped_mass": {
+      "max_ax_over_g": 0.3532135461466561,
+      "max_ay_over_g": 1.4555877017625607,
+      "max_a_over_g": 1.4565787939212071
+     },
+     "retuned": {
+      "converged": false,
+      "iterations": 12,
+      "max_ax_over_g": 0.1541960886187803,
+      "max_ay_over_g": 3.057090202233485e-11,
+      "max_a_over_g": 0.1541960886187803,
+      "residual_history": [
+       1.4555877017625607,
+       1.4277914082716172,
+       1.3774410563314634,
+       1.3120237564030126,
+       1.23697759471589,
+       1.156335935677754,
+       1.1141954307467834,
+       0.9946692326430856,
+       0.9117614459216424,
+       0.549613722345121,
+       0.006516098225985511,
+       6.878110950526093e-05
+      ],
+      "seconds": 3.86
+     }
+    },
+    {
+     "name": "difference_consistent",
+     "form": "difference",
+     "own_pressure": "reconstructed",
+     "corrected_gradient": true,
+     "description": "well-balanced difference form -M^-1 sum V (p_j - p_i) grad W",
+     "at_shipped_mass": {
+      "max_ax_over_g": 0.255670244448446,
+      "max_ay_over_g": 3.2953172279262803,
+      "max_a_over_g": 3.2953173540707486
+     },
+     "retuned": {
+      "converged": false,
+      "iterations": 12,
+      "max_ax_over_g": 0.23278454787947442,
+      "max_ay_over_g": 3.9511508016535206,
+      "max_a_over_g": 3.95119515677672,
+      "residual_history": [
+       3.2953172279262803,
+       3.3818557650727747,
+       3.4599490561699127,
+       3.530444680445537,
+       3.594382199551496,
+       3.652606605815107,
+       3.705833744830308,
+       3.7546890920754783,
+       3.7997305580593284,
+       3.8414616878336627,
+       3.8803392067354276,
+       3.9167773920189206
+      ],
+      "seconds": 3.96
+     }
+    },
+    {
+     "name": "lsq_plane_gradient",
+     "form": "lsq",
+     "own_pressure": "reconstructed",
+     "corrected_gradient": true,
+     "description": "MLS plane-fit gradient (exact for any linear field on any support)",
+     "at_shipped_mass": {
+      "max_ax_over_g": 0.21590367007567537,
+      "max_ay_over_g": 3.1071034019240513,
+      "max_a_over_g": 3.1071035083777763
+     },
+     "retuned": {
+      "converged": false,
+      "iterations": 12,
+      "max_ax_over_g": 0.2043312371923867,
+      "max_ay_over_g": 4.538745422811579,
+      "max_a_over_g": 4.539165852777617,
+      "residual_history": [
+       3.1071034019240513,
+       3.3790387839065437,
+       3.566352164650111,
+       3.7150919034213317,
+       3.8408593265935482,
+       3.951376602203324,
+       4.051165618121247,
+       4.143138435415779,
+       4.2292856225498054,
+       4.311021034561487,
+       4.389372603012552,
+       4.465095874892381
+      ],
+      "seconds": 3.15
+     }
+    }
+   ],
+   "controls": {
+    "zero_pressure_max_a_over_g": 1.0,
+    "pressure_scaled_1pct_max_ax_over_g": 0.35674568160812264,
+    "gravity_off_max_a_over_g": 2.45617531671216
+   },
+   "cancellation": {
+    "worst_position": [
+     0.375,
+     0.275
+    ],
+    "worst_p_required": -1132.1435617691968,
+    "worst_p_physical": 245.2499999999997,
+    "worst_p_eos": 0.0,
+    "worst_ax_over_g": -0.10919297870601832,
+    "worst_deficiency": 842.6860003077127,
+    "worst_required_over_physical": -4.6162836361639075,
+    "wall_band_residual_ax_max_over_g": 0.10919297870601832,
+    "interior_residual_ax_max_over_g": 0.010488750247021924
+   },
+   "seconds": 16.3
+  },
+  {
+   "dx": 0.04,
+   "h": 0.052000000000000005,
+   "fluid_particles": 70,
+   "wall_particles": 108,
+   "unknowns": 35,
+   "shipped": {
+    "converged": true,
+    "iterations": 11,
+    "max_a_over_g": 2.4119340571673124e-13,
+    "max_ax_over_g": 0.12028643296453921,
+    "max_ax_over_g_wall_band": 0.12028643296453921,
+    "max_ax_over_g_interior": 0.007169045487635829
+   },
+   "variants": [
+    {
+     "name": "shipped_reimplementation",
+     "form": "symmetrised",
+     "own_pressure": "eos",
+     "corrected_gradient": false,
+     "description": "the shipped form through this code path (implementation control: must reproduce residual_report)",
+     "at_shipped_mass": {
+      "max_ax_over_g": 0.12028643296453921,
+      "max_ay_over_g": 2.4083125345589533e-13,
+      "max_a_over_g": 0.12028643296453921
+     },
+     "retuned": {
+      "converged": true,
+      "iterations": 1,
+      "max_ax_over_g": 0.12028643296453921,
+      "max_ay_over_g": 2.4083125345589533e-13,
+      "max_a_over_g": 0.12028643296453921,
+      "residual_history": [
+       2.4083125345589533e-13
+      ],
+      "seconds": 0.06
+     }
+    },
+    {
+     "name": "own_pressure_reconstructed",
+     "form": "symmetrised",
+     "own_pressure": "reconstructed",
+     "corrected_gradient": false,
+     "description": "shipped form, but the free-surface particle's clamped p=0 replaced by its support's least-squares hydrostatic value",
+     "at_shipped_mass": {
+      "max_ax_over_g": 0.14733069871947282,
+      "max_ay_over_g": 0.20716816874645494,
+      "max_a_over_g": 0.2542144467313526
+     },
+     "retuned": {
+      "converged": true,
+      "iterations": 7,
+      "max_ax_over_g": 0.09381300737852581,
+      "max_ay_over_g": 1.649603548107674e-13,
+      "max_a_over_g": 0.09381300737852581,
+      "residual_history": [
+       0.20716816874645494,
+       0.21984190885137747,
+       0.14992608030411764,
+       0.0016233812488553215,
+       6.198516844891965e-06,
+       2.7309901989637693e-12,
+       1.649603548107674e-13
+      ],
+      "seconds": 1.75
+     }
+    },
+    {
+     "name": "corrected_gradient",
+     "form": "symmetrised",
+     "own_pressure": "eos",
+     "corrected_gradient": true,
+     "description": "shipped form with the Randles-Libersky first-order moment correction M_i^-1",
+     "at_shipped_mass": {
+      "max_ax_over_g": 0.29549458733933065,
+      "max_ay_over_g": 1.2841148230243182,
+      "max_a_over_g": 1.2841149978651099
+     },
+     "retuned": {
+      "converged": false,
+      "iterations": 12,
+      "max_ax_over_g": 0.19795123091017952,
+      "max_ay_over_g": 0.0025545503980077306,
+      "max_a_over_g": 0.19795711305067643,
+      "residual_history": [
+       1.2841148230243182,
+       1.2410496083756144,
+       1.1882268403054272,
+       1.1289465942370047,
+       1.0656468693510515,
+       1.0001657335734384,
+       0.9858274516862207,
+       0.901666119228627,
+       0.7911268507302712,
+       0.7245634504445458,
+       0.5245661996102712,
+       0.03579397726975806
+      ],
+      "seconds": 3.69
+     }
+    },
+    {
+     "name": "corrected_gradient_own_reconstructed",
+     "form": "symmetrised",
+     "own_pressure": "reconstructed",
+     "corrected_gradient": true,
+     "description": "both of the above",
+     "at_shipped_mass": {
+      "max_ax_over_g": 0.35887229357802974,
+      "max_ay_over_g": 1.486150013067551,
+      "max_a_over_g": 1.487132878463313
+     },
+     "retuned": {
+      "converged": false,
+      "iterations": 12,
+      "max_ax_over_g": 0.15314351434852538,
+      "max_ay_over_g": 5.235479318669218e-05,
+      "max_a_over_g": 0.15314352329772674,
+      "residual_history": [
+       1.486150013067551,
+       1.441184435084698,
+       1.4385370192131404,
+       1.4050583003085901,
+       1.3506588626445222,
+       1.2824191217960825,
+       1.2055283754162778,
+       1.1820111705066014,
+       1.0644982865328265,
+       0.9959009477664067,
+       0.6159329388731042,
+       0.008099892134808603
+      ],
+      "seconds": 4.8
+     }
+    },
+    {
+     "name": "difference_consistent",
+     "form": "difference",
+     "own_pressure": "reconstructed",
+     "corrected_gradient": true,
+     "description": "well-balanced difference form -M^-1 sum V (p_j - p_i) grad W",
+     "at_shipped_mass": {
+      "max_ax_over_g": 0.26311827377586533,
+      "max_ay_over_g": 3.298234627939319,
+      "max_a_over_g": 3.298234660321333
+     },
+     "retuned": {
+      "converged": false,
+      "iterations": 12,
+      "max_ax_over_g": 0.19435292639805882,
+      "max_ay_over_g": 1.9830586056630968,
+      "max_a_over_g": 1.9879128076969999,
+      "residual_history": [
+       3.298234627939319,
+       4.807290223629741,
+       4.971754885194057,
+       5.653198323476469,
+       2.135190265530183,
+       2.1242501454677387,
+       2.0086963386063292,
+       2.0118297240760246,
+       1.9837991855405361,
+       1.9837939171180166,
+       1.9837243103063147,
+       1.983801162772549
+      ],
+      "seconds": 6.73
+     }
+    },
+    {
+     "name": "lsq_plane_gradient",
+     "form": "lsq",
+     "own_pressure": "reconstructed",
+     "corrected_gradient": true,
+     "description": "MLS plane-fit gradient (exact for any linear field on any support)",
+     "at_shipped_mass": {
+      "max_ax_over_g": 0.22364091692419294,
+      "max_ay_over_g": 3.10629519449513,
+      "max_a_over_g": 3.106295224210549
+     },
+     "retuned": {
+      "converged": false,
+      "iterations": 10,
+      "max_ax_over_g": 0.1513219793283581,
+      "max_ay_over_g": 1.9002563900661222,
+      "max_a_over_g": 1.9032289267474454,
+      "residual_history": [
+       3.10629519449513,
+       4.171230067104041,
+       4.262828752404511,
+       2.143200832525488,
+       1.8621771257261825,
+       2.0927792225045394,
+       2.07625456260709,
+       2.075936338933613,
+       1.9066048415982235,
+       1.9002563900661222
+      ],
+      "seconds": 4.69
+     }
+    }
+   ],
+   "controls": {
+    "zero_pressure_max_a_over_g": 1.0,
+    "pressure_scaled_1pct_max_ax_over_g": 0.36246101651381,
+    "gravity_off_max_a_over_g": 2.486737666972872
+   },
+   "cancellation": {
+    "worst_position": [
+     0.38,
+     0.26
+    ],
+    "worst_p_required": -1192.5521811246642,
+    "worst_p_physical": 392.3999999999998,
+    "worst_p_eos": 0.0,
+    "worst_ax_over_g": -0.12028643296453921,
+    "worst_deficiency": 914.6039317372124,
+    "worst_required_over_physical": -3.0391238051087277,
+    "wall_band_residual_ax_max_over_g": 0.12028643296453921,
+    "interior_residual_ax_max_over_g": 0.007169045487636192
+   },
+   "seconds": 23.5
+  }
+ ],
+ "summary": {
+  "anchor_tolerance": 1e-09,
+  "rows": [
+   {
+    "dx": 0.05,
+    "shipped_ax": 0.10919297870601832,
+    "shipped_ay": 1.4757704629064261e-13,
+    "shipped_reimplementation_ax": 0.10919297870601832,
+    "shipped_reimplementation_ay": 1.4775812242106057e-13,
+    "own_pressure_reconstructed_ax": 0.09285102120957912,
+    "own_pressure_reconstructed_ay": 3.6957638218306943e-13,
+    "corrected_gradient_ax": 0.19734371748311613,
+    "corrected_gradient_ay": 2.3849356061219938e-11,
+    "corrected_gradient_own_reconstructed_ax": 0.1541960886187803,
+    "corrected_gradient_own_reconstructed_ay": 3.057090202233485e-11,
+    "difference_consistent_ax": 0.23278454787947442,
+    "difference_consistent_ay": 3.9511508016535206,
+    "lsq_plane_gradient_ax": 0.2043312371923867,
+    "lsq_plane_gradient_ay": 4.538745422811579
+   },
+   {
+    "dx": 0.04,
+    "shipped_ax": 0.12028643296453921,
+    "shipped_ay": 2.4119340571673124e-13,
+    "shipped_reimplementation_ax": 0.12028643296453921,
+    "shipped_reimplementation_ay": 2.4083125345589533e-13,
+    "own_pressure_reconstructed_ax": 0.09381300737852581,
+    "own_pressure_reconstructed_ay": 1.649603548107674e-13,
+    "corrected_gradient_ax": 0.19795123091017952,
+    "corrected_gradient_ay": 0.0025545503980077306,
+    "corrected_gradient_own_reconstructed_ax": 0.15314351434852538,
+    "corrected_gradient_own_reconstructed_ay": 5.235479318669218e-05,
+    "difference_consistent_ax": 0.19435292639805882,
+    "difference_consistent_ay": 1.9830586056630968,
+    "lsq_plane_gradient_ax": 0.1513219793283581,
+    "lsq_plane_gradient_ay": 1.9002563900661222
+   }
+  ],
+  "best_variant_max_a_over_g": 0.09285102120957912,
+  "best_over_tolerance": 92851021.20957913,
+  "verdict": "no consistent-gradient variant reaches the anchor tolerance"
+ },
+ "cancellation_extra": {
+  "0.025": {
+   "worst_position": [
+    0.3875,
+    0.2875
+   ],
+   "worst_ax_over_g": -0.10131975386966495,
+   "worst_deficiency": 2034.2712288543535,
+   "worst_p_required": -417.64206009966404,
+   "worst_p_physical": 122.62500000000011,
+   "worst_p_eos": 0.0,
+   "worst_required_over_physical": -3.4058475849106107,
+   "wall_band_residual_ax_max_over_g": 0.10131975386966495,
+   "interior_residual_ax_max_over_g": 0.010585061538801399
+  },
+  "0.025_fluid_particles": 192,
+  "note": "cancellation diagnostic only; ladder GN not run at this dx"
+ }
+}
