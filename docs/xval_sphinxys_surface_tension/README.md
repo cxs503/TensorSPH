@@ -22,8 +22,12 @@ fraction and its measured effect on the surface-delta normalisation.
 > the ported CSS force reproduces `omega_n^2 = n(n^2-1)sigma/(rho R^3)` to **+0.7 %**
 > (single phase, hourglass off) and **-4.2 %** (two-phase mixture 1000:1) — inside the
 > 15 % gate — while the inner hourglass penalty contributes a spurious `O(sigma/R)`
-> mode-2 pressure that does not scale with the perturbation. See
-> [`LAMB.md`](LAMB.md) and `benchmarks/surface_tension/sphinxys_lamb.py`.
+> mode-2 pressure that does not scale with the perturbation. Round 2 (m21855) identified that
+> penalty as a faithful transcription of upstream whose *single-phase* behaviour is spurious
+> (-2.09 sigma/R on a circle) and fixed it with a scope switch
+> (`hourglass_scope="contact"`, `src/tensorsph/sphinxys_css.py`): the single-phase Lamb error
+> becomes +0.70 % / -0.85 % / -0.58 % at R/Δx = 16/24/32 and the two-phase answer moves by
+> 0.0014 pp. See [`LAMB.md`](LAMB.md) §6 and `benchmarks/surface_tension/sphinxys_lamb.py`.
 
 ## 1. Problem and the reference (zero hand-copy)
 

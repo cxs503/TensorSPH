@@ -164,7 +164,8 @@ def modal_summary(dp_measured: float, mode: int, radius: float, eps: float,
 def css_single_phase(geom: dict, *, sigma: float = SIGMA, hourglass: bool = True,
                      hourglass_coeff: float = HOURGLASS,
                      delta: str = "sphinxys",
-                     assembly: str = "upstream") -> dict:
+                     assembly: str = "upstream",
+                     hourglass_scope: str = "all") -> dict:
     pos, vol = geom["pos"], geom["vol"]
     dx = geom["dx"]
     h = H_FACTOR * dx
@@ -174,7 +175,7 @@ def css_single_phase(geom: dict, *, sigma: float = SIGMA, hourglass: bool = True
     acc, fields = sc.surface_tension_acceleration(
         pos, mass, rho, vol, pairs, None, sigma, h, mode="single_phase",
         delta=delta, hourglass=hourglass, hourglass_coeff=hourglass_coeff,
-        assembly=assembly)
+        assembly=assembly, hourglass_scope=hourglass_scope)
     # a_i = (m_i/rho_i) div S = V_i div S  (upstream)  or  (1/rho_i) div S (consistent)
     if assembly == "upstream":
         force_density = acc / vol[:, None]
@@ -190,6 +191,7 @@ def css_single_phase(geom: dict, *, sigma: float = SIGMA, hourglass: bool = True
                delta_integral=float((fields.delta_s * vol).sum()
                                     / (2.0 * math.pi * geom["radius"])),
                delta=delta, hourglass=bool(hourglass),
+               hourglass_scope=hourglass_scope,
                hourglass_coeff=float(hourglass_coeff), assembly=assembly,
                n_particles=int(pos.shape[0]))
     return out
@@ -197,7 +199,8 @@ def css_single_phase(geom: dict, *, sigma: float = SIGMA, hourglass: bool = True
 
 def css_two_phase(geom: dict, *, sigma: float = SIGMA, hourglass: bool = True,
                   hourglass_coeff: float = HOURGLASS, delta: str = "sphinxys",
-                  assembly: str = "upstream", bracket: str = "mixture") -> dict:
+                  assembly: str = "upstream", bracket: str = "mixture",
+                  hourglass_scope: str = "all") -> dict:
     pos, vol, phase, rho0 = geom["pos"], geom["vol"], geom["phase"], geom["rho0"]
     h = H_FACTOR * geom["dx"]
     mass = rho0 * vol
@@ -209,7 +212,8 @@ def css_two_phase(geom: dict, *, sigma: float = SIGMA, hourglass: bool = True,
     acc, fields = sc.surface_tension_acceleration(
         pos, mass, rho0, vol, pairs_inner, pairs_cross, sigma, h, frac=frac,
         mode="two_phase", delta=delta, hourglass=hourglass,
-        hourglass_coeff=hourglass_coeff, assembly=assembly, bracket=bracket)
+        hourglass_coeff=hourglass_coeff, assembly=assembly, bracket=bracket,
+        hourglass_scope=hourglass_scope)
     water = phase == 0
     force_density = acc / vol[:, None] if assembly == "upstream" else rho0[:, None] * acc
     proj = modal_pressure(pos, geom["theta"], force_density, vol, geom["mode"],
@@ -221,6 +225,7 @@ def css_two_phase(geom: dict, *, sigma: float = SIGMA, hourglass: bool = True,
                                     / (2.0 * math.pi * geom["radius"])),
                contact_fraction_water=float(frac[water][0]),
                rho_air=RHO_AIR, delta=delta, hourglass=bool(hourglass),
+               hourglass_scope=hourglass_scope,
                hourglass_coeff=float(hourglass_coeff), assembly=assembly,
                bracket=bracket, n_particles=int(pos.shape[0]),
                n_water=int(water.sum()))
@@ -252,6 +257,7 @@ def ladder(levels=(16, 24, 32), mode: int = MODE, eps: float = EPS,
     csf = [dict(case=f"csf_R{ppd}", **csf_lamb(mode, eps, radius, dx_of(ppd)))
            for ppd in levels]
     css_hg = []
+    css_hg_contact = []
     css_nohg = []
     css_cons = []
     for ppd in levels:
@@ -259,13 +265,17 @@ def ladder(levels=(16, 24, 32), mode: int = MODE, eps: float = EPS,
         g = lobe_geometry(mode, eps, radius, dx)
         css_hg.append(dict(case=f"css_hg_R{ppd}", radius_over_dx=ppd,
                            **css_single_phase(g, hourglass=True)))
+        css_hg_contact.append(dict(case=f"css_hg_contact_R{ppd}", radius_over_dx=ppd,
+                                   **css_single_phase(g, hourglass=True,
+                                                      hourglass_scope="contact")))
         css_nohg.append(dict(case=f"css_nohg_R{ppd}", radius_over_dx=ppd,
                              **css_single_phase(g, hourglass=False)))
         css_cons.append(dict(case=f"css_consistent_R{ppd}", radius_over_dx=ppd,
                              **css_single_phase(g, hourglass=True,
                                                 assembly="consistent")))
-    return {"csf": csf, "css_hourglass": css_hg, "css_no_hourglass": css_nohg,
-            "css_consistent": css_cons}
+    return {"csf": csf, "css_hourglass": css_hg,
+            "css_hourglass_contact": css_hg_contact,
+            "css_no_hourglass": css_nohg, "css_consistent": css_cons}
 
 
 def mixture_probe(mode: int = MODE, eps: float = EPS, radius: float = RADIUS,
@@ -277,7 +287,9 @@ def mixture_probe(mode: int = MODE, eps: float = EPS, radius: float = RADIUS,
     for label, kw in (("hourglass", dict(hourglass=True)),
                       ("no_hourglass", dict(hourglass=False)),
                       ("consistent", dict(hourglass=True, assembly="consistent")),
-                      ("symmetric_bracket", dict(hourglass=True, bracket="symmetric"))):
+                      ("symmetric_bracket", dict(hourglass=True, bracket="symmetric")),
+                      ("hourglass_scope_contact",
+                       dict(hourglass=True, hourglass_scope="contact"))):
         rows[label] = css_two_phase(g, **kw)
     return {"geometry": {"radius_over_dx": radius_over_dx, "dx": dx, "eps": eps,
                          "mode": mode, "rho_ratio": RHO0 / RHO_AIR,
@@ -301,16 +313,21 @@ def amplitude_scan(mode: int = MODE, radius: float = RADIUS,
     for eps in epsilons:
         g = lobe_geometry(mode, eps, radius, dx)
         hg = css_single_phase(g, hourglass=True)
+        hgc = css_single_phase(g, hourglass=True, hourglass_scope="contact")
         nohg = css_single_phase(g, hourglass=False)
         csf = csf_lamb(mode, eps, radius, dx)
         dp_hg = hg["dp_measured_pa"] - nohg["dp_measured_pa"]
+        dp_hgc = hgc["dp_measured_pa"] - nohg["dp_measured_pa"]
         rows.append({"eps": eps,
                      "css_hourglass_dp": hg["dp_measured_pa"],
                      "css_hourglass_ratio": hg["stiffness_ratio"],
+                     "css_hourglass_contact_dp": hgc["dp_measured_pa"],
                      "css_no_hourglass_dp": nohg["dp_measured_pa"],
                      "css_no_hourglass_ratio": nohg["stiffness_ratio"],
                      "hourglass_dp": dp_hg,
                      "hourglass_over_sigma_R": dp_hg * radius / SIGMA,
+                     "hourglass_contact_dp": dp_hgc,
+                     "hourglass_contact_over_sigma_R": dp_hgc * radius / SIGMA,
                      "csf_dp": csf["dp_measured"],
                      "csf_ratio": csf["stiffness_ratio"]})
     return rows
@@ -330,7 +347,9 @@ def plot(payload: dict, path: Path) -> None:
     # (a) frequency ratio vs resolution
     ax = axes[0]
     for key, style, label in (("csf", "k-o", "Brackbill CSF (calibration)"),
-                              ("css_hourglass", "r-s", "SPHinXsys CSS, hourglass 4.5"),
+                              ("css_hourglass", "r-s", "SPHinXsys CSS, hourglass 4.5 (scope=all)"),
+                              ("css_hourglass_contact", "m-D",
+                               "CSS, hourglass 4.5 (scope=contact)"),
                               ("css_no_hourglass", "b-^", "SPHinXsys CSS, hourglass off"),
                               ("css_consistent", "g-d", "CSS, assembly=consistent")):
         rows = payload["ladder"][key]
@@ -355,6 +374,7 @@ def plot(payload: dict, path: Path) -> None:
     dp_exact = _dp_exact(rows[-1])
     names, vals, colors = [], [], []
     for key, color in (("csf", "0.2"), ("css_hourglass", "#d62728"),
+                       ("css_hourglass_contact", "#c2185b"),
                        ("css_no_hourglass", "#1f77b4"),
                        ("css_consistent", "#2ca02c")):
         r = payload["ladder"][key][-1]
@@ -422,24 +442,27 @@ def main(argv=None) -> int:
         "calibration": "Brackbill CSF via surface_tension_dispersion.drop_modal_stiffness",
         "sigma": SIGMA, "rho0": RHO0, "radius": RADIUS, "mode": MODE, "eps": EPS,
         "h_over_dx": H_FACTOR, "hourglass_coeff": HOURGLASS,
+        "hourglass_scopes": list(sc.HOURGLASS_SCOPES),
         "reference": {"dp": "sigma (n^2-1) eps / R", "omega": "sqrt(n (n^2-1) sigma / (rho R^3))"},
         "ladder": ladder(levels),
         "mixture": mixture_probe(radius_over_dx=args.mixture_level),
         "amplitude_scan": amplitude_scan(),
     }
-    for key in ("csf", "css_hourglass", "css_no_hourglass", "css_consistent"):
+    for key in ("csf", "css_hourglass", "css_hourglass_contact",
+                "css_no_hourglass", "css_consistent"):
         _table(payload["ladder"][key], f"ladder / {key}")
     print("\nmixture (two-phase 1000:1)")
     for label, row in payload["mixture"]["cases"].items():
         print(f"{label:>18} dp ratio {row['stiffness_ratio']:9.4f} "
               f"omega ratio {row['omega_ratio']:9.4f} err {row['omega_error_pct']:7.2f}%")
     print("\namplitude scan (hourglass part isolated)")
-    print(f"{'eps':>6} {'dp_css_hg':>10} {'dp_css_nohg':>12} {'dp_hg':>10} "
-          f"{'dp_hg/(sigma/R)':>15} {'dp_csf':>10}")
+    print(f"{'eps':>6} {'dp_css_hg':>10} {'dp_hg_contact':>13} {'dp_css_nohg':>12} "
+          f"{'dp_hg':>10} {'dp_hg/(s/R)':>12} {'dp_csf':>10}")
     for row in payload["amplitude_scan"]:
         print(f"{row['eps']:6.2f} {row['css_hourglass_dp']:10.4f} "
+              f"{row['css_hourglass_contact_dp']:13.4f} "
               f"{row['css_no_hourglass_dp']:12.4f} {row['hourglass_dp']:10.4f} "
-              f"{row['hourglass_over_sigma_R']:15.3f} {row['csf_dp']:10.4f}")
+              f"{row['hourglass_over_sigma_R']:12.3f} {row['csf_dp']:10.4f}")
 
     (outdir / "lamb.json").write_text(json.dumps(payload, indent=2))
     plot(payload, outdir / "lamb.png")
