@@ -1,5 +1,11 @@
 {
   "case": "CASE-SPH-LAKE-AT-REST",
+  "extra_records_from": {
+    "stability.json": "benchmarks/lake_at_rest/stability.py",
+    "stability_band_fit.json": "benchmarks/lake_at_rest/band_fit.py",
+    "stability_viscous.json": "benchmarks/lake_at_rest/stability.py --viscosity 1e-6",
+    "wall_gap.json": "benchmarks/lake_at_rest/wall_gap.py"
+  },
   "frozen_by": "benchmarks/lake_at_rest/freeze.py",
   "manifest": "MANIFEST.sha256",
   "not_shipped": {
@@ -17,6 +23,9 @@
     "periodic_dx020.json",
     "wall_dx020.json",
     "report.json",
+    "stability.json",
+    "stability_band_fit.json",
+    "wall_gap.json",
     "MANIFEST.sha256",
     "channel.json"
   ]

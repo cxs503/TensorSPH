@@ -17,6 +17,57 @@ DATA = HERE / "tests" / "data" / "lake_at_rest"
 DOC = HERE / "docs" / "verification_lake_at_rest_horizon.md"
 
 
+def series(entry):
+    """Raw per-sample series of an arm (arm level; older form under ``run``)."""
+    data = entry.get("samples") or entry.get("run", {}).get("samples")
+    assert data, f"arm {entry.get('arm')} carries no raw series"
+    return data
+
+
+def band_block(payload):
+    """Markdown block for the band estimator (``band_fit.py``).
+
+    The shipped study fitted one absolute window for every arm; that window is
+    not a rate estimator for an arm that starts moving, so the rate is re-derived
+    in the declared exponential band.  Both numbers are shown: dropping the
+    legacy fit would hide the defect, quoting only it would be wrong.
+    """
+    path = DATA / "stability_band_fit.json"
+    if not path.is_file():
+        return "_(band fit artefact missing: `benchmarks/lake_at_rest/band_fit.py`)_"
+    band = json.loads(path.read_text())
+    verdict = band["verdict"]
+    low, high = band["band"]["window"]
+    rows = ["| arm | legacy window `1e-10 .. 1e-5` | R² | band "
+            f"`{low:g} .. {high:g}` | R² | valid rate? |",
+            "|---|---|---|---|---|---|"]
+    for entry in band["arms"]:
+        leg, banded = entry["legacy"], entry["band"]
+        rows.append(
+            f"| {entry['arm']} | {fmt(leg['lambda_per_s'])} | "
+            f"{fmt(leg['r2_exp'], 4)} | {fmt(banded['lambda_per_s'])} | "
+            f"{fmt(banded['r2_exp'], 4)} | "
+            f"{'yes' if entry['legacy_is_a_rate'] else '**no** (transient)'} |")
+    ratios = verdict["ratios"]
+    return "\n".join([
+        f"Rate in the declared exponential band (seven decades above the roundoff "
+        f"floor, one below saturation): `lambda = {fmt(verdict['lambda_base_per_s'])}` "
+        f"1/s with `R^2 = {fmt(verdict['r2_base'], 5)}`.",
+        "",
+        *rows,
+        "",
+        "Controls in the band: `dt` halved "
+        f"`{fmt(ratios['dt_half_over_base'], 4)}`, seed `1e-6` over `1e-8` "
+        f"`{fmt(ratios['seed_1e-6_over_seed_1e-8'], 4)}`, pair list rebuilt "
+        f"`{fmt(ratios['pairs_rebuilt_over_base'], 4)}`, `dx = 0.025` "
+        f"`{fmt(ratios['resolution_dx025_over_base'], 4)}`, 8 s saturation arm "
+        f"`{fmt(ratios['saturation_over_base'], 4)}`.  The legacy window's fit for "
+        "the seeded arms spans the start-up transient (`R^2` 0.29 / 0.58); those "
+        "numbers are recorded but are **not** rates, and the seed-independence "
+        "gate now uses the band estimate.",
+    ])
+
+
 def fmt(value, digits=3):
     if value is None:
         return "—"
@@ -37,9 +88,9 @@ def arm_table(payload):
             f"| {entry['arm']} | {fmt(run['dt'])} | {run['steps']} "
             f"| {fmt(run['t_end'], 2)} "
             f"| {fmt(run['certified_horizon_s']['v'], 4)} "
-            f"| {fmt(run['samples'][-1]['v_over_c0'])} "
+            f"| {fmt(series(entry)[-1]['v_over_c0'])} "
             f"| {fmt(growth['lambda_per_s'])} | {fmt(growth['r2_exp'], 4)} "
-            f"| {run['samples'][-1]['column_mode']} |")
+            f"| {series(entry)[-1]['column_mode']} |")
     return "\n".join(rows)
 
 
@@ -166,6 +217,8 @@ protocol as the published 0.50 s run, only longer.
 
 {arm_table(payload)}
 
+{band_block(payload)}
+
 `t*` is the running-worst crossing time of the anchor tolerance by
 `max|v|/c0`; `λ` is the least-squares slope of `ln max|v|/c0` against `t` in the
 declared window (`t` from `{fmt(base['growth']['t_from'], 3)}` to
@@ -182,7 +235,7 @@ the lake ends up sloshing, not settling back.
 The periodic direction lets the vertical displacement be decomposed into
 `x`-wavenumbers.  The dominant index reported per sample is the argmax of
 `|rFFT(column-mean Δy)|`; over the base arm it stays at index
-`{base['run']['samples'][-1]['column_mode']}` (out of
+`{series(base)[-1]['column_mode']}` (out of
 `{base['run']['columns'] // 2}` resolvable), and its amplitude trace is the
 orange curve of `docs/figures/lake_stability_growth.png`.  A grid-scale index
 (`k ≈ π/dx`) would point at a kernel/pairing (tensile) mode; a low index at a
