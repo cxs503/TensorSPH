@@ -169,6 +169,16 @@ class Config:
     # thickness can be studied without monkey-patching, see
     # benchmarks/contact_angle/diagnose_bc.py --study reach.
     contact_angle_reach: float = 2.0
+    # Contact-angle *force* model. "rotate" = the shipped interface-normal BC
+    # (tensorsph.csf_consistent.apply_contact_angle_boundary), which rotates the
+    # near-wall CSF force direction and therefore applies no per-unit-length
+    # traction -- measured response slope -0.025 over theta_set 60..120 deg
+    # (docs/verification_contact_angle_bc.md). "young" = explicit wall-adhesion
+    # traction sigma cos(theta) along the wall (tensorsph.contact_angle_isph,
+    # calibrated on analytic contact-line geometry); "brackbill" = the
+    # sigma (n_wall - cos theta n) amplitude form of the same literature, kept as
+    # the audited alternative.
+    contact_angle_model: str = "rotate"
     # CSF surface-tension discretisation. "consistent" = kernel-sum colour with
     # first-order (MLS) consistent operators (tensorsph.csf_consistent), the
     # scheme verified against the Young-Laplace law; "legacy" = the original
