@@ -416,28 +416,67 @@ def mode_amplitude(profile: torch.Tensor, dz: float, k: float):
     return (2.0 / n) * torch.sum(centred.to(torch.complex128) * phase)
 
 
-def fit_growth_rate(times, amplitudes, low: float, high: float) -> dict:
+def fit_growth_rate(times, amplitudes, low=None, high=None) -> dict:
     """Least-squares slope of ``log(amplitude)`` inside ``[low, high] * a0``.
 
     The window is predeclared (surface tension grows exponentially only while the
     amplitude is small; the fit must not see the saturated/pinch-off part), and
     the returned ``r2`` shows whether the fitted interval really is exponential.
+
+    Warning -- the default window is **seed-relative**: ``a0`` is the first
+    sample, i.e. the perturbation the run was started with, so ``[3 a0, 25 a0]``
+    moves the physical band whenever the seed changes and can sit in the start-up
+    transient or past pinch-off.  That failure mode is measured on shipped data
+    in ``tests/test_rate_fit_band_rule.py`` (the same window form returns rates
+    6-50 % off the plateau rate).  Pass ``low=None, high=None`` to let
+    :mod:`tensorsph.rate_fit` choose the band from the data (the longest
+    amplitude plateau on which the fit is exponential) instead; the returned
+    ``band_source`` says which was used.
     """
     t = torch.as_tensor(times, dtype=torch.float64)
     a = torch.as_tensor(amplitudes, dtype=torch.float64)
+    if low is None or high is None:
+        from .. import rate_fit
+        auto = None
+        if a.numel() >= 2:
+            auto = rate_fit.auto_band(t.numpy(), a.numpy())
+        if auto is None:
+            return {"omega": float("nan"), "r2": float("nan"),
+                    "n_points": int(a.numel()),
+                    "window": [float("nan")] * 2, "band_source": "none",
+                    "band_rule": "no amplitude band on which the growth is "
+                                 "exponential: no rate to quote"}
+        low, high = auto[0] / float(a[0]), auto[1] / float(a[0])
+        source = "auto"
+    else:
+        source = "declared"
     a0 = float(a[0])
     sel = (a >= low * a0) & (a <= high * a0)
     if int(sel.sum()) < 3:
         return {"omega": float("nan"), "r2": float("nan"),
-                "n_points": int(sel.sum()), "window": [float("nan")] * 2}
+                "n_points": int(sel.sum()), "window": [float("nan")] * 2,
+                "band_source": source}
     tt, yy = t[sel], torch.log(a[sel])
     slope = ((tt - tt.mean()) * (yy - yy.mean())).sum() / ((tt - tt.mean()) ** 2).sum()
     intercept = yy.mean() - slope * tt.mean()
     resid = yy - (slope * tt + intercept)
     ss_tot = ((yy - yy.mean()) ** 2).sum().clamp_min(1e-300)
     r2 = 1.0 - (resid ** 2).sum() / ss_tot
-    return {"omega": float(slope), "r2": float(r2), "n_points": int(sel.sum()),
-            "window": [float(a[sel][0]), float(a[sel][-1])]}
+    out = {"omega": float(slope), "r2": float(r2), "n_points": int(sel.sum()),
+           "window": [float(a[sel][0]), float(a[sel][-1])],
+           "band_source": source}
+    if source == "declared":
+        # record how far the declared (seed-relative) band sits from the band
+        # the data supports, so a report cannot quote one without the other
+        from .. import rate_fit
+        p = rate_fit.plateau(t.numpy(), a.numpy())
+        out["declared_seed_relative"] = True
+        out["plateau_window"] = [p["band"][0], p["band"][1]] if p["valid"] else None
+        out["plateau_omega"] = p["sigma"]
+        out["declared_legal"] = bool(
+            p["valid"] and not math.isnan(float(slope))
+            and abs(float(slope) / p["sigma"] - 1.0) <= rate_fit.SPREAD_MAX)
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -462,8 +501,17 @@ class ColumnResult:
     metadata: dict = field(default_factory=dict)
 
     def growth(self, low: float = 3.0, high: float = 25.0) -> dict:
-        """Exponential growth rate of the relative radial mode amplitude."""
+        """Exponential growth rate of the relative radial mode amplitude.
+
+        The defaults ``(3.0, 25.0)`` are multiples of the *seed* ``a0``; see
+        :func:`fit_growth_rate` for why that band is not scale free, and
+        :meth:`growth_banded` for the data-chosen band.
+        """
         return fit_growth_rate(self.times, self.amplitudes, low, high)
+
+    def growth_banded(self) -> dict:
+        """Growth rate over the amplitude band the data supports (band rule)."""
+        return fit_growth_rate(self.times, self.amplitudes, None, None)
 
     def null_growth(self) -> dict:
         """Growth of a non-resonant mode: the noise floor of the measurement."""
