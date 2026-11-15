@@ -16,9 +16,18 @@ The error of the chosen arm is *recomputed* from the raw ``tau``/``Z_over_a``
 curves against the experimental points instead of trusting the stored ``score``
 block; the recomputation is asserted equal to the registry number.
 
+The artefacts carry registry-derived numbers (``records``,
+``methods_without_evidence``), so they go stale whenever a later mission banks more
+evidence.  ``--check`` rebuilds everything in memory, writes nothing, and exits 1 if
+the committed tables/summary differ -- the same anti-drift gate as
+``build_registry.py --check``.  PNG bytes are *not* pinned (a matplotlib bump would
+break them); instead the summary stores ``figure_digests``, a sha256 over the exact
+series each figure draws.
+
 Usage::
 
     PYTHONPATH=src python benchmarks/method_selection/plot_method_selection_m20114.py
+    PYTHONPATH=src python benchmarks/method_selection/plot_method_selection_m20114.py --check
 
 Outputs
 -------
@@ -29,6 +38,9 @@ Outputs
 """
 from __future__ import annotations
 
+import argparse
+import difflib
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -93,7 +105,8 @@ def score_from_curves(arm: dict, experiment: dict) -> dict:
     }
 
 
-def figure_front(granular: dict[float, dict], experiment: dict) -> Path:
+def figure_front(granular: dict[float, dict], experiment: dict,
+                 *, save: bool = True) -> Path:
     fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.4))
     styles = {"baseline": ("#4c72b0", "--", "no correction"),
               ARM: ("#2e8b57", "-", f"TVC alpha=0.10 (all particles)")}
@@ -116,12 +129,14 @@ def figure_front(granular: dict[float, dict], experiment: dict) -> Path:
     fig.suptitle("transport-velocity correction vs experiment (registry evidence leg)")
     fig.tight_layout()
     out = FIG_DIR / "figure_tvc_front.png"
-    fig.savefig(out, dpi=150)
+    if save:
+        fig.savefig(out, dpi=150)
     plt.close(fig)
     return out
 
 
-def figure_registry(registry: dict) -> Path:
+def registry_bars(registry: dict) -> tuple[list[str], list[float], list[float]]:
+    """``(methods, best, worst)`` -- exactly the series the coverage figure draws."""
     methods = sorted({r["method"] for r in registry["records"]},
                       key=lambda m: min(r["measured_pct"] for r in registry["records"]
                                         if r["method"] == m))
@@ -129,6 +144,11 @@ def figure_registry(registry: dict) -> Path:
             for m in methods]
     worst = [max(r["measured_pct"] for r in registry["records"] if r["method"] == m)
              for m in methods]
+    return methods, best, worst
+
+
+def figure_registry(registry: dict, *, save: bool = True) -> Path:
+    methods, best, worst = registry_bars(registry)
     fig, ax = plt.subplots(figsize=(8.6, 4.6))
     y = range(len(methods))
     ax.barh(list(y), best, color="#2e8b57", height=0.55, label="best record")
@@ -144,13 +164,41 @@ def figure_registry(registry: dict) -> Path:
     ax.legend(fontsize=8, loc="lower right")
     fig.tight_layout()
     out = FIG_DIR / "figure_registry_coverage.png"
-    fig.savefig(out, dpi=150)
+    if save:
+        fig.savefig(out, dpi=150)
     plt.close(fig)
     return out
 
 
-def main() -> int:
-    granular = {}
+def _digest(payload: dict) -> str:
+    """sha256 over the *plotted* series (never over the pixels).
+
+    Pinning PNG bytes would break on any matplotlib bump, so the summary stores a
+    digest of the numbers each figure draws: if a committed artefact moves a curve,
+    the digest moves with it and ``--check`` reports drift.
+    """
+    blob = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(blob).hexdigest()
+
+
+def _front_payload(granular: dict[float, dict], experiment: dict) -> dict:
+    return {
+        "experiment": [[p["tau"], p["Z_over_a"]] for p in experiment["data"]],
+        "grids": {f"{dx:.2f}": {r["variant"]: {"tau": r["tau"], "Z_over_a": r["Z_over_a"]}
+                                for r in doc["records"] if r["variant"] in ("baseline", ARM)}
+                  for dx, doc in sorted(granular.items())},
+    }
+
+
+def _registry_payload(registry: dict) -> dict:
+    methods, best, worst = registry_bars(registry)
+    return {"methods": methods, "best": best, "worst": worst,
+            "owner_tolerance_pct": OWNER_TOLERANCE_PCT}
+
+
+def build(*, save_figures: bool) -> dict:
+    """Render every m20114 artefact in memory; only the figures are written here."""
+    granular: dict[float, dict] = {}
     for dx in (0.03, 0.04):
         tag = str(dx).replace(".", "")  # 0.03 -> "003": the artefact naming convention
         granular[dx] = json.loads(
@@ -158,9 +206,12 @@ def main() -> int:
     experiment = json.loads(EXP_PATH.read_text())
     registry = json.loads(REGISTRY_PATH.read_text())
 
-    FIG_DIR.mkdir(parents=True, exist_ok=True)
-    fig_front = figure_front(granular, experiment)
-    fig_cover = figure_registry(registry)
+    if save_figures:
+        FIG_DIR.mkdir(parents=True, exist_ok=True)
+    figures = [figure_front(granular, experiment, save=save_figures),
+               figure_registry(registry, save=save_figures)]
+    digests = {figures[0].name: _digest(_front_payload(granular, experiment)),
+               figures[1].name: _digest(_registry_payload(registry))}
 
     recomputed = {f"{dx:.2f}": {v: score_from_curves(next(r for r in doc["records"]
                                                           if r["variant"] == v), experiment)
@@ -198,9 +249,8 @@ def main() -> int:
               f"- methods without evidence: {registry['methods_without_evidence'] or 'none'}",
               f"- catalogue size (METHODS + MODIFIERS): {len(METHODS) + len(MODIFIERS)}",
               f"- records: {len(registry['records'])}", ""]
-    TABLES_PATH.write_text("\n".join(lines))
 
-    SUMMARY_PATH.write_text(json.dumps({
+    summary = json.dumps({
         "anchor": "XVAL-SPH-METHOD-SELECTION-2026-11-12",
         "increment": "transport_velocity_correction evidence closure",
         "arm": ARM,
@@ -209,12 +259,62 @@ def main() -> int:
         "registry_backed_pct": banked,
         "methods_without_evidence": registry["methods_without_evidence"],
         "records": len(registry["records"]),
-        "figures": [fig_front.name, fig_cover.name],
+        "figures": [f.name for f in figures],
+        "figure_digests": digests,
         "owner_tolerance_pct": OWNER_TOLERANCE_PCT,
-    }, indent=2))
+    }, indent=2)
 
-    print(f"wrote {fig_front}\nwrote {fig_cover}\nwrote {TABLES_PATH}\nwrote {SUMMARY_PATH}")
-    print(f"recomputed dx=0.03 {ARM}: {recomputed_fine:.4f} %  (banked {banked:.4f} %)")
+    return {"tables": "\n".join(lines), "summary": summary, "digests": digests,
+            "figures": figures, "recomputed_fine": recomputed_fine, "banked": banked}
+
+
+def check(tables_path: Path = TABLES_PATH, summary_path: Path = SUMMARY_PATH) -> list[str]:
+    """Rebuild in memory (writes nothing) and list every stale/missing artefact."""
+    rendered = build(save_figures=False)
+    drift: list[str] = []
+    for label, path, expected in (("tables", tables_path, rendered["tables"]),
+                                  ("summary", summary_path, rendered["summary"])):
+        actual = path.read_text() if path.exists() else ""
+        if actual != expected:
+            diff = list(difflib.unified_diff(actual.splitlines(), expected.splitlines(),
+                                             fromfile=f"committed/{path.name}",
+                                             tofile=f"recomputed/{path.name}",
+                                             lineterm="", n=1))
+            drift.append(f"{label} is stale: {path.name}\n" + "\n".join(diff[:24]))
+    for fig in rendered["figures"]:
+        if not fig.exists():
+            drift.append(f"missing figure: {fig.name}")
+    return drift
+
+
+def write() -> dict:
+    """Regenerate the figures and the two text artefacts on disk."""
+    rendered = build(save_figures=True)
+    TABLES_PATH.write_text(rendered["tables"])
+    SUMMARY_PATH.write_text(rendered["summary"])
+    for fig in rendered["figures"]:
+        print(f"wrote {fig}")
+    print(f"wrote {TABLES_PATH}\nwrote {SUMMARY_PATH}")
+    return rendered
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--check", action="store_true",
+                    help="rebuild in memory and fail if the committed artefacts differ (no writes)")
+    args = ap.parse_args(argv)
+    if args.check:
+        drift = check()
+        if drift:
+            print("DRIFT: m20114 artefacts are stale -- rerun without --check")
+            print()
+            print("\n\n".join(drift))
+            return 1
+        print("OK: m20114 tables, summary and figures are up to date")
+        return 0
+    rendered = write()
+    print(f"recomputed dx=0.03 {ARM}: {rendered['recomputed_fine']:.4f} %  "
+          f"(banked {rendered['banked']:.4f} %)")
     return 0
 
 
