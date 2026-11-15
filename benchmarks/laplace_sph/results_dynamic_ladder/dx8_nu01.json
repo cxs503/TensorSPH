@@ -1,0 +1,151 @@
+{
+ "radius_m": 0.02,
+ "dx_m": 0.0025,
+ "h_m": 0.0032500000000000003,
+ "dt_s": 0.002183528140164191,
+ "R_over_dx": 8.0,
+ "R_over_h": 6.153846153846153,
+ "n_particles": 780,
+ "n_liquid": 232,
+ "sigma": 0.072,
+ "rho0": 1000.0,
+ "nu_m2_per_s": 1.1999999999999999e-05,
+ "nu_factor": 0.01,
+ "pin_outer": true,
+ "curvature_method": "mls",
+ "v_ref_m_per_s": 0.06,
+ "diverged": false,
+ "steps_completed": 12,
+ "umax_over_vref_final": 0.26289546143178827,
+ "umean_over_vref_final": 0.03442124962915272,
+ "area_ratio_final": 0.9956896551724137,
+ "dp_final_Pa": 3.6422017941730926,
+ "dp_theory_Pa": 3.5999999999999996,
+ "dp_rel_error_pct": 1.1722720603636994,
+ "history": [
+  {
+   "step": 10,
+   "t_over_t_sigma": 1.0000000000000002,
+   "umax_over_vref": 0.05879524756640193,
+   "umean_over_vref": 0.00750217746390823,
+   "dp_Pa": 3.6258011956735943,
+   "area_ratio": 1.0,
+   "div_after_over_div_before": 9.39402897777489e-07,
+   "cg_iterations": 638
+  },
+  {
+   "step": 20,
+   "t_over_t_sigma": 2.0000000000000004,
+   "umax_over_vref": 0.11166082501859233,
+   "umean_over_vref": 0.014379751815878286,
+   "dp_Pa": 3.6146790561037876,
+   "area_ratio": 1.0,
+   "div_after_over_div_before": 9.870877397579856e-07,
+   "cg_iterations": 640
+  },
+  {
+   "step": 30,
+   "t_over_t_sigma": 3.0000000000000004,
+   "umax_over_vref": 0.15294907524399465,
+   "umean_over_vref": 0.020195929138433263,
+   "dp_Pa": 3.6085041796042905,
+   "area_ratio": 0.9956896551724137,
+   "div_after_over_div_before": 9.728159002736983e-07,
+   "cg_iterations": 616
+  },
+  {
+   "step": 40,
+   "t_over_t_sigma": 4.000000000000001,
+   "umax_over_vref": 0.17828382238783805,
+   "umean_over_vref": 0.02458768095903481,
+   "dp_Pa": 3.6164895900038383,
+   "area_ratio": 1.0,
+   "div_after_over_div_before": 9.918876137147887e-07,
+   "cg_iterations": 646
+  },
+  {
+   "step": 50,
+   "t_over_t_sigma": 5.000000000000001,
+   "umax_over_vref": 0.18670751601504673,
+   "umean_over_vref": 0.027429692920934043,
+   "dp_Pa": 3.653506654339462,
+   "area_ratio": 1.0,
+   "div_after_over_div_before": 9.79137189812931e-07,
+   "cg_iterations": 627
+  },
+  {
+   "step": 60,
+   "t_over_t_sigma": 6.000000000000001,
+   "umax_over_vref": 0.1790878949903455,
+   "umean_over_vref": 0.028917279692157467,
+   "dp_Pa": 3.67264988239046,
+   "area_ratio": 1.004310344827586,
+   "div_after_over_div_before": 9.920047269443346e-07,
+   "cg_iterations": 565
+  },
+  {
+   "step": 70,
+   "t_over_t_sigma": 7.000000000000001,
+   "umax_over_vref": 0.16753537045335384,
+   "umean_over_vref": 0.029392350172594384,
+   "dp_Pa": 3.675730702936427,
+   "area_ratio": 1.004310344827586,
+   "div_after_over_div_before": 8.423973716907291e-07,
+   "cg_iterations": 554
+  },
+  {
+   "step": 80,
+   "t_over_t_sigma": 8.000000000000002,
+   "umax_over_vref": 0.17344133750017096,
+   "umean_over_vref": 0.029270476327526412,
+   "dp_Pa": 3.6990021419496935,
+   "area_ratio": 1.0,
+   "div_after_over_div_before": 9.934503454848606e-07,
+   "cg_iterations": 527
+  },
+  {
+   "step": 90,
+   "t_over_t_sigma": 9.0,
+   "umax_over_vref": 0.2049535331353896,
+   "umean_over_vref": 0.029193569081529362,
+   "dp_Pa": 3.7304712449010147,
+   "area_ratio": 1.0086206896551724,
+   "div_after_over_div_before": 9.932796721540745e-07,
+   "cg_iterations": 550
+  },
+  {
+   "step": 100,
+   "t_over_t_sigma": 10.000000000000002,
+   "umax_over_vref": 0.2367680481156626,
+   "umean_over_vref": 0.029823958506656967,
+   "dp_Pa": 3.7512481603347343,
+   "area_ratio": 1.004310344827586,
+   "div_after_over_div_before": 9.316348694214397e-07,
+   "cg_iterations": 513
+  },
+  {
+   "step": 110,
+   "t_over_t_sigma": 11.000000000000002,
+   "umax_over_vref": 0.25785330799530354,
+   "umean_over_vref": 0.03152892008041023,
+   "dp_Pa": 3.742651496560016,
+   "area_ratio": 1.0,
+   "div_after_over_div_before": 9.812736742873447e-07,
+   "cg_iterations": 515
+  },
+  {
+   "step": 120,
+   "t_over_t_sigma": 12.000000000000002,
+   "umax_over_vref": 0.26289546143178827,
+   "umean_over_vref": 0.03442124962915272,
+   "dp_Pa": 3.6422017941730926,
+   "area_ratio": 0.9956896551724137,
+   "div_after_over_div_before": 9.997832018802365e-07,
+   "cg_iterations": 525
+  }
+ ],
+ "wall_s": 283.63714385032654,
+ "job": "dx8_nu01",
+ "role": "ladder",
+ "threads": 8
+}
