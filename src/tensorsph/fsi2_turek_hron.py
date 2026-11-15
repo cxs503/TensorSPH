@@ -1055,6 +1055,10 @@ class FSI2State:
     cylinder_normals: Optional[torch.Tensor] = None
     #: tributary arc length per cylinder station [m]
     cylinder_tributary: Optional[torch.Tensor] = None
+    #: inflow volume accumulated since the last injected column, in metres of
+    #: channel travel (``U_mean * dt`` summed).  Drives the open-boundary
+    #: injection by mass flux instead of by a geometric front.
+    inflow_deficit: float = 0.0
 
 
 def initial_state(case: FSI2Case) -> FSI2State:
@@ -1106,7 +1110,8 @@ def _inlet_ramp(case: FSI2Case, t: float) -> float:
     return 0.5 * (1.0 - math.cos(math.pi * x))
 
 
-def _apply_open_boundaries(state: "FSI2State", case: FSI2Case) -> Dict[str, int]:
+def _apply_open_boundaries(state: "FSI2State", case: FSI2Case,
+                            dt: Optional[float] = None) -> Dict[str, int]:
     """Inflow column injection + outflow removal for the through-flow channel.
 
     Without this the channel is a closed tank: fluid piles up against the
@@ -1115,9 +1120,21 @@ def _apply_open_boundaries(state: "FSI2State", case: FSI2Case) -> Dict[str, int]
     particle methods:
 
     * particles that reach the downstream end (``x > L - dx/4``) are deleted;
-    * when the inlet column has drifted one lattice spacing downstream
-      (``min x > 1.5 dx``) a fresh column of fluid particles is laid at
-      ``x = dx/2`` with the parabolic inlet velocity.
+    * a fresh column of fluid particles is laid at ``x = dx/2`` with the
+      parabolic inlet velocity once the *prescribed inflow volume* has filled
+      one lattice column, ``sum(U_mean dt) >= dx``.
+
+    The second rule used to be geometric -- "inject when ``min x > 1.5 dx``" --
+    and that clock is pinned by the slowest particle in the domain: the inlet
+    parabola vanishes at the walls, so a near-wall particle creeps at
+    ``U(y=0.5dx) = 0.1 U_max`` and keeps ``min x`` below the trigger while the
+    outlet keeps deleting particles.  The channel then drains instead of
+    through-flowing; measured on the FSI2 rigid-body precursor at
+    ``dx = 0.02``, ``injected = 0`` over 1200 steps against 26 removals, bulk
+    speed down to 0.19 ``U_mean`` and downstream flux 0.07-0.18 of the inlet
+    flux (``docs/xval_fsi2/INFLOW_CLOCK_STALL.md``).  A flux-driven clock cannot
+    be stalled by a single slow particle, and it injects the volume the inlet
+    boundary condition actually delivers.
 
     Particle count therefore stays within one lattice column of its initial
     value; the exact count is logged in ``state.history``.
@@ -1136,7 +1153,10 @@ def _apply_open_boundaries(state: "FSI2State", case: FSI2Case) -> Dict[str, int]
     if n_now == 0:
         return {"injected": 0, "removed": removed}
 
-    if float(state.fluid_pos[:, 0].min()) > 1.5 * dx:
+    dt = case.dt() if dt is None else float(dt)
+    state.inflow_deficit += case.inlet_u_mean() * dt
+    if state.inflow_deficit >= dx:
+        state.inflow_deficit -= dx
         ys = torch.arange(0.5 * dx, case.channel_height, dx,
                           dtype=state.fluid_pos.dtype, device=state.fluid_pos.device)
         xs = torch.full_like(ys, 0.5 * dx)
@@ -1171,7 +1191,7 @@ def step_fsi2(state: FSI2State, case: FSI2Case, dt: float) -> Dict[str, float]:
 
     counters = {"injected": 0, "removed": 0}
     if case.open_boundaries:
-        counters = _apply_open_boundaries(state, case)
+        counters = _apply_open_boundaries(state, case, dt)
 
     # Beam boundary layer: one row per face, outward normals per particle
     beam_boundary, beam_normals, beam_interp, tributary = beam_boundary_geometry(
