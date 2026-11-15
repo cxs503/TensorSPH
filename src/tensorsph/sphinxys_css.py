@@ -111,6 +111,21 @@ def _grad(delta: torch.Tensor, h: float, kernel: str) -> torch.Tensor:
 #: ``m_i``, i.e. by ``rho_i dx^2`` -- see ``docs/xval_sphinxys_mixture_laplace``.
 ASSEMBLIES = ("upstream", "consistent")
 
+#: Scope of the hourglass penalty.  ``"all"`` is the literal upstream
+#: transcription (inner + contact loop).  ``"contact"`` keeps the penalty in the
+#: contact loop only, i.e. drops the *inner* (same-phase) penalty -- which is the
+#: physically meaningful configuration for a one-sided free surface, because the
+#: inner penalty is designed to stop two *phases* from sliding through each
+#: other, and upstream itself suppresses it by ``4 f (1-f)`` on the contact side
+#: (``4 f (1-f) = 4e-3`` at ``rho_ratio = 1000``).  On a vacuum-reduced
+#: single-phase interface there is no such factor and the term is not a
+#: regularisation of the Lamb mode: it returns an O(sigma/R) modal force that
+#: does not scale with the perturbation, biasing the Lamb frequency by
+#: 135-167 % (``benchmarks/surface_tension/out_sphinxys_lamb/lamb.json``).
+#: ``"contact"`` removes that spurious force and leaves the two-phase path
+#: unchanged to a few tenths of a percent.
+HOURGLASS_SCOPES = ("all", "contact")
+
 #: Interface completion of the one-sided (vacuum-reduced) stress flux.  A
 #: free-surface particle has no neighbour on the far side of the interface, so
 #: ``sum_present V grad W`` does not represent the full kernel; ``"mirror"``
@@ -371,12 +386,17 @@ def inner_stress_force(
     assembly: str = "upstream",
     completion: str = "none",
     completion_weight: float = 1.0,
+    hourglass_scope: str = "all",
 ) -> torch.Tensor:
     """Acceleration from the same-phase stress divergence.
 
     ``a_i = (m_i/rho_i) sum_j V_j (S_i + S_j + H_ij) . grad_i W_ij``
     (``assembly="upstream"``) or ``a_i = (1/rho_i) sum_j V_j (...)``
     (``assembly="consistent"``; see :func:`pair_weight`).
+
+    ``hourglass_scope="contact"`` drops this inner penalty (see
+    :data:`HOURGLASS_SCOPES`); it is the recommended setting for
+    ``mode="single_phase"``.
 
     The pair list is stored once, so the ``j`` end is assembled explicitly:
     ``H`` flips sign under ``i <-> j`` (``e_ji = -e_ij``) while ``S_i + S_j``
@@ -407,7 +427,11 @@ def inner_stress_force(
 
     flux_s = torch.einsum("pab,pb->pa", fields.stress[i] + fields.stress[j], gw_eff)
 
-    if hourglass and hourglass_coeff != 0.0:
+    if hourglass_scope not in HOURGLASS_SCOPES:  # pragma: no cover - validation
+        raise ValueError(f"unknown hourglass_scope {hourglass_scope!r}; "
+                         f"expected {list(HOURGLASS_SCOPES)}")
+
+    if hourglass and hourglass_coeff != 0.0 and hourglass_scope == "all":
         g_avg = 0.5 * (fields.color_gradient[i] + fields.color_gradient[j])
         ge = (g_avg * e).sum(dim=1)
         g_mag = torch.linalg.vector_norm(g_avg, dim=1)
@@ -529,8 +553,12 @@ def surface_tension_acceleration(
     bracket: str = "mixture",
     completion: str = "none",
     completion_weight: float = 1.0,
+    hourglass_scope: str = "all",
 ) -> tuple[torch.Tensor, StressFields]:
     """Full SPHinXsys surface-tension acceleration + the fields it was built from.
+
+    ``hourglass_scope="contact"`` keeps the hourglass penalty in the contact
+    (cross-phase) loop only; see :data:`HOURGLASS_SCOPES`.
 
     ``mode="two_phase"`` needs ``pairs_cross`` (each unordered cross-phase pair
     once) and ``frac`` (contact fraction per particle).  ``mode="single_phase"``
@@ -553,7 +581,8 @@ def surface_tension_acceleration(
                              kernel=kernel, hourglass=hourglass,
                              hourglass_coeff=hourglass_coeff, eps=eps,
                              assembly=assembly, completion=completion,
-                             completion_weight=completion_weight)
+                             completion_weight=completion_weight,
+                             hourglass_scope=hourglass_scope)
     if mode == "two_phase":
         acc = acc + contact_stress_force(pos, mass, rho, vol, pairs_cross, fields, frac,
                                          sigma, h, kernel=kernel, hourglass=hourglass,

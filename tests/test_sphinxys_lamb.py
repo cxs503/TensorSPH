@@ -121,32 +121,67 @@ def test_two_phase_mixture_lamb_frequency_within_gate():
     assert abs(row["contact_fraction_water"] - 1000.0 / 1001.0) < 1e-12
 
 
-@pytest.mark.xfail(strict=True, reason="hourglass term injects a spurious mode-2 pressure "
-                                       "of order sigma/R on a circle (documented defect)")
-def test_hourglass_contribution_vanishes_with_the_perturbation():
-    """The hourglass penalty is a *lattice* term and must not act as a physical
-    restoring force.  Two independent statements are pinned here:
+def test_hourglass_scope_contact_removes_the_spurious_circle_force():
+    """The inner hourglass penalty is upstream code for *phase* mixing, and on a
+    vacuum-reduced single-phase interface it returns an O(sigma/R) modal force
+    that does not scale with the perturbation.  ``hourglass_scope="contact"``
+    drops that inner penalty; on a circle (``eps = 0``), where the mode-2 modal
+    pressure of any physical force is zero by symmetry, nothing is left."""
+    for ppd in (16, 24):
+        circle = L.lobe_geometry(2, 0.0, RADIUS, RADIUS / ppd)
+        row = L.css_single_phase(circle, hourglass=True, hourglass_scope="contact")
+        spurious = abs(row["dp_measured_pa"]) * RADIUS / SIGMA
+        assert spurious < 0.15, (ppd, spurious, row)
 
-    * its contribution is not proportional to the perturbation (a physical
-      surface-tension term scales exactly with ``eps``);
-    * on a perfect circle (``eps = 0``) the mode-2 modal pressure of a physical
-      force is zero by symmetry, so anything the port returns there is spurious.
 
-    Locked as ``xfail(strict)``-style evidence in
-    ``benchmarks/surface_tension/out_sphinxys_lamb/lamb.json`` and
-    ``docs/xval_sphinxys_surface_tension/LAMB.md``; the assertion below states
-    what *should* hold, so it will start passing -- and this test will fail --
-    as soon as the hourglass term is rescaled or gated to the contact path.
-    """
+def test_hourglass_scope_contact_is_identical_to_hourglass_off_on_a_free_surface():
+    """With no second phase there is no contact loop, so the scoped penalty must
+    reduce exactly to the physical (hourglass off) flux."""
+    g = L.lobe_geometry(2, 0.10, RADIUS, RADIUS / 24)
+    on = L.css_single_phase(g, hourglass=True, hourglass_scope="contact")
+    off = L.css_single_phase(g, hourglass=False)
+    assert abs(on["dp_measured_pa"] - off["dp_measured_pa"]) < 1e-12 * max(
+        1.0, abs(off["dp_measured_pa"]))
+
+
+def test_hourglass_scope_contact_passes_the_lamb_gate_at_every_level():
+    """The fix is a *setting*, not a tuned coefficient: with the inner penalty
+    dropped the ported force reproduces the Lamb frequency inside the 15 % gate
+    on the whole resolution ladder (R/dx = 16, 24, 32)."""
+    for ppd in (16, 24, 32):
+        g = L.lobe_geometry(2, 0.10, RADIUS, RADIUS / ppd)
+        row = L.css_single_phase(g, hourglass=True, hourglass_scope="contact")
+        assert abs(row["omega_error_pct"]) < GATE_PCT, (ppd, row)
+
+
+def test_hourglass_scope_contact_is_inert_on_the_two_phase_path():
+    """The contact (cross-phase) hourglass penalty is the one that upstream
+    actually uses -- it is suppressed by ``4 f (1-f)`` -- so restricting the
+    scope must leave the two-phase answer unchanged."""
     dx = RADIUS / 16
-    circle = L.lobe_geometry(2, 0.0, RADIUS, dx)
-    dp_circle = L.css_single_phase(circle, hourglass=True)["dp_measured_pa"]
-    spurious = abs(dp_circle) * RADIUS / SIGMA
-    assert spurious < 0.15, (
-        f"hourglass injects a spurious mode-2 pressure of {spurious:.2f} sigma/R "
-        "on an unperturbed circle")
+    g = L.two_phase_lobe_geometry(2, 0.10, RADIUS, dx, rings=6)
+    all_ = L.css_two_phase(g, hourglass=True, hourglass_scope="all")
+    contact = L.css_two_phase(g, hourglass=True, hourglass_scope="contact")
+    assert abs(all_["omega_ratio"] - contact["omega_ratio"]) < 5e-3, (all_, contact)
+    assert abs(contact["omega_error_pct"]) < GATE_PCT, contact
 
 
+def test_upstream_inner_hourglass_defect_stays_pinned():
+    """Regression pin on the *literal* upstream transcription (scope="all"): the
+    spurious mode-2 pressure on a circle is ~2 sigma/R, which is what
+    ``docs/xval_sphinxys_surface_tension/LAMB.md`` reports.  If the ported inner
+    hourglass is ever rewritten, this test must be updated together with the
+    document -- the record must not drift silently."""
+    circle = L.lobe_geometry(2, 0.0, RADIUS, RADIUS / 24)
+    row = L.css_single_phase(circle, hourglass=True)
+    spurious = abs(row["dp_measured_pa"]) * RADIUS / SIGMA
+    assert 1.5 < spurious < 3.0, (spurious, row)
+
+
+def test_invalid_hourglass_scope_is_rejected():
+    g = L.lobe_geometry(2, 0.10, RADIUS, RADIUS / 16)
+    with pytest.raises(ValueError):
+        L.css_single_phase(g, hourglass=True, hourglass_scope="inner")
 
 
 def test_css_hourglass_off_matches_lamb_on_two_resolutions():
@@ -160,25 +195,21 @@ def test_css_hourglass_off_matches_lamb_on_two_resolutions():
 
 def test_css_hourglass_off_vanishes_on_a_circle():
     """On a perfect circle the mode-2 modal pressure of a physical force is zero.
-    The ported CSS force (hourglass off) satisfies this; the hourglass term does
-    not (see the strict-xfail test above)."""
+    The ported CSS force (hourglass off) satisfies this, and so does the fixed
+    setting ``hourglass_scope="contact"``; the literal upstream inner penalty
+    does not (``test_upstream_inner_hourglass_defect_stays_pinned``)."""
     g = L.lobe_geometry(2, 0.0, RADIUS, RADIUS / 16)
     row = L.css_single_phase(g, hourglass=False)
     spurious = abs(row["dp_measured_pa"]) * RADIUS / SIGMA
     assert spurious < 0.1, (spurious, row)
 
 
-@pytest.mark.parametrize("eps", [0.02])
-@pytest.mark.xfail(strict=True, reason="the inner hourglass part is O(sigma/R) and does not scale "
-                                       "with the perturbation (documented defect)")
-def test_hourglass_part_scales_with_the_perturbation(eps):
-    """A physical surface-tension term is proportional to ``eps``; the hourglass
-    part must shrink by the same factor between eps = 0.10 and eps = 0.02."""
-    dx = RADIUS / 16
-
-    def dp_hg(e):
-        g = L.lobe_geometry(2, e, RADIUS, dx)
-        return (L.css_single_phase(g, hourglass=True)["dp_measured_pa"]
-                - L.css_single_phase(g, hourglass=False)["dp_measured_pa"])
-
-    assert abs(dp_hg(eps)) < 0.3 * abs(dp_hg(0.10)), (abs(dp_hg(eps)), abs(dp_hg(0.10)))
+@pytest.mark.parametrize("eps", [0.02, 0.05, 0.10])
+def test_hourglass_scope_contact_passes_the_gate_across_amplitudes(eps):
+    """The setting is not tuned to one perturbation: the ported modal force keeps
+    the Lamb frequency inside the 15 % gate over an order of magnitude in ``eps``
+    (linear theory is only meaningful for small ``eps``; the eps-scan of
+    ``lamb.json`` shows the modal force growing with it)."""
+    g = L.lobe_geometry(2, eps, RADIUS, RADIUS / 16)
+    row = L.css_single_phase(g, hourglass=True, hourglass_scope="contact")
+    assert abs(row["omega_error_pct"]) < GATE_PCT, (eps, row)

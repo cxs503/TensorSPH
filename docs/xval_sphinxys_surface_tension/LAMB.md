@@ -1,7 +1,7 @@
 # LAMB: dynamic cross-validation of the SPHinXsys CSS surface tension port
 
 **Anchor** `XVAL-SPH-MIXTURE-MATERIAL-AND-SURFACE-TENSION` · repository **TensorSPH**
-· mission **m19927** (self-start, models seat) · 2026-11-14
+· mission **m19927** (self-start, models seat) · **round 2 (m21855): the inner-hourglass defect is fixed** · 2026-11-15
 
 **Verdict (short).** The ported SPHinXsys continuous-surface-stress (CSS) force
 *does* carry the curvature force. Measured in the one unit that does not depend
@@ -11,14 +11,20 @@ perturbed drop — the port reproduces the exact 2-D linear result
 (vacuum-reduced) mode and **-4.2 %** in two-phase mixture mode at 1000:1, both
 inside the 15 % acceptance gate. The earlier "-99.8 % / structurally blind"
 verdict of `sphinxys_xval.py` (m17909) is a **bookkeeping artefact** of the
-reading, not a property of the model (see §5). What the port *does* get wrong is
-its **hourglass penalty**, which in single-phase mode contributes a spurious
-mode-2 pressure of order `sigma/R` that does not scale with the perturbation
-(§6) — a documented defect, locked by strict `xfail` tests.
+reading, not a property of the model (see §5). What the port *did* get wrong was
+its **hourglass penalty**: in single-phase mode the inner (same-phase) penalty
+contributes a spurious mode-2 pressure of order `sigma/R` that does not scale
+with the perturbation, biasing the Lamb frequency by 135–167 %. The term is a
+*faithful* transcription of upstream (re-derived in §6), so the fix is not a
+rewrite but a **scope**: `hourglass_scope="contact"` keeps the penalty in the
+cross-phase loop only. With it the single-phase Lamb error drops to
+**+0.70 % / -0.85 % / -0.58 %** at R/Δx = 16 / 24 / 32 (gate < 15 %) and the
+two-phase mixture answer moves by 0.0014 percentage points (inert).
 
 Artefacts: `benchmarks/surface_tension/sphinxys_lamb.py`,
 `benchmarks/surface_tension/out_sphinxys_lamb/lamb.json`, `lamb.png`,
-`tests/test_sphinxys_lamb.py`.
+`tests/test_sphinxys_lamb.py`, and the setting itself in
+`src/tensorsph/sphinxys_css.py` (`HOURGLASS_SCOPES`).
 
 ---
 
@@ -53,6 +59,7 @@ test measures) and retains only what curvature *gradients* produce.
 | h/Δx | 1.3 | `SPHAdaptation(h_spacing_ratio = 1.3)` |
 | kernel | Wendland C2, support 2h | upstream default |
 | hourglass coeff | 4.5 | `SPHinXsysHourglassControlCoeff` |
+| hourglass scope | `"all"` (upstream) / `"contact"` (fixed setting, §6.3) | `HOURGLASS_SCOPES` |
 | resolution ladder | R/Δx = 16, 24, 32 | |
 
 Reference model for the calibration channel: the Brackbill CSF model already in
@@ -108,6 +115,18 @@ interface-concentrated stress for a delta-function surface force) and
 | 24 | 1.0086 | +5.5061 | +2.3465 | +134.65 % | FAIL |
 | 32 | 1.0114 | +7.1499 | +2.6739 | +167.39 % | FAIL |
 
+**SPHinXsys CSS, hourglass 4.5 with `hourglass_scope="contact"`** (recommended single-phase setting)
+
+| R/Δx | delta integral | dp/dp_exact | omega/omega_exact | omega error | < 15 %? |
+|---|---|---|---|---|---|
+| 16 | 1.0019 | +1.0141 | +1.0070 | +0.70 % | **PASS** |
+| 24 | 1.0086 | +0.9831 | +0.9915 | -0.85 % | **PASS** |
+| 32 | 1.0114 | +0.9883 | +0.9942 | -0.58 % | **PASS** |
+
+Identical to the hourglass-off row at the printed precision, because a
+single-phase interface has no contact loop to keep the penalty in
+(`test_hourglass_scope_contact_is_identical_to_hourglass_off_on_a_free_surface`).
+
 **Calibration channel — Brackbill CSF** (`drop_modal_stiffness`)
 
 | R/Δx | dp/dp_exact | omega/omega_exact | omega error |
@@ -127,6 +146,7 @@ reading `a_i/V_i`, which is the bookkeeping identity of §5.
 | no_hourglass | +0.9318 | +0.9653 | -3.47 % | 0.9880 |
 | consistent | +1.0216 | +1.0107 | +1.07 % | 0.9880 |
 | symmetric_bracket | +1.0213 | +1.0106 | +1.06 % | 0.9880 |
+| hourglass_scope_contact | +1.0216 | +1.0107 | +1.07 % | 0.9880 |
 
 `symmetric_bracket` uses the plain two-point bracket `S_i + S_j` instead of upstream's
 `2(1-f) S_i + 2 f S_j`: indistinguishable here, because the contact-fraction weighting of a
@@ -134,13 +154,13 @@ reading `a_i/V_i`, which is the bookkeeping identity of §5.
 
 ### 3.3 Amplitude scan (R/Δx = 24) — physical part vs hourglass part
 
-| eps | CSS hourglass off dp [Pa] | CSS hourglass on dp [Pa] | hourglass part [Pa] | hourglass part / (sigma/R) | Brackbill CSF dp [Pa] |
-|---|---|---|---|---|---|
-| 0.00 | -0.0021 | -1.5101 | -1.5080 | -2.094 | +0.0058 |
-| 0.01 | -0.0222 | -1.2035 | -1.1814 | -1.641 | -0.0098 |
-| 0.02 | -0.0392 | -1.1475 | -1.1083 | -1.539 | -0.0444 |
-| 0.05 | -0.1130 | -0.8135 | -0.7005 | -0.973 | -0.1010 |
-| 0.10 | -0.2123 | -1.1893 | -0.9770 | -1.357 | -0.2074 |
+| eps | CSS hourglass off dp [Pa] | CSS hourglass on dp [Pa] | hourglass part [Pa] | hourglass part / (sigma/R) | CSS `scope="contact"` dp [Pa] | Brackbill CSF dp [Pa] |
+|---|---|---|---|---|---|---|
+| 0.00 | -0.0021 | -1.5101 | -1.5080 | -2.094 | -0.0021 | +0.0058 |
+| 0.01 | -0.0222 | -1.2035 | -1.1814 | -1.641 | -0.0222 | -0.0098 |
+| 0.02 | -0.0392 | -1.1475 | -1.1083 | -1.539 | -0.0392 | -0.0444 |
+| 0.05 | -0.1130 | -0.8135 | -0.7005 | -0.973 | -0.1130 | -0.1010 |
+| 0.10 | -0.2123 | -1.1893 | -0.9770 | -1.357 | -0.2123 | -0.2074 |
 
 The physical (hourglass off) column scales with `eps`, as a linear surface-tension force must.
 At `eps = 0` — a perfect circle, where the mode-2 modal pressure of a physical force is **zero by
@@ -169,44 +189,100 @@ formed consistently (`a_i / V_i`, resp. `rho_i a_i` for the consistent
 assembly), the same port reproduces the curvature stress to a few percent, as
 the Lamb frequency above shows.
 
-## 6. The real defect: the inner hourglass penalty
+## 6. The inner hourglass penalty: defect, root cause, fix
 
 The inner (same-phase) hourglass penalty of `inner_stress_force` — upstream
-`SurfaceStressForce<Inner<>>`, coefficient 4.5 — is the one part of the port that does **not**
-survive this test:
+`SurfaceStressForce<Inner<>>`, coefficient 4.5 — was the one part of the port that did **not**
+survive this test. Round 2 of this record keeps the diagnosis and adds the fix.
+
+### 6.1 Is the transcription faithful? (yes — re-derived)
+
+Upstream forms the hourglass matrix from the *mismatch* dyadic
+
+    t = r_ij g_avg e_ij^T                      (g_avg = (g_i + g_j)/2)
+    mismatch = -t t / |t| = -sign(g_avg . e_ij) g_avg e_ij^T / |g_avg|
+    H_ij = 0.5 c_hg sigma (T_i + T_j) . mismatch / (r_ij + Eps),   T = I - n n^T
+
+so the pair flux ``H_ij . grad_i W_ij`` with ``grad W = W' e_ij`` is
+
+    H . gw = -0.5 c_hg sigma sign(g.e) W' (T_i + T_j) g_avg / (|g_avg| r_ij).
+
+The port computes ``coef = -(W' g.e)/((|g|+Eps)(|g.e|+Eps)) = -W' sign(g.e)/|g|`` and
+``hg = 0.5 c_hg sigma coef/(r+Eps) (T_i + T_j) g_avg``, i.e.
+``hg = -0.5 c_hg sigma W' sign(g.e) (T_i+T_j) g_avg / (|g| r)`` — the same expression
+(the ``Eps`` guards differ only where a factor is already singular). **The port is not
+mis-transcribed; the term is upstream's, and its misbehaviour is inherited.**
+
+### 6.2 What the term does in each path
 
 | quantity | value |
 |---|---|
-| hourglass part on a perfect circle (eps = 0) | **-1.508 Pa = -2.09 sigma/R** |
+| hourglass part on a perfect circle (eps = 0, R/Δx = 24) | **-1.508 Pa = -2.09 sigma/R** |
 | hourglass part at eps = 0.01 / 0.02 / 0.05 / 0.10 | -1.18 / -1.11 / -0.70 / -0.98 Pa |
 | physical part at eps = 0 / 0.01 / 0.02 / 0.05 / 0.10 | -0.002 / -0.022 / -0.039 / -0.113 / -0.212 Pa |
-| omega error, hourglass 4.5, single-phase | **-136.7 % / +134.7 % / +167.4 %** (R/dx = 16 / 24 / 32) |
-| omega error, hourglass 4.5, two-phase 1000:1 | +1.07 % (contact hourglass carries the f(1-f) factor) |
+| omega error, hourglass 4.5, scope = all, single-phase | **-136.7 % / +134.7 % / +167.4 %** (R/Δx = 16 / 24 / 32) |
+| omega error, hourglass 4.5, scope = contact, single-phase | **+0.70 % / -0.85 % / -0.58 %** |
+| omega error, hourglass 4.5, scope = all, two-phase 1000:1 | +1.07 % |
+| omega error, hourglass 4.5, scope = contact, two-phase 1000:1 | +1.07 % (Δ = 0.0014 pp) |
 
-The hourglass contribution is **O(sigma/R) and independent of the perturbation amplitude** — it
-does not vanish as the interface becomes a circle, so it is a lattice-scale term, not a
-regularisation of the mode. In single-phase mode its error is 135-167 % and its sign flips with
-resolution. In the two-phase path the same term is suppressed by the contact factor `4 f(1-f)`
-(0.004 at 1000:1), which is why upstream — where every interface is a *contact* between two
-bodies — does not see this.
+Root cause. The penalty is built to penalise *phase mixing*: it acts only on pairs whose colour
+gradient points along the pair (`sign(g . e)`), i.e. pairs that straddle a **contact** interface,
+and upstream suppresses it there by `4 f (1-f)` = 4e-3 at 1000:1. A vacuum-reduced single-phase
+interface has no such second phase: the colour gradient is one-sided, `|g|` is about half its
+two-phase value, and *every* interface pair sits on the wrong side of the colour gradient, so the
+"mismatch" fires coherently over the whole band instead of cancelling in pairs. The result is an
+`O(sigma/R)` radial force that does not vanish as the perturbation goes to zero — a lattice
+term, not a regularisation of the mode.
 
-**Consequence.** Run the port with `hourglass=False` in single-phase mode (as
-`benchmarks/surface_tension/sphinxys_xval.py` already does for its stress reading), or rescale
-the inner hourglass by the contact factor. The defect is locked by two strict `xfail` tests in
-`tests/test_sphinxys_lamb.py`, which will turn into failures (and thus prompt an update) as soon
-as the term is fixed.
+### 6.3 Fix: `hourglass_scope`
+
+`src/tensorsph/sphinxys_css.py` now exposes `HOURGLASS_SCOPES = ("all", "contact")` on
+`inner_stress_force` / `surface_tension_acceleration`:
+
+* `"all"` (default, unchanged): literal upstream transcription — inner + contact penalty.
+  Backwards compatible; the values in §3.1 and §6.2 are unchanged.
+* `"contact"`: keep the penalty in the cross-phase (contact) loop only. On a single-phase
+  free surface this is *exactly* `hourglass=False` (no contact loop to keep it in); on the
+  two-phase path it removes only the inner part, and the answer moves by 0.0014 pp.
+
+With `hourglass_scope="contact"` the port passes the 15 % Lamb gate on the whole resolution
+ladder and across `eps = 0.02 / 0.05 / 0.10`, with no tuned coefficient. The old strict-`xfail`
+pins are replaced by six positive tests plus one regression pin that keeps the literal-upstream
+number (-2.09 sigma/R on a circle) on the record, so the document cannot drift away from the
+code silently:
+
+* `test_hourglass_scope_contact_removes_the_spurious_circle_force`
+* `test_hourglass_scope_contact_is_identical_to_hourglass_off_on_a_free_surface`
+* `test_hourglass_scope_contact_passes_the_lamb_gate_at_every_level`
+* `test_hourglass_scope_contact_passes_the_gate_across_amplitudes`
+* `test_hourglass_scope_contact_is_inert_on_the_two_phase_path`
+* `test_upstream_inner_hourglass_defect_stays_pinned`
+* `test_invalid_hourglass_scope_is_rejected`
+
+**Residual limitation.** The setting fixes the *symptom* in a controllable way; it does not
+repair the operator. A vacuum-reduced single-phase interface still has a one-sided colour
+gradient, so §7's delta-normalisation caveat (0.96–0.98) remains, and the inner penalty is
+unusable for single-phase cases even at scope `"all"`. Anyone who wants an hourglass-regularised
+single-phase CSS must build a two-sided completion first (see
+`benchmarks/surface_tension/single_phase_completion.py`).
 
 
 ## 7. Pitfalls and scope
 
-* The Lamb test is linear theory: `eps` must be small; the `eps`-scan in §3
-  shows the physical part is proportional to `eps` as required.
+* The Lamb test is linear theory: `eps` must be small. The discrete modal force
+  is not exactly proportional to `eps` — at R/Δx = 16 doubling `eps` moves it by
+  1.48x-2.16x, because the interface arc length and the discrete band both change
+  with `eps`. The gate is therefore checked over a range of amplitudes
+  (§6.3) rather than by a linearity law.
 * `dp_mode` is a *modal surface pressure*, not a full dynamic simulation: it
   measures the instantaneous restoring force at `t = 0`, which is exactly what
   the frequency of a conservative oscillator needs. Viscous damping, density
   re-initialisation and the WCSPH pressure closure are out of scope.
 * Single-phase CSS is a *reduction* of the two-phase model (vacuum reduction of
   the colour gradient); its `delta_s` integral is 0.96–0.98 rather than 1, so a
-  few percent of the deficit below is delta normalisation, not curvature.
+  few percent of the residual is delta normalisation, not curvature.
+* `hourglass_scope` defaults to `"all"` so nothing that consumes
+  `sphinxys_css` changes silently; a single-phase caller must ask for
+  `"contact"` (or pass `hourglass=False`).
 * Two-phase numbers use `rho_air = 1 kg/m^3`; the contact-fraction weighting
   makes the water stress the dominant contribution, as upstream intends.
