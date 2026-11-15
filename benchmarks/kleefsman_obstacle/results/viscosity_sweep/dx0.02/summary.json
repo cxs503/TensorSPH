@@ -1,0 +1,131 @@
+{
+ "case": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST",
+ "repo": "TensorSPH",
+ "purpose": "attribute the arrival-time bias to the laminar-viscosity setting",
+ "experiment": {
+  "peak_height_m": 0.37,
+  "arrival_time_s": 0.3591,
+  "probe_x_m": 2.426
+ },
+ "tolerance_relative": 0.1,
+ "reference": {
+  "citation": "Kleefsman K.M.T., Fekken G., Veldman A.E.P., Iwanowski B., Buchner B. (2005) A Volume-of-Fluid based simulation method for wave impact problems. J. Comput. Phys. 206:363-393.",
+  "doi": "10.1016/j.jcp.2004.12.007"
+ },
+ "runs": [
+  {
+   "dx": 0.02,
+   "viscosity": 0.01,
+   "tag": "dx0.02_nu0.01",
+   "finished": true,
+   "t_end": 1.2,
+   "simulated_time_s": 1.2001999999999005,
+   "steps": 6001,
+   "dt": 0.0002,
+   "sound_speed": 20.0,
+   "peak_height_m": 0.5174656510353088,
+   "peak_time_s": 0.7159999999999538,
+   "arrival_time_s": 0.4540686776727774,
+   "max_speed": 6.641249179840088,
+   "max_density_compression": 0.12032958984374997,
+   "mass_error_rel": 0.0,
+   "boundary_escapes": 0,
+   "mean_front_speed": 2.638367407635489,
+   "reynolds": 316.0764154347316,
+   "boundary_layer_m": 0.0673846182502192,
+   "boundary_layer_over_dx": 3.36923091251096,
+   "wall_clock_s": 85.80593640002189,
+   "rel_error": {
+    "peak_height": 0.3985558136089428,
+    "arrival_time": 0.26446304002444293
+   },
+   "pass": {
+    "peak_height": false,
+    "arrival_time": false
+   }
+  },
+  {
+   "dx": 0.02,
+   "viscosity": 0.001,
+   "tag": "dx0.02_nu0.001",
+   "finished": true,
+   "t_end": 1.2,
+   "simulated_time_s": 1.2001999999999005,
+   "steps": 6001,
+   "dt": 0.0002,
+   "sound_speed": 20.0,
+   "peak_height_m": 0.5242491960525513,
+   "peak_time_s": 1.0559999999999163,
+   "arrival_time_s": 0.44910655988451986,
+   "max_speed": 9.410646438598633,
+   "max_density_compression": 0.16141430664062506,
+   "mass_error_rel": 0.0,
+   "boundary_escapes": 0,
+   "mean_front_speed": 2.667518373163032,
+   "reynolds": 3195.6870110493123,
+   "boundary_layer_m": 0.021192134387185257,
+   "boundary_layer_over_dx": 1.0596067193592629,
+   "wall_clock_s": 80.81571671995334,
+   "rel_error": {
+    "peak_height": 0.4168897190609494,
+    "arrival_time": 0.2506448339864102
+   },
+   "pass": {
+    "peak_height": false,
+    "arrival_time": false
+   }
+  },
+  {
+   "dx": 0.02,
+   "viscosity": 0.0001,
+   "tag": "dx0.02_nu0.0001",
+   "finished": true,
+   "t_end": 1.2,
+   "simulated_time_s": 1.2001999999999005,
+   "steps": 6001,
+   "dt": 0.0002,
+   "sound_speed": 20.0,
+   "peak_height_m": 0.5729596018791199,
+   "peak_time_s": 0.9919999999999234,
+   "arrival_time_s": 0.4389417279610611,
+   "max_speed": 7.005850315093994,
+   "max_density_compression": 0.1557165527343749,
+   "mass_error_rel": 0.0,
+   "boundary_escapes": 0,
+   "mean_front_speed": 2.729291666036991,
+   "reynolds": 32696.914159123153,
+   "boundary_layer_m": 0.006625267752786004,
+   "boundary_layer_over_dx": 0.3312633876393002,
+   "wall_clock_s": 85.13110719999531,
+   "rel_error": {
+    "peak_height": 0.5485394645381618,
+    "arrival_time": 0.22233842372893667
+   },
+   "pass": {
+    "peak_height": false,
+    "arrival_time": false
+   }
+  }
+ ],
+ "monotonic_checks": {
+  "dx0.02": {
+   "viscosity_desc": [
+    0.01,
+    0.001,
+    0.0001
+   ],
+   "arrival_s": [
+    0.4540686776727774,
+    0.44910655988451986,
+    0.4389417279610611
+   ],
+   "peak_m": [
+    0.5174656510353088,
+    0.5242491960525513,
+    0.5729596018791199
+   ],
+   "arrival_monotonically_decreasing_in_1_over_nu": true,
+   "arrival_span_s": 0.015126949711716298
+  }
+ }
+}

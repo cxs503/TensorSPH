@@ -1,0 +1,70 @@
+{
+ "source_series": "docs/m20884/outputs/kleefsman_h2_ref/h2_fig19.json",
+ "old_calibration": {
+  "x0": 661.0,
+  "x1": 1179.0,
+  "y_top": 6.5,
+  "y_bot": 413.5,
+  "t0": 0.0,
+  "t1": 6.0,
+  "h_top": 0.4,
+  "h_bot": 0.0
+ },
+ "jpeg": "/tmp/kleef/fig19.jpg",
+ "frame": {
+  "width": 1182,
+  "height": 450,
+  "frame_cols": [
+   661,
+   1177
+  ],
+  "frame_rows": [
+   5,
+   413
+  ]
+ },
+ "measured_calibration": {
+  "x0": 661.0,
+  "x1": 1177.0,
+  "y_top": 5.0,
+  "y_bot": 413.0,
+  "t0": 0.0,
+  "t1": 6.0,
+  "h_top": 0.4,
+  "h_bot": 0.0
+ },
+ "frame_px_shift": {
+  "x0": 0.0,
+  "x1": -2.0,
+  "y_top": -1.5,
+  "y_bot": -0.5
+ },
+ "curves": {
+  "dashed_experiment": {
+   "arrival_old_s": 0.34812554489973846,
+   "arrival_new_s": 0.349887471867967,
+   "peak_old_m": 0.37002457002457007,
+   "peak_new_m": 0.3686274509803922,
+   "arrival_shift_s": 0.0017619269682285221,
+   "peak_shift_m": -0.0013971190441778858
+  },
+  "solid_comflow": {
+   "arrival_old_s": 0.35958011583011584,
+   "arrival_new_s": 0.3617732558139535,
+   "peak_old_m": 0.33611793611793617,
+   "peak_new_m": 0.3348039215686275,
+   "arrival_shift_s": 0.002193139983837633,
+   "peak_shift_m": -0.0013140145493086841
+  }
+ },
+ "residual": {
+  "best_run": "dx0.02_nu0.0001",
+  "best_arrival_s": 0.4389417279610611,
+  "experiment_arrival_s": 0.34812554489973846,
+  "residual_s": 0.09081618306132266,
+  "residual_px": 7.810191743273749,
+  "calibration_shift_px": 2.0,
+  "calibration_shift_s": 0.023255813953488372,
+  "residual_explained_by_calibration": false
+ }
+}
