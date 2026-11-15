@@ -1,0 +1,183 @@
+{
+ "all_gates_pass": false,
+ "anchor": "CASE-POISEUILLE-SPH extension (proposed slug CASE-DUCT-POISEUILLE-3D)",
+ "case": "case_duct_poiseuille_3d",
+ "gates": [
+  {
+   "gate": "D1",
+   "measured": 0.009791108919335366,
+   "pass": true,
+   "threshold": 1.0,
+   "unit": "%",
+   "what": "series vs independent FD (square), centre velocity"
+  },
+  {
+   "gate": "D1b",
+   "measured": 0.025407828974565706,
+   "pass": true,
+   "threshold": 1.0,
+   "unit": "%",
+   "what": "series vs independent FD (square), L2"
+  },
+  {
+   "gate": "D1c",
+   "measured": 0.009840309205207128,
+   "pass": true,
+   "threshold": 1.0,
+   "unit": "%",
+   "what": "series vs independent FD (4:1 duct), centre velocity"
+  },
+  {
+   "gate": "D1d",
+   "measured": 0.06339787810994243,
+   "pass": true,
+   "threshold": 1.0,
+   "unit": "%",
+   "what": "series vs independent FD (4:1 duct), L2"
+  },
+  {
+   "gate": "D2",
+   "measured": 0.016359049081559076,
+   "pass": true,
+   "threshold": 0.1,
+   "unit": "%",
+   "what": "series truncation nmax=81 vs 321 (square centre)"
+  },
+  {
+   "gate": "D7-ref",
+   "measured": -0.004631826859037628,
+   "pass": true,
+   "threshold": 5.0,
+   "unit": "%",
+   "what": "analytic shape effect u_c(square)/(g0H^2/8nu) vs 0.5894"
+  }
+ ],
+ "generated_by": "tensorsph.case_poiseuille_duct (reference layer)",
+ "geometry": {
+  "H": 0.1,
+  "aspects": [
+   1.0,
+   4.0
+  ]
+ },
+ "note": "SPH ladder predeclared but not run (compute cost recorded); no SPH number is claimed",
+ "parameters": {
+  "aspect": 1.0,
+  "average_fraction": 0.25,
+  "columns": 4,
+  "courant": 0.25,
+  "delta": 0.1,
+  "device": "cpu",
+  "g0": 9.81,
+  "gamma": 7.0,
+  "h_factor": 1.3,
+  "height": 0.1,
+  "nu": 0.01,
+  "rho0": 1000.0,
+  "settle_times": 3.0,
+  "slip": "no_slip",
+  "sound_speed": 20.0,
+  "square_to_plane_ratio_reference": 0.5894,
+  "t_end": 0.3039635509270134,
+  "tau": 0.10132118364233779,
+  "u_plane_2d_limit": 1.2262500000000003,
+  "width": 0.1
+ },
+ "reference": {
+  "bulk_square": 0.34476464546844043,
+  "bulk_wide": 0.6886897332932893,
+  "centre_square": 0.7227182733903196,
+  "centre_wide": 1.221523015785769,
+  "fd_square": {
+   "centre_error_pct": 0.009791108919335366,
+   "dy": 0.0010416666666666667,
+   "dz": 0.0010416666666666667,
+   "l2_error_pct": 0.025407828974565706,
+   "n_y": 96,
+   "n_z": 96,
+   "u_centre_fd": 0.722654192954153,
+   "u_centre_series": 0.7225834440221157
+  },
+  "fd_wide": {
+   "centre_error_pct": 0.009840309205207128,
+   "dy": 0.0010416666666666667,
+   "dz": 0.004166666666666667,
+   "l2_error_pct": 0.06339787810994243,
+   "n_y": 96,
+   "n_z": 96,
+   "u_centre_fd": 1.2215007939400326,
+   "u_centre_series": 1.2213806063117991
+  },
+  "plane_limit": [
+   {
+    "aspect": 1.0,
+    "deviation_pct": -41.06272999875071,
+    "ratio_to_plane": 0.5893727000124929,
+    "u_centre": 0.7227182733903196,
+    "u_plane_2d": 1.2262500000000003
+   },
+   {
+    "aspect": 2.0,
+    "deviation_pct": -8.902473586947224,
+    "ratio_to_plane": 0.9109752641305278,
+    "u_centre": 1.11708341764006,
+    "u_plane_2d": 1.2262500000000003
+   },
+   {
+    "aspect": 4.0,
+    "deviation_pct": -0.38548291247553373,
+    "ratio_to_plane": 0.9961451708752447,
+    "u_centre": 1.221523015785769,
+    "u_plane_2d": 1.2262500000000003
+   },
+   {
+    "aspect": 8.0,
+    "deviation_pct": -0.0007321483868509468,
+    "ratio_to_plane": 0.9999926785161315,
+    "u_centre": 1.2262410220304065,
+    "u_plane_2d": 1.2262500000000003
+   }
+  ],
+  "provenance": {
+   "fd": "cell-centred 5-point Poisson, sparse direct, Dirichlet at the cell face",
+   "series": "White Viscous Fluid Flow 3rd ed. \u00a73-3; Bruus Theoretical Microfluidics \u00a73.3",
+   "truncation": "mode count scales with aspect: default_nmax(W/H)"
+  },
+  "series_ratio_wide_over_square": 1.6901786778622923,
+  "square_to_plane_measured": 0.5893727000124929,
+  "truncation": [
+   {
+    "error_vs_nmax321_pct": 0.016359049081559076,
+    "nmax": 21,
+    "u_centre": 0.7228342430819124
+   },
+   {
+    "error_vs_nmax321_pct": 0.002359245610545432,
+    "nmax": 41,
+    "u_centre": 0.7227330642603528
+   },
+   {
+    "error_vs_nmax321_pct": 0.00031267825150419355,
+    "nmax": 81,
+    "u_centre": 0.7227182733903196
+   },
+   {
+    "error_vs_nmax321_pct": 3.597138912327051e-05,
+    "nmax": 161,
+    "u_centre": 0.7227162735855144
+   }
+  ],
+  "u_plane_2d": 1.2262500000000003
+ },
+ "reference_gates_pass": true,
+ "sph_ladder": {
+  "measured_step_cost_s": {
+   "H_over_dx": 8,
+   "particles": 1920,
+   "s_per_step": 1.7,
+   "source": "local cProfile, 20 steps in 34.6 s"
+  },
+  "reason": "3-D operator set cost: measured 1.7 s/step at 1920 particles (H/dx=8, 4 columns); one rung = ~43 min, predeclared ladder (2 aspects x 4 rungs + control) out of reach for one mission slot",
+  "status": "not_run"
+ }
+}
