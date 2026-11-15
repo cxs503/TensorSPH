@@ -1,0 +1,209 @@
+{
+  "anchor": "XVAL-SPH-METHOD-SELECTION-2026-11-12",
+  "artefact_commit": "9f79e31f",
+  "artefact_commit_date": "2026-11-14\n",
+  "records_at_artefact_commit": 12,
+  "records_now": 29,
+  "records_banked_after": 17,
+  "hidden_fraction": 0.5862068965517242,
+  "owner_tolerance_pct": 15.0,
+  "methods_at_artefact_commit": 10,
+  "methods_now": 10,
+  "methods_new_since": [],
+  "per_method": {
+    "compressible_riemann": {
+      "at_artefact_commit": {
+        "best": 0.7768408089469451,
+        "worst": 0.7768408089469451
+      },
+      "now": {
+        "best": 0.7768408089469451,
+        "worst": 0.7768408089469451
+      }
+    },
+    "compression_regularization": {
+      "at_artefact_commit": {
+        "best": 5.532656212791526,
+        "worst": 5.532656212791526
+      },
+      "now": {
+        "best": 5.532656212791526,
+        "worst": 5.532656212791526
+      }
+    },
+    "csf_surface_tension": {
+      "at_artefact_commit": {
+        "best": 5.59931563881463,
+        "worst": 23.79926667246913
+      },
+      "now": {
+        "best": 5.59931563881463,
+        "worst": 45.69297615786225
+      }
+    },
+    "density_diffusion": {
+      "at_artefact_commit": {
+        "best": 1.0208380223078255,
+        "worst": 1.0208380223078255
+      },
+      "now": {
+        "best": 0.4819784767019315,
+        "worst": 1.0208380223078255
+      }
+    },
+    "heat_conduction_operator": {
+      "at_artefact_commit": {
+        "best": 0.00021805730765489528,
+        "worst": 0.00021805730765489528
+      },
+      "now": {
+        "best": 0.00021805730765489528,
+        "worst": 834.6029833103374
+      }
+    },
+    "isph_projection": {
+      "at_artefact_commit": {
+        "best": 0.8665938382240863,
+        "worst": 0.8665938382240863
+      },
+      "now": {
+        "best": 0.04583375643014956,
+        "worst": 0.8665938382240863
+      }
+    },
+    "particle_shifting": {
+      "at_artefact_commit": {
+        "best": 8.832573890686035,
+        "worst": 8.832573890686035
+      },
+      "now": {
+        "best": 8.832573890686035,
+        "worst": 8.832573890686035
+      }
+    },
+    "transport_velocity_correction": {
+      "at_artefact_commit": {
+        "best": 10.810360584937099,
+        "worst": 16.96262081604608
+      },
+      "now": {
+        "best": 10.810360584937099,
+        "worst": 16.96262081604608
+      }
+    },
+    "wcsph_delta_sph": {
+      "at_artefact_commit": {
+        "best": 2.9679295205491987,
+        "worst": 2.9679295205491987
+      },
+      "now": {
+        "best": 2.9679295205491987,
+        "worst": 2.9679295205491987
+      }
+    },
+    "wcsph_wall_no_slip": {
+      "at_artefact_commit": {
+        "best": 5.654072500230903,
+        "worst": 5.654072500230903
+      },
+      "now": {
+        "best": 0.0,
+        "worst": 32.64941126108171
+      }
+    }
+  },
+  "records_over_owner_tolerance": [
+    {
+      "method": "compressible_riemann",
+      "at_artefact_commit": false,
+      "now": false
+    },
+    {
+      "method": "compression_regularization",
+      "at_artefact_commit": false,
+      "now": false
+    },
+    {
+      "method": "csf_surface_tension",
+      "at_artefact_commit": true,
+      "now": true
+    },
+    {
+      "method": "density_diffusion",
+      "at_artefact_commit": false,
+      "now": false
+    },
+    {
+      "method": "heat_conduction_operator",
+      "at_artefact_commit": false,
+      "now": true
+    },
+    {
+      "method": "isph_projection",
+      "at_artefact_commit": false,
+      "now": false
+    },
+    {
+      "method": "particle_shifting",
+      "at_artefact_commit": false,
+      "now": false
+    },
+    {
+      "method": "transport_velocity_correction",
+      "at_artefact_commit": true,
+      "now": true
+    },
+    {
+      "method": "wcsph_delta_sph",
+      "at_artefact_commit": false,
+      "now": false
+    },
+    {
+      "method": "wcsph_wall_no_slip",
+      "at_artefact_commit": false,
+      "now": true
+    }
+  ],
+  "history": [
+    {
+      "commit": "3d70483b",
+      "date": "2026-11-14\n",
+      "records": 10
+    },
+    {
+      "commit": "9f79e31f",
+      "date": "2026-11-14\n",
+      "records": 12
+    },
+    {
+      "commit": "348e2ffe",
+      "date": "2026-11-14\n",
+      "records": 17
+    },
+    {
+      "commit": "f6931114",
+      "date": "2026-11-15\n",
+      "records": 20
+    },
+    {
+      "commit": "daec5b11",
+      "date": "2026-11-15\n",
+      "records": 26
+    },
+    {
+      "commit": "8c6a6bb6",
+      "date": "2026-11-15\n",
+      "records": 26
+    },
+    {
+      "commit": "6875e1f3",
+      "date": "2026-11-15\n",
+      "records": 28
+    },
+    {
+      "commit": "9a9fd6fc",
+      "date": "2026-11-15\n",
+      "records": 29
+    }
+  ]
+}

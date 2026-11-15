@@ -34,10 +34,14 @@
   },
   "registry_backed_pct": 10.810360584937099,
   "methods_without_evidence": [],
-  "records": 12,
+  "records": 29,
   "figures": [
     "figure_tvc_front.png",
     "figure_registry_coverage.png"
   ],
+  "figure_digests": {
+    "figure_tvc_front.png": "2f80a38fe695cbdfb777ec262226dcd80576e59b1db4a5de833679b3b824bc40",
+    "figure_registry_coverage.png": "ef3efb4b170e0028c2facd248b387f25eab42509631571e738566af88fd7a6e3"
+  },
   "owner_tolerance_pct": 15.0
 }
