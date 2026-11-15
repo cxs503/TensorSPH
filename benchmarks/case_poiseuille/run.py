@@ -235,8 +235,10 @@ def harmonic_profile(case: dict, omega: float, height: float) -> list[dict]:
             "amplitude_analytic": float(amp_ana[k]),
             "amplitude_rel_error": (float(fit["amplitude"]) - float(amp_ana[k]))
                                    / float(amp_ana[k]) if amp_ana[k] else float("nan"),
-            "phase": fit["phase"],
-            "phase_analytic": float(pha_ana[k]),
+            "phase": fit["phase"],                          # radians (fit convention)
+            "phase_analytic": float(pha_ana[k]),            # radians
+            "phase_deg": math.degrees(float(fit["phase"])),
+            "phase_analytic_deg": math.degrees(float(pha_ana[k])),
             "phase_error_deg": math.degrees(_wrap(fit["phase"] - float(pha_ana[k]))),
             "fit_residual": fit["residual"],
         })
@@ -307,8 +309,12 @@ def evaluate_harmonic(case: dict, omega: float, height: float, resolution: int,
         "amp_centre_error_pct": 100.0 * centre["amplitude_rel_error"],
         "amp_profile_rms_pct": 100.0 * _rms(r["amplitude_rel_error"] for r in inner),
         "amp_worst_row_pct": 100.0 * max(abs(r["amplitude_rel_error"]) for r in inner),
-        "phase_centre_deg": centre["phase"],
-        "phase_centre_analytic_deg": centre["phase_analytic"],
+        # ``harmonic_fit`` and ``womersley.phase`` both work in radians; the
+        # summary carries the unit in the field name, so convert explicitly.
+        "phase_centre_rad": centre["phase"],
+        "phase_centre_deg": math.degrees(centre["phase"]),
+        "phase_centre_analytic_rad": centre["phase_analytic"],
+        "phase_centre_analytic_deg": math.degrees(centre["phase_analytic"]),
         "phase_centre_error_deg": centre["phase_error_deg"],
         "phase_centre_pct_of_quarter_turn": phase_centre_pct,
         "phase_profile_rms_pct_of_quarter_turn": phase_rms_pct,
@@ -537,16 +543,21 @@ def main(argv=None) -> int:
         base = next(r for r in harmonic if r["resolution_H_over_dx"] == 12)
         ampl_ratio = fast["amp_centre"] / base["amp_centre"]
         ampl_ratio_ana = fast["amp_centre_analytic"] / base["amp_centre_analytic"]
-        phase_ratio = fast["phase_centre_deg"] - base["phase_centre_deg"]
-        phase_ratio_ana = fast["phase_centre_analytic_deg"] - base["phase_centre_analytic_deg"]
+        # differences are taken in radians (the native fit unit) and reported in
+        # both units, so no consumer has to guess
+        phase_ratio_rad = fast["phase_centre_rad"] - base["phase_centre_rad"]
+        phase_ratio_ana_rad = (fast["phase_centre_analytic_rad"]
+                               - base["phase_centre_analytic_rad"])
         freq = {
             "omega_slow": OMEGA,
             "omega_fast": OMEGA_FAST,
             "amplitude_ratio_measured": ampl_ratio,
             "amplitude_ratio_analytic": ampl_ratio_ana,
             "amplitude_ratio_error_pct": 100.0 * (ampl_ratio - ampl_ratio_ana) / ampl_ratio_ana,
-            "phase_difference_measured_deg": phase_ratio,
-            "phase_difference_analytic_deg": phase_ratio_ana,
+            "phase_difference_measured_rad": phase_ratio_rad,
+            "phase_difference_measured_deg": math.degrees(phase_ratio_rad),
+            "phase_difference_analytic_rad": phase_ratio_ana_rad,
+            "phase_difference_analytic_deg": math.degrees(phase_ratio_ana_rad),
             "quasi_steady_ratio_would_be": 1.0,
             "gates": {"G6_frequency_ratio_5pct":
                       abs(100.0 * (ampl_ratio - ampl_ratio_ana) / ampl_ratio_ana) <= 5.0},
