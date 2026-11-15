@@ -67,7 +67,8 @@ def _max_finite(values) -> float | None:
     return max(vals) if vals else None
 
 
-def digest(art: dict, src: Path | None = None, compact: bool = False) -> dict:
+def digest(art: dict, src: Path | None = None, compact: bool = False,
+           keep_sweep: bool = False) -> dict:
     """Digest of ``art``; ``compact`` fits the job-stdout tail (see module doc)."""
     out = {k: art.get(k) for k in KEEP_TOP if k in art}
     fp = art.get("footprint_peak") or {}
@@ -87,8 +88,11 @@ def digest(art: dict, src: Path | None = None, compact: bool = False) -> dict:
         if mb:
             out["matched_bandwidth"] = {k: mb.get(k)
                                         for k in _SWEEP_SUMMARY if k in mb}
-            out["matched_bandwidth"]["bandwidth_sweep_dropped"] = len(
-                mb.get("bandwidth_sweep") or [])
+            sweep = mb.get("bandwidth_sweep") or []
+            if keep_sweep:
+                out["matched_bandwidth"]["bandwidth_sweep"] = sweep
+            else:
+                out["matched_bandwidth"]["bandwidth_sweep_dropped"] = len(sweep)
         out.pop("design", None)
         out["digest_mode"] = "compact"
     out["provenance"] = {"host": platform.node(),
@@ -111,6 +115,9 @@ def main(argv=None) -> int:
     ap.add_argument("source", type=Path, help="artefact json, or digest json with --restore")
     ap.add_argument("--restore", type=Path, default=None,
                     help="write a minimal artefact for footprint_ledger.py to this path")
+    ap.add_argument("--keep-sweep", action="store_true",
+                    help="with --compact, keep matched_bandwidth.bandwidth_sweep "
+                         "(needed by bandwidth_matched.py, ~3 kB)")
     ap.add_argument("--compact", action="store_true",
                     help=f"shrink the read-out below the {STDOUT_TAIL_CHARS}-char "
                          "job-stdout tail (drops per-frame rows / bin sweep)")
@@ -120,7 +127,8 @@ def main(argv=None) -> int:
         restore(doc, args.restore)
         print(f"restored {args.restore}")
         return 0
-    text = json.dumps(digest(doc, args.source, compact=args.compact),
+    text = json.dumps(digest(doc, args.source, compact=args.compact,
+                                 keep_sweep=args.keep_sweep),
                       sort_keys=True, separators=(",", ":"))
     if args.compact and len(text) > STDOUT_TAIL_CHARS:
         print(f"[digest] WARNING compact digest is {len(text)} chars > tail "
