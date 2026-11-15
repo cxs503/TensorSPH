@@ -117,10 +117,20 @@ def test_centre_amplitude_and_phase_recompute(points, pid):
     centre = min(p["rows"], key=lambda r: abs(r["y_over_H"] - 0.5))
     assert 100.0 * centre["amplitude_rel_error"] == pytest.approx(
         p["amp_centre_error_pct"], rel=1e-9, abs=1e-9)
-    assert abs(centre["phase"] - p["phase_centre_deg"]) < 1e-12 \
-        if "phase_centre_deg" in p else True
-    assert centre["phase_analytic"] == pytest.approx(p["rows"][0]["phase_analytic"],
-                                                     0.0) or True
+    # ``rows`` record the fitted phase in radians (harmonic_fit convention).
+    # ``phase_centre_deg`` never existed in this artifact, so the pre-m21208
+    # version of this assertion was a no-op; pin the unit instead, so that a
+    # degrees value in a radians slot cannot pass unnoticed.
+    assert abs(centre["phase"]) <= math.pi
+    assert abs(centre["phase_analytic"]) <= math.pi
+    # the stored analytic values, in radians, must be the closed form evaluated
+    # at the stored row ordinates (no unit slip, no stale reference)
+    from tensorsph import womersley as wm
+    h, nu, g0 = 0.1, 0.01, 9.81
+    amp = float(wm.amplitude(centre["y"], h, g0, nu, p["omega"]))
+    pha = float(wm.phase(centre["y"], h, g0, nu, p["omega"]))
+    assert centre["amplitude_analytic"] == pytest.approx(amp, rel=1e-9)
+    assert centre["phase_analytic"] == pytest.approx(pha, rel=1e-9, abs=1e-12)
     assert abs(centre["phase_error_deg"]) == pytest.approx(
         abs(p["phase_centre_error_deg"]), rel=1e-9, abs=1e-9)
 

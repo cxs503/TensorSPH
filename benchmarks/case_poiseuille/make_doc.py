@@ -42,7 +42,7 @@ def fig_harmonic_profiles(data, path):
         axes[0].plot(yh, [r["amplitude"] for r in rows], "o-", ms=3.5, lw=1.2,
                      color=colour,
                      label=f"SPH H/dx={run['resolution_H_over_dx']}")
-        axes[1].plot(yh, [r["phase"] for r in rows], "o-", ms=3.5, lw=1.2,
+        axes[1].plot(yh, [r["phase_deg"] for r in rows], "o-", ms=3.5, lw=1.2,
                      color=colour,
                      label=f"SPH H/dx={run['resolution_H_over_dx']}")
     ref_rows = runs[-1]["rows"]
@@ -50,7 +50,7 @@ def fig_harmonic_profiles(data, path):
                  [r["amplitude_analytic"] for r in ref_rows], "k--", lw=1.6,
                  label="Womersley closed form")
     axes[1].plot([r["y_over_H"] for r in ref_rows],
-                 [r["phase_analytic"] for r in ref_rows], "k--", lw=1.6,
+                 [r["phase_analytic_deg"] for r in ref_rows], "k--", lw=1.6,
                  label="Womersley closed form")
     if data.get("reference_check"):
         fr = data["reference_check"]["rows"]
@@ -83,7 +83,7 @@ def fig_centreline_series(data, path):
     period = run["period"]
     t = np.linspace(0.0, 2.0 * period, 400)
     u_ana = centre["amplitude_analytic"] * np.cos(
-        omega * t + math.radians(centre["phase_analytic"]))
+        omega * t + math.radians(centre["phase_analytic_deg"]))
     fig, ax = plt.subplots(figsize=(6.4, 3.6))
     ax.plot(t / period, u_ana, "k--", lw=1.6, label="Womersley closed form")
     series = run.get("centre_series")
