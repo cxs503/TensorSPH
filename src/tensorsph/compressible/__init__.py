@@ -15,6 +15,9 @@ fv_reference : independent HLLC finite-volume solution, used to cross-check the
 riemann_dissipation : Mach-limited Riemann dissipation for SPH — replaces
                Monaghan artificial viscosity with a genuine Riemann solver
                at particle interfaces, scaled by local Mach number.
+riemann_topology : topology-aware exact Riemann data (shock vs rarefaction per
+               side), star-plateau measurement windows, snapshot grading, and
+               the reflective-box representability precondition.
 """
 from .sod import (  # noqa: F401
     SodSPHConfig,
@@ -25,6 +28,7 @@ from .sod import (  # noqa: F401
     plateau_windows,
 )
 from . import fv_reference  # noqa: F401
+from . import riemann_topology  # noqa: F401
 from .riemann_dissipation import (  # noqa: F401
     RiemannDissipationConfig,
     run_sod_riemann,
@@ -41,6 +45,7 @@ __all__ = [
     "evaluate_metrics",
     "plateau_windows",
     "fv_reference",
+    "riemann_topology",
     "RiemannDissipationConfig",
     "run_sod_riemann",
     "hllc_star_pressure",
