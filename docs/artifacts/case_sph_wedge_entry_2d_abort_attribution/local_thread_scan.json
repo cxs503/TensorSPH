@@ -1,0 +1,46 @@
+{
+ "case": "CASE-SPH-WEDGE-ENTRY-2D",
+ "design": "local thread-invariance probe (MALLOC_CHECK_=3)",
+ "runs": {
+  "4 mm, 8 thr": {
+   "dx_mm": 4.0,
+   "steps": 329,
+   "wall_s": 13.0,
+   "band_peak_median": 10.041483876237576,
+   "band_spread_rel": 0.23532990691078393,
+   "jackknife_rel": 0.001159017447267652
+  },
+  "4 mm, 16 thr": {
+   "dx_mm": 4.0,
+   "steps": 329,
+   "wall_s": 19.5,
+   "band_peak_median": 10.041483876237576,
+   "band_spread_rel": 0.23532990691078393,
+   "jackknife_rel": 0.001159017447267652
+  },
+  "2 mm, 7 thr": {
+   "dx_mm": 2.0,
+   "steps": 587,
+   "wall_s": 73.8,
+   "band_peak_median": 6.070821030113392,
+   "band_spread_rel": 0.1182695652941803,
+   "jackknife_rel": 0.4295484978580885
+  },
+  "2 mm, 8 thr": {
+   "dx_mm": 2.0,
+   "steps": 587,
+   "wall_s": 68.9,
+   "band_peak_median": 6.070821030113392,
+   "band_spread_rel": 0.1182695652941803,
+   "jackknife_rel": 0.4295484978580885
+  }
+ },
+ "committed_dx2mm": {
+  "band_peak_median": 6.071,
+  "uncertainty": 0.43
+ },
+ "cluster": {
+  "cj4173": "coarse scan 2/1 mm x 4/8/16 (queued at write time)",
+  "cj4177": "fine scan 1/0.5 mm x 8/16/32 (queued at write time)"
+ }
+}
