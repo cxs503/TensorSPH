@@ -1,0 +1,130 @@
+name: TensorSPH tests
+
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  TORCH_DEVICE_BACKEND_AUTOLOAD: "0"
+
+jobs:
+  pytest:
+    runs-on: ci-loong64
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install package and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[test]"
+      - name: Lint
+        run: python -m ruff check .
+      - name: Run unit and smoke tests
+        run: python -m pytest -q
+      - name: Run tiny end-to-end case
+        run: |
+          python examples/droplet_impact_2d/run.py --steps 3 --output artifacts/ci-droplet
+          test -s artifacts/ci-droplet/diagnostics.csv
+          test -s artifacts/ci-droplet/run_manifest.json
+      - name: Verify the manifest records acceptance results
+        run: |
+          python - <<'PY'
+          import json, sys
+          manifest = json.load(open("artifacts/ci-droplet/run_manifest.json"))
+          statuses = manifest["statuses"]
+          assert statuses["software_execution"] == "success", statuses
+          assert statuses["physical_validation"] == "not_evaluated", statuses
+          criteria = manifest["acceptance"]["criteria"]
+          assert criteria, "acceptance criteria must be recorded"
+          for item in criteria:
+              assert item["result"] in ("pass", "fail", "not_evaluated"), item
+              assert "measured" in item and "threshold" in item, item
+              assert item["population"] in ("all_steps", "sampled_rows"), item
+          # Stability gates must be judged on every step, not on the steps that
+          # happen to write a diagnostic row.
+          sampling = manifest["sampling"]
+          assert sampling["extrema_population"] == "all_steps", sampling
+          by_id = {c["id"]: c for c in criteria}
+          for key in ("density_compression", "mach_number", "acoustic_courant"):
+              assert by_id[key]["population"] == "all_steps", by_id[key]
+          extrema = sampling["extrema"]
+          c0 = manifest["config"]["sound_speed"]
+          assert abs(by_id["mach_number"]["measured"] - extrema["peak_speed"] / c0) < 1e-12
+          assert by_id["density_compression"]["measured"] >= 0.0
+          print("manifest contract OK:", [(c["id"], c["result"]) for c in criteria])
+          PY
+      - name: Compare neighbour search and pair-based RHS against references
+        run: |
+          python benchmarks/neighbor_search/compare.py --particles 400 --dimension 2
+          python benchmarks/neighbor_search/compare.py --particles 400 --dimension 3
+          python benchmarks/neighbor_search/compare_rhs.py --sizes 128,256 --repeats 1
+      - name: Free-surface treatments compared side by side
+        run: |
+          python benchmarks/free_surface/compare.py --deltas 0,0.1 \
+            --bands 6 --hydro-seconds 0.5 --dam-seconds 0.3 --impact-seconds 0.05 \
+            --json-out artifacts/free_surface.json
+      - name: Reusing the neighbour list must not change the forces
+        run: |
+          python - <<'PY'
+          import torch
+          from tensorsph.droplet_impact import Config, make_particles, rhs
+          from tensorsph.neighbor_search import PairListCache
+
+          cfg = Config(dx=0.05, pool_width=0.4, pool_depth=0.15,
+                       drop_radius=0.05, drop_center_y=0.25, device="cpu")
+          pos, mass = make_particles(cfg, torch.device("cpu"))
+          vel = torch.zeros_like(pos)
+          cache = PairListCache(2.0 * cfg.h_factor * cfg.dx, 0.25 * cfg.h_factor * cfg.dx)
+          pairs, rebuilt = cache.get(pos)
+          assert rebuilt
+          cached = rhs(pos, vel, mass, cfg, pairs=pairs)
+          fresh = rhs(pos, vel, mass, cfg)
+          for a, b in zip(cached, fresh):
+              torch.testing.assert_close(a, b, rtol=1e-6, atol=1e-6)
+          print("pair reuse is physics-neutral")
+          PY
+      - name: Hydrostatic profile and fluctuation gates
+        run: |
+          python benchmarks/hydrostatic/run.py --seconds 4 --boundary wall \
+            --json-out artifacts/ci-hydrostatic.json
+      - name: A ringing pool is rejected by the fluctuation gate
+        run: |
+          # The gate must be able to fail. A step that is an order of magnitude
+          # too large for the viscous term makes the pool ring hard, and the
+          # hydrostatic script has to exit non-zero because of it.
+          python - <<'PY'
+          import subprocess, sys
+          proc = subprocess.run(
+              [sys.executable, "benchmarks/hydrostatic/run.py",
+               "--seconds", "0.3", "--max-interior-error", "1.0",
+               "--max-surface-drop", "1.0", "--max-fluctuation", "0.001"],
+              capture_output=True, text=True)
+          assert proc.returncode != 0, "a 0.1 % fluctuation limit must fail"
+          assert "pressure_fluctuation" in proc.stdout, proc.stdout[-500:]
+          print("the fluctuation gate can fail")
+          PY
+      - name: Dam-break convergence gates
+        run: |
+          python benchmarks/dam_break/run.py --sizes 0.04,0.02 --seconds 0.4 \
+            --json-out artifacts/ci-dam-break.json
+      - name: Fail-fast behaviour is reported through the exit status
+        run: |
+          if python examples/droplet_impact_2d/run.py --steps 2 --dt 1e-2 \
+              --output artifacts/ci-invalid; then
+            echo "expected the run to be rejected"; exit 1
+          fi
+          test -s artifacts/ci-invalid/diagnostics.csv || true
+      - name: Upload smoke-run artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tensorsph-smoke-python-py311
+          path: |
+            artifacts/ci-droplet/
+            artifacts/ci-invalid/
+            artifacts/ci-dam-break.json
+          if-no-files-found: warn
