@@ -167,15 +167,27 @@ def test_audit_depth_matches_the_registry_by_hand():
             assert abs(depth["worst_pct"] - max(r["measured_pct"] for r in mine)) < 1e-12
 
 
-def test_shock_recommendation_stands_on_exactly_one_record():
-    """The Sod shock recommendation is load-bearing on one single record."""
+def test_shock_recommendation_now_stands_on_two_benchmark_families():
+    """m22388 added the strong-shock/contact family: the Sod tube is no longer single-sourced.
+
+    Before m22388 this test asserted the *opposite* (one load-bearing record,
+    ``single_sourced == ["compressible_riemann"]``).  The added family
+    (``CASE-SPH-STRONG-SHOCK-CONTACT``, a 1000:1 driver with a 10.3x contact jump)
+    makes the recommendation reproduced on two independent datasets, so the
+    invariant to guard is now the stronger one: no single family can remove it,
+    while removing the *method* still flips the recommendation to unverified.
+    """
     payload = json.loads(AUDIT_JSON.read_text())
     row = next(r for r in payload["profiles"] if r["label"] == "Sod shock tube")
-    critical = row["critical_removals"]
-    assert [c["removed_method"] for c in critical] == ["compressible_riemann"]
-    assert row["single_sourced"] == ["compressible_riemann"]
+    assert row["single_sourced"] == []
+    depth = row["depth"]["compressible_riemann"]
+    assert depth["n_benchmark_families"] == 2 and depth["single_source"] is False
+    assert set(depth["benchmark_families"]) == {
+        "case-sph-sod-shock-compressible", "case-sph-strong-shock-contact"}
+    # every single-family removal keeps the recommendation (no flip)
+    assert all(c["changes"] == [] for c in row["critical_removals"])
 
-    # reproduce the flip by hand: drop that record, the recommendation is gone
+    # reproduce the flip by hand: drop the method, the recommendation is gone
     registry = load_registry()
     registry = {k: v for k, v in registry.items() if k != "compressible_riemann"}
     trial = select_method(CaseProfile(**SHOCK), registry=registry, strict_bound=True)

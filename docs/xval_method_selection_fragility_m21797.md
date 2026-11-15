@@ -6,7 +6,7 @@
 
 方法选择器（`src/tensorsph/method_selection.py`）对每个算例画像给出一份 SPH 格式推荐（主方案 + 修饰项）与一个精度上界。此前两轮复核问的是「数字对不对」（m20432 独立复算记录值）和「上界是否覆盖被推荐格式的全部在册记录」（m21537 严格模式）。**没有人问过：这些上界站在几条*独立*记录上。**
 
-登记表共 29 条记录、10 个有证据的格式、12 个不同的基准族。若某格式的全部在册精度记录都来自同一个基准族，则该上界只是一次测量，删掉那条记录推荐就会静默变成 `WITHHELD`——这正是本单要量的东西。
+登记表共 30 条记录、10 个有证据的格式、13 个不同的基准族。若某格式的全部在册精度记录都来自同一个基准族，则该上界只是一次测量，删掉那条记录推荐就会静默变成 `WITHHELD`——这正是本单要量的东西。
 
 七个标准画像取自 `benchmarks/method_selection/build_registry.py::PROFILES`（规则波水槽、Sod 激波管、毛细液滴、平面 Couette 槽道、Gresho 涡、一维瞬态导热、斜坡破碎波）。
 
@@ -21,7 +21,7 @@
 
 | 格式 | 记录数 | live 精度记录 | 基准族 | 最差 [%] | 最好 [%] | 极差 [pp] | 单一来源 |
 |---|---|---|---|---|---|---|---|
-| `compressible_riemann` | 1 | 1 | 1 | 0.7768 | 0.7768 | — | **是** |
+| `compressible_riemann` | 2 | 2 | 2 | 0.7768 | 0.4142 | 0.3626 | 否 |
 | `compression_regularization` | 1 | 1 | 1 | 5.533 | 5.533 | — | **是** |
 | `csf_surface_tension` | 4 | 4 | 1 | 45.69 | 5.599 | 40.09 | **是** |
 | `density_diffusion` | 2 | 2 | 1 | 1.021 | 0.482 | 0.5389 | **是** |
@@ -32,14 +32,14 @@
 | `wcsph_delta_sph` | 1 | 1 | 1 | 2.968 | 2.968 | — | **是** |
 | `wcsph_wall_no_slip` | 12 | 7 | 2 | 17.08 | 0.4781 | 16.6 | 否 |
 
-**结论**：10 个格式里 **8 个是单一来源**（`compressible_riemann`, `compression_regularization`, `csf_surface_tension`, `density_diffusion`, `isph_projection`, `particle_shifting`, `transport_velocity_correction`, `wcsph_delta_sph`）。按业主标准 15 % 判级，这些上界属于**一次测量的数据点**，不属于经独立复现的 bound。
+**结论**：10 个格式里 **7 个是单一来源**（`compression_regularization`, `csf_surface_tension`, `density_diffusion`, `isph_projection`, `particle_shifting`, `transport_velocity_correction`, `wcsph_delta_sph`）。按业主标准 15 % 判级，这些上界属于**一次测量的数据点**，不属于经独立复现的 bound。
 
 ## ④ 逐画像：承重记录（删掉就变）
 
 | 画像 | 严格模式主方案 | 上界 [%] | 承重记录数 | 变化 |
 |---|---|---|---|---|
 | regular wave in a flume | `wcsph_delta_sph` | 5.533 | 2 | 删 `compression_regularization` → modifiers/withheld；删 `wcsph_delta_sph` → primary/primary_status/verified/modifiers |
-| Sod shock tube | `compressible_riemann` | 0.7768 | 1 | 删 `compressible_riemann` → primary/primary_status/verified |
+| Sod shock tube | `compressible_riemann` | 0.7768 | 1 | 删 `compressible_riemann` → 上界变 |
 | planar Couette channel | `isph_projection` | 0.8666 | 2 | 删 `isph_projection` → 上界变；删 `wcsph_wall_no_slip` → withheld |
 | 1-D transient conduction | `heat_conduction_operator` | 0.1504 | 1 | 删 `heat_conduction_operator` → 上界变 |
 | breaking wave over a slope | `wcsph_delta_sph` | 8.833 | 4 | 删 `compression_regularization` → modifiers/withheld；删 `particle_shifting` → modifiers/withheld；删 `transport_velocity_correction` → modifiers/withheld；删 `wcsph_delta_sph` → primary/primary_status/verified/modifiers/withheld |
