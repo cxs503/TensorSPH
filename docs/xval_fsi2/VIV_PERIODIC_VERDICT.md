@@ -22,95 +22,164 @@ Turek–Hron FSI2（LNCSE 53, 2006）：2-D 通道 2.5 × 0.41 m，D = 0.1 m 刚
 
 | 运行 | dx [m] | 步数 | 物理时长 [s] | dt [s] | 界面 | 平均子迭代 | 收敛步占比 | 中止 |
 |---|---|---|---|---|---|---|---|---|
-| `viv_dx005_local_partial.json` | 0.05 | 350 | 0.910 | 2.600e-03 | aitken | 2.58 | 1.000 | 否 |
+| `viv_dx005_aitken.json` | 0.05 | 10000 | 26.000 | 2.600e-03 | aitken | 2.13 | 0.991 | 否 |
+| `viv_dx002_aitken.json` | 0.02 | 6000 | 6.240 | 1.040e-03 | aitken | 2.08 | 1.000 | 否 |
 
 ## ③ 计算结果
 
-### dx = 0.05 m（分析窗口 t = 0.276 … 0.910 s）
+### dx = 0.05 m（分析窗口 t = 7.803 … 26.000 s）
 
-* 信号自相关测得主导周期 **0.1534 s**，窗口覆盖 **4.14 个周期** → 周期性判据 `regime_ok = False`
+* 信号自相关测得主导周期 **2.1372 s**，窗口覆盖 **8.51 个周期** → 周期性判据 `regime_ok = True`
 * 力系数标度 `0.5 ρ U_mean² D` = 2（U_mean = 0.2 m/s）
+* **可判定性筛检** `admissible = False`（已核 finite, blowup, body_containment, period_band；未核 无）
+    * ⛔ fluid blow-up: max|v| = 12.04 m/s is 2.41 x the artificial sound speed c0 = 5 m/s (limit 1 x c0)
+    * ⛔ body left its own length: |tip| = 1.238 m is 3.54 x the beam length 0.35 m (limit 1)
+
+> 下表相对误差**不是**精度判定：本算例不满足可判定性条件，判定降级为 `WITHHELD`，数值仅作取证保留。
 
 | 梁尖位移 | 基准 (Turek–Hron) | 实测 | 相对误差 | <15 % | <3 % |
 |---|---|---|---|---|---|
-| `tip_x_amplitude` | 0.0028 | 0.057301 | +1946.46 % | ✘ | ✘ |
-| `tip_y_amplitude` | 0.0082 | 0.097569 | +1089.87 % | ✘ | ✘ |
+| `tip_x_amplitude` | 0.0028 | 0.87854 | +31276.35 % | ✘ | ✘ |
+| `tip_y_amplitude` | 0.0082 | 0.9586 | +11590.25 % | ✘ | ✘ |
 
 | 力系数（面元臂） | 基准 (Turek–Hron) | 实测 | 相对误差 | <15 % | <3 % |
 |---|---|---|---|---|---|
-| `drag_mean` | 3.2 | 26.112 | +715.99 % | ✘ | ✘ |
-| `drag_amplitude` | 0.96 | 207.34 | +21497.55 % | ✘ | ✘ |
-| `lift_amplitude` | 0.22 | 201.81 | +91632.48 % | ✘ | ✘ |
+| `drag_mean` | 3.2 | 63.007 | +1868.98 % | ✘ | ✘ |
+| `drag_amplitude` | 0.96 | 85649 | +8921657.57 % | ✘ | ✘ |
+| `lift_amplitude` | 0.22 | 2.41e+05 | +109547154.21 % | ✘ | ✘ |
 
-压力臂 + 黏性臂合并的 `drag_mean`：26.24 vs 3.2（+720.01 %）
+压力臂 + 黏性臂合并的 `drag_mean`：62.327 vs 3.2（+1847.72 %）
 
-判定：梁尖 **WITHHELD**，力系数 **WITHHELD**；最坏相对误差 +1946.46 % / +91632.48 %
+判定：梁尖 **WITHHELD**，力系数 **WITHHELD**；最坏相对误差 +31276.35 % / +109547154.21 %
+
+`withheld_reason = nonphysical: fluid blow-up: max|v| = 12.04 m/s is 2.41 x the artificial sound speed c0 = 5 m/s (limit 1 x c0); body left its own length: |tip| = 1.238 m is 3.54 x the beam length 0.35 m (limit 1)`
+
+### dx = 0.02 m（分析窗口 t = 1.873 … 6.240 s）
+
+* 信号自相关测得主导周期 **0.2018 s**，窗口覆盖 **21.64 个周期** → 周期性判据 `regime_ok = False`
+* 力系数标度 `0.5 ρ U_mean² D` = 2（U_mean = 0.2 m/s）
+* **可判定性筛检** `admissible = False`（已核 finite, blowup, body_containment, period_band；未核 无）
+    * ⛔ identified period 0.2018 s lies outside the VIV band [1.67, 3.85] s: it is ringing, not shedding
+
+> 下表相对误差**不是**精度判定：本算例不满足可判定性条件，判定降级为 `WITHHELD`，数值仅作取证保留。
+
+| 梁尖位移 | 基准 (Turek–Hron) | 实测 | 相对误差 | <15 % | <3 % |
+|---|---|---|---|---|---|
+| `tip_x_amplitude` | 0.0028 | 0.00014373 | -94.87 % | ✘ | ✘ |
+| `tip_y_amplitude` | 0.0082 | 0.0056239 | -31.42 % | ✘ | ✘ |
+
+| 力系数（面元臂） | 基准 (Turek–Hron) | 实测 | 相对误差 | <15 % | <3 % |
+|---|---|---|---|---|---|
+| `drag_mean` | 3.2 | 0.056474 | -98.24 % | ✘ | ✘ |
+| `drag_amplitude` | 0.96 | 15.684 | +1533.79 % | ✘ | ✘ |
+| `lift_amplitude` | 0.22 | 5.7016 | +2491.64 % | ✘ | ✘ |
+
+压力臂 + 黏性臂合并的 `drag_mean`：0.10422 vs 3.2（-96.74 %）
+
+判定：梁尖 **WITHHELD**，力系数 **WITHHELD**；最坏相对误差 +94.87 % / +2491.64 %
+
+`withheld_reason = nonphysical: identified period 0.2018 s lies outside the VIV band [1.67, 3.85] s: it is ringing, not shedding`
 
 ### 结果图
 
 ![viv_dx005.png](assets/viv_dx005.png)
 
+![viv_dx002.png](assets/viv_dx002.png)
+
 ![viv_error_bars.png](assets/viv_error_bars.png)
 
 ## ④ 误差判定（显式回答「是否 <3 %」）
 
-| 量 | 门槛 | 本次最坏相对误差 | <15 % | <3 % |
-|---|---|---|---|---|
-| dx=0.05 tip | 15 % | +1946.46 % | 否 | 否 |
-| dx=0.05 fit_arm | 15 % | +91632.48 % | 否 | 否 |
-
-
+| 量 | 门槛 | 本次最坏相对误差 | <15 % | <3 % | 可判定 |
+|---|---|---|---|---|---|
+| dx=0.05 tip | 15 % | +31276.35 % | 否 | 否 | 否（非物理解） |
+| dx=0.05 fit_arm | 15 % | +109547154.21 % | 否 | 否 | 否（非物理解） |
+| dx=0.02 tip | 15 % | +94.87 % | 否 | 否 | 否（非物理解） |
+| dx=0.02 fit_arm | 15 % | +2491.64 % | 否 | 否 | 否（非物理解） |
 
 ## ⑤ 注意点 / 本轮真正修掉的缺陷
 
-1. **判定门的假阳性（本轮修复）**：`periods_in_window` 只看「窗口内有自相关峰」。
-   本单 350 步工件（dx = 0.05，Aitken 臂）在 0.153 s 处有干净的自相关峰
-   （入口斜坡之后的声学振铃），旧门据此判 `regime_ok = True`、「覆盖 4.14 个周期」，
-   然后把启动瞬态当成周期解**打出 FAIL**——这正是上一轮
-   `TRANSIENT_VERDICT_AND_TOLERANCE.md` §5.1 警告过的失效模式，只是方位反了：
-   那次是「没数被判 WITHHELD」，这次是「噪声被判 FAIL」。
-   修法（`verdict_body_force_transient.py`）：新增**包络平稳性**判据
-   （窗口后半段峰峰值 / 前半段峰峰值，须落在 [0.8, 1.25]），
-   `regime_ok` 现在要求「≥1 个周期 **且** 幅值平稳」。
-   同时把 **Strouhal 合理性带** `T ∈ [D/(0.30U), D/(0.13U)] = [1.67, 3.85] s`
-   一并输出为诊断字段（不进门）：0.153 s 比物理带下界还小 **10.9 倍**，
-   这本身就是「它不是 VIV 周期」的独立证据。
-2. **本单没有拿到精度判定**：`dx = 0.05 / 350 步（t_end = 0.91 s）` 的工件落在启动瞬态，
-   判定为 **WITHHELD**（不是 PASS，也不是 FAIL）。真正的周期解要 `t ≳ 2.5 s`
-   （`TRANSIENT_VERDICT_AND_TOLERANCE.md` §5.6），本单把这条长时作业
-   **递交到集群等待**（`cj3755`：dx = 0.05、10000 步；`cj3756`：dx = 0.02、10000 步；
-   见下表），排队 30 min 仍未开跑，故本单不宣称任何基准精度结论。
-3. **Aitken 臂的收敛性（本轮实测）**：350 步里平均 **2.58** 次界面子迭代、
-   **100 %** 的步收敛（`tol = 1e-2`）。对照上一轮 IQN-ILS 的 92 % 步顶
-   `max_iter = 12`，这是 `COUPLING_CONVERGENCE_BUDGET.md` 的结论在真实算例上的确认，
-   不是新主张。
-4. **基准值是二手出处**（未核 Turek & Hron 2006 原 PDF），与
-   `SIMILARITY_AND_REFERENCE_AUDIT.md` §4.1 的告知一致；`Ae = 5600`、`rho_s/rho_f = 1`
-   由 `fsi2_similarity.similarity_corrected_case` 保证。
-5. **图注**：`assets/viv_dx005.png` 两联图的上轴是梁尖 y 位移（红线=基准幅值 ±8.2 mm），
-   下轴是面元臂的 Cd/Cl 时程（点线=基准 Cd 均值 3.2）。曲线的**包络在增长**，
-   这就是平稳性判据判 WITHHELD 的直接证据；`assets/viv_error_bars.png` 是同一工件的
-   相对误差棒（红线 15 %、点线 3 %）。
-6. **未完成的部分（如实）**：长时 `dx = 0.02 / 10000 步` 作业 `cj3756` 仍在排队，
-   其工件到位后只需一条命令即可补判：
-   `python benchmarks/xval_fsi2/make_viv_report.py --artifact <artifact> --out-md docs/xval_fsi2/VIV_PERIODIC_VERDICT.md --figures`
+### 5.1 判定门的第二个假阳性：收敛包络 ≠ 物理解
 
-### 排队中的长时作业（本单递交，未取回）
+上一轮（报告 19734）修掉了「启动瞬态被判 FAIL」的假阳性：门只在「窗口 ≥1 个周期」时给结论，
+漏掉了「幅值还在长」这一层。修法是**包络平稳性**（窗口后半段峰峰值 / 前半段峰峰值 ∈ [0.8, 1.25]）。
 
-| 作业 | dx [m] | 步数 | 物理时长 | 界面 | 核数 | 状态（本单结束时刻） |
-|---|---|---|---|---|---|---|
-| `cj3755` | 0.05 | 10000 | ≈26 s | aitken, max_iter=4 | 8 | queued（30 min，未开跑） |
-| `cj3756` | 0.02 | 10000 | ≈10.4 s | aitken, max_iter=4 | 16 | queued（30 min，未开跑） |
+本轮两个长时作业跑完（`cj3755` dx=0.05 / 10000 步、`cj3756` dx=0.02 / 6000 步），
+把这个修法的**反向漏洞**暴露出来：一个**发散的场**同样有平稳包络——它饱和了。
+于是旧门对 dx=0.05 打出 `FAIL`，`lift_amplitude` 相对误差 `+109547154 %`。
+这不是「力算子精度不够」，这是「场已经不是解了」。把它标成 FAIL 是一个没有证据支撑的精度主张。
+
+本轮的修法：在统计判据之外增加**可判定性（admissibility）筛检**，作为任何精度判定的前置条件。
+三项，全部读自工件自带的量或基准几何，无自由参数：
+
+| 检查 | 判据 | 阈值来源 |
+|---|---|---|
+| `finite` | 窗口内无 NaN/Inf | 无 |
+| `blowup` | `max|v| / c0 ≤ 1` | `c0` 由工件 `case.sound_speed` 声明（FSI2 配置 Mach 0.06） |
+| `body_containment` | `max|tip| / beam_length ≤ 1` | 基准几何 L = 3.5 D（Turek–Hron） |
+| `period_band` | 识别周期 ∈ `D/(St·U)`，St ∈ [0.13, 0.30] | `VIV_STROUHAL_BAND`（既有常量） |
+
+不满足 → 判定一律降级 `WITHHELD`，并在 `withheld_reason` 写明哪一项、量值多少；
+相对误差仍保留在工件里（`comparable: false`），但不作为精度结论。
+筛检**未核**的项进 `skipped` 列表，绝不静默算通过。
+
+### 5.2 两个长时工件本身：都不是 Turek–Hron 解
+
+| 工件 | 现象 | 量值 |
+|---|---|---|
+| `viv_dx005_aitken`（dx=0.05，26.0 s） | 流体发散 | `max|v| = 12.04 m/s` = **2.41 × c0**；梁尖位移 1.238 m = **3.54 × 梁长** |
+| `viv_dx002_aitken`（dx=0.02，6.24 s） | 过阻尼 | `Cd` 均值 0.052 vs 3.2（**−98 %**）；`tip_y` −31 %；包络衰减 → `WITHHELD` |
+
+注意 `period_band` 一项**依赖分析窗口**：dx=0.05 在 `warmup=0.5`（`verdict_body_force_transient`
+默认）识别到 0.320 s、出带；在 `warmup=0.3`（`make_viv_report` 默认）识别到 2.137 s、落带内。
+即这条带对该工件时灵时不灵，**不能**单独作为否决依据；把它挡下来的是与该窗口无关的
+`blowup`（2.41 × c0）和 `body_containment`（3.54 × 梁长）。这也是为什么三条检查各自独立记录、
+任意一条不过即降级，而不是合成一个分数。
+
+两者方向相反（一个炸、一个死），说明强耦合路径在两个分辨率上都没有收敛到物理解；
+`dx` 不是这里的控制参数。
+
+### 5.3 骨架离散被 `max(15, …)` 静默夹住 —— 这条梯子不是收敛研究
+
+`run_body_force_transient.py` 用 `n_beam_nodes = max(15, int(beam_length/dx))`：
+
+| dx [m] | `beam_length/dx` | 实际节点数 | 节点间距 [m] | 间距/dx |
+|---|---|---|---|---|
+| 0.05 | 7 | **15（被夹住）** | 0.0233 | 0.47 |
+| 0.02 | 17 | 17 | 0.0206 | 1.03 |
+| 0.10 | 3 | **15（被夹住）** | 0.0233 | 0.23 |
+
+dx 从 0.05 收到 0.02（流体细 2.5×），梁只从 15 收到 17 个节点（细 1.1×）；
+dx=0.10 时梁比流体**细 4.3 倍**。所以这两个工件的差异里混着「结构没细」这一项，
+不能读成流体的收敛性。夹紧保留（保护杆件求解器），但**写进工件**：
+`beam_nodes_clamped`、`case.beam_length`、`case.beam_node_spacing`、
+`case.beam_spacing_over_dx`，让一条 dx 梯子无法被当成收敛证据。
+
+### 5.4 本单没有拿到精度判定（如实）
+
+漂移/发散两条腿都不成立 → 锚点验收（<15 %）**本轮仍未达成**，`WITHHELD` 不是 PASS。
+下一步该做的不是再加分辨率，而是先让 dx=0.02 的场有物理量级的 `Cd`（0.05 → 3.2 差了 60 倍，
+指向载荷通道或体积力标度，不是离散误差），再谈周期窗口。
 
 ## ⑥ 复现
 
 ```bash
-# 本单的 350 步工件（可直接重跑判定/出报告）
-PYTHONPATH=src python benchmarks/xval_fsi2/run_body_force_transient.py \
-    --dx 0.05 --steps 350 --max-iter 4 --tol 1e-2 --interface-solver aitken \
-    --threads 4 --out artifacts/xval_fsi2/viv_dx005_local_partial.json
+# 从集群取回两个长时工件后，重跑判定（轻量，秒级）
+PYTHONPATH=src python benchmarks/xval_fsi2/verdict_body_force_transient.py \
+    --artifact artifacts/xval_fsi2/viv_dx005_aitken.json \
+    --out artifacts/xval_fsi2/viv_dx005_aitken_admitted.json
+PYTHONPATH=src python benchmarks/xval_fsi2/verdict_body_force_transient.py \
+    --artifact artifacts/xval_fsi2/viv_dx002_aitken.json \
+    --out artifacts/xval_fsi2/viv_dx002_aitken_admitted.json
+
+# 报告（含图）
 PYTHONPATH=src python benchmarks/xval_fsi2/make_viv_report.py \
-    --artifact artifacts/xval_fsi2/viv_dx005_local_partial.json \
+    --artifact artifacts/xval_fsi2/viv_dx005_aitken.json \
+    --artifact artifacts/xval_fsi2/viv_dx002_aitken.json \
     --out-md docs/xval_fsi2/VIV_PERIODIC_VERDICT.md --figures
-python -m pytest tests/test_fsi2_viv_verdict_pipeline.py tests/test_fsi2_body_force_verdict.py -q
+
+# 守护
+python -m pytest tests/test_fsi2_verdict_admissibility.py \
+                 tests/test_fsi2_viv_verdict_pipeline.py -q
 ```
+
