@@ -81,9 +81,32 @@
    "table_steps": 1210
   },
   {
-   "committed": null,
+   "closest_estimator": "resolved_band",
+   "closest_rel_gap_to_table": 0.05820970640062506,
+   "committed": {
+    "alpha_visc": 0.03,
+    "artifact": "docs/artifacts/case_sph_wedge_entry_2d_ensemble/ensemble_dx0.5mm_c0v20.json",
+    "c0_factor": 20.0,
+    "cp": {
+     "footprint_max": 39.21190340789164,
+     "footprint_median": 14.531889772900568,
+     "resolved_band": 8.984200407341307
+    },
+    "cp_err_vs_table": {
+     "footprint_max": 3.6185987524018417,
+     "footprint_median": 0.7116477942167925,
+     "resolved_band": 0.05820970640062506
+    },
+    "cp_err_vs_wagner": {
+     "footprint_max": 3.666859632410789,
+     "footprint_median": 0.7295332251110256,
+     "resolved_band": 0.06926720119563079
+    },
+    "frames": 61,
+    "steps": 2090
+   },
    "dx": 0.0005,
-   "match": "no committed artefact at this dx",
+   "match": "reproduced",
    "table_c_over_Vt": 2.6859,
    "table_cp": 8.49,
    "table_cp_err_recomputed": 0.01044924718430007,
@@ -109,6 +132,11 @@
   "alpha_mismatch": true,
   "c0_mismatch": false,
   "committed_runs": {
+   "dx0.5mm": {
+    "alpha_visc": 0.03,
+    "c0_factor": 20.0,
+    "steps": 2090
+   },
    "dx1mm": {
     "alpha_visc": 0.03,
     "c0_factor": 20.0,
@@ -136,12 +164,13 @@
  "section": "### 3.2",
  "summary": {
   "no_committed_artifact": [
-   0.00133,
+   0.00133
+  ],
+  "reproduced": [
    0.0005
   ],
-  "reproduced": [],
   "rows_in_table": 4,
-  "rows_with_committed_artifact": 2,
+  "rows_with_committed_artifact": 3,
   "unreproducible": [
    0.002,
    0.001

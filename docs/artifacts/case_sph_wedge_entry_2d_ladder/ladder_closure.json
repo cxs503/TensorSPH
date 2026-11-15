@@ -90,11 +90,29 @@
    "mean_wet_nodes": 58.22950819672131,
    "wall_seconds": 381.8,
    "steps": 1076
+  },
+  {
+   "tag": "dx0.5mm",
+   "dx": 0.0005,
+   "obs_peak": 8.984200407341307,
+   "obs_spread_rel": 0.0,
+   "obs_jackknife_rel": 0.2089547589993377,
+   "uncertainty": 0.2089547589993377,
+   "synth_peak": 7.80121530424795,
+   "synth_spread_rel": 0.07166080807409698,
+   "residual": 0.1516411298697515,
+   "err_vs_wagner_point": -0.09576354775661422,
+   "judgeable": false,
+   "n_bins_used": [
+    30
+   ],
+   "pooled_samples": 7044,
+   "mean_wet_nodes": 115.47540983606558,
+   "wall_seconds": 2362.2,
+   "steps": 2090
   }
  ],
- "missing_grids": [
-  "dx0.5mm"
- ],
+ "missing_grids": [],
  "verdict": {
   "verdict": "NOT_DECIDABLE",
   "reason": "only 1 judgeable grid(s) (estimator spread > 15%)",
