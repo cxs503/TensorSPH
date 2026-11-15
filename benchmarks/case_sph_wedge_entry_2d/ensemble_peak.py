@@ -401,6 +401,14 @@ def main(argv=None) -> int:
                     help="comma separated bin counts (default: BIN_GRID)")
     ap.add_argument("--out", type=Path,
                     default=ROOT / "artifacts" / "case_sph_wedge_entry_2d_ensemble")
+    # Persist the per-frame wall samples so the *uncertainty model* of the
+    # footprint reading can be audited after the fact (m22416).  The committed
+    # artefacts of m21677..m21953 kept only pooled readings, which made the
+    # frame bootstrap unfalsifiable: with no per-frame data the independence
+    # assumption it rests on could not be checked.  Off by default so every
+    # previously committed artefact reproduces bit for bit.
+    ap.add_argument("--dump-frames", type=Path, default=None,
+                    help="also write per-frame (tau, cp) wall samples to this path")
     args = ap.parse_args(argv)
 
     out_dir = Path(args.out)
@@ -430,6 +438,19 @@ def main(argv=None) -> int:
     tag = f"dx{case['cfg']['dx']*1e3:g}mm_c0v{case['cfg']['c0_factor']:g}"
     path = out_dir / f"ensemble_{tag}.json"
     path.write_text(json.dumps(payload, indent=1))
+    if args.dump_frames is not None:
+        dump = Path(args.dump_frames)
+        dump.parent.mkdir(parents=True, exist_ok=True)
+        dump.write_text(json.dumps({
+            "case": "CASE-SPH-WEDGE-ENTRY-2D",
+            "script": "benchmarks/case_sph_wedge_entry_2d/ensemble_peak.py",
+            "tag": tag, "dx": case["cfg"]["dx"], "t_end": case["t_end"],
+            "C": case["C"], "q": case["q"],
+            "frames": [{"t": s["t"], "n_wet": s["n_wet"],
+                        "max_rho_ratio": s["max_rho_ratio"],
+                        "tau": s["tau"], "cp": s["cp"]} for s in case["shots"]],
+        }, indent=1))
+        print(f"[ensemble] frame samples -> {dump}")
     print(f"[ensemble] {tag}: steps={case['steps']} wall={case['wall_seconds']:.1f}s"
           f" -> {path}")
     for key, row in result["by_frames"].items():

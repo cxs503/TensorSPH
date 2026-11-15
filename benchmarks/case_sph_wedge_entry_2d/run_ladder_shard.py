@@ -42,14 +42,17 @@ def main(argv=None) -> int:
     ap.add_argument("--c0-factor", type=float, default=20.0)
     ap.add_argument("--threads", type=int, default=8)
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--dump-frames", type=Path, default=None)
     args = ap.parse_args(argv)
     dx = LADDER_DX[args.shard % len(LADDER_DX)]
     band = ",".join(str(b) for b in BIN_BAND)
+    extra = (["--dump-frames", str(args.dump_frames)]
+             if args.dump_frames is not None else [])
     return ep.main(["--dx", repr(dx), "--velocity", repr(args.velocity),
                     "--frames", str(args.frames),
                     "--c0-factor", repr(args.c0_factor),
                     "--threads", str(args.threads),
-                    "--bin-grid", band, "--out", str(args.out)])
+                    "--bin-grid", band, "--out", str(args.out), *extra])
 
 
 if __name__ == "__main__":
