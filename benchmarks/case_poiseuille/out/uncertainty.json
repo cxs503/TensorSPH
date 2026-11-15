@@ -1,0 +1,560 @@
+{
+ "case": "CASE-POISEUILLE-SPH",
+ "generated_by": "benchmarks/case_poiseuille/uncertainty.py",
+ "source_artifact": "benchmarks/case_poiseuille/out/result.json",
+ "source_sha256": "6ac2c5cc613c0c2ec0999936817e41e47210b2c6df5045ac4934897c6bdaef65",
+ "tolerance_percent": 5.0,
+ "safety_factor": 1.25,
+ "conservative_order": 1.0,
+ "interior_band_y_over_H": [
+  0.15,
+  0.85
+ ],
+ "method": "per-rung analytic reference from tensorsph.womersley; common grid + 5-point Lagrange interpolation for the norm functionals; GCI finest pair with Fs=1.25, selected band = max(observed-order, conservative p=1); ASME V&V 20-2009 E vs U_V",
+ "common_grid_points": 41,
+ "interpolation": "5-point Lagrange on the rung rows",
+ "reference_consistency": {
+  "max_relative_deviation": 2.220446049250313e-16,
+  "pass": true,
+  "note": "stored row analytic values vs tensorsph.womersley closed form"
+ },
+ "input_uncertainty": {
+  "resolution_H_over_dx": 16,
+  "amplitude": {
+   "n": 2,
+   "mean": 0.7353530095876659,
+   "half_range": 0.000123894990106177,
+   "std": 0.00017521397531823594,
+   "half_range_percent_of_mean": 0.016848369217343458
+  },
+  "phase_quarter_turns": {
+   "n": 2,
+   "mean": -0.6077523789115332,
+   "half_range": 0.0002323225459025524,
+   "std": 0.0003285536952604355,
+   "half_range_percent_of_mean": 0.038226513620339145,
+   "half_range_percent": 0.02323225459025524
+  },
+  "fit_residual_max": 0.007369942636373993,
+  "note": "half-range of the two measurement windows of the finest rung, in per cent of the measured value (amplitude) or of a quarter turn (phase); U_input, not U_num"
+ },
+ "quantities": {
+  "amp_centre": {
+   "n_rungs": 3,
+   "spacings": [
+    0.00625,
+    0.008333333333333333,
+    0.0125
+   ],
+   "values": [
+    0.7353529645916362,
+    0.73450795256078,
+    0.7305696702253266
+   ],
+   "labels": [
+    "H/dx=16",
+    "H/dx=12",
+    "H/dx=8"
+   ],
+   "truth": 0.7348080435320031,
+   "truth_per_rung": [
+    0.7348080435320031,
+    0.7326634758426129,
+    0.726533375157222
+   ],
+   "scale": null,
+   "tolerance_percent": 5.0,
+   "order_analysis": {
+    "status": "order_unresolved",
+    "reason": "pair orders disagree by 2.31 order units (1.93..4.24)",
+    "errors": [
+     0.0005449210596331078,
+     0.0018444767181671207,
+     0.004036295068104545
+    ],
+    "abs_errors": [
+     0.0005449210596331078,
+     0.0018444767181671207,
+     0.004036295068104545
+    ],
+    "pair_orders": [
+     {
+      "fine": "H/dx=16",
+      "coarse": "H/dx=12",
+      "r": 1.3333333333333333,
+      "e_fine": 0.0005449210596331078,
+      "e_coarse": 0.0018444767181671207,
+      "p": 4.23839394927472
+     },
+     {
+      "fine": "H/dx=12",
+      "coarse": "H/dx=8",
+      "r": 1.5,
+      "e_fine": 0.0018444767181671207,
+      "e_coarse": 0.004036295068104545,
+      "p": 1.9314401597786877
+     }
+    ],
+    "p_best": 1.9314401597786877,
+    "p_mean": 3.0849170545267035,
+    "order_spread": 2.306953789496032,
+    "monotone_magnitude": true
+   },
+   "order_claim": "no order of accuracy claimed: pair orders disagree by 2.31 order units (1.93..4.24)",
+   "p_used": 1.9314401597786877,
+   "p_identified": false,
+   "gci_fine_pairs": {
+    "observed_order": {
+     "gci_percent": 0.1933101614634086,
+     "order_used": 1.9314401597786877,
+     "order_observed": 1.9314401597786877,
+     "order_convention": "observed p",
+     "safety": 1.25,
+     "r": 1.3333333333333333,
+     "pair_diff_over_scale": 0.001149124395419342,
+     "scale": 0.7353529645916362,
+     "scale_basis": "|fine value|",
+     "fine": 0.7353529645916362,
+     "coarse": 0.73450795256078
+    },
+    "conservative": {
+     "gci_percent": 0.4309216482822534,
+     "order_used": 1.0,
+     "order_observed": 1.0,
+     "order_convention": "observed p",
+     "safety": 1.25,
+     "r": 1.3333333333333333,
+     "pair_diff_over_scale": 0.001149124395419342,
+     "scale": 0.7353529645916362,
+     "scale_basis": "|fine value|",
+     "fine": 0.7353529645916362,
+     "coarse": 0.73450795256078
+    }
+   },
+   "richardson": null,
+   "U_num_percent": 0.4309216482822534,
+   "U_num_basis": "observed p",
+   "U_num_spread_percent": [
+    0.1933101614634086,
+    0.4309216482822534
+   ],
+   "validation": {
+    "comparison": 0.7353529645916362,
+    "truth": 0.7348080435320031,
+    "E_percent": 0.07415828724653513,
+    "U_num_percent": 0.4309216482822534,
+    "U_input_percent": 0.016848369217343458,
+    "U_V_percent": 0.4312508950756833,
+    "E_over_U_V": 0.17196088887773917,
+    "verdict": "validated",
+    "scale_basis": "|truth|",
+    "tolerance_percent": 5.0,
+    "within_tolerance": true,
+    "supports_tolerance": true
+   },
+   "scale_text": "relative, |S-T|/|T|",
+   "error_percent_per_rung": [
+    0.07415828724653513,
+    0.25174951106247606,
+    0.5555553545260175
+   ],
+   "worst_rung_error_percent": 0.5555553545260175,
+   "worst_rung_within_tolerance": true,
+   "repeatability_floor_percent": 0.016848369217343458,
+   "error_over_floor": 4.401511285151426
+  },
+  "amp_profile_l2": {
+   "n_rungs": 3,
+   "spacings": [
+    0.00625,
+    0.008333333333333333,
+    0.0125
+   ],
+   "values": [
+    0.6259823664179024,
+    0.6275486818226752,
+    0.6313235086046012
+   ],
+   "labels": [
+    "H/dx=16",
+    "H/dx=12",
+    "H/dx=8"
+   ],
+   "truth": 0.6248077786590251,
+   "truth_per_rung": [
+    0.6248077786590251,
+    0.6248077786590251,
+    0.6248077786590251
+   ],
+   "scale": null,
+   "tolerance_percent": 5.0,
+   "order_analysis": {
+    "status": "order_unresolved",
+    "reason": "pair orders disagree by 0.81 order units (2.14..2.95)",
+    "errors": [
+     0.0011745877588772435,
+     0.0027409031636500547,
+     0.006515729945576032
+    ],
+    "abs_errors": [
+     0.0011745877588772435,
+     0.0027409031636500547,
+     0.006515729945576032
+    ],
+    "pair_orders": [
+     {
+      "fine": "H/dx=16",
+      "coarse": "H/dx=12",
+      "r": 1.3333333333333333,
+      "e_fine": 0.0011745877588772435,
+      "e_coarse": 0.0027409031636500547,
+      "p": 2.9455093885677233
+     },
+     {
+      "fine": "H/dx=12",
+      "coarse": "H/dx=8",
+      "r": 1.5,
+      "e_fine": 0.0027409031636500547,
+      "e_coarse": 0.006515729945576032,
+      "p": 2.135650490983158
+     }
+    ],
+    "p_best": 2.135650490983158,
+    "p_mean": 2.5405799397754407,
+    "order_spread": 0.8098588975845651,
+    "monotone_magnitude": true
+   },
+   "order_claim": "no order of accuracy claimed: pair orders disagree by 0.81 order units (2.14..2.95)",
+   "p_used": 2.135650490983158,
+   "p_identified": false,
+   "gci_fine_pairs": {
+    "observed_order": {
+     "gci_percent": 0.36860580707890256,
+     "order_used": 2.135650490983158,
+     "order_observed": 2.135650490983158,
+     "order_convention": "observed p",
+     "safety": 1.25,
+     "r": 1.3333333333333333,
+     "pair_diff_over_scale": 0.002502171768409124,
+     "scale": 0.6259823664179024,
+     "scale_basis": "|fine value|",
+     "fine": 0.6259823664179024,
+     "coarse": 0.6275486818226752
+    },
+    "conservative": {
+     "gci_percent": 0.9383144131534217,
+     "order_used": 1.0,
+     "order_observed": 1.0,
+     "order_convention": "observed p",
+     "safety": 1.25,
+     "r": 1.3333333333333333,
+     "pair_diff_over_scale": 0.002502171768409124,
+     "scale": 0.6259823664179024,
+     "scale_basis": "|fine value|",
+     "fine": 0.6259823664179024,
+     "coarse": 0.6275486818226752
+    }
+   },
+   "richardson": null,
+   "U_num_percent": 0.9383144131534217,
+   "U_num_basis": "observed p",
+   "U_num_spread_percent": [
+    0.36860580707890256,
+    0.9383144131534217
+   ],
+   "validation": {
+    "comparison": 0.6259823664179024,
+    "truth": 0.6248077786590251,
+    "E_percent": 0.18799185909595542,
+    "U_num_percent": 0.9383144131534217,
+    "U_input_percent": 0.016848369217343458,
+    "U_V_percent": 0.9384656655822492,
+    "E_over_U_V": 0.20031831316846338,
+    "verdict": "validated",
+    "scale_basis": "|truth|",
+    "tolerance_percent": 5.0,
+    "within_tolerance": true,
+    "supports_tolerance": true
+   },
+   "scale_text": "relative L2 norm of the amplitude profile on the common grid over 0.15<=y/H<=0.85",
+   "error_percent_per_rung": [
+    0.18799185909595542,
+    0.43867942385938846,
+    1.042837520294677
+   ],
+   "worst_rung_error_percent": 1.042837520294677,
+   "worst_rung_within_tolerance": true,
+   "repeatability_floor_percent": 0.016848369217343458,
+   "error_over_floor": 11.157866774574208
+  },
+  "phase_centre": {
+   "n_rungs": 3,
+   "spacings": [
+    0.00625,
+    0.008333333333333333,
+    0.0125
+   ],
+   "values": [
+    -0.6077522451711352,
+    -0.6094020666717359,
+    -0.6165337637385522
+   ],
+   "labels": [
+    "H/dx=16",
+    "H/dx=12",
+    "H/dx=8"
+   ],
+   "truth": -0.6090389728011874,
+   "truth_per_rung": [
+    -0.6090389728011874,
+    -0.6085260942260607,
+    -0.6070610744612086
+   ],
+   "scale": 1.0,
+   "tolerance_percent": 5.0,
+   "order_analysis": {
+    "status": "oscillatory",
+    "reason": "the error changes sign between rungs",
+    "errors": [
+     0.001286727630052109,
+     -0.0008759724456751661,
+     -0.009472689277343571
+    ],
+    "abs_errors": [
+     0.001286727630052109,
+     0.0008759724456751661,
+     0.009472689277343571
+    ],
+    "pair_orders": [
+     {
+      "fine": "H/dx=16",
+      "coarse": "H/dx=12",
+      "r": 1.3333333333333333,
+      "e_fine": 0.001286727630052109,
+      "e_coarse": -0.0008759724456751661,
+      "p": null
+     },
+     {
+      "fine": "H/dx=12",
+      "coarse": "H/dx=8",
+      "r": 1.5,
+      "e_fine": -0.0008759724456751661,
+      "e_coarse": -0.009472689277343571,
+      "p": 5.871857876604037
+     }
+    ],
+    "p_best": 5.871857876604037,
+    "p_mean": 5.871857876604037,
+    "order_spread": 0.0,
+    "monotone_magnitude": false
+   },
+   "order_claim": "no order of accuracy claimed: the error changes sign between rungs",
+   "p_used": 1.0,
+   "p_identified": false,
+   "gci_fine_pairs": {
+    "observed_order": null,
+    "conservative": {
+     "gci_percent": 0.6186830627252506,
+     "order_used": 1.0,
+     "order_observed": 1.0,
+     "order_convention": "observed p",
+     "safety": 1.25,
+     "r": 1.3333333333333333,
+     "pair_diff_over_scale": 0.0016498215006006678,
+     "scale": 1.0,
+     "scale_basis": "declared",
+     "fine": -0.6077522451711352,
+     "coarse": -0.6094020666717359
+    }
+   },
+   "richardson": null,
+   "U_num_percent": 0.6186830627252506,
+   "U_num_basis": "observed p",
+   "U_num_spread_percent": [
+    0.6186830627252506
+   ],
+   "validation": {
+    "comparison": -0.6077522451711352,
+    "truth": -0.6090389728011874,
+    "E_percent": 0.1286727630052109,
+    "U_num_percent": 0.6186830627252506,
+    "U_input_percent": 0.02323225459025524,
+    "U_V_percent": 0.6191191078915614,
+    "E_over_U_V": 0.20783200092694912,
+    "verdict": "validated",
+    "scale_basis": "declared",
+    "tolerance_percent": 5.0,
+    "within_tolerance": true,
+    "supports_tolerance": true
+   },
+   "scale_text": "rad/(pi/2): per cent of a quarter turn",
+   "error_percent_per_rung": [
+    0.1286727630052109,
+    0.08759724456751661,
+    0.9472689277343571
+   ],
+   "worst_rung_error_percent": 0.9472689277343571,
+   "worst_rung_within_tolerance": true,
+   "repeatability_floor_percent": 0.02323225459025524,
+   "error_over_floor": 5.538539641313274
+  },
+  "phase_profile_l2": {
+   "n_rungs": 3,
+   "spacings": [
+    0.00625,
+    0.008333333333333333,
+    0.0125
+   ],
+   "values": [
+    0.5826646507424342,
+    0.5842772383664643,
+    0.5889149025191168
+   ],
+   "labels": [
+    "H/dx=16",
+    "H/dx=12",
+    "H/dx=8"
+   ],
+   "truth": 0.5814884298015419,
+   "truth_per_rung": [
+    0.5814884298015419,
+    0.5814884298015419,
+    0.5814884298015419
+   ],
+   "scale": 1.0,
+   "tolerance_percent": 5.0,
+   "order_analysis": {
+    "status": "order_unresolved",
+    "reason": "pair orders disagree by 0.59 order units (2.42..3.00)",
+    "errors": [
+     0.001176220940892314,
+     0.0027888085649223626,
+     0.007426472717574906
+    ],
+    "abs_errors": [
+     0.001176220940892314,
+     0.0027888085649223626,
+     0.007426472717574906
+    ],
+    "pair_orders": [
+     {
+      "fine": "H/dx=16",
+      "coarse": "H/dx=12",
+      "r": 1.3333333333333333,
+      "e_fine": 0.001176220940892314,
+      "e_coarse": 0.0027888085649223626,
+      "p": 3.0009091385790327
+     },
+     {
+      "fine": "H/dx=12",
+      "coarse": "H/dx=8",
+      "r": 1.5,
+      "e_fine": 0.0027888085649223626,
+      "e_coarse": 0.007426472717574906,
+      "p": 2.4155877392942022
+     }
+    ],
+    "p_best": 2.4155877392942022,
+    "p_mean": 2.7082484389366175,
+    "order_spread": 0.5853213992848305,
+    "monotone_magnitude": true
+   },
+   "order_claim": "no order of accuracy claimed: pair orders disagree by 0.59 order units (2.42..3.00)",
+   "p_used": 2.4155877392942022,
+   "p_identified": false,
+   "gci_fine_pairs": {
+    "observed_order": {
+     "gci_percent": 0.2008601259340712,
+     "order_used": 2.4155877392942022,
+     "order_observed": 2.4155877392942022,
+     "order_convention": "observed p",
+     "safety": 1.25,
+     "r": 1.3333333333333333,
+     "pair_diff_over_scale": 0.0016125876240300485,
+     "scale": 1.0,
+     "scale_basis": "declared",
+     "fine": 0.5826646507424342,
+     "coarse": 0.5842772383664643
+    },
+    "conservative": {
+     "gci_percent": 0.6047203590112684,
+     "order_used": 1.0,
+     "order_observed": 1.0,
+     "order_convention": "observed p",
+     "safety": 1.25,
+     "r": 1.3333333333333333,
+     "pair_diff_over_scale": 0.0016125876240300485,
+     "scale": 1.0,
+     "scale_basis": "declared",
+     "fine": 0.5826646507424342,
+     "coarse": 0.5842772383664643
+    }
+   },
+   "richardson": null,
+   "U_num_percent": 0.6047203590112684,
+   "U_num_basis": "observed p",
+   "U_num_spread_percent": [
+    0.2008601259340712,
+    0.6047203590112684
+   ],
+   "validation": {
+    "comparison": 0.5826646507424342,
+    "truth": 0.5814884298015419,
+    "E_percent": 0.11762209408923141,
+    "U_num_percent": 0.6047203590112684,
+    "U_input_percent": 0.02323225459025524,
+    "U_V_percent": 0.6051664649136334,
+    "E_over_U_V": 0.1943632056776608,
+    "verdict": "validated",
+    "scale_basis": "declared",
+    "tolerance_percent": 5.0,
+    "within_tolerance": true,
+    "supports_tolerance": true
+   },
+   "scale_text": "L2 norm of the phase profile on the common grid, per cent of a quarter turn",
+   "error_percent_per_rung": [
+    0.11762209408923141,
+    0.27888085649223626,
+    0.7426472717574906
+   ],
+   "worst_rung_error_percent": 0.7426472717574906,
+   "worst_rung_within_tolerance": true,
+   "repeatability_floor_percent": 0.02323225459025524,
+   "error_over_floor": 5.062879008676495
+  }
+ },
+ "single_rung": {
+  "steady_profile_rms": {
+   "resolution_H_over_dx": 12,
+   "error_percent": 0.8775166679338824,
+   "within_tolerance": true
+  },
+  "startup_profile_rms_at_0.40s": {
+   "resolution_H_over_dx": 12,
+   "error_percent": 0.8659265872680739,
+   "within_tolerance": true
+  },
+  "status": "insufficient",
+  "reason": "the committed R1 artifacts contain a single resolution (H/dx=12): neither an order nor a GCI can be estimated, so the R1 anchor is graded against the tolerance only"
+ },
+ "order_status": {
+  "amp_centre": "order_unresolved",
+  "amp_profile_l2": "order_unresolved",
+  "phase_centre": "oscillatory",
+  "phase_profile_l2": "order_unresolved"
+ },
+ "gates": {
+  "U0_reference_matches_closed_form": true,
+  "U1_all_rungs_within_5pct": true,
+  "U1b_R1_anchor_within_5pct": true,
+  "U2_validation_E_leq_U_V": true,
+  "U3_band_supports_5pct": true
+ },
+ "all_gates_pass": true,
+ "honest_limits": [
+  "three rungs with unequal ratios (H/dx = 8,12,16 -> r = 1.5 and 1.333) leave the observed order only loosely identified: a monotone ladder can still show pair orders 1.9 and 4.2 because each pair samples a different interval of a staircase error, so no order is quoted when they disagree",
+  "the GCI band is a bound on the graded *functional*, not a pointwise field bound; the pointwise profile error is larger near the walls",
+  "U_input is the between-window repeatability of one run, not a run-to-run ensemble: it captures the sampling window, not reproducibility across hardware or thread counts",
+  "the phase functional is oscillatory (the error changes sign between H/dx=12 and 16), so its band uses the conservative p=1 convention and no order of accuracy is claimed for the phase"
+ ]
+}
