@@ -357,3 +357,22 @@ so the ``alpha = 0.05`` gate failure is **not** a cadence bookkeeping artifact;
 shipped rate (``alpha = 0.2`` every second step: 8.2 % rel. / MAE 0.089 at
 ``dx = 0.03 m``), so the dam-break acceptance is met only outside upstream's
 shipped coefficient.
+
+---
+
+## 追加腿：`SHIFT_BOUND_PREDICTION.md`（位移上界预测器）
+
+`shift_bound.py` 逐点扫 α ∈ {0, 0.025, 0.05, 0.075, 0.10, 0.125, 0.15, 0.20}
+× Δx ∈ {0.04, 0.03, 0.02} m，测量单步修正位移
+`s(α) = max_t |δr|/Δx` 与精度最优点，用来回答本文件 ⑤ 里遗留的
+「`alpha` 是拟合还是可预测」：
+
+* `s(α)/α = 2.010` 在三个分辨率上一致（跨分辨率 0.002 %，线性残差 ≤ 0.03 %）
+  → **位移上界本身可被预测**，不需要实验参考。
+* 精度最优点 `α_opt = 0.075 / 0.10 / 0.10`（相对误差 11.7 / 10.6 / 12.5 %），
+  所处上界 `C_implied = 0.151 / 0.201 / 0.201`（离散 27.3 % > 25 % 容差）
+  → 预登记假说 H1 **被否证**：最优点不在分辨率无关的上界上。
+* H2（留一分辨率）在 Δx=0.02↔0.03 之间精确成立（α 偏差 3.6e-6），
+  跨到最粗一层则不成立（偏差 33 %，且预测点不过 15 % 门）。
+* `dx = 0.01` 的扩展点已递交调度器（`cj3673`），payload 增量写入，
+  回传后重跑 `make_shift_bound_doc.py` 即可扩表。
