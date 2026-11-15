@@ -166,6 +166,11 @@ def test_capillary_arm_meets_gate_target():
     assert abs(out["omega_error_pct"]) < 6.0
 
 
+@pytest.mark.skip(reason="round 5 recorded the pre-fix instability signature; the "
+                             "initialisation defects behind it are fixed in round 6 and the "
+                             "behaviour is now pinned by "
+                             "tests/test_oscillating_drop_freq_round6.py::"
+                             "test_tension_free_drop_stays_at_rest")
 def test_capillary_arm_is_unstable_recorded_defect():
     """Arm C: the recorded failure, so a fix has to flip this test.
 
