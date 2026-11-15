@@ -233,7 +233,8 @@ def compute_surface_tension_force(
             contact_angle=getattr(cfg, "contact_angle", None),
             contact_angle_reach=getattr(cfg, "contact_angle_reach", 2.0),
             curvature_scheme=getattr(cfg, "csf_curvature", "mls"),
-            delta_normalization=getattr(cfg, "csf_delta_normalization", "legacy"))
+            delta_normalization=getattr(cfg, "csf_delta_normalization", "legacy"),
+            contact_angle_model=getattr(cfg, "contact_angle_model", "rotate"))
         return acc
 
     # Count neighbors for each particle
