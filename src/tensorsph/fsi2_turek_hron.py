@@ -153,6 +153,11 @@ class FSI2Case:
     # physics (the rod is loaded by pressure only, as before); on, it produces
     # the friction part of the benchmark force coefficients.
     body_viscous_load: bool = True
+    #: Feed the friction (viscous) traction on the beam faces back into the rod
+    #: load.  It is not diagnostic: on the Turek-Hron plate at ``Re_L ~ 3.5e2``
+    #: the laminar skin friction is the dominant axial load, so a pressure-only
+    #: rod never deflects (measured tip displacement == 0 in the coupled probe).
+    beam_viscous_load: bool = True
     #: arm used for the *reported* body coefficients: ``"fit"`` (plane fit,
     #: exact on a linear pressure field) or ``"avg"`` (OSS kernel average).
     #: Both are always computed for the rigid cylinder; only the reported
@@ -1215,8 +1220,10 @@ def step_fsi2(state: FSI2State, case: FSI2Case, dt: float) -> Dict[str, float]:
         cyl_start=state.wall_static.shape[0],
         cyl_normals=state.cylinder_normals,
         cyl_tributary=state.cylinder_tributary,
-        vel=state.fluid_vel if case.wall_impedance else None,
-        wall_vel=wall_vel if case.wall_impedance else None,
+        # the friction arm needs the fluid velocity whatever the interface
+        # scheme is; ``body_force_from_fluid`` gates the Robin arm itself
+        vel=state.fluid_vel,
+        wall_vel=wall_vel,
         fluid_mass=state.fluid_mass,
         beam_boundary=beam_boundary, beam_normals=beam_normals,
         beam_tributary=tributary, beam_boundary_vel=beam_boundary_vel)
@@ -1224,7 +1231,11 @@ def step_fsi2(state: FSI2State, case: FSI2Case, dt: float) -> Dict[str, float]:
     cyl_coverage = body["cyl_coverage"]
     f_visc_cyl, f_visc_beam = body["f_visc_cyl"], body["f_visc_beam"]
 
-    raw_load = (beam_interp.T @ f_beam) * case.load_scale
+    # Structural load = pressure traction + skin friction on the same faces.
+    f_beam_struct = (f_beam + f_visc_beam
+                     if (case.beam_viscous_load and f_visc_beam.numel())
+                     else f_beam)
+    raw_load = (beam_interp.T @ f_beam_struct) * case.load_scale
     alpha = float(case.coupling_relaxation)
     if alpha >= 1.0 or state.load is None:
         nodal_load = raw_load
@@ -1267,6 +1278,12 @@ def step_fsi2(state: FSI2State, case: FSI2Case, dt: float) -> Dict[str, float]:
             "cyl_lift_fit": float(f_cyl_fit[:, 1].sum()) if f_cyl_fit.numel() else 0.0,
             "body_drag_fit": (float(f_cyl_fit[:, 0].sum()) if f_cyl_fit.numel() else 0.0) + drag,
             "body_lift_fit": (float(f_cyl_fit[:, 1].sum()) if f_cyl_fit.numel() else 0.0) + lift,
+            "drag_struct": (float(f_beam_struct[:, 0].sum())
+                            if f_beam_struct.numel() else 0.0),
+            "lift_struct": (float(f_beam_struct[:, 1].sum())
+                            if f_beam_struct.numel() else 0.0),
+            "beam_drag_pressure": drag, "beam_drag_friction": (
+                float(f_visc_beam[:, 0].sum()) if f_visc_beam.numel() else 0.0),
             "drag_viscous": float(visc[0]), "lift_viscous": float(visc[1]),
             "cyl_coverage": cyl_coverage,
             "max_speed": float(state.fluid_vel.norm(dim=1).max()),
@@ -1285,7 +1302,7 @@ def run_fsi2(case: FSI2Case, state: Optional[FSI2State] = None):
         row = step_fsi2(state, case, dt)
         if k % max(case.output_every, 1) == 0 or k == n_steps - 1:
             for key, value in row.items():
-                state.history[key].append(value)
+                state.history.setdefault(key, []).append(value)
 
     hist = state.history
     tip_x = hist["tip_x"]

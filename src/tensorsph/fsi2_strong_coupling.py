@@ -275,14 +275,24 @@ def _fluid_load(state: FSI2State, case: FSI2Case, dt: float,
         cyl_start=state.wall_static.shape[0],
         cyl_normals=state.cylinder_normals,
         cyl_tributary=state.cylinder_tributary,
-        vel=fluid_vel if case.wall_impedance else None,
-        wall_vel=wall_vel if case.wall_impedance else None,
+        # the friction arm needs the fluid velocity whatever the interface
+        # scheme is; the Robin arm is gated inside the helper
+        vel=fluid_vel,
+        wall_vel=wall_vel,
         fluid_mass=fluid_mass,
         beam_boundary=beam_boundary, beam_normals=beam_normals,
         beam_tributary=tributary, beam_boundary_vel=beam_boundary_vel)
 
-    raw_load = (beam_interp.T @ f_beam) * case.load_scale
-    return {"raw_load": raw_load, "f_beam": f_beam, "acc": acc,
+    # Structural load = pressure traction + skin friction on the same faces
+    # (shared fix with the loose driver in fsi2_turek_hron.step_fsi2).
+    f_visc_beam = body["f_visc_beam"]
+    f_beam_struct = (f_beam + f_visc_beam
+                     if (case.beam_viscous_load and f_visc_beam.numel())
+                     else f_beam)
+    raw_load = (beam_interp.T @ f_beam_struct) * case.load_scale
+    return {"raw_load": raw_load, "f_beam": f_beam,
+            "f_beam_struct": f_beam_struct, "f_visc_beam": f_visc_beam,
+            "acc": acc,
             "coverage": coverage,
             "f_cyl": body["f_cyl"], "f_cyl_fit": body["f_cyl_fit"],
             "f_visc_cyl": body["f_visc_cyl"], "f_visc_beam": body["f_visc_beam"],
@@ -441,11 +451,21 @@ def step_fsi2_strong(state: FSI2State, case: FSI2Case, dt: float,
     visc_c = _sum("f_visc_cyl") + _sum("f_visc_beam")
     drag_beam = float(f_beam[:, 0].sum()) if f_beam.numel() else 0.0
     lift_beam = float(f_beam[:, 1].sum()) if f_beam.numel() else 0.0
+    f_struct = last.get("f_beam_struct") if last is not None else None
+    drag_struct = float(f_struct[:, 0].sum()) if (f_struct is not None
+                                                  and f_struct.numel()) else 0.0
+    lift_struct = float(f_struct[:, 1].sum()) if (f_struct is not None
+                                                  and f_struct.numel()) else 0.0
+    f_vb = last.get("f_visc_beam") if last is not None else None
+    beam_friction = float(f_vb[:, 0].sum()) if (f_vb is not None
+                                                and f_vb.numel()) else 0.0
     f_cyl_n = 0 if last is None or last.get("f_cyl") is None else int(last["f_cyl"].shape[0])
     row = {
         "t": state.time, "tip_x": tip_x, "tip_y": tip_y,
         "drag": drag_beam,
         "lift": lift_beam,
+        "drag_struct": drag_struct, "lift_struct": lift_struct,
+        "beam_drag_friction": beam_friction,
         "cyl_drag": float(f_cyl_c[0]), "cyl_lift": float(f_cyl_c[1]),
         "body_drag": float(f_cyl_c[0]) + drag_beam,
         "body_lift": float(f_cyl_c[1]) + lift_beam,
@@ -480,6 +500,7 @@ def run_fsi2_strong(case: FSI2Case, n_steps: int,
     dt = case.dt()
     hist: Dict[str, List[float]] = {
         "t": [], "tip_x": [], "tip_y": [], "drag": [], "lift": [],
+        "drag_struct": [], "lift_struct": [], "beam_drag_friction": [],
         "max_speed": [], "n_fluid": [], "coupling_iterations": [],
         "coupling_residual": [], "coupling_converged": [],
     }
