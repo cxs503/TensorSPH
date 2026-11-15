@@ -24,6 +24,17 @@
 > (runner `benchmarks/lake_at_rest/wall_gap.py`, evidence
 > `tests/data/lake_at_rest/wall_gap.json`). The verdict below is unchanged.
 
+> **Update (m22315).** The *only* closure that meets the anchor tolerance in the
+> closed tank is an identity, not a scheme: with the consistent gradient +
+> `incompressible` closure the residual is `~1e-15` for a free-surface
+> perturbation of **1 dx** as well (the shipped operator answers `6.0e+02 g`
+> at the same state) and the surface does not move at all in time.  The
+> tolerance is therefore a scheme property only where the operator is
+> translation invariant, which is the laterally periodic tank.  See
+> `docs/verification_lake_at_rest_closure_response.md` (runner
+> `benchmarks/lake_at_rest/closure_response.py`, evidence
+> `tests/data/lake_at_rest/closure_response.json`).
+
 Case-pool anchor `CASE-SPH-LAKE-AT-REST`. Reference: the analytic hydrostatic
 identity (`u = 0`, flat free surface) — no experimental uncertainty, no fitted
 constant. Artefact: `artifacts/lake_at_rest/rest_dx020.json`; code

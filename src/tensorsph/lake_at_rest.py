@@ -176,11 +176,21 @@ def build_state(cfg: LakeConfig):
     """
     shipped = cfg.shipped()
     device = torch.device(cfg.device)
-    # Snap onto the exact lattice: the same column reached through two different
-    # arithmetic paths differs in the last bits, and a lake that must be exactly
-    # mirror-symmetric cannot afford two copies of "x = 0.45".
-    pos = pool_lattice(shipped, device).to(cfg.torch_dtype).round(decimals=12)
-    wall = wall_particles(cfg, device).to(cfg.torch_dtype).round(decimals=12)
+    # The lattice builders read the *global* default dtype (``torch.arange`` and
+    # friends), while the case declares its own in ``LakeConfig.dtype``.  Casting
+    # after the fact is not enough: a float32 lattice rounds to ~1.5e-8 in ``x``,
+    # which breaks the mirror-pair map below for every ``dx``.  Build the lattice
+    # in the declared dtype instead of depending on the caller's global state.
+    previous_dtype = torch.get_default_dtype()
+    torch.set_default_dtype(cfg.torch_dtype)
+    try:
+        # Snap onto the exact lattice: the same column reached through two
+        # different arithmetic paths differs in the last bits, and a lake that
+        # must be exactly mirror-symmetric cannot afford two copies of "x = 0.45".
+        pos = pool_lattice(shipped, device).round(decimals=12)
+        wall = wall_particles(cfg, device).round(decimals=12)
+    finally:
+        torch.set_default_dtype(previous_dtype)
     n, nw = pos.shape[0], wall.shape[0]
     if cfg.periodic_x:
         pairs = periodic_pairs(pos, wall, cfg.h(), cfg.width)
