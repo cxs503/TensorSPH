@@ -15,7 +15,14 @@ import numpy as np
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REF_DIR = os.path.join(ROOT, "outputs", "kleefsman_h2_ref")
+# the digitisation bundle was relocated under docs/ (see
+# docs/dev_report_m17086_ledger_artifact_relocation.md); accept either place so the
+# guard follows the artifacts instead of silently failing on a stale path
+_CANDIDATES = [
+    os.path.join(ROOT, "outputs", "kleefsman_h2_ref"),
+    os.path.join(ROOT, "docs", "m20884", "outputs", "kleefsman_h2_ref"),
+]
+REF_DIR = next((c for c in _CANDIDATES if os.path.isdir(c)), _CANDIDATES[0])
 CASE_REF = os.path.join(ROOT, "benchmarks", "kleefsman_obstacle", "reference.json")
 sys.path.insert(0, REF_DIR)
 
