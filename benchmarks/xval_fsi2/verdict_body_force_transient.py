@@ -88,16 +88,67 @@ def dominant_period(t, signal, min_lag_frac: float = 0.02) -> float | None:
     return None
 
 
-def periods_in_window(t, signal, warmup: int) -> dict:
+#: Strouhal band used *only* as a plausibility band for the identified period.
+#: A vortex street behind a cylinder at Re ~ 100 sheds at ``St ~ 0.13-0.30``; the
+#: FSI2 beam follows the shedding, so a "period" outside ``D/(St U)`` cannot be
+#: the VIV period.  The band is deliberately wide (a factor 2.3) -- it is there
+#: to reject start-up ringing (measured 0.153 s against a 1.7-3.8 s band), not
+#: to score the answer.
+VIV_STROUHAL_BAND = (0.13, 0.30)
+
+
+def viv_period_band(u_mean: float, diameter: float) -> tuple | None:
+    """Physically admissible VIV period range [s] for ``(U_mean, D)``."""
+    if not u_mean or u_mean <= 0 or not diameter or diameter <= 0:
+        return None
+    lo, hi = VIV_STROUHAL_BAND
+    return (float(diameter / (hi * u_mean)), float(diameter / (lo * u_mean)))
+
+
+def _envelope_stationarity(x, min_ratio: float = 0.8,
+                           max_ratio: float = 1.25) -> dict:
+    """Peak-to-peak of the second half over the first half of the window.
+
+    An oscillation whose *amplitude* is still growing (a start-up transient, or
+    the acoustic ringing that follows the inlet ramp) can have a clean interior
+    autocorrelation peak without being periodic.  This ratio is the cheap
+    discriminator: the previous round's artefact was judged ``FAIL`` off a
+    0.153 s "period" that was ringing, i.e. a start-up transient was scored as
+    if it were a periodic solution.  A periodic window has ``ratio ~ 1``.
+    """
+    x = np.asarray(x, dtype=float)
+    n = x.size
+    if n < 32 or not np.all(np.isfinite(x)):
+        return {"ratio": None, "stationary": False}
+    h = n // 2
+    a = float(np.ptp(x[:h]))
+    b = float(np.ptp(x[h:]))
+    if not np.isfinite(a) or not np.isfinite(b) or a <= 0.0:
+        return {"ratio": None, "stationary": False}
+    ratio = b / a
+    return {"ratio": float(ratio),
+            "stationary": bool(min_ratio <= ratio <= max_ratio)}
+
+
+def periods_in_window(t, signal, warmup: int,
+                      band: tuple | None = None) -> dict:
     t = np.asarray(t, dtype=float)
     x = np.asarray(signal, dtype=float)[warmup:]
     tt = t[warmup:]
     period = dominant_period(tt, x)
     span = float(tt[-1] - tt[0]) if tt.size > 1 else 0.0
+    env = _envelope_stationarity(x)
+    in_band = None
+    if band is not None and period is not None:
+        in_band = bool(band[0] <= period <= band[1])
     return {
         "period_s": period,
         "window_s": span,
         "periods_in_window": (span / period) if period else None,
+        "amplitude_ratio_second_over_first_half": env["ratio"],
+        "amplitude_stationary": env["stationary"],
+        "period_band_s": list(band) if band is not None else None,
+        "period_in_band": in_band,
     }
 
 
@@ -149,9 +200,15 @@ def build_verdict(payload: dict, warmup_frac: float = 0.5) -> dict:
     tip_y = float(0.5 * (max(hist["tip_y"][warm:]) - min(hist["tip_y"][warm:])))
 
     # --- how much of the periodic regime does the window actually cover? ----
-    per = periods_in_window(t, hist["body_drag_fit"], warm)
+    band = viv_period_band(u_mean, D)
+    per = periods_in_window(t, hist["body_drag_fit"], warm, band=band)
     n_periods = per["periods_in_window"]
-    regime_ok = n_periods is not None and n_periods >= 1.0
+    # A window is only "periodic" if it both spans >= 1 cycle *and* the cycle
+    # amplitude is stationary; otherwise the numbers are start-up, whatever the
+    # autocorrelation says.  The Strouhal band is reported alongside but is not
+    # part of the gate (unit-test signals are not physical cases).
+    regime_ok = (n_periods is not None and n_periods >= 1.0
+                 and bool(per["amplitude_stationary"]))
 
     # --- gates --------------------------------------------------------------
     fit_gate = [_gate_row(k, v, {"drag_mean": fit.get("cd_mean"),
