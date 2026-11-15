@@ -273,6 +273,15 @@ def analyse(case: dict, bin_grid=None) -> dict:
             jk[tag] = spread(p2)[2]
         jk_rel = (abs(jk["late_half"] - jk["early_half"])
                   / max(abs(jk["late_half"]), 1e-12))
+        # Declared uncertainty = the stricter of the two committed readings,
+        # i.e. max(resolution-band spread, frame half-split).  ``judgeable``
+        # below keeps the historical rule (full bin-grid spread only) so that
+        # the committed artefacts stay reproducible; m22545 showed that rule
+        # disagrees with the stricter one on 2 of 4 grids (see
+        # docs/case_sph_wedge_entry_2d_stationarity_m22545.md), so
+        # ``judgeable_stationarity`` is the field to read.
+        unc_declared = max(rb_rel, jk_rel) if (rb_rel == rb_rel and jk_rel == jk_rel) \
+            else float("nan")
         by_frames[str(n_frames)] = {
             "n_frames": n_frames, "pooled_samples": len(cps),
             "mean_wet_nodes": statistics.mean(s["n_wet"] for s in sel),
@@ -288,7 +297,10 @@ def analyse(case: dict, bin_grid=None) -> dict:
                                     (rb_med - ref) / ref if rb_med == rb_med
                                     else float("nan"))},
             "jackknife_halves": jk, "jackknife_rel": jk_rel,
+            "uncertainty_declared": unc_declared,
             "judgeable": bool(rel == rel and rel < SPREAD_TOL),
+            "judgeable_stationarity": bool(unc_declared == unc_declared
+                                           and unc_declared < SPREAD_TOL),
         }
 
     # ---- matched-bandwidth reading (m21677) ---------------------------- #
