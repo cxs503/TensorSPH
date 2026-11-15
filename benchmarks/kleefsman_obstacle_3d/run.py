@@ -50,6 +50,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--tag", default=None)
     ap.add_argument("--out-dir", default=str(DEFAULT_OUT))
     ap.add_argument("--threads", type=int, default=0)
+    ap.add_argument("--checkpoint", default=None,
+                    help="state file used to continue a run that was killed; "
+                         "written every --checkpoint-every steps and removed "
+                         "once t_end is reached")
+    ap.add_argument("--checkpoint-every", type=int, default=20)
+    ap.add_argument("--no-resume", action="store_true",
+                    help="ignore an existing checkpoint and start at t = 0")
     args = ap.parse_args(argv)
 
     if args.threads > 0:
@@ -84,7 +91,13 @@ def main(argv: list[str] | None = None) -> int:
     # discarded every sample because the whole series used to be written only
     # after the loop returned.
     csv_path = out_dir / f"{tag}_time_series.csv"
-    csv_fh = csv_path.open("w", newline="")
+    resuming = bool(args.checkpoint and Path(args.checkpoint).exists()
+                    and not args.no_resume)
+    # a resumed run appends: the samples already in the checkpoint are not
+    # re-emitted, so the file stays one monotone series
+    csv_fh = csv_path.open("a" if resuming else "w", newline="")
+    if resuming:
+        print(f"[{tag}] resuming from {args.checkpoint}", flush=True)
     writer = csv.writer(csv_fh)
     writer.writerow(["t_s", "slab_height_m", "height_operator_m",
                      "front_x_m", "n_bypass"])
@@ -114,7 +127,10 @@ def main(argv: list[str] | None = None) -> int:
 
     t0 = time.time()
     try:
-        run = run_case(cfg, device="cpu", progress=progress, on_sample=on_sample)
+        run = run_case(cfg, device="cpu", progress=progress, on_sample=on_sample,
+                       checkpoint_path=args.checkpoint,
+                       checkpoint_every=args.checkpoint_every,
+                       resume=not args.no_resume)
     except BaseException as exc:            # noqa: BLE001 - want the evidence
         csv_fh.close()
         meta = json.loads(meta_path.read_text())
