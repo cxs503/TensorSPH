@@ -29,6 +29,7 @@
     "wall_gap.json",
     "wellbalanced.json",
     "wb_operator.json",
+    "mechanism.json",
     "MANIFEST.sha256",
     "channel.json"
   ]
