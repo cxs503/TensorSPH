@@ -314,5 +314,13 @@ surface and wall branches are graded against exact continuum limits instead.
 * hence `|dr|/h = 30 alpha/(7 pi)`, independent of `dx` -- the *derivation* of the
   fixed-`alpha` scaling that `RESOLUTION_LADDER.md` section 3 had only fitted.
 
-Still open: a numeric diff against a live SPHinXsys build (gap 2), hexagonal
-lattices, and the adaptive `h_ratio` branch (not ported).
+Closed since (m21267, `docs/xval_tvc_lattice_sensitivity.md`): the anchor was re-measured on a
+family of arrangements -- hexagonal packing (10.33 % vs 14.15 %, both order 2), rotated
+squares (bias changes sign, `cos(g,n)` drops to 0.968), uniform jitter (bias unchanged,
+p95 16.8 -> 30.1 %) -- and the wall branch's exact zero is now established on the
+triangular lattice too. The 14.15 % is therefore arrangement-specific even though the
+~14 % plane-truncation bias is not, and any quotation of the gate must carry the
+arrangement family.
+
+Still open: a numeric diff against a live SPHinXsys build (gap 2), the `TruncatedLinear`
+limiter variants (source not transcribed), and the adaptive `h_ratio` branch (not ported).
