@@ -125,5 +125,37 @@
       "benchmarks/kleefsman_obstacle/results/arrival_attribution/attribution.json",
       "tests/test_kleefsman_arrival_attribution.py"
     ]
+  },
+  "convergence_t30": {
+    "what": "three-grid (dx=0.04/0.02/0.01) measured-order convergence of the frozen acceptance metric + ASME V&V 20 comparison-error criterion",
+    "verdict": "PEAK_FAIL_RESOLVED",
+    "primary_station": {
+      "peak_ladder_convergence": "CONVERGED",
+      "p_observed": 3.4308766626317984,
+      "p_effective": 2.0,
+      "gci_fine_conservative": 0.003976154071256745,
+      "richardson_peak_m": 0.4817680481582096,
+      "peak_rel_error_continuum": 0.302075805832999,
+      "vv20": "MODEL_ERROR_EXCEEDS_U_V",
+      "arrival_richardson_s": 0.43727268288618376,
+      "arrival_rel_error_fine": 0.2578222946579422,
+      "same_event_as_experiment": false,
+      "station_verdict": "PEAK_FAIL_MODEL_ERROR"
+    },
+    "secondary_station": {
+      "peak_ladder_convergence": "NOT_CONVERGED",
+      "p_observed": 0.3772051858800637,
+      "gci_fine_conservative": 0.16271462774358322,
+      "peak_rel_error_continuum": 0.13625515735384047,
+      "station_verdict": "PEAK_NOT_CERTIFIABLE_UNCONVERGED",
+      "why": "finest-grid peak sits inside the 10 % tolerance but the ladder is unconverged, so no PASS is issued"
+    },
+    "evidence": [
+      "benchmarks/kleefsman_obstacle/results/convergence_t30/convergence.json",
+      "docs/benchmarks/kleefsman-convergence-t30-m21718.md",
+      "tests/test_kleefsman_convergence_t30.py",
+      "platform report 19608"
+    ],
+    "horizon_note": "dx0.01 record used here ends at t_end=2.6 s (dx0.04/0.02 at 3.0 s); every compared extremum (<=1.55 s) lies inside its own record (checked by _uniform_horizon). A uniform t_end=3.0 s dx0.01 run is submitted as cluster job cj3647; convergence_t30.py prefers results/gap_t30/ once it lands."
   }
 }

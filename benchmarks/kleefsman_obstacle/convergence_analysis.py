@@ -196,12 +196,20 @@ def analyze_metric(rows: list[dict], key: str, safety: float = 1.25) -> dict:
         # ratios agree (uniform refinement).
         r = d1 if abs(d1 - d2) <= 1e-6 * max(d1, d2) else float("nan")
         p = observed_order(vals[k], vals[k + 1], vals[k + 2], r)
+        # A non-positive observed order means the grid-to-grid differences do not
+        # shrink under refinement (anti-convergence).  Both the Richardson
+        # extrapolation and the GCI are then meaningless, and the GCI in
+        # particular turns *negative*, i.e. it would pass any "gci < tol" test.
+        # Refuse them instead of publishing a negative uncertainty.
+        valid = math.isfinite(p) and p > 0.0
         res["orders"].append({
             "dx_triplet": [float(rows[k]["dx"]), float(rows[k + 1]["dx"]),
                            float(rows[k + 2]["dx"])],
             "r": r, "r_uniform": bool(math.isfinite(r)), "p": p,
-            "richardson": richardson(vals[k + 1], vals[k + 2], p, r),
-            "gci_fine": gci_fine(vals[k], vals[k + 1], vals[k + 2], p, r, safety),
+            "p_positive": bool(valid),
+            "richardson": richardson(vals[k + 1], vals[k + 2], p, r) if valid else float("nan"),
+            "gci_fine": gci_fine(vals[k], vals[k + 1], vals[k + 2], p, r, safety)
+            if valid else float("nan"),
         })
     last = res["orders"][-1]
     res["richardson"] = last["richardson"]
@@ -211,6 +219,8 @@ def analyze_metric(rows: list[dict], key: str, safety: float = 1.25) -> dict:
                    for a, b in zip(vals, vals[1:]))
     res["monotone"] = bool(monotone)
     if math.isnan(last["p"]) or not monotone:
+        res["verdict"] = "NOT_CONVERGED"
+    elif not last.get("p_positive", True):
         res["verdict"] = "NOT_CONVERGED"
     elif math.isnan(res["gci_fine"]) or res["gci_fine"] > 0.10:
         res["verdict"] = "NOT_CONVERGED"

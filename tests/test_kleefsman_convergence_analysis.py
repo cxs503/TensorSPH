@@ -59,6 +59,23 @@ def test_non_monotone_sequence_is_not_converged():
     assert math.isnan(m["p_finest"]) or not m["monotone"]
 
 
+def test_negative_observed_order_is_not_called_converged():
+    """Differences that *grow* under refinement (p <= 0) are anti-convergence.
+
+    Regression: the GCI of a negative order is negative, so the historical
+    ``gci < 0.10`` test declared such a ladder ``CONVERGED`` and published a
+    negative uncertainty.  Both extrapolations must be refused instead.
+    """
+    rows = ca.ladder([{"dx": dx, "value": v} for dx, v in
+                      ((0.04, 1.536), (0.02, 1.488), (0.01, 1.437))])
+    m = ca.analyze_metric(rows, "value")
+    assert m["p_finest"] < 0.0
+    assert m["verdict"] == "NOT_CONVERGED"
+    assert math.isnan(m["gci_fine"])
+    assert math.isnan(m["richardson"])
+    assert m["orders"][-1]["p_positive"] is False
+
+
 def test_observed_order_undefined_when_two_grids_agree():
     assert math.isnan(ca.observed_order(0.3, 0.3, 0.3, 2.0))
 
