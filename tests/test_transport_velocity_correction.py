@@ -20,7 +20,8 @@ sys.path.insert(0, str(ROOT / "src"))
 from tensorsph.droplet_impact import cubic_spline_kernel  # noqa: E402
 from tensorsph.transport_velocity_correction import (  # noqa: E402
     SPHINXSYS_DEFAULT_COEFFICIENT, SPHINXSYS_SINGLE_STEP_FRACTION,
-    kernel_gradient_integral, transport_velocity_correction)
+    TRUNCATED_LINEAR_DEFAULT_SLOPE, kernel_gradient_integral, no_limiter,
+    transport_velocity_correction, truncated_linear)
 
 
 def lattice(n=25, dx=0.02, dtype=torch.float64):
@@ -186,3 +187,132 @@ def test_correction_keeps_the_column_bounded_and_massive():
     assert math.isfinite(run.max_tvc_shift)
     assert run.max_tvc_shift / (cfg.h_factor * cfg.dx) < 0.5
     assert run.max_density_compression < 0.1
+
+# --------------------------------------------------------------------------
+# TruncatedLinear limiter (upstream ``common_functors.h``, sha256 c6ccd39c...)
+# --------------------------------------------------------------------------
+
+def half_plane(nx=60, ny=24, dx=0.02, dtype=torch.float64):
+    """Column of fluid resting on nothing: free surface at y = ny*dx."""
+    xs = torch.arange(nx, dtype=dtype) * dx
+    ys = torch.arange(ny, dtype=dtype) * dx
+    gx, gy = torch.meshgrid(xs, ys, indexing="ij")
+    pos = torch.stack((gx.reshape(-1), gy.reshape(-1)), dim=-1)
+    return pos, torch.full((pos.shape[0],), dx * dx, dtype=dtype)
+
+
+def test_truncated_linear_is_upstream_smin_of_slope_times_measure():
+    """``return SMIN(slope_ * dimensionless_measure, Real(1));`` -- verbatim."""
+    assert TRUNCATED_LINEAR_DEFAULT_SLOPE == 100.0     # ``Real slope = 100.0``
+    lim = truncated_linear()
+    x = torch.tensor([0.0, 1e-4, 0.005, 0.01, 0.0101, 0.5, 1e6],
+                     dtype=torch.float64)
+    got = lim(x)
+    want = torch.tensor([0.0, 1e-2, 0.5, 1.0, 1.0, 1.0, 1.0],
+                       dtype=torch.float64)
+    assert torch.allclose(got, want, atol=1e-15, rtol=0)
+    # the threshold is exactly 1/slope: SMIN takes the smaller operand
+    assert float(lim(torch.tensor([1.0 / 100.0], dtype=torch.float64))) == 1.0
+    assert float(lim(torch.tensor([0.5 / 100.0], dtype=torch.float64))) == 0.5
+    # slope_ is a constructor argument, not a hard-wired 100
+    assert torch.allclose(truncated_linear(10.0)(x), torch.minimum(10.0 * x,
+                                                                  torch.ones_like(x)))
+    # monotone, never above one
+    xs = torch.linspace(0.0, 2.0, 1001, dtype=torch.float64)
+    f = truncated_linear()(xs)
+    assert bool((f <= 1.0).all()) and bool((f.diff() >= 0).all())
+
+
+@pytest.mark.parametrize("bad", [0.0, -1.0, float("nan"), float("inf")])
+def test_truncated_linear_rejects_invalid_slope(bad):
+    with pytest.raises(ValueError):
+        truncated_linear(bad)
+
+
+def test_limiter_enters_the_displacement_law_and_nowhere_else():
+    """``update()``: ``dr = alpha h_ref^2 limiter(h_ref^2 |g|^2) g``, exactly."""
+    dx = 0.02
+    h = 1.3 * dx
+    pos, vol = lattice(25, dx)
+    jitter = (torch.rand(pos.shape, generator=torch.Generator().manual_seed(3),
+                         dtype=pos.dtype) - 0.5) * 0.02 * dx
+    pos = pos + jitter
+    res = transport_velocity_correction(pos, vol, h, alpha=0.05,
+                                        limiter=truncated_linear())
+    g = kernel_gradient_integral(pos, vol, h)      # independent recomputation
+    assert torch.allclose(res.gradient_integral, g, atol=1e-18, rtol=0)
+    x = h * h * torch.sum(g * g, dim=1)
+    assert torch.allclose(res.limiter, torch.minimum(100.0 * x, torch.ones_like(x)),
+                          atol=1e-15, rtol=0)
+    want = (0.05 * h * h) * res.limiter[:, None] * g
+    assert torch.equal(res.shift, want)            # bit-exact, same expression
+    # the NoLimiter path is untouched: same code, factor exactly one
+    ref = transport_velocity_correction(pos, vol, h, alpha=0.05,
+                                        limiter=no_limiter)
+    assert torch.equal(ref.limiter, torch.ones_like(ref.limiter))
+    assert torch.equal(ref.shift, (0.05 * h * h) * g)
+
+
+def test_free_surface_branch_of_the_operator_is_limiter_insensitive():
+    """``|g| h_ref ~ 1.36`` at a plane free surface -> limiter == 1 -> inert.
+
+    The continuum anchor (``SURFACE_ANCHOR.md``) puts a surface particle at
+    ``|g| h = 2 I(h,0) = 30/(7 pi)``; the decisive property for
+    ``TruncatedLinear(100)`` is that it only acts below ``|g| h = 0.1``, so the
+    correction that moves the free surface must come out unchanged.
+    """
+    dx = 0.02
+    h = 1.3 * dx
+    pos, vol = half_plane(dx=dx)
+    surface = pos[:, 1] >= 23 * dx - 1e-12
+    x_mid = (pos[:, 0] > 3 * h) & (pos[:, 0] < 59 * dx - 3 * h)
+    tl = transport_velocity_correction(pos, vol, h, alpha=0.2,
+                                       limiter=truncated_linear())
+    nl = transport_velocity_correction(pos, vol, h, alpha=0.2, limiter=no_limiter)
+    mag_h = torch.linalg.vector_norm(tl.gradient_integral, dim=1) * h
+    assert float(mag_h[surface & x_mid].mean()) > 0.1     # above the threshold
+    assert torch.equal(tl.limiter[surface & x_mid],
+                       torch.ones_like(tl.limiter[surface & x_mid]))
+    assert torch.equal(tl.shift[surface & x_mid], nl.shift[surface & x_mid])
+
+
+def test_limiter_attenuates_the_correction_on_a_nearly_regular_bulk():
+    """The regime where upstream's limited aliases differ from NoLimiter.
+
+    A bulk particle of an almost perfect lattice has ``|g| h ~ 1e-2``, i.e.
+    ``x = h^2|g|^2 ~ 1e-4`` -> ``limiter ~ 1e-2``: the correction upstream
+    applies in the lid-driven-cavity/throat examples is one to two orders of
+    magnitude smaller than the port's ``NoLimiter`` default gives there.
+    """
+    dx = 0.02
+    h = 1.3 * dx
+    pos, vol = lattice(25, dx)
+    pos = pos + (torch.rand(pos.shape, generator=torch.Generator().manual_seed(0),
+                            dtype=pos.dtype) - 0.5) * 0.04 * dx
+    interior = ((pos[:, 0] > 2.2 * h) & (pos[:, 0] < 24 * dx - 2.2 * h)
+                & (pos[:, 1] > 2.2 * h) & (pos[:, 1] < 24 * dx - 2.2 * h))
+    tl = transport_velocity_correction(pos, vol, h, alpha=0.05,
+                                       limiter=truncated_linear())
+    nl = transport_velocity_correction(pos, vol, h, alpha=0.05, limiter=no_limiter)
+    mag_h = torch.linalg.vector_norm(tl.gradient_integral, dim=1) * h
+    assert float(mag_h[interior].mean()) < 0.1            # below the threshold
+    assert float(tl.limiter[interior].mean()) < 0.2       # measured 0.086
+    # per-particle ratio of the displacement is the limiter, exactly
+    ratio = (torch.linalg.vector_norm(tl.shift[interior], dim=1)
+             / torch.linalg.vector_norm(nl.shift[interior], dim=1))
+    assert torch.allclose(ratio, tl.limiter[interior], atol=1e-12, rtol=1e-12)
+    assert float(ratio.mean()) < 0.2
+
+
+def test_dam_break_config_resolves_the_limiter_by_name():
+    from tensorsph.dam_break import DamBreakConfig, tvc_limiter_callable
+    assert tvc_limiter_callable(DamBreakConfig(tvc_limiter=None)) is None
+    assert tvc_limiter_callable(DamBreakConfig(tvc_limiter="none")) is None
+    lim = tvc_limiter_callable(DamBreakConfig(tvc_limiter="truncated_linear"))
+    x = torch.tensor([0.005, 0.02], dtype=torch.float64)
+    assert torch.allclose(lim(x), torch.tensor([0.5, 1.0], dtype=torch.float64))
+    lim5 = tvc_limiter_callable(DamBreakConfig(tvc_limiter="truncated_linear",
+                                               tvc_limiter_slope=5.0))
+    assert torch.allclose(lim5(x), torch.tensor([0.025, 0.1], dtype=torch.float64))
+    with pytest.raises(ValueError):
+        tvc_limiter_callable(DamBreakConfig(tvc_limiter="modified_truncated"))
