@@ -1,3 +1,17 @@
+# ⚠ 勘误（m21430，2026-11-15）：本文 §3.2 的 A1 结论已被推翻
+
+本文断言仓内剖面 `2Cs − s² + 1` 比欧拉 Bernoulli 高一个动压（§3.2，并据此推出
+「参考侧偏 +13.5 %」）。该断言**不成立**：Jain et al. (2022) *JFM* 934 A26（DOI
+10.1017/jfm.2021.1129；开放版 arXiv:2011.10378v3）**eq. (10)** 给出的正是
+`p/(ρV²) = C s − ½ τ²/(1−τ²)`，即 `p/q = 2Cs − s² + 1` —— 与仓内剖面一致。
+本文的「欧拉」列多扣了 `½ρV²`（均匀流项在 Bernoulli 常数与 |∇φ|² 中重复计一次），
+属**审计侧的规范双计**；程序化对比见
+`docs/case_sph_wedge_entry_2d_literature_regrade.md` §④ 与
+`docs/artifacts/case_sph_wedge_entry_2d_regrade/regrade.json`（max abs dev ≈ 7e-15 q）。
+本文 **A2 结论（`cp_centre` 单位 C → 2C 的 ×2 修正）成立，保留**。
+
+---
+
 # CASE-SPH-WEDGE-ENTRY-2D：砰击压力参考值的单位与剖面审计（m17079）
 
 **锚点**：`CASE-SPH-WEDGE-ENTRY-2D`（open，算例池·二维楔形体入水砰击压力；判据 <15 % 对标

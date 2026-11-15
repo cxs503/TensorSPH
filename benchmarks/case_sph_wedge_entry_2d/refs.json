@@ -1,5 +1,5 @@
 {
-  "_comment": "Reference data for CASE-SPH-WEDGE-ENTRY-2D. Every number carries its provenance. A reference whose original source could not be read is status=WITHHELD with value null - a recalled or secondary number is never presented as the original table value. Derived analytic values are NOT typed here: run.py computes them from the in-repo implementation into artifacts/case_sph_wedge_entry_2d/refs_derived.json.",
+  "_comment": "Reference data for CASE-SPH-WEDGE-ENTRY-2D. Every number carries its provenance. A reference whose original source could not be read is status=WITHHELD with value null; a value reproduced in an open-access peer-reviewed table is kept in a separate 'beta30_via_open_source' field with its coordinates - a recalled or secondary number is never presented as the original table value. Derived analytic values are NOT typed here: run.py computes them from the in-repo implementation into artifacts/case_sph_wedge_entry_2d/refs_derived.json.",
   "case": {
     "id": "CASE-SPH-WEDGE-ENTRY-2D",
     "physical_setup": "2D symmetric rigid wedge, deadrise angle beta = 30 deg (angle between one face and the undisturbed free surface), constant vertical velocity V, calm water, gravity neglected (self-similar regime: the only length scale is V*t)",
@@ -30,7 +30,128 @@
       "table_or_figure_value_beta_30": null,
       "status": "WITHHELD",
       "withheld_reason": "The beta = 30 deg number lives in the paper's tables/figures; the article is closed access (OpenAlex oa_status=closed, no repository full text) and the ecosystem has no document-delivery channel and no registered copy (checked 2026-11-12: knowledge_base LIKE '%zhao|faltinsen|wedge|deadrise%' -> 0 numeric rows; oss_solutions -> 0 rows). Reporting a remembered or secondary-source number as the original table value would be fabrication, so the cell stays empty and the comparison is WITHHELD (not PASS, not FAIL).",
-      "what_would_close_it": "The paper delivered to the repo as a text-extractable file (PDF/text) with page/table coordinates for the wedge similarity-solution pressure coefficient at beta = 30 deg; then the digitised value is entered here with page/table/figure coordinates and the comparison re-run with --stage accept (no solver change needed)."
+      "what_would_close_it": "The paper delivered to the repo as a text-extractable file (PDF/text) with page/table coordinates for the wedge similarity-solution pressure coefficient at beta = 30 deg; then the digitised value is entered here with page/table/figure coordinates and the comparison re-run with --stage accept (no solver change needed).",
+      "beta30_via_open_source": {
+        "source_ref": "jain_novakovic_bogaert_vandermeer_2022_table1",
+        "column": "COM",
+        "value_rho_v2": 3.46,
+        "value_q_units": 6.92,
+        "doi": "10.1017/jfm.2021.1129",
+        "note": "The primary article is still unread in the ecosystem, so table_or_figure_value_beta_30 stays null and the primary status stays WITHHELD. This field is a *tracked secondary* value: a peer-reviewed open-access table that states it reproduces the Zhao & Faltinsen composite solution. It is usable as the acceptance denominator only with that provenance attached, and it is cross-checked against the independent exact similarity value (EIM = 3.45, i.e. 0.3 % apart), which is what makes it credible."
+      }
+    },
+    {
+      "id": "jain_novakovic_bogaert_vandermeer_2022_table1",
+      "role": "open-access primary source for the peak slamming pressure coefficient at beta = 30 deg, including the Zhao & Faltinsen (1993) composite solution (column COM) and the exact self-similar solution of Dobrovol'skaya (1969) (column EIM) evaluated by Wang & Faltinsen (2017)",
+      "citation": "Jain, U., Novakovic, V., Bogaert, H. & van der Meer, D. (2022) On wedge-slamming pressures. Journal of Fluid Mechanics 934, A26. DOI 10.1017/jfm.2021.1129. Open-access preprint arXiv:2011.10378v3 used for the numbers (ar5iv HTML full text).",
+      "bibliographic_verification": {
+        "checked_at": "2026-11-15",
+        "crossref": "GET https://api.crossref.org/works?query.bibliographic=On+wedge-slamming+pressures+Jain+van+der+Meer -> HTTP 200, DOI 10.1017/jfm.2021.1129, container JFM vol 934, authors [Jain, Novakovic, Bogaert, van der Meer]",
+        "fulltext": "https://ar5iv.labs.arxiv.org/html/2011.10378 -> HTTP 200, 373 kB HTML, text-extracted with a tag-stripping script (no pdftotext in the image); all numbers below were parsed out of that text, not recalled."
+      },
+      "table_coordinates": "Table 1 (section 2.4.2), caption: 'Values of C_p,max (== P_max/rho V^2) for several deadrise angles beta'",
+      "column_legend": {
+        "OLM": "ordinary Logvinovich model (Logvinovich 1969)",
+        "MLM": "modified Logvinovich model (Korobkin & Malenica 2005)",
+        "GWM": "generalised Wagner model (Korobkin 2004, pressure eq. 21 of the source)",
+        "EIM": "exact self-similar integral equation, Dobrovol'skaya (1969), numerical results of Wang & Faltinsen (2017)",
+        "ASM": "asymptotic solution of Wang & Faltinsen (2017)",
+        "COM": "composite solution of Zhao & Faltinsen (1993) -- the mission-designated metric owner",
+        "Sensor1": "space-averaged measurement, transducer 1 (not a point pressure: not comparable to a point Cp_max)",
+        "Sensor2": "space-averaged measurement, transducer 2 (same caveat)"
+      },
+      "normalisation": "Cp_max in this table is defined as P_max / (rho V^2). The case's own Cp is P / (0.5 rho V^2), so every table value is multiplied by 2 before use (regrade.py: cp_q_units()). Mixing the two normalisations is a factor-2 error, which is exactly the class of defect audited in docs/audit_wagner_pressure_reference_m17079.md.",
+      "cp_max_rho_v2": {
+        "1": {
+          "OLM": 1925.44,
+          "MLM": 3435.8,
+          "GWM": 3435.23,
+          "EIM": 4044.88,
+          "ASM": 4049.18,
+          "COM": 3447.66
+        },
+        "2": {
+          "OLM": 497.59,
+          "MLM": 963.81,
+          "GWM": 963.24,
+          "EIM": 1009.11,
+          "ASM": 1011.68,
+          "COM": 991.21
+        },
+        "3": {
+          "OLM": 224.18,
+          "MLM": 442.7,
+          "GWM": 442.13,
+          "EIM": 447.25,
+          "ASM": 449.18,
+          "COM": 447.1
+        },
+        "4": {
+          "OLM": 126.11,
+          "MLM": 249.19,
+          "GWM": 248.62,
+          "EIM": 250.72,
+          "ASM": 252.3,
+          "COM": 251.95
+        },
+        "10": {
+          "OLM": 19.84,
+          "MLM": 40.89,
+          "GWM": 40.32,
+          "EIM": 38.85,
+          "ASM": 39.68,
+          "COM": 38.92
+        },
+        "20": {
+          "OLM": 4.66,
+          "MLM": 10.49,
+          "GWM": 9.92,
+          "EIM": 8.87,
+          "ASM": 9.31,
+          "COM": 8.89
+        },
+        "30": {
+          "OLM": 1.85,
+          "MLM": 4.81,
+          "GWM": 4.24,
+          "EIM": 3.45,
+          "ASM": 3.7,
+          "COM": 3.46
+        },
+        "40": {
+          "OLM": 0.87,
+          "MLM": 2.78,
+          "GWM": 2.21,
+          "EIM": 1.63,
+          "ASM": 1.75,
+          "COM": 1.63
+        }
+      },
+      "sensor_readings_beta10": {
+        "Sensor1": {
+          "value": 17.74,
+          "sigma": 1.54
+        },
+        "Sensor2": {
+          "value": 19.79,
+          "sigma": 2.36
+        }
+      },
+      "pressure_profile_equation": {
+        "eq": 10,
+        "statement": "p(x,0) = rho V^2 [ (pi/(2 tan beta)) c/sqrt(c^2-x^2) - (1/2) x^2/(c^2-x^2) ], x < c",
+        "used_for": "independent re-derivation of the in-repo Wagner profile (see literature_refs.wagner_eq10_over_q)"
+      },
+      "wetting_rate_equation": {
+        "eq": 9,
+        "statement": "c(t) = pi V t / (2 tan beta)"
+      },
+      "integrity_checks": {
+        "monotone_in_beta": "every model column decreases with beta (test enforces it: catches an OCR/typing error)",
+        "ASM_vs_asymptotic": "column ASM must equal the Wagner-family leading order C^2/2 (in rho V^2 units) within 1 % for beta >= 10 deg, C = pi/(2 tan beta) -- ties the digitised table to the in-repo C, so a wrong normalisation cannot pass"
+      },
+      "status": "REAL",
+      "provenance_kind": "peer-reviewed open-access table of solutions; secondary as regards the Zhao & Faltinsen (1993) numbers it reproduces"
     }
   ]
 }
