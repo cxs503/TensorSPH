@@ -48,6 +48,12 @@ def main() -> int:
     # return an unconverged last-iterate load, so the default sits at the
     # measured floor.  Override with --tol to reproduce the old behaviour.
     ap.add_argument("--tol", type=float, default=1.0e-2)
+    #: interface accelerator.  ``iqn-ils`` is the library default; ``aitken``
+    #: is the arm that ``docs/xval_fsi2/COUPLING_CONVERGENCE_BUDGET.md``
+    #: measured to reach a 1e-10 reduction floor in <= 3 iterations (the
+    #: IQN-ILS secant history cannot get below ~1e-2 on this interface).
+    ap.add_argument("--interface-solver", default="iqn-ils",
+                    choices=("iqn-ils", "aitken"))
     ap.add_argument("--warmup-frac", type=float, default=0.5)
     ap.add_argument("--checkpoint-every", type=int, default=250)
     ap.add_argument("--out", default="artifacts/xval_fsi2/body_force_transient.json")
@@ -77,7 +83,8 @@ def main() -> int:
     aborted = False
     for k in range(args.steps):
         row, stats = step_fsi2_strong(state, case, dt, max_iter=args.max_iter,
-                                      tol=args.tol)
+                                      tol=args.tol,
+                                      interface_solver=args.interface_solver)
         for kk in keys:
             hist[kk].append(float(row.get(kk, float("nan"))))
         iters.append(int(getattr(stats, "iterations", 0)))
@@ -94,6 +101,7 @@ def main() -> int:
                   f"iters={iters[-1]} wall={time.time()-t0:.0f}s", flush=True)
             payload = dict(history=hist, iterations=iters, converged=converged,
                            dt=dt, dx=args.dx, case=_case_summary(case),
+                           interface_solver=args.interface_solver,
                            n_steps=len(hist["t"]), aborted=aborted,
                            wall_clock_s=time.time() - t0)
             out.write_text(json.dumps(payload))
@@ -119,6 +127,7 @@ def main() -> int:
     payload = dict(history=hist, iterations=iters, converged=converged,
                    summary=summary, dt=dt, dx=args.dx,
                    case=_case_summary(case), n_steps=n, aborted=aborted,
+                   interface_solver=args.interface_solver,
                    wall_clock_s=time.time() - t0)
     out.write_text(json.dumps(payload))
     print(json.dumps(summary, indent=2))
