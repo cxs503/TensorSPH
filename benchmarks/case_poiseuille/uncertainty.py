@@ -44,7 +44,12 @@ Usage
 -----
     PYTHONPATH=.:src python3 benchmarks/case_poiseuille/uncertainty.py [--no-doc]
 
-Exit status is non-zero when a declared gate (U1/U2/U3) fails.
+The R1 (constant-forcing) anchor used to carry a single rung, so its steady and
+start-up errors could only be compared with the tolerance; with the R1 ladder in
+``out/result.json`` the same order/GCI/V&V machinery now covers them too
+(gates U1c/U2b/U3b).
+
+Exit status is non-zero when a declared gate (U1/U2/U3/U1b/U1c/U2b/U3b) fails.
 """
 from __future__ import annotations
 
@@ -227,6 +232,125 @@ def quantities(result: dict, common_grid: bool = True) -> dict:
     return q
 
 
+def _rms_values(values) -> float:
+    """Root-mean-square of a sequence (no numpy dependency)."""
+    vals = [float(v) for v in values]
+    if not vals:
+        return float("nan")
+    return math.sqrt(sum(v * v for v in vals) / len(vals))
+
+
+def r1_quantities(result: dict, common_grid: bool = True) -> dict:
+    """R1 (constant forcing) functionals on the resolution ladder.
+
+    Both graded R1 numbers are *errors* whose analytic truth is exactly zero: the
+    band-RMS of the relative deviation from the steady parabola, and from the
+    Boussinesq start-up series at t = 0.40 s.  Storing ``value = deviation``
+    (a fraction), ``truth = 0`` and ``scale = 1`` lets the same order / GCI /
+    validation machinery run unchanged, and the reported per-cent is literally
+    the feature-ledger quantity (``100 * value``).
+
+    An empty dict means the artifact carries no R1 ladder (legacy single-rung
+    artifact); the caller then keeps the old tolerance-only grading.
+    """
+    ladder = result.get("constant_ladder") or {}
+    runs = ladder.get("runs") or []
+    if not runs:
+        return {}
+    grid = _common_grid()
+    height = result["geometry"]["height"]
+
+    def deviation(rows: list[dict]) -> float:
+        if common_grid:
+            um = _on_grid(rows, "u_measured", grid)
+            ua = _on_grid(rows, "u_analytic", grid)
+        else:  # the pitfall variant: functional on each rung's own rows
+            band = [r for r in rows if INTERIOR[0] <= r["y_over_H"] <= INTERIOR[1]]
+            um = [r["u_measured"] for r in band]
+            ua = [r["u_analytic"] for r in band]
+        return _rms_values([(m - a) / a for m, a in zip(um, ua)])
+
+    keys = ("r1_steady_profile_rms", "r1_startup_profile_rms_at_0.40s")
+    scale_text = ("RMS of the relative deviation from the analytic profile "
+                  "(fraction); truth = 0, reported per cent = 100 x value")
+    q = {k: {"spacings": [], "values": [], "truth": [], "labels": [],
+             "scale": 1.0, "scale_text": scale_text} for k in keys}
+
+    for run in sorted(runs, key=lambda r: r["resolution_H_over_dx"]):
+        dx = height / run["resolution_H_over_dx"]
+        label = f"H/dx={run['resolution_H_over_dx']}"
+        start = next((s for s in run.get("startup", [])
+                      if abs(s["t_requested"] - 0.40) < 1e-9), None)
+        if start is None or "rows" not in start:
+            continue
+        entries = {
+            "r1_steady_profile_rms": deviation(run["steady_rows"]),
+            "r1_startup_profile_rms_at_0.40s": deviation(start["rows"]),
+        }
+        for key, val in entries.items():
+            q[key]["spacings"].append(dx)
+            q[key]["values"].append(val)
+            q[key]["truth"].append(0.0)
+            q[key]["labels"].append(label)
+    return {k: v for k, v in q.items() if len(v["values"]) >= 2}
+
+
+def r1_input_uncertainty(result: dict) -> dict:
+    """U_input for the R1 functionals, from the finest rung of the ladder.
+
+    The steady functional has several measurement samples inside one run (rows
+    0.80..1.00), so their half range is a genuine between-window repeatability.
+    The start-up functional is read at a single instant; no repeatability exists
+    inside the run, so ``U_input = 0`` is declared instead of invented, which
+    makes the start-up band optimistic by construction.
+    """
+    runs = ((result.get("constant_ladder") or {}).get("runs") or [])
+    if not runs:
+        return {}
+    # finest rung = the LARGEST H/dx (smallest dx); taking min() here silently
+    # reported the coarsest rung's spread as the finest run's repeatability
+    finest = max(runs, key=lambda r: r["resolution_H_over_dx"])
+    samples = finest.get("steady_rms_samples_pct") or []
+    rep = repeatability(samples) if len(samples) > 1 else {
+        "n": len(samples), "half_range_percent_of_mean": 0.0}
+    return {
+        "resolution_H_over_dx": finest["resolution_H_over_dx"],
+        "steady_samples": rep,
+        "steady_half_range_percent_of_mean": rep.get("half_range_percent_of_mean", 0.0),
+        "startup": 0.0,
+        "startup_reason": ("the start-up functional is read at a single instant "
+                           "(t = 0.40 s): no between-window repeatability exists "
+                           "inside the run, so U_input = 0 and U_V = U_num"),
+    }
+
+
+def _grade(key: str, spec: dict, u_input_percent: float) -> dict:
+    """Grade one functional: order, GCI band, E vs U_V, tolerance statements."""
+    rungs = [Rung(h, v, lab)
+             for h, v, lab in zip(spec["spacings"], spec["values"], spec["labels"])]
+    rep = ladder_analysis(
+        rungs,
+        truth=spec["truth"],
+        tolerance_percent=TOL_PERCENT,
+        u_input_percent=u_input_percent,
+        safety=DEFAULT_SAFETY,
+        scale=spec.get("scale"),
+    )
+    scale_denom = spec.get("scale")
+    errs_pct = [
+        100.0 * abs(v - t) / (abs(scale_denom) if scale_denom else abs(t))
+        for v, t in zip(rep["values"], rep["truth_per_rung"])
+    ]
+    rep["scale_text"] = spec["scale_text"]
+    rep["error_percent_per_rung"] = errs_pct
+    rep["worst_rung_error_percent"] = max(errs_pct)
+    rep["worst_rung_within_tolerance"] = max(errs_pct) <= TOL_PERCENT
+    rep["repeatability_floor_percent"] = u_input_percent
+    rep["error_over_floor"] = (
+        errs_pct[0] / u_input_percent if u_input_percent > 0 else None)
+    return rep
+
+
 def input_uncertainty(result: dict) -> dict:
     """Repeatability of the finest-rung measurement (``U_input``).
 
@@ -264,34 +388,11 @@ def analyse(result: dict, common_grid: bool = True) -> dict:
         "phase_profile_l2": u_in["phase_quarter_turns"]["half_range_percent"],
     }
 
-    quantities_out: dict[str, dict] = {}
-    for key, spec in q.items():
-        rungs = [Rung(h, v, lab)
-                 for h, v, lab in zip(spec["spacings"], spec["values"], spec["labels"])]
-        rep = ladder_analysis(
-            rungs,
-            truth=spec["truth"],
-            tolerance_percent=TOL_PERCENT,
-            u_input_percent=u_input_pct[key],
-            safety=DEFAULT_SAFETY,
-            scale=spec["scale"],
-        )
-        # Errors must follow the *report* order (fine -> coarse), which the
-        # analysis sorted; zipping the unsorted input lists with the sorted
-        # values silently labels the finest rung with the coarsest error.
-        scale_denom = spec["scale"]
-        errs_pct = [
-            100.0 * abs(v - t) / (abs(scale_denom) if scale_denom else abs(t))
-            for v, t in zip(rep["values"], rep["truth_per_rung"])
-        ]
-        rep["scale_text"] = spec["scale_text"]
-        rep["error_percent_per_rung"] = errs_pct
-        rep["worst_rung_error_percent"] = max(errs_pct)
-        rep["worst_rung_within_tolerance"] = max(errs_pct) <= TOL_PERCENT
-        rep["repeatability_floor_percent"] = u_input_pct[key]
-        rep["error_over_floor"] = (
-            errs_pct[0] / u_input_pct[key] if u_input_pct[key] > 0 else None)
-        quantities_out[key] = rep
+    # Errors must follow the *report* order (fine -> coarse), which the analysis
+    # sorted; zipping the unsorted input lists with the sorted values silently
+    # labels the finest rung with the coarsest error -- _grade handles that.
+    quantities_out = {key: _grade(key, spec, u_input_pct[key])
+                      for key, spec in q.items()}
 
     const = result["constant_run"]
     single = {
@@ -305,11 +406,29 @@ def analyse(result: dict, common_grid: bool = True) -> dict:
             "error_percent": const["startup_rms_pct_at_040"],
             "within_tolerance": const["startup_rms_pct_at_040"] <= TOL_PERCENT,
         },
-        "status": "insufficient",
-        "reason": ("the committed R1 artifacts contain a single resolution "
-                   "(H/dx=12): neither an order nor a GCI can be estimated, so the "
-                   "R1 anchor is graded against the tolerance only"),
     }
+    r1_input = r1_input_uncertainty(result)
+    r1 = {}
+    for key, spec in r1_quantities(result, common_grid=common_grid).items():
+        u_in = (r1_input.get("steady_half_range_percent_of_mean", 0.0)
+                if key.startswith("r1_steady") else 0.0)
+        r1[key] = _grade(key, spec, u_in)
+    if r1:
+        single["status"] = "ladder"
+        single["reason"] = (
+            "R1 is now graded on a resolution ladder, so the steady and start-up "
+            "anchors carry an observed order, a GCI band and the V&V-20 comparison "
+            "instead of a tolerance-only check; the H/dx="
+            f"{const['resolution_H_over_dx']} numbers above remain the G7/G8 anchor")
+        single["ladder_resolutions_H_over_dx"] = sorted(
+            r["resolution_H_over_dx"]
+            for r in (result["constant_ladder"]["runs"]))
+    else:
+        single["status"] = "insufficient"
+        single["reason"] = ("the committed R1 artifacts contain a single resolution "
+                            "(H/dx=%d): neither an order nor a GCI can be estimated, "
+                            "so the R1 anchor is graded against the tolerance only"
+                            % const["resolution_H_over_dx"])
 
     ref = reference_consistency(result)
     gates = {
@@ -319,12 +438,20 @@ def analyse(result: dict, common_grid: bool = True) -> dict:
         "U1b_R1_anchor_within_5pct": all(
             v["within_tolerance"] for v in single.values() if isinstance(v, dict)
             and "within_tolerance" in v),
+        "U1c_R1_ladder_all_rungs_within_5pct": (
+            all(v["worst_rung_within_tolerance"] for v in r1.values()) if r1 else None),
         "U2_validation_E_leq_U_V": all(
             (v.get("validation") or {}).get("verdict") == "validated"
             for v in quantities_out.values()),
         "U3_band_supports_5pct": all(
             (v.get("validation") or {}).get("supports_tolerance") is True
             for v in quantities_out.values()),
+        "U2b_R1_validation_E_leq_U_V": (
+            all((v.get("validation") or {}).get("verdict") == "validated"
+                for v in r1.values()) if r1 else None),
+        "U3b_R1_band_supports_5pct": (
+            all((v.get("validation") or {}).get("supports_tolerance") is True
+                for v in r1.values()) if r1 else None),
     }
 
     return {
@@ -345,11 +472,13 @@ def analyse(result: dict, common_grid: bool = True) -> dict:
         "reference_consistency": ref,
         "input_uncertainty": u_in,
         "quantities": quantities_out,
+        "r1_quantities": r1,
+        "r1_input_uncertainty": r1_input,
         "single_rung": single,
         "order_status": {k: (v.get("order_analysis") or {}).get("status")
                          for k, v in quantities_out.items()},
         "gates": gates,
-        "all_gates_pass": all(gates.values()),
+        "all_gates_pass": all(v for v in gates.values() if v is not None),
         "honest_limits": [
             "three rungs with unequal ratios (H/dx = 8,12,16 -> r = 1.5 and 1.333) "
             "leave the observed order only loosely identified: a monotone ladder can "
@@ -357,6 +486,17 @@ def analyse(result: dict, common_grid: bool = True) -> dict:
             "interval of a staircase error, so no order is quoted when they disagree",
             "the GCI band is a bound on the graded *functional*, not a pointwise field "
             "bound; the pointwise profile error is larger near the walls",
+            "the R1 steady band does NOT support the 5 % acceptance: its U_input is "
+            "the half range of the in-run samples of the functional over the "
+            "0.80..1.00 s window, which measures the residual fill of the channel "
+            "rather than pure measurement scatter; the window mean is inside the "
+            "tolerance (U1c) but the band is wider than it (U3b), so no 5 % "
+            "certification is claimed for the steady anchor -- closing it needs a "
+            "longer integration (stationary window) or a sub-window repeatability, "
+            "which needs the per-sample profiles that this artifact does not store",
+            "the R1 start-up functional is read at a single instant (t = 0.40 s), so "
+            "its U_input is 0 by declaration and its band is U_num alone: the "
+            "start-up row of the V&V table is optimistic relative to the steady row",
             "U_input is the between-window repeatability of one run, not a run-to-run "
             "ensemble: it captures the sampling window, not reproducibility across "
             "hardware or thread counts",
@@ -418,13 +558,24 @@ def write_doc(payload: dict) -> Path:
         for lab, val, t, e in zip(v["labels"], v["values"], v["truth_per_rung"],
                                   v["error_percent_per_rung"]):
             A(f"| `{key}` | {lab} | {val:.6g} | {t:.6g} | {e:.4f} |")
+    r1 = payload.get("r1_quantities") or {}
+    if r1:
+        A("")
+        A("### R1 constant-forcing ladder (previously a single rung)")
+        A("")
+        A("| functional | H/dx | value | reference | error % |")
+        A("|---|---|---|---|---|")
+        for key, v in r1.items():
+            for lab, val, t, e in zip(v["labels"], v["values"], v["truth_per_rung"],
+                                      v["error_percent_per_rung"]):
+                A(f"| `{key}` | {lab} | {val:.6g} | {t:g} | {e:.4f} |")
     A("")
     A("## 4. Uncertainty and validation")
     A("")
     A("| functional | order status | pair orders (r:p) | p used | U_num % | "
       "U_input % | E % | U_V % | E/U_V | ≤5 %? | band ≤5 %? | verdict |")
     A("|---|---|---|---|---|---|---|---|---|---|---|---|")
-    for key, v in payload["quantities"].items():
+    for key, v in list(payload["quantities"].items()) + list(r1.items()):
         oa = v.get("order_analysis") or {}
         pairs = ", ".join(f"{p['r']:.3g}:{p['p']:.2f}"
                           for p in oa.get("pair_orders", []) if p.get("p") is not None
@@ -441,7 +592,7 @@ def write_doc(payload: dict) -> Path:
     A("")
     A("### Status narrative (honest)")
     A("")
-    for key, v in payload["quantities"].items():
+    for key, v in list(payload["quantities"].items()) + list(r1.items()):
         oa = v.get("order_analysis") or {}
         ratio = v["error_over_floor"]
         A(f"* **`{key}`** — {oa.get('status')}: {oa.get('reason')}; finest-rung "
@@ -462,17 +613,30 @@ def write_doc(payload: dict) -> Path:
     A("`U1` = the acceptance holds at *every* rung, not only the finest one chosen "
       "for grading; `U2` = the residual is inside the uncertainty band; `U3` = the "
       "band itself is narrower than the 5 % tolerance, so the case can certify "
-      "5 % rather than merely happen to hit it.")
+      "5 % rather than merely happen to hit it. The `b`/`c` variants ask the same "
+      "three questions of the R1 constant-forcing ladder (steady parabola and "
+      "Boussinesq start-up), which until now had a single rung.")
     A("")
-    A("## 6. R1 anchors (single rung)")
+    A("## 6. R1 anchors and their ladder")
     A("")
     s = payload["single_rung"]
-    A(f"* steady profile RMS: {s['steady_profile_rms']['error_percent']:.4f} % "
+    A(f"* steady profile RMS (anchor rung): "
+      f"{s['steady_profile_rms']['error_percent']:.4f} % "
       f"(≤ 5 %: {s['steady_profile_rms']['within_tolerance']})")
-    A(f"* start-up profile RMS at t = 0.40 s: "
+    A(f"* start-up profile RMS at t = 0.40 s (anchor rung): "
       f"{s['startup_profile_rms_at_0.40s']['error_percent']:.4f} % "
       f"(≤ 5 %: {s['startup_profile_rms_at_0.40s']['within_tolerance']})")
     A(f"* status: **{s['status']}** — {s['reason']}")
+    if r1:
+        A("")
+        A(f"* ladder rungs: {s.get('ladder_resolutions_H_over_dx')}")
+        u_in = payload.get("r1_input_uncertainty") or {}
+        rep = u_in.get("steady_samples") or {}
+        A(f"* `U_input` (steady): half range of {rep.get('n')} in-run measurement "
+          f"samples = "
+          f"{u_in.get('steady_half_range_percent_of_mean', float('nan')):.4f} %")
+        A(f"* `U_input` (start-up): {u_in.get('startup', float('nan')):g} % — "
+          f"{u_in.get('startup_reason')}")
     A("")
     A("## 7. Limits")
     A("")
@@ -497,12 +661,16 @@ def write_figure(payload: dict) -> Path | None:
         return None
 
     FIG.parent.mkdir(parents=True, exist_ok=True)
-    fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.3))
-    panels = ((axes[0], ["amp_centre", "amp_profile_l2"], "amplitude functionals"),
-              (axes[1], ["phase_centre", "phase_profile_l2"], "phase functionals"))
+    r1 = payload.get("r1_quantities") or {}
+    fig, axes = plt.subplots(1, 3, figsize=(16.0, 4.3)) if r1 else \
+        plt.subplots(1, 2, figsize=(11.5, 4.3))
+    panels = [[axes[0], ["amp_centre", "amp_profile_l2"], "R2 amplitude functionals"],
+              [axes[1], ["phase_centre", "phase_profile_l2"], "R2 phase functionals"]]
+    if r1:
+        panels.append([axes[2], list(r1), "R1 steady / start-up functionals"])
     for ax, keys, title in panels:
         for key in keys:
-            v = payload["quantities"][key]
+            v = (payload["quantities"] | r1)[key]
             err = [max(e, 1e-8) for e in v["error_percent_per_rung"]]
             ax.loglog(v["spacings"], err, "o-", label=f"{key} error")
             floor = v["repeatability_floor_percent"]
@@ -539,11 +707,11 @@ def main(argv: list[str] | None = None) -> int:
     payload = analyse(result, common_grid=not args.rowwise_norm)
     OUT_JSON.write_text(json.dumps(payload, indent=1) + "\n")
 
-    print(f"{'functional':18s} {'status':18s} {'E%':>8s} {'U_num%':>8s} "
+    print(f"{'functional':32s} {'status':18s} {'E%':>8s} {'U_num%':>8s} "
           f"{'U_V%':>8s} {'E/U_V':>6s} {'≤5%':>5s} {'band≤5%':>7s} verdict")
-    for key, v in payload["quantities"].items():
+    for key, v in (payload["quantities"] | payload.get("r1_quantities", {})).items():
         val = v.get("validation") or {}
-        print(f"{key:18s} {str((v.get('order_analysis') or {}).get('status')):18s} "
+        print(f"{key:32s} {str((v.get('order_analysis') or {}).get('status')):18s} "
               f"{val.get('E_percent', float('nan')):8.4f} "
               f"{val.get('U_num_percent', float('nan')):8.3f} "
               f"{val.get('U_V_percent', float('nan')):8.3f} "

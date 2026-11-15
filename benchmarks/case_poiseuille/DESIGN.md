@@ -67,6 +67,8 @@ taken modulo `2 pi` before the tolerance is applied.
 | **G6** | frequency discrimination: measured `A(omega_fast)/A(omega)` vs analytic ratio | ≤ 5 % |
 | **G7** | R1 anchor: steady-profile RMS error over the same interior band | ≤ 5 % |
 | **G8** | R1 anchor: start-up profile RMS vs Boussinesq series at `t = 0.40 s` | ≤ 5 % |
+| **G7b** | R1 ladder: steady-profile RMS at *every* rung (8/12/16) | ≤ 5 % |
+| **G8b** | R1 ladder: start-up profile RMS at *every* rung | ≤ 5 % |
 | **G9** | reference self-check: independent Crank–Nicolson FD solution vs the closed form (amplitude RMS and phase RMS) | ≤ 1 % |
 
 G1–G5 are graded at the **finest** resolution of the ladder (`H/dx = 16`); the
