@@ -11,6 +11,8 @@
         }
       ],
       "expected_primary": "wcsph_delta_sph",
+      "headline_bound_pct": 5.532656212791526,
+      "headline_quantity": "compression_regularization: max interior-band hydrostatic pressure error vs analytic p = rho0 g (H - y), SPHinXsys reference-mean arm",
       "label": "regular wave in a flume",
       "modifiers": [
         {
@@ -23,7 +25,9 @@
         }
       ],
       "notes": [],
+      "primary_accuracy_pct": 2.9679295205491987,
       "primary_method": "wcsph_delta_sph",
+      "primary_robustness_pct": null,
       "primary_status": "SELECTED",
       "primary_worst_banked_pct": 2.9679295205491987,
       "primary_worst_pct": 2.9679295205491987,
@@ -32,7 +36,8 @@
         "gravity_waves": true,
         "has_free_surface": true
       },
-      "verified": true
+      "verified": true,
+      "within_owner_standard": true
     },
     {
       "candidates": [
@@ -42,10 +47,14 @@
         }
       ],
       "expected_primary": "compressible_riemann",
+      "headline_bound_pct": 0.7768408089469451,
+      "headline_quantity": "compressible_riemann: max abs relative error over the gated shock quantities (rho*, p*, u*, wave positions)",
       "label": "Sod shock tube",
       "modifiers": [],
       "notes": [],
+      "primary_accuracy_pct": 0.7768408089469451,
       "primary_method": "compressible_riemann",
+      "primary_robustness_pct": null,
       "primary_status": "SELECTED",
       "primary_worst_banked_pct": 0.7768408089469451,
       "primary_worst_pct": 0.7768408089469451,
@@ -54,7 +63,8 @@
         "domain": "closed",
         "shock_advection": true
       },
-      "verified": true
+      "verified": true,
+      "within_owner_standard": true
     },
     {
       "candidates": [
@@ -64,6 +74,8 @@
         }
       ],
       "expected_primary": "csf_surface_tension",
+      "headline_bound_pct": 23.79926667246913,
+      "headline_quantity": "csf_surface_tension: delta_s-weighted mean curvature rel. error",
       "label": "capillary droplet (Laplace law)",
       "modifiers": [
         {
@@ -76,7 +88,9 @@
         }
       ],
       "notes": [],
+      "primary_accuracy_pct": 23.79926667246913,
       "primary_method": "csf_surface_tension",
+      "primary_robustness_pct": null,
       "primary_status": "SELECTED",
       "primary_worst_banked_pct": 23.79926667246913,
       "primary_worst_pct": 5.986710404320461,
@@ -85,7 +99,8 @@
         "capillary_dominated": true,
         "has_free_surface": true
       },
-      "verified": true
+      "verified": true,
+      "within_owner_standard": false
     },
     {
       "candidates": [
@@ -99,12 +114,16 @@
         }
       ],
       "expected_primary": "isph_projection",
+      "headline_bound_pct": 0.8665938382240863,
+      "headline_quantity": "isph_projection: centre-velocity error vs the analytic Poiseuille parabola (H/dx=16, momentum-budget wall-shear record also banked)",
       "label": "planar Couette channel",
       "modifiers": [],
       "notes": [
-        "wcsph_wall_no_slip preferred by rule 'wall_bounded' but SELECTED: plane Couette channel: interior L2 velocity error vs u=U*y/H (finest rung) = 5.65% misses its own 5% gate but is inside 15% (benchmarks/couette/out/results.json); plane Couette channel: wall-shear error at the moving wall, |1 - tau_SPH/tau_exact| (the no-slip quantity itself; artefact gate 5 %) = 32.6% exceeds the 15% owner standard (benchmarks/couette/out/results.json); CASE-COUETTE-VISCOUS-TIME (steady-state envelope, H/dx=8): wall-shear error |1 - tau_SPH/tau_exact| at the steady end of the viscous-time sweep (longest run whose steady_drift passes the 1 % gate), H/dx=8 = 9.55% misses its own 5% gate but is inside 15% (benchmarks/couette/out_design/viscous_time_convergence.json); CASE-COUETTE-VISCOUS-TIME (reading mobility, H/dx=8): mobility of the wall-shear reading across the admissible viscous-time sweep (max - min, percentage points), H/dx=8: how much the accuracy claim would move if the run were stopped earlier = 18.3% exceeds the 15% owner standard (benchmarks/couette/out_design/viscous_time_convergence.json); CASE-COUETTE-VISCOUS-TIME (moving wall, H/dx=8): wall-shear error at the MOVING wall, |1 - tau_SPH/tau_exact|, at the steady end of the viscous-time sweep, H/dx=8 (the bottom-wall reading alone does not evidence the whole no-slip condition) = 14.2% misses its own 5% gate but is inside 15% (benchmarks/couette/out_design/viscous_time_convergence.json); CASE-COUETTE-VISCOUS-TIME (moving wall, H/dx=16): wall-shear error at the MOVING wall, |1 - tau_SPH/tau_exact|, at the steady end of the viscous-time sweep, H/dx=16 (the bottom-wall reading alone does not evidence the whole no-slip condition) = 17.1% exceeds the 15% owner standard (benchmarks/couette/out_design/viscous_time_convergence.json); plane Couette channel: cross-channel mass-flux error |1 - Q_SPH/Q_exact| (artefact gate 5 %) = 7.16% misses its own 5% gate but is inside 15% (benchmarks/couette/out/results.json)"
+        "wcsph_wall_no_slip preferred by rule 'wall_bounded' but SELECTED: CASE-COUETTE-VISCOUS-TIME (steady-state envelope, H/dx=8): wall-shear error |1 - tau_SPH/tau_exact| at the steady end of the viscous-time sweep (longest run whose steady_drift passes the 1 % gate), H/dx=8 = 9.55% misses its own 5% gate but is inside 15% (benchmarks/couette/out_design/viscous_time_convergence.json); CASE-COUETTE-VISCOUS-TIME (reading mobility, H/dx=8): mobility of the wall-shear reading across the admissible viscous-time sweep (max - min, percentage points), H/dx=8: how much the accuracy claim would move if the run were stopped earlier = 18.3% -- a conditioning record (kind=robustness), not an error against a reference: reported for transparency, excluded from the accuracy bound (benchmarks/couette/out_design/viscous_time_convergence.json); CASE-COUETTE-VISCOUS-TIME (reading mobility, H/dx=16): mobility of the wall-shear reading across the admissible viscous-time sweep (max - min, percentage points), H/dx=16: how much the accuracy claim would move if the run were stopped earlier = 0% -- a conditioning record (kind=robustness), not an error against a reference: reported for transparency, excluded from the accuracy bound (benchmarks/couette/out_design/viscous_time_convergence.json); CASE-COUETTE-VISCOUS-TIME (moving wall, H/dx=8): wall-shear error at the MOVING wall, |1 - tau_SPH/tau_exact|, at the steady end of the viscous-time sweep, H/dx=8 (the bottom-wall reading alone does not evidence the whole no-slip condition) = 14.2% misses its own 5% gate but is inside 15% (benchmarks/couette/out_design/viscous_time_convergence.json); CASE-COUETTE-VISCOUS-TIME (moving wall, H/dx=16): wall-shear error at the MOVING wall, |1 - tau_SPH/tau_exact|, at the steady end of the viscous-time sweep, H/dx=16 (the bottom-wall reading alone does not evidence the whole no-slip condition) = 17.1% exceeds the 15% owner standard (benchmarks/couette/out_design/viscous_time_convergence.json); refuted record, excluded from the accuracy claim: plane Couette channel: interior L2 velocity error vs u=U*y/H (finest rung) = 5.65% -- measured on the ``run.py --quick`` artefact, which overrides the DESIGN.md terminal time 1.2 H^2/nu down to 0.3 H^2/nu: the reading is a startup transient, not a property of the wall model (docs/audit_couette_wall_shear_reading.md; superseded by the design-time record from benchmarks/couette/out_design/results.json) (benchmarks/couette/out/results.json); refuted record, excluded from the accuracy claim: plane Couette channel: wall-shear error at the moving wall, |1 - tau_SPH/tau_exact| (the no-slip quantity itself; artefact gate 5 %) = 32.6% -- measured on the ``run.py --quick`` artefact, which overrides the DESIGN.md terminal time 1.2 H^2/nu down to 0.3 H^2/nu: the reading is a startup transient, not a property of the wall model (docs/audit_couette_wall_shear_reading.md; superseded by the design-time record from benchmarks/couette/out_design/results.json) (benchmarks/couette/out/results.json); refuted record, excluded from the accuracy claim: plane Couette channel: cross-channel mass-flux error |1 - Q_SPH/Q_exact| (artefact gate 5 %) = 7.16% -- measured on the ``run.py --quick`` artefact, which overrides the DESIGN.md terminal time 1.2 H^2/nu down to 0.3 H^2/nu: the reading is a startup transient, not a property of the wall model (docs/audit_couette_wall_shear_reading.md; superseded by the design-time record from benchmarks/couette/out_design/results.json) (benchmarks/couette/out/results.json)"
       ],
+      "primary_accuracy_pct": 0.8665938382240863,
       "primary_method": "isph_projection",
+      "primary_robustness_pct": null,
       "primary_status": "SELECTED",
       "primary_worst_banked_pct": 0.8665938382240863,
       "primary_worst_pct": 0.8665938382240863,
@@ -113,7 +132,8 @@
         "domain": "closed",
         "reynolds": 1.0
       },
-      "verified": true
+      "verified": true,
+      "within_owner_standard": true
     },
     {
       "candidates": [
@@ -123,13 +143,17 @@
         }
       ],
       "expected_primary": null,
+      "headline_bound_pct": null,
+      "headline_quantity": null,
       "label": "Gresho vortex (smooth inviscid, periodic)",
       "modifiers": [],
       "notes": [
         "rule 'wall_bounded' fired but no candidate is selectable (isph_projection=WITHHELD)",
         "no rule produced an evidence-backed scheme: profile outside the validated regime of this repository, do not run silently"
       ],
+      "primary_accuracy_pct": null,
       "primary_method": null,
+      "primary_robustness_pct": null,
       "primary_status": "NONE",
       "primary_worst_banked_pct": null,
       "primary_worst_pct": null,
@@ -139,7 +163,8 @@
         "reynolds": 10000.0,
         "smooth_inviscid_vortex": true
       },
-      "verified": false
+      "verified": false,
+      "within_owner_standard": false
     },
     {
       "candidates": [
@@ -149,10 +174,14 @@
         }
       ],
       "expected_primary": "heat_conduction_operator",
+      "headline_bound_pct": 0.00021805730765489528,
+      "headline_quantity": "heat_conduction_operator: max normalised error vs the erfc similarity solution",
       "label": "1-D transient conduction",
       "modifiers": [],
       "notes": [],
+      "primary_accuracy_pct": 0.00021805730765489528,
       "primary_method": "heat_conduction_operator",
+      "primary_robustness_pct": null,
       "primary_status": "SELECTED",
       "primary_worst_banked_pct": 0.00021805730765489528,
       "primary_worst_pct": 0.00021805730765489528,
@@ -160,7 +189,8 @@
         "domain": "closed",
         "thermal_transport": true
       },
-      "verified": true
+      "verified": true,
+      "within_owner_standard": true
     },
     {
       "candidates": [
@@ -170,6 +200,8 @@
         }
       ],
       "expected_primary": "wcsph_delta_sph",
+      "headline_bound_pct": 16.96262081604608,
+      "headline_quantity": "transport_velocity_correction: same quantity on the coarser rung: records the alpha=0.10 arm is resolution-sensitive (kept in the registry, fails the owner standard)",
       "label": "breaking wave over a slope",
       "modifiers": [
         {
@@ -190,7 +222,9 @@
         }
       ],
       "notes": [],
+      "primary_accuracy_pct": 2.9679295205491987,
       "primary_method": "wcsph_delta_sph",
+      "primary_robustness_pct": null,
       "primary_status": "SELECTED",
       "primary_worst_banked_pct": 2.9679295205491987,
       "primary_worst_pct": 2.9679295205491987,
@@ -200,7 +234,8 @@
         "has_free_surface": true,
         "tensile_stretching": true
       },
-      "verified": true
+      "verified": true,
+      "within_owner_standard": false
     }
   ],
   "unexpected_routes": []
