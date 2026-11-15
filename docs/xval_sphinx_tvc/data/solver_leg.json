@@ -1,0 +1,191 @@
+{
+  "anchor": "XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION",
+  "leg": "solver_3d",
+  "criteria": {
+    "C1_bulk_fixed_point": {
+      "statement": "max |dr|/h on a full-support 3-D lattice < 1e-10",
+      "kind": "exact anchor (no calibration)"
+    },
+    "C2_surface_anchor": {
+      "statement": "free-surface |dr|/h/alpha vs the continuum 3-D value within 15 % at h/dx = 1.3",
+      "kind": "owner 15 % gate"
+    },
+    "C3_pre_fix": {
+      "statement": "the pre-fix 2-D normalisation under-corrects a 3-D cloud by more than 20x at dx = 0.02 (sigma_2/sigma_3 = 10h/7)",
+      "kind": "defect magnitude"
+    },
+    "C4_wall_branch": {
+      "statement": "3-D wall residual < 1e-10 for wall_factor = 2 and > 0.4 for wall_factor = 1",
+      "kind": "exact anchor (geometry)"
+    },
+    "C5_flow_invariants": {
+      "statement": "every flow run: mass drift == 0 and |energy drift| < 1 %",
+      "kind": "case invariant (pre-existing)"
+    },
+    "C6_regularisation": {
+      "statement": "at dx = 0.02 the TVC run's close-pair fraction (r < 0.7 dx) is at least 50 % below the baseline's",
+      "kind": "mechanism"
+    },
+    "C7_non_intrusive": {
+      "statement": "with the corrected frame, TVC's front MAE against Ritter does not exceed the baseline MAE by more than 20 % (relative)",
+      "kind": "grading; the absolute 15 % gate lives on the 2-D leg (3-D front lag vs a 2-D shallow-water reference is physical)"
+    }
+  },
+  "host": {
+    "python": "3.11.6",
+    "torch": "2.7.1",
+    "git": "c7bbc5d2",
+    "cpu_count": 128,
+    "threads": 4
+  },
+  "grids": [
+    0.03,
+    0.02
+  ],
+  "steps": 4000,
+  "seed": 12345,
+  "sound_speed": 25.0,
+  "anchors": {
+    "criteria": {
+      "C1_bulk_fixed_point": {
+        "statement": "max |dr|/h on a full-support 3-D lattice < 1e-10",
+        "kind": "exact anchor (no calibration)"
+      },
+      "C2_surface_anchor": {
+        "statement": "free-surface |dr|/h/alpha vs the continuum 3-D value within 15 % at h/dx = 1.3",
+        "kind": "owner 15 % gate"
+      },
+      "C3_pre_fix": {
+        "statement": "the pre-fix 2-D normalisation under-corrects a 3-D cloud by more than 20x at dx = 0.02 (sigma_2/sigma_3 = 10h/7)",
+        "kind": "defect magnitude"
+      },
+      "C4_wall_branch": {
+        "statement": "3-D wall residual < 1e-10 for wall_factor = 2 and > 0.4 for wall_factor = 1",
+        "kind": "exact anchor (geometry)"
+      },
+      "C5_flow_invariants": {
+        "statement": "every flow run: mass drift == 0 and |energy drift| < 1 %",
+        "kind": "case invariant (pre-existing)"
+      },
+      "C6_regularisation": {
+        "statement": "at dx = 0.02 the TVC run's close-pair fraction (r < 0.7 dx) is at least 50 % below the baseline's",
+        "kind": "mechanism"
+      },
+      "C7_non_intrusive": {
+        "statement": "with the corrected frame, TVC's front MAE against Ritter does not exceed the baseline MAE by more than 20 % (relative)",
+        "kind": "grading; the absolute 15 % gate lives on the 2-D leg (3-D front lag vs a 2-D shallow-water reference is physical)"
+      }
+    },
+    "host": {
+      "python": "3.11.6",
+      "torch": "2.7.1",
+      "git": "c7bbc5d2",
+      "cpu_count": 128,
+      "threads": 4
+    },
+    "h_over_dx": 1.3,
+    "body": "3-D cubic-spline TVC, dim inferred from a 3-column point cloud",
+    "continuum_3d": {
+      "I_3_at_h_0.13": 5.384615384487178,
+      "max_shift_over_h_per_alpha": 1.3999999999666664,
+      "kernel_normalisation": 1.0
+    },
+    "surface": [
+      {
+        "dx": 0.03,
+        "h": 0.039,
+        "dim": 3,
+        "kind": "simple",
+        "n_particles": 3528,
+        "max_shift_over_h": 0.05873924540122657,
+        "max_shift_over_h_per_alpha": 1.1747849080245314,
+        "continuum_over_h_per_alpha": 1.3999999999666661,
+        "bias_rel": -0.1608679228196409
+      },
+      {
+        "dx": 0.02,
+        "h": 0.026000000000000002,
+        "dim": 3,
+        "kind": "simple",
+        "n_particles": 3528,
+        "max_shift_over_h": 0.058739245401226645,
+        "max_shift_over_h_per_alpha": 1.1747849080245327,
+        "continuum_over_h_per_alpha": 1.3999999999666668,
+        "bias_rel": -0.16086792281964013
+      }
+    ],
+    "bulk": [
+      {
+        "dx": 0.03,
+        "max_abs_shift_over_h": 2.7656015912282867e-15
+      },
+      {
+        "dx": 0.02,
+        "max_abs_shift_over_h": 2.052840370036115e-15
+      }
+    ],
+    "wall": [
+      {
+        "dx": 0.03,
+        "wall_factor_2": 1.1306636771035385e-16,
+        "wall_factor_1": 0.5873924540122649
+      },
+      {
+        "dx": 0.02,
+        "wall_factor_2": 1.7991596515309217e-15,
+        "wall_factor_1": 0.5873924540122666
+      }
+    ],
+    "pre_fix": [
+      {
+        "dx": 0.03,
+        "h": 0.039,
+        "sigma_ratio_2_over_3": 0.055714285714285716,
+        "under_correction_factor": 17.94871794871795
+      },
+      {
+        "dx": 0.02,
+        "h": 0.026000000000000002,
+        "sigma_ratio_2_over_3": 0.037142857142857144,
+        "under_correction_factor": 26.923076923076923
+      }
+    ]
+  },
+  "runs": [],
+  "verdicts": {
+    "C1_bulk_fixed_point": {
+      "value": 2.7656015912282867e-15,
+      "pass": true
+    },
+    "C2_surface_anchor": {
+      "continuum": 1.3999999999666664,
+      "measured": [
+        1.1747849080245314,
+        1.1747849080245327
+      ],
+      "bias": [
+        0.1608679228196409,
+        0.16086792281963996
+      ],
+      "pass": false
+    },
+    "C3_pre_fix": {
+      "under_correction_factor": [
+        17.94871794871795,
+        26.923076923076923
+      ],
+      "pass": true
+    },
+    "C4_wall_branch": {
+      "residual_wall_factor_2": [
+        1.1306636771035385e-16,
+        1.7991596515309217e-15
+      ],
+      "residual_wall_factor_1": [
+        0.5873924540122649,
+        0.5873924540122666
+      ],
+      "pass": true
+    }
+  }
+}

@@ -299,13 +299,23 @@ def test_boundary_3d_clamps_particles():
     assert float(pos[:, 2].max()) <= cfg.tank_depth + 1e-6
 
 
-def test_dimensionless_front():
-    """Dimensionless front Z/a vs tau should be computable."""
+def test_dimensionless_front_frame():
+    """``Z/a`` is measured from the initial column face, not from ``x = 0``.
+
+    The reference curves this case is graded against (Ritter ``Z/a = 2 tau``,
+    Martin & Moyce) measure the distance travelled from the dam face, so
+    ``Z/a`` must start at exactly 0; dividing the absolute leading edge by the
+    column width instead adds ``1 - dx/(2a)`` (0.9 at ``dx = 0.03``) to every
+    sample.  See ``docs/xval_sphinx_tvc/SOLVER_3D_LEG.md``.
+    """
     cfg = small_case(steps=30, output_every=15)
     run = run_case(cfg)
     tau, za = run.dimensionless(cfg)
     assert len(tau) == len(za)
     assert all(t >= 0 for t in tau)
-    # Front starts at x=column_width, so Z/a >= 1.0 at t=0
-    assert za[0] > 0.5, f"initial Z/a={za[0]} is unreasonably small"
-    assert all(z >= 0.5 for z in za)
+    assert za[0] == 0.0, f"initial Z/a={za[0]} must be zero in the dam-face frame"
+    # The offset that the previous convention reported at t = 0.
+    offset = run.initial_front / cfg.column_width
+    assert offset > 0.5
+    for z_old, z_new in zip((f / cfg.column_width for f in run.front), za):
+        assert z_new == pytest.approx(z_old - offset, abs=1e-12)
