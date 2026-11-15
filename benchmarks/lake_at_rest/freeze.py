@@ -214,9 +214,7 @@ def _report(runs: dict) -> dict:
 #: (``tests/test_lake_at_rest_evidence.py``) fails on a fresh checkout.  Only the
 #: files that exist are shipped, and ``--reship`` re-hashes the frozen payload
 #: without re-running the physics so the published numbers keep their bytes.
-EXTRA_RECORDS = ("stability.json", "stability_band_fit.json",
-                 "stability_viscous.json", "wall_gap.json",
-                 "wellbalanced.json")
+EXTRA_RECORDS = ("stability.json", "stability_band_fit.json", "hydrostatic_closure.json", "stability_viscous.json", "wall_gap.json", "wellbalanced.json", "wb_operator.json")
 
 
 def _extra_payload(ship: Path) -> list:
