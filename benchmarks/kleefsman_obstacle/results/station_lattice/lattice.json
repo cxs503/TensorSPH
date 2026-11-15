@@ -1,0 +1,61 @@
+{
+ "case": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST",
+ "question": "x of the experimental gauge H2 that the acceptance metric is compared against",
+ "evidence": {
+  "probe_spacing_m": 0.496,
+  "probe_spacing_source": "Amaro Junior, Cheng & Buruchenko (2020) Fig. 2a, three equal 0.496 m strings between the four wave probes",
+  "one_probe_in_reservoir": "Kleefsman et al. (2005) p.381 (probes H1..H4); Fig. 19 caption p.383 names H4 as the reservoir probe",
+  "h2_location": "Kleefsman et al. (2005) p.382: 'in the tank just in front of the box'",
+  "unused_strings": [
+   "1.150",
+   "0.496",
+   "0.496",
+   "0.496"
+  ],
+  "why_now": "the committed provenance chain (geometry_provenance) reads only 1.228/1.248/0.744/0.161 and therefore never constrained the probe station: probe_offset = 0.05 m is a convention, not a measurement"
+ },
+ "geometry": {
+  "tank_length": 3.22,
+  "column_length": 1.228,
+  "box_upstream_face": 2.476
+ },
+ "constraints": {
+  "H4_in_reservoir": "0 <= a <= 1.228",
+  "H1_inside_tank": "a + 3S <= 3.22 -> a <= 1.7320000000000002",
+  "H2_in_tank_downstream_of_gate": "a + 2S > 1.228 -> a > 0.236",
+  "admissible_a_interval": [
+   0.236,
+   1.228
+  ],
+  "admissible_H2_interval": [
+   1.228,
+   2.2199999999999998
+  ]
+ },
+ "committed_station": {
+  "x_m": 2.426,
+  "implied_a_m": 1.4340000000000002,
+  "admissible": false,
+  "verdict": "EXCLUDED_BY_LATTICE",
+  "why": "the committed station needs a = 1.434 m > column_length 1.228 m, i.e. H4 inside the tank, contradicting the primary source"
+ },
+ "anchors": {
+  "anchor_gate": {
+   "a_m": 1.228,
+   "why": "the only string that fixes H4 absolutely is the reservoir length: H4 sits at the reservoir/tank gate 1.228 m from the closed end",
+   "H2_m": 2.2199999999999998,
+   "H3_m": 1.724,
+   "H1_m": 2.716,
+   "admissible": true
+  },
+  "anchor_far_wall": {
+   "a_m": 0.5820000000000003,
+   "why": "the five figure strings must all dimension something; 1.150 m from the far (open) wall to H1 puts H1 at 2.070 m and H4 at 0.582 m, i.e. inside the reservoir",
+   "H2_m": 1.5740000000000003,
+   "H3_m": 1.0780000000000003,
+   "H1_m": 2.0700000000000003,
+   "admissible": true
+  }
+ },
+ "consequence": "no committed grade of this case was taken at a station the probe lattice admits; the arrival verdict must be re-evaluated at the admissible anchors"
+}
