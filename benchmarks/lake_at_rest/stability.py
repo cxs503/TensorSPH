@@ -52,6 +52,7 @@ import time
 
 import torch
 
+import band_fit
 from tensorsph.droplet_impact import rhs
 from tensorsph.lake_at_rest import (LakeConfig, analytic_profile, build_state,
                                     periodic_pairs, reconstruct)
@@ -203,6 +204,13 @@ def growth_fit(samples: list[dict], field: str = "v_over_c0") -> dict:
 
 def arm_report(name: str, cfg: LakeConfig, run: dict) -> dict:
     fit = growth_fit(run["samples"])
+    # The band estimator (``benchmarks/lake_at_rest/band_fit.py``) is recorded
+    # next to the legacy single-window fit because the legacy window is not an
+    # exponential-rate estimator for an arm that starts moving (see that
+    # module's docstring): on the seeded arms it fits the transient and
+    # returns R^2 < 0.6.  Both numbers ship; the gates use the band one.
+    band = band_fit.fit_lambda(run["samples"], band_fit.BAND_LOW,
+                              band_fit.BAND_HIGH)
     peak = max(run["samples"], key=lambda s: s["dy_over_H"])
     return {
         "arm": name,
@@ -215,6 +223,7 @@ def arm_report(name: str, cfg: LakeConfig, run: dict) -> dict:
         "run": {k: v for k, v in run.items() if k != "samples"},
         "samples": run["samples"],       # raw series: the gates re-derive from it
         "growth": fit,
+        "growth_band": band,
         "peak_sample": peak,
     }
 

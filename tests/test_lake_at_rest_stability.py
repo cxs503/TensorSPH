@@ -39,7 +39,39 @@ from tensorsph.lake_at_rest import (LakeConfig, analytic_profile, build_state,
                                    reconstruct)
 
 ARTEFACT = Path(__file__).parent / "data" / "lake_at_rest" / "stability.json"
+BAND_ARTEFACT = (Path(__file__).parent / "data" / "lake_at_rest"
+                 / "stability_band_fit.json")
 TOLERANCE = 1.0e-9
+#: Declared exponential band of ``benchmarks/lake_at_rest/band_fit.py``: the
+#: window in which the departure of *every* arm is exponential (seven decades
+#: above the roundoff floor, one below saturation).  The legacy single window
+#: ``1e-10 .. 1e-5`` is kept only to show that it is not a rate estimator for an
+#: arm that starts moving -- its fit spans the start-up transient and returns
+#: ``R^2 < 0.6`` there.
+BAND = (1.0e-6, 1.0e-3)
+R2_MIN = 0.98
+
+
+def samples_of(entry):
+    """Raw series of an arm (shipped at arm level; older form under ``run``)."""
+    series = entry.get("samples") or entry.get("run", {}).get("samples")
+    assert series, f"arm {entry.get('arm')} carries no raw series"
+    return series
+
+
+@pytest.fixture(scope="module")
+def band_artefact():
+    assert BAND_ARTEFACT.is_file(), (
+        f"{BAND_ARTEFACT} is missing; reproduce with "
+        "`PYTHONPATH=src python3 benchmarks/lake_at_rest/band_fit.py`")
+    return json.loads(BAND_ARTEFACT.read_text())
+
+
+def band_arm(band_artefact, name):
+    for entry in band_artefact["arms"]:
+        if entry["arm"] == name:
+            return entry
+    raise AssertionError(f"arm {name} missing from the band artefact")
 
 
 def fit_lambda(samples: list[dict], low: float, high: float,
@@ -85,13 +117,13 @@ def test_artefact_is_the_declared_case(artefact):
     assert low < high
     for entry in artefact["arms"]:
         assert entry["run"]["steps"] > 0
-        assert entry["run"]["samples"]
+        assert samples_of(entry)
 
 
 def test_reported_horizon_follows_from_the_raw_series(artefact):
     """t* recorded in the verdict must be the first crossing of the tolerance."""
     for entry in artefact["arms"]:
-        samples = entry["run"]["samples"]
+        samples = samples_of(entry)
         crossing = None
         worst = 0.0
         for sample in samples:
@@ -113,14 +145,22 @@ def test_reported_horizon_follows_from_the_raw_series(artefact):
 def test_growth_rate_is_reproducible_from_the_raw_series(artefact):
     low, high = artefact["fit_window"]
     for entry in artefact["arms"]:
-        slope, r2, points = fit_lambda(entry["run"]["samples"], low, high)
+        slope, r2, points = fit_lambda(samples_of(entry), low, high)
         recorded = entry["growth"]["lambda_per_s"]
         if recorded is None:
             assert slope is None, entry["arm"]
             continue
         assert points >= 4
         assert math.isclose(slope, recorded, rel_tol=1e-9), entry["arm"]
-        assert r2 is not None and r2 >= 0.98, (entry["arm"], r2)
+        assert r2 is not None
+        if entry["run"]["seed_in_dx"]:
+            # A seeded arm enters the legacy window at t = dt: the fit averages
+            # the start-up transient (measured R^2 0.29 / 0.58).  Those numbers
+            # may be recorded, they may not be quoted as a rate -- the rate is
+            # the band estimate gated below.
+            assert r2 < R2_MIN, (
+                f"{entry['arm']}: legacy-window R^2={r2:.3f} -- if a seeded arm "
+                f"now fits this window, the estimator changed; revisit it")
 
 
 def test_departure_is_exponential_not_power_law(artefact):
@@ -144,27 +184,73 @@ def test_the_published_horizon_is_not_the_horizon(artefact):
     assert base["run"]["max_v_over_c0"] > 1e-6      # it really does move
 
 
-def test_halving_dt_keeps_the_growth_rate(artefact):
+def test_halving_dt_keeps_the_growth_rate(artefact, band_artefact):
     """Declared window: the rate is a property of the equilibrium, not of dt."""
     base = arm(artefact, "base")
     half = arm(artefact, "courant_half")
-    ratio = half["growth"]["lambda_per_s"] / base["growth"]["lambda_per_s"]
+    ratio = (band_arm(band_artefact, "courant_half")["band"]["lambda_per_s"]
+             / band_arm(band_artefact, "base")["band"]["lambda_per_s"])
     assert 0.75 <= ratio <= 1.33, ratio
+    assert band_artefact["verdict"]["dt_independent"] is True
     assert half["run"]["dt"] == pytest.approx(0.5 * base["run"]["dt"], rel=1e-9)
 
 
-def test_seed_amplitude_does_not_change_the_rate(artefact):
-    """Declared window: linear instability means the slope is seed-independent."""
-    coarse = arm(artefact, "seed_1e-6")["growth"]["lambda_per_s"]
-    fine = arm(artefact, "seed_1e-8")["growth"]["lambda_per_s"]
+def test_band_fit_is_reproducible_from_the_raw_series(artefact, band_artefact):
+    """The band estimate must be the fit of the shipped series, arm by arm.
+
+    Re-derived with this file's own least squares (not the producer's), so a
+    frozen number cannot be a transcription.
+    """
+    assert band_artefact["band"]["window"] == list(BAND)
+    for entry in band_artefact["arms"]:
+        raw = samples_of(arm(artefact, entry["arm"]))
+        slope, r2, points = fit_lambda(raw, *BAND)
+        recorded = entry["band"]["lambda_per_s"]
+        if recorded is None:
+            continue
+        assert points >= 4
+        assert math.isclose(slope, recorded, rel_tol=1e-9), entry["arm"]
+        assert r2 >= R2_MIN, (entry["arm"], r2)
+        assert entry["band"]["valid"] is True
+
+
+def test_seed_amplitude_does_not_change_the_rate(band_artefact):
+    """Declared window: linear instability means the rate is seed-independent.
+
+    Measured in the exponential band.  Over the legacy window the two seeded
+    arms give ``0.887`` and ``3.72`` 1/s (``R^2`` 0.29 / 0.58): a transient
+    average, which is why this gate failed when it used that window.
+    """
+    coarse = band_arm(band_artefact, "seed_1e-6")["band"]["lambda_per_s"]
+    fine = band_arm(band_artefact, "seed_1e-8")["band"]["lambda_per_s"]
     assert coarse is not None and fine is not None
-    assert 0.90 <= coarse / fine <= 1.10, (coarse, fine)
+    ratio = coarse / fine
+    assert 0.90 <= ratio <= 1.10, (coarse, fine, ratio)
+    base = band_arm(band_artefact, "base")["band"]["lambda_per_s"]
+    for lam in (coarse, fine):
+        assert abs(lam / base - 1.0) <= 0.10, (lam, base)
 
 
-def test_rebuilding_the_pair_list_does_not_remove_it(artefact):
+def test_legacy_window_is_rejected_where_it_is_a_transient(band_artefact):
+    """A slope fitted across the start-up transient must not ship as a rate."""
+    assert set(band_artefact["verdict"]["legacy_window_invalid_arms"]) == {
+        "seed_1e-6", "seed_1e-8"}, band_artefact["verdict"]
+    for name in ("seed_1e-6", "seed_1e-8"):
+        entry = band_arm(band_artefact, name)
+        assert entry["legacy"]["r2_exp"] < R2_MIN
+        assert entry["legacy"]["lambda_per_s"] < 0.5 * entry["band"]["lambda_per_s"]
+
+
+def test_band_rate_is_not_a_window_artefact(band_artefact):
+    """Four declared windows must give the same rate on the base arm (< 5 %)."""
+    spread = band_arm(band_artefact, "base")["sensitivity"]["spread_rel"]
+    assert spread is not None and spread < 0.05, spread
+
+
+def test_rebuilding_the_pair_list_does_not_remove_it(band_artefact):
     """The frozen neighbour list is not what manufactures the departure."""
-    base = arm(artefact, "base")["growth"]["lambda_per_s"]
-    rebuilt = arm(artefact, "pairs_rebuilt")["growth"]["lambda_per_s"]
+    base = band_arm(band_artefact, "base")["band"]["lambda_per_s"]
+    rebuilt = band_arm(band_artefact, "pairs_rebuilt")["band"]["lambda_per_s"]
     assert rebuilt is not None
     assert rebuilt / base >= 0.5
 
@@ -183,13 +269,13 @@ def test_coarse_lattice_rederivation():
     reports = {}
     for courant in (0.30, 0.15):
         cfg = LakeConfig(dx=0.04, depth=0.24, width=0.32, periodic_x=True,
-                         max_courant=courant, t_end=0.30)
+                         max_courant=courant, t_end=3.0)
         state = build_state(cfg)
         solution = reconstruct(state, cfg, prior=analytic_profile(state, cfg)["mass"])
         assert solution["a_max_over_g"] < 1e-9        # still the certified rest
         mass = solution["mass"]
         pos = state["pos"].clone()
-        pos[:, 1] = pos[:, 1] + 1.0e-6 * cfg.dx      # seed in units of dx
+        pos[:, 1] = pos[:, 1] + 1.0e-8 * cfg.dx      # seed in units of dx
         vel = torch.zeros_like(pos)
         dt = cfg.dt()
         steps = int(round(cfg.t_end / dt))
@@ -203,11 +289,11 @@ def test_coarse_lattice_rederivation():
             pos = pos + dt * vel
             samples.append({"t": (step + 1) * dt,
                             "v_over_c0": float(vel.abs().max()) / cfg.sound_speed})
-        reports[courant] = (fit_lambda(samples, 1e-10, 1e-5)[0],
+        reports[courant] = (fit_lambda(samples, *BAND)[0],
                             float((pos[:, 1] - y0).abs().max()) / cfg.depth)
     lam_fine_dt, dy_fine_dt = reports[0.30]
     lam_coarse_dt, _ = reports[0.15]
     assert lam_fine_dt is not None and lam_coarse_dt is not None
     assert lam_fine_dt > 0 and lam_coarse_dt > 0        # it departs
     assert dy_fine_dt > TOLERANCE                       # and it is visible
-    assert 0.5 <= lam_coarse_dt / lam_fine_dt <= 1.6    # no dy-driven rate
+    assert 0.8 <= lam_coarse_dt / lam_fine_dt <= 1.25   # no dt-driven rate
