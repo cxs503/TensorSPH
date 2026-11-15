@@ -1,0 +1,212 @@
+{
+ "case": "CASE-POISEUILLE-SPH",
+ "generated_by": "benchmarks/case_poiseuille/steady_window.py",
+ "question": "is the committed 0.80..1.00 s R1 window stationary, i.e. is its sample scatter a repeatability rather than residual fill?",
+ "windows": {
+  "A": [
+   0.8,
+   1.0
+  ],
+  "B": [
+   1.6,
+   1.8
+  ],
+  "sample_dt": 0.02,
+  "t_end": 1.8
+ },
+ "thresholds": {
+  "S1_reproduce_percent": 1.0,
+  "S3_fill_ratio": 0.01,
+  "tolerance_percent": 5.0
+ },
+ "u_num_percent_from_uncertainty_artifact": 2.0486201025862165,
+ "rungs": [
+  {
+   "resolution_H_over_dx": 12,
+   "dt": 0.0001625,
+   "steps": 11077,
+   "wall_clock_s": 111.22903871536255,
+   "n_fluid": 96,
+   "max_mach": 0.06142470836639404,
+   "sample_times": [
+    0.7999875,
+    0.819975,
+    0.8399625,
+    0.85995,
+    0.8799374999999999,
+    0.899925,
+    0.920075,
+    0.9400624999999999,
+    0.96005,
+    0.9800375,
+    1.000025,
+    1.0200125,
+    1.04,
+    1.0599874999999999,
+    1.079975,
+    1.0999625,
+    1.11995,
+    1.1399375,
+    1.1599249999999999,
+    1.180075,
+    1.2000625,
+    1.2200499999999999,
+    1.2400375,
+    1.260025,
+    1.2800125,
+    1.3,
+    1.3199874999999999,
+    1.339975,
+    1.3599625,
+    1.37995,
+    1.3999374999999998,
+    1.4199249999999999,
+    1.440075,
+    1.4600625,
+    1.4800499999999999,
+    1.5000375,
+    1.520025,
+    1.5400125,
+    1.5599999999999998,
+    1.5799874999999999,
+    1.599975,
+    1.6199625,
+    1.63995,
+    1.6599374999999998,
+    1.679925,
+    1.700075,
+    1.7200624999999998,
+    1.7400499999999999,
+    1.7600375,
+    1.780025,
+    1.8000125
+   ],
+   "functional_percent": [
+    0.7452588127148044,
+    0.9452149192712412,
+    0.8395270341929906,
+    0.8749943672889415,
+    1.0098151398976942,
+    1.0539487950076147,
+    0.7732349174174954,
+    0.9869525026250162,
+    0.8355934155986603,
+    0.8875261240031848,
+    1.026903676475282,
+    0.9595802735849482,
+    0.8265136408375241,
+    0.9890637878217846,
+    0.8146411661343993,
+    0.8993962998930285,
+    0.999284454960337,
+    0.899461321212653,
+    0.9196644507246051,
+    0.9678292336998595,
+    0.8057429523643791,
+    0.9073236498717746,
+    0.9385534429737042,
+    0.9025334549828182,
+    1.012255560055314,
+    0.9198832941502418,
+    0.8329975070190277,
+    0.9066108270299615,
+    0.8815738978856182,
+    0.9450414240972544,
+    1.0972253815804225,
+    0.8573270175963807,
+    0.9029582717343221,
+    0.8910690276728134,
+    0.8651316632698827,
+    0.9897954572021689,
+    1.140157682193853,
+    0.8217981030098336,
+    0.9924988451639762,
+    0.8662189162208156,
+    0.9013948655583045,
+    1.0312716956961694,
+    1.1168254267645163,
+    0.8419977904757471,
+    1.033135143351915,
+    0.8149378844732726,
+    0.8663017367939362,
+    0.648692153568577,
+    0.7838129779762004,
+    0.6121880676669457,
+    0.634371717954143
+   ],
+   "window_A": {
+    "span_s": [
+     0.8,
+     1.0
+    ],
+    "n": 9,
+    "mean_percent": 0.9118674683669821,
+    "half_range_percent_of_scale": 0.14035693879505967,
+    "half_range_percent_of_mean": 15.392252017326367
+   },
+   "window_B": {
+    "span_s": [
+     1.6,
+     1.8
+    ],
+    "n": 9,
+    "mean_percent": 0.8610180974185867,
+    "half_range_percent_of_scale": 0.25231867954878534,
+    "half_range_percent_of_mean": 29.30468944906739
+   },
+   "committed_window_mean_percent": 0.9071790640448113,
+   "S1_deviation_percent": 0.5168113449693962,
+   "between_window": {
+    "half_range_percent_of_scale": 0.025424685474197684,
+    "half_range_percent_of_mean": 2.868169944508738,
+    "mean_percent": 0.8864427828927843,
+    "within_window_half_range_percent_of_scale": 0.25231867954878534,
+    "union_half_range_percent_of_scale": 0.25231867954878534
+   },
+   "trend_window_A": {
+    "n": 9,
+    "slope_per_s": -0.21335053649176736,
+    "slope_se": 0.6341473723187564,
+    "t_stat": -0.33643683756293474,
+    "dof": 7,
+    "drift_over_window": -0.03414942024721351
+   },
+   "trend_window_B": {
+    "n": 9,
+    "slope_per_s": -2.6889956284804803,
+    "slope_se": 0.6250454552538209,
+    "t_stat": -4.302080122138513,
+    "dof": 7,
+    "drift_over_window": -0.4304073627836569
+   },
+   "fill": {
+    "decay_rate_1_over_s": 9.869604401089356,
+    "e_folding_s": 0.10132118364233779,
+    "separation_s": 0.8,
+    "predicted_fill_ratio": 0.00037234730603371506,
+    "note": "bounded by the slowest decay mode of the start-up series; the measured difference between windows A and B cannot exceed this fraction of whatever transient was left at the start of A"
+   },
+   "u_num_percent": 2.0486201025862165,
+   "u_input_percent_of_scale": 0.025424685474197684,
+   "U_V_percent": 2.0487778648140025,
+   "gates": {
+    "S1_extended_run_reproduces_committed_window": true,
+    "S2_window_is_stationary": true,
+    "S3_surviving_fill_cannot_explain_the_difference": true,
+    "S4_between_window_band_supports_5pct": true
+   }
+  }
+ ],
+ "gates": {
+  "S1_extended_run_reproduces_committed_window@H/dx=12": true,
+  "S2_window_is_stationary@H/dx=12": true,
+  "S3_surviving_fill_cannot_explain_the_difference@H/dx=12": true,
+  "S4_between_window_band_supports_5pct@H/dx=12": true
+ },
+ "all_gates_pass": true,
+ "honest_limits": [
+  "two rungs (H/dx = 12, 16) with one separation (0.8 s = 7.9 e-folding times of the slowest start-up mode): the test falsifies *fill* as an explanation of the scatter, it cannot resolve a drift slower than the window's own 0.2 s",
+  "the 30 % window-to-window scatter reduction expected from averaging 11 samples instead of one is NOT claimed here: the graded functional is already the window mean, so the between-window half range is the repeatability of that mean and is smaller than the single-sample half range by construction -- the single-sample value stays the conservative choice used by uncertainty.py",
+  "no acoustic (compressibility) scale separation is attempted: the instantaneous scatter is WCSPH particle noise, not resolved physics"
+ ]
+}
