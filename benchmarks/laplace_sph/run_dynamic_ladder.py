@@ -174,12 +174,20 @@ def _fit_order(xs, ys):
 
 
 def summarize():
+    # The directory also holds records that are *not* marches of this ladder
+    # (``diagnose_solenoid.json`` from the one-shot solenoidal diagnostic).  The
+    # job list is the authority on what a ladder row is: a file is consumed only
+    # if its stem is a declared job, so a side diagnostic can never crash the
+    # summariser (it did: ``KeyError: 'role'``, before this filter).
+    wanted = {s["name"] for s in job_specs()}
     runs = {}
     if OUTDIR.exists():
         for p in sorted(OUTDIR.glob("*.json")):
-            if p.name == "summary.json":
+            if p.stem not in wanted:
                 continue
             blob = json.loads(p.read_text())
+            if "role" not in blob:  # truncated / foreign record: never half-read it
+                continue
             runs[blob.get("job", p.stem)] = blob
 
     ladder = sorted([r for r in runs.values() if r["role"] == "ladder"],
@@ -304,7 +312,13 @@ def summarize():
             "nu_sweep": list(NU_SWEEP), "nu_sweep_level": NU_SWEEP_LEVEL,
             "cg_rel_tol": 1e-6, "cg_max_iter": 4000,
             "v_ref_m_per_s": math.sqrt(SIGMA / (RHO * R)),
-            "t_sigma_s": math.sqrt(RHO * (HF * R / 8.0) ** 3 / SIGMA),
+            # t_sigma = sqrt(rho h^3/sigma) is *level dependent*; the record used to
+            # carry one value computed with h of R/dx = 8 under the bare name
+            # ``t_sigma_s``, which reads as "the capillary time of this run".
+            "t_sigma_s_by_level": {
+                "R_over_dx_%d" % lvl: math.sqrt(RHO * (HF * LEVELS[lvl]) ** 3 / SIGMA)
+                for lvl in sorted(LEVELS)},
+            "t_sigma_s_ref_R_over_dx_8": math.sqrt(RHO * (HF * LEVELS[8]) ** 3 / SIGMA),
         },
         "gates_declared": GATES_DECLARED,
         "rows": rows,
