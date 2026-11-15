@@ -1,0 +1,707 @@
+{
+  "case": {
+    "radius_m": 0.1,
+    "sigma_nm": 0.072,
+    "rho_water": 1000.0,
+    "h_over_dx": 1.3,
+    "kernel": "wendland_c2",
+    "dimension": 2,
+    "reference": "Delta p = sigma / R (exact)"
+  },
+  "gate_pct": 15.0,
+  "closure_weight_round2": 0.4263334171275849,
+  "predeclared": {
+    "TRANSFER": "|err(alpha*)| < 15 % on every configuration not used by the round-2 fit (hex lattice, offset lattices)",
+    "CALIBRATION": "|alpha_null(hex) - alpha_null(square)| > 0.10 * alpha_null(square) => the weight is a discretisation calibration",
+    "MOMENTUM": "relative momentum residual < 1e-12 on every lattice"
+  },
+  "configurations": [
+    {
+      "lattice": "square",
+      "offset_dx": [
+        0.0,
+        0.0
+      ],
+      "radius_over_dx": 16.0,
+      "dx_m": 0.00625,
+      "particles": 797,
+      "cell_area_m2": 3.906250000000001e-05,
+      "completion_weight": 0.0,
+      "dp_pa": 0.5058510755885964,
+      "dp_theory_pa": 0.7199999999999999,
+      "err_pct": -29.74290616825048,
+      "momentum_residual": 3.1780138626798084e-17,
+      "a_peak_over_physical": 326.38340785203815,
+      "momentum_net_over_sum": 3.1780138626798084e-17
+    },
+    {
+      "lattice": "square",
+      "offset_dx": [
+        0.0,
+        0.0
+      ],
+      "radius_over_dx": 16.0,
+      "dx_m": 0.00625,
+      "particles": 797,
+      "cell_area_m2": 3.906250000000001e-05,
+      "completion_weight": 0.4263334171275849,
+      "dp_pa": 0.7252655076373483,
+      "dp_theory_pa": 0.7199999999999999,
+      "err_pct": 0.7313205051872854,
+      "momentum_residual": 8.394806839258613e-17,
+      "a_peak_over_physical": 472.302695228618,
+      "momentum_net_over_sum": 8.394806839258615e-17
+    },
+    {
+      "lattice": "square",
+      "offset_dx": [
+        0.0,
+        0.0
+      ],
+      "radius_over_dx": 32.0,
+      "dx_m": 0.003125,
+      "particles": 3209,
+      "cell_area_m2": 9.765625000000002e-06,
+      "completion_weight": 0.0,
+      "dp_pa": 0.5039574779152621,
+      "dp_theory_pa": 0.7199999999999999,
+      "err_pct": -30.005905845102472,
+      "momentum_residual": 5.134856727294927e-17,
+      "a_peak_over_physical": 1305.3252901173273,
+      "momentum_net_over_sum": 5.134856727294927e-17
+    },
+    {
+      "lattice": "square",
+      "offset_dx": [
+        0.0,
+        0.0
+      ],
+      "radius_over_dx": 32.0,
+      "dx_m": 0.003125,
+      "particles": 3209,
+      "cell_area_m2": 9.765625000000002e-06,
+      "completion_weight": 0.4263334171275849,
+      "dp_pa": 0.7199999999999999,
+      "dp_theory_pa": 0.7199999999999999,
+      "err_pct": 0.0,
+      "momentum_residual": 2.9159302086587346e-17,
+      "a_peak_over_physical": 1888.7610425666892,
+      "momentum_net_over_sum": 2.9159302086587346e-17
+    },
+    {
+      "lattice": "square",
+      "offset_dx": [
+        0.5,
+        0.0
+      ],
+      "radius_over_dx": 16.0,
+      "dx_m": 0.00625,
+      "particles": 800,
+      "cell_area_m2": 3.906250000000001e-05,
+      "completion_weight": 0.0,
+      "dp_pa": 0.5080617176980102,
+      "dp_theory_pa": 0.7199999999999999,
+      "err_pct": -29.43587254194301,
+      "momentum_residual": 4.8666542682017954e-17,
+      "a_peak_over_physical": 393.6691210087477,
+      "momentum_net_over_sum": 4.8666542682017954e-17
+    },
+    {
+      "lattice": "square",
+      "offset_dx": [
+        0.5,
+        0.0
+      ],
+      "radius_over_dx": 16.0,
+      "dx_m": 0.00625,
+      "particles": 800,
+      "cell_area_m2": 3.906250000000001e-05,
+      "completion_weight": 0.4263334171275849,
+      "dp_pa": 0.7279503817293842,
+      "dp_theory_pa": 0.7199999999999999,
+      "err_pct": 1.1042196846367136,
+      "momentum_residual": 2.0602095373699068e-17,
+      "a_peak_over_physical": 593.6901665328999,
+      "momentum_net_over_sum": 2.0602095373699068e-17
+    },
+    {
+      "lattice": "square",
+      "offset_dx": [
+        0.5,
+        0.0
+      ],
+      "radius_over_dx": 32.0,
+      "dx_m": 0.003125,
+      "particles": 3208,
+      "cell_area_m2": 9.765625000000002e-06,
+      "completion_weight": 0.0,
+      "dp_pa": 0.5096369847494134,
+      "dp_theory_pa": 0.7199999999999999,
+      "err_pct": -29.217085451470343,
+      "momentum_residual": 0.0,
+      "a_peak_over_physical": 1477.9184001223364,
+      "momentum_net_over_sum": 0.0
+    },
+    {
+      "lattice": "square",
+      "offset_dx": [
+        0.5,
+        0.0
+      ],
+      "radius_over_dx": 32.0,
+      "dx_m": 0.003125,
+      "particles": 3208,
+      "cell_area_m2": 9.765625000000002e-06,
+      "completion_weight": 0.4263334171275849,
+      "dp_pa": 0.7274817314393147,
+      "dp_theory_pa": 0.7199999999999999,
+      "err_pct": 1.0391293665715076,
+      "momentum_residual": 2.966918082986406e-17,
+      "a_peak_over_physical": 2047.7380514427578,
+      "momentum_net_over_sum": 2.966918082986405e-17
+    },
+    {
+      "lattice": "square",
+      "offset_dx": [
+        0.3,
+        0.37
+      ],
+      "radius_over_dx": 16.0,
+      "dx_m": 0.00625,
+      "particles": 806,
+      "cell_area_m2": 3.906250000000001e-05,
+      "completion_weight": 0.0,
+      "dp_pa": 0.5107490052689894,
+      "dp_theory_pa": 0.7199999999999999,
+      "err_pct": -29.0626381570848,
+      "momentum_residual": 1.5524099127786688e-16,
+      "a_peak_over_physical": 327.07209481622,
+      "momentum_net_over_sum": 1.5524099127786688e-16
+    },
+    {
+      "lattice": "square",
+      "offset_dx": [
+        0.3,
+        0.37
+      ],
+      "radius_over_dx": 16.0,
+      "dx_m": 0.00625,
+      "particles": 806,
+      "cell_area_m2": 3.906250000000001e-05,
+      "completion_weight": 0.4263334171275849,
+      "dp_pa": 0.7321064946098126,
+      "dp_theory_pa": 0.7199999999999999,
+      "err_pct": 1.681457584696212,
+      "momentum_residual": 6.102835015388921e-17,
+      "a_peak_over_physical": 473.3952631276336,
+      "momentum_net_over_sum": 6.102835015388921e-17
+    },
+    {
+      "lattice": "square",
+      "offset_dx": [
+        0.3,
+        0.37
+      ],
+      "radius_over_dx": 32.0,
+      "dx_m": 0.003125,
+      "particles": 3221,
+      "cell_area_m2": 9.765625000000002e-06,
+      "completion_weight": 0.0,
+      "dp_pa": 0.5070598795522674,
+      "dp_theory_pa": 0.7199999999999999,
+      "err_pct": -29.57501672885174,
+      "momentum_residual": 4.3680181522229963e-17,
+      "a_peak_over_physical": 1305.3252901173305,
+      "momentum_net_over_sum": 4.3680181522229963e-17
+    },
+    {
+      "lattice": "square",
+      "offset_dx": [
+        0.3,
+        0.37
+      ],
+      "radius_over_dx": 32.0,
+      "dx_m": 0.003125,
+      "particles": 3221,
+      "cell_area_m2": 9.765625000000002e-06,
+      "completion_weight": 0.4263334171275849,
+      "dp_pa": 0.7240653825885349,
+      "dp_theory_pa": 0.7199999999999999,
+      "err_pct": 0.5646364706298695,
+      "momentum_residual": 6.221292336581151e-17,
+      "a_peak_over_physical": 1890.7593384102468,
+      "momentum_net_over_sum": 6.221292336581151e-17
+    },
+    {
+      "lattice": "hex",
+      "offset_dx": [
+        0.0,
+        0.0
+      ],
+      "radius_over_dx": 16.0,
+      "dx_m": 0.00625,
+      "particles": 926,
+      "cell_area_m2": 3.3829117335329635e-05,
+      "completion_weight": 0.0,
+      "dp_pa": 0.5362439614454908,
+      "dp_theory_pa": 0.7199999999999999,
+      "err_pct": -25.521672021459597,
+      "momentum_residual": 6.308826337805896e-17,
+      "a_peak_over_physical": 557.7320418812687,
+      "momentum_net_over_sum": 6.308826337805896e-17
+    },
+    {
+      "lattice": "hex",
+      "offset_dx": [
+        0.0,
+        0.0
+      ],
+      "radius_over_dx": 16.0,
+      "dx_m": 0.00625,
+      "particles": 926,
+      "cell_area_m2": 3.3829117335329635e-05,
+      "completion_weight": 0.4263334171275849,
+      "dp_pa": 0.7675131068848736,
+      "dp_theory_pa": 0.7199999999999999,
+      "err_pct": 6.599042622899135,
+      "momentum_residual": 4.914716132038095e-17,
+      "a_peak_over_physical": 795.6773550171506,
+      "momentum_net_over_sum": 4.914716132038095e-17
+    },
+    {
+      "lattice": "hex",
+      "offset_dx": [
+        0.0,
+        0.0
+      ],
+      "radius_over_dx": 32.0,
+      "dx_m": 0.003125,
+      "particles": 3719,
+      "cell_area_m2": 8.457279333832409e-06,
+      "completion_weight": 0.0,
+      "dp_pa": 0.5345131591697149,
+      "dp_theory_pa": 0.7199999999999999,
+      "err_pct": -25.76206122642848,
+      "momentum_residual": 1.187719582511275e-17,
+      "a_peak_over_physical": 1116.716451029551,
+      "momentum_net_over_sum": 1.1877195825112754e-17
+    },
+    {
+      "lattice": "hex",
+      "offset_dx": [
+        0.0,
+        0.0
+      ],
+      "radius_over_dx": 32.0,
+      "dx_m": 0.003125,
+      "particles": 3719,
+      "cell_area_m2": 8.457279333832409e-06,
+      "completion_weight": 0.4263334171275849,
+      "dp_pa": 0.7618305165211453,
+      "dp_theory_pa": 0.7199999999999999,
+      "err_pct": 5.809793961270201,
+      "momentum_residual": 5.45346239722725e-17,
+      "a_peak_over_physical": 1755.4129259495437,
+      "momentum_net_over_sum": 5.45346239722725e-17
+    }
+  ],
+  "alpha_scan": {
+    "square": [
+      {
+        "lattice": "square",
+        "offset_dx": [
+          0.0,
+          0.0
+        ],
+        "radius_over_dx": 32.0,
+        "dx_m": 0.003125,
+        "particles": 3209,
+        "cell_area_m2": 9.765625000000002e-06,
+        "completion_weight": 0.0,
+        "dp_pa": 0.5039574779152621,
+        "dp_theory_pa": 0.7199999999999999,
+        "err_pct": -30.005905845102472,
+        "momentum_residual": 5.134856727294927e-17,
+        "a_peak_over_physical": 1305.3252901173273,
+        "momentum_net_over_sum": 5.134856727294927e-17
+      },
+      {
+        "lattice": "square",
+        "offset_dx": [
+          0.0,
+          0.0
+        ],
+        "radius_over_dx": 32.0,
+        "dx_m": 0.003125,
+        "particles": 3209,
+        "cell_area_m2": 9.765625000000002e-06,
+        "completion_weight": 0.1,
+        "dp_pa": 0.5546320235655471,
+        "dp_theory_pa": 0.7199999999999999,
+        "err_pct": -22.967774504785112,
+        "momentum_residual": 2.2782700824709347e-17,
+        "a_peak_over_physical": 1441.2609150603141,
+        "momentum_net_over_sum": 2.2782700824709347e-17
+      },
+      {
+        "lattice": "square",
+        "offset_dx": [
+          0.0,
+          0.0
+        ],
+        "radius_over_dx": 32.0,
+        "dx_m": 0.003125,
+        "particles": 3209,
+        "cell_area_m2": 9.765625000000002e-06,
+        "completion_weight": 0.2,
+        "dp_pa": 0.6053065692158319,
+        "dp_theory_pa": 0.7199999999999999,
+        "err_pct": -15.929643164467771,
+        "momentum_residual": 2.096834659579373e-17,
+        "a_peak_over_physical": 1577.797689385001,
+        "momentum_net_over_sum": 2.096834659579373e-17
+      },
+      {
+        "lattice": "square",
+        "offset_dx": [
+          0.0,
+          0.0
+        ],
+        "radius_over_dx": 32.0,
+        "dx_m": 0.003125,
+        "particles": 3209,
+        "cell_area_m2": 9.765625000000002e-06,
+        "completion_weight": 0.3,
+        "dp_pa": 0.6559811148661169,
+        "dp_theory_pa": 0.7199999999999999,
+        "err_pct": -8.891511824150417,
+        "momentum_residual": 9.846977220876919e-18,
+        "a_peak_over_physical": 1714.8351163264376,
+        "momentum_net_over_sum": 9.846977220876919e-18
+      },
+      {
+        "lattice": "square",
+        "offset_dx": [
+          0.0,
+          0.0
+        ],
+        "radius_over_dx": 32.0,
+        "dx_m": 0.003125,
+        "particles": 3209,
+        "cell_area_m2": 9.765625000000002e-06,
+        "completion_weight": 0.4,
+        "dp_pa": 0.7066556605164018,
+        "dp_theory_pa": 0.7199999999999999,
+        "err_pct": -1.8533804838330603,
+        "momentum_residual": 3.7524788826079845e-17,
+        "a_peak_over_physical": 1852.4564572804052,
+        "momentum_net_over_sum": 3.7524788826079845e-17
+      },
+      {
+        "lattice": "square",
+        "offset_dx": [
+          0.0,
+          0.0
+        ],
+        "radius_over_dx": 32.0,
+        "dx_m": 0.003125,
+        "particles": 3209,
+        "cell_area_m2": 9.765625000000002e-06,
+        "completion_weight": 0.5,
+        "dp_pa": 0.7573302061666871,
+        "dp_theory_pa": 0.7199999999999999,
+        "err_pct": 5.184750856484341,
+        "momentum_residual": 2.4174345773318965e-17,
+        "a_peak_over_physical": 1990.443972373789,
+        "momentum_net_over_sum": 2.4174345773318965e-17
+      },
+      {
+        "lattice": "square",
+        "offset_dx": [
+          0.0,
+          0.0
+        ],
+        "radius_over_dx": 32.0,
+        "dx_m": 0.003125,
+        "particles": 3209,
+        "cell_area_m2": 9.765625000000002e-06,
+        "completion_weight": 0.6,
+        "dp_pa": 0.8080047518169718,
+        "dp_theory_pa": 0.7199999999999999,
+        "err_pct": 12.222882196801667,
+        "momentum_residual": 2.9674532224029166e-17,
+        "a_peak_over_physical": 2128.726454785616,
+        "momentum_net_over_sum": 2.9674532224029166e-17
+      }
+    ],
+    "hex": [
+      {
+        "lattice": "hex",
+        "offset_dx": [
+          0.0,
+          0.0
+        ],
+        "radius_over_dx": 32.0,
+        "dx_m": 0.003125,
+        "particles": 3719,
+        "cell_area_m2": 8.457279333832409e-06,
+        "completion_weight": 0.0,
+        "dp_pa": 0.5345131591697149,
+        "dp_theory_pa": 0.7199999999999999,
+        "err_pct": -25.76206122642848,
+        "momentum_residual": 1.187719582511275e-17,
+        "a_peak_over_physical": 1116.716451029551,
+        "momentum_net_over_sum": 1.1877195825112754e-17
+      },
+      {
+        "lattice": "hex",
+        "offset_dx": [
+          0.0,
+          0.0
+        ],
+        "radius_over_dx": 32.0,
+        "dx_m": 0.003125,
+        "particles": 3719,
+        "cell_area_m2": 8.457279333832409e-06,
+        "completion_weight": 0.1,
+        "dp_pa": 0.5878323099139793,
+        "dp_theory_pa": 0.7199999999999999,
+        "err_pct": -18.356623623058418,
+        "momentum_residual": 6.070329054263011e-17,
+        "a_peak_over_physical": 1238.7000158705016,
+        "momentum_net_over_sum": 6.070329054263011e-17
+      },
+      {
+        "lattice": "hex",
+        "offset_dx": [
+          0.0,
+          0.0
+        ],
+        "radius_over_dx": 32.0,
+        "dx_m": 0.003125,
+        "particles": 3719,
+        "cell_area_m2": 8.457279333832409e-06,
+        "completion_weight": 0.2,
+        "dp_pa": 0.6411514606582436,
+        "dp_theory_pa": 0.7199999999999999,
+        "err_pct": -10.951186019688375,
+        "momentum_residual": 3.662507098997581e-17,
+        "a_peak_over_physical": 1379.3812195614091,
+        "momentum_net_over_sum": 3.662507098997581e-17
+      },
+      {
+        "lattice": "hex",
+        "offset_dx": [
+          0.0,
+          0.0
+        ],
+        "radius_over_dx": 32.0,
+        "dx_m": 0.003125,
+        "particles": 3719,
+        "cell_area_m2": 8.457279333832409e-06,
+        "completion_weight": 0.3,
+        "dp_pa": 0.6944706114025082,
+        "dp_theory_pa": 0.7199999999999999,
+        "err_pct": -3.545748416318286,
+        "momentum_residual": 3.771849291163179e-17,
+        "a_peak_over_physical": 1544.6476074454993,
+        "momentum_net_over_sum": 3.771849291163179e-17
+      },
+      {
+        "lattice": "hex",
+        "offset_dx": [
+          0.0,
+          0.0
+        ],
+        "radius_over_dx": 32.0,
+        "dx_m": 0.003125,
+        "particles": 3719,
+        "cell_area_m2": 8.457279333832409e-06,
+        "completion_weight": 0.4,
+        "dp_pa": 0.7477897621467724,
+        "dp_theory_pa": 0.7199999999999999,
+        "err_pct": 3.8596891870517416,
+        "momentum_residual": 1.945308541395307e-17,
+        "a_peak_over_physical": 1711.3334141604678,
+        "momentum_net_over_sum": 1.945308541395307e-17
+      },
+      {
+        "lattice": "hex",
+        "offset_dx": [
+          0.0,
+          0.0
+        ],
+        "radius_over_dx": 32.0,
+        "dx_m": 0.003125,
+        "particles": 3719,
+        "cell_area_m2": 8.457279333832409e-06,
+        "completion_weight": 0.5,
+        "dp_pa": 0.8011089128910367,
+        "dp_theory_pa": 0.7199999999999999,
+        "err_pct": 11.265126790421784,
+        "momentum_residual": 3.1968500505065345e-17,
+        "a_peak_over_physical": 1879.0609406253386,
+        "momentum_net_over_sum": 3.1968500505065345e-17
+      },
+      {
+        "lattice": "hex",
+        "offset_dx": [
+          0.0,
+          0.0
+        ],
+        "radius_over_dx": 32.0,
+        "dx_m": 0.003125,
+        "particles": 3719,
+        "cell_area_m2": 8.457279333832409e-06,
+        "completion_weight": 0.6,
+        "dp_pa": 0.8544280636353014,
+        "dp_theory_pa": 0.7199999999999999,
+        "err_pct": 18.67056439379189,
+        "momentum_residual": 3.4471012529082465e-17,
+        "a_peak_over_physical": 2047.5742046802802,
+        "momentum_net_over_sum": 3.447101252908247e-17
+      }
+    ]
+  },
+  "alpha_null": {
+    "square": {
+      "alpha_null": 0.4263334171275849,
+      "bracket": [
+        0.4,
+        0.5
+      ],
+      "method": "linear interpolation"
+    },
+    "hex": {
+      "alpha_null": 0.3478803361290183,
+      "bracket": [
+        0.3,
+        0.4
+      ],
+      "method": "linear interpolation"
+    }
+  },
+  "mode_stiffness": [
+    {
+      "lattice": "square",
+      "radius_over_dx": 16.0,
+      "particles": 799,
+      "mode": 2,
+      "eps": 0.05,
+      "completion_weight": 0.0,
+      "A": 0.06786527375953579,
+      "A_ddot": -0.01631336509731061,
+      "omega2_measured": 0.24037868255144865,
+      "omega2_exact": 0.4319999999999999,
+      "omega_err_pct": -25.405621154422043,
+      "approx": true
+    },
+    {
+      "lattice": "square",
+      "radius_over_dx": 16.0,
+      "particles": 799,
+      "mode": 2,
+      "eps": 0.05,
+      "completion_weight": 0.4263334171275849,
+      "A": 0.06786527375953579,
+      "A_ddot": -0.023353631592321976,
+      "omega2_measured": 0.344117547879788,
+      "omega2_exact": 0.4319999999999999,
+      "omega_err_pct": -10.749319449660232,
+      "approx": true
+    },
+    {
+      "lattice": "hex",
+      "radius_over_dx": 16.0,
+      "particles": 932,
+      "mode": 2,
+      "eps": 0.05,
+      "completion_weight": 0.0,
+      "A": 0.07637285996241726,
+      "A_ddot": -0.01687113227709466,
+      "omega2_measured": 0.22090481206801563,
+      "omega2_exact": 0.4319999999999999,
+      "omega_err_pct": -28.490998354128504,
+      "approx": true
+    },
+    {
+      "lattice": "hex",
+      "radius_over_dx": 16.0,
+      "particles": 932,
+      "mode": 2,
+      "eps": 0.05,
+      "completion_weight": 0.4263334171275849,
+      "A": 0.07637285996241726,
+      "A_ddot": -0.02429181130379429,
+      "omega2_measured": 0.31806863479707553,
+      "omega2_exact": 0.4319999999999999,
+      "omega_err_pct": -14.193823767971491,
+      "approx": true
+    }
+  ],
+  "dynamic_probe": [
+    {
+      "model": "css",
+      "completion_weight": 0.4263334171275849,
+      "radius_over_dx": 12,
+      "particles": 455,
+      "steps": 618,
+      "t_end_over_period": 0.35,
+      "containment_max_r_over_R": 4.771019550186361,
+      "contained": false,
+      "q_start": 0.08566984719727327,
+      "q_end": 0.02042768811083177,
+      "q_half_range": 0.03262107954322075
+    },
+    {
+      "model": "css",
+      "completion_weight": 0.0,
+      "radius_over_dx": 12,
+      "particles": 455,
+      "steps": 618,
+      "t_end_over_period": 0.35,
+      "containment_max_r_over_R": 3.358169436165044,
+      "contained": false,
+      "q_start": 0.08569870243574149,
+      "q_end": -0.04579181957457018,
+      "q_half_range": 0.06574526100515583
+    },
+    {
+      "model": "csf",
+      "completion_weight": null,
+      "radius_over_dx": 12,
+      "particles": 455,
+      "steps": 618,
+      "t_end_over_period": 0.35,
+      "containment_max_r_over_R": 1.0307485095072582,
+      "contained": true,
+      "q_start": 0.08562957277741971,
+      "q_end": -0.02184725347799861,
+      "q_half_range": 0.05373841312770916
+    }
+  ],
+  "verdict": {
+    "transfer_ok": true,
+    "transfer_worst": {
+      "lattice": "hex",
+      "offset_dx": [
+        0.0,
+        0.0
+      ],
+      "radius_over_dx": 16.0,
+      "err_pct": 6.599042622899135
+    },
+    "calibration_dependent": true,
+    "alpha_null": {
+      "square": 0.4263334171275849,
+      "hex": 0.3478803361290183,
+      "relative_shift_pct": -18.401813661979176
+    },
+    "momentum_ok": true,
+    "dynamic_probe_contained": {
+      "css": false,
+      "csf": true
+    }
+  },
+  "runtime_s": 46.82724618911743
+}
