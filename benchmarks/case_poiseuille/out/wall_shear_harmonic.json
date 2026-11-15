@@ -1,0 +1,473 @@
+{
+ "case": "CASE-POISEUILLE-SPH",
+ "layer": "harmonic wall shear (pulsatile drag) from the momentum budget",
+ "note": "post-processing of out/result.json; no SPH rerun. tau_hat = rho H (g_hat - i omega <u>_hat)/2, exact for the periodic state, kernel-free.",
+ "inputs": {
+  "artifact": "benchmarks/case_poiseuille/out/result.json",
+  "geometry": {
+   "height": 0.1,
+   "viscosity": 0.01,
+   "rho0": 1000.0,
+   "body_force": 9.81,
+   "columns": 8
+  },
+  "body_force": 9.81,
+  "omega_slow": 13.0,
+  "omega_fast": 31.4
+ },
+ "thresholds": {
+  "amp_pct": 5.0,
+  "phase_pct_of_quarter_turn": 5.0,
+  "phase_deg_equivalent": 4.5,
+  "interior_band_y_over_H": [
+   0.15,
+   0.85
+  ],
+  "declared": "case convention of DESIGN.md; not tuned to the observed values (exploratory probe recorded in the note)"
+ },
+ "harmonic_runs": [
+  {
+   "resolution_H_over_dx": 8,
+   "omega": 13.0,
+   "womersley_number": 1.8027756377319948,
+   "stokes_layer": 0.03922322702763681,
+   "n_rows": 8,
+   "mean_velocity": {
+    "measured_abs": 0.5089515092200774,
+    "measured_phase_deg": -52.00563791474164,
+    "analytic_abs": 0.4954658408257093,
+    "analytic_phase_deg": -51.82977942253683,
+    "amp_error_pct": 2.721815972599395,
+    "phase_error_deg": -0.1758584922048101,
+    "phase_error_pct_quarter_turn": 0.1953983246720112
+   },
+   "wall_shear_budget": {
+    "measured_abs": 307.044002362389,
+    "measured_phase_deg": -41.548111763670995,
+    "analytic_abs": 309.7224425701126,
+    "analytic_phase_deg": -39.98619690915508,
+    "amp_error_pct": -0.8647872545165303,
+    "phase_error_deg": -1.5619148545159192,
+    "phase_error_pct_quarter_turn": 1.7354609494621325
+   },
+   "wall_shear_local_quadratic": {
+    "measured_abs": 285.65114345515707,
+    "measured_phase_deg": -66.28904839608204,
+    "analytic_abs": 309.7224425701126,
+    "analytic_phase_deg": -39.98619690915508,
+    "amp_error_pct": -7.771893736601432,
+    "phase_error_deg": -26.302851486926954,
+    "phase_error_pct_quarter_turn": 29.225390541029952
+   },
+   "mean_amplitude_complex": [
+    0.31330237121706184,
+    -0.401090093279753
+   ],
+   "wall_shear_budget_complex": [
+    229.7914393681606,
+    -203.64654129109022
+   ],
+   "wall_shear_analytic_complex": [
+    237.30911077928698,
+    -199.02858431074873
+   ],
+   "wall_shear_local_complex": [
+    114.8668349090424,
+    -261.53811575985924
+   ]
+  },
+  {
+   "resolution_H_over_dx": 12,
+   "omega": 13.0,
+   "womersley_number": 1.8027756377319948,
+   "stokes_layer": 0.03922322702763681,
+   "n_rows": 12,
+   "mean_velocity": {
+    "measured_abs": 0.5014970397098758,
+    "measured_phase_deg": -51.86546781478976,
+    "analytic_abs": 0.4954658408257093,
+    "analytic_phase_deg": -51.82977942253683,
+    "amp_error_pct": 1.21727844529409,
+    "phase_error_deg": -0.035688392252922085,
+    "phase_error_pct_quarter_turn": 0.03965376916991343
+   },
+   "wall_shear_budget": {
+    "measured_abs": 308.74246119449697,
+    "measured_phase_deg": -40.69049917896045,
+    "analytic_abs": 309.7224425701126,
+    "analytic_phase_deg": -39.98619690915508,
+    "amp_error_pct": -0.31640631769646044,
+    "phase_error_deg": -0.7043022698053676,
+    "phase_error_pct_quarter_turn": 0.7825580775615195
+   },
+   "wall_shear_local_quadratic": {
+    "measured_abs": 289.6988115833371,
+    "measured_phase_deg": -65.61183154679055,
+    "analytic_abs": 309.7224425701126,
+    "analytic_phase_deg": -39.98619690915508,
+    "amp_error_pct": -6.465024239321215,
+    "phase_error_deg": -25.62563463763547,
+    "phase_error_pct_quarter_turn": 28.472927375150523
+   },
+   "mean_amplitude_complex": [
+    0.3096794615851113,
+    -0.3944590116984581
+   ],
+   "wall_shear_budget_complex": [
+    234.10164239600223,
+    -201.29165003032233
+   ],
+   "wall_shear_analytic_complex": [
+    237.30911077928698,
+    -199.02858431074873
+   ],
+   "wall_shear_local_complex": [
+    119.62138032394172,
+    -263.8486816381555
+   ]
+  },
+  {
+   "resolution_H_over_dx": 16,
+   "omega": 13.0,
+   "womersley_number": 1.8027756377319948,
+   "stokes_layer": 0.03922322702763681,
+   "n_rows": 16,
+   "mean_velocity": {
+    "measured_abs": 0.4986027613030465,
+    "measured_phase_deg": -51.817328542435206,
+    "analytic_abs": 0.4954658408257093,
+    "analytic_phase_deg": -51.82977942253683,
+    "amp_error_pct": 0.6331254788643825,
+    "phase_error_deg": 0.012450880101624762,
+    "phase_error_pct_quarter_turn": 0.013834311224027514
+   },
+   "wall_shear_budget": {
+    "measured_abs": 309.3794173446856,
+    "measured_phase_deg": -40.358450268173186,
+    "analytic_abs": 309.7224425701126,
+    "analytic_phase_deg": -39.98619690915508,
+    "amp_error_pct": -0.1107524603579102,
+    "phase_error_deg": -0.37225335901808876,
+    "phase_error_pct_quarter_turn": 0.41361484335343196
+   },
+   "wall_shear_local_quadratic": {
+    "measured_abs": 291.0188313260795,
+    "measured_phase_deg": -63.37663462811585,
+    "analytic_abs": 309.7224425701126,
+    "analytic_phase_deg": -39.98619690915508,
+    "amp_error_pct": -6.0388298273862056,
+    "phase_error_deg": -23.390437718960754,
+    "phase_error_pct_quarter_turn": 25.98937524328973
+   },
+   "mean_amplitude_complex": [
+    0.30822161419978855,
+    -0.39192365343150626
+   ],
+   "wall_shear_budget_complex": [
+    235.74962526952095,
+    -200.34404922986258
+   ],
+   "wall_shear_analytic_complex": [
+    237.30911077928698,
+    -199.02858431074873
+   ],
+   "wall_shear_local_complex": [
+    130.4124322862597,
+    -260.1625601265079
+   ]
+  }
+ ],
+ "harmonic_fast": {
+  "resolution_H_over_dx": 12,
+  "omega": 31.4,
+  "womersley_number": 2.8017851452243803,
+  "stokes_layer": 0.02523772325625344,
+  "n_rows": 12,
+  "mean_velocity": {
+   "measured_abs": 0.2534885653529427,
+   "measured_phase_deg": -70.33928035318922,
+   "analytic_abs": 0.24812803685019463,
+   "analytic_phase_deg": -70.42343307996978,
+   "amp_error_pct": 2.1603880685133525,
+   "phase_error_deg": 0.08415272678055885,
+   "phase_error_pct_quarter_turn": 0.0935030297561765
+  },
+  "wall_shear_budget": {
+   "measured_abs": 176.9778588233297,
+   "measured_phase_deg": -49.16429383447893,
+   "analytic_abs": 179.6651461881418,
+   "analytic_phase_deg": -46.59471226081059,
+   "amp_error_pct": -1.4957199110828157,
+   "phase_error_deg": -2.56958157366833,
+   "phase_error_pct_quarter_turn": 2.8550906374092557
+  },
+  "wall_shear_local_quadratic": {
+   "measured_abs": 137.63285451424937,
+   "measured_phase_deg": -101.58572417619513,
+   "analytic_abs": 179.6651461881418,
+   "analytic_phase_deg": -46.59471226081059,
+   "amp_error_pct": -23.394794463850566,
+   "phase_error_deg": -54.99101191538453,
+   "phase_error_pct_quarter_turn": 61.10112435042726
+  },
+  "mean_amplitude_complex": [
+   0.08528616035625121,
+   -0.23871054358025515
+  ],
+  "wall_shear_budget_complex": [
+   115.72444657899945,
+   -133.8992717593144
+  ],
+  "wall_shear_analytic_complex": [
+   123.4577248957535,
+   -130.52875130932193
+  ],
+  "wall_shear_local_complex": [
+   -27.64133520685466,
+   -134.82862911756848
+  ]
+ },
+ "frequency_discrimination": {
+  "resolution_H_over_dx": 12,
+  "omega_slow": 13.0,
+  "omega_fast": 31.4,
+  "ratio_measured": 0.5732216363716808,
+  "ratio_analytic": 0.5800843642367652,
+  "ratio_error_pct": -1.183056860033449,
+  "phase_difference_measured_deg": -8.473794655518475,
+  "phase_difference_analytic_deg": -6.608515351655512,
+  "phase_difference_error_deg": -1.8652793038629625,
+  "quasi_steady_ratio_would_be": 1.0,
+  "quasi_steady_phase_difference_deg": 0.0
+ },
+ "quasi_steady_control": {
+  "description": "quasi-steady control: section mean of the steady parabola <u> = g0 H^2/(12 nu) at zero phase, fed through the same budget (1)",
+  "mean_amplitude": 0.8175000000000002,
+  "measured": {
+   "measured_abs": 723.1525707795003,
+   "measured_phase_deg": -47.29061004263854,
+   "analytic_abs": 309.7224425701126,
+   "analytic_phase_deg": -39.98619690915508,
+   "amp_error_pct": 133.4840719899716,
+   "phase_error_deg": -7.30441313348345,
+   "phase_error_pct_quarter_turn": 8.11601459275939
+  },
+  "note": "this is what a mean-momentum-balance-only solver would report"
+ },
+ "estimator_transferability": {
+  "omega": 13.0,
+  "womersley_number": 1.8027756377319948,
+  "per_rung": {
+   "8": {
+    "measured_abs": 293.3586596924407,
+    "measured_phase_deg": -63.79057967162566,
+    "analytic_abs": 309.7224425701126,
+    "analytic_phase_deg": -39.98619690915508,
+    "amp_error_pct": -5.283370085126327,
+    "phase_error_deg": -23.804382762470567,
+    "phase_error_pct_quarter_turn": 26.449314180522855
+   },
+   "12": {
+    "measured_abs": 293.19900039565937,
+    "measured_phase_deg": -64.85919322726227,
+    "analytic_abs": 309.7224425701126,
+    "analytic_phase_deg": -39.98619690915508,
+    "amp_error_pct": -5.334919238444524,
+    "phase_error_deg": -24.872996318107198,
+    "phase_error_pct_quarter_turn": 27.636662575674663
+   },
+   "16": {
+    "measured_abs": 293.4150776832643,
+    "measured_phase_deg": -63.115602825616506,
+    "analytic_abs": 309.7224425701126,
+    "analytic_phase_deg": -39.98619690915508,
+    "amp_error_pct": -5.265154423918361,
+    "phase_error_deg": -23.129405916461423,
+    "phase_error_pct_quarter_turn": 25.69933990717936
+   }
+  },
+  "amp_bias_max_pct": 5.334919238444524,
+  "amp_bias_spread_pct": 0.06976481452616312,
+  "is_biased_beyond_case_tolerance": true,
+  "is_resolution_independent": true
+ },
+ "estimator_bias_sweep": [
+  {
+   "omega": 2.0,
+   "womersley_number": 0.7071067811865476,
+   "amp_error_pct": -0.1342795541033559,
+   "phase_error_deg": -3.6557440609719833
+  },
+  {
+   "omega": 3.583333333333333,
+   "womersley_number": 0.9464847243000456,
+   "amp_error_pct": -0.42924865888728236,
+   "phase_error_deg": -6.539982353160752
+  },
+  {
+   "omega": 5.166666666666666,
+   "womersley_number": 1.1365151414154882,
+   "amp_error_pct": -0.8866030673014946,
+   "phase_error_deg": -9.40757923616627
+  },
+  {
+   "omega": 6.75,
+   "womersley_number": 1.299038105676658,
+   "amp_error_pct": -1.5000412278101116,
+   "phase_error_deg": -12.251593266576407
+  },
+  {
+   "omega": 8.333333333333332,
+   "womersley_number": 1.4433756729740643,
+   "amp_error_pct": -2.2613406634946265,
+   "phase_error_deg": -15.065507826288524
+  },
+  {
+   "omega": 9.916666666666666,
+   "womersley_number": 1.5745369689742654,
+   "amp_error_pct": -3.1606553315264407,
+   "phase_error_deg": -17.84332936811532
+  },
+  {
+   "omega": 11.5,
+   "womersley_number": 1.6955824957813173,
+   "amp_error_pct": -4.1868524094674235,
+   "phase_error_deg": -20.579663766132768
+  },
+  {
+   "omega": 13.083333333333332,
+   "womersley_number": 1.8085445345175586,
+   "amp_error_pct": -5.327867332441249,
+   "phase_error_deg": -23.26976925246663
+  },
+  {
+   "omega": 14.666666666666666,
+   "womersley_number": 1.9148542155126762,
+   "amp_error_pct": -6.571057012124582,
+   "phase_error_deg": -25.909585987485002
+  },
+  {
+   "omega": 16.25,
+   "womersley_number": 2.0155644370746373,
+   "amp_error_pct": -7.903533900795212,
+   "phase_error_deg": -28.495743671207066
+  },
+  {
+   "omega": 17.833333333333332,
+   "womersley_number": 2.111476576553321,
+   "amp_error_pct": -9.312467364058419,
+   "phase_error_deg": -31.025549658700953
+  },
+  {
+   "omega": 19.416666666666664,
+   "womersley_number": 2.2032173444003806,
+   "amp_error_pct": -10.785343101017686,
+   "phase_error_deg": -33.49696074401737
+  },
+  {
+   "omega": 21.0,
+   "womersley_number": 2.29128784747792,
+   "amp_error_pct": -12.310175569407654,
+   "phase_error_deg": -35.908542128264656
+  },
+  {
+   "omega": 22.583333333333332,
+   "womersley_number": 2.376096238230542,
+   "amp_error_pct": -13.875672130622318,
+   "phase_error_deg": -38.25941712857332
+  },
+  {
+   "omega": 24.166666666666664,
+   "womersley_number": 2.4579802006254377,
+   "amp_error_pct": -15.471350672970862,
+   "phase_error_deg": -40.549210980430985
+  },
+  {
+   "omega": 25.75,
+   "womersley_number": 2.5372228912730552,
+   "amp_error_pct": -17.087614694370533,
+   "phase_error_deg": -42.7779917101343
+  },
+  {
+   "omega": 27.333333333333332,
+   "womersley_number": 2.614064523559687,
+   "amp_error_pct": -18.715791240341517,
+   "phase_error_deg": -44.9462105786896
+  },
+  {
+   "omega": 28.916666666666664,
+   "womersley_number": 2.688710967483613,
+   "amp_error_pct": -20.34813779371083,
+   "phase_error_deg": -47.054644085246764
+  },
+  {
+   "omega": 30.5,
+   "womersley_number": 2.7613402542968153,
+   "amp_error_pct": -21.977824337928464,
+   "phase_error_deg": -49.10433901494818
+  },
+  {
+   "omega": 32.08333333333333,
+   "womersley_number": 2.832107577994405,
+   "amp_error_pct": -23.598896519440792,
+   "phase_error_deg": -51.096561555976166
+  },
+  {
+   "omega": 33.666666666666664,
+   "womersley_number": 2.901149197588202,
+   "amp_error_pct": -25.206225261274184,
+   "phase_error_deg": -53.03275111306601
+  },
+  {
+   "omega": 35.25,
+   "womersley_number": 2.968585521759479,
+   "amp_error_pct": -26.795447453843458,
+   "phase_error_deg": -54.91447911821152
+  },
+  {
+   "omega": 36.83333333333333,
+   "womersley_number": 3.0345235760055207,
+   "amp_error_pct": -28.362901567098742,
+   "phase_error_deg": -56.74341288390278
+  },
+  {
+   "omega": 38.416666666666664,
+   "womersley_number": 3.0990589969645086,
+   "amp_error_pct": -29.90556126029634,
+   "phase_error_deg": -58.521284354719086
+  },
+  {
+   "omega": 40.0,
+   "womersley_number": 3.1622776601683795,
+   "amp_error_pct": -31.420969357415984,
+   "phase_error_deg": -60.24986348107228
+  }
+ ],
+ "reference_selfcheck": {
+  "budget_identity_rel_error": 2.0519299084613018e-16,
+  "steady_wall_shear": 490.5,
+  "omega_to_zero_limit": 490.50000000000006,
+  "omega_to_zero_rel_error": 1.158887234674985e-16,
+  "g_hat": [
+   9.81,
+   0.0
+  ],
+  "pass": true
+ },
+ "gates": {
+  "W0_mean_amplitude_5pct": true,
+  "W0b_mean_phase_5pct_of_quarter_turn": true,
+  "W1_wall_shear_amplitude_5pct": true,
+  "W2_wall_shear_phase_5pct_of_quarter_turn": true,
+  "W3_all_rungs_5pct": true,
+  "W4_frequency_ratio_5pct": true,
+  "W5_local_estimator_control_biased_gt_5pct": true,
+  "W6_reference_selfcheck_1e-10": true
+ },
+ "all_gates_pass": true,
+ "limitations": [
+  "The budget uses only the cross-section mean velocity: it certifies the integral momentum flux at the wall, not the shape of the Stokes layer.",
+  "The phase reference is the absolute time base of the harmonic fit; a common shift of the forcing history would move every phase equally, which the measured-vs-analytic agreement rules out.",
+  "Single harmonic only: a secondary-harmonic (nonlinear) wall shear is not measurable from the stored per-row fits."
+ ]
+}
