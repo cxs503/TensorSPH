@@ -41,7 +41,13 @@ def main() -> int:
     ap.add_argument("--sound-speed", type=float, default=5.0)
     ap.add_argument("--u-mean", type=float, default=0.2)
     ap.add_argument("--max-iter", type=int, default=12)
-    ap.add_argument("--tol", type=float, default=1.0e-3)
+    # The interface iteration cannot reduce the residual below ~1e-2 on this
+    # configuration (non-smooth load transfer + acoustic stiffness, see
+    # docs/xval_fsi2/STRONG_COUPLING_AND_ROD_STABILITY.md §5.3).  Asking for
+    # less makes every step burn max_iter chasing an unreachable floor and
+    # return an unconverged last-iterate load, so the default sits at the
+    # measured floor.  Override with --tol to reproduce the old behaviour.
+    ap.add_argument("--tol", type=float, default=1.0e-2)
     ap.add_argument("--warmup-frac", type=float, default=0.5)
     ap.add_argument("--checkpoint-every", type=int, default=250)
     ap.add_argument("--out", default="artifacts/xval_fsi2/body_force_transient.json")
@@ -64,7 +70,7 @@ def main() -> int:
             "cyl_lift", "cyl_drag_fit", "cyl_lift_fit", "drag_viscous",
             "lift_viscous", "max_speed", "drag", "lift", "body_drag_fit",
             "body_lift_fit", "cyl_coverage", "coupling_iterations",
-            "coupling_converged")
+            "coupling_converged")  # coupling_residual appended separately
     hist = {k: [] for k in keys}
     iters, converged = [], []
     t0 = time.time()
@@ -76,6 +82,9 @@ def main() -> int:
             hist[kk].append(float(row.get(kk, float("nan"))))
         iters.append(int(getattr(stats, "iterations", 0)))
         converged.append(bool(getattr(stats, "converged", True)))
+        # residual is not a row key: it lives on the stats object
+        hist.setdefault("coupling_residual", []).append(
+            float(getattr(stats, "residual_rel", float("nan"))))
         if not np.isfinite(hist["max_speed"][-1]) or hist["max_speed"][-1] > 50.0:
             aborted = True
             break
