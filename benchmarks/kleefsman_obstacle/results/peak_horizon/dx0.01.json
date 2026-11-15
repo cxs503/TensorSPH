@@ -1,0 +1,70 @@
+{
+  "tag": "dx0.01",
+  "dx": 0.01,
+  "t_end": 2.6,
+  "sound_speed": 20.0,
+  "dt": 0.00019500000000000002,
+  "simulated_time_s": 2.6000976175620254,
+  "steps": 18023,
+  "particles_fluid": 6710,
+  "gauge_aperture_m": 0.08,
+  "stations_offset_m": [
+    0.05,
+    0.248
+  ],
+  "peak_window_s": 0.03,
+  "arrival_threshold_m": 0.02,
+  "raw_probe_peak_m": 0.4780556857585907,
+  "raw_probe_peak_time_s": 1.1467612339027995,
+  "raw_probe_arrival_s": 0.4446249423432627,
+  "gauges": {
+    "height@x2.426": {
+      "peak_m": 0.4780556857585907,
+      "peak_time_s": 1.1467612339027995,
+      "arrival_time_s": 0.4446249423432627,
+      "station_x_m": 2.426,
+      "operator": "height"
+    },
+    "surface@x2.426": {
+      "peak_m": 0.4880556857585907,
+      "peak_time_s": 1.1467612339027995,
+      "arrival_time_s": 0.4359794576257658,
+      "station_x_m": 2.426,
+      "operator": "surface"
+    },
+    "slab@x2.426": {
+      "peak_m": 0.4831685256958007,
+      "peak_time_s": 1.156832266246842,
+      "arrival_time_s": 0.4378479555797872,
+      "station_x_m": 2.426,
+      "operator": "slab"
+    },
+    "height@x2.228": {
+      "peak_m": 0.38564905524253845,
+      "peak_time_s": 1.3463291847935197,
+      "arrival_time_s": 0.39183022864747935,
+      "station_x_m": 2.228,
+      "operator": "height"
+    },
+    "surface@x2.228": {
+      "peak_m": 0.39564905524253846,
+      "peak_time_s": 1.3463291847935197,
+      "arrival_time_s": 0.38508734257385185,
+      "station_x_m": 2.228,
+      "operator": "surface"
+    },
+    "slab@x2.228": {
+      "peak_m": 0.36827423095703127,
+      "peak_time_s": 1.4285422274171355,
+      "arrival_time_s": 0.38685598380365505,
+      "station_x_m": 2.228,
+      "operator": "slab"
+    }
+  },
+  "max_density_compression": 0.2784619140625,
+  "max_speed": 9.44178295135498,
+  "mass_error_rel": 0.0,
+  "boundary_escapes": 5,
+  "wall_clock_s": 958.2,
+  "time_series_csv": "dx0.01_time_series.csv"
+}
