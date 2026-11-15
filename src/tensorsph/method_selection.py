@@ -49,6 +49,9 @@ from typing import Callable, Mapping, Sequence
 
 __all__ = [
     "OWNER_TOLERANCE_PCT",
+    "EVIDENCE_ACCURACY",
+    "EVIDENCE_KINDS",
+    "EVIDENCE_ROBUSTNESS",
     "CaseProfile",
     "Decision",
     "Evidence",
@@ -68,6 +71,15 @@ __all__ = [
 
 #: Owner precision standard: a benchmark error above this is not acceptable.
 OWNER_TOLERANCE_PCT = 15.0
+
+#: A record that measures an error against an analytic/reference answer.
+EVIDENCE_ACCURACY = "accuracy"
+#: A record that measures the *conditioning* of a reading (how far the number
+#: would move under a modelling choice) rather than its distance to a reference.
+#: Such a record is evidence about robustness; it may never be subtracted from,
+#: nor silently added to, the accuracy claim.
+EVIDENCE_ROBUSTNESS = "robustness"
+EVIDENCE_KINDS = (EVIDENCE_ACCURACY, EVIDENCE_ROBUSTNESS)
 
 
 # --------------------------------------------------------------------------- #
@@ -260,11 +272,16 @@ class Evidence:
     source_sha256: str = ""
     status: str = RECORD_BANKED
     precondition: str = ""
+    #: ``accuracy`` (default) or ``robustness`` -- see ``EVIDENCE_ROBUSTNESS``.
+    kind: str = EVIDENCE_ACCURACY
 
     def __post_init__(self) -> None:
         if self.status not in RECORD_STATES:
             raise ValueError(f"evidence status must be one of {RECORD_STATES}, "
                              f"got {self.status!r}")
+        if self.kind not in EVIDENCE_KINDS:
+            raise ValueError(f"evidence kind must be one of {EVIDENCE_KINDS}, "
+                             f"got {self.kind!r}")
 
     @property
     def own_gate_passed(self) -> bool:
@@ -278,6 +295,11 @@ class Evidence:
     def is_refuted(self) -> bool:
         """True when a later audit invalidated the measurement itself."""
         return self.status == RECORD_REFUTED
+
+    @property
+    def is_accuracy(self) -> bool:
+        """True when the record is an error against a reference (not conditioning)."""
+        return self.kind == EVIDENCE_ACCURACY
 
     def as_dict(self) -> dict:
         out = asdict(self)
@@ -315,6 +337,7 @@ def load_registry(path: str | Path | None = None) -> dict[str, list[Evidence]]:
             source_sha256=str(raw.get("source_sha256", "")),
             status=str(raw.get("status", RECORD_BANKED)),
             precondition=str(raw.get("precondition", "")),
+            kind=str(raw.get("kind", EVIDENCE_ACCURACY)),
         )
         registry.setdefault(ev.method, []).append(ev)
     return registry
@@ -376,6 +399,41 @@ class Decision:
         return max(self.evidence, key=lambda ev: ev.measured_pct)
 
     @property
+    def worst_accuracy_pct(self) -> float | None:
+        """Worst *accuracy* record of this scheme, refuted ones excluded.
+
+        This is the number a selection may stand on: ``worst_measured_pct`` is
+        a maximum over records that happen to be inside the owner standard, so
+        it is an existential claim ("some benchmark passed"), not a bound on the
+        scheme's worst measured error.  Conditioning records
+        (``kind=robustness``, e.g. the mobility of a reading across a sweep) are
+        reported separately by ``worst_robustness_pct``: adding them to an error
+        bound would compare two different quantities.
+        """
+        values = [ev.measured_pct for ev in self.evidence
+                  if ev.is_accuracy and not ev.is_refuted]
+        return max(values) if values else None
+
+    @property
+    def worst_accuracy_record(self) -> Evidence | None:
+        live = [ev for ev in self.evidence if ev.is_accuracy and not ev.is_refuted]
+        return max(live, key=lambda ev: ev.measured_pct) if live else None
+
+    @property
+    def worst_robustness_pct(self) -> float | None:
+        values = [ev.measured_pct for ev in self.evidence
+                  if not ev.is_accuracy and not ev.is_refuted]
+        return max(values) if values else None
+
+    @property
+    def accuracy_within_owner_standard(self) -> bool | None:
+        """``None`` when the scheme has no live accuracy record at all."""
+        worst = self.worst_accuracy_pct
+        if worst is None:
+            return None
+        return worst <= OWNER_TOLERANCE_PCT
+
+    @property
     def refuted_evidence(self) -> list[Evidence]:
         """Records kept for the audit trail but excluded from the claim."""
         return [ev for ev in self.evidence if ev.is_refuted]
@@ -389,6 +447,9 @@ class Decision:
             "citation": self.citation,
             "worst_measured_pct": self.worst_measured_pct,
             "worst_banked_pct": self.worst_banked_pct,
+            "worst_accuracy_pct": self.worst_accuracy_pct,
+            "worst_robustness_pct": self.worst_robustness_pct,
+            "accuracy_within_owner_standard": self.accuracy_within_owner_standard,
             "n_refuted": len(self.refuted_evidence),
             "evidence": [ev.as_dict() for ev in self.evidence],
             "caveats": list(self.caveats),
@@ -405,9 +466,53 @@ class Selection:
 
     @property
     def is_verified(self) -> bool:
+        """True when a rule produced an evidence-backed scheme (status gate only).
+
+        Note what this does *not* say: it does not say the scheme's worst
+        accuracy record is inside the owner standard.  Use
+        ``within_owner_standard`` for that.
+        """
         return self.primary is not None and self.primary.status == "SELECTED"
 
+    @property
+    def endorsed(self) -> list[Decision]:
+        """The decisions this selection actually puts forward (primary+modifiers)."""
+        return ([self.primary] if self.primary is not None else []) + list(self.modifiers)
+
+    @property
+    def headline_bound_pct(self) -> float | None:
+        """Worst live *accuracy* record among the schemes put forward here.
+
+        One number for the whole recommendation, so that a card cannot advertise
+        the primary's favourable record while a modifier carries a 17 % one.
+        ``None`` when nothing put forward has an accuracy record.
+        """
+        values = [d.worst_accuracy_pct for d in self.endorsed
+                  if d.worst_accuracy_pct is not None]
+        return max(values) if values else None
+
+    @property
+    def headline_record(self) -> tuple[str, Evidence] | None:
+        """(method, record) that sets ``headline_bound_pct``."""
+        best: tuple[str, Evidence] | None = None
+        for decision in self.endorsed:
+            record = decision.worst_accuracy_record
+            if record is None:
+                continue
+            if best is None or record.measured_pct > best[1].measured_pct:
+                best = (decision.method, record)
+        return best
+
+    @property
+    def within_owner_standard(self) -> bool:
+        """The whole recommendation, not one favourable record, is inside 15 %."""
+        if not self.is_verified:
+            return False
+        bound = self.headline_bound_pct
+        return bound is not None and bound <= OWNER_TOLERANCE_PCT
+
     def as_dict(self) -> dict:
+        headline = self.headline_record
         return {
             "profile": asdict(self.profile),
             "primary": self.primary.as_dict() if self.primary else None,
@@ -415,6 +520,12 @@ class Selection:
             "candidates": [d.as_dict() for d in self.candidates],
             "notes": list(self.notes),
             "verified": self.is_verified,
+            "headline_bound_pct": self.headline_bound_pct,
+            "headline_quantity": (
+                None if headline is None
+                else f"{headline[0]}: {headline[1].case} -- {headline[1].quantity}"
+            ),
+            "within_owner_standard": self.within_owner_standard,
         }
 
 
@@ -588,9 +699,32 @@ def _classify(method_key: str, role: str, rationale: str,
                 for ev in refuted
             ],
         )
-    passing = [ev for ev in banked if ev.within_owner_tolerance]
+    accuracy_banked = [ev for ev in banked if ev.is_accuracy]
+    if not accuracy_banked:
+        return Decision(
+            method=method_key, status="WITHHELD", role=role,
+            rationale=rationale + " -- its records measure the conditioning of a "
+                                   "reading, not an error against a reference, so "
+                                   "there is no accuracy evidence to stand on",
+            citation=spec.citation, evidence=records,
+            caveats=[
+                f"{ev.case}: {ev.quantity} = {ev.measured_pct:.3g}% "
+                f"(kind={ev.kind}, {ev.source})"
+                for ev in banked
+            ],
+        )
+    # Only accuracy records may satisfy the owner standard: a conditioning
+    # record that happens to read 0 % (e.g. a sweep with zero mobility) must not
+    # rescue a scheme whose real error records fail (m21115).
+    passing = [ev for ev in accuracy_banked if ev.within_owner_tolerance]
     for ev in banked:
-        if not ev.within_owner_tolerance:
+        if not ev.is_accuracy:
+            caveats.append(
+                f"{ev.case}: {ev.quantity} = {ev.measured_pct:.3g}% -- a conditioning "
+                f"record (kind={ev.kind}), not an error against a reference: reported "
+                f"for transparency, excluded from the accuracy bound ({ev.source})"
+            )
+        elif not ev.within_owner_tolerance:
             caveats.append(
                 f"{ev.case}: {ev.quantity} = {ev.measured_pct:.3g}% exceeds the "
                 f"{OWNER_TOLERANCE_PCT:g}% owner standard ({ev.source})"
@@ -702,6 +836,23 @@ def render_decision(selection: Selection) -> str:
     lines = ["# method-selection decision", "", "## profile"]
     for key, value in asdict(selection.profile).items():
         lines.append(f"- {key}: {value}")
+    lines += ["", "## verdict"]
+    bound = selection.headline_bound_pct
+    headline = selection.headline_record
+    if bound is None:
+        lines.append(f"- accuracy bound: unavailable (no accuracy record among the "
+                     f"schemes put forward; owner standard {OWNER_TOLERANCE_PCT:g}%)")
+    else:
+        where = "" if headline is None else f" -- set by {headline[0]} ({headline[1].case})"
+        lines.append(
+            f"- accuracy bound: {bound:.3g}% over every live accuracy record of the "
+            f"schemes put forward (owner standard {OWNER_TOLERANCE_PCT:g}%){where}"
+        )
+    lines.append(
+        "- within owner standard: " + ("YES" if selection.within_owner_standard else "NO")
+        + ("" if selection.is_verified else " (nothing was selected)")
+    )
+
     lines += ["", "## primary scheme"]
     if selection.primary is None:
         lines.append("- none (WITHHELD: no evidence-backed rule fired)")
@@ -715,6 +866,21 @@ def render_decision(selection: Selection) -> str:
                 f"- claimed bound: {worst:.3g}% (owner standard "
                 f"{OWNER_TOLERANCE_PCT:g}%; passing records only)"
             )
+            accuracy = d.worst_accuracy_pct
+            if accuracy is not None and accuracy > worst + 1e-12:
+                record = d.worst_accuracy_record
+                case = f" ({record.case})" if record else ""
+                lines.append(
+                    f"- accuracy bound: {accuracy:.3g}%{case} -- the worst live "
+                    "accuracy record of this scheme; above it the claim above is "
+                    "not reachable"
+                )
+            robustness = d.worst_robustness_pct
+            if robustness is not None:
+                lines.append(
+                    f"- conditioning record (not an error vs a reference): "
+                    f"{robustness:.3g}%"
+                )
             banked = d.worst_banked_pct
             if banked is not None and banked > worst + 1e-12:
                 record = d.worst_banked_record

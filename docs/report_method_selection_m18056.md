@@ -128,15 +128,15 @@ python -m tensorsph.method_selection --json /tmp/prof.json     # CLI 判型（�
 
 ### 3.2 路由矩阵（候选算例画像 → 选定方法）
 
-| 算例画像 | 选定方法 | 状态 | 最坏实测误差 [%] | 附加项（modifier） |
-|---|---|---|---|---|
-| regular wave in a flume | wcsph_delta_sph | SELECTED | 2.968 | density_diffusion=SELECTED, compression_regularization=SELECTED |
-| Sod shock tube | compressible_riemann | SELECTED | 0.7768 | - |
-| capillary droplet (Laplace law) | csf_surface_tension | SELECTED | 5.987 | density_diffusion=SELECTED, compression_regularization=SELECTED |
-| planar Couette channel | isph_projection | SELECTED | 0.8666 | - |
-| Gresho vortex (smooth inviscid, periodic) | （无） | NONE | - | - |
-| 1-D transient conduction | heat_conduction_operator | SELECTED | 0.0002181 | - |
-| breaking wave over a slope | wcsph_delta_sph | SELECTED | 2.968 | density_diffusion=SELECTED, transport_velocity_correction=SELECTED, particle_shifting=SELECTED, compression_regularization=SELECTED |
+| 算例画像 | 选定方法 | 状态 | 宣称上界 [%] | 精度上界 [%]（整份推荐） | <15% | 附加项（modifier） |
+|---|---|---|---|---|---|---|
+| regular wave in a flume | wcsph_delta_sph | SELECTED | 2.968 | 5.533 | ✔ | density_diffusion=SELECTED, compression_regularization=SELECTED |
+| Sod shock tube | compressible_riemann | SELECTED | 0.7768 | 0.7768 | ✔ | - |
+| capillary droplet (Laplace law) | csf_surface_tension | SELECTED | 5.987 | 23.8 | ✘ | density_diffusion=SELECTED, compression_regularization=SELECTED |
+| planar Couette channel | isph_projection | SELECTED | 0.8666 | 0.8666 | ✔ | - |
+| Gresho vortex (smooth inviscid, periodic) | （无） | NONE | - | - | ✘ | - |
+| 1-D transient conduction | heat_conduction_operator | SELECTED | 0.0002181 | 0.0002181 | ✔ | - |
+| breaking wave over a slope | wcsph_delta_sph | SELECTED | 2.968 | 16.96 | ✘ | density_diffusion=SELECTED, transport_velocity_correction=SELECTED, particle_shifting=SELECTED, compression_regularization=SELECTED |
 
 7 个画像中 6 个给出证据背书的方案；与预期不一致者：无。
 
@@ -145,6 +145,24 @@ python -m tensorsph.method_selection --json /tmp/prof.json     # CLI 判型（�
 
 | 方法 | 族 | 状态 | 文献出处 |
 |---|---|---|---|
+
+### 3.5 宣称上界 vs 真实精度上界（逐方法）
+
+| 方法 | 宣称上界 [%]（仅过 15% 的记录） | 真实精度上界 [%]（全部 live accuracy） | 差额 [pp] | 条件数记录 [%]（不计入） | live accuracy 记录数 | <15% |
+|---|---|---|---|---|---|---|
+| `compressible_riemann` | 0.7768 | 0.7768 | +0 | - | 1 | ✔ |
+| `compression_regularization` | 5.533 | 5.533 | +0 | - | 1 | ✔ |
+| `csf_surface_tension` | 5.987 | 23.8 | +17.81 | - | 3 | ✘ |
+| `density_diffusion` | 1.021 | 1.021 | +0 | - | 2 | ✔ |
+| `heat_conduction_operator` | 0.0002181 | 0.0002181 | +0 | - | 1 | ✔ |
+| `isph_projection` | 0.8666 | 0.8666 | +0 | - | 2 | ✔ |
+| `particle_shifting` | 8.833 | 8.833 | +0 | - | 1 | ✔ |
+| `transport_velocity_correction` | 10.81 | 16.96 | +6.152 | - | 2 | ✘ |
+| `wcsph_delta_sph` | 2.968 | 2.968 | +0 | - | 1 | ✔ |
+| `wcsph_wall_no_slip` | 14.2 | 17.08 | +2.873 | 18.26 | 7 | ✘ |
+
+10 个有证据的方法中，3 个的宣称上界**低于**自己最差的活accuracy 记录（最大差额 17.81 pp）；3 个方法的真实精度上界超出 15% owner 标准：`csf_surface_tension`, `transport_velocity_correction`, `wcsph_wall_no_slip`。
+
 
 ### 3.4 图
 
@@ -155,6 +173,10 @@ python -m tensorsph.method_selection --json /tmp/prof.json     # CLI 判型（�
 ![routing_matrix](docs/figures/method_selection_m18056/routing_matrix.png)
 
 *图 2 路由矩阵：算例画像 → 选定方法；绿底=证据背书（SELECTED），红底=无可选方法。*
+
+![claim_bounds](docs/figures/method_selection_m18056/claim_bounds.png)
+
+*图 3 逐方法：圆点=宣称上界（只取过 15% 的记录），菱形=全部 live accuracy 记录的最坏值（绿=在 15% 内，红=超出），灰线=两者差额；虚线=owner 15% 标准。*
 
 
 ---

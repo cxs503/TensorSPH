@@ -11,6 +11,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import math
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -19,6 +20,21 @@ REPO = Path(__file__).resolve().parents[1]
 DRIVER = REPO / "benchmarks" / "xval_method_selection" / "grade_matrix.py"
 REPORT = REPO / "docs" / "reports" / "xval_method_selection_m17501.json"
 GRAVITY = 9.81
+
+#: Report rows whose raw record is *not tracked by git* (it was produced under
+#: ``runs/`` on the node).  A clean checkout can therefore not re-open the record
+#: itself, and the report has to carry the failure in its own text.  The set is
+#: declared explicitly so that a new local-only record cannot slip into the
+#: published matrix unnoticed -- the previous version of this test simply crashed
+#: with FileNotFoundError on every clean checkout, which is a red build nobody
+#: can act on (m21115).
+LOCAL_ONLY_RECORDS = frozenset({"D20_h025_A"})
+
+
+def _tracked_in_git(rel: str) -> bool:
+    proc = subprocess.run(["git", "-C", str(REPO), "ls-files", "--error-unmatch", rel],
+                          capture_output=True, text=True)
+    return proc.returncode == 0
 
 
 def _driver():
@@ -108,6 +124,7 @@ def test_report_artifact_matches_a_fresh_regrade():
         pytest.skip(f"report artifact missing: {REPORT}")
     payload = json.loads(REPORT.read_text())
     assert payload["anchor"] == "XVAL-SPH-METHOD-SELECTION-2026-11-12"
+    local_only = set()
     for row in payload["rows"]:
         record = Path(row["record"])
         if not record.is_absolute():
@@ -115,6 +132,24 @@ def test_report_artifact_matches_a_fresh_regrade():
         if not row.get("present"):
             assert not record.exists(), f"{record} exists but the report calls it missing"
             continue
+        try:
+            rel = record.relative_to(REPO).as_posix()
+        except ValueError:  # pragma: no cover - absolute path outside the repo
+            rel = None
+        if rel is not None and not _tracked_in_git(rel):
+            # The record is local-only: the report must stand on its own text.
+            assert row["label"] in LOCAL_ONLY_RECORDS, (
+                f"{row['label']} points at untracked evidence {rel}: ship it "
+                "(tests/data/ text channel) or declare it in LOCAL_ONLY_RECORDS "
+                "together with the failure it reports")
+            assert row.get("failed") is True, (
+                f"{row['label']}: untracked evidence may only be quoted when it "
+                "records a failure; a passing row needs shippable evidence")
+            assert row.get("error"), f"{row['label']}: report carries no error text"
+            local_only.add(row["label"])
+            continue
+        if not record.exists():
+            pytest.skip(f"{rel} is tracked but absent in this checkout")
         if row.get("failed"):
             assert json.loads(record.read_text()).get("failed") is True
             continue
@@ -127,6 +162,9 @@ def test_report_artifact_matches_a_fresh_regrade():
                                                      rel=1e-12)
         for gauge, series in zip(row["gauges"], fresh["probe_eta"]):
             assert len(series) == len(fresh["times"])
+    labels = {row["label"] for row in payload["rows"]}
+    assert local_only <= set(LOCAL_ONLY_RECORDS)
+    assert LOCAL_ONLY_RECORDS <= labels, "declared local-only row is not in the report"
 
 def _run_matrix(tmp_path, records, *, matrix=None):
     runs = tmp_path / "runs"
