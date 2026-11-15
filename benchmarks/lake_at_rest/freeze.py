@@ -215,7 +215,8 @@ def _report(runs: dict) -> dict:
 #: files that exist are shipped, and ``--reship`` re-hashes the frozen payload
 #: without re-running the physics so the published numbers keep their bytes.
 EXTRA_RECORDS = ("stability.json", "stability_band_fit.json",
-                 "stability_viscous.json", "wall_gap.json")
+                 "stability_viscous.json", "wall_gap.json",
+                 "wellbalanced.json")
 
 
 def _extra_payload(ship: Path) -> list:

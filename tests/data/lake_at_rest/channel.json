@@ -26,6 +26,7 @@
     "stability.json",
     "stability_band_fit.json",
     "wall_gap.json",
+    "wellbalanced.json",
     "MANIFEST.sha256",
     "channel.json"
   ]
