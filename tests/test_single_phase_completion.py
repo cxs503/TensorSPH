@@ -246,3 +246,50 @@ def test_figure_renders(tmp_path):
     assert len(svg) > 10_000
     for title in ("closure scan", "baseline vs closure", "smoothing-width transfer"):
         assert title in svg, title
+
+# --------------------------------------------------------------------------- #
+# 6. the hourglass pair order (round 3): the penalty must be conservative
+# --------------------------------------------------------------------------- #
+def test_pair_assembly_conserves_momentum_with_the_penalty_on():
+    """The upstream penalty is momentum conserving once the pair is antisymmetric.
+
+    ``H_ij`` is even under ``i <-> j`` so ``H . grad W`` is odd -- the parity of the
+    stress flux -- and both terms must enter the pair bracket with the same sign.
+    The removed assembly added the penalty on both ends instead; its leak is
+    reconstructed from the current API (``legacy_pair_order_leak``, which reproduces
+    the 0.753 the pre-fix code measured), because the reconstruction is itself
+    verified against the model on a star of pairs.
+    """
+    import json
+
+    P = json.loads((SPC.OUT / "gate.json").read_text())
+    po = P["hourglass_pair_order"]
+    pa = po["pair_assembly"]
+    assert pa["momentum_residual_hg_on"] < 1e-12, pa
+    assert pa["momentum_residual_hg_off"] < 1e-12, pa
+    assert 0.5 < pa["legacy_pair_order_leak"] < 1.0, pa
+    star = pa["pair_hourglass_star_check"]
+    assert star["rel_diff"] < 1e-12, star
+    assert star["net_relative"] < 1e-12, star
+    for rec in po["single_phase_hg_on"]:
+        assert rec["momentum_residual"] < 1e-12, rec
+    for key in ("off", "on"):
+        assert po["two_phase"][key]["momentum_residual"] < 1e-12, key
+
+
+def test_pair_order_block_is_reproducible_from_the_module():
+    """``gate.json``'s pair-order block must still be what the module measures."""
+    import json
+
+    P = json.loads((SPC.OUT / "gate.json").read_text())
+    pa = P["hourglass_pair_order"]["pair_assembly"]
+    fresh = SPC.hourglass_pair_order(SPC.LADDER, P["fit"]["alpha_star"])
+    assert fresh["legacy_pair_order_leak"] == pytest.approx(pa["legacy_pair_order_leak"],
+                                                            rel=1e-12)
+    assert fresh["momentum_residual_hg_on"] == pytest.approx(
+        pa["momentum_residual_hg_on"], rel=1e-9, abs=1e-18)
+    assert SPC.pair_hourglass_star_check()["rel_diff"] == pytest.approx(
+        pa["pair_hourglass_star_check"]["rel_diff"], rel=1e-9, abs=1e-18)
+    assert SPC.pair_identity()["momentum_residual"] == pytest.approx(
+        P["hourglass_pair_order"]["pair_identity"]["momentum_residual"],
+        rel=1e-9, abs=1e-18)

@@ -92,6 +92,30 @@ def t5() -> str:
     return "\n".join(rows)
 
 
+def t7() -> str:
+    po = P["hourglass_pair_order"]
+    pa = po["pair_assembly"]
+    st = pa["pair_hourglass_star_check"]
+    rows = ["| configuration | Δp error vs σ/R | momentum residual |", "|---|---|---|"]
+    for r in po["single_phase_hg_on"]:
+        rows.append(f"| single phase, penalty **on**, α = 0, R/Δx = "
+                    f"{r['radius_over_dx']:.0f} | {r['err_pct']:+.2f} % | "
+                    f"{r['momentum_residual']:.1e} |")
+    for key, label in (("off", "two phase, penalty **off**"),
+                       ("on", "two phase, penalty **on**")):
+        tp = po["two_phase"][key]
+        rows.append(f"| {label}, both-phase reading, R/Δx = {pa['radius_over_dx']:.0f} "
+                    f"| {tp['dp_flux_all_err_pct']:+.2f} % | "
+                    f"{tp['momentum_residual']:.1e} |")
+    rows.append(f"| 3-particle generic pair state, penalty **on** | — | "
+                f"{po['pair_identity']['momentum_residual']:.1e} |")
+    rows.append(f"| removed (pre-round-3) pair order, reconstructed from the "
+                f"current API | — | **{pa['legacy_pair_order_leak']:.4f}** |")
+    rows.append(f"| audit re-implementation vs the model, 5-particle star | — | "
+                f"rel. diff {st['rel_diff']:.1e}, net {st['net_relative']:.1e} |")
+    return "\n".join(rows)
+
+
 def t6() -> str:
     d = P["delta_mass_split"]
     f = P["full_mirror_hypothesis"]
@@ -130,6 +154,7 @@ def render_doc() -> tuple[str, str]:
     vtext, status = verdict()
     tables = {
         "T1": t1(), "T2": t2(), "T3": t3(), "T4": t4(), "T5": t5(), "T6": t6(),
+        "T7": t7(),
     }
     c = P["case"]
     doc = f"""# Single-phase free-surface surface tension: interface-completion closure
@@ -210,6 +235,41 @@ sweep h/Δx ∈ [1.1, 1.5].
 
 {tables['T6']}
 
+### T7 — hourglass pair order: the penalty conserves momentum (round 3)
+
+The hourglass penalty is the one term that was transcribed asymmetrically: the
+inner loop gave the `j` end `-w (flux - hg)` (the penalty was *added* on both ends
+instead of cancelling) and the contact loop kept an `e`-odd term un-flipped.  But
+`H_ij` is **even** under `i <-> j` (`T_i + T_j` and `M ∝ (g·e) g (x) e` both are),
+so the scalar `H·grad W` is odd — the same parity as `(S_i + S_j)·grad W` — and
+both terms must enter the antisymmetric bracket with the same sign.  Upstream
+satisfies that identity (its `j` end is run by the symmetric loop), so the
+residual recorded in round 2 (0.73) was the **port's**, not the model's:
+`2 w hg` per pair.  T7 reconstructs it from the current API and reproduces it
+exactly (0.7534 relative: the number the pre-fix code measured); the corrected assembly
+makes it vanish (9.2e-18).
+
+Consequences, all with the penalty **on**.  Nothing else moves: every gated number
+of T1–T6 runs with the penalty off and is bit-identical.
+
+* the free-surface reading at α = 0 moves from −375 % to -119.07 % at
+  R/Δx = 32; the ladder (-45.0 %, -119.1 %, -573.9 %) still diverges with resolution, so the
+  round-2 conclusion stands — the penalty must stay off on a free surface.  It is
+  now *biased*, not non-conservative;
+* the two-phase reading at R/Δx = 32 moves from −5.82 % (asymmetrically assembled)
+  to -12.75 %: the faithful number is worse, which is the point — part of the old
+  agreement was the leak cancelling a real penalty bias;
+* the momentum of the penalty alone is 2.9e-18 on a star of pairs, and the audit's
+  re-implementation of the term agrees with the model to 4.6e-17, so the
+  reconstruction is a measurement, not a guess.
+
+In the dynamic test (`docs/xval_sphinxys_surface_tension/LAMB.md`) the same
+correction is why the two-phase Lamb frequency with the penalty on now reads
++49.7 % at R/Δx = 16 (it read −4.2 % with the asymmetric assembly): the inner
+penalty is a *phase-mixing* term that biases the mode-2 force, and
+`hourglass_scope="contact"` (which drops it) is the setting that passes the gate.
+
+
 Figure (panel a: closure scan with the gate band; panel b: baseline vs closure
 on the ladder; panel c: smoothing-ratio transfer): regenerate with
 
@@ -251,7 +311,10 @@ test that the figure still renders.
    and {P['ladder_validated'][2]['err_pct']:+.2f} %.
 3. **Hourglass penalty must stay off on a free surface** — the upstream penalty
    is unbalanced without a second phase and diverges with resolution (round-2
-   §5.2).  The closure does not change that: see T5.
+   §5.2).  The closure does not change that: see T5.  Round 3 corrected its
+   *assembly* (T7): the pair is now exactly antisymmetric, so the penalty
+   conserves momentum and the divergence above is a genuine model bias rather
+   than a conservation error.
 4. **The pair-averaged normal is ill-defined in the deep bulk** (`∇c → 0`, the
    direction is numerical noise).  This is harmless because the flux is
    multiplied by `S ≈ 0` there, and
@@ -299,6 +362,7 @@ suite instead of silently documenting a stale run.
 def render_tables() -> str:
     tables = {
         "T1": t1(), "T2": t2(), "T3": t3(), "T4": t4(), "T5": t5(), "T6": t6(),
+        "T7": t7(),
     }
     return ("# Single-phase interface-completion closure: tables (generated)\n\n"
             "Generated from `out_single_phase_completion/gate.json` by "
