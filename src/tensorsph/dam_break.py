@@ -87,10 +87,21 @@ class DamBreakConfig(Config):
     tvc_alpha: float | None = None
     # "all" = every fluid particle (upstream ParticleScope=AllParticles);
     # "bulk" = interior particles only (ParticleScope=BulkParticles, the scope
-    # used by the upstream channel-flow examples).
+    # used by the upstream channel-flow examples), detected by the zeroth
+    # moment (concentration); "bulk_g" = interior detected by the first moment
+    # (|g| h <= tvc_bulk_g), which is the criterion the correction itself uses
+    # and the only one that leaves a narrow resting column at rest.
     tvc_scope: str = "all"
     # Free-surface detector threshold for scope="bulk": C_i < tvc_bulk_c * c_ref.
     tvc_bulk_c: float = 0.95
+    # First-moment scope criterion for scope="bulk_g": keep the correction only
+    # on particles with |g_i| h <= tvc_bulk_g, i.e. on particles whose kernel
+    # support is complete in the *gradient* sense the correction actually uses.
+    # The concentration criterion above is a zeroth-moment proxy; it admits
+    # truncated-support particles and that is what makes the 0.95 default
+    # unstable in a narrow resting column (docs/xval_sphinx_tvc/
+    # BULK_SCOPE_CRITERION.md).
+    tvc_bulk_g: float = 0.02
     # Safety cap on the per-step displacement in units of h; None keeps the
     # upstream behaviour (no cap).
     tvc_max_shift: float | None = None
@@ -407,10 +418,13 @@ def run_case(cfg: DamBreakConfig, pair_skin_factor: float | None = None,
             # upstream ``update()`` does.
             volume = mass / density
             active = None
+            scope_tol = None
             if cfg.tvc_scope == "bulk":
                 c_ref = estimate_reference_concentration(
                     concentration(positions, volume, h))
                 active = concentration(positions, volume, h) >= cfg.tvc_bulk_c * c_ref
+            elif cfg.tvc_scope == "bulk_g":
+                scope_tol = cfg.tvc_bulk_g
             all_positions[:fluid_count] = positions
             wall_volume_p = torch.full((wall.shape[0],), cfg.dx ** positions.shape[1],
                                        dtype=mass.dtype, device=device)
@@ -420,7 +434,7 @@ def run_case(cfg: DamBreakConfig, pair_skin_factor: float | None = None,
                 limiter=tvc_limiter_callable(cfg),
                 max_shift=(None if cfg.tvc_max_shift is None
                            else cfg.tvc_max_shift * h),
-                active=active)
+                active=active, scope_tol=scope_tol)
             positions = positions + tvc.shift
             tvc_shift_peak = max(tvc_shift_peak, tvc.max_shift)
             escaped += apply_boundary(positions, velocity, cfg, top=top)
