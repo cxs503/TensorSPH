@@ -75,8 +75,16 @@ What this module does *not* do
   discrete system are untouched by the correction itself (the momentum effect
   enters through the subsequent density/pressure evaluation, which is the
   point of the formulation).
-* The adaptive-smoothing-length rescaling ``h_ratio`` of upstream is not
-  ported (TensorSPH has a single ``h``); the ratio is 1 in every run here.
+* The adaptive-smoothing-length rescaling ``h_ratio`` of upstream **is**
+  ported (``h_ratio=`` on both entry points, upstream's
+  ``AdaptiveSmoothingLength`` branch): the kernel is evaluated at the local
+  smoothing length ``h_local_i = h_ref / h_ratio_i`` (upstream's ratio is
+  *reference over local*, ``adaptation.h``) and the displacement carries
+  upstream's ``1/h_ratio_i**2`` factor from ``update()``.  TensorSPH itself
+  still runs a single ``h``, so every solver-level run sets ``h_ratio = 1``;
+  the branch is verified against upstream's own formulas in
+  ``docs/xval_sphinx_tvc/ADAPTIVE_H_RATIO.md`` and
+  ``tests/test_tvc_adaptive_h_ratio.py``.
 * Two of upstream's limiter objects are shipped -- ``no_limiter``
   (``NoLimiter``) and ``truncated_linear`` (``TruncatedLinear``, slope 100) --
   because both are in use in upstream's own examples: ``NoLimiter`` is the
@@ -215,11 +223,30 @@ def truncated_linear(
     return limiter
 
 
+def _as_ratio(h_ratio, n: int, like: torch.Tensor) -> torch.Tensor:
+    """Broadcast ``h_ratio`` to ``n`` particles on ``like``'s dtype/device.
+
+    Upstream stores one ratio per particle (``DiscreteVariable<Real>
+    "SmoothingLengthRatio"``); a shorter vector is padded with ones, which is
+    the wall-particle convention (walls keep the reference smoothing length).
+    """
+    if isinstance(h_ratio, torch.Tensor):
+        r = h_ratio.to(dtype=like.dtype, device=like.device).reshape(-1)
+        if r.numel() == n:
+            return r
+        if r.numel() < n:
+            return torch.cat([r, torch.ones(n - r.numel(), dtype=like.dtype,
+                                            device=like.device)])
+        raise ValueError("h_ratio has more entries than particles")
+    return torch.full((n,), float(h_ratio), dtype=like.dtype, device=like.device)
+
+
 def kernel_gradient_integral(
     positions: torch.Tensor,
     volume: torch.Tensor,
     h: float,
     pairs: torch.Tensor | None = None,
+    h_ratio: float | torch.Tensor | None = None,
     wall_count: int = 0,
     wall_factor: float = 2.0,
     correction: torch.Tensor | None = None,
@@ -262,7 +289,19 @@ def kernel_gradient_integral(
     if n_fluid <= 0:
         raise ValueError("need at least one fluid particle")
     if pairs is None:
-        pairs = cell_linked_pairs(positions, 2.0 * h)
+        # The search radius must cover the largest support in the body: with
+        # adaptive smoothing lengths a coarse particle (h_ratio < 1) has
+        # h_local > h, and upstream's cell linked list uses each particle's own
+        # cut-off (``SearchDepthAdaptive``: ``CutOffRadius(h_ratio_[i])``).
+        # Searching at ``2 h`` would silently drop the outer shell of such a
+        # neighbour list -- measured: 42 % of the displacement at
+        # ``h_ratio = 0.5`` before this fix (docs/xval_sphinx_tvc/
+        # ADAPTIVE_H_RATIO.md, C1).  ``h_ratio = None`` keeps ``2 h``.
+        search_h = h
+        if h_ratio is not None:
+            ratio_t = _as_ratio(h_ratio, positions.shape[0], positions)
+            search_h = h / float(ratio_t.min().clamp_min(1.0e-30))
+        pairs = cell_linked_pairs(positions, 2.0 * search_h)
     grad = torch.zeros((n_fluid, positions.shape[1]),
                        dtype=positions.dtype, device=positions.device)
     if pairs.numel() == 0:
@@ -275,7 +314,25 @@ def kernel_gradient_integral(
     # a symmetric lattice would not cancel and the correction would push every
     # particle the same way.
     i, j = pairs.unbind(dim=1)
-    gw = cubic_spline_gradient(positions[i] - positions[j], h)  # grad_i W_ij
+    delta = positions[i] - positions[j]
+    if h_ratio is None:
+        gw_i = cubic_spline_gradient(delta, h)      # grad_i W_ij at h
+        gw_j = -gw_i                                # grad_j W_ij at h
+    else:
+        # Upstream ``Kernel::dW(h_ratio, r_ij)`` (``base_kernel.cpp``)
+        # evaluates the profile at ``q = r/h_ref * h_ratio`` with the
+        # derivative normalisation scaled by ``h_ratio**(dim+1)``, and
+        # ``h_ratio_i = h_ref/h_local_i`` (``adaptation.h``), so the result is
+        # exactly the gradient of the same kernel at ``h_local_i``.  The
+        # cut-off follows the owner particle's ratio (``SearchDepthAdaptive``
+        # uses ``CutOffRadius(h_ratio_[i])``), which the profile enforces by
+        # returning zero for ``q >= 2``.  The two directions of a pair are
+        # therefore evaluated separately: with per-particle ``h`` there is no
+        # ``gw_j = -gw_i`` symmetry.
+        ratio = _as_ratio(h_ratio, n_total, positions)
+        h_local = h / ratio
+        gw_i = cubic_spline_gradient(delta, h_local[i])
+        gw_j = cubic_spline_gradient(-delta, h_local[j])
     fluid_i = i < n_fluid
     fluid_j = j < n_fluid
     ff = fluid_i & fluid_j
@@ -284,10 +341,10 @@ def kernel_gradient_integral(
 
     targets = [i[ff], j[ff], i[fw], j[wf]]
     values = [
-        ((c[i[ff]] + c[j[ff]]) * volume[j[ff]])[:, None] * gw[ff],
-        -((c[i[ff]] + c[j[ff]]) * volume[i[ff]])[:, None] * gw[ff],
-        (wall_factor * c[i[fw]] * volume[j[fw]])[:, None] * gw[fw],
-        -(wall_factor * c[j[wf]] * volume[i[wf]])[:, None] * gw[wf],
+        ((c[i[ff]] + c[j[ff]]) * volume[j[ff]])[:, None] * gw_i[ff],
+        ((c[i[ff]] + c[j[ff]]) * volume[i[ff]])[:, None] * gw_j[ff],
+        (wall_factor * c[i[fw]] * volume[j[fw]])[:, None] * gw_i[fw],
+        (wall_factor * c[j[wf]] * volume[i[wf]])[:, None] * gw_j[wf],
     ]
     target = torch.cat(targets)
     value = torch.cat(values)
@@ -302,6 +359,7 @@ def transport_velocity_correction(
     h: float,
     alpha: float | None = None,
     pairs: torch.Tensor | None = None,
+    h_ratio: float | torch.Tensor | None = None,
     wall_count: int = 0,
     h_ref: float | None = None,
     limiter: Callable[[torch.Tensor], torch.Tensor] | None = None,
@@ -340,11 +398,24 @@ def transport_velocity_correction(
         h_ref = h
     if limiter is None:
         limiter = no_limiter
-    g = kernel_gradient_integral(positions, volume, h, pairs=pairs,
-                                 wall_count=wall_count)
+    # ``h_ratio`` is upstream's *reference over local* ratio, so the local
+    # smoothing length this module's kernel must see is ``h / ratio``; when
+    # ``h_ref`` differs from ``h`` the ratio is rescaled to the same base.
+    g = kernel_gradient_integral(
+        positions, volume, h, pairs=pairs, wall_count=wall_count,
+        h_ratio=(None if h_ratio is None
+                 else _as_ratio(h_ratio, positions.shape[0], positions)
+                 * (h / h_ref)))
     squared = torch.sum(g * g, dim=1)
     fac = limiter(h_ref * h_ref * squared)
     shift = (alpha * h_ref * h_ref) * fac[:, None] * g
+    if h_ratio is not None:
+        # upstream ``update()``: ``pos += correction_scaling * limiter * g *
+        # inv_h_ratio**2`` with ``inv_h_ratio = 1/h_ratio = h_local/h_ref``.
+        # Combined with ``|g| ~ 1/h_local`` this makes the relative
+        # displacement ``|dr|/h_local`` independent of the local refinement.
+        inv_ratio = 1.0 / _as_ratio(h_ratio, g.shape[0], positions)
+        shift = shift * inv_ratio.square()[:, None]
     if active is not None:
         if active.shape != squared.shape:
             raise ValueError("active must be (N,) over the fluid particles")
@@ -368,6 +439,10 @@ def transport_velocity_correction(
                      limiter=fac, alpha=float(alpha), h_ref=float(h_ref),
                      clipped=clipped,
                      extras={"max_shift": max_shift,
+                             "h_ratio": None if h_ratio is None else (
+                                 float(min(_as_ratio(h_ratio, g.shape[0], positions).min(),
+                                           torch.tensor(float("inf")))),
+                                 float(_as_ratio(h_ratio, g.shape[0], positions).max())),
                              "scope_tol": scope_tol,
                              "scope_tol_kept_fraction": kept_fraction,
                              "scope_active_fraction": (
