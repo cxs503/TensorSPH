@@ -1,0 +1,248 @@
+{
+  "artifact": "artifacts/xval_fsi2/viv_dx002_aitken.json",
+  "n_steps": 6000,
+  "dt": 0.0010400000000000001,
+  "t_end": 6.239999999999613,
+  "dx": 0.02,
+  "aborted": false,
+  "warmup_frac": 0.5,
+  "warmup_samples": 3000,
+  "window_start_t": 3.121040000000114,
+  "window_end_t": 6.239999999999613,
+  "window": {
+    "period_s": 0.19967999999996794,
+    "window_s": 3.118959999999499,
+    "periods_in_window": 15.619791666666666,
+    "amplitude_ratio_second_over_first_half": 1.526882355362488,
+    "amplitude_stationary": false,
+    "period_band_s": [
+      1.6666666666666665,
+      3.8461538461538454
+    ],
+    "period_in_band": false
+  },
+  "regime_ok": false,
+  "admissibility": {
+    "checked": [
+      "finite",
+      "blowup",
+      "body_containment",
+      "period_band"
+    ],
+    "skipped": [],
+    "reasons": [
+      "identified period 0.1997 s lies outside the VIV band [1.67, 3.85] s: it is ringing, not shedding"
+    ],
+    "admissible": false,
+    "non_finite_fields": [],
+    "max_speed_over_c0": 0.05994447595534932,
+    "max_speed_window": 0.2997223797767466,
+    "sound_speed": 5.0,
+    "beam_length": 0.35000000000000003,
+    "tip_excursion_over_beam": 0.023230257119385818,
+    "tip_excursion_m": 0.008130589991785037,
+    "period_s": 0.19967999999996794,
+    "period_band_s": [
+      1.6666666666666665,
+      3.8461538461538454
+    ],
+    "period_in_band": false,
+    "enforced": true,
+    "admissible_and_enforced": false
+  },
+  "admissible": false,
+  "withheld_reason": "nonphysical: identified period 0.1997 s lies outside the VIV band [1.67, 3.85] s: it is ringing, not shedding",
+  "coefficients": {
+    "scale_0.5_rho_U2_D": 2.000000000000001,
+    "u_mean": 0.20000000000000004,
+    "rho_f": 1000.0,
+    "D": 0.1,
+    "fit_arm": {
+      "n_samples": 3000,
+      "drag_mean": 0.11039537013332665,
+      "drag_amplitude": 31.368802621841702,
+      "lift_mean": -0.25822223948090506,
+      "lift_amplitude": 9.969553405411713,
+      "cd_mean": 0.0551976850666633,
+      "cd_amplitude": 15.684401310920844,
+      "cl_mean": -0.1291111197404525,
+      "cl_amplitude": 4.9847767027058545,
+      "scale_0.5_rho_U2_D": 2.000000000000001
+    },
+    "avg_arm": {
+      "n_samples": 3000,
+      "drag_mean": 0.10386642121725083,
+      "drag_amplitude": 25.149457133831575,
+      "lift_mean": -0.16032576550673278,
+      "lift_amplitude": 7.440793381362278,
+      "cd_mean": 0.05193321060862539,
+      "cd_amplitude": 12.574728566915782,
+      "cl_mean": -0.08016288275336635,
+      "cl_amplitude": 3.7203966906811377,
+      "scale_0.5_rho_U2_D": 2.000000000000001
+    },
+    "cd_viscous": 0.05395927718457846,
+    "cd_fit_plus_viscous": 0.10915696225124176
+  },
+  "tip": {
+    "tip_x_amplitude": 0.0001306832801221125,
+    "tip_y_amplitude": 0.0056238740146169475
+  },
+  "gates": {
+    "fit_arm": {
+      "rows": [
+        {
+          "quantity": "drag_mean",
+          "reference": 3.2,
+          "computed": 0.0551976850666633,
+          "rel_error": -0.9827507234166678,
+          "pass_15": false,
+          "pass_3": false
+        },
+        {
+          "quantity": "drag_amplitude",
+          "reference": 0.96,
+          "computed": 15.684401310920844,
+          "rel_error": 15.337918032209211,
+          "pass_15": false,
+          "pass_3": false
+        },
+        {
+          "quantity": "lift_amplitude",
+          "reference": 0.22,
+          "computed": 4.9847767027058545,
+          "rel_error": 21.65807592139025,
+          "pass_15": false,
+          "pass_3": false
+        }
+      ],
+      "worst_rel_error": 21.65807592139025,
+      "verdict": "WITHHELD",
+      "comparable": false
+    },
+    "avg_arm": {
+      "rows": [
+        {
+          "quantity": "drag_mean",
+          "reference": 3.2,
+          "computed": 0.05193321060862539,
+          "rel_error": -0.9837708716848046,
+          "pass_15": false,
+          "pass_3": false
+        },
+        {
+          "quantity": "drag_amplitude",
+          "reference": 0.96,
+          "computed": 12.574728566915782,
+          "rel_error": 12.098675590537274,
+          "pass_15": false,
+          "pass_3": false
+        },
+        {
+          "quantity": "lift_amplitude",
+          "reference": 0.22,
+          "computed": 3.7203966906811377,
+          "rel_error": 15.910894048550626,
+          "pass_15": false,
+          "pass_3": false
+        }
+      ],
+      "worst_rel_error": 15.910894048550626,
+      "verdict": "WITHHELD",
+      "comparable": false
+    },
+    "tip": {
+      "rows": [
+        {
+          "quantity": "tip_x_amplitude",
+          "reference": 0.0028,
+          "computed": 0.0001306832801221125,
+          "rel_error": -0.9533273999563884,
+          "pass_15": false,
+          "pass_3": false
+        },
+        {
+          "quantity": "tip_y_amplitude",
+          "reference": 0.0082,
+          "computed": 0.0056238740146169475,
+          "rel_error": -0.31416170553451866,
+          "pass_15": false,
+          "pass_3": false
+        }
+      ],
+      "worst_rel_error": 0.9533273999563884,
+      "verdict": "WITHHELD",
+      "comparable": false
+    },
+    "fit_plus_viscous_cd_mean": {
+      "quantity": "drag_mean",
+      "reference": 3.2,
+      "computed": 0.10915696225124176,
+      "rel_error": -0.965888449296487,
+      "pass_15": false,
+      "pass_3": false
+    }
+  },
+  "coupling": {
+    "mean_iterations": 2.075,
+    "converged_fraction": 1.0
+  },
+  "cross_check_compare_body_forces": {
+    "rows": [
+      {
+        "quantity": "drag_mean",
+        "reference": 3.2,
+        "computed": 0.0551976850666633,
+        "rel_error": -0.9827507234166678,
+        "pass_15": false,
+        "pass_3": false
+      },
+      {
+        "quantity": "drag_amplitude",
+        "reference": 0.96,
+        "computed": 15.684401310920844,
+        "rel_error": 15.337918032209211,
+        "pass_15": false,
+        "pass_3": false
+      },
+      {
+        "quantity": "lift_amplitude",
+        "reference": 0.22,
+        "computed": 4.9847767027058545,
+        "rel_error": 21.65807592139025,
+        "pass_15": false,
+        "pass_3": false
+      }
+    ],
+    "passed_15": false,
+    "passed_3": false,
+    "worst_rel_error": 21.65807592139025
+  },
+  "cross_check_compare_to_benchmark": {
+    "rows": [
+      {
+        "quantity": "tip_x_amplitude",
+        "reference": 0.0028,
+        "computed": 0.0001306832801221125,
+        "rel_error": -0.9533273999563884,
+        "pass_15": false,
+        "pass_3": false
+      },
+      {
+        "quantity": "tip_y_amplitude",
+        "reference": 0.0082,
+        "computed": 0.0056238740146169475,
+        "rel_error": -0.31416170553451866,
+        "pass_15": false,
+        "pass_3": false
+      }
+    ],
+    "passed_15": false,
+    "passed_3": false,
+    "worst_rel_error": 0.9533273999563884
+  },
+  "thresholds": {
+    "accept": 0.15,
+    "report": 0.03
+  }
+}

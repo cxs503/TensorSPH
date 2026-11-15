@@ -97,6 +97,134 @@ def dominant_period(t, signal, min_lag_frac: float = 0.02) -> float | None:
 VIV_STROUHAL_BAND = (0.13, 0.30)
 
 
+# --------------------------------------------------------------------------- #
+# physical admissibility
+# --------------------------------------------------------------------------- #
+#: Weakly-compressible SPH is configured for a Mach number of order 1e-1
+#: (the FSI2 driver sets ``c0 = 5 m/s`` against ``U_max = 0.3 m/s``, i.e.
+#: Mach 0.06).  A particle speed reaching the *artificial sound speed itself*
+#: is not a small perturbation of that regime any more: the discretisation has
+#: lost the solution and the numbers downstream are whatever the divergence
+#: produced.  The limit is 1.0 (= c0) rather than, say, 0.3, to leave the
+#: genuine acoustic ripple alone.
+BLOWUP_MACH_LIMIT = 1.0
+
+#: The FSI2 beam is 3.5 D long and the channel 4.1 D high (Turek-Hron 2006,
+#: reproduced in ``cases.py``).  A tip whose excursion exceeds its own beam
+#: length is not a bending solution any more -- the beam has left the fluid
+#: domain.  Expressed relative to the beam length so it is scale free.
+TIP_EXCURSION_LIMIT = 1.0
+
+#: Beam length and channel height of the benchmark, in cylinder diameters.
+FSI2_BEAM_LENGTH_OVER_D = 3.5
+FSI2_CHANNEL_HEIGHT_OVER_D = 4.1
+
+
+def physical_admissibility(hist: dict, warm: int, case: dict,
+                           band: tuple | None) -> dict:
+    """Can these numbers be read as an accuracy statement at all?
+
+    A relative error against the Turek-Hron reference only means something if
+    the run is a solution of the FSI2 problem.  Two of the three checks below
+    are decided from quantities the artefact carries itself (the declared
+    artificial sound speed, and the benchmark geometry expressed in diameters),
+    so they do not depend on a tuned constant and they cannot be satisfied by
+    shrinking the error.  Each check is reported with its own inputs; a check
+    whose inputs are absent is listed under ``skipped`` -- never silently
+    counted as passed.
+
+    Returns a dict with ``admissible``, ``reasons`` and the per-check evidence.
+    """
+    t = np.asarray(hist["t"], dtype=float)
+    win = slice(warm, None)
+    checked, skipped, reasons = [], [], []
+    out: dict = {"checked": checked, "skipped": skipped, "reasons": reasons,
+                 "admissible": True}
+
+    # -- 0. finiteness ------------------------------------------------------
+    bad = []
+    for key in ("tip_x", "tip_y", "body_drag_fit", "body_lift_fit",
+                "max_speed"):
+        arr = hist.get(key)
+        if arr is None:
+            continue
+        a = np.asarray(arr, dtype=float)[win]
+        if not np.all(np.isfinite(a)):
+            bad.append(key)
+    out["non_finite_fields"] = bad
+    if bad:
+        checked.append("finite")
+        reasons.append("non-finite samples in " + ", ".join(bad))
+        out["admissible"] = False
+    else:
+        checked.append("finite")
+
+    # -- 1. blow-up screen: particle speed against the artificial sound speed -
+    c0 = case.get("sound_speed")
+    vmax_arr = hist.get("max_speed")
+    if c0 is None or vmax_arr is None:
+        skipped.append("blowup")
+        out["max_speed_over_c0"] = None
+    else:
+        c0 = float(c0)
+        v = np.asarray(vmax_arr, dtype=float)[win]
+        vmax = float(np.nanmax(np.abs(v))) if v.size else float("nan")
+        ratio = vmax / c0 if c0 else None
+        out["max_speed_over_c0"] = ratio
+        out["max_speed_window"] = vmax
+        out["sound_speed"] = c0
+        checked.append("blowup")
+        if ratio is not None and (not np.isfinite(ratio) or
+                                  ratio > BLOWUP_MACH_LIMIT):
+            reasons.append(
+                f"fluid blow-up: max|v| = {vmax:.4g} m/s is {ratio:.2f} x the "
+                f"artificial sound speed c0 = {c0:.4g} m/s "
+                f"(limit {BLOWUP_MACH_LIMIT:g} x c0)")
+            out["admissible"] = False
+
+    # -- 2. body containment: beam tip against its own length ---------------
+    D = float(case.get("cylinder_d", 0.1) or 0.1)
+    beam_len = float(case.get("beam_length", FSI2_BEAM_LENGTH_OVER_D * D))
+    tip_x, tip_y = hist.get("tip_x"), hist.get("tip_y")
+    out["beam_length"] = beam_len
+    if tip_x is None or tip_y is None or beam_len <= 0:
+        skipped.append("body_containment")
+        out["tip_excursion_over_beam"] = None
+    else:
+        ex = max(np.nanmax(np.abs(np.asarray(tip_x, dtype=float)[win])),
+                 np.nanmax(np.abs(np.asarray(tip_y, dtype=float)[win])))
+        ratio = float(ex) / beam_len
+        out["tip_excursion_over_beam"] = ratio
+        out["tip_excursion_m"] = float(ex)
+        checked.append("body_containment")
+        if not np.isfinite(ratio) or ratio > TIP_EXCURSION_LIMIT:
+            reasons.append(
+                f"body left its own length: |tip| = {ex:.4g} m is "
+                f"{ratio:.2f} x the beam length {beam_len:.4g} m "
+                f"(limit {TIP_EXCURSION_LIMIT:g})")
+            out["admissible"] = False
+
+    # -- 3. Strouhal band on the identified period --------------------------
+    period = dominant_period(np.asarray(t, dtype=float)[win],
+                             np.asarray(hist["body_drag_fit"], dtype=float)[win])
+    out["period_s"] = period
+    out["period_band_s"] = list(band) if band is not None else None
+    if band is None or period is None:
+        skipped.append("period_band")
+        out["period_in_band"] = None
+    else:
+        in_band = bool(band[0] <= period <= band[1])
+        out["period_in_band"] = in_band
+        checked.append("period_band")
+        if not in_band:
+            reasons.append(
+                f"identified period {period:.4g} s lies outside the VIV band "
+                f"[{band[0]:.3g}, {band[1]:.3g}] s: it is ringing, not shedding")
+            out["admissible"] = False
+
+    return out
+
+
 def viv_period_band(u_mean: float, diameter: float) -> tuple | None:
     """Physically admissible VIV period range [s] for ``(U_mean, D)``."""
     if not u_mean or u_mean <= 0 or not diameter or diameter <= 0:
@@ -169,7 +297,8 @@ def _gate_row(name, ref, got, gate=GATE_ACCEPT):
             "pass_3": abs(rel) <= GATE_REPORT}
 
 
-def build_verdict(payload: dict, warmup_frac: float = 0.5) -> dict:
+def build_verdict(payload: dict, warmup_frac: float = 0.5,
+                  enforce_admissibility: bool = True) -> dict:
     hist = payload["history"]
     t = np.asarray(hist["t"], dtype=float)
     n = t.size
@@ -210,6 +339,17 @@ def build_verdict(payload: dict, warmup_frac: float = 0.5) -> dict:
     regime_ok = (n_periods is not None and n_periods >= 1.0
                  and bool(per["amplitude_stationary"]))
 
+    # --- is the window a solution at all? ----------------------------------
+    # ``regime_ok`` answers "does the window hold a stationary cycle"; it says
+    # nothing about whether the cycle belongs to the FSI2 problem.  A diverging
+    # field has a perfectly stationary (saturated) envelope, so the statistical
+    # gate alone used to score a blow-up as an accuracy FAIL.  The screen below
+    # is a precondition for any accuracy statement.
+    adm = physical_admissibility(hist, warm, case, band)
+    admissible = bool(adm["admissible"]) or not enforce_admissibility
+    adm["enforced"] = bool(enforce_admissibility)
+    adm["admissible_and_enforced"] = admissible
+
     # --- gates --------------------------------------------------------------
     fit_gate = [_gate_row(k, v, {"drag_mean": fit.get("cd_mean"),
                                  "drag_amplitude": fit.get("cd_amplitude"),
@@ -224,7 +364,7 @@ def build_verdict(payload: dict, warmup_frac: float = 0.5) -> dict:
                 for k, v in BENCHMARK_TIP.items()]
 
     def verdict(rows):
-        if not regime_ok:
+        if not regime_ok or not admissible:
             return "WITHHELD"
         return "PASS" if all(r["pass_15"] for r in rows) else "FAIL"
 
@@ -246,6 +386,12 @@ def build_verdict(payload: dict, warmup_frac: float = 0.5) -> dict:
         "window_end_t": float(t[-1]),
         "window": per,
         "regime_ok": bool(regime_ok),
+        "admissibility": adm,
+        "admissible": bool(adm["admissible"]),
+        "withheld_reason": (
+            None if (regime_ok and admissible) else
+            ("nonphysical: " + "; ".join(adm["reasons"])) if not adm["admissible"]
+            else "window does not hold a stationary cycle"),
         "coefficients": {
             "scale_0.5_rho_U2_D": float(scale),
             "u_mean": u_mean,
@@ -259,11 +405,14 @@ def build_verdict(payload: dict, warmup_frac: float = 0.5) -> dict:
         "tip": {"tip_x_amplitude": tip_x, "tip_y_amplitude": tip_y},
         "gates": {
             "fit_arm": {"rows": fit_gate, "worst_rel_error": worst(fit_gate),
-                        "verdict": verdict(fit_gate)},
+                        "verdict": verdict(fit_gate),
+                        "comparable": bool(regime_ok and admissible)},
             "avg_arm": {"rows": avg_gate, "worst_rel_error": worst(avg_gate),
-                        "verdict": verdict(avg_gate)},
+                        "verdict": verdict(avg_gate),
+                        "comparable": bool(regime_ok and admissible)},
             "tip": {"rows": tip_gate, "worst_rel_error": worst(tip_gate),
-                    "verdict": verdict(tip_gate)},
+                    "verdict": verdict(tip_gate),
+                    "comparable": bool(regime_ok and admissible)},
             "fit_plus_viscous_cd_mean": (
                 _gate_row("drag_mean", BENCHMARK_FORCES["drag_mean"],
                           cd_fit_total) if cd_fit_total is not None else None),
@@ -296,6 +445,12 @@ def _print_table(v: dict) -> None:
                   f"{' (<3%)' if r['pass_3'] else ''}")
     print("verdicts:", {g: v["gates"][g]["verdict"]
                         for g in ("fit_arm", "avg_arm", "tip")})
+    adm = v["admissibility"]
+    print("admissible:", adm["admissible"],
+          "| checked:", ",".join(adm["checked"]),
+          "| skipped:", ",".join(adm["skipped"]) or "-")
+    for r in adm["reasons"]:
+        print("  blocked:", r)
 
 
 def main() -> int:
