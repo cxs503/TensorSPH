@@ -322,5 +322,18 @@ triangular lattice too. The 14.15 % is therefore arrangement-specific even thoug
 ~14 % plane-truncation bias is not, and any quotation of the gate must carry the
 arrangement family.
 
-Still open: a numeric diff against a live SPHinXsys build (gap 2), the `TruncatedLinear`
-limiter variants (source not transcribed), and the adaptive `h_ratio` branch (not ported).
+Closed since (this leg, `docs/xval_sphinx_tvc/LIMITER_LEG.md`): upstream's `TruncatedLinear`
+limiter is transcribed from `src/shared/common/common_functors.h` (verbatim in `oss_source/`,
+sha256 `c6ccd39c...`), shipped as `truncated_linear()`, wired as `tvc_limiter=`, and measured.
+Upstream ships only two limiters in that revision -- an earlier note here mentioned a
+`ModifiedTruncatedLinear`, which does **not** exist in the fetched source (retired claim).
+Measured effect: inert wherever the free surface drives the correction (`|g| h_ref = 1.17 >
+0.1`, bit-identical shift), attenuating on a nearly regular bulk (median 6 % of the
+`NoLimiter` displacement). On the dam break it costs 0.009 in MAE at the port's single-step
+coefficient `alpha = 0.05`, but **0.162 at upstream's dual-criteria default `alpha = 0.2`**
+(MAE 0.505 -> 0.343) -- so the `alpha = 0.2` NoLimiter rows of `UNCALIBRATED_DEFAULTS.md`
+understate upstream, and cavity-type (bulk, well ordered) comparisons must pass
+`tvc_limiter="truncated_linear"`.
+
+Still open: a numeric diff against a live SPHinXsys build (gap 2) and the adaptive `h_ratio`
+branch (not ported).
