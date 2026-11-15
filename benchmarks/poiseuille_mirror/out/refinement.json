@@ -1,0 +1,719 @@
+{
+  "case": "plane_poiseuille_channel_mirror_wall",
+  "anchor": "CASE-POISEUILLE-SPH",
+  "study": "independent refinement past H/dx = 16",
+  "question": "does the published error ladder keep decaying above its top rung, and at what resolution is the 5 % / 3 % line met?",
+  "config": {
+    "viscosity": 0.01,
+    "body_force": 9.81,
+    "height": 0.1,
+    "columns": 12,
+    "t_end": 1.0,
+    "t_average": 0.2
+  },
+  "analysis": {
+    "resolutions": [
+      16,
+      24,
+      32,
+      48
+    ],
+    "tolerance_pct": 5.0,
+    "tolerance_strict_pct": 3.0,
+    "readings": {
+      "u_max_error_pct": {
+        "label": "centreline |u_max/u_ref - 1|",
+        "kind": "abs",
+        "values": [
+          -0.254328316504826,
+          -0.3411700358570857,
+          -0.5133466496987871,
+          -0.5461273815532408
+        ],
+        "worst_abs": 0.5461273815532408,
+        "pass_5pct_all_rungs": true,
+        "pass_3pct_all_rungs": true,
+        "remaining_error_at_coarsest_pct": 0.254328316504826,
+        "observed_order_pairwise": [
+          -0.7244889116041036,
+          -1.420214864315887,
+          -0.15266640574058324
+        ],
+        "power_law_fit": {
+          "p": -0.7421255500542915,
+          "C": 0.03356351439962934,
+          "log_rms": 0.09188406296007798
+        },
+        "resolution_for_5pct": null,
+        "resolution_for_3pct": null
+      },
+      "rms_interior_rel_pct": {
+        "label": "profile row-rms, interior 0.1<=y/H<=0.9",
+        "kind": "abs",
+        "values": [
+          0.4241340756126215,
+          0.1481169112125197,
+          0.21889310053462002,
+          0.3421692860471797
+        ],
+        "worst_abs": 0.4241340756126215,
+        "pass_5pct_all_rungs": true,
+        "pass_3pct_all_rungs": true,
+        "remaining_error_at_coarsest_pct": 0.4241340756126215,
+        "observed_order_pairwise": [
+          2.5946689313712357,
+          -1.357684819748083,
+          -1.1017523058662246
+        ],
+        "power_law_fit": {
+          "p": 0.09580223801903448,
+          "C": 0.3600453931970598,
+          "log_rms": 0.40465841012627074
+        },
+        "resolution_for_5pct": 1.1836259357684373e-12,
+        "resolution_for_3pct": 2.4485519756660684e-10
+      },
+      "rms_all_rel_pct": {
+        "label": "profile row-rms, all rows",
+        "kind": "abs",
+        "values": [
+          1.749767841851525,
+          0.9281674151981948,
+          0.631588874411048,
+          0.4432136428773852
+        ],
+        "worst_abs": 1.749767841851525,
+        "pass_5pct_all_rungs": true,
+        "pass_3pct_all_rungs": true,
+        "remaining_error_at_coarsest_pct": 1.749767841851525,
+        "observed_order_pairwise": [
+          1.5637011984894145,
+          1.3381906291382133,
+          0.873532007045852
+        ],
+        "power_law_fit": {
+          "p": 1.2555920182879154,
+          "C": 53.19022700696984,
+          "log_rms": 0.0704968411738424
+        },
+        "resolution_for_5pct": 6.574016831940751,
+        "resolution_for_3pct": 9.874596875654472
+      },
+      "rms_umax_pct": {
+        "label": "profile row-rms normalised by u_max",
+        "kind": "abs",
+        "values": [
+          0.36232997724377297,
+          0.13071040495898645,
+          0.18740623965642403,
+          0.26326396923299406
+        ],
+        "worst_abs": 0.36232997724377297,
+        "pass_5pct_all_rungs": true,
+        "pass_3pct_all_rungs": true,
+        "remaining_error_at_coarsest_pct": 0.36232997724377297,
+        "observed_order_pairwise": [
+          2.5145717563455454,
+          -1.252404903662204,
+          -0.8382436420469916
+        ],
+        "power_law_fit": {
+          "p": 0.19170547123325932,
+          "C": 0.4156399087053956,
+          "log_rms": 0.3722366207754481
+        },
+        "resolution_for_5pct": 2.31760527714552e-06,
+        "resolution_for_3pct": 3.328717318340471e-05
+      },
+      "max_row_rel_pct": {
+        "label": "worst single row",
+        "kind": "abs",
+        "values": [
+          4.613898557856302,
+          3.078429270320884,
+          2.3315135389862203,
+          1.5370367576040351
+        ],
+        "worst_abs": 4.613898557856302,
+        "pass_5pct_all_rungs": true,
+        "pass_3pct_all_rungs": false,
+        "remaining_error_at_coarsest_pct": 4.613898557856302,
+        "observed_order_pairwise": [
+          0.9979987820326008,
+          0.9660033492224636,
+          1.0276131200196919
+        ],
+        "power_law_fit": {
+          "p": 0.9983333627755986,
+          "C": 73.61325795199838,
+          "log_rms": 0.004534959524400548
+        },
+        "resolution_for_5pct": 14.78890071749315,
+        "resolution_for_3pct": 24.66919634832327
+      },
+      "G1_raw_pct": {
+        "label": "wall shear, wall-plane secant (raw)",
+        "kind": "abs",
+        "values": [
+          1.3447142279233049,
+          0.930947411680072,
+          0.7318350882340452,
+          0.4783677034057243
+        ],
+        "worst_abs": 1.3447142279233049,
+        "pass_5pct_all_rungs": true,
+        "pass_3pct_all_rungs": true,
+        "remaining_error_at_coarsest_pct": 1.3447142279233049,
+        "observed_order_pairwise": [
+          0.906943661299768,
+          0.8365053425315624,
+          1.048611828800232
+        ],
+        "power_law_fit": {
+          "p": 0.9340926242656664,
+          "C": 18.114646941565308,
+          "log_rms": 0.01764923080539681
+        },
+        "resolution_for_5pct": 3.967398432583379,
+        "resolution_for_3pct": 6.855003681019991
+      },
+      "G1_corrected_pct": {
+        "label": "wall shear, wall-plane secant (stencil-corrected)",
+        "kind": "abs",
+        "values": [
+          4.613898557856322,
+          3.0784143778860518,
+          2.330753105507566,
+          1.5360347318626344
+        ],
+        "worst_abs": 4.613898557856322,
+        "pass_5pct_all_rungs": true,
+        "pass_3pct_all_rungs": false,
+        "remaining_error_at_coarsest_pct": 4.613898557856322,
+        "observed_order_pairwise": [
+          0.9980107132316769,
+          0.9671204502856622,
+          1.028416951058456
+        ],
+        "power_law_fit": {
+          "p": 0.9989605532456456,
+          "C": 73.74865892115515,
+          "log_rms": 0.00455046266638728
+        },
+        "resolution_for_5pct": 14.791093280558599,
+        "resolution_for_3pct": 24.66492876406647
+      },
+      "G2_raw_pct": {
+        "label": "wall shear, row-pair secant (raw)",
+        "kind": "abs",
+        "values": [
+          -12.752726026995854,
+          -8.713831449502852,
+          -6.603432090518213,
+          -4.56521328800682
+        ],
+        "worst_abs": 12.752726026995854,
+        "pass_5pct_all_rungs": false,
+        "pass_3pct_all_rungs": false,
+        "remaining_error_at_coarsest_pct": 12.752726026995854,
+        "observed_order_pairwise": [
+          0.939250905098362,
+          0.9639879713852253,
+          0.910372519842318
+        ],
+        "power_law_fit": {
+          "p": 0.9369260360895737,
+          "C": 170.98017948592627,
+          "log_rms": 0.004082253135982839
+        },
+        "resolution_for_5pct": 43.37536892471788,
+        "resolution_for_3pct": 74.82156942451185
+      },
+      "G2_corrected_pct": {
+        "label": "wall shear, row-pair secant (stencil-corrected)",
+        "kind": "abs",
+        "values": [
+          -0.28882974513811943,
+          -0.41508885400314277,
+          -0.3769942298860962,
+          -0.41587473531147223
+        ],
+        "worst_abs": 0.41587473531147223,
+        "pass_5pct_all_rungs": true,
+        "pass_3pct_all_rungs": true,
+        "remaining_error_at_coarsest_pct": 0.28882974513811943,
+        "observed_order_pairwise": [
+          -0.8944177902050336,
+          0.3346149467555513,
+          -0.2420780824907554
+        ],
+        "power_law_fit": {
+          "p": -0.28905912525000277,
+          "C": 0.14174249145003243,
+          "log_rms": 0.0931257564923259
+        },
+        "resolution_for_5pct": null,
+        "resolution_for_3pct": null
+      },
+      "G3_corrected_pct": {
+        "label": "wall shear, 3-point one-sided (stencil-corrected)",
+        "kind": "abs",
+        "values": [
+          -0.16272567868279575,
+          -0.3633922155416469,
+          -0.29358259375852347,
+          -0.34674890753866316
+        ],
+        "worst_abs": 0.3633922155416469,
+        "pass_5pct_all_rungs": true,
+        "pass_3pct_all_rungs": true,
+        "remaining_error_at_coarsest_pct": 0.16272567868279575,
+        "observed_order_pairwise": [
+          -1.9814698929646648,
+          0.741525960623977,
+          -0.41049623227470655
+        ],
+        "power_law_fit": {
+          "p": -0.5968546115403005,
+          "C": 0.03835515162199688,
+          "log_rms": 0.2125089836846384
+        },
+        "resolution_for_5pct": null,
+        "resolution_for_3pct": null
+      },
+      "G4_pct": {
+        "label": "wall shear, global parabola fit (published)",
+        "kind": "abs",
+        "values": [
+          -0.43650131500180267,
+          -0.4378734156731734,
+          -0.4653622200451957,
+          -0.4762058357348442
+        ],
+        "worst_abs": 0.4762058357348442,
+        "pass_5pct_all_rungs": true,
+        "pass_3pct_all_rungs": true,
+        "remaining_error_at_coarsest_pct": 0.43650131500180267,
+        "observed_order_pairwise": [
+          -0.0077404327813532115,
+          -0.21164407769878155,
+          -0.056809126424512635
+        ],
+        "power_law_fit": {
+          "p": -0.08774045663985851,
+          "C": 0.33896006735587786,
+          "log_rms": 0.013944515797903612
+        },
+        "resolution_for_5pct": null,
+        "resolution_for_3pct": null
+      },
+      "nu_eff_rel_pct": {
+        "label": "effective viscosity |nu_eff/nu - 1|",
+        "kind": "abs",
+        "values": [
+          0.438412189985371,
+          0.43980390278335335,
+          0.4675471652800356,
+          0.47847230689206377
+        ],
+        "worst_abs": 0.47847230689206377,
+        "pass_5pct_all_rungs": true,
+        "pass_3pct_all_rungs": true,
+        "remaining_error_at_coarsest_pct": 0.438412189985371,
+        "observed_order_pairwise": [
+          -0.007816729831758854,
+          -0.21263500829571352,
+          -0.05696693003460843
+        ],
+        "power_law_fit": {
+          "p": -0.0881277335983855,
+          "C": 0.34006803446990785,
+          "log_rms": 0.014006764254071805
+        },
+        "resolution_for_5pct": null,
+        "resolution_for_3pct": null
+      },
+      "slip_over_umax": {
+        "label": "slip at the wall plane / u_max",
+        "kind": "value",
+        "values": [
+          0.006303921620634959,
+          0.002932273996730128,
+          0.0019162351508263088,
+          0.000981853616906924
+        ],
+        "worst_abs": 0.006303921620634959,
+        "pass_5pct_all_rungs": true,
+        "pass_3pct_all_rungs": true,
+        "remaining_error_at_coarsest_pct": 0.006303921620634959,
+        "observed_order_pairwise": [
+          1.8876931054875117,
+          1.4787707290618073,
+          1.6491565778363182
+        ],
+        "power_law_fit": {
+          "p": 1.6788562163038006,
+          "C": 0.6417723992306789,
+          "log_rms": 0.03205009887237174
+        },
+        "resolution_for_5pct": 0.2943951940128684,
+        "resolution_for_3pct": 0.39909244730127463
+      }
+    }
+  },
+  "verdict": {
+    "questions": {
+      "Q1_wall_layer_keeps_decaying_above_16": {
+        "reading": "wall shear, wall-plane secant (stencil-corrected)",
+        "values_pct": [
+          4.613898557856322,
+          3.0784143778860518,
+          2.330753105507566,
+          1.5360347318626344
+        ],
+        "observed_order": 0.9989605532456456,
+        "decays": true
+      },
+      "Q2_resolution_for_5pct_wall_layer": {
+        "reading": "wall shear, wall-plane secant (stencil-corrected)",
+        "H_over_dx": 14.791093280558599,
+        "basis": "power-law fit over this ladder (extrapolation, not a run)"
+      },
+      "Q3_resolution_for_3pct_wall_layer": {
+        "reading": "wall shear, wall-plane secant (stencil-corrected)",
+        "H_over_dx": 24.66492876406647
+      },
+      "Q4_profile_and_centreline_under_3pct": {
+        "interior_rms_worst_pct": 0.4241340756126215,
+        "interior_rms_pass_3pct": true,
+        "centreline_worst_pct": 0.5461273815532408,
+        "centreline_pass_3pct": true
+      },
+      "Q5_raw_local_secant_without_stencil_correction": {
+        "reading": "wall shear, wall-plane secant (raw)",
+        "values_pct": [
+          1.3447142279233049,
+          0.930947411680072,
+          0.7318350882340452,
+          0.4783677034057243
+        ],
+        "observed_order": 0.9340926242656664,
+        "note": "a raw one-spacing secant carries an O(dx) stencil bias; if its error plateaus it is measuring the stencil, not the wall"
+      }
+    }
+  },
+  "reproducibility_vs_committed_ladder": {
+    "available": true,
+    "committed_artifact": "benchmarks/poiseuille_mirror/out/results.json",
+    "same_session_control_agrees": true,
+    "checks": [
+      {
+        "resolution_H_over_dx": 16,
+        "u_max_error_pct": {
+          "committed": -0.254328316504826,
+          "resolved": -0.254328316504826,
+          "abs_diff_pct_points": 0.0,
+          "agree_within_0p5pp": true
+        },
+        "rms_interior_rel_pct": {
+          "committed": 0.4241340756126215,
+          "resolved": 0.4241340756126215,
+          "abs_diff_pct_points": 0.0,
+          "agree_within_0p5pp": true
+        },
+        "rms_all_rel_pct": {
+          "committed": 1.749767841851525,
+          "resolved": 1.749767841851525,
+          "abs_diff_pct_points": 0.0,
+          "agree_within_0p5pp": true
+        }
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "resolution_H_over_dx": 16,
+      "dx": 0.00625,
+      "h": 0.008125,
+      "length": 0.07500000000000001,
+      "n_fluid": 192,
+      "n_ghost": 216,
+      "steps": 8205,
+      "dt": 0.000121875,
+      "t_end": 1.0,
+      "t_average": 0.2,
+      "max_mach": 0.06132914423942566,
+      "steady_drift": 0.0001675257530551227,
+      "wall_clock_s": 99.35823726654053,
+      "profile": {
+        "u_max_measured": 1.2231312990188599,
+        "u_max_analytic": 1.2262500000000003,
+        "u_max_error_pct": -0.254328316504826,
+        "rms_interior_rel_pct": 0.4241340756126215,
+        "rms_all_rel_pct": 1.749767841851525,
+        "rms_umax_pct": 0.36232997724377297,
+        "max_row_rel_pct": 4.613898557856302,
+        "n_rows": 16
+      },
+      "wall": {
+        "tau_ref_pa": 490.5,
+        "slope_ref": 49.050000000000004,
+        "fit_c0_c1_c2": [
+          0.007710523840759431,
+          48.83589610499162,
+          -488.35897472392276
+        ],
+        "nu_eff_over_nu": 1.0043841218998537,
+        "nu_eff_rel_pct": 0.438412189985371,
+        "fit_residual_rms_over_umax": 0.00031096538141869515,
+        "gauges": {
+          "G1_secant_wall_plane": {
+            "ratio": 1.013447142279233,
+            "error_pct": 1.3447142279233049,
+            "stencil_bias": 1.032258064516129,
+            "error_pct_bias_corrected": 4.613898557856322
+          },
+          "G2_secant_row_pair": {
+            "ratio": 0.8724727397300415,
+            "error_pct": -12.752726026995854,
+            "stencil_bias": 1.1428571428571428,
+            "error_pct_bias_corrected": -0.28882974513811943
+          },
+          "G3_three_point_quad": {
+            "ratio": 0.9359744467623492,
+            "error_pct": -6.40255532376508,
+            "stencil_bias": 1.0666666666666662,
+            "error_pct_bias_corrected": -0.16272567868279575
+          },
+          "G4_global_fit_slope": {
+            "ratio": 0.995634986849982,
+            "error_pct": -0.43650131500180267,
+            "stencil_bias": 1.0,
+            "error_pct_bias_corrected": -0.43650131500180267
+          }
+        }
+      },
+      "slip_over_umax": 0.006303921620634959,
+      "body_force": 9.81,
+      "viscosity": 0.01,
+      "height": 0.1,
+      "columns": 12
+    },
+    {
+      "resolution_H_over_dx": 24,
+      "dx": 0.004166666666666667,
+      "h": 0.005416666666666667,
+      "length": 0.05,
+      "n_fluid": 288,
+      "n_ghost": 216,
+      "steps": 12308,
+      "dt": 8.125e-05,
+      "t_end": 1.0,
+      "t_average": 0.2,
+      "max_mach": 0.06128163337707519,
+      "steady_drift": 0.0034159904261618513,
+      "wall_clock_s": 201.96341061592102,
+      "profile": {
+        "u_max_measured": 1.2220664024353027,
+        "u_max_analytic": 1.2262500000000003,
+        "u_max_error_pct": -0.3411700358570857,
+        "rms_interior_rel_pct": 0.1481169112125197,
+        "rms_all_rel_pct": 0.9281674151981948,
+        "rms_umax_pct": 0.13071040495898645,
+        "max_row_rel_pct": 3.078429270320884,
+        "n_rows": 24
+      },
+      "wall": {
+        "tau_ref_pa": 490.5,
+        "slope_ref": 49.050000000000004,
+        "fit_c0_c1_c2": [
+          0.003583433534135372,
+          48.83522308961231,
+          -488.3522079301943
+        ],
+        "nu_eff_over_nu": 1.0043980390278335,
+        "nu_eff_rel_pct": 0.43980390278335335,
+        "fit_residual_rms_over_umax": 0.00013818000458197893,
+        "gauges": {
+          "G1_secant_wall_plane": {
+            "ratio": 1.0093094741168007,
+            "error_pct": 0.930947411680072,
+            "stencil_bias": 1.021276595744681,
+            "error_pct_bias_corrected": 3.0784143778860518
+          },
+          "G2_secant_row_pair": {
+            "ratio": 0.9128616855049715,
+            "error_pct": -8.713831449502852,
+            "stencil_bias": 1.0909090909090906,
+            "error_pct_bias_corrected": -0.41508885400314277
+          },
+          "G3_three_point_quad": {
+            "ratio": 0.9548508246010594,
+            "error_pct": -4.514917539894059,
+            "stencil_bias": 1.043478260869565,
+            "error_pct_bias_corrected": -0.3633922155416469
+          },
+          "G4_global_fit_slope": {
+            "ratio": 0.9956212658432683,
+            "error_pct": -0.4378734156731734,
+            "stencil_bias": 1.0,
+            "error_pct_bias_corrected": -0.4378734156731734
+          }
+        }
+      },
+      "slip_over_umax": 0.002932273996730128,
+      "body_force": 9.81,
+      "viscosity": 0.01,
+      "height": 0.1,
+      "columns": 12
+    },
+    {
+      "resolution_H_over_dx": 32,
+      "dx": 0.003125,
+      "h": 0.0040625,
+      "length": 0.037500000000000006,
+      "n_fluid": 384,
+      "n_ghost": 216,
+      "steps": 16410,
+      "dt": 6.09375e-05,
+      "t_end": 1.0,
+      "t_average": 0.2,
+      "max_mach": 0.06124997138977051,
+      "steady_drift": 0.00042617729522865193,
+      "wall_clock_s": 274.21004366874695,
+      "profile": {
+        "u_max_measured": 1.2199550867080688,
+        "u_max_analytic": 1.2262500000000003,
+        "u_max_error_pct": -0.5133466496987871,
+        "rms_interior_rel_pct": 0.21889310053462002,
+        "rms_all_rel_pct": 0.631588874411048,
+        "rms_umax_pct": 0.18740623965642403,
+        "max_row_rel_pct": 2.3315135389862203,
+        "n_rows": 32
+      },
+      "wall": {
+        "tau_ref_pa": 490.5,
+        "slope_ref": 49.050000000000004,
+        "fit_c0_c1_c2": [
+          0.002337720819574396,
+          48.82173983106784,
+          -488.21735360282486
+        ],
+        "nu_eff_over_nu": 1.0046754716528004,
+        "nu_eff_rel_pct": 0.4675471652800356,
+        "fit_residual_rms_over_umax": 0.0004053684446262787,
+        "gauges": {
+          "G1_secant_wall_plane": {
+            "ratio": 1.0073183508823405,
+            "error_pct": 0.7318350882340452,
+            "stencil_bias": 1.0158730158730156,
+            "error_pct_bias_corrected": 2.330753105507566
+          },
+          "G2_secant_row_pair": {
+            "ratio": 0.9339656790948179,
+            "error_pct": -6.603432090518213,
+            "stencil_bias": 1.0666666666666667,
+            "error_pct_bias_corrected": -0.3769942298860962
+          },
+          "G3_three_point_quad": {
+            "ratio": 0.9659059186229645,
+            "error_pct": -3.4094081377035512,
+            "stencil_bias": 1.0322580645161288,
+            "error_pct_bias_corrected": -0.29358259375852347
+          },
+          "G4_global_fit_slope": {
+            "ratio": 0.995346377799548,
+            "error_pct": -0.4653622200451957,
+            "stencil_bias": 1.0,
+            "error_pct_bias_corrected": -0.4653622200451957
+          }
+        }
+      },
+      "slip_over_umax": 0.0019162351508263088,
+      "body_force": 9.81,
+      "viscosity": 0.01,
+      "height": 0.1,
+      "columns": 12
+    },
+    {
+      "resolution_H_over_dx": 48,
+      "dx": 0.0020833333333333333,
+      "h": 0.0027083333333333334,
+      "length": 0.025,
+      "n_fluid": 576,
+      "n_ghost": 216,
+      "steps": 24615,
+      "dt": 4.0625e-05,
+      "t_end": 1.0,
+      "t_average": 0.2,
+      "max_mach": 0.06108554005622864,
+      "steady_drift": 0.0002311005212025201,
+      "wall_clock_s": 683.9864892959595,
+      "profile": {
+        "u_max_measured": 1.2195531129837036,
+        "u_max_analytic": 1.2262500000000003,
+        "u_max_error_pct": -0.5461273815532408,
+        "rms_interior_rel_pct": 0.3421692860471797,
+        "rms_all_rel_pct": 0.4432136428773852,
+        "rms_umax_pct": 0.26326396923299406,
+        "max_row_rel_pct": 1.5370367576040351,
+        "n_rows": 48
+      },
+      "wall": {
+        "tau_ref_pa": 490.5,
+        "slope_ref": 49.050000000000004,
+        "fit_c0_c1_c2": [
+          0.0011974226349831252,
+          48.81642103757206,
+          -488.16426915992776
+        ],
+        "nu_eff_over_nu": 1.0047847230689206,
+        "nu_eff_rel_pct": 0.47847230689206377,
+        "fit_residual_rms_over_umax": 0.00029078933075628446,
+        "gauges": {
+          "G1_secant_wall_plane": {
+            "ratio": 1.0047836770340572,
+            "error_pct": 0.4783677034057243,
+            "stencil_bias": 1.0105263157894737,
+            "error_pct_bias_corrected": 1.5360347318626344
+          },
+          "G2_secant_row_pair": {
+            "ratio": 0.9543478671199318,
+            "error_pct": -4.56521328800682,
+            "stencil_bias": 1.0434782608695652,
+            "error_pct_bias_corrected": -0.41587473531147223
+          },
+          "G3_three_point_quad": {
+            "ratio": 0.9757714169470175,
+            "error_pct": -2.4228583052982477,
+            "stencil_bias": 1.0212765957446805,
+            "error_pct_bias_corrected": -0.34674890753866316
+          },
+          "G4_global_fit_slope": {
+            "ratio": 0.9952379416426516,
+            "error_pct": -0.4762058357348442,
+            "stencil_bias": 1.0,
+            "error_pct_bias_corrected": -0.4762058357348442
+          }
+        }
+      },
+      "slip_over_umax": 0.000981853616906924,
+      "body_force": 9.81,
+      "viscosity": 0.01,
+      "height": 0.1,
+      "columns": 12
+    }
+  ],
+  "torch": "2.7.1",
+  "generated_at": "2026-11-15T06:50:44Z",
+  "figures": [
+    {
+      "name": "poiseuille_refinement_ladder.png",
+      "caption": "(a) steady velocity profiles at H/dx = 16/24/32/48 against the analytic parabola; (b) log-log error ladder with least-squares observed orders, against the 5 % anchor band and the 3 % owner band."
+    },
+    {
+      "name": "poiseuille_refinement_wall_rows.png",
+      "caption": "relative error of the first four off-wall rows at each resolution; a shrinking wall-layer deficit is the signature of a boundary condition applied on the plane."
+    }
+  ]
+}
