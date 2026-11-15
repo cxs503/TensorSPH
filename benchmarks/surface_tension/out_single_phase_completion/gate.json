@@ -362,12 +362,12 @@
       "particles": 3209,
       "completion_weight": 0.4263334171275849,
       "hourglass": true,
-      "dp_pa": -1.7646962967212718,
+      "dp_pa": 0.07873078523303578,
       "dp_theory_pa": 0.7199999999999999,
-      "err_pct": -345.09670787795443,
+      "err_pct": -89.06516871763391,
       "stress_reading_err_pct": -2.1250146125313676,
       "delta_integral": 0.9787498538746863,
-      "momentum_residual": 0.7492840028372669
+      "momentum_residual": 8.817962945252284e-18
     }
   ],
   "momentum": {
@@ -402,5 +402,59 @@
     "err_pct": 40.375407558071075,
     "note": "plane-symmetric full mirror: over-restores the free-surface flux"
   },
-  "runtime_s": 20.58313298225403
+  "hourglass_pair_order": {
+    "single_phase_hg_on": [
+      {
+        "radius_over_dx": 16.0,
+        "err_pct": -44.982974993689304,
+        "momentum_residual": 1.8536511554408944e-17
+      },
+      {
+        "radius_over_dx": 32.0,
+        "err_pct": -119.07107456273638,
+        "momentum_residual": 9.201788401720906e-18
+      },
+      {
+        "radius_over_dx": 64.0,
+        "err_pct": -573.9234975167133,
+        "momentum_residual": 2.424881670743537e-18
+      }
+    ],
+    "pair_assembly": {
+      "radius_over_dx": 32,
+      "particles": 3209,
+      "single_phase_hg_on_err_pct": -119.07107456273638,
+      "momentum_residual_hg_off": 1.3638935299690257e-18,
+      "momentum_residual_hg_on": 9.201788401720906e-18,
+      "legacy_pair_order_leak": 0.7534163010709672,
+      "pair_hourglass_star_check": {
+        "particles": 5,
+        "pairs": 4,
+        "rel_diff": 4.5524562270748395e-17,
+        "net_relative": 2.875124853460383e-18
+      },
+      "legacy_note": "removed assembly (-w(flux - hg) inner / non-flipped nn_gw contact): each pair added its hourglass contribution twice"
+    },
+    "pair_identity": {
+      "particles": 3,
+      "pairs": 2,
+      "hourglass": true,
+      "momentum_residual": 2.5752319260315797e-17
+    },
+    "two_phase": {
+      "off": {
+        "dp_flux_all_err_pct": -5.800199051819537,
+        "dp_flux_water_err_pct": -30.052594995395825,
+        "dp_stress_err_pct": -2.2227918207145323,
+        "momentum_residual": 2.8626306832487634e-17
+      },
+      "on": {
+        "dp_flux_all_err_pct": -12.751202985878646,
+        "dp_flux_water_err_pct": 13.837792214516305,
+        "dp_stress_err_pct": -2.2227918207145323,
+        "momentum_residual": 8.012300725299247e-18
+      }
+    }
+  },
+  "runtime_s": 4.949275732040405
 }
