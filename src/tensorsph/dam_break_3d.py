@@ -29,6 +29,7 @@ from .droplet_impact import (
     Config,
     cell_centres,
     hydrostatic_density,
+    lattice_mass_unit,
     next_dt,
     resolve_device,
     tait_pressure,
@@ -36,6 +37,7 @@ from .droplet_impact import (
     free_surface_pressure,
     VISCOUS_LAPLACIAN_FACTOR,
 )
+from .transport_velocity_correction import transport_velocity_correction
 from .neighbor_search import PairListCache, cell_linked_pairs
 
 
@@ -120,6 +122,19 @@ class DamBreak3DConfig(Config):
     output_every: int = 100
     device: str = "cpu"
     hydrostatic_init: bool = True
+    # Transport-velocity correction (:mod:`tensorsph.transport_velocity_correction`),
+    # the operator the 2-D dam break has been verified with since the
+    # XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION port.  A value of 0 (the default)
+    # keeps the solver bit-identical to the pre-existing 3-D case.
+    # ``tvc_alpha = None`` selects the module default (0.05); the 2-D leg
+    # calibrates 0.10 on Martin & Moyce, which cannot be transferred here
+    # without a 3-D reference -- see docs/xval_sphinx_tvc/SOLVER_3D_LEG.md.
+    tvc_every: int = 0
+    tvc_alpha: float | None = None
+    tvc_scope_tol: float | None = None
+    #: Clip the per-pass displacement at ``tvc_max_shift * h`` (same knob and
+    #: units as ``DamBreakConfig.tvc_max_shift`` in the 2-D case).
+    tvc_max_shift: float | None = None
 
     def tank_top(self) -> float:
         return float(self.tank_height)
@@ -145,6 +160,8 @@ def validate_case(cfg: DamBreak3DConfig) -> None:
         raise ValueError("column_depth must fit inside the tank")
     if cfg.sound_speed <= 0 or cfg.rho0 <= 0 or cfg.gamma <= 0:
         raise ValueError("rho0, sound_speed, and gamma must be positive")
+    if cfg.tvc_every < 0:
+        raise ValueError("tvc_every must be non-negative (0 disables)")
     courant = cfg.dt * cfg.sound_speed / (cfg.h_factor * cfg.dx)
     if courant > cfg.max_courant * (1.0 + 1.0e-9):
         raise ValueError(
@@ -468,6 +485,14 @@ class DamBreak3DRun:
     dt_max: float = 0.0
     max_acoustic_courant: float = 0.0
     snapshots: list = field(default_factory=list)
+    #: Leading edge at ``t = 0`` (m).  The reference ``Z/a`` of Martin & Moyce
+    #: and of the Ritter solution is measured *from the initial column face*,
+    #: so this offset has to be subtracted before any comparison; see
+    #: :meth:`dimensionless`.
+    initial_front: float = 0.0
+    #: One row per applied TVC pass: ``step``, ``time``, ``max_shift_over_h``,
+    #: ``mean_shift_over_h``, ``kept_fraction`` (``None`` without ``tvc_scope_tol``).
+    tvc_log: list = field(default_factory=list)
 
     @property
     def mass_drift(self) -> float:
@@ -481,10 +506,23 @@ class DamBreak3DRun:
         return (self.final_energy - self.initial_energy) / self.initial_energy
 
     def dimensionless(self, cfg: DamBreak3DConfig):
+        """``(tau, Z/a)`` with ``Z`` measured from the initial column face.
+
+        ``self.front`` stores the *absolute* leading-edge coordinate
+        ``x_max``; both references this case is graded against -- the Ritter
+        shallow-water front ``Z/a = 2 tau`` and the Martin & Moyce
+        digitisation -- measure the distance travelled from the dam face.
+        Dividing ``x_max`` by ``a`` therefore adds a spurious ``+1`` in
+        ``Z/a`` (``+1 - dx/(2a)`` on the lattice, which is where the
+        ``0.9`` at ``t = 0`` came from); the 2-D case documents the same
+        frame trap in ``docs/xval_sphinx_tvc/README.md``.  The offset
+        subtracted here is the leading edge at ``t = 0``, not the nominal
+        column width, so ``Z/a(0) = 0`` exactly on any lattice.
+        """
         scale = cfg.column_width
         return ([t * math.sqrt(2.0 * cfg.gravity / cfg.column_width)
                  for t in self.times],
-                [z / scale for z in self.front])
+                [(z - self.initial_front) / scale for z in self.front])
 
 
 # --------------------------------------------------------------------------- #
@@ -533,6 +571,16 @@ def run_case(cfg: DamBreak3DConfig, pair_skin_factor: float | None = None,
     impact_limit = cfg.pool_width - 3.0 * cfg.dx
     compression_at_impact = None
     wall_impact_time = None
+
+    # Wall-particle volume for the TVC wall branch: the wall lattice uses the
+    # fluid spacing, so one lattice cell of the *calibrated* mass is the
+    # consistent volume (upstream stores V = m / rho for every particle; the
+    # 3-D walls here are massless in the RHS, so their mass cannot be borrowed
+    # from ``mass``).
+    wall_volume = (torch.full((wall.shape[0] if wall is not None else 0,),
+                              lattice_mass_unit(cfg) / cfg.rho0,
+                              dtype=positions.dtype, device=device))
+    tvc_log: list = []
 
     dt = cfg.dt
     elapsed = 0.0
@@ -593,6 +641,36 @@ def run_case(cfg: DamBreak3DConfig, pair_skin_factor: float | None = None,
         velocity = velocity + step_dt * acc
         positions = positions + step_dt * velocity
         escaped += apply_boundary_3d(positions, velocity, cfg, top=top)
+        if cfg.tvc_every and step > 0 and step % cfg.tvc_every == 0:
+            # Upstream applies the correction inside the advection step, i.e.
+            # after the position update and before the next density solve.
+            all_positions[:fluid_count] = positions
+            fluid_volume = mass / density.clamp_min(1.0e-12)
+            tvc = transport_velocity_correction(
+                all_positions,
+                torch.cat((fluid_volume, wall_volume)),
+                h,
+                alpha=cfg.tvc_alpha,
+                pairs=pairs,
+                wall_count=int(wall_volume.numel()),
+                h_ref=h,
+                scope_tol=cfg.tvc_scope_tol,
+                max_shift=(None if cfg.tvc_max_shift is None
+                           else cfg.tvc_max_shift * h),
+                dim=3,
+            )
+            shift = tvc.shift[:fluid_count]
+            shift_norm = torch.linalg.vector_norm(shift, dim=-1)
+            positions = positions + shift
+            escaped += apply_boundary_3d(positions, velocity, cfg, top=top)
+            tvc_log.append({
+                "step": int(step),
+                "time": float(elapsed),
+                "max_shift_over_h": float(shift_norm.max() / h),
+                "mean_shift_over_h": float(shift_norm.mean() / h),
+                "kept_fraction": tvc.extras["scope_tol_kept_fraction"],
+                "clipped_fraction": float(tvc.clipped),
+            })
         elapsed += step_dt
         if cfg.adaptive_dt:
             dt = next_dt(cfg, dt, speed_scalar)
@@ -620,6 +698,8 @@ def run_case(cfg: DamBreak3DConfig, pair_skin_factor: float | None = None,
         dt_min=dt_min, dt_max=dt_max,
         max_acoustic_courant=float(courant_peak),
         snapshots=snapshots,
+        tvc_log=tvc_log,
+        initial_front=float(front[0]) if front else 0.0,
     )
 
 
