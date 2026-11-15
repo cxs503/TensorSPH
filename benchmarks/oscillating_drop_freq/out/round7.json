@@ -1,0 +1,402 @@
+{
+ "case": "SPH-OSC-DROP-FREQ",
+ "round": 7,
+ "study": "observed order + conservative GCI + ASME V&V 20 validation uncertainty on the round-4 estimators",
+ "reference": "Rayleigh 1879, Proc. R. Soc. Lond. 29:71; Lamb 1932 Art. 275; ASME V&V 20-2009; Roache 1994",
+ "gate_pct": 6.0,
+ "generated": "2026-11-15T21:05:09Z",
+ "environment": {
+  "python": "3.11.6",
+  "torch": "2.7.1",
+  "device": "cpu"
+ },
+ "safety_factor": 1.25,
+ "analysis": {
+  "rows": [
+   {
+    "channel": "A",
+    "mode": 2,
+    "eps": 0.02,
+    "status": "ok",
+    "p_observed": 4.0,
+    "p_band": [
+     2.7800000000000002,
+     4.0
+    ],
+    "q_inf": 0.9403026022140901,
+    "q_inf_error_pct": -5.969739778590988,
+    "rms_residual": 0.02626263767078656,
+    "monotone": false,
+    "q_finest": 0.968893288843444,
+    "rdx_finest": 24.0,
+    "gci_pct": 1.6607682304321258,
+    "u_input_pct": 0.009972991538731435,
+    "validation": {
+     "u_num": 0.016607682304321258,
+     "u_input": 9.972991538731435e-05,
+     "u_v": 0.016607981743044172,
+     "error_rel": 0.031106711156556055,
+     "validation_ratio": 1.872997672916175,
+     "pass": false
+    },
+    "q_at_24": 0.968893288843444,
+    "omega_error_at_24_pct": -3.1106711156556055,
+    "gate_at_24": true,
+    "history": {
+     "12": 0.9885844755932467,
+     "16": 0.916597305077766,
+     "24": 0.968893288843444
+    }
+   },
+   {
+    "channel": "A",
+    "mode": 2,
+    "eps": 0.05,
+    "status": "ok",
+    "p_observed": 0.2,
+    "p_band": [
+     0.2,
+     0.9299999999999999
+    ],
+    "q_inf": 1.090165647234816,
+    "q_inf_error_pct": 9.0165647234816,
+    "rms_residual": 0.011217548030962582,
+    "monotone": false,
+    "q_finest": 0.9622275436721293,
+    "rdx_finest": 24.0,
+    "gci_pct": 52.33445752921847,
+    "u_input_pct": 0.0027319052401386656,
+    "validation": {
+     "u_num": 0.5233445752921847,
+     "u_input": 2.7319052401386656e-05,
+     "u_v": 0.5233445760052241,
+     "error_rel": 0.03777245632787074,
+     "validation_ratio": 0.07217511761790704,
+     "pass": true
+    },
+    "q_at_24": 0.9622275436721293,
+    "omega_error_at_24_pct": -3.777245632787074,
+    "gate_at_24": true,
+    "history": {
+     "12": 0.9443408330808499,
+     "16": 0.9281971401567697,
+     "24": 0.9622275436721293
+    }
+   },
+   {
+    "channel": "A",
+    "mode": 3,
+    "eps": 0.02,
+    "status": "ok",
+    "p_observed": 1.9399999999999997,
+    "p_band": [
+     1.9399999999999997,
+     1.9399999999999997
+    ],
+    "q_inf": 0.9744164475932957,
+    "q_inf_error_pct": -2.558355240670429,
+    "rms_residual": 1.3608880099796844e-06,
+    "monotone": true,
+    "q_finest": 0.95727983669745,
+    "rdx_finest": 24.0,
+    "gci_pct": 2.2381451122874756,
+    "u_input_pct": 0.0041153323858234,
+    "validation": {
+     "u_num": 0.022381451122874756,
+     "u_input": 4.1153323858234e-05,
+     "u_v": 0.02238148895765642,
+     "error_rel": 0.04272016330255002,
+     "validation_ratio": 1.908727492767455,
+     "pass": false
+    },
+    "q_at_24": 0.95727983669745,
+    "omega_error_at_24_pct": -4.272016330255002,
+    "gate_at_24": true,
+    "history": {
+     "12": 0.9086588573493575,
+     "16": 0.9367814237226236,
+     "24": 0.95727983669745
+    }
+   },
+   {
+    "channel": "A",
+    "mode": 3,
+    "eps": 0.05,
+    "status": "ok",
+    "p_observed": 1.93,
+    "p_band": [
+     1.93,
+     1.93
+    ],
+    "q_inf": 0.9747605118529504,
+    "q_inf_error_pct": -2.523948814704957,
+    "rms_residual": 2.142837627411902e-06,
+    "monotone": true,
+    "q_finest": 0.9572721623137007,
+    "rdx_finest": 24.0,
+    "gci_pct": 2.2828662457917748,
+    "u_input_pct": 0.004648647236582537,
+    "validation": {
+     "u_num": 0.02282866245791775,
+     "u_input": 4.648647236582537e-05,
+     "u_v": 0.022828709788546005,
+     "error_rel": 0.042727837686299286,
+     "validation_ratio": 1.871671158031778,
+     "pass": false
+    },
+    "q_at_24": 0.9572721623137007,
+    "omega_error_at_24_pct": -4.272783768629928,
+    "gate_at_24": true,
+    "history": {
+     "12": 0.9081256157113596,
+     "16": 0.9365196758751623,
+     "24": 0.9572721623137007
+    }
+   },
+   {
+    "channel": "A_differential",
+    "mode": 2,
+    "eps": 0.02,
+    "status": "ok",
+    "p_observed": 1.055,
+    "p_band": [
+     1.055,
+     1.055
+    ],
+    "q_inf": 0.9984888003089787,
+    "q_inf_error_pct": -0.15111996910213144,
+    "rms_residual": 3.4996260566664985e-06,
+    "monotone": true,
+    "q_finest": 0.9582039268957535,
+    "rdx_finest": 24.0,
+    "gci_pct": 5.257403965551627,
+    "u_input_pct": 0.009972991538731435,
+    "validation": {
+     "u_num": 0.05257403965551627,
+     "u_input": 9.972991538731435e-05,
+     "u_v": 0.05257413424637462,
+     "error_rel": 0.04179607310424649,
+     "validation_ratio": 0.7949930836403387,
+     "pass": true
+    },
+    "q_at_24": 0.9582039268957535,
+    "omega_error_at_24_pct": -4.1796073104246485,
+    "gate_at_24": true,
+    "history": {
+     "12": 0.914785447348263,
+     "16": 0.9366900078570275,
+     "24": 0.9582039268957535
+    }
+   },
+   {
+    "channel": "A_differential",
+    "mode": 2,
+    "eps": 0.05,
+    "status": "ok",
+    "p_observed": 1.04,
+    "p_band": [
+     1.04,
+     1.04
+    ],
+    "q_inf": 0.9994824665594682,
+    "q_inf_error_pct": -0.05175334405318477,
+    "rms_residual": 1.14522122822537e-06,
+    "monotone": true,
+    "q_finest": 0.9579490466466462,
+    "rdx_finest": 24.0,
+    "gci_pct": 5.420287927971367,
+    "u_input_pct": 0.0027319052401386656,
+    "validation": {
+     "u_num": 0.05420287927971368,
+     "u_input": 2.7319052401386656e-05,
+     "u_v": 0.054202886164316365,
+     "error_rel": 0.04205095335335385,
+     "validation_ratio": 0.7758065359448967,
+     "pass": true
+    },
+    "q_at_24": 0.9579490466466462,
+    "omega_error_at_24_pct": -4.205095335335384,
+    "gate_at_24": true,
+    "history": {
+     "12": 0.9140794278658004,
+     "16": 0.9361608147428329,
+     "24": 0.9579490466466462
+    }
+   },
+   {
+    "channel": "A_differential",
+    "mode": 3,
+    "eps": 0.02,
+    "status": "ok",
+    "p_observed": 1.9349999999999998,
+    "p_band": [
+     1.9349999999999998,
+     1.9349999999999998
+    ],
+    "q_inf": 0.9745250366472743,
+    "q_inf_error_pct": -2.54749633527257,
+    "rms_residual": 3.174151396825386e-06,
+    "monotone": true,
+    "q_finest": 0.9572404414503074,
+    "rdx_finest": 24.0,
+    "gci_pct": 2.255975704385544,
+    "u_input_pct": 0.0041153323858234,
+    "validation": {
+     "u_num": 0.02255975704385544,
+     "u_input": 4.1153323858234e-05,
+     "u_v": 0.02255979457960222,
+     "error_rel": 0.0427595585496926,
+     "validation_ratio": 1.8953877615691723,
+     "pass": false
+    },
+    "q_at_24": 0.9572404414503074,
+    "omega_error_at_24_pct": -4.27595585496926,
+    "gate_at_24": true,
+    "history": {
+     "12": 0.9084405209414784,
+     "16": 0.9366564070724642,
+     "24": 0.9572404414503074
+    }
+   },
+   {
+    "channel": "A_differential",
+    "mode": 3,
+    "eps": 0.05,
+    "status": "ok",
+    "p_observed": 1.925,
+    "p_band": [
+     1.925,
+     1.925
+    ],
+    "q_inf": 0.9748399867664935,
+    "q_inf_error_pct": -2.5160013233506473,
+    "rms_residual": 1.8580841725151813e-06,
+    "monotone": true,
+    "q_finest": 0.9572276621077808,
+    "rdx_finest": 24.0,
+    "gci_pct": 2.2992601153593926,
+    "u_input_pct": 0.004648647236582537,
+    "validation": {
+     "u_num": 0.022992601153593924,
+     "u_input": 4.648647236582537e-05,
+     "u_v": 0.02299264814675251,
+     "error_rel": 0.04277233789221924,
+     "validation_ratio": 1.8602614896388268,
+     "pass": false
+    },
+    "q_at_24": 0.9572276621077808,
+    "omega_error_at_24_pct": -4.277233789221924,
+    "gate_at_24": true,
+    "history": {
+     "12": 0.9079641308963283,
+     "16": 0.9364051070845102,
+     "24": 0.9572276621077808
+    }
+   },
+   {
+    "channel": "B",
+    "mode": 2,
+    "eps": 0.02,
+    "status": "ok",
+    "p_observed": 4.0,
+    "p_band": [
+     3.98,
+     4.0
+    ],
+    "q_inf": 0.9639051496138382,
+    "q_inf_error_pct": -3.609485038616178,
+    "rms_residual": 0.0007062984895400774,
+    "monotone": true,
+    "q_finest": 0.9598072509517642,
+    "rdx_finest": 24.0,
+    "gci_pct": 0.38846238848136716,
+    "u_input_pct": 0.012037557543820299,
+    "validation": {
+     "u_num": 0.003884623884813672,
+     "u_input": 0.00012037557543820299,
+     "u_v": 0.0038864885186536886,
+     "error_rel": 0.040192749048235776,
+     "validation_ratio": 10.34166159383352,
+     "pass": false
+    },
+    "q_at_24": 0.9598072509517642,
+    "omega_error_at_24_pct": -4.019274904823577,
+    "gate_at_24": true,
+    "history": {
+     "12": 0.9093428266635986,
+     "16": 0.9476896578932044,
+     "24": 0.9598072509517642
+    }
+   },
+   {
+    "channel": "B",
+    "mode": 3,
+    "eps": 0.02,
+    "status": "ok",
+    "p_observed": 1.845,
+    "p_band": [
+     1.845,
+     1.845
+    ],
+    "q_inf": 0.9783533320118009,
+    "q_inf_error_pct": -2.164666798819914,
+    "rms_residual": 1.4503801078807782e-06,
+    "monotone": true,
+    "q_finest": 0.9595194364772606,
+    "rdx_finest": 24.0,
+    "gci_pct": 2.4530305079243586,
+    "u_input_pct": 0.02743057872502952,
+    "validation": {
+     "u_num": 0.024530305079243586,
+     "u_input": 0.0002743057872502952,
+     "u_v": 0.02453183871921717,
+     "error_rel": 0.04048056352273943,
+     "validation_ratio": 1.6501234981228183,
+     "pass": false
+    },
+    "q_at_24": 0.9595194364772606,
+    "omega_error_at_24_pct": -4.048056352273943,
+    "gate_at_24": true,
+    "history": {
+     "12": 0.9106953207543932,
+     "16": 0.9385628396547685,
+     "24": 0.9595194364772606
+    }
+   }
+  ],
+  "ladder": [
+   12.0,
+   16.0,
+   24.0
+  ],
+  "finest": 24.0,
+  "finest_pair": [
+   16.0,
+   24.0
+  ]
+ },
+ "verdict": {
+  "status": "ok",
+  "n_ok_rows": 10,
+  "p_observed_range": [
+   0.2,
+   4.0
+  ],
+  "p_observed_median": 1.93,
+  "first_order_assumption_held": false,
+  "gate_rows": 10,
+  "gate_pass_rows_at_24": 10,
+  "q_inf_range_pct": [
+   -5.969739778590988,
+   9.0165647234816
+  ],
+  "validation_rows": 10,
+  "validation_pass_rows": 3,
+  "gci_at_finest_pct_range": [
+   0.38846238848136716,
+   52.33445752921847
+  ],
+  "statement": "observed order p = 1.93 (range 0.20-4.00) on 10 channel rows; R/dx = 24 inside the 6 % gate on 10/10 rows; Q_inf validated against the exact value 1 on 3/10 rows (ASME V&V 20, U_V from GCI + estimator control bias); => the pass is NOT fully asymptotic: see the failing rows for the channel/mode where Q_inf or the 6 % band fails"
+ },
+ "figure": "/srv/tensor/agent/work/m22406/docs/figures/case_sph_osc_drop_freq_round7_convergence.png"
+}
