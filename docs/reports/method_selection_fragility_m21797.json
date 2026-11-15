@@ -5,12 +5,12 @@
  ],
  "depth": {
   "compressible_riemann": {
-   "best_pct": 0.7768408089469451,
-   "n_benchmark_families": 1,
-   "n_live_accuracy": 1,
-   "n_records": 1,
-   "single_source": true,
-   "spread_pct": null,
+   "best_pct": 0.4142172501483377,
+   "n_benchmark_families": 2,
+   "n_live_accuracy": 2,
+   "n_records": 2,
+   "single_source": false,
+   "spread_pct": 0.36262355879860736,
    "worst_pct": 0.7768408089469451
   },
   "compression_regularization": {
@@ -100,8 +100,8 @@
  "invariants_ok": true,
  "mission": 21797,
  "n_depth_mismatches": 0,
- "n_families_total": 12,
- "n_records": 29,
+ "n_families_total": 13,
+ "n_records": 30,
  "owner_tolerance_pct": 15.0,
  "profiles": [
   {
@@ -210,18 +210,14 @@
     "verified": true,
     "withheld": []
    },
-   "card": "# method-selection decision\n\n## profile\n- acoustic_mach: 0.9\n- has_free_surface: False\n- gravity_waves: False\n- shock_advection: True\n- capillary_dominated: False\n- density_ratio: 1.0\n- reynolds: 100.0\n- thermal_transport: False\n- tensile_stretching: False\n- smooth_inviscid_vortex: False\n- domain: closed\n\n## verdict\n- accuracy bound: 0.777% over every live accuracy record of the schemes put forward (owner standard 15%) -- set by compressible_riemann (CASE-SPH-SOD-SHOCK-COMPRESSIBLE)\n- within owner standard: YES\n\n## primary scheme\n- compressible_riemann: SELECTED\n- why: [shock] acoustic Mach 0.9 and explicit shock flag >= 0.3: weak compressibility assumption breaks down\n- claimed bound: 0.777% (owner standard 15%; passing records only)\n- reference: Sod (1978) J. Comput. Phys. 27:1 (reference); Zhang, Hu & Adams (2017) J. Comput. Phys. 338:210 (Riemann WCSPH dissipation)\n\n## modifiers\n- none\n\n## strict bound (worst live accuracy record <= 15%)\n- nothing excluded: every scheme put forward is inside the owner standard\n\n## evidence depth\n- compressible_riemann: SINGLE SOURCE (1 benchmark family)\n- caveat: the bound of compressible_riemann has not been reproduced on a second benchmark family -- treat it as a measured data point, not an independently confirmed bound\n",
+   "card": "# method-selection decision\n\n## profile\n- acoustic_mach: 0.9\n- has_free_surface: False\n- gravity_waves: False\n- shock_advection: True\n- capillary_dominated: False\n- density_ratio: 1.0\n- reynolds: 100.0\n- thermal_transport: False\n- tensile_stretching: False\n- smooth_inviscid_vortex: False\n- domain: closed\n\n## verdict\n- accuracy bound: 0.777% over every live accuracy record of the schemes put forward (owner standard 15%) -- set by compressible_riemann (CASE-SPH-SOD-SHOCK-COMPRESSIBLE)\n- within owner standard: YES\n\n## primary scheme\n- compressible_riemann: SELECTED\n- why: [shock] acoustic Mach 0.9 and explicit shock flag >= 0.3: weak compressibility assumption breaks down\n- claimed bound: 0.777% (owner standard 15%; passing records only)\n- reference: Sod (1978) J. Comput. Phys. 27:1 (reference); Zhang, Hu & Adams (2017) J. Comput. Phys. 338:210 (Riemann WCSPH dissipation)\n\n## modifiers\n- none\n\n## strict bound (worst live accuracy record <= 15%)\n- nothing excluded: every scheme put forward is inside the owner standard\n\n## evidence depth\n- compressible_riemann: 2 benchmark families, 2 records; spread 0.363 pp over live records\n",
    "critical_removals": [
     {
-     "bound_shift_pp": null,
-     "changes": [
-      "primary",
-      "primary_status",
-      "verified"
-     ],
-     "headline_bound_pct": null,
-     "primary": null,
-     "primary_status": null,
+     "bound_shift_pp": -0.36262355879860736,
+     "changes": [],
+     "headline_bound_pct": 0.4142172501483377,
+     "primary": "compressible_riemann",
+     "primary_status": "SELECTED",
      "removed_case": "CASE-SPH-SOD-SHOCK-COMPRESSIBLE",
      "removed_method": "compressible_riemann",
      "removed_record_kind": "accuracy",
@@ -231,14 +227,15 @@
    "depth": {
     "compressible_riemann": {
      "benchmark_families": [
-      "case-sph-sod-shock-compressible"
+      "case-sph-sod-shock-compressible",
+      "case-sph-strong-shock-contact"
      ],
-     "best_pct": 0.7768408089469451,
-     "n_benchmark_families": 1,
-     "n_live_accuracy": 1,
-     "n_records": 1,
-     "single_source": true,
-     "spread_pct": null,
+     "best_pct": 0.4142172501483377,
+     "n_benchmark_families": 2,
+     "n_live_accuracy": 2,
+     "n_records": 2,
+     "single_source": false,
+     "spread_pct": 0.36262355879860736,
      "worst_pct": 0.7768408089469451
     }
    },
@@ -250,9 +247,7 @@
     "domain": "closed",
     "shock_advection": true
    },
-   "single_sourced": [
-    "compressible_riemann"
-   ]
+   "single_sourced": []
   },
   {
    "baseline": {

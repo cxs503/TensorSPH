@@ -4,6 +4,7 @@
 |---|---|---|---|---|---|---|---|
 | `wcsph_delta_sph` | CASE-WAVE-FLUME | max gauge wave-height error vs piston-transfer target (H/dx=3.2, delta=0.1) | 2.968 | 10 | ✔ | ✔ | `docs/reports/wave_flume_numbers.json` |
 | `compressible_riemann` | CASE-SPH-SOD-SHOCK-COMPRESSIBLE | max abs relative error over the gated shock quantities (rho*, p*, u*, wave positions) | 0.7768 | 5 | ✔ | ✔ | `benchmarks/case_sod_shock_compressible/result.json` |
+| `compressible_riemann` | CASE-SPH-STRONG-SHOCK-CONTACT (1000:1 driver, 10.3x contact jump) | max abs relative error over the gated star-plateau values (rho*_L, rho*_R, p*, u*) and the contact/shock positions | 0.4142 | 5 | ✔ | ✔ | `benchmarks/case_strong_shock_contact/result.json` |
 | `heat_conduction_operator` | CASE-SPH-CONDUCTION-1D | max normalised error vs the erfc similarity solution | 0.0002181 | 3 | ✔ | ✔ | `benchmarks/case_conduction_1d/result.json` |
 | `heat_conduction_operator` | CASE-SPH-CONDUCTION-2D (Fourier mode decay) | max normalised field error vs exp(-alpha (kx^2+ky^2) t) cos(kx x) cos(ky y) on a periodic square, n=128, RK4 time stepping, 2-D k->0 lattice calibration (gate 3 %) | 0.1504 | 3 | ✔ | ✔ | `benchmarks/case_conduction_2d/result.json` |
 | `heat_conduction_operator` | CASE-SPH-CONDUCTION-2D (1-D calibration lifted to 2-D) | same family and resolution, but the 1-D lattice factor (1.0218) applied in 2-D: ~870 % -- O(dx) dimensional mismatch | 834.6 | 3 | ✘ | ✘ | `benchmarks/case_conduction_2d/result.json` |
@@ -32,7 +33,7 @@
 | `transport_velocity_correction` | XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.03 m) | mean relative error of the front position Z/a vs the Martin & Moyce (1952) digitised points, alpha=0.10 over all particles | 10.81 | 15 | ✔ | ✔ | `docs/xval_sphinx_tvc/data/grid_dx003.json` |
 | `transport_velocity_correction` | XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.04 m) | same quantity on the coarser rung: records the alpha=0.10 arm is resolution-sensitive (kept in the registry, fails the owner standard) | 16.96 | 15 | ✘ | ✘ | `docs/xval_sphinx_tvc/data/grid_dx004.json` |
 
-登记记录 29 条，覆盖 10 个方法；最坏误差 834.6%。缺失源文件：无。
+登记记录 30 条，覆盖 10 个方法；最坏误差 834.6%。缺失源文件：无。
 
 
 ### 3.2 路由矩阵（候选算例画像 → 选定方法）
@@ -59,7 +60,7 @@
 
 | 方法 | 宣称上界 [%]（仅过 15% 的记录） | 真实精度上界 [%]（全部 live accuracy） | 差额 [pp] | 条件数记录 [%]（不计入） | live accuracy 记录数 | <15% |
 |---|---|---|---|---|---|---|
-| `compressible_riemann` | 0.7768 | 0.7768 | +0 | - | 1 | ✔ |
+| `compressible_riemann` | 0.7768 | 0.7768 | +0 | - | 2 | ✔ |
 | `compression_regularization` | 5.533 | 5.533 | +0 | - | 1 | ✔ |
 | `csf_surface_tension` | 5.987 | 45.69 | +39.71 | - | 4 | ✘ |
 | `density_diffusion` | 1.021 | 1.021 | +0 | - | 2 | ✔ |
