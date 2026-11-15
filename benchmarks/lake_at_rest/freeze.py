@@ -206,6 +206,47 @@ def _report(runs: dict) -> dict:
     }
 
 
+#: Records produced by the *other* runners of this case and shipped next to the
+#: two case runs: the rest-horizon study (``stability.py``) and its band-fit
+#: re-reduction (``band_fit.py``).  ``freeze`` does not regenerate them -- they
+#: cost minutes of cluster time -- but it must hash them, otherwise they land in
+#: ``tests/data/lake_at_rest`` unmanifested and the evidence channel's own gate
+#: (``tests/test_lake_at_rest_evidence.py``) fails on a fresh checkout.  Only the
+#: files that exist are shipped, and ``--reship`` re-hashes the frozen payload
+#: without re-running the physics so the published numbers keep their bytes.
+EXTRA_RECORDS = ("stability.json", "stability_band_fit.json",
+                 "stability_viscous.json", "wall_gap.json")
+
+
+def _extra_payload(ship: Path) -> list:
+    return [ship / name for name in EXTRA_RECORDS if (ship / name).is_file()]
+
+
+def reship(ship: Path = SHIPPED) -> dict:
+    """Re-hash every shipped ``*.json`` without re-running the case."""
+    payload = [ship / f"{name}.json" for name in RUNS] + [ship / REPORT]
+    payload += _extra_payload(ship)
+    missing = [str(path.name) for path in payload if not path.is_file()]
+    if missing:
+        raise SystemExit(f"cannot reship: missing {missing}")
+    lines = [f"{_sha256(path)}  {path.stat().st_size}  {path.name}"
+             for path in payload]
+    (ship / MANIFEST).write_text("\n".join(lines) + "\n")
+    channel = json.loads((ship / CHANNEL).read_text())
+    channel["shipped"] = [path.name for path in payload] + [MANIFEST, CHANNEL]
+    channel["extra_records_from"] = {
+        "stability.json": "benchmarks/lake_at_rest/stability.py",
+        "stability_band_fit.json": "benchmarks/lake_at_rest/band_fit.py",
+        "stability_viscous.json": "benchmarks/lake_at_rest/stability.py "
+                                  "--viscosity 1e-6",
+        "wall_gap.json": "benchmarks/lake_at_rest/wall_gap.py",
+    }
+    (ship / CHANNEL).write_text(json.dumps(channel, indent=2, sort_keys=True))
+    print(f"reship: {len(payload)} record(s) manifested into "
+          f"{ship.relative_to(REPO)} (physics not re-run)")
+    return channel
+
+
 def freeze(ship: Path = SHIPPED) -> dict:
     """Run both configurations and write the text channel."""
     ship.mkdir(parents=True, exist_ok=True)
@@ -221,7 +262,8 @@ def freeze(ship: Path = SHIPPED) -> dict:
     report = _report(runs)
     (ship / REPORT).write_text(json.dumps(report, indent=2, sort_keys=True))
 
-    payload = sorted(ship / f"{name}.json" for name in RUNS) + [ship / REPORT]
+    payload = (sorted(ship / f"{name}.json" for name in RUNS)
+               + [ship / REPORT] + _extra_payload(ship))
     lines = [f"{_sha256(path)}  {path.stat().st_size}  {path.name}"
              for path in payload]
     (ship / MANIFEST).write_text("\n".join(lines) + "\n")
@@ -317,7 +359,13 @@ def main(argv=None) -> int:
                         help="re-run the case and compare with the frozen "
                              "channel instead of writing it")
     parser.add_argument("--out", type=Path, default=SHIPPED)
+    parser.add_argument("--reship", action="store_true",
+                        help="re-hash the frozen payload without re-running the "
+                             "case (use after a sibling runner shipped a record)")
     args = parser.parse_args(argv)
+    if args.reship:
+        reship(args.out)
+        return 0
     if args.verify:
         failures = verify(args.out)
         if failures:
