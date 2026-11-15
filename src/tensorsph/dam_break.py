@@ -257,6 +257,11 @@ class DamBreakRun:
     # Largest transport-velocity-correction displacement applied in the run
     # (meters); 0 for a run without the correction.
     max_tvc_shift: float = 0.0
+    # Largest fraction of particles whose correction displacement was scaled
+    # down by ``tvc_max_shift`` in a single application (0 = cap never engaged).
+    # This is the diagnostic that separates "the cap is inert" from "the cap is
+    # carrying the run", which ``max_tvc_shift`` alone cannot tell apart.
+    max_tvc_clipped: float = 0.0
     # ``(time, positions, velocities)`` captured at the requested
     # ``snapshot_times``.
     # Used by the shallow-water (Ritter) verification, which needs the depth
@@ -343,6 +348,7 @@ def run_case(cfg: DamBreakConfig, pair_skin_factor: float | None = None,
 
     dt = cfg.dt
     tvc_shift_peak = 0.0
+    tvc_clipped_peak = 0.0
     elapsed = 0.0
     dt_min = dt_max = dt
     # Same semantics as ``droplet_impact.run``: ``cfg.steps`` at ``cfg.dt`` is
@@ -437,6 +443,7 @@ def run_case(cfg: DamBreakConfig, pair_skin_factor: float | None = None,
                 active=active, scope_tol=scope_tol)
             positions = positions + tvc.shift
             tvc_shift_peak = max(tvc_shift_peak, tvc.max_shift)
+            tvc_clipped_peak = max(tvc_clipped_peak, float(tvc.clipped))
             escaped += apply_boundary(positions, velocity, cfg, top=top)
         elapsed += step_dt
         if cfg.adaptive_dt:
@@ -461,6 +468,7 @@ def run_case(cfg: DamBreakConfig, pair_skin_factor: float | None = None,
         dt_min=dt_min, dt_max=dt_max,
         max_acoustic_courant=float(courant_peak),
         max_tvc_shift=float(tvc_shift_peak),
+        max_tvc_clipped=float(tvc_clipped_peak),
         snapshots=snapshots,
     )
 
