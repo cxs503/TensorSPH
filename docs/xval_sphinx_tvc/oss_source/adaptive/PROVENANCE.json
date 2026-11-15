@@ -1,0 +1,24 @@
+{
+ "repository": "https://github.com/Xiangyu-Hu/SPHinXsys",
+ "commit": "09e55cfdd23104e1b1db006a209a906218b3b14e",
+ "fetch_route": "api.github.com contents API (base64); raw.githubusercontent.com refused from this host",
+ "why": "definitions of h_ratio (AdaptiveSmoothingLength) and of the h_ratio-scaled kernel gradient needed by the transport-velocity update() branch",
+ "files_sha256": {
+  "adaptation.h": "2bca4b9a7b9809c76bb18343f8919da3ca18fdcc75f0eedf9e546d85c973bb69",
+  "adaptation.cpp": "abeba581e66fc22c6de246b29843641b60c724570b638a22cf05c6038a219726",
+  "adaptation.hpp": "5ccd388dc2d5606e36f8c1a4816f3e7d169320dd142a9d36b203e3f5df0e6feb",
+  "base_kernel.h": "e071ba07765cd25bc45a855c174212b534355e67f6cecdf3d92012b91f7e470d",
+  "base_kernel.cpp": "a697e49df90c6b6020e085926b2d450c0d1f6c1d81461f8446d7a69b74a51a66",
+  "kernel_cubic_B_spline.h": "4667c9bdc302d736d32d851bc556a91a93b9323f5b432428d57f3fe03a730408",
+  "kernel_cubic_B_spline.cpp": "ca4caf98406e9778dfe3e8b7323709093ee7243da8d26c82ade662e523033d8e"
+ },
+ "git_blob_sha1": {
+  "adaptation.h": "3e55c1324f24407ca059dba6d25ecb575ae794a4",
+  "adaptation.cpp": "09ef14c0a89dc4de5d1b873c3843a30b18ba07fb",
+  "adaptation.hpp": "3f16f9938830f75c3c6ec0c4664a31e3aada1f3b",
+  "base_kernel.h": "050f7bcbe03e941248fb1b0f9b3f2047b33db056",
+  "base_kernel.cpp": "1e883507c6693f0ad3098e8e7857e39be87c3e7c",
+  "kernel_cubic_B_spline.h": "78d19852cde9b4c4439bfb56496166cee4ddc64a",
+  "kernel_cubic_B_spline.cpp": "9588ec0e429a816938d3aae8b3d162ff61561c63"
+ }
+}
