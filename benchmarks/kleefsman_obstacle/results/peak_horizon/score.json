@@ -1,0 +1,404 @@
+{
+  "mission": "m21324",
+  "gauge": "slab_x2.426",
+  "protocol": {
+    "operator": "slab",
+    "column": "slab_x2.426",
+    "aperture_m": 0.08,
+    "station_offset_m": 0.05,
+    "peak_window_s": 0.03,
+    "arrival_threshold_m": 0.02
+  },
+  "grids": {
+    "dx0.01": {
+      "run": {
+        "tag": "dx0.01",
+        "dx": 0.01,
+        "t_end": 2.6,
+        "sound_speed": 20.0,
+        "dt": 0.00019500000000000002,
+        "simulated_time_s": 2.6000976175620254,
+        "steps": 18023,
+        "particles_fluid": 6710,
+        "gauge_aperture_m": 0.08,
+        "stations_offset_m": [
+          0.05,
+          0.248
+        ],
+        "peak_window_s": 0.03,
+        "arrival_threshold_m": 0.02,
+        "raw_probe_peak_m": 0.4780556857585907,
+        "raw_probe_peak_time_s": 1.1467612339027995,
+        "raw_probe_arrival_s": 0.4446249423432627,
+        "gauges": {
+          "height@x2.426": {
+            "peak_m": 0.4780556857585907,
+            "peak_time_s": 1.1467612339027995,
+            "arrival_time_s": 0.4446249423432627,
+            "station_x_m": 2.426,
+            "operator": "height"
+          },
+          "surface@x2.426": {
+            "peak_m": 0.4880556857585907,
+            "peak_time_s": 1.1467612339027995,
+            "arrival_time_s": 0.4359794576257658,
+            "station_x_m": 2.426,
+            "operator": "surface"
+          },
+          "slab@x2.426": {
+            "peak_m": 0.4831685256958007,
+            "peak_time_s": 1.156832266246842,
+            "arrival_time_s": 0.4378479555797872,
+            "station_x_m": 2.426,
+            "operator": "slab"
+          },
+          "height@x2.228": {
+            "peak_m": 0.38564905524253845,
+            "peak_time_s": 1.3463291847935197,
+            "arrival_time_s": 0.39183022864747935,
+            "station_x_m": 2.228,
+            "operator": "height"
+          },
+          "surface@x2.228": {
+            "peak_m": 0.39564905524253846,
+            "peak_time_s": 1.3463291847935197,
+            "arrival_time_s": 0.38508734257385185,
+            "station_x_m": 2.228,
+            "operator": "surface"
+          },
+          "slab@x2.228": {
+            "peak_m": 0.36827423095703127,
+            "peak_time_s": 1.4285422274171355,
+            "arrival_time_s": 0.38685598380365505,
+            "station_x_m": 2.228,
+            "operator": "slab"
+          }
+        },
+        "max_density_compression": 0.2784619140625,
+        "max_speed": 9.44178295135498,
+        "mass_error_rel": 0.0,
+        "boundary_escapes": 5,
+        "wall_clock_s": 958.2,
+        "time_series_csv": "dx0.01_time_series.csv"
+      },
+      "score": {
+        "protocol": {
+          "operator": "slab",
+          "column": "slab_x2.426",
+          "aperture_m": 0.08,
+          "station_offset_m": 0.05,
+          "peak_window_s": 0.03,
+          "arrival_threshold_m": 0.02
+        },
+        "record": {
+          "t_start_s": 0.0,
+          "t_end_s": 2.6,
+          "samples": 903
+        },
+        "censoring": {
+          "censored": false,
+          "margin_s": 0.13,
+          "slack_s": 1.4482000000000002,
+          "peak_time_s": 1.1518,
+          "t_end": 2.6,
+          "reason": "peak observed with margin"
+        },
+        "peak_height_m": 0.48129863636363646,
+        "peak_time_s": 1.1518,
+        "arrival_time_s": 0.4378479407704297,
+        "event_peak_m": 0.38632390909090913,
+        "event_peak_time_s": 1.403604,
+        "event_window_s": [
+          1.4027,
+          2.0027
+        ],
+        "event_peak_rel_error": 0.04411867321867335,
+        "reference": {
+          "peak_height_m": 0.37,
+          "peak_time_s": 1.7027,
+          "arrival_time_s": 0.3591,
+          "arrival_time_s_interpolated": 0.3481,
+          "arrival_definition_band_rel": 0.030632135895293663,
+          "source": "Kleefsman, Fekken, Veldman, Iwanowski & Buchner (2005) J. Comput. Phys. 206:363-393, doi:10.1016/j.jcp.2004.12.007, Fig. 19 right panel"
+        },
+        "tolerance_rel": 0.1,
+        "rows": [
+          {
+            "metric": "peak_height",
+            "ref": 0.37,
+            "got": 0.48129863636363646,
+            "rel_error": 0.30080712530712556,
+            "pass": false
+          },
+          {
+            "metric": "arrival_time",
+            "ref": 0.3481,
+            "got": 0.4378479407704297,
+            "rel_error": 0.2578222946579422,
+            "pass": false
+          },
+          {
+            "metric": "arrival_time_first_above_sample",
+            "ref": 0.3591,
+            "got": 0.4378479407704297,
+            "rel_error": 0.21929251119585003,
+            "pass": false
+          }
+        ],
+        "peak_event_mismatch": true,
+        "verdict": "FAIL",
+        "why": "at least one metric outside tolerance",
+        "peak_row": {
+          "metric": "peak_height",
+          "ref": 0.37,
+          "got": 0.48129863636363646,
+          "rel_error": 0.30080712530712556,
+          "pass": false
+        },
+        "arrival_row": {
+          "metric": "arrival_time",
+          "ref": 0.3481,
+          "got": 0.4378479407704297,
+          "rel_error": 0.2578222946579422,
+          "pass": false
+        }
+      }
+    },
+    "dx0.04": {
+      "run": {
+        "tag": "dx0.04",
+        "dx": 0.04,
+        "t_end": 2.6,
+        "sound_speed": 20.0,
+        "dt": 0.0002,
+        "simulated_time_s": 2.6001999999997465,
+        "steps": 13001,
+        "particles_fluid": 390,
+        "gauge_aperture_m": 0.08,
+        "stations_offset_m": [
+          0.05,
+          0.248
+        ],
+        "peak_window_s": 0.03,
+        "arrival_threshold_m": 0.02,
+        "raw_probe_peak_m": 0.4254579544067383,
+        "raw_probe_peak_time_s": 0.9199999999999313,
+        "raw_probe_arrival_s": 0.48414603344528545,
+        "gauges": {
+          "height@x2.426": {
+            "peak_m": 0.4254579544067383,
+            "peak_time_s": 0.9199999999999313,
+            "arrival_time_s": 0.48414603344528545,
+            "station_x_m": 2.426,
+            "operator": "height"
+          },
+          "surface@x2.426": {
+            "peak_m": 0.46545795440673826,
+            "peak_time_s": 0.9199999999999313,
+            "arrival_time_s": 0.4658087708469711,
+            "station_x_m": 2.426,
+            "operator": "surface"
+          },
+          "slab@x2.426": {
+            "peak_m": 0.43382301330566403,
+            "peak_time_s": 0.9119999999999322,
+            "arrival_time_s": 0.46039496901992677,
+            "station_x_m": 2.426,
+            "operator": "slab"
+          },
+          "height@x2.228": {
+            "peak_m": 0.3876568377017975,
+            "peak_time_s": 1.5239999999998648,
+            "arrival_time_s": 0.4358024256643237,
+            "station_x_m": 2.228,
+            "operator": "height"
+          },
+          "surface@x2.228": {
+            "peak_m": 0.42765683770179747,
+            "peak_time_s": 1.5239999999998648,
+            "arrival_time_s": 0.40179328208226006,
+            "station_x_m": 2.228,
+            "operator": "surface"
+          },
+          "slab@x2.228": {
+            "peak_m": 0.4012372589111328,
+            "peak_time_s": 1.5439999999998626,
+            "arrival_time_s": 0.4073935439619555,
+            "station_x_m": 2.228,
+            "operator": "slab"
+          }
+        },
+        "max_density_compression": 0.17233422851562508,
+        "max_speed": 5.977508544921875,
+        "mass_error_rel": 0.0,
+        "boundary_escapes": 0,
+        "wall_clock_s": 263.7,
+        "time_series_csv": "dx0.04_time_series.csv"
+      },
+      "score": {
+        "protocol": {
+          "operator": "slab",
+          "column": "slab_x2.426",
+          "aperture_m": 0.08,
+          "station_offset_m": 0.05,
+          "peak_window_s": 0.03,
+          "arrival_threshold_m": 0.02
+        },
+        "record": {
+          "t_start_s": 0.0,
+          "t_end_s": 2.6,
+          "samples": 652
+        },
+        "censoring": {
+          "censored": false,
+          "margin_s": 0.13,
+          "slack_s": 1.6960000000000002,
+          "peak_time_s": 0.904,
+          "t_end": 2.6,
+          "reason": "peak observed with margin"
+        },
+        "peak_height_m": 0.42717371428571427,
+        "peak_time_s": 0.904,
+        "arrival_time_s": 0.4603949539979133,
+        "event_peak_m": 0.3959234285714285,
+        "event_peak_time_s": 1.404,
+        "event_window_s": [
+          1.4027,
+          2.0027
+        ],
+        "event_peak_rel_error": 0.07006332046332023,
+        "reference": {
+          "peak_height_m": 0.37,
+          "peak_time_s": 1.7027,
+          "arrival_time_s": 0.3591,
+          "arrival_time_s_interpolated": 0.3481,
+          "arrival_definition_band_rel": 0.030632135895293663,
+          "source": "Kleefsman, Fekken, Veldman, Iwanowski & Buchner (2005) J. Comput. Phys. 206:363-393, doi:10.1016/j.jcp.2004.12.007, Fig. 19 right panel"
+        },
+        "tolerance_rel": 0.1,
+        "rows": [
+          {
+            "metric": "peak_height",
+            "ref": 0.37,
+            "got": 0.42717371428571427,
+            "rel_error": 0.1545235521235521,
+            "pass": false
+          },
+          {
+            "metric": "arrival_time",
+            "ref": 0.3481,
+            "got": 0.4603949539979133,
+            "rel_error": 0.3225939500083691,
+            "pass": false
+          },
+          {
+            "metric": "arrival_time_first_above_sample",
+            "ref": 0.3591,
+            "got": 0.4603949539979133,
+            "rel_error": 0.2820800723974195,
+            "pass": false
+          }
+        ],
+        "peak_event_mismatch": true,
+        "verdict": "FAIL",
+        "why": "at least one metric outside tolerance",
+        "peak_row": {
+          "metric": "peak_height",
+          "ref": 0.37,
+          "got": 0.42717371428571427,
+          "rel_error": 0.1545235521235521,
+          "pass": false
+        },
+        "arrival_row": {
+          "metric": "arrival_time",
+          "ref": 0.3481,
+          "got": 0.4603949539979133,
+          "rel_error": 0.3225939500083691,
+          "pass": false
+        }
+      }
+    }
+  },
+  "control": {
+    "protocol": {
+      "operator": "slab",
+      "column": "slab_x2.426",
+      "aperture_m": 0.08,
+      "station_offset_m": 0.05,
+      "peak_window_s": 0.03,
+      "arrival_threshold_m": 0.02
+    },
+    "record": {
+      "t_start_s": 0.3475,
+      "t_end_s": 2.6,
+      "samples": 166
+    },
+    "censoring": {
+      "censored": false,
+      "margin_s": 0.13,
+      "slack_s": 0.8857000000000002,
+      "peak_time_s": 1.7143,
+      "t_end": 2.6,
+      "reason": "peak observed with margin"
+    },
+    "peak_height_m": 0.36999999999999994,
+    "peak_time_s": 1.7143,
+    "arrival_time_s": 0.3481105263157894,
+    "event_peak_m": 0.36999999999999994,
+    "event_peak_time_s": 1.7143,
+    "event_window_s": [
+      1.4027,
+      2.0027
+    ],
+    "event_peak_rel_error": 1.50030138462859e-16,
+    "reference": {
+      "peak_height_m": 0.37,
+      "peak_time_s": 1.7027,
+      "arrival_time_s": 0.3591,
+      "arrival_time_s_interpolated": 0.3481,
+      "arrival_definition_band_rel": 0.030632135895293663,
+      "source": "Kleefsman, Fekken, Veldman, Iwanowski & Buchner (2005) J. Comput. Phys. 206:363-393, doi:10.1016/j.jcp.2004.12.007, Fig. 19 right panel"
+    },
+    "tolerance_rel": 0.1,
+    "rows": [
+      {
+        "metric": "peak_height",
+        "ref": 0.37,
+        "got": 0.36999999999999994,
+        "rel_error": 1.50030138462859e-16,
+        "pass": true
+      },
+      {
+        "metric": "arrival_time",
+        "ref": 0.3481,
+        "got": 0.3481105263157894,
+        "rel_error": 3.0239344410816794e-05,
+        "pass": true
+      },
+      {
+        "metric": "arrival_time_first_above_sample",
+        "ref": 0.3591,
+        "got": 0.3481105263157894,
+        "rel_error": 0.030602822846590223,
+        "pass": true
+      }
+    ],
+    "peak_event_mismatch": false,
+    "verdict": "PASS",
+    "why": "both metrics inside tolerance",
+    "peak_row": {
+      "metric": "peak_height",
+      "ref": 0.37,
+      "got": 0.36999999999999994,
+      "rel_error": 1.50030138462859e-16,
+      "pass": true
+    },
+    "arrival_row": {
+      "metric": "arrival_time",
+      "ref": 0.3481,
+      "got": 0.3481105263157894,
+      "rel_error": 3.0239344410816794e-05,
+      "pass": true
+    }
+  }
+}
