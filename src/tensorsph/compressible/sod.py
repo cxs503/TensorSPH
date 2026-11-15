@@ -101,8 +101,11 @@ __all__ = [
     "evaluate_metrics",
     "contact_force_check",
     "plateau_windows",
+    "wall_contamination",
+    "WallContaminationError",
     "WAVE_WINDOW_FRACTION",
     "WINDOW_TRIM_H",
+    "WALL_GUARD_AMP_PCT",
 ]
 
 #: Fraction of each plateau width trimmed at both ends when averaging a plateau
@@ -120,6 +123,17 @@ WAVE_WINDOW_FRACTION = 0.10
 #: the scheme.  SPH spreads a jump over ~3-4 h (kernel support is 2h), so 3h is
 #: the smallest defensible exclusion zone and is used for every plateau edge.
 WINDOW_TRIM_H = 3.0
+
+#: Predicted acoustic perturbation (relative pressure, %) above which a
+#: measurement window is declared wall-contaminated.  See
+#: :func:`wall_contamination`; 1 % is the smallest perturbation that can move a
+#: plateau average by more than the scheme error the harness is trying to
+#: resolve.
+WALL_GUARD_AMP_PCT = 1.0
+
+
+class WallContaminationError(RuntimeError):
+    """A measurement window is corrupted by the mirror-ghost wall boundary."""
 
 
 # ---------------------------------------------------------------------------
@@ -502,7 +516,100 @@ def plateau_windows(cfg: SodSPHConfig, t: float) -> dict:
     }
 
 
-def evaluate_metrics(snap: dict, cfg: SodSPHConfig) -> dict:
+def wall_contamination(cfg: SodSPHConfig, t: float,
+                       windows: Optional[dict] = None) -> dict:
+    """Predict which measurement windows the *wall boundary* corrupts at time ``t``.
+
+    Why this exists
+    ---------------
+    Both walls are mirror ghost particles (``_extend_with_ghosts``).  That is
+    exact for a **uniform** state only when the wall-normal velocity vanishes:
+    the ghosts copy the thermodynamic state and reverse the velocity, so a
+    plateau at rest is reproduced exactly, while a plateau flowing at
+    ``u_wall != 0`` is forced to ``u = 0`` at the wall and the wall therefore
+    emits a wave.  Linear acoustics gives its amplitude,
+
+        dp/p = rho c u / p = gamma |u_wall| / c_wall ,
+
+    and it penetrates the domain at speed ``c_wall + |u_wall|``, reaching
+    ``x_L + (c_L + |u_L|) t`` from the left wall and
+    ``x_R - (c_R + |u_R|) t`` from the right wall.
+
+    Sod's initial data have ``u = 0`` on both plateaus, so nothing is flagged
+    and the harness is exact (measured plateau error: 0.00 %).  Any other
+    Riemann problem with a moving outer state -- e.g. Lax (Toro test 2) -- is
+    *not* measurable by this harness without this flag, and the inflated number
+    is resolution independent, i.e. it looks exactly like a scheme error.
+
+    Parameters
+    ----------
+    cfg : SodSPHConfig
+    t : float
+        Time of the snapshot whose windows are being judged.
+    windows : dict, optional
+        ``plateau_windows(cfg, t)["windows"]``; recomputed when omitted.
+
+    Returns
+    -------
+    dict
+        ``{"flags": {window: {...}}, "contaminated": [window, ...],
+        "clean": bool, "amplitude_pct": {...}}`` where each flag carries the
+        emitting wall, ``u_wall``, ``c_wall``, the penetration depth ``reach``,
+        the predicted ``amplitude_pct`` and whether the window is touched.
+    """
+    if windows is None:
+        windows = plateau_windows(cfg, t)["windows"]
+    gamma = cfg.gamma
+    walls = {
+        "left": {"x": cfg.x_left, "u": cfg.u_L, "rho": cfg.rho_L, "p": cfg.p_L,
+                 "reach": lambda c: cfg.x_left + (c + abs(cfg.u_L)) * t,
+                 "sign": +1.0},
+        "right": {"x": cfg.x_right, "u": cfg.u_R, "rho": cfg.rho_R, "p": cfg.p_R,
+                  "reach": lambda c: cfg.x_right - (c + abs(cfg.u_R)) * t,
+                  "sign": -1.0},
+    }
+    flags: Dict[str, dict] = {}
+    contaminated: List[str] = []
+    for name, (lo, hi) in windows.items():
+        per_wall: Dict[str, dict] = {}
+        for side, wall in walls.items():
+            c_wall = math.sqrt(max(gamma * wall["p"] / wall["rho"], 1e-30))
+            amp_pct = 100.0 * gamma * abs(wall["u"]) / c_wall
+            reach = wall["reach"](c_wall)
+            # the wave has crossed into the window when its penetration depth
+            # has passed the window edge that faces that wall
+            touches = (reach > lo) if wall["sign"] > 0 else (reach < hi)
+            per_wall[side] = {"u_wall": float(wall["u"]),
+                              "c_wall": float(c_wall), "reach": float(reach),
+                              "amplitude_pct": float(amp_pct),
+                              "touches": bool(touches),
+                              "contaminated": bool(
+                                  amp_pct > WALL_GUARD_AMP_PCT and touches)}
+        culprits = [side for side in per_wall if per_wall[side]["contaminated"]]
+        # the flag names the strongest wall that actually reaches the window;
+        # a window with no reaching wall reports ``wall=None`` and 0 %.
+        wall_name = (max(culprits, key=lambda s: per_wall[s]["amplitude_pct"])
+                     if culprits else None)
+        chosen = (per_wall[wall_name] if wall_name
+                  else {"u_wall": 0.0, "c_wall": float("nan"),
+                        "reach": float("nan"), "amplitude_pct": 0.0,
+                        "touches": False, "contaminated": False})
+        flags[name] = {"window": [float(lo), float(hi)],
+                       "wall": wall_name,
+                       "u_wall": chosen["u_wall"],
+                       "c_wall": chosen["c_wall"],
+                       "reach": chosen["reach"],
+                       "amplitude_pct": chosen["amplitude_pct"],
+                       "contaminated": bool(culprits),
+                       "per_wall": per_wall}
+        if culprits:
+            contaminated.append(name)
+    return {"flags": flags, "contaminated": contaminated,
+            "clean": not contaminated,
+            "amplitude_pct": {k: v["amplitude_pct"] for k, v in flags.items()}}
+
+def evaluate_metrics(snap: dict, cfg: SodSPHConfig,
+                     require_clean_windows: bool = False) -> dict:
     """Plateau / wave metrics of one SPH snapshot versus the exact Sod solution.
 
     Measurement windows are derived from the *exact* wave positions, never from
@@ -608,4 +715,25 @@ def evaluate_metrics(snap: dict, cfg: SodSPHConfig) -> dict:
     metrics["max_abs_rel_err"] = float(max(abs(metrics["rel_err"][k]) for k in gated))
     metrics["pass_5pct"] = bool(metrics["max_abs_rel_err"] < 0.05)
     metrics["pass_3pct"] = bool(metrics["max_abs_rel_err"] < 0.03)
+
+    # Wall-boundary audit.  The mirror ghosts are exact only for an outer
+    # plateau at rest; when one moves, the wall emits a wave that can sit inside
+    # a measurement window and the reported "scheme error" is then partly a
+    # boundary artefact.  The flag is always reported; ``require_clean_windows``
+    # turns it into a hard error for callers that must not publish a
+    # contaminated number.
+    guard = wall_contamination(cfg, t, metrics["windows"])
+    metrics["wall_guard"] = guard
+    metrics["windows_clean"] = guard["clean"]
+    if require_clean_windows and not guard["clean"]:
+        raise WallContaminationError(
+            f"{', '.join(guard['contaminated'])} measurement window(s) are "
+            f"contaminated by the mirror-ghost wall boundary at t={t}: "
+            + "; ".join(
+                f"{w} <- {flag['wall']} wall (u_wall={flag['u_wall']:+.4g}, "
+                f"predicted dp/p={flag['amplitude_pct']:.1f}%, "
+                f"penetration to x={flag['reach']:.4g})"
+                for w, flag in guard["flags"].items() if flag["contaminated"])
+            + ". Measure in the frame where that plateau is at rest, or extend "
+              "the domain.")
     return metrics
