@@ -212,10 +212,19 @@ def test_published_verdict_reproduces_from_the_artifact(payload: dict,
         assert got["error_percent_per_rung"] == pytest.approx(
             pub["error_percent_per_rung"], rel=1e-12)
     assert payload["gates"] == published["gates"]
-    # honest FAIL: the R1 steady band does not support the 5 % acceptance
-    # (U3b), while every graded R2 band and every R1 point/rung check passes
-    assert payload["all_gates_pass"] is False
-    assert payload["gates"]["U3b_R1_band_supports_5pct"] is False
+    # History, kept explicit rather than erased: until the scale defect in
+    # r1_input_uncertainty was fixed this gate FAILED (U3b_R1_band_supports_5pct)
+    # because U_input was the sample half range divided by the sample MEAN -- the
+    # functional that decays to zero under refinement -- so the band grew with
+    # refinement (44.91 % at H/dx=16).  The corrected band is the same scatter in
+    # per cent of the declared scale (0.216 pp), the legacy number is still
+    # published, and the stationarity of the window is now verified independently
+    # in benchmarks/case_poiseuille/steady_window.py.
+    assert published["r1_input_uncertainty"]["legacy_normalization"][
+        "used_for_grading"] is False
+    assert payload["gates"]["U4_r1_u_input_shares_the_scale_of_E"] is True
+    assert payload["gates"]["U3b_R1_band_supports_5pct"] is True
+    assert payload["all_gates_pass"] is True
 
 
 def test_reference_matches_the_library_closed_form(payload: dict) -> None:
