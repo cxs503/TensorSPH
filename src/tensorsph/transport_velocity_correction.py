@@ -241,6 +241,47 @@ def _as_ratio(h_ratio, n: int, like: torch.Tensor) -> torch.Tensor:
     return torch.full((n,), float(h_ratio), dtype=like.dtype, device=like.device)
 
 
+#: Normalisation ``sigma_d`` of the cubic-spline (M4) profile per spatial
+#: dimension: ``W_d(r) = sigma_d f(r/h)`` with ``int W_d dV = 1`` over ``R^d``.
+#: Upstream carries the dimension through its kernel class
+#: (``base_kernel.cpp``: ``factor_W_1D_ * h_factor_W_1D_(h_ratio)`` with
+#: ``factor_W_1D_`` built from the compile-time ``Dimensions``), so the
+#: operator is dimension generic there; a port that hard-wires one
+#: normalisation is *silently* wrong in every other dimension -- for a 3-D
+#: cloud it multiplies every ``grad W`` by ``sigma_2/sigma_3 = 10 h / 7``,
+#: i.e. 0.037 at ``h = 0.026 m`` (27x under-correction).  Measured in
+#: ``docs/xval_sphinx_tvc/DIMENSION_LEG.md``.
+CUBIC_SPLINE_SIGMA: dict[int, Callable[[float], float]] = {
+    1: lambda h: 2.0 / (3.0 * h),
+    2: lambda h: 10.0 / (7.0 * math.pi * h * h),
+    3: lambda h: 1.0 / (math.pi * h * h * h),
+}
+
+
+def cubic_spline_gradient_dim(
+    delta: torch.Tensor, h: float, dim: int, eps: float = 1.0e-12
+) -> torch.Tensor:
+    """``grad_i W_ij`` of the cubic spline *in ``dim`` dimensions*.
+
+    ``dim == 2`` delegates to :func:`tensorsph.droplet_impact.cubic_spline_gradient`
+    so the 2-D path of every earlier verification leg stays bit-identical.
+    """
+    if dim == 2:
+        return cubic_spline_gradient(delta, h, eps)
+    if dim not in CUBIC_SPLINE_SIGMA:
+        raise ValueError(f"cubic spline is implemented for dim in 1..3, got {dim}")
+    r = torch.linalg.vector_norm(delta, dim=-1)
+    q = r / h
+    sigma = CUBIC_SPLINE_SIGMA[dim](h)
+    dshape = torch.where(
+        q < 1.0,
+        -3.0 * q + 2.25 * q.square(),
+        torch.where(q < 2.0, -0.75 * (2.0 - q).square(), 0.0),
+    )
+    scale = sigma * dshape / (h * r.clamp_min(eps))
+    return delta * scale.unsqueeze(-1)
+
+
 def kernel_gradient_integral(
     positions: torch.Tensor,
     volume: torch.Tensor,
@@ -250,6 +291,7 @@ def kernel_gradient_integral(
     wall_count: int = 0,
     wall_factor: float = 2.0,
     correction: torch.Tensor | None = None,
+    dim: int | None = None,
 ) -> torch.Tensor:
     """Upstream's (negated, weighted) ``grad-1`` integral for fluid particles.
 
@@ -264,8 +306,10 @@ def kernel_gradient_integral(
     volume : (N + M,) tensor
         ``m / rho`` of every particle.
     h : float
-        Smoothing length; the kernel is the 2-D cubic spline of
-        :mod:`tensorsph.droplet_impact` (``cubic_spline_gradient``).
+        Smoothing length; the kernel is the cubic spline of
+        :mod:`tensorsph.droplet_impact` in ``dim`` dimensions
+        (``cubic_spline_gradient_dim``; ``dim == 2`` is bit-identical to
+        ``cubic_spline_gradient``).
     pairs : (K, 2) int tensor, optional
         Unordered unique neighbour pairs ``(i, j)``, ``i < j``, into
         ``positions`` (the convention of
@@ -279,12 +323,25 @@ def kernel_gradient_integral(
     correction : (N + M,) tensor, optional
         Kernel correction factors ``C``; ``None`` is upstream's
         ``NoKernelCorrection`` (all ones).
+    dim : int, optional
+        Spatial dimension of the kernel normalisation; ``None`` infers it from
+        ``positions.shape[1]``.  Passing a ``dim`` that contradicts the point
+        cloud is an error (before this parameter existed the 2-D
+        normalisation was applied to 3-D clouds without any diagnostic).
     """
     n_total = positions.shape[0]
     if volume.shape != (n_total,):
         raise ValueError("volume must have one entry per position")
     if not math.isfinite(h) or h <= 0:
         raise ValueError("h must be finite and positive")
+    dim = int(positions.shape[1]) if dim is None else int(dim)
+    if dim != int(positions.shape[1]):
+        raise ValueError(
+            f"dim={dim} contradicts the point cloud (positions.shape[1]="
+            f"{int(positions.shape[1])}); upstream evaluates the kernel in "
+            "the body's Dimensions")
+    if dim not in CUBIC_SPLINE_SIGMA:
+        raise ValueError(f"cubic spline is implemented for dim in 1..3, got {dim}")
     n_fluid = n_total - int(wall_count)
     if n_fluid <= 0:
         raise ValueError("need at least one fluid particle")
@@ -316,8 +373,8 @@ def kernel_gradient_integral(
     i, j = pairs.unbind(dim=1)
     delta = positions[i] - positions[j]
     if h_ratio is None:
-        gw_i = cubic_spline_gradient(delta, h)      # grad_i W_ij at h
-        gw_j = -gw_i                                # grad_j W_ij at h
+        gw_i = cubic_spline_gradient_dim(delta, h, dim)   # grad_i W_ij at h
+        gw_j = -gw_i                                      # grad_j W_ij at h
     else:
         # Upstream ``Kernel::dW(h_ratio, r_ij)`` (``base_kernel.cpp``)
         # evaluates the profile at ``q = r/h_ref * h_ratio`` with the
@@ -331,8 +388,8 @@ def kernel_gradient_integral(
         # ``gw_j = -gw_i`` symmetry.
         ratio = _as_ratio(h_ratio, n_total, positions)
         h_local = h / ratio
-        gw_i = cubic_spline_gradient(delta, h_local[i])
-        gw_j = cubic_spline_gradient(-delta, h_local[j])
+        gw_i = cubic_spline_gradient_dim(delta, h_local[i], dim)
+        gw_j = cubic_spline_gradient_dim(-delta, h_local[j], dim)
     fluid_i = i < n_fluid
     fluid_j = j < n_fluid
     ff = fluid_i & fluid_j
@@ -366,6 +423,7 @@ def transport_velocity_correction(
     max_shift: float | None = None,
     active: torch.Tensor | None = None,
     scope_tol: float | None = None,
+    dim: int | None = None,
 ) -> TVCResult:
     """One upstream ``TransportVelocityCorrection`` application.
 
@@ -391,6 +449,10 @@ def transport_velocity_correction(
     c_ref`` criterion admits particles an order of magnitude closer to the
     free surface than full support allows, and their ``|g| h`` is ~10^2 times
     the true interior value (``benchmarks/xval_sphinx_tvc/bulk_scope_criterion.py``).
+
+    ``dim`` selects the kernel normalisation and defaults to the point cloud's
+    own dimension; the free-surface continuum anchor of the shift is
+    dimension dependent only through ``sigma_d`` (``DIMENSION_LEG.md``).
     """
     if alpha is None:
         alpha = SPHINXSYS_DEFAULT_COEFFICIENT * SPHINXSYS_SINGLE_STEP_FRACTION
@@ -405,7 +467,7 @@ def transport_velocity_correction(
         positions, volume, h, pairs=pairs, wall_count=wall_count,
         h_ratio=(None if h_ratio is None
                  else _as_ratio(h_ratio, positions.shape[0], positions)
-                 * (h / h_ref)))
+                 * (h / h_ref)), dim=dim)
     squared = torch.sum(g * g, dim=1)
     fac = limiter(h_ref * h_ref * squared)
     shift = (alpha * h_ref * h_ref) * fac[:, None] * g
@@ -443,6 +505,8 @@ def transport_velocity_correction(
                                  float(min(_as_ratio(h_ratio, g.shape[0], positions).min(),
                                            torch.tensor(float("inf")))),
                                  float(_as_ratio(h_ratio, g.shape[0], positions).max())),
+                             "dim": int(positions.shape[1]) if dim is None
+                                    else int(dim),
                              "scope_tol": scope_tol,
                              "scope_tol_kept_fraction": kept_fraction,
                              "scope_active_fraction": (
