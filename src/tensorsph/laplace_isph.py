@@ -90,6 +90,7 @@ from .neighbor_search import cell_linked_pairs
 
 __all__ = [
     "hex_block",
+    "neutralize_source",
     "smooth_indicator",
     "csf_state_two_phase",
     "pressure_poisson",
@@ -246,9 +247,49 @@ def _pair_coeffs(pos, pairs, vol, h, eta):
     return i, j, coef
 
 
+def neutralize_source(source, free):
+    """Remove the constant-mode (monopole) component of a Poisson right-hand side.
+
+    Every *free-free* row of the pair Laplacian of :func:`pressure_poisson` is
+    ``sum_j coef_ij (p_i - p_j)``, so the free block annihilates constants and
+    the constant vector is the null direction of the free-free operator (its
+    coefficients are symmetric for the uniform cell volume / harmonic pair
+    density used here).  The Dirichlet rows are replaced by identity rows, so the
+    **assembled system is nonsingular**: a charged right-hand side does *not*
+    stall the CG and there is no compatibility condition to satisfy.  What a
+    nonzero free-set sum does instead is inject a net source into a domain with
+    an absorbing boundary -- geometrically a "charge", whose response is a
+    slow, non-decaying pressure plateau (in the static-drop carrier: the vapour
+    phase, which must sit at the ambient level, is what shows it) that no gauge
+    can remove because it *is* a solution of the posed problem.
+
+    Subtracting the free-set mean of ``rhs`` removes that monopole, which is what
+    makes a pressure field readable as "ambient + decaying field".  It never
+    touches the force field, so every instrument that does not read ``p`` (the
+    traction line integral, the Whitney-Graustein curvature gauge) is unchanged
+    by construction.
+
+    Measured on the Young-Laplace carrier (round 7,
+    ``scripts/xval_projection_laplace/neutral_source.py``): the shipped source is
+    already neutral to ``1e-16`` relative in both weightings, so this function is
+    a *no-op there* -- it is kept because the property is a precondition, not a
+    result, and because a caller with a different divergence operator
+    (a free-surface truncation, a solid wall) may not inherit it.
+
+    Returns ``(source_neutral, removed_constant)``.
+    """
+    free = free.to(torch.bool) if hasattr(free, "to") else torch.as_tensor(free)
+    n_free = int(free.sum())
+    if n_free == 0:
+        return source, 0.0
+    mean = source[free].sum() / n_free
+    return torch.where(free, source - mean, source), float(mean)
+
+
 def pressure_poisson(pos, source, pairs, vol, h, dirichlet,
                      rel_tol=1e-10, max_iter=4000,
-                     rho=None, weighting="density"):
+                     rho=None, weighting="density",
+                     neutralize=False, return_diag=False):
     """Solve ``-grad^2 p = source`` with ``p = 0`` on ``dirichlet`` (matrix-free CG).
 
     With ``rho`` (per-particle density) and ``weighting="density"`` the operator
@@ -266,6 +307,14 @@ def pressure_poisson(pos, source, pairs, vol, h, dirichlet,
 
     ``dirichlet=True`` rows are eliminated as identity rows, so the same
     operator can be used inside the conjugate-gradient loop.
+
+    ``neutralize=True`` first projects the right-hand side onto the range of the
+    operator (:func:`neutralize_source`), i.e. it removes the source monopole
+    that the Dirichlet gauge cannot absorb; without it the constant mode of the
+    residual is all that is left and CG stops at a finite residual with a
+    uniform pressure offset added to the solution.  ``return_diag=True`` returns
+    ``(p, n_iter, diag)`` with the achieved relative residual and the removed
+    charge, so the compatibility claim is measured rather than asserted.
     """
     n = pos.shape[0]
     eta = 0.1 * h
@@ -285,6 +334,14 @@ def pressure_poisson(pos, source, pairs, vol, h, dirichlet,
         return torch.where(fixed, p, out)
 
     rhs = torch.where(fixed, torch.zeros_like(source), source.to(pos.dtype))
+    free = ~fixed
+    # plain (unweighted) free-set sum: the discrete null direction of a symmetric
+    # assembly is the constant vector, so this is the charge that must vanish.
+    charge_before = float(rhs.sum())
+    removed = 0.0
+    if neutralize:
+        rhs, removed = neutralize_source(rhs, free)
+    charge_after = float(rhs.sum())
 
     diag = torch.zeros(n, dtype=pos.dtype)
     diag = diag.index_add(0, i, coef)
@@ -313,6 +370,13 @@ def pressure_poisson(pos, source, pairs, vol, h, dirichlet,
         rz_new = (r * z).sum()
         d = z + (rz_new / rz) * d
         rz = rz_new
+    if return_diag:
+        res = apply(p) - rhs
+        diag = {"rel_residual": float(torch.linalg.vector_norm(res) / rhs_norm),
+                "charge_before": charge_before, "charge_after": charge_after,
+                "removed_constant": removed, "n_free": int(free.sum()),
+                "neutralize": bool(neutralize)}
+        return p, n_iter, diag
     return p, n_iter
 
 
