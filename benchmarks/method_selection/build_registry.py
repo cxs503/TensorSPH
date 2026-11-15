@@ -61,6 +61,11 @@ def x_sod(doc: dict) -> float:
     return abs(float(doc["metrics"]["max_abs_rel_err"])) * 100.0
 
 
+def x_strong_shock_contact(doc: dict) -> float:
+    """Gated error of the second compressible-Riemann family (1000:1 driver)."""
+    return abs(float(doc["primary"]["grading"]["max_abs_rel_err"])) * 100.0
+
+
 def x_conduction(doc: dict) -> float:
     return abs(float(doc["main_run"]["max_normalised_error"])) * 100.0
 
@@ -284,6 +289,28 @@ SOURCES: tuple[Source, ...] = (
         gate_pct=5.0,
         path="benchmarks/case_sod_shock_compressible/result.json",
         fn=x_sod,
+    ),
+    Source(
+        extractor="x_strong_shock_contact",
+        method="compressible_riemann",
+        case="CASE-SPH-STRONG-SHOCK-CONTACT (1000:1 driver, 10.3x contact jump)",
+        quantity="max abs relative error over the gated star-plateau values "
+                 "(rho*_L, rho*_R, p*, u*) and the contact/shock positions",
+        gate_pct=5.0,
+        path="benchmarks/case_strong_shock_contact/result.json",
+        fn=x_strong_shock_contact,
+        precondition=(
+            "second benchmark family for this method (the Sod tube, a 10:1 driver with a "
+            "1.3-Mach shock and a 3.4x contact jump, is the first): stationary outer "
+            "states, pressure ratio 1000:1, 10.3x contact density jump, shock Mach ~4.6. "
+            "What is NOT gated: the rarefaction-fan interior (the fan crossing "
+            "x(u*/2) carries a measured non-convergent 3 % bias -- the SPH fan "
+            "converges to an S-shaped profile) and the contact-zone pressure spike "
+            "(2.11 p* at N=800, reported as a diagnostic). Riemann data whose outer "
+            "states move (Toro tests 2-5) is NOT representable in this fixed-mass "
+            "reflecting box and is refused by riemann_topology.reflective_box_budget "
+            "(Toro test 4: net boundary influx 90 % of the box mass)."
+        ),
     ),
     Source(
         extractor="x_conduction",
