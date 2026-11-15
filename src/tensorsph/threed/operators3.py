@@ -60,7 +60,11 @@ def pair_geometry(pos: torch.Tensor, pairs: torch.Tensor, h: float,
     if box is not None:
         delta = minimum_image(delta, box)
     weight, grad, lap = pair_kernels(delta, h)
-    return delta, weight, grad, lap
+    # ``pair_kernels`` is evaluated in the kernel's own precision; a cloud in a
+    # different precision (float64 is the default of ``cubic_lattice``) would
+    # otherwise blow up in ``index_add`` with a Float/Double mismatch.
+    weight = weight.to(delta.dtype)
+    return delta, weight, grad.to(delta.dtype), lap.to(delta.dtype)
 
 
 def summation_density(pos: torch.Tensor, mass: torch.Tensor, h: float,

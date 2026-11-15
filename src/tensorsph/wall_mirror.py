@@ -79,8 +79,14 @@ __all__ = ["mirror_plane", "plane_walls"]
 
 def mirror_plane(pos: torch.Tensor, vel: torch.Tensor, mass: torch.Tensor,
                  plane_y: float, support: float, side: int = 1,
-                 slip: str = "no_slip", plane_vel=None, slip_length=None):
-    """Mirror the near-plane fluid across ``y = plane_y``.
+                 slip: str = "no_slip", plane_vel=None, slip_length=None,
+                 axis: int = 1):
+    """Mirror the near-plane fluid across the plane ``x_axis = plane_y``.
+
+    ``axis`` selects the coordinate normal to the plane (default ``1``, i.e.
+    ``y``, which is what every 2-D caller uses).  A 3-D duct needs walls normal
+    to both transverse axes, so the routine is dimension-generic in the normal
+    direction; ``plane_y`` keeps its name for backward compatibility.
 
     Only fluid particles within ``support`` of the plane are mirrored: a ghost
     further than that is beyond the kernel support of every fluid particle and
@@ -107,8 +113,14 @@ def mirror_plane(pos: torch.Tensor, vel: torch.Tensor, mass: torch.Tensor,
         raise ValueError("side must be +1 (fluid above) or -1 (fluid below)")
     if support <= 0.0:
         raise ValueError("support must be positive")
+    if pos.dim() != 2:
+        raise ValueError("pos must be (N, D)")
+    dim = int(pos.shape[1])
+    axis = int(axis)
+    if not 0 <= axis < dim:
+        raise ValueError(f"axis {axis} out of range for a {dim}-D cloud")
 
-    dist = (pos[:, 1] - float(plane_y)) * side
+    dist = (pos[:, axis] - float(plane_y)) * side
     keep = (dist > 0.0) & (dist <= float(support))
     if not bool(keep.any()):
         empty_p = pos.new_zeros((0, pos.shape[1]))
@@ -116,7 +128,7 @@ def mirror_plane(pos: torch.Tensor, vel: torch.Tensor, mass: torch.Tensor,
         return empty_p, empty_p.clone(), empty_m
 
     ghost_pos = pos[keep].clone()
-    ghost_pos[:, 1] = 2.0 * float(plane_y) - pos[keep, 1]
+    ghost_pos[:, axis] = 2.0 * float(plane_y) - pos[keep, axis]
 
     ghost_vel = vel[keep].clone()
     wall_v = torch.zeros(ghost_vel.shape[1], dtype=ghost_vel.dtype,
@@ -137,13 +149,13 @@ def mirror_plane(pos: torch.Tensor, vel: torch.Tensor, mass: torch.Tensor,
         alpha = (lam - d) / (lam + d)
         rel = ghost_vel - wall_v                      # motion relative to wall
         ghost_vel = wall_v + rel
-        ghost_vel[:, 0] = wall_v[0] + alpha.reshape(-1) * rel[:, 0]
-        ghost_vel[:, 1] = wall_v[1] - rel[:, 1]
+        ghost_vel = wall_v + alpha.reshape(-1, 1) * rel
+        ghost_vel[:, axis] = wall_v[axis] - rel[:, axis]
     elif slip == "no_slip":
         # mirror through the wall's own motion: mean of (v, 2w - v) is w
         ghost_vel = 2.0 * wall_v - ghost_vel
     else:  # free_slip: only the normal component is mirrored about w
-        ghost_vel[:, 1] = 2.0 * wall_v[1] - ghost_vel[:, 1]
+        ghost_vel[:, axis] = 2.0 * wall_v[axis] - ghost_vel[:, axis]
         # the tangential component is left untouched: zero tangential jump,
         # hence zero tangential momentum exchange even for a moving wall.
 
@@ -152,12 +164,15 @@ def mirror_plane(pos: torch.Tensor, vel: torch.Tensor, mass: torch.Tensor,
 
 def plane_walls(pos: torch.Tensor, vel: torch.Tensor, mass: torch.Tensor,
                 planes: Sequence[tuple], support: float,
-                slip: str = "no_slip", slip_length=None):
+                slip: str = "no_slip", slip_length=None, axis: int = 1):
     """Mirror across several planar walls; returns stacked ghosts.
 
-    ``planes`` is a sequence of ``(plane_y, side)`` or ``(plane_y, side,
-    plane_vel)`` entries; a per-plane velocity lets one wall move while the
-    other is at rest (Stokes' second problem, an oscillating wavemaker floor).
+    ``planes`` is a sequence of ``(plane_y, side)``, ``(plane_y, side,
+    plane_vel)`` or ``(plane_y, side, plane_vel, axis)`` entries; a per-plane
+    velocity lets one wall move while the other is at rest (Stokes' second
+    problem, an oscillating wavemaker floor), and a per-plane ``axis`` lets one
+    call close a 3-D box (duct) instead of a 2-D channel.  Entries without an
+    axis fall back to the ``axis`` argument.
     ``slip_length`` is forwarded to :func:`mirror_plane` and is required when
     ``slip == "navier"``.
     """
@@ -165,8 +180,10 @@ def plane_walls(pos: torch.Tensor, vel: torch.Tensor, mass: torch.Tensor,
     for plane in planes:
         plane_y, side = plane[0], plane[1]
         plane_vel = plane[2] if len(plane) > 2 else None
+        plane_axis = int(plane[3]) if len(plane) > 3 else axis
         p, v, m = mirror_plane(pos, vel, mass, plane_y, support, side, slip,
-                               plane_vel=plane_vel, slip_length=slip_length)
+                               plane_vel=plane_vel, slip_length=slip_length,
+                               axis=plane_axis)
         if p.shape[0]:
             gp.append(p)
             gv.append(v)
