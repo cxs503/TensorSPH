@@ -1,0 +1,122 @@
+{
+ "case": "CASE-POISEUILLE-SPH",
+ "generated_by": "benchmarks/case_poiseuille/steady_drift.py",
+ "generated": "2026-11-15T20:08:54",
+ "question": "is the R1 steady functional stationary about its own mean, or still decaying toward the parabola?",
+ "baseline_window": [
+  0.8,
+  1.6
+ ],
+ "windows": {
+  "A": [
+   0.8,
+   1.0
+  ],
+  "B": [
+   1.6,
+   1.8
+  ],
+  "C": [
+   3.4,
+   3.6
+  ]
+ },
+ "thresholds": {
+  "tolerance_percent": 5.0,
+  "D2_alpha": 0.05,
+  "block_samples": 3,
+  "n_boot": 20000,
+  "seed": 20260211
+ },
+ "source_artifact": "benchmarks/case_poiseuille/out/steady_window.json",
+ "window_A": {
+  "n": 9,
+  "mean": 0.9118674683669821,
+  "half_range": 0.14035693879505967,
+  "slope_per_s": -0.21335053649176736,
+  "slope_se": 0.6341473723187564,
+  "t_stat": -0.33643683756293474,
+  "drift_over_window": -0.03414942024721351
+ },
+ "window_B": {
+  "n": 9,
+  "mean": 0.8610180974185867,
+  "half_range": 0.25231867954878534,
+  "slope_per_s": -2.6889956284804812,
+  "slope_se": 0.6250454552538208,
+  "t_stat": -4.302080122138515,
+  "drift_over_window": -0.43040736278365704
+ },
+ "baseline": {
+  "n": 40,
+  "mean": 0.9221809190570032,
+  "sd": 0.08154982934376322,
+  "lag1": -0.2698233482205874
+ },
+ "window_B_residual_lag1": -0.8966513232518669,
+ "window_B_effective_t": {
+  "rho": -0.8966513232518669,
+  "t_effective": -18.429764402196653,
+  "se_factor": 0.23343109701531226,
+  "correction": "naive t is conservative"
+ },
+ "bootstrap": {
+  "n_boot": 20000,
+  "block": 3,
+  "n_test": 9,
+  "seed": 20260211,
+  "p_one_sided": 0.0,
+  "p_two_sided": 0.0,
+  "null_slope_median": -0.007103183494722351,
+  "null_slope_p05": -0.6464758124425386,
+  "observed_slope": -2.6889956284804812
+ },
+ "bootstrap_sensitivity": {
+  "by_block": [
+   {
+    "block": 1,
+    "p_one_sided": 0.0
+   },
+   {
+    "block": 2,
+    "p_one_sided": 0.0
+   },
+   {
+    "block": 3,
+    "p_one_sided": 0.0
+   },
+   {
+    "block": 5,
+    "p_one_sided": 0.0
+   },
+   {
+    "block": 8,
+    "p_one_sided": 0.0
+   }
+  ],
+  "by_baseline_end": [
+   {
+    "baseline_end_s": 1.4,
+    "n": 30,
+    "p_one_sided": 0.0
+   },
+   {
+    "baseline_end_s": 1.5,
+    "n": 34,
+    "p_one_sided": 0.0
+   },
+   {
+    "baseline_end_s": 1.6,
+    "n": 40,
+    "p_one_sided": 0.0
+   }
+  ]
+ },
+ "committed_E_percent": 0.4105229685364704,
+ "D3_bound_percent": 0.8409303313201275,
+ "gates": {
+  "D1_late_window_slope_is_negative": true,
+  "D2_decline_distinguishable_from_baseline_noise": true,
+  "D3_acceptance_survives_the_drift": true
+ }
+}
