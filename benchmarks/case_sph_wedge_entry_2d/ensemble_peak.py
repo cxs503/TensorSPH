@@ -71,6 +71,7 @@ import torch  # noqa: E402
 from tensorsph.wedge_entry import (  # noqa: E402
     WedgeConfig,
     WedgeImpact,
+    with_realisation,
     wagner_c_coeff,
     wagner_p_over_q,
     wagner_peak_over_q,
@@ -202,11 +203,21 @@ def spread(values):
 
 
 def collect(dx: float, velocity: float, frames: int, c0_factor: float,
-            threads: int) -> dict:
+            threads: int, seed: int | None = None,
+            scale: float = 1.0) -> dict:
+    """Run the case once.
+
+    ``seed`` (m22826) selects an *independent realization* through the two
+    sub-cell discrete-phase offsets of ``tensorsph.wedge_entry``; ``None``
+    reproduces the unperturbed case bit for bit, which is what every committed
+    artefact up to m22798 was produced with.
+    """
     torch.set_num_threads(max(1, int(threads)))
     cfg = WedgeConfig(beta_deg=30.0, velocity=velocity, dx=dx, frames=frames,
                       alpha_visc=0.03, sound_speed_factor=c0_factor,
                       max_courant=0.35)
+    if seed is not None:
+        cfg = with_realisation(cfg, seed, scale)
     cfg.validate()
     t0 = time.time()
     sim = WedgeImpact(cfg)
@@ -233,9 +244,18 @@ def collect(dx: float, velocity: float, frames: int, c0_factor: float,
                           "max_rho_ratio": diag["max_rho_ratio"]})
             target += 1
     wall = time.time() - t0
-    return {"cfg": {"beta_deg": 30.0, "velocity": velocity, "dx": dx,
-                    "frames": frames, "c0_factor": c0_factor,
-                    "courant": 0.35, "alpha_visc": 0.03},
+    cfg_out = {"beta_deg": 30.0, "velocity": velocity, "dx": dx,
+               "frames": frames, "c0_factor": c0_factor,
+               "courant": 0.35, "alpha_visc": 0.03}
+    if seed is not None:
+        # provenance of the realization: without these three numbers a reading
+        # cannot be reproduced, and an ensemble of unknown phases is not an
+        # ensemble
+        cfg_out["phase_x_dx"] = float(cfg.phase_x_dx)
+        cfg_out["gap_jitter_dx"] = float(cfg.gap_jitter_dx)
+        cfg_out["realisation_seed"] = int(seed)
+        cfg_out["realisation_scale"] = float(scale)
+    return {"cfg": cfg_out,
             "steps": steps, "wall_seconds": wall, "t_end": t_end,
             "C": C, "c0": sim.c0, "q": sim.q,
             "wagner_cp_max": wagner_peak_over_q(cfg.beta),

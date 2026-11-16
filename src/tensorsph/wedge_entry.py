@@ -77,9 +77,10 @@ same definition):
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import json
 import math
+import random
 from pathlib import Path
 
 import torch
@@ -366,6 +367,51 @@ class WetWidth:
 
 
 # --------------------------------------------------------------------------- #
+# Independent realizations of one case definition
+# --------------------------------------------------------------------------- #
+
+# Sub-cell bounds of the two discrete-phase offsets that distinguish one
+# *realization* of a case from another (see ``WedgeConfig.phase_x_dx``).
+# ``PHASE_X_MAX_DX`` is bounded by the clearance the symmetric lattice leaves to
+# the tank side walls: with ``nx = floor(2 half_width / dx)`` and
+# ``2 half_width = nx dx + f dx`` (``0 <= f < 1``) the outer column sits at
+# ``(nx-1) dx / 2``, i.e. ``(1+f) dx / 2 >= dx/2`` from the wall, so any
+# ``|phase_x_dx| <= 1/4`` keeps a fluid-wall separation of at least ``dx/4``.
+PHASE_X_MAX_DX = 0.25
+GAP_JITTER_MAX_DX = 0.25
+# Draw order is frozen: the first number of the stream is the lateral phase, the
+# second the gap offset.  ``random.Random`` (Mersenne Twister) is used because
+# its stream for an integer seed is stable across CPython versions and
+# platforms, so a seed quoted in a report reproduces the same case anywhere.
+REALISATION_DRAW_ORDER = ("phase_x_dx", "gap_jitter_dx")
+
+
+def realisation_phases(seed: int, scale: float = 1.0) -> tuple[float, float]:
+    """Discrete-phase offsets ``(phase_x_dx, gap_jitter_dx)`` for ``seed``.
+
+    ``scale`` in ``[0, 1]`` shrinks both offsets (``scale = 0`` reproduces the
+    unperturbed case bit for bit); it is the knob used to check that the answer
+    does not depend on the perturbation size, i.e. that the perturbation only
+    samples the discretisation phase rather than changing the flow.
+    """
+    if not 0.0 <= scale <= 1.0:
+        raise ValueError("scale must be in [0, 1]")
+    rng = random.Random(int(seed))
+    draws = [rng.uniform(-1.0, 1.0) for _ in REALISATION_DRAW_ORDER]
+    out = (draws[0] * PHASE_X_MAX_DX * scale,
+           draws[1] * GAP_JITTER_MAX_DX * scale)
+    return out
+
+
+def with_realisation(cfg: WedgeConfig, seed: int,
+                     scale: float = 1.0) -> WedgeConfig:
+    """Return a copy of ``cfg`` carrying realization ``seed`` (bit-identical
+    when ``scale = 0``)."""
+    phase_x, gap_jitter = realisation_phases(seed, scale)
+    return replace(cfg, phase_x_dx=phase_x, gap_jitter_dx=gap_jitter)
+
+
+# --------------------------------------------------------------------------- #
 # Configuration
 # --------------------------------------------------------------------------- #
 
@@ -449,6 +495,31 @@ class WedgeConfig:
     # field even where the support is truncated by the free surface).
     density_diffusion_form: str = "molteni"
     density_diffusion_eigenvalue_floor: float = 0.1
+    # ---- independent-realization knobs (m22826) --------------------------- #
+    # The peak wall pressure of this case is an *extremal* reading of a noisy
+    # field, so its uncertainty has to be quoted over **independent
+    # realizations** of the same continuum problem, not over frames of one
+    # trajectory (docs/case_sph_wedge_entry_2d_noise_floor_m22798.md, item 3).
+    # These two numbers are the only handle a realization has: both are pure
+    # *discrete-phase* offsets of magnitude < one cell, so neither changes the
+    # continuum problem, the particle count, the lattice spacing, the calibrated
+    # mass unit or the observation window.
+    #
+    # ``phase_x_dx``: lateral sub-cell shift of the fluid lattice, in units of
+    # ``dx``.  Random positional jitter was rejected on purpose: it perturbs the
+    # summation density of the initial state (the mass unit is calibrated for
+    # the perfect lattice) and therefore seeds an acoustic transient that is
+    # indistinguishable from the quantity being measured.  A rigid lateral
+    # phase shift leaves every particle-particle distance untouched -- it only
+    # changes how the fixed wedge wall nodes sample the fluid, which is exactly
+    # the discretisation phase that sets the extrapolated wall pressure.
+    # Vertical phase (a shift of the free surface) is *not* offered: it would
+    # move the free surface and hence the impact instant.
+    phase_x_dx: float = 0.0
+    # ``gap_jitter_dx``: sub-cell offset added to ``initial_gap_dx``, i.e. the
+    # impact phase of the body.  The clock is still rebased so that ``t = 0`` is
+    # first contact, so the window and the self-similar abscissa are unchanged.
+    gap_jitter_dx: float = 0.0
     device: str = "cpu"
 
     # ---- derived ---------------------------------------------------------- #
@@ -500,6 +571,19 @@ class WedgeConfig:
             raise ValueError("body_span exceeds the tank half-width")
         if self.resolved_t_end() <= 0:
             raise ValueError("t_end must be positive")
+        if abs(self.phase_x_dx) > PHASE_X_MAX_DX:
+            raise ValueError(
+                f"phase_x_dx={self.phase_x_dx} exceeds PHASE_X_MAX_DX="
+                f"{PHASE_X_MAX_DX}: the shifted lattice must stay clear of the "
+                f"tank walls by >= 0.25 dx")
+        if abs(self.gap_jitter_dx) > GAP_JITTER_MAX_DX:
+            raise ValueError(
+                f"gap_jitter_dx={self.gap_jitter_dx} exceeds GAP_JITTER_MAX_DX="
+                f"{GAP_JITTER_MAX_DX}")
+        if self.initial_gap_dx + self.gap_jitter_dx < 1.0:
+            raise ValueError(
+                "initial_gap_dx + gap_jitter_dx < 1 dx: the apex wall particles "
+                "would start inside the support of the top fluid row")
         courant = self.dt_hint() * (self.sound_speed() + self.velocity) / self.h()
         if courant > self.max_courant * (1.0 + 1.0e-9):
             raise ValueError(
@@ -653,7 +737,7 @@ class WedgeImpact:
         self.wall_mass = torch.full((self.wall_local.shape[0],), self.mass_unit,
                                     dtype=self.dtype, device=self.device)
 
-        self.gap = cfg.initial_gap_dx * self.dx
+        self.gap = (cfg.initial_gap_dx + cfg.gap_jitter_dx) * self.dx
         self.t_contact = self.gap / self.V
         self.time = -self.t_contact          # t = 0 is first contact
         self.body_offset = torch.tensor((0.0, self.gap), dtype=self.dtype,
@@ -681,6 +765,13 @@ class WedgeImpact:
         # drift before contact at dx = 3 mm)
         x = (torch.arange(nx, dtype=self.dtype, device=self.device)
              - 0.5 * (nx - 1)) * dx
+        if cfg.phase_x_dx != 0.0:
+            # discrete-phase realization knob: rigid lateral shift of the whole
+            # column set (no particle-particle distance changes, so the initial
+            # density of the perfect lattice -- and the mass unit calibrated for
+            # it -- stay exact).  See the field docstring for why this and not
+            # random jitter.
+            x = x + float(cfg.phase_x_dx) * dx
         y = -cfg.depth + (torch.arange(ny, dtype=self.dtype, device=self.device) + 0.5) * dx
         gx, gy = torch.meshgrid(x, y, indexing="xy")
         pos = torch.stack((gx.reshape(-1), gy.reshape(-1)), dim=-1)
