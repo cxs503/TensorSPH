@@ -1,0 +1,103 @@
+{
+ "asymptote": {
+  "beta_deg": 1.0,
+  "note": "smallest tabulated deadrise; the Wagner asymptotic peak is expected to coincide with the exact similarity solution here, which is what makes the anchor usable at all",
+  "wagner_vs_eim_rel": 0.0011860816690645315
+ },
+ "rows": [
+  {
+   "C": 89.99086129181747,
+   "beta_deg": 1.0,
+   "com_vs_eim_rel": -0.14764838511896528,
+   "cp_com": 6895.32,
+   "cp_eim": 8089.76,
+   "cp_wagner": 8099.355116043132,
+   "wagner_vs_com_rel": 0.17461627829355741,
+   "wagner_vs_eim_rel": 0.0011860816690645315
+  },
+  {
+   "C": 44.98172146997213,
+   "beta_deg": 2.0,
+   "com_vs_eim_rel": -0.017738403147327775,
+   "cp_com": 1982.42,
+   "cp_eim": 2018.22,
+   "cp_wagner": 2024.3552664021515,
+   "wagner_vs_com_rel": 0.02115357310870114,
+   "wagner_vs_eim_rel": 0.0030399393535647246
+  },
+  {
+   "C": 29.97257942015481,
+   "beta_deg": 3.0,
+   "com_vs_eim_rel": -0.0003353828954723026,
+   "cp_com": 894.2,
+   "cp_eim": 894.5,
+   "cp_wagner": 899.3555170974876,
+   "wagner_vs_com_rel": 0.005765507825416627,
+   "wagner_vs_eim_rel": 0.0054281912772360386
+  },
+  {
+   "C": 22.46343402676282,
+   "beta_deg": 4.0,
+   "com_vs_eim_rel": 0.0049058710912570636,
+   "cp_com": 503.9,
+   "cp_eim": 501.44,
+   "cp_wagner": 505.60586827472565,
+   "wagner_vs_com_rel": 0.003385330967901723,
+   "wagner_vs_eim_rel": 0.008307810056488618
+  },
+  {
+   "C": 8.908428650474175,
+   "beta_deg": 10.0,
+   "com_vs_eim_rel": 0.0018018018018017834,
+   "cp_com": 77.84,
+   "cp_eim": 77.7,
+   "cp_wagner": 80.36010102058913,
+   "wagner_vs_com_rel": 0.032375398517332066,
+   "wagner_vs_eim_rel": 0.034235534370516296
+  },
+  {
+   "C": 4.315727438431242,
+   "beta_deg": 20.0,
+   "com_vs_eim_rel": 0.0022547914317927464,
+   "cp_com": 17.78,
+   "cp_eim": 17.74,
+   "cp_wagner": 19.62550332282829,
+   "wagner_vs_com_rel": 0.10379658733567432,
+   "wagner_vs_eim_rel": 0.10628541842324091
+  },
+  {
+   "C": 2.720699046351327,
+   "beta_deg": 30.0,
+   "com_vs_eim_rel": 0.0028985507246375164,
+   "cp_com": 6.92,
+   "cp_eim": 6.9,
+   "cp_wagner": 8.402203300817021,
+   "wagner_vs_com_rel": 0.21419122844176597,
+   "wagner_vs_eim_rel": 0.21771062330681468
+  },
+  {
+   "C": 1.8720021656916068,
+   "beta_deg": 40.0,
+   "com_vs_eim_rel": 0.0,
+   "cp_com": 3.26,
+   "cp_eim": 3.26,
+   "cp_wagner": 4.504392108354066,
+   "wagner_vs_com_rel": 0.38171537066075656,
+   "wagner_vs_eim_rel": 0.38171537066075656
+  }
+ ],
+ "validity": {
+  "angles_inside_gate": [
+   1.0,
+   2.0,
+   3.0,
+   4.0,
+   10.0,
+   20.0
+  ],
+  "case_angle": 30.0,
+  "case_angle_wagner_vs_eim_rel": 0.21771062330681468,
+  "gate": 0.15,
+  "max_angle_inside_gate": 20.0
+ }
+}
