@@ -238,19 +238,46 @@ def check_arm_explicit_keys(payload, problems):
         problems.append("interface-invariance control missing from the summary")
 
 
+B64_PATH = FIG_PATH.with_name(FIG_PATH.name + ".b64")
+
+
+def figure_bytes():
+    """The shipped figure as PNG bytes, from the PNG or its ASCII copy."""
+    if FIG_PATH.exists():
+        return FIG_PATH.read_bytes()
+    if B64_PATH.exists():
+        import base64
+        return base64.b64decode(B64_PATH.read_text().strip(), validate=True)
+    return None
+
+
 def check_figure(problems):
-    """The artifact table advertises a figure; it has to exist and be a PNG."""
-    if not FIG_PATH.exists():
-        problems.append(f"figure {FIG_PATH.relative_to(ROOT)} missing "
-                        "(regenerate: python scripts/xval_projection_laplace/"
-                        "density_ratio.py)")
+    """The artifact table advertises a figure; it has to exist and be a PNG.
+
+    The PNG or its base64 copy is accepted: the delivery gate filters binary
+    paths, so round 3 merged with the PNG stripped out (and this checker, and a
+    pytest gate, merged expecting it -- main was red).  The text copy is the
+    transport, so the gate follows it.
+    """
+    blob = figure_bytes()
+    if blob is None:
+        try:
+            shown = FIG_PATH.relative_to(ROOT)
+        except ValueError:          # a figure path outside the repo (tests)
+            shown = FIG_PATH.name
+        problems.append(
+            f"figure {shown} and {B64_PATH.name} both missing "
+            "(regenerate: python scripts/xval_projection_laplace/"
+            "density_ratio.py --figure-only)")
         return
-    head = FIG_PATH.open("rb").read(8)
-    if head != b"\x89PNG\r\n\x1a\n":
+    if blob[:8] != b"\x89PNG\r\n\x1a\n":
         problems.append("density_ratio.png is not a PNG")
-    if FIG_PATH.stat().st_size < 20_000:
-        problems.append("density_ratio.png suspiciously small "
-                        f"({FIG_PATH.stat().st_size} B)")
+    if len(blob) < 20_000:
+        problems.append(f"density_ratio.png suspiciously small ({len(blob)} B)")
+    elif not blob.endswith(b"IEND\xaeB`\x82"):
+        # a base64 copy can be interrupted mid-write and still start with the
+        # PNG magic; the IEND chunk is what says the raster is complete.
+        problems.append("density_ratio.png truncated (no IEND chunk)")
 
 
 def check(json_path=JSON_PATH, doc_path=DOC_PATH):
