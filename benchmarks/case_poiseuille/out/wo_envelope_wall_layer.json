@@ -1,0 +1,651 @@
+{
+ "case": "CASE-POISEUILLE-SPH",
+ "tag": "wall-layer resolution envelope (secondary analysis)",
+ "study": "benchmarks/case_poiseuille/wall_layer_envelope.py",
+ "parent_artefact": {
+  "path": "benchmarks/case_poiseuille/out/wo_envelope.json",
+  "sha256": "24c63197ef6ef5ebf23f4590df965039ffa591d0b58f5d9e9bacca8cba784d54",
+  "generated": "2026-11-14T17:14:35",
+  "wall_clock_total_s": 377.16083312034607
+ },
+ "generated": "2026-11-16T09:03:00Z",
+ "epistemic_status": "post-hoc secondary analysis of a published artefact; not blind. Thresholds, alternatives, exclusions and stopping rule are frozen in this file and the verdicts are computed from them; no new solver run was made.",
+ "decision": "Publish a resolution requirement for the near-wall (Stokes-layer) metric of CASE-POISEUILLE-SPH -- a usable monotone envelope err_wall(delta/dx) with a stated domain of validity -- or state that none exists.",
+ "alternatives": {
+  "A0_no_envelope": "No usable envelope: the wall-row error is not reproducible as a function of delta/dx alone (row-level structure or scatter between points at matched delta/dx breaks it), so no rule may be published.",
+  "A1_power_law": "err_wall = K * (delta/dx)^(-m) on the resolved branch; extrapolates and is out-of-sample predictable within tolerance.",
+  "A2_saturating": "err_wall = E_inf + K * (delta/dx)^(-m): an unresolved-layer plateau E_inf plus the resolved-branch decay; better evidence than A1."
+ },
+ "hypotheses": {
+  "W1_power_law_is_predictive": {
+   "text": "On the fit set (declared r16 sweep points with 1.4 <= delta/dx <= 6.5) a two-parameter power law reaches R^2 >= 0.95 and predicts the held-out points (same case, different (Wo, H/dx), inside the fit domain) with MAPE <= 25 %.",
+   "frozen_prediction": "supported: log-log errors of this kind are usually tight"
+  },
+  "W2_plateau_is_real": {
+   "text": "Adding an unresolved-layer plateau E_inf improves the fit by Delta AIC >= 4 over the pure power law AND lowers the held-out MAPE, i.e. the near-wall error saturates instead of diverging.",
+   "frozen_prediction": "supported: at delta/dx < 1 the layer is sub-cell, so the error should stop growing with the metric delta/dx"
+  },
+  "W3_H8_at_row_level": {
+   "text": "The parent study's H8 (wall-row error is a function of delta/dx alone) also holds *per row*: at matched delta/dx, per-row amplitude errors agree within 2.0 percentage points on the declared y/delta grid.",
+   "frozen_prediction": "supported at aggregate level by H8; the row-level test is the stricter version and may loosen the claim"
+  }
+ },
+ "thresholds": {
+  "fit_r2_min": 0.95,
+  "holdout_mape_max_pct": 25.0,
+  "delta_aic_min": 4.0,
+  "row_pair_max_disagreement_pp": 2.0,
+  "row_pair_falsify_pp": 4.0,
+  "target_gates_pct": [
+   5.0,
+   3.0
+  ]
+ },
+ "design": {
+  "fit_rule": "role startswith 'A:' (frequency sweep at H/dx = 16) AND sampling_ok AND 1.4 <= delta/dx <= 6.5",
+  "holdout_rule": "all other points with sampling_ok = true; split into 'interpolation' (inside the fit domain) and 'extrapolation' (below it)",
+  "exclusion_rule": "points whose parent verdict is invalid_sampling are excluded from both sets; a sensitivity row reports what happens if the excluded point is added back",
+  "repetition_rationale": "no new solver repetitions: the unit of analysis is the existing 14-point artefact. Out-of-sample spread is estimated by two independent devices -- leave-one-out on the fit set and the held-out (Wo, H/dx) points the fit never saw.",
+  "confounders": [
+   "settling/window length (controlled: W3_wo500_r16_settle4 doubles settle periods)",
+   "temporal sampling (controlled: invalid_sampling point excluded, sensitivity reported)",
+   "two dx levels differ in both dx and Wo at fixed delta/dx (matched-pair test)",
+   "row-averaging floor (parent study's analytic floor; not subtracted, reported separately)",
+   "fit domain is narrow (6 points); extrapolation beyond delta/dx = 6.29 is labelled, never presented as measured"
+  ],
+  "variables": "controlled: g0, nu, H, c_s, column count, samples/period, interior gate definition. Varied: Wo (hence delta/dx) and H/dx.",
+  "analysis": "ordinary least squares in log space (power law) and a deterministic grid profile over E_inf (saturating law); AIC with k = 2 and 3; relative residuals; MAPE on hold-outs; linear interpolation of per-row profiles in y/delta for matched pairs.",
+  "stopping_rule": "one evaluation of each model: no model form, threshold or exclusion is changed after the held-out errors are seen. If both W1 and W2 fail, the answer is A0 (no envelope) and the analysis stops there.",
+  "interpretation_limits": "one H, one nu, one column count, Re ~ 12; laminar single channel, Ma < 0.04; says nothing about free surface, turbulence or 3-D. Post-hoc, unblinded. Correlation with delta/dx is not a causal decomposition of the error (the floor and the sub-cell smearing are not separable from this artefact alone)."
+ },
+ "fit_set": [
+  {
+   "id": "W5_wo800_r16",
+   "role": "A:sweep",
+   "wo": 8.0,
+   "h_over_dx": 16,
+   "delta_over_dx": 1.4142,
+   "steps_per_period": 201.3841,
+   "sampling_ok": true,
+   "verdict": "pass",
+   "err_wall_pct": 26.3486,
+   "err_wall_floor_frac": 0.2143,
+   "err_interior_rms_pct": 0.5253,
+   "err_centre_pct": 0.1359,
+   "phase_centre_pct_q": 0.9595
+  },
+  {
+   "id": "W4_wo650_r16",
+   "role": "A:H2_predicted_fail",
+   "wo": 6.5,
+   "h_over_dx": 16,
+   "delta_over_dx": 1.7406,
+   "steps_per_period": 305.0553,
+   "sampling_ok": true,
+   "verdict": "pass",
+   "err_wall_pct": 22.1662,
+   "err_wall_floor_frac": 0.2092,
+   "err_interior_rms_pct": 0.5985,
+   "err_centre_pct": -0.164,
+   "phase_centre_pct_q": 0.4551
+  },
+  {
+   "id": "W3_wo500_r16",
+   "role": "A:H2_predicted_fail",
+   "wo": 5.0,
+   "h_over_dx": 16,
+   "delta_over_dx": 2.2627,
+   "steps_per_period": 515.5434,
+   "sampling_ok": true,
+   "verdict": "pass",
+   "err_wall_pct": 17.2916,
+   "err_wall_floor_frac": 0.2089,
+   "err_interior_rms_pct": 0.7967,
+   "err_centre_pct": -0.7335,
+   "phase_centre_pct_q": 0.2813
+  },
+  {
+   "id": "W2_wo377_r16",
+   "role": "A:H2_boundary",
+   "wo": 3.77,
+   "h_over_dx": 16,
+   "delta_over_dx": 3.001,
+   "steps_per_period": 906.823,
+   "sampling_ok": true,
+   "verdict": "pass",
+   "err_wall_pct": 12.8194,
+   "err_wall_floor_frac": 0.2121,
+   "err_interior_rms_pct": 0.7771,
+   "err_centre_pct": -0.6352,
+   "phase_centre_pct_q": 0.397
+  },
+  {
+   "id": "W1_wo280_r16",
+   "role": "A:control_G6_fast",
+   "wo": 2.8,
+   "h_over_dx": 16,
+   "delta_over_dx": 4.0406,
+   "steps_per_period": 1643.9522,
+   "sampling_ok": true,
+   "verdict": "pass",
+   "err_wall_pct": 7.6729,
+   "err_wall_floor_frac": 0.25,
+   "err_interior_rms_pct": 1.2486,
+   "err_centre_pct": 1.2911,
+   "phase_centre_pct_q": 0.0327
+  },
+  {
+   "id": "W0_wo180_r16",
+   "role": "A:control_committed_rung",
+   "wo": 1.8,
+   "h_over_dx": 16,
+   "delta_over_dx": 6.2854,
+   "steps_per_period": 3977.9584,
+   "sampling_ok": true,
+   "verdict": "pass",
+   "err_wall_pct": 5.7205,
+   "err_wall_floor_frac": 0.2229,
+   "err_interior_rms_pct": 0.3897,
+   "err_centre_pct": 0.0775,
+   "phase_centre_pct_q": 0.1316
+  }
+ ],
+ "holdout_set": [
+  {
+   "id": "W4_wo650_r8",
+   "role": "B:H6_ladder",
+   "wo": 6.5,
+   "h_over_dx": 8,
+   "delta_over_dx": 0.8703,
+   "steps_per_period": 152.5276,
+   "sampling_ok": true,
+   "verdict": "pass",
+   "err_wall_pct": 30.2009,
+   "err_wall_floor_frac": 0.2908,
+   "err_interior_rms_pct": 1.2738,
+   "err_centre_pct": -0.0663,
+   "phase_centre_pct_q": 0.6251
+  },
+  {
+   "id": "W7_wo1250_r16",
+   "role": "A:sweep",
+   "wo": 12.5,
+   "h_over_dx": 16,
+   "delta_over_dx": 0.9051,
+   "steps_per_period": 82.4869,
+   "sampling_ok": true,
+   "verdict": "pass",
+   "err_wall_pct": 31.2205,
+   "err_wall_floor_frac": 0.2718,
+   "err_interior_rms_pct": 0.82,
+   "err_centre_pct": 0.1464,
+   "phase_centre_pct_q": 2.417
+  },
+  {
+   "id": "W6_wo1000_r16",
+   "role": "A:sweep",
+   "wo": 10.0,
+   "h_over_dx": 16,
+   "delta_over_dx": 1.1314,
+   "steps_per_period": 128.8859,
+   "sampling_ok": true,
+   "verdict": "pass",
+   "err_wall_pct": 30.0816,
+   "err_wall_floor_frac": 0.2309,
+   "err_interior_rms_pct": 0.6957,
+   "err_centre_pct": 0.1212,
+   "phase_centre_pct_q": 1.5945
+  },
+  {
+   "id": "W8_wo1600_r32",
+   "role": "C:H5_sampling_recovered",
+   "wo": 16.0,
+   "h_over_dx": 32,
+   "delta_over_dx": 1.4142,
+   "steps_per_period": 100.6921,
+   "sampling_ok": true,
+   "verdict": "pass",
+   "err_wall_pct": 26.6441,
+   "err_wall_floor_frac": 0.2119,
+   "err_interior_rms_pct": 0.1196,
+   "err_centre_pct": 0.1088,
+   "phase_centre_pct_q": 1.9809
+  },
+  {
+   "id": "W3_wo500_r16_settle4",
+   "role": "D:H3_settling_control",
+   "wo": 5.0,
+   "h_over_dx": 16,
+   "delta_over_dx": 2.2627,
+   "steps_per_period": 515.5434,
+   "sampling_ok": true,
+   "verdict": "pass",
+   "err_wall_pct": 17.3722,
+   "err_wall_floor_frac": 0.2079,
+   "err_interior_rms_pct": 0.7616,
+   "err_centre_pct": -0.4818,
+   "phase_centre_pct_q": 0.2535
+  },
+  {
+   "id": "W3_wo500_r24",
+   "role": "B:refinement_at_fixed_Wo",
+   "wo": 5.0,
+   "h_over_dx": 24,
+   "delta_over_dx": 3.3941,
+   "steps_per_period": 773.3151,
+   "sampling_ok": true,
+   "verdict": "pass",
+   "err_wall_pct": 11.4494,
+   "err_wall_floor_frac": 0.2123,
+   "err_interior_rms_pct": 0.3984,
+   "err_centre_pct": -0.5335,
+   "phase_centre_pct_q": 0.2427
+  },
+  {
+   "id": "W4_wo650_r32",
+   "role": "B:H6_ladder",
+   "wo": 6.5,
+   "h_over_dx": 32,
+   "delta_over_dx": 3.4811,
+   "steps_per_period": 610.1105,
+   "sampling_ok": true,
+   "verdict": "pass",
+   "err_wall_pct": 11.166,
+   "err_wall_floor_frac": 0.2117,
+   "err_interior_rms_pct": 0.2626,
+   "err_centre_pct": -0.2521,
+   "phase_centre_pct_q": 0.2971
+  }
+ ],
+ "excluded": [
+  {
+   "id": "W8_wo1600_r16",
+   "verdict": "invalid_sampling",
+   "delta_over_dx": 0.7071,
+   "err_wall_pct": 27.3748
+  }
+ ],
+ "models": {
+  "A1_power_law": {
+   "kind": "power_law",
+   "form": "err_wall[%] = K * (delta/dx)**(-m)",
+   "K": 39.72409010776133,
+   "m": 1.0806325982853342,
+   "k_params": 2,
+   "sse_rel": 0.030274955916167298,
+   "r2": 0.9891080427898827
+  },
+  "A2_saturating": {
+   "kind": "saturating",
+   "form": "err_wall[%] = E_inf + K * (delta/dx)**(-m)",
+   "E_inf": 1.0121878218324554,
+   "K": 40.3186371119649,
+   "m": 1.1886838940435165,
+   "k_params": 3,
+   "sse_rel": 0.02917312011317058,
+   "r2": 0.9854248621600623
+  },
+  "fit_residuals_pct": {
+   "A1_power_law": [
+    3.668,
+    -1.539,
+    -4.942,
+    -5.498,
+    14.485,
+    -4.739
+   ],
+   "A2_saturating": [
+    5.194,
+    -1.308,
+    -5.813,
+    -6.927,
+    13.116,
+    -3.037
+   ]
+  },
+  "aic": {
+   "A1_power_law": -27.735,
+   "A2_saturating": -25.958,
+   "delta_aic_favouring_A2": -1.778
+  },
+  "loo": {
+   "A1_power_law": {
+    "loo_resid_pct": [
+     6.812,
+     -2.197,
+     -6.071,
+     -6.602,
+     20.21,
+     -11.909
+    ],
+    "loo_mape_pct": 8.966843781539877,
+    "loo_max_abs_pct": 20.210308768821704
+   },
+   "A2_saturating": {
+    "loo_resid_pct": [
+     15.742,
+     -1.877,
+     -7.915,
+     -10.601,
+     20.21,
+     -11.909
+    ],
+    "loo_mape_pct": 11.37575090157617,
+    "loo_max_abs_pct": 20.210308768821704
+   }
+  }
+ },
+ "holdout": {
+  "A1_power_law": {
+   "detail": [
+    {
+     "id": "W4_wo650_r8",
+     "delta_over_dx": 0.8703,
+     "measured_pct": 30.201,
+     "predicted_pct": 46.159,
+     "rel_error_pct": 52.84,
+     "in_fit_domain": false
+    },
+    {
+     "id": "W7_wo1250_r16",
+     "delta_over_dx": 0.9051,
+     "measured_pct": 31.221,
+     "predicted_pct": 44.244,
+     "rel_error_pct": 41.713,
+     "in_fit_domain": false
+    },
+    {
+     "id": "W6_wo1000_r16",
+     "delta_over_dx": 1.1314,
+     "measured_pct": 30.082,
+     "predicted_pct": 34.764,
+     "rel_error_pct": 15.565,
+     "in_fit_domain": false
+    },
+    {
+     "id": "W8_wo1600_r32",
+     "delta_over_dx": 1.4142,
+     "measured_pct": 26.644,
+     "predicted_pct": 27.315,
+     "rel_error_pct": 2.518,
+     "in_fit_domain": true
+    },
+    {
+     "id": "W3_wo500_r16_settle4",
+     "delta_over_dx": 2.2627,
+     "measured_pct": 17.372,
+     "predicted_pct": 16.437,
+     "rel_error_pct": -5.383,
+     "in_fit_domain": true
+    },
+    {
+     "id": "W3_wo500_r24",
+     "delta_over_dx": 3.3941,
+     "measured_pct": 11.449,
+     "predicted_pct": 10.606,
+     "rel_error_pct": -7.37,
+     "in_fit_domain": true
+    },
+    {
+     "id": "W4_wo650_r32",
+     "delta_over_dx": 3.4811,
+     "measured_pct": 11.166,
+     "predicted_pct": 10.319,
+     "rel_error_pct": -7.583,
+     "in_fit_domain": true
+    }
+   ],
+   "interpolation_mape_pct": 5.71356614906972,
+   "extrapolation_abs_rel_error_pct": 36.706126571225944,
+   "usable": true
+  },
+  "A2_saturating": {
+   "detail": [
+    {
+     "id": "W4_wo650_r8",
+     "delta_over_dx": 0.8703,
+     "measured_pct": 30.201,
+     "predicted_pct": 48.571,
+     "rel_error_pct": 60.826,
+     "in_fit_domain": false
+    },
+    {
+     "id": "W7_wo1250_r16",
+     "delta_over_dx": 0.9051,
+     "measured_pct": 31.221,
+     "predicted_pct": 46.404,
+     "rel_error_pct": 48.634,
+     "in_fit_domain": false
+    },
+    {
+     "id": "W6_wo1000_r16",
+     "delta_over_dx": 1.1314,
+     "measured_pct": 30.082,
+     "predicted_pct": 35.829,
+     "rel_error_pct": 19.105,
+     "in_fit_domain": false
+    },
+    {
+     "id": "W8_wo1600_r32",
+     "delta_over_dx": 1.4142,
+     "measured_pct": 26.644,
+     "predicted_pct": 27.717,
+     "rel_error_pct": 4.027,
+     "in_fit_domain": true
+    },
+    {
+     "id": "W3_wo500_r16_settle4",
+     "delta_over_dx": 2.2627,
+     "measured_pct": 17.372,
+     "predicted_pct": 16.286,
+     "rel_error_pct": -6.251,
+     "in_fit_domain": true
+    },
+    {
+     "id": "W3_wo500_r24",
+     "delta_over_dx": 3.3941,
+     "measured_pct": 11.449,
+     "predicted_pct": 10.445,
+     "rel_error_pct": -8.773,
+     "in_fit_domain": true
+    },
+    {
+     "id": "W4_wo650_r32",
+     "delta_over_dx": 3.4811,
+     "measured_pct": 11.166,
+     "predicted_pct": 10.165,
+     "rel_error_pct": -8.962,
+     "in_fit_domain": true
+    }
+   ],
+   "interpolation_mape_pct": 7.003137230639626,
+   "extrapolation_abs_rel_error_pct": 42.85514817104761,
+   "usable": true
+  }
+ },
+ "matched_pairs": [
+  {
+   "pair": [
+    "W3_wo500_r16",
+    "W3_wo500_r16_settle4"
+   ],
+   "delta_over_dx": [
+    2.2627,
+    2.2627
+   ],
+   "delta_over_dx_rel_gap_pct": 0.0,
+   "wo_pair": [
+    5.0,
+    5.0
+   ],
+   "h_over_dx_pair": [
+    16,
+    16
+   ],
+   "y_over_delta_grid": [
+    0.25,
+    0.5,
+    0.75,
+    1.0,
+    1.5,
+    2.0,
+    3.0
+   ],
+   "err_a_pct": [
+    16.428,
+    8.994,
+    3.625,
+    2.12,
+    0.417,
+    -0.325,
+    -0.716
+   ],
+   "err_b_pct": [
+    16.511,
+    9.095,
+    3.743,
+    2.255,
+    0.584,
+    -0.127,
+    -0.472
+   ],
+   "max_abs_disagreement_pp": 0.244,
+   "rms_disagreement_pp": 0.158
+  },
+  {
+   "pair": [
+    "W5_wo800_r16",
+    "W8_wo1600_r32"
+   ],
+   "delta_over_dx": [
+    1.4142,
+    1.4142
+   ],
+   "delta_over_dx_rel_gap_pct": 0.0,
+   "wo_pair": [
+    8.0,
+    16.0
+   ],
+   "h_over_dx_pair": [
+    16,
+    32
+   ],
+   "y_over_delta_grid": [
+    0.25,
+    0.5,
+    0.75,
+    1.0,
+    1.5,
+    2.0,
+    3.0
+   ],
+   "err_a_pct": [
+    26.349,
+    21.74,
+    13.873,
+    6.007,
+    1.58,
+    -0.288,
+    -0.827
+   ],
+   "err_b_pct": [
+    26.644,
+    22.047,
+    14.2,
+    6.353,
+    1.904,
+    -0.014,
+    -0.7
+   ],
+   "max_abs_disagreement_pp": 0.346,
+   "rms_disagreement_pp": 0.294
+  }
+ ],
+ "requirements": [
+  {
+   "model": "A1_power_law",
+   "target_wall_err_pct": 5.0,
+   "delta_over_dx_required": 6.806,
+   "inside_calibrated_domain": false
+  },
+  {
+   "model": "A2_saturating",
+   "target_wall_err_pct": 5.0,
+   "delta_over_dx_required": 7.003,
+   "inside_calibrated_domain": false
+  },
+  {
+   "model": "A1_power_law",
+   "target_wall_err_pct": 3.0,
+   "delta_over_dx_required": 10.92,
+   "inside_calibrated_domain": false
+  },
+  {
+   "model": "A2_saturating",
+   "target_wall_err_pct": 3.0,
+   "delta_over_dx_required": 12.579,
+   "inside_calibrated_domain": false
+  }
+ ],
+ "anchors": {
+  "best_measured_wall_point": {
+   "id": "W0_wo180_r16",
+   "delta_over_dx": 6.285,
+   "err_wall_pct": 5.721
+  },
+  "unresolved_branch": {
+   "n_points": 3,
+   "delta_over_dx_range": [
+    0.87,
+    1.131
+   ],
+   "err_wall_pct_range": [
+    30.082,
+    31.221
+   ],
+   "err_wall_pct_mean": 30.501,
+   "note": "below the calibrated domain the measured wall-row error stops growing with dx (it saturates), so the resolved-branch law must not be extrapolated into this region"
+  },
+  "rule_domain": {
+   "delta_over_dx_min": 1.414,
+   "delta_over_dx_max": 6.285,
+   "hard_lower_bound": true,
+   "reason": "the smallest measured delta/dx used in the fit; below it the power law over-predicts by up to 60.8 % at the measured points, so the region is out of scope"
+  },
+  "smallest_measured_delta_over_dx_under_gate": null,
+  "err_at_delta_over_dx_3": 11.936,
+  "interior_gate_worst_pct": 1.274,
+  "interior_gate_smallest_delta_over_dx_tested": 0.87,
+  "parent_scope_claim": "Wo below ~3, delta/dx between 3 and 7",
+  "reconciliation": "the lower bound 3 is only defensible for the interior gate (it passes down to delta/dx = 0.87); the upper bound 7 lines up with the wall-layer requirement for <= 5 % error",
+  "holdout_mape_pct": 5.71356614906972
+ },
+ "sensitivity": {
+  "excluded_id": "W8_wo1600_r16",
+  "excluded_verdict": "invalid_sampling",
+  "delta_over_dx": 0.7071,
+  "in_calibrated_domain": false,
+  "measured_pct": 27.375,
+  "predicted_pct": 57.77,
+  "rel_error_pct": 111.035,
+  "model": "A1_power_law",
+  "note": "reported only; an invalid_sampling point cannot be added back as evidence for a spatial envelope"
+ },
+ "verdict": {
+  "adopted": "A1_power_law",
+  "W1_power_law_is_predictive": "supported",
+  "W2_plateau_is_real": "falsified",
+  "W3_H8_at_row_level": "supported",
+  "max_matched_pair_disagreement_pp": 0.346,
+  "statement": "Adopted A1_power_law on delta/dx in [1.414, 6.285]: err_wall = 39.72 * x^(-1.081) (fit R^2 is in the artefact; out-of-sample MAPE on the held-out points inside the domain is 5.7 %). 5 % wall-row amplitude error needs delta/dx >= 6.806 (an extrapolation above the calibrated domain, not a measurement); 3 % needs >= 10.92. No measured point is yet inside the 5 % wall gate -- the best is W0_wo180_r16 at delta/dx = 6.285 (5.721 %). Below delta/dx = 1.414 the law must not be used: there the measured error saturates at 30.501 % mean over 3 points (range [30.082, 31.221]), so refinement-based prediction fails and only refinement itself helps. The interior gate by contrast still passes at delta/dx = 0.87 (worst 1.274 %): the two metrics need resolutions about an order of magnitude apart. Row-level H8: supported."
+ },
+ "wall_clock_s": 3.507,
+ "provenance": {
+  "python": "3.11.6",
+  "numpy": "2.4.6",
+  "git_head": "",
+  "git_dirty": "?? benchmarks/case_poiseuille/make_wall_layer_envelope_doc.py\n?? benchmarks/case_poiseuille/out/wo_envelope_wall_layer.json\n?? benchmarks/case_poiseuille/wall_layer_envelope.py\n?? docs/figures/case_poiseuille_wo_envelope_wall_layer.png",
+  "command": "PYTHONPATH=src:. python3 benchmarks/case_poiseuille/wall_layer_envelope.py",
+  "solver_runs": 0
+ }
+}
