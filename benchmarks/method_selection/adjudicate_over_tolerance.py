@@ -74,6 +74,7 @@ sys.path.insert(0, str(BENCH_DIR))
 
 import audit_quantity_coverage as aqc
 import resolution_ladder_guard as rlg  # noqa: E402  (the independent recomputations)
+import transient_reading_guard as trg  # noqa: E402  (the terminal-time axis)
 
 AUDIT_JSON = ROOT / "docs" / "reports" / "method_selection_coverage_audit_m20432.json"
 REGISTRY_JSON = ROOT / "docs" / "reports" / "method_selection_registry.json"
@@ -242,6 +243,22 @@ def classify(over_record: dict, registry_by_extractor: dict[str, dict],
                 # a reader cannot mistake the record for a convergence pass.
                 entry.setdefault("downgrades", []).append(
                     f"{guard['class']}: {guard['reason']}")
+        transient = trg.classify_record(extractor)
+        if transient is not None:
+            entry["transient_guard"] = transient
+            entry["evidence"].append(
+                f"terminal-time ladder at the record's own grid "
+                f"(H/dx={transient['resolution_H_over_dx']:g}, "
+                f"{transient['n_levels']} levels): {transient['reason']}")
+            if transient["class"] == "transient_reading":
+                # Precedence: the same grid recovers inside the standard without
+                # any refinement, so the grid is not the cause of the
+                # over-tolerance value.  The resolution verdict stays banked.
+                previous = entry["class"]
+                entry["class"] = "transient_reading"
+                entry.setdefault("downgrades", []).append(
+                    f"transient_reading overrides {previous}: "
+                    f"{transient['reason']}")
         entry["pair"] = {
             "fine_extractor": pair["fine"],
             "parameter": pair["parameter"],
@@ -397,7 +414,8 @@ def decision_linkage(method: str, strict: dict, banked_pct: float) -> dict:
 # --------------------------------------------------------------------------- #
 #: Every class the adjudication may hand out, in report order.
 ADJUDICATION_CLASSES = ("resolution_attributable", "resolution_window",
-                        "resolution_pair_only", "reading_mobility",
+                        "resolution_pair_only", "transient_reading",
+                        "reading_window_time", "reading_mobility",
                         "genuine_accuracy_failure", "documented_trap_arm")
 
 
@@ -533,6 +551,10 @@ def build() -> dict:
             spec["method"]: rlg.classify_method(spec["method"])
             for spec in rlg.LADDERS
         },
+        "transient_reading_guard": {
+            spec["extractor"]: trg.classify_record(spec["extractor"])
+            for spec in trg.RECORDS
+        },
         "adjudications": adjudications,
     }
 
@@ -597,8 +619,7 @@ def render_markdown(result: dict) -> str:
         "阶梯回落或最细档重新超限给 `resolution_window`（通过区间是标定窗口的性质，"
         "不是收敛）；档数不足给 `resolution_pair_only`（单调性未测）。\n")
     for entry in result["adjudications"]:
-        if entry["class"] not in ("resolution_attributable", "resolution_window",
-                                  "resolution_pair_only"):
+        if "ladder_guard" not in entry:
             continue
         pair = entry["pair"]
         guard = entry.get("ladder_guard")
@@ -615,6 +636,42 @@ def render_markdown(result: dict) -> str:
             lines.append(f"  - {series['artifact']}: " + ", ".join(
                 f"{key} → {value:.3g} %" for key, value in series["values"].items()))
         lines.append("")
+    transient_rows = [e for e in result["adjudications"]
+                      if "transient_guard" in e]
+    if transient_rows:
+        lines.append("## 终端时间轴（瞬态读数类证据）\n")
+        lines.append(
+            "分辨率配对只回答「细化网格能不能救」。它不回答「这条超限值是不是在流场"
+            "还没稳下来时取的读数」。`transient_reading_guard.py` 固定记录自己的网格，"
+            "只沿终端时间轴取值（同一估计器、同一格栅、同一套门限）：若记录值超限、"
+            "更长的终端时间**每一个**都更小、且至少一档回到 15% 以内，则超限值属"
+            "`transient_reading`（先于稳态的读数），分辨率标签不是原因；"
+            "否则属 `reading_window_time`，瞬态解释被否证、原标签维持。\n")
+        for entry in transient_rows:
+            g = entry["transient_guard"]
+            lines.append(f"### `{entry['extractor']}` → **{entry['class']}**"
+                         f"（H/dx = {g['resolution_H_over_dx']:g}，"
+                         f"{g['n_levels']} 档终端时间）\n")
+            lines.append("| t_end [H²/ν] | 壁面剪切误差 [%] | 是否过稳态门 |")
+            lines.append("|---|---|---|")
+            for vt, value in g["levels"].items():
+                steady = "是" if vt in g["admissible_levels"] else "否"
+                lines.append(f"| {vt} | {value:.2f} | {steady} |")
+            lines.append("")
+            lines.append(f"- 记录值：{g['record_pct']:.3f} %，"
+                         f"取自 `{g['record']['artifact']}`（t_end = "
+                         f"{g['record']['viscous_times']:.3g} H²/ν）")
+            lines.append(f"- 判据：{g['reason']}")
+            lines.append(f"- 通过档位：{g['passing_levels'] or '无'}；"
+                         f"其中过稳态门的：{g['passing_levels_steady'] or '无'}")
+            for protocol, res in g["matched_protocol_resolution"].items():
+                lines.append(
+                    f"- 同一终端时间协议下的分辨率阶梯（`{protocol}`，"
+                    f"{res['class']}）：" + ", ".join(
+                        f"H/dx={rung} → {value:.3f} %"
+                        for rung, value in res["rungs"].items())
+                    + f" —— {res['reason']}")
+            lines.append("")
     if result["audit_coverage_gap"]:
         lines.append("## 覆盖率审计的盲区\n")
         lines.append(
@@ -634,6 +691,11 @@ def render_markdown(result: dict) -> str:
         "配对记录必须是同一方法的同一量，且粗档 > 15% ≥ 细档，再由完整阶梯定级；"
         "配对不成立时脚本把问题写进 `problems`（测试会因此变红）。")
     lines.append(
+        "- `transient_reading` / `reading_window_time`：必须在记录自己的网格上、"
+        "≥3 档终端时间、同一估计器与门限；共享档位跨产物必须逐位一致（不一致即抛错）。"
+        "`transient_reading` 需要「每个更长档都更小」且至少一档进标准；否则给 "
+        "`reading_window_time`，瞬态解释被否证。")
+    lines.append(
         "- `genuine_accuracy_failure`：没有更细档的同类记录落在 15% 以内；"
         "本脚本仍从原始产物独立复算一次，避免把陈旧数字当作失败证据。")
     return "\n".join(lines) + "\n"
@@ -645,6 +707,8 @@ def render_figure(result: dict, path: Path) -> None:
         "resolution_attributable": "#1f77b4",
         "resolution_window": "#ff7f0e",
         "resolution_pair_only": "#8c564b",
+        "transient_reading": "#17becf",
+        "reading_window_time": "#bcbd22",
         "reading_mobility": "#9467bd",
         "genuine_accuracy_failure": "#d62728",
         "documented_trap_arm": "#2ca02c",
