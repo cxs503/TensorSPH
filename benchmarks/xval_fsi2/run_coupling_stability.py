@@ -238,8 +238,9 @@ def main():
         for ratio in (1.0, 2.0, 5.0, 10.0):
             r = run_case(args.dx, ratio, variant, args.nst)
             rows.append(r)
+            v20_str = "n/a" if r["v_at_step20"] is None else f"{r['v_at_step20']:.3e}"
             print(f"{variant:10s} ratio={ratio:5.1f} sigma={r['sigma_per_s']:+11.3e} "
-                  f"v20={r['v_at_step20']:.3e} vend={r['v_end']:.3e} "
+                  f"v20={v20_str} vend={r['v_end']:.3e} "
                   f"-> {r['verdict']}", flush=True)
 
     # dx-independence of the ratio-1 verdict (coarser probe could be a resolution artefact)
@@ -272,10 +273,8 @@ def main():
         "u_mean": 0.2, "sound_speed": 5.0,
         "provenance": {
             "dx": args.dx, "n_steps": args.nst, "dt": ref["dt"],
-            "t_end": args.nst * ref["dt"],
-            "u_mean": 0.2, "sound_speed": 5.0,
-            "open_boundaries": True,
-            "rod_substeps": ref["rod_substeps"],
+            "t_end": args.nst * ref["dt"], "u_mean": 0.2, "sound_speed": 5.0,
+            "open_boundaries": True, "rod_substeps": ref["rod_substeps"],
             "divergence_limit": DIVERGENCE_LIMIT,
             "kernel": "cubic spline (di.cubic_spline_kernel)",
             "runner": "benchmarks/xval_fsi2/run_coupling_stability.py",
@@ -285,17 +284,15 @@ def main():
         "controls": [control],
         "series": series,
     }
-    os.makedirs(os.path.dirname(args.out), exist_ok=True)
+
     with open(args.out, "w") as fh:
         json.dump(payload, fh, indent=2)
     print("wrote", args.out)
 
-    if args.fig:
-        os.makedirs(os.path.dirname(args.fig), exist_ok=True)
-        write_figure(payload, args.fig)
+    block = table_markdown(payload)
+    _write_markdown(args.md_doc, block)
 
-    if args.md_doc:
-        _write_markdown(args.md_doc, table_markdown(payload))
+    write_figure(payload, args.fig)
 
 
 if __name__ == "__main__":
