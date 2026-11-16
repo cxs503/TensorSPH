@@ -430,3 +430,5 @@ shipped coefficient.
   跨到最粗一层则不成立（偏差 33 %，且预测点不过 15 % 门）。
 * `dx = 0.01` 的扩展点已递交调度器（`cj3673`），payload 增量写入，
   回传后重跑 `make_shift_bound_doc.py` 即可扩表。
+Still open: a numeric diff against a live SPHinXsys build (gap 2), hexagonal
+lattices, and the adaptive `h_ratio` branch (not ported).
