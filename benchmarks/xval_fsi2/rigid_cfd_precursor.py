@@ -51,6 +51,7 @@ from tensorsph.fsi2_turek_hron import (  # noqa: E402
     initial_state,
 )
 from tensorsph.neighbor_search import cell_linked_pairs  # noqa: E402
+from tensorsph.farfield_force import wake_plane_drag  # noqa: E402
 
 
 def _apply_open_boundaries_global(state, case, dt: float) -> dict:
@@ -98,13 +99,69 @@ def _apply_open_boundaries_global(state, case, dt: float) -> dict:
     return {"injected": injected, "removed": removed}
 
 
+# --------------------------------------------------------------------------- #
+# Far-field (control-volume) drag on the same field: a second estimator whose
+# error mechanism is independent of the wall-station load channel
+# --------------------------------------------------------------------------- #
+#: Planes of the momentum budget: ``0.10 m`` sits upstream of the cylinder
+#: (surface at 0.15 m), ``0.75 m`` downstream of the beam tip (0.60 m).  Over
+#: that 0.65 m the no-slip walls add a laminar friction term of order
+#: ``6 mu U_mean / H * 0.65 = 4e-4 N/m`` against a load of ~6 N/m (0.007 %), so
+#: the plane difference is the body load to that accuracy.
+FARFIELD_UP_X = 0.10
+FARFIELD_DOWN_X = 0.75
+
+
+def momentum_plane_flux(pos, vel, pressure, mass, case, x_plane: float) -> dict:
+    """``int (rho u_x^2 + p) dy`` across the vertical plane ``x = x_plane``.
+
+    ``wake_plane_drag`` with ``u_inf = 0`` and ``p_ref = 0`` evaluates
+    ``int (-rho u_x^2 - p) dy`` (its ``(p_ref - p)`` term is the pressure
+    integral), so the momentum-plus-pressure flux is minus that value.  The
+    solver's pressure datum is ``tait_pressure`` (``p = 0`` at ``rho = rho0``),
+    hence ``p_ref = 0`` is the correct reference and no offset is estimated.
+
+    The surface values are reconstructed with the module's ``fit`` arm, which is
+    exact for linear fields and removes the ``sum ds_b delta_b (grad p.n_b)``
+    residue of a plain bin average (see ``farfield_force`` docstring).
+    """
+    half = 0.5 * case.channel_height
+    # plane_surface_bins bins symmetrically about y = 0; the channel is 0..H
+    pos_shifted = torch.stack((pos[:, 0], pos[:, 1] - half), dim=-1)
+    res = wake_plane_drag(pos_shifted, vel, pressure, rho=case.rho0, u_inf=0.0,
+                          p_ref=0.0, x_plane=float(x_plane), y_range=half,
+                          dx=case.dx, volumes=mass / case.rho0,
+                          reconstruct="fit")
+    return {"flux": -float(res["drag"]), "coverage": float(res["coverage"]),
+            "n_bins": int(res["n_bins"])}
+
+
+def farfield_drag(pos, vel, pressure, mass, case) -> dict:
+    """Steady momentum-budget drag between the two planes (per unit thickness).
+
+    The unsteady term ``-d/dt int rho u dV`` is *not* included (the module does
+    not ship it); it cancels over a shedding period, so only the time-averaged
+    far-field number is interpretable, never an instantaneous one.
+    """
+    up = momentum_plane_flux(pos, vel, pressure, mass, case, FARFIELD_UP_X)
+    down = momentum_plane_flux(pos, vel, pressure, mass, case, FARFIELD_DOWN_X)
+    return {"ff_flux_up": up["flux"], "ff_flux_down": down["flux"],
+            "ff_drag": up["flux"] - down["flux"],
+            "ff_coverage_up": up["coverage"], "ff_coverage_down": down["coverage"]}
+
+
 #: Injection clock actually used by :func:`rigid_step`.  ``row`` is the
 #: production per-streamline clock; ``global`` is the control arm above.
 CLOCK = os.environ.get("FSI2_INFLOW_CLOCK", "row").strip().lower()
 
 
-def rigid_step(state, case, dt: float) -> dict:
-    """One fluid step with the whole structure frozen."""
+def rigid_step(state, case, dt: float, farfield: bool = False) -> dict:
+    """One fluid step with the whole structure frozen.
+
+    ``farfield=True`` additionally evaluates the control-volume drag
+    (two plane reconstructions); it is only worth its cost at the
+    sampling cadence, so the caller decides.
+    """
     cfg = case.fluid_config()
     cfg.dt = dt
     counters = {"injected": 0, "removed": 0}
@@ -195,6 +252,13 @@ def rigid_step(state, case, dt: float) -> dict:
     else:
         strip_max_per_row, strip_n = 0.0, 0
     scale = 0.5 * case.rho0 * case.inlet_u_mean() ** 2 * case.cylinder_d
+    ff_keys = ("ff_drag", "ff_flux_up", "ff_flux_down", "ff_coverage_up",
+               "ff_coverage_down", "cd_farfield")
+    if farfield:
+        ff = farfield_drag(pos, vel, pressure, state.fluid_mass, case)
+        ff["cd_farfield"] = float(ff["ff_drag"] / scale)
+    else:
+        ff = {k: float("nan") for k in ff_keys}
     return {
         "t": float(state.time),
         "drag_press": float(f_press_body[0]),
@@ -222,6 +286,7 @@ def rigid_step(state, case, dt: float) -> dict:
         "ux_behind": float(vel[behind, 0].mean()) if bool(behind.any()) else float("nan"),
         "u_mean_ref": float(case.inlet_u_mean()),
         "u_max_ref": float(case.inlet_u_max),
+        **ff,
     }
 
 
@@ -234,6 +299,13 @@ def main() -> int:
     ap.add_argument("--sample-every", type=int, default=250)
     ap.add_argument("--threads", type=int, default=6)
     ap.add_argument("--out", default="artifacts/xval_fsi2/rigid_cfd.json")
+    ap.add_argument("--farfield", action=argparse.BooleanOptionalAction,
+                    default=True,
+                    help="control-volume drag alongside the surface load")
+    ap.add_argument("--max-seconds", type=float, default=0.0,
+                    help="stop early and still write the artifact (0 = never)")
+    ap.add_argument("--cluster", default="",
+                    help="free-form label recorded in the artifact")
     args = ap.parse_args()
 
     torch.set_num_threads(args.threads)
@@ -246,16 +318,24 @@ def main() -> int:
             "cd_fit", "cyl_coverage", "max_speed", "mass_total", "n_fluid",
             "injected", "removed", "bulk_speed_mean", "bulk_ux_mean",
             "flux_ratio", "ux_ahead", "ux_behind",
-            "inlet_strip_max_per_row", "inlet_strip_n")
+            "inlet_strip_max_per_row", "inlet_strip_n",
+            "ff_drag", "ff_flux_up", "ff_flux_down", "ff_coverage_up",
+            "ff_coverage_down", "cd_farfield")
     hist = {k: [] for k in keys}
     injected_total = 0
     removed_total = 0
     t0 = time.time()
     for step in range(1, args.steps + 1):
-        s = rigid_step(state, case, dt)
+        sample_now = (step % args.sample_every == 0) or step == 1
+        s = rigid_step(state, case, dt,
+                       farfield=args.farfield and sample_now)
         injected_total += s["injected"]
         removed_total += s["removed"]
         s["injected_total"], s["removed_total"] = injected_total, removed_total
+        if args.max_seconds > 0 and (time.time() - t0) > args.max_seconds:
+            print(f"stopping at step {step} (--max-seconds {args.max_seconds})",
+                  flush=True)
+            break
         if step % args.sample_every == 0 or step == 1:
             for k in keys:
                 hist[k].append(s[k])
@@ -276,7 +356,12 @@ def main() -> int:
                  "drag_scale_0.5_rho_U2_D": 0.5 * case.rho0
                  * case.inlet_u_mean() ** 2 * case.cylinder_d,
                  "structure": "rigid (cylinder + beam boundary frozen)",
-                 "inflow_clock": CLOCK},
+                 "inflow_clock": CLOCK,
+                 "farfield_planes": ([FARFIELD_UP_X, FARFIELD_DOWN_X]
+                                     if args.farfield else None),
+                 "farfield_reconstruct": "fit" if args.farfield else None,
+                 "label": args.cluster,
+                 "max_seconds": args.max_seconds},
         "history": hist,
     }
     path = Path(args.out)
