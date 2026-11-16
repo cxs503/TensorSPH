@@ -54,8 +54,22 @@ def test_refs_derived_is_computed_not_typed():
     # cp in this driver is p/q with q = rho V^2/2, so the stagnation reference
     # is p(0)/q = 2C (see docs/audit_wagner_pressure_reference_m17079.md).
     assert ref["wagner"]["cp_centre"] == pytest.approx(2.0 * C, rel=1e-12)
-    assert ref["zhao_faltinsen_1993"]["status"] == "WITHHELD"
-    assert ref["zhao_faltinsen_1993"]["cp_max"] is None
+    # The mission-designated reference is still second-hand: the primary
+    # article is unread, so the status must stay WITHHELD and the value must
+    # carry its provenance tier.  (m23321: this used to be asserted against a
+    # derived artefact that hardcoded "REAL" -- it asserted the opposite of the
+    # documented provenance policy.  The contract is now on the source.)
+    zf_src = [r for r in refs["references"] if r["id"] == "zhao_faltinsen_1993"][0]
+    assert zf_src["status"] == "WITHHELD"
+    assert zf_src["table_or_figure_value_beta_30"] is None
+    derived_zf = ref["zhao_faltinsen_1993"]
+    assert derived_zf["status"] == zf_src["status"]           # inherited, not typed
+    assert derived_zf["provenance_tier"] == "secondary_open_access_table"
+    # a second-hand value may serve as the denominator, but never silently
+    assert derived_zf["cp_max"] is not None
+    assert derived_zf["secondary_table_value_rho_v2"] == pytest.approx(
+        zf_src["beta30_via_open_source"]["value_rho_v2"], rel=1e-12)
+    assert derived_zf["doi"] == zf_src["beta30_via_open_source"]["doi"]
 
 
 # --------------------------------------------------------------------------- #
