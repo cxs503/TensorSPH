@@ -44,6 +44,11 @@
   "ladder_mls": [
     {
       "variant": "model",
+      "center_m": [
+        0.0,
+        0.0
+      ],
+      "lattice_angle_deg": 0.0,
       "dx_m": 0.002,
       "h_m": 0.0026000000000000003,
       "R_over_h": 7.692307692307692,
@@ -57,6 +62,11 @@
       "kappa_error_pct": 1.1034025930156677,
       "kappa_delta_weighted": 50.55419471895041,
       "kappaR_delta_weighted": 1.0110838943790084,
+      "rho_liquid": 1000.0,
+      "rho_vapour": 1000.0,
+      "density_ratio": 1.0,
+      "poisson_weighting": "uniform",
+      "v_ref_vapour_m_per_s": 0.06,
       "p_core_Pa": 3.636165650215871,
       "p_vapour_Pa": 0.0011950096830138227,
       "dp_measured_Pa": 3.634970640532857,
@@ -67,6 +77,7 @@
       "dp_flux_over_theory": 0.9951799636904941,
       "residual_acc_over_mean_csf_acc": 0.3083041636918511,
       "residual_acc_median_over_mean_csf_acc": 0.2556571465333983,
+      "residual_acc_median_over_local_csf_acc": 0.3042958810258194,
       "residual_bulk_median_over_mean_csf_acc": 0.011398569043487268,
       "residual_acc_max": 0.47719159183021104,
       "v_ref_m_per_s": 0.06,
@@ -74,6 +85,11 @@
     },
     {
       "variant": "model",
+      "center_m": [
+        0.0,
+        0.0
+      ],
+      "lattice_angle_deg": 0.0,
       "dx_m": 0.0015,
       "h_m": 0.0019500000000000001,
       "R_over_h": 10.256410256410255,
@@ -87,6 +103,11 @@
       "kappa_error_pct": 1.3112084772636257,
       "kappa_delta_weighted": 50.39475935621388,
       "kappaR_delta_weighted": 1.0078951871242776,
+      "rho_liquid": 1000.0,
+      "rho_vapour": 1000.0,
+      "density_ratio": 1.0,
+      "poisson_weighting": "uniform",
+      "v_ref_vapour_m_per_s": 0.06,
       "p_core_Pa": 3.619388663404366,
       "p_vapour_Pa": -0.0024338713295827727,
       "dp_measured_Pa": 3.6218225347339486,
@@ -97,6 +118,7 @@
       "dp_flux_over_theory": 0.995907766527542,
       "residual_acc_over_mean_csf_acc": 0.33682563734633697,
       "residual_acc_median_over_mean_csf_acc": 0.2762277259309496,
+      "residual_acc_median_over_local_csf_acc": 0.3211938186747358,
       "residual_bulk_median_over_mean_csf_acc": 0.011903618194251392,
       "residual_acc_max": 0.770648054157979,
       "v_ref_m_per_s": 0.06,
@@ -104,6 +126,11 @@
     },
     {
       "variant": "model",
+      "center_m": [
+        0.0,
+        0.0
+      ],
+      "lattice_angle_deg": 0.0,
       "dx_m": 0.001,
       "h_m": 0.0013000000000000002,
       "R_over_h": 15.384615384615383,
@@ -117,6 +144,11 @@
       "kappa_error_pct": 0.2707530462840557,
       "kappa_delta_weighted": 50.17715373091861,
       "kappaR_delta_weighted": 1.0035430746183722,
+      "rho_liquid": 1000.0,
+      "rho_vapour": 1000.0,
+      "density_ratio": 1.0,
+      "poisson_weighting": "uniform",
+      "v_ref_vapour_m_per_s": 0.06,
       "p_core_Pa": 3.5932062418394985,
       "p_vapour_Pa": 0.0008837031772589095,
       "dp_measured_Pa": 3.5923225386622395,
@@ -127,6 +159,7 @@
       "dp_flux_over_theory": 0.9940268114824533,
       "residual_acc_over_mean_csf_acc": 0.4558633078019965,
       "residual_acc_median_over_mean_csf_acc": 0.3624740696611366,
+      "residual_acc_median_over_local_csf_acc": 0.42517234553594846,
       "residual_bulk_median_over_mean_csf_acc": 0.00582913613495103,
       "residual_acc_max": 2.308763142401042,
       "v_ref_m_per_s": 0.06,
@@ -136,6 +169,11 @@
   "ladder_fit_quadratic": [
     {
       "variant": "model",
+      "center_m": [
+        0.0,
+        0.0
+      ],
+      "lattice_angle_deg": 0.0,
       "dx_m": 0.002,
       "h_m": 0.0026000000000000003,
       "R_over_h": 7.692307692307692,
@@ -149,6 +187,11 @@
       "kappa_error_pct": -28.731673053563643,
       "kappa_delta_weighted": 37.55221978264005,
       "kappaR_delta_weighted": 0.751044395652801,
+      "rho_liquid": 1000.0,
+      "rho_vapour": 1000.0,
+      "density_ratio": 1.0,
+      "poisson_weighting": "uniform",
+      "v_ref_vapour_m_per_s": 0.06,
       "p_core_Pa": 2.766183024415692,
       "p_vapour_Pa": -0.005452220820422193,
       "dp_measured_Pa": 2.7716352452361144,
@@ -159,6 +202,7 @@
       "dp_flux_over_theory": 0.7391917214476121,
       "residual_acc_over_mean_csf_acc": 0.2918277352962288,
       "residual_acc_median_over_mean_csf_acc": 0.23483532202853452,
+      "residual_acc_median_over_local_csf_acc": 0.2951766542942962,
       "residual_bulk_median_over_mean_csf_acc": 0.01351221607470136,
       "residual_acc_max": 0.3309995009759,
       "v_ref_m_per_s": 0.06,
@@ -166,6 +210,11 @@
     },
     {
       "variant": "model",
+      "center_m": [
+        0.0,
+        0.0
+      ],
+      "lattice_angle_deg": 0.0,
       "dx_m": 0.0015,
       "h_m": 0.0019500000000000001,
       "R_over_h": 10.256410256410255,
@@ -179,6 +228,11 @@
       "kappa_error_pct": -28.368180714988213,
       "kappa_delta_weighted": 37.23899651326043,
       "kappaR_delta_weighted": 0.7447799302652086,
+      "rho_liquid": 1000.0,
+      "rho_vapour": 1000.0,
+      "density_ratio": 1.0,
+      "poisson_weighting": "uniform",
+      "v_ref_vapour_m_per_s": 0.06,
       "p_core_Pa": 2.744393145913304,
       "p_vapour_Pa": -0.002660785877494371,
       "dp_measured_Pa": 2.7470539317907985,
@@ -189,6 +243,7 @@
       "dp_flux_over_theory": 0.7359208784820438,
       "residual_acc_over_mean_csf_acc": 0.31564382949752856,
       "residual_acc_median_over_mean_csf_acc": 0.2652932490986081,
+      "residual_acc_median_over_local_csf_acc": 0.3008418430853174,
       "residual_bulk_median_over_mean_csf_acc": 0.010540169301440087,
       "residual_acc_max": 0.4857334035308078,
       "v_ref_m_per_s": 0.06,
@@ -196,6 +251,11 @@
     },
     {
       "variant": "model",
+      "center_m": [
+        0.0,
+        0.0
+      ],
+      "lattice_angle_deg": 0.0,
       "dx_m": 0.001,
       "h_m": 0.0013000000000000002,
       "R_over_h": 15.384615384615383,
@@ -209,6 +269,11 @@
       "kappa_error_pct": -29.837505255253728,
       "kappa_delta_weighted": 36.98624872363828,
       "kappaR_delta_weighted": 0.7397249744727656,
+      "rho_liquid": 1000.0,
+      "rho_vapour": 1000.0,
+      "density_ratio": 1.0,
+      "poisson_weighting": "uniform",
+      "v_ref_vapour_m_per_s": 0.06,
       "p_core_Pa": 2.7187113109478167,
       "p_vapour_Pa": -0.000837132169475158,
       "dp_measured_Pa": 2.719548443117292,
@@ -219,6 +284,7 @@
       "dp_flux_over_theory": 0.7326525842080536,
       "residual_acc_over_mean_csf_acc": 0.3614345122742517,
       "residual_acc_median_over_mean_csf_acc": 0.28998899288975505,
+      "residual_acc_median_over_local_csf_acc": 0.3461263674004337,
       "residual_bulk_median_over_mean_csf_acc": 0.008870652195221443,
       "residual_acc_max": 0.9321437359733649,
       "v_ref_m_per_s": 0.06,
@@ -231,6 +297,11 @@
       "rows": [
         {
           "variant": "model",
+          "center_m": [
+            0.0,
+            0.0
+          ],
+          "lattice_angle_deg": 0.0,
           "dx_m": 0.002,
           "h_m": 0.0026000000000000003,
           "R_over_h": 7.692307692307692,
@@ -244,6 +315,11 @@
           "kappa_error_pct": 1.1034025930156677,
           "kappa_delta_weighted": 50.55419471895041,
           "kappaR_delta_weighted": 1.0110838943790084,
+          "rho_liquid": 1000.0,
+          "rho_vapour": 1000.0,
+          "density_ratio": 1.0,
+          "poisson_weighting": "uniform",
+          "v_ref_vapour_m_per_s": 0.06,
           "p_core_Pa": 3.636165650215871,
           "p_vapour_Pa": 0.0011950096830138227,
           "dp_measured_Pa": 3.634970640532857,
@@ -254,6 +330,7 @@
           "dp_flux_over_theory": 0.9951799636904941,
           "residual_acc_over_mean_csf_acc": 0.3083041636918511,
           "residual_acc_median_over_mean_csf_acc": 0.2556571465333983,
+          "residual_acc_median_over_local_csf_acc": 0.3042958810258194,
           "residual_bulk_median_over_mean_csf_acc": 0.011398569043487268,
           "residual_acc_max": 0.47719159183021104,
           "v_ref_m_per_s": 0.06,
@@ -261,6 +338,11 @@
         },
         {
           "variant": "model",
+          "center_m": [
+            0.0,
+            0.0
+          ],
+          "lattice_angle_deg": 0.0,
           "dx_m": 0.0015,
           "h_m": 0.0019500000000000001,
           "R_over_h": 10.256410256410255,
@@ -274,6 +356,11 @@
           "kappa_error_pct": 1.3112084772636257,
           "kappa_delta_weighted": 50.39475935621388,
           "kappaR_delta_weighted": 1.0078951871242776,
+          "rho_liquid": 1000.0,
+          "rho_vapour": 1000.0,
+          "density_ratio": 1.0,
+          "poisson_weighting": "uniform",
+          "v_ref_vapour_m_per_s": 0.06,
           "p_core_Pa": 3.619388663404366,
           "p_vapour_Pa": -0.0024338713295827727,
           "dp_measured_Pa": 3.6218225347339486,
@@ -284,6 +371,7 @@
           "dp_flux_over_theory": 0.995907766527542,
           "residual_acc_over_mean_csf_acc": 0.33682563734633697,
           "residual_acc_median_over_mean_csf_acc": 0.2762277259309496,
+          "residual_acc_median_over_local_csf_acc": 0.3211938186747358,
           "residual_bulk_median_over_mean_csf_acc": 0.011903618194251392,
           "residual_acc_max": 0.770648054157979,
           "v_ref_m_per_s": 0.06,
@@ -291,6 +379,11 @@
         },
         {
           "variant": "model",
+          "center_m": [
+            0.0,
+            0.0
+          ],
+          "lattice_angle_deg": 0.0,
           "dx_m": 0.001,
           "h_m": 0.0013000000000000002,
           "R_over_h": 15.384615384615383,
@@ -304,6 +397,11 @@
           "kappa_error_pct": 0.2707530462840557,
           "kappa_delta_weighted": 50.17715373091861,
           "kappaR_delta_weighted": 1.0035430746183722,
+          "rho_liquid": 1000.0,
+          "rho_vapour": 1000.0,
+          "density_ratio": 1.0,
+          "poisson_weighting": "uniform",
+          "v_ref_vapour_m_per_s": 0.06,
           "p_core_Pa": 3.5932062418394985,
           "p_vapour_Pa": 0.0008837031772589095,
           "dp_measured_Pa": 3.5923225386622395,
@@ -314,6 +412,7 @@
           "dp_flux_over_theory": 0.9940268114824533,
           "residual_acc_over_mean_csf_acc": 0.4558633078019965,
           "residual_acc_median_over_mean_csf_acc": 0.3624740696611366,
+          "residual_acc_median_over_local_csf_acc": 0.42517234553594846,
           "residual_bulk_median_over_mean_csf_acc": 0.00582913613495103,
           "residual_acc_max": 2.308763142401042,
           "v_ref_m_per_s": 0.06,
@@ -326,6 +425,11 @@
       "rows": [
         {
           "variant": "kappa_exact",
+          "center_m": [
+            0.0,
+            0.0
+          ],
+          "lattice_angle_deg": 0.0,
           "dx_m": 0.002,
           "h_m": 0.0026000000000000003,
           "R_over_h": 7.692307692307692,
@@ -339,6 +443,11 @@
           "kappa_error_pct": 0.0,
           "kappa_delta_weighted": 49.999999999999986,
           "kappaR_delta_weighted": 0.9999999999999998,
+          "rho_liquid": 1000.0,
+          "rho_vapour": 1000.0,
+          "density_ratio": 1.0,
+          "poisson_weighting": "uniform",
+          "v_ref_vapour_m_per_s": 0.06,
           "p_core_Pa": 3.5819257657298795,
           "p_vapour_Pa": 0.00789618399199872,
           "dp_measured_Pa": 3.574029581737881,
@@ -349,6 +458,7 @@
           "dp_flux_over_theory": 0.9842439667485969,
           "residual_acc_over_mean_csf_acc": 0.23263148206138456,
           "residual_acc_median_over_mean_csf_acc": 0.21315642774634502,
+          "residual_acc_median_over_local_csf_acc": 0.2253551173675402,
           "residual_bulk_median_over_mean_csf_acc": 0.001728455536687071,
           "residual_acc_max": 0.2820764212746884,
           "v_ref_m_per_s": 0.06,
@@ -356,6 +466,11 @@
         },
         {
           "variant": "kappa_exact",
+          "center_m": [
+            0.0,
+            0.0
+          ],
+          "lattice_angle_deg": 0.0,
           "dx_m": 0.0015,
           "h_m": 0.0019500000000000001,
           "R_over_h": 10.256410256410255,
@@ -369,6 +484,11 @@
           "kappa_error_pct": 0.0,
           "kappa_delta_weighted": 49.99999999999999,
           "kappaR_delta_weighted": 0.9999999999999999,
+          "rho_liquid": 1000.0,
+          "rho_vapour": 1000.0,
+          "density_ratio": 1.0,
+          "poisson_weighting": "uniform",
+          "v_ref_vapour_m_per_s": 0.06,
           "p_core_Pa": 3.5842969573896184,
           "p_vapour_Pa": -0.0001449991954138271,
           "dp_measured_Pa": 3.584441956585032,
@@ -379,6 +499,7 @@
           "dp_flux_over_theory": 0.9880921847581974,
           "residual_acc_over_mean_csf_acc": 0.23309514686034546,
           "residual_acc_median_over_mean_csf_acc": 0.21258620705279946,
+          "residual_acc_median_over_local_csf_acc": 0.22592413558098093,
           "residual_bulk_median_over_mean_csf_acc": 0.0009899018284273866,
           "residual_acc_max": 0.3743916781333658,
           "v_ref_m_per_s": 0.06,
@@ -386,6 +507,11 @@
         },
         {
           "variant": "kappa_exact",
+          "center_m": [
+            0.0,
+            0.0
+          ],
+          "lattice_angle_deg": 0.0,
           "dx_m": 0.001,
           "h_m": 0.0013000000000000002,
           "R_over_h": 15.384615384615383,
@@ -399,6 +525,11 @@
           "kappa_error_pct": 0.0,
           "kappa_delta_weighted": 50.0,
           "kappaR_delta_weighted": 1.0,
+          "rho_liquid": 1000.0,
+          "rho_vapour": 1000.0,
+          "density_ratio": 1.0,
+          "poisson_weighting": "uniform",
+          "v_ref_vapour_m_per_s": 0.06,
           "p_core_Pa": 3.580997656196292,
           "p_vapour_Pa": -0.00014968940283839935,
           "dp_measured_Pa": 3.5811473455991303,
@@ -409,6 +540,7 @@
           "dp_flux_over_theory": 0.9905355652315757,
           "residual_acc_over_mean_csf_acc": 0.23349177601825205,
           "residual_acc_median_over_mean_csf_acc": 0.21334925921567088,
+          "residual_acc_median_over_local_csf_acc": 0.22454240056374516,
           "residual_bulk_median_over_mean_csf_acc": 0.000618234248862076,
           "residual_acc_max": 0.561025056412312,
           "v_ref_m_per_s": 0.06,
@@ -421,6 +553,11 @@
       "rows": [
         {
           "variant": "delta_unit",
+          "center_m": [
+            0.0,
+            0.0
+          ],
+          "lattice_angle_deg": 0.0,
           "dx_m": 0.002,
           "h_m": 0.0026000000000000003,
           "R_over_h": 7.692307692307692,
@@ -434,6 +571,11 @@
           "kappa_error_pct": 1.1034025930156677,
           "kappa_delta_weighted": 50.55419471895043,
           "kappaR_delta_weighted": 1.0110838943790086,
+          "rho_liquid": 1000.0,
+          "rho_vapour": 1000.0,
+          "density_ratio": 1.0,
+          "poisson_weighting": "uniform",
+          "v_ref_vapour_m_per_s": 0.06,
           "p_core_Pa": 3.6551476068030215,
           "p_vapour_Pa": 0.001201248018696567,
           "dp_measured_Pa": 3.653946358784325,
@@ -444,6 +586,7 @@
           "dp_flux_over_theory": 1.000375123835647,
           "residual_acc_over_mean_csf_acc": 0.3083041636918511,
           "residual_acc_median_over_mean_csf_acc": 0.25565714653339805,
+          "residual_acc_median_over_local_csf_acc": 0.30429588102581884,
           "residual_bulk_median_over_mean_csf_acc": 0.011398569043487208,
           "residual_acc_max": 0.47968268573275,
           "v_ref_m_per_s": 0.06,
@@ -451,6 +594,11 @@
         },
         {
           "variant": "delta_unit",
+          "center_m": [
+            0.0,
+            0.0
+          ],
+          "lattice_angle_deg": 0.0,
           "dx_m": 0.0015,
           "h_m": 0.0019500000000000001,
           "R_over_h": 10.256410256410255,
@@ -464,6 +612,11 @@
           "kappa_error_pct": 1.3112084772636257,
           "kappa_delta_weighted": 50.39475935621388,
           "kappaR_delta_weighted": 1.0078951871242776,
+          "rho_liquid": 1000.0,
+          "rho_vapour": 1000.0,
+          "density_ratio": 1.0,
+          "poisson_weighting": "uniform",
+          "v_ref_vapour_m_per_s": 0.06,
           "p_core_Pa": 3.639734890105864,
           "p_vapour_Pa": -0.0024475532251842084,
           "dp_measured_Pa": 3.6421824433310483,
@@ -474,6 +627,7 @@
           "dp_flux_over_theory": 1.0015062161763544,
           "residual_acc_over_mean_csf_acc": 0.3368256373463369,
           "residual_acc_median_over_mean_csf_acc": 0.27622772593095,
+          "residual_acc_median_over_local_csf_acc": 0.3211938186747361,
           "residual_bulk_median_over_mean_csf_acc": 0.011903618194251288,
           "residual_acc_max": 0.774980216706728,
           "v_ref_m_per_s": 0.06,
@@ -481,6 +635,11 @@
         },
         {
           "variant": "delta_unit",
+          "center_m": [
+            0.0,
+            0.0
+          ],
+          "lattice_angle_deg": 0.0,
           "dx_m": 0.001,
           "h_m": 0.0013000000000000002,
           "R_over_h": 15.384615384615383,
@@ -494,6 +653,11 @@
           "kappa_error_pct": 0.2707530462840557,
           "kappa_delta_weighted": 50.177153730918604,
           "kappaR_delta_weighted": 1.003543074618372,
+          "rho_liquid": 1000.0,
+          "rho_vapour": 1000.0,
+          "density_ratio": 1.0,
+          "poisson_weighting": "uniform",
+          "v_ref_vapour_m_per_s": 0.06,
           "p_core_Pa": 3.6178052570437047,
           "p_vapour_Pa": 0.0008897529908321712,
           "dp_measured_Pa": 3.6169155040528724,
@@ -504,6 +668,7 @@
           "dp_flux_over_theory": 1.00083189836122,
           "residual_acc_over_mean_csf_acc": 0.4558633078019964,
           "residual_acc_median_over_mean_csf_acc": 0.36247406966113666,
+          "residual_acc_median_over_local_csf_acc": 0.42517234553594674,
           "residual_bulk_median_over_mean_csf_acc": 0.005829136134951064,
           "residual_acc_max": 2.324568886858883,
           "v_ref_m_per_s": 0.06,
@@ -516,6 +681,11 @@
       "rows": [
         {
           "variant": "gauge",
+          "center_m": [
+            0.0,
+            0.0
+          ],
+          "lattice_angle_deg": 0.0,
           "dx_m": 0.002,
           "h_m": 0.0026000000000000003,
           "R_over_h": 7.692307692307692,
@@ -529,6 +699,11 @@
           "kappa_error_pct": 0.0,
           "kappa_delta_weighted": 49.999999999999986,
           "kappaR_delta_weighted": 0.9999999999999998,
+          "rho_liquid": 1000.0,
+          "rho_vapour": 1000.0,
+          "density_ratio": 1.0,
+          "poisson_weighting": "uniform",
+          "v_ref_vapour_m_per_s": 0.06,
           "p_core_Pa": 3.6291040863445656,
           "p_vapour_Pa": 0.008000186342793304,
           "dp_measured_Pa": 3.6211039000017724,
@@ -539,6 +714,7 @@
           "dp_flux_over_theory": 0.9972076573617866,
           "residual_acc_over_mean_csf_acc": 0.23263148206138456,
           "residual_acc_median_over_mean_csf_acc": 0.21315642774634525,
+          "residual_acc_median_over_local_csf_acc": 0.22535511736754033,
           "residual_bulk_median_over_mean_csf_acc": 0.001728455536687155,
           "residual_acc_max": 0.28579171095714473,
           "v_ref_m_per_s": 0.06,
@@ -546,6 +722,11 @@
         },
         {
           "variant": "gauge",
+          "center_m": [
+            0.0,
+            0.0
+          ],
+          "lattice_angle_deg": 0.0,
           "dx_m": 0.0015,
           "h_m": 0.0019500000000000001,
           "R_over_h": 10.256410256410255,
@@ -559,6 +740,11 @@
           "kappa_error_pct": 0.0,
           "kappa_delta_weighted": 49.99999999999999,
           "kappaR_delta_weighted": 0.9999999999999999,
+          "rho_liquid": 1000.0,
+          "rho_vapour": 1000.0,
+          "density_ratio": 1.0,
+          "poisson_weighting": "uniform",
+          "v_ref_vapour_m_per_s": 0.06,
           "p_core_Pa": 3.6211955170645944,
           "p_vapour_Pa": -0.00014649189022313908,
           "dp_measured_Pa": 3.6213420089548176,
@@ -569,6 +755,7 @@
           "dp_flux_over_theory": 0.998264103792001,
           "residual_acc_over_mean_csf_acc": 0.23309514686034552,
           "residual_acc_median_over_mean_csf_acc": 0.21258620705279918,
+          "residual_acc_median_over_local_csf_acc": 0.2259241355809808,
           "residual_bulk_median_over_mean_csf_acc": 0.000989901828427502,
           "residual_acc_max": 0.3782458547938506,
           "v_ref_m_per_s": 0.06,
@@ -576,6 +763,11 @@
         },
         {
           "variant": "gauge",
+          "center_m": [
+            0.0,
+            0.0
+          ],
+          "lattice_angle_deg": 0.0,
           "dx_m": 0.001,
           "h_m": 0.0013000000000000002,
           "R_over_h": 15.384615384615383,
@@ -589,6 +781,11 @@
           "kappa_error_pct": 0.0,
           "kappa_delta_weighted": 50.0,
           "kappaR_delta_weighted": 1.0,
+          "rho_liquid": 1000.0,
+          "rho_vapour": 1000.0,
+          "density_ratio": 1.0,
+          "poisson_weighting": "uniform",
+          "v_ref_vapour_m_per_s": 0.06,
           "p_core_Pa": 3.6101317754507547,
           "p_vapour_Pa": -0.0001509072391323267,
           "dp_measured_Pa": 3.610282682689887,
@@ -599,6 +796,7 @@
           "dp_flux_over_theory": 0.9985943198172733,
           "residual_acc_over_mean_csf_acc": 0.23349177601825213,
           "residual_acc_median_over_mean_csf_acc": 0.21334925921567097,
+          "residual_acc_median_over_local_csf_acc": 0.2245424005637448,
           "residual_bulk_median_over_mean_csf_acc": 0.0006182342488620855,
           "residual_acc_max": 0.5655894187681424,
           "v_ref_m_per_s": 0.06,
@@ -673,6 +871,11 @@
   },
   "negative_control": {
     "variant": "model",
+    "center_m": [
+      0.0,
+      0.0
+    ],
+    "lattice_angle_deg": 0.0,
     "dx_m": 0.001,
     "h_m": 0.0013000000000000002,
     "R_over_h": 15.384615384615383,
@@ -686,6 +889,11 @@
     "kappa_error_pct": 0.2707530462840557,
     "kappa_delta_weighted": 50.17715373091861,
     "kappaR_delta_weighted": 1.0035430746183722,
+    "rho_liquid": 1000.0,
+    "rho_vapour": 1000.0,
+    "density_ratio": 1.0,
+    "poisson_weighting": "uniform",
+    "v_ref_vapour_m_per_s": 0.0,
     "p_core_Pa": 0.0,
     "p_vapour_Pa": 0.0,
     "dp_measured_Pa": 0.0,
@@ -696,6 +904,7 @@
     "dp_flux_over_theory": NaN,
     "residual_acc_over_mean_csf_acc": NaN,
     "residual_acc_median_over_mean_csf_acc": NaN,
+    "residual_acc_median_over_local_csf_acc": 0.0,
     "residual_bulk_median_over_mean_csf_acc": NaN,
     "residual_acc_max": 0.0,
     "v_ref_m_per_s": 0.0,
@@ -786,5 +995,5 @@
     "fit_quadratic_also_passes": false,
     "spurious_current_gate_met": false
   },
-  "wall_clock_s": 11.32
+  "wall_clock_s": 7.97
 }
