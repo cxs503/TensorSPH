@@ -16,7 +16,6 @@ import math
 import pytest
 import torch
 
-from tensorsph import droplet_impact as di
 from tensorsph import fsi2_turek_hron as fsi2
 from tensorsph.neighbor_search import cell_linked_pairs
 
@@ -188,27 +187,124 @@ def test_acoustic_impedance_sign():
 # --------------------------------------------------------------------------- #
 # Open boundaries: the benchmark is a through-flow channel, not a tank
 # --------------------------------------------------------------------------- #
-def test_outlet_removal_and_inlet_injection():
-    case = _case(dx=0.02, inlet_ramp_time=0.0)  # start-up ramp off for the unit test
+#
+# D4 was first closed with a *geometric* inlet clock -- "re-inject once the
+# inlet has drifted one lattice spacing" -- and the round below pinned exactly
+# that.  The clock was then replaced by a per-streamline *flux* clock, because a
+# geometric trigger is pinned by the slowest particle in the domain (the inlet
+# parabola vanishes at the wall, so a near-wall particle creeps at ~0.1 U_max and
+# keeps ``min x`` below the trigger while the outlet keeps deleting particles:
+# ``injected = 0`` over 1200 steps, ``docs/xval_fsi2/INFLOW_CLOCK_STALL.md``).
+# The tests below therefore pin the *current* contract, not the withdrawn one:
+# a row injects once it has been delivered one lattice spacing of volume,
+# ``sum(u(y_j) dt) >= dx``, and nothing else.
+
+def _shifted_state(case, shift_lattice=1.5, stall_particle=True):
+    """Initial state with a gap at the inlet and (optionally) a stalled particle.
+
+    Shifting everything downstream by ``1.5 dx`` opens the inlet: ``min x`` is
+    then ``2 dx``, i.e. past the old ``1.5 dx`` geometric trigger, so a geometric
+    clock would inject on the first call and a flux clock must not.  The extra
+    particle parked at ``x = dx/2`` with zero velocity is the *stall* case: it
+    holds ``min x`` at half a lattice spacing forever, which killed the
+    geometric clock outright.
+    """
     state = fsi2.initial_state(case)
     n0 = state.fluid_pos.shape[0]
-
-    # push everything one lattice spacing downstream: a gap opens at the inlet
     shifted = state.fluid_pos.clone()
-    shifted[:, 0] += 1.5 * case.dx
+    shifted[:, 0] += shift_lattice * case.dx
     keep = shifted[:, 0] < case.channel_length - 0.25 * case.dx
     state.fluid_pos = shifted[keep]
     state.fluid_vel = state.fluid_vel[keep]
     state.fluid_mass = state.fluid_mass[keep]
     n_removed = int((~keep).sum())
+    if stall_particle:
+        park = torch.tensor([[0.5 * case.dx, 0.5 * case.dx]], dtype=state.fluid_pos.dtype)
+        state.fluid_pos = torch.cat((state.fluid_pos, park), dim=0)
+        state.fluid_vel = torch.cat(
+            (state.fluid_vel, torch.zeros_like(park)), dim=0)
+        state.fluid_mass = torch.cat(
+            (state.fluid_mass, torch.full((1,), float(state.fluid_mass[0]),
+                                          dtype=state.fluid_mass.dtype)), dim=0)
+    return state, n0, n_removed
 
-    counters = fsi2._apply_open_boundaries(state, case)
-    assert counters["injected"] > 0
-    # the injected column carries the parabolic profile, not a uniform slug
-    col = state.fluid_pos[:, 0] < 1.0 * case.dx
-    u = state.fluid_vel[col, 0]
-    assert float(u.max()) > float(u.min())
-    assert abs(state.fluid_pos.shape[0] - (n0 - n_removed)) < 0.25 * n0
+
+def _row_speeds(case):
+    """Local inlet speed of every injection row, exactly as the driver lays them."""
+    dx = case.dx
+    ys = torch.arange(0.5 * dx, case.channel_height, dx, dtype=torch.float64)
+    H = case.channel_height
+    return ys, case.inlet_u_max * 4.0 * ys * (H - ys) / (H * H)
+
+
+def test_open_boundaries_remove_at_the_outlet_but_wait_for_the_flux_clock():
+    """One fluid step removes the outlet row and injects nothing yet.
+
+    The flux clock delivers ``u(y_j) dt`` per streamline; one step delivers
+    ``3e-4 dx`` at the fastest row, so no row has earned a particle.  A
+    geometric clock would have fired here (``min x = 0.5 dx`` because of the
+    parked particle, or ``2 dx`` without it).
+    """
+    case = _case(dx=0.02, inlet_ramp_time=0.0)
+    for stall in (True, False):
+        state, n0, n_removed = _shifted_state(case, stall_particle=stall)
+        assert n_removed > 0                     # the shift really did cross the outlet
+        counters = fsi2._apply_open_boundaries(state, case, dt=case.dt())
+        assert counters["removed"] == 0          # the shift removed them already
+        assert counters["injected"] == 0, counters
+        expected = n0 - n_removed + (1 if stall else 0)
+        assert state.fluid_pos.shape[0] == expected
+
+
+def test_inlet_injection_delivers_the_local_volume_per_streamline():
+    """A row injects once its own flux has filled one spacing -- not on position.
+
+    Driven with ``dt = 3 dx / U_max`` so the accumulated volume is three
+    spacings at the channel centre and less than one near the wall: the deep
+    rows inject (up to three particles), the near-wall rows stay silent.  That
+    is the per-streamline behaviour the flux clock exists for; a global clock
+    fed by ``U_mean`` would have over-fed the wall rows by ``U_mean/u(y) ~ 7``.
+    """
+    case = _case(dx=0.02, inlet_ramp_time=0.0)
+    state, n0, n_removed = _shifted_state(case, stall_particle=True)
+    n_before = state.fluid_pos.shape[0]
+    ys, u_row = _row_speeds(case)
+    dt = 3.0 * case.dx / case.inlet_u_max
+
+    counters = fsi2._apply_open_boundaries(state, case, dt=dt)
+    injected = counters["injected"]
+    assert injected > 0
+
+    # the parked particle (min x = dx/2 < 1.5 dx) does not stall the clock
+    assert float(state.fluid_pos[:, 0].min()) <= 0.5 * case.dx
+    # particle bookkeeping is exact: nothing else is created or destroyed
+    assert state.fluid_pos.shape[0] == n_before + injected
+
+    # every injected particle sits on the inlet column, none at the wall rows
+    fresh_pos = state.fluid_pos[n_before:]
+    fresh_vel = state.fluid_vel[n_before:]
+    assert torch.allclose(fresh_pos[:, 0],
+                          torch.full((injected,), 0.5 * case.dx,
+                                     dtype=fresh_pos.dtype))
+    fired = u_row * dt >= case.dx
+    assert bool(fired.any()) and not bool(fired.all())     # near-wall rows silent
+    fired_ys = ys[fired]
+    assert float(fresh_pos[:, 1].min()) >= float(fired_ys.min()) - 1e-12
+    assert float(fresh_pos[:, 1].max()) <= float(fired_ys.max()) + 1e-12
+
+    # the injected velocity is the *analytic* parabola at its own row, not a slug
+    H = case.channel_height
+    u_exact = case.inlet_u_max * 4.0 * fresh_pos[:, 1] * (H - fresh_pos[:, 1]) / (H * H)
+    assert torch.allclose(fresh_vel[:, 0].to(torch.float64), u_exact, rtol=1e-10)
+    assert float(fresh_vel[:, 0].max() / fresh_vel[:, 0].min()) > 2.0
+
+    # delivered volume: one particle per spacing per streamline, to rounding
+    expected = float((u_row * dt / case.dx).sum())
+    assert abs(injected - expected) <= int(fired.sum()) + 1, (injected, expected)
+    # the clock's residual never exceeds one spacing on any streamline
+    assert float(state.inflow_deficit_rows.max()) < case.dx
+    assert state.inflow_deficit == pytest.approx(
+        float(state.inflow_deficit_rows.mean()), rel=1e-12)
 
 
 def test_open_boundaries_are_on_by_default():
