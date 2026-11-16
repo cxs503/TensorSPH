@@ -1,0 +1,231 @@
+{
+ "radius_m": 0.02,
+ "dx_m": 0.00125,
+ "h_m": 0.0016250000000000001,
+ "dt_s": 0.0007719937774108748,
+ "R_over_dx": 16.0,
+ "R_over_h": 12.307692307692307,
+ "n_particles": 3090,
+ "n_liquid": 926,
+ "sigma": 0.072,
+ "rho0": 1000.0,
+ "nu_m2_per_s": 1.1999999999999999e-05,
+ "nu_factor": 0.01,
+ "pin_outer": true,
+ "curvature_method": "mls",
+ "v_ref_m_per_s": 0.06,
+ "diverged": false,
+ "steps_completed": 8,
+ "umax_over_vref_final": 0.09742232930516288,
+ "umean_over_vref_final": 0.006017232539915674,
+ "area_ratio_final": 1.0,
+ "dp_final_Pa": 3.5622029340051733,
+ "dp_theory_Pa": 3.5999999999999996,
+ "dp_rel_error_pct": -1.0499184998562838,
+ "history": [
+  {
+   "step": 1,
+   "t_over_t_sigma": 0.1,
+   "umax_over_vref": 0.012398981213061084,
+   "umean_over_vref": 0.0007666432949489715,
+   "dp_Pa": 3.5710304330792253,
+   "area_ratio": 1.0,
+   "div_after_over_div_before": 9.791032477316322e-07,
+   "cg_iterations": 1185,
+   "lattice": {
+    "nn_min": 6.0,
+    "nn_median": 18.0,
+    "pair_min_over_dx": 0.9999999999999953,
+    "pair_p01_over_dx": 0.9999999999999962,
+    "color_min": 0.0,
+    "color_max": 1.0,
+    "kappa_R_max": 2.3148015185912376,
+    "gradc_dx_max": 0.48072317037579887,
+    "acc_over_aref_max": 14.97175672076442
+   }
+  },
+  {
+   "step": 2,
+   "t_over_t_sigma": 0.2,
+   "umax_over_vref": 0.024745567949644158,
+   "umean_over_vref": 0.0015301432010265436,
+   "dp_Pa": 3.5709328460992245,
+   "area_ratio": 1.0,
+   "div_after_over_div_before": 9.85024200860232e-07,
+   "cg_iterations": 1186,
+   "lattice": {
+    "nn_min": 6.0,
+    "nn_median": 18.0,
+    "pair_min_over_dx": 0.9998321825293622,
+    "pair_p01_over_dx": 0.9999475990992007,
+    "color_min": 0.0,
+    "color_max": 1.0,
+    "kappa_R_max": 2.3138572220401468,
+    "gradc_dx_max": 0.48072796952449287,
+    "acc_over_aref_max": 14.966624283563847
+   }
+  },
+  {
+   "step": 3,
+   "t_over_t_sigma": 0.30000000000000004,
+   "umax_over_vref": 0.037034347338561674,
+   "umean_over_vref": 0.0022900988244581246,
+   "dp_Pa": 3.570380717166116,
+   "area_ratio": 1.0,
+   "div_after_over_div_before": 9.947575734958844e-07,
+   "cg_iterations": 1163,
+   "lattice": {
+    "nn_min": 6.0,
+    "nn_median": 18.0,
+    "pair_min_over_dx": 0.999497110477605,
+    "pair_p01_over_dx": 0.9998430291445225,
+    "color_min": 0.0,
+    "color_max": 1.0,
+    "kappa_R_max": 2.311972744608779,
+    "gradc_dx_max": 0.4807375277567244,
+    "acc_over_aref_max": 14.956381543044154
+   }
+  },
+  {
+   "step": 4,
+   "t_over_t_sigma": 0.4,
+   "umax_over_vref": 0.04925984722688779,
+   "umean_over_vref": 0.003045886316366651,
+   "dp_Pa": 3.568924153912801,
+   "area_ratio": 1.0,
+   "div_after_over_div_before": 9.762866262495476e-07,
+   "cg_iterations": 1175,
+   "lattice": {
+    "nn_min": 6.0,
+    "nn_median": 18.0,
+    "pair_min_over_dx": 0.9989955699555735,
+    "pair_p01_over_dx": 0.999686514825166,
+    "color_min": 0.0,
+    "color_max": 1.0,
+    "kappa_R_max": 2.3091527404985674,
+    "gradc_dx_max": 0.48075178090072146,
+    "acc_over_aref_max": 14.94105280470682
+   }
+  },
+  {
+   "step": 5,
+   "t_over_t_sigma": 0.5,
+   "umax_over_vref": 0.06141887699370134,
+   "umean_over_vref": 0.0037969822521806457,
+   "dp_Pa": 3.5682431682799542,
+   "area_ratio": 1.0,
+   "div_after_over_div_before": 9.888883548638238e-07,
+   "cg_iterations": 1164,
+   "lattice": {
+    "nn_min": 6.0,
+    "nn_median": 18.0,
+    "pair_min_over_dx": 0.9983285398853321,
+    "pair_p01_over_dx": 0.9994785016532637,
+    "color_min": 0.0,
+    "color_max": 1.0,
+    "kappa_R_max": 2.305402393407938,
+    "gradc_dx_max": 0.4807706493153139,
+    "acc_over_aref_max": 14.92066450787471
+   }
+  },
+  {
+   "step": 6,
+   "t_over_t_sigma": 0.6000000000000001,
+   "umax_over_vref": 0.07350369132185666,
+   "umean_over_vref": 0.004542962992006933,
+   "dp_Pa": 3.5663035552629796,
+   "area_ratio": 1.0,
+   "div_after_over_div_before": 9.879822738134278e-07,
+   "cg_iterations": 930,
+   "lattice": {
+    "nn_min": 6.0,
+    "nn_median": 18.0,
+    "pair_min_over_dx": 0.9974971118102259,
+    "pair_p01_over_dx": 0.9992192831035843,
+    "color_min": 0.0,
+    "color_max": 1.0,
+    "kappa_R_max": 2.300727767413152,
+    "gradc_dx_max": 0.48079402821562034,
+    "acc_over_aref_max": 14.895247265561805
+   }
+  },
+  {
+   "step": 7,
+   "t_over_t_sigma": 0.7000000000000001,
+   "umax_over_vref": 0.0855058280422972,
+   "umean_over_vref": 0.005283199114966401,
+   "dp_Pa": 3.564203501047091,
+   "area_ratio": 1.0,
+   "div_after_over_div_before": 9.728003881848552e-07,
+   "cg_iterations": 916,
+   "lattice": {
+    "nn_min": 6.0,
+    "nn_median": 18.0,
+    "pair_min_over_dx": 0.9965026293983792,
+    "pair_p01_over_dx": 0.9989090056063352,
+    "color_min": 0.0,
+    "color_max": 1.0,
+    "kappa_R_max": 2.2951351633491197,
+    "gradc_dx_max": 0.48082178754482907,
+    "acc_over_aref_max": 14.86483218735026
+   }
+  },
+  {
+   "step": 8,
+   "t_over_t_sigma": 0.8,
+   "umax_over_vref": 0.09742232930516288,
+   "umean_over_vref": 0.006017232539915674,
+   "dp_Pa": 3.5622029340051733,
+   "area_ratio": 1.0,
+   "div_after_over_div_before": 9.762011648997833e-07,
+   "cg_iterations": 1176,
+   "lattice": {
+    "nn_min": 6.0,
+    "nn_median": 18.0,
+    "pair_min_over_dx": 0.9953480505390785,
+    "pair_p01_over_dx": 0.9985477458316985,
+    "color_min": 0.0,
+    "color_max": 1.0,
+    "kappa_R_max": 2.2886311730131856,
+    "gradc_dx_max": 0.4808537858440442,
+    "acc_over_aref_max": 14.829451070148368
+   }
+  }
+ ],
+ "wall_s": 446.9322624206543,
+ "job": "health_dx16",
+ "role": "lattice_health",
+ "threads": 128,
+ "first_break_step": null,
+ "first_break_rules": [],
+ "health_trend": {
+  "pair_min_over_dx": [
+   0.9953480505390785,
+   8
+  ],
+  "nn_min_over_median": [
+   0.3333333333333333,
+   1
+  ],
+  "color_min": [
+   0.0,
+   1
+  ],
+  "color_max": [
+   1.0,
+   1
+  ],
+  "kappa_R_max": [
+   2.3148015185912376,
+   1
+  ],
+  "gradc_dx_max": [
+   0.4808537858440442,
+   8
+  ],
+  "acc_over_aref_max": [
+   14.97175672076442,
+   1
+  ]
+ }
+}
