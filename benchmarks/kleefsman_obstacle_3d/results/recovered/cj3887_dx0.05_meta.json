@@ -1,0 +1,15 @@
+{
+ "tag": "dx0.05",
+ "dx": 0.05,
+ "t_end": 2.6,
+ "dt": null,
+ "sound_speed": 20.0,
+ "wall_layers": 3,
+ "obstacle_z": 0.0,
+ "station_offset": 0.05,
+ "gauge_aperture": 0.08,
+ "arrival_threshold": 0.02,
+ "output_every": 5,
+ "threads": 8,
+ "complete": false
+}
