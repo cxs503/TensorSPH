@@ -1,0 +1,51 @@
+{
+ "case": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST",
+ "subject": "height_operator_m column of the recovered 3-D production records",
+ "operator_equivalence": "slab_height and peak_height screen with the same _station_mask, i.e. same particle set, same instant",
+ "records": [
+  {
+   "tag": "dx0.05",
+   "job": "cj3887",
+   "dx": 0.05,
+   "samples": 468,
+   "t_last_s": 2.048963,
+   "meta_has_revision": false,
+   "slab_max_m": 0.120192,
+   "height_max_m": 0.0,
+   "wet_samples": 354,
+   "impossible_samples": 101,
+   "worst_impossible_slab_m": 0.120192,
+   "height_column_admissible": false,
+   "particles_per_slab_quantum": 0.0038771712158808935,
+   "max_particles_in_band": 31.0,
+   "particles_needed_at_floor_for_worst_sample": 31.0,
+   "floor_columns_available": 27,
+   "floor_columns_generous": 30,
+   "floor_packing_ratio": 1.148,
+   "gate_reason": "samples report slab > 2*dx of water while the highest wetted point in the same band is 0.0; the two columns were not produced by these operators on one particle set (see docs/audit_kleefsman_3d_height_operator_m22745.md)"
+  },
+  {
+   "tag": "dx0.04",
+   "job": "cj3888",
+   "dx": 0.04,
+   "samples": 327,
+   "t_last_s": 1.14426,
+   "meta_has_revision": false,
+   "slab_max_m": 0.0933,
+   "height_max_m": 0.0,
+   "wet_samples": 194,
+   "impossible_samples": 55,
+   "worst_impossible_slab_m": 0.0933,
+   "height_column_admissible": false,
+   "particles_per_slab_quantum": 0.0019851116625310174,
+   "max_particles_in_band": 47.0,
+   "particles_needed_at_floor_for_worst_sample": 47.0,
+   "floor_columns_available": 33,
+   "floor_columns_generous": 36,
+   "floor_packing_ratio": 1.424,
+   "gate_reason": "samples report slab > 2*dx of water while the highest wetted point in the same band is 0.0; the two columns were not produced by these operators on one particle set (see docs/audit_kleefsman_3d_height_operator_m22745.md)"
+  }
+ ],
+ "any_inadmissible": true,
+ "verdict": "INADMISSIBLE (record defect, not a physical reading)"
+}
