@@ -857,6 +857,101 @@ def boundary_pressure_from_fluid_linear_exact(pos, pressure, wall,
     return p_out, w_out
 
 
+def boundary_pressure_from_fluid_quadratic_exact(pos, pressure, wall,
+                                                 wall_start_idx, wall_stop_idx,
+                                                 pairs, h):
+    """Wall pressure from a *local quadratic fit*, exact on a quadratic field.
+
+    Companion of :func:`boundary_pressure_from_fluid_linear_exact`.  The plane
+    fit removes the *linear* part of the truncation bias exactly; on a curved
+    body the support is not a half space but a spherical cap whose inner radius
+    is the body radius ``r``, so the sampled field is also *curved* in the
+    tangential direction and, for support ``2h`` comparable to ``2r``, the fit
+    sees an arc of order ``h/r`` radians of the surface.  This arm carries the
+    six 2-D quadratic terms ``1, u, v, u^2, u v, v^2`` with ``u = (x-x_w)/h``
+    (the normalisation is what keeps the normal equations well conditioned -
+    the raw squared offsets are ``O(h^2)`` and would mix the constant term with
+    round-off).  It is exact for any quadratically varying field whatever the
+    truncation, so it is the natural arm when the shell is thick compared with
+    the spacing or the body is mildly curved.
+
+    Scope (measured, not assumed)
+    -----------------------------
+    Exactness on a quadratic field is a property of the algebra.  Whether the
+    curvature of a *flow* field is captured is a resolution question: on the
+    FSI2 cylinder in potential flow this arm is worse than the plane fit when
+    the neighbour set is thin (``3h`` shell) because six parameters are fitted
+    to ~8 samples, and better when it is thick (``5h``: +5.9 % vs +11.6 % at
+    ``dx = 10 mm``).  At the coupled spacing ``dx = 20 mm`` no near-field arm
+    reaches the 15 % gate -- see
+    ``docs/xval_fsi2/CURVED_SURFACE_LOAD_ADMISSIBILITY.md`` and
+    ``artifacts/xval_fsi2/curved_surface_load.json``.  Stations with fewer than
+    six usable neighbours fall back to the kernel-weighted mean (reported
+    through the returned weight sum, as for the plane arm).
+
+    Returns ``(p_wall, w_sum)``.
+    """
+    n = pos.shape[0]
+    n_wall = max(min(wall.shape[0] - wall_start_idx, wall_stop_idx - wall_start_idx), 0)
+    p_out = torch.zeros((n_wall,), dtype=pos.dtype, device=pos.device)
+    w_out = torch.zeros((n_wall,), dtype=pos.dtype, device=pos.device)
+    if n_wall == 0 or pairs.numel() == 0:
+        return p_out, w_out
+
+    i, j = pairs.unbind(dim=1)
+    crossing = (i < n) != (j < n)
+    if not bool(crossing.any()):
+        return p_out, w_out
+    fluid_idx = torch.where(i < n, i, j)[crossing]
+    wall_idx = (torch.where(i < n, j, i) - n)[crossing]
+    keep = (wall_idx >= wall_start_idx) & (wall_idx < wall_start_idx + n_wall)
+    if not bool(keep.any()):
+        return p_out, w_out
+    fluid_idx = fluid_idx[keep]
+    wall_idx = wall_idx[keep] - wall_start_idx
+
+    delta = pos[fluid_idx] - wall[wall_start_idx + wall_idx]
+    r = torch.linalg.vector_norm(delta, dim=1)
+    active = (r > 1.0e-12) & (r < 2.0 * h)
+    if not bool(active.any()):
+        return p_out, w_out
+    fluid_idx, wall_idx = fluid_idx[active], wall_idx[active]
+    delta, r = delta[active], r[active]
+    w = di.cubic_spline_kernel(r, h)
+    p_src = pressure[fluid_idx]
+
+    u, v = delta[:, 0] / h, delta[:, 1] / h
+    one = torch.ones_like(u)
+    basis = torch.stack((one, u, v, u * u, u * v, v * v), dim=1)     # (P, 6)
+    m = 6
+    lhs = torch.zeros((n_wall, m, m), dtype=pos.dtype, device=pos.device)
+    lhs = lhs.index_add(0, wall_idx,
+                        w[:, None, None] * (basis[:, :, None] * basis[:, None, :]))
+    rhs = torch.zeros((n_wall, m), dtype=pos.dtype, device=pos.device)
+    rhs = rhs.index_add(0, wall_idx, w[:, None] * p_src[:, None] * basis)
+    w_out = w_out.index_add(0, wall_idx, w)
+    count = torch.zeros((n_wall,), dtype=pos.dtype, device=pos.device)
+    count = count.index_add(0, wall_idx, torch.ones_like(r))
+
+    # Tikhonov regularisation scaled by the station's own weight sum (same
+    # policy as the plane arm) plus a hard fallback when the station cannot
+    # support six parameters at all.
+    wsum = w_out.clamp_min(1.0e-30)
+    eye = torch.eye(m, dtype=pos.dtype, device=pos.device).expand(n_wall, m, m)
+    reg = 1.0e-10 * wsum[:, None, None] * eye
+    fallback = torch.zeros_like(rhs[:, 0]).index_add(0, wall_idx, w * p_src) / wsum
+    try:
+        sol = torch.linalg.solve(lhs + reg, rhs.unsqueeze(-1)).squeeze(-1)
+    except Exception:  # pragma: no cover - singular batch on exotic input
+        sol = None
+    if sol is None or not bool(torch.isfinite(sol).all()):
+        p_out = fallback
+    else:
+        ok = (wsum > 1.0e-30) & torch.isfinite(sol[:, 0]) & (count >= m)
+        p_out = torch.where(ok, sol[:, 0], fallback)
+    return p_out, w_out
+
+
 def boundary_force_from_pressure(p_wall, normals, tributary):
     """Traction on a boundary particle: ``F = -p n trib`` (n points into fluid).
 
