@@ -5,7 +5,7 @@
 read from the artifact, none is typed.*
 
 Anchor `CASE-POISEUILLE-SPH` (算例池·泊肃叶流, ref: analytic, tolerance < 5 %).
-Verdict of the pool record: **FAIL** — 53 functionals,
+Verdict of the pool record: **FAIL** — 55 functionals,
 33 of them re-derived here from the raw per-row /
 per-sample data, 20 carried as stored and labelled as such,
 2 failing (the combined case's honest C6 gate).
@@ -54,7 +54,7 @@ driven by a uniform body force `g`; reference `u = g y (H-y) / (2 nu)`.
 Summary: worst functional **-12.370 %** (`CP_backflow_peak@Hdx8`,
 tolerance 5.0 %); maximum |error| among functionals
 graded at the anchor's 5 %: **+12.3703 %**;
-binding violations: 1 (0 unknown).
+binding violations: 0 (0 unknown).
 
 Table 1 — every graded functional (errors are recomputed unless `basis = stored`):
 
@@ -66,9 +66,9 @@ Table 1 — every graded functional (errors are recomputed unless `basis = store
 | `CP_momentum_budget@Hdx12` | 12 | stored | -0.0277 | 2.0 | PASS |
 | `CP_momentum_budget@Hdx16` | 16 | stored | -0.0333 | 2.0 | PASS |
 | `CP_momentum_budget@Hdx8` | 8 | stored | -0.0570 | 2.0 | PASS |
-| `CP_profile_rms@Hdx12` | 12 | recomputed | +0.4662 | 5.0 | PASS |
-| `CP_profile_rms@Hdx16` | 16 | recomputed | +0.1752 | 5.0 | PASS |
-| `CP_profile_rms@Hdx8` | 8 | recomputed | +1.0527 | 5.0 | PASS |
+| `CP_profile_rms@Hdx12` | 12 | recomputed | +0.4158 | 5.0 | PASS |
+| `CP_profile_rms@Hdx16` | 16 | recomputed | +0.1609 | 5.0 | PASS |
+| `CP_profile_rms@Hdx8` | 8 | recomputed | +0.8840 | 5.0 | PASS |
 | `CP_tau_bottom@Hdx12` | 12 | recomputed | -1.8145 | 5.0 | PASS |
 | `CP_tau_bottom@Hdx16` | 16 | recomputed | -1.3388 | 5.0 | PASS |
 | `CP_tau_bottom@Hdx8` | 8 | recomputed | -0.2845 | 5.0 | PASS |
@@ -101,14 +101,15 @@ Table 2 — binding of the stored summaries to the raw rows:
 
 | functional | stored [%] | recomputed [%] | rel. diff | status |
 |---|---|---|---|---|
-| `CP_profile_rms@Hdx8` | +0.8840 | +1.0527 | 19.08% | known (pinned) |
+| -- | -- | -- | -- | -- |
 
 Table 3 — pinned artifacts:
 
 | artifact | sha256 |
 |---|---|
 | `benchmarks/case_poiseuille/out/audit_independent.json` | `3811fe14e7dbb410…` |
-| `benchmarks/case_poiseuille/out/combined.json` | `cbb05f4eca58a8b4…` |
+| `benchmarks/case_poiseuille/out/combined.json` | `e73d06b0b5089b37…` |
+| `benchmarks/case_poiseuille/out/legs_row_audit.json` | `a03ca47a87df41d2…` |
 | `benchmarks/case_poiseuille/out/r1_rung_12.json` | `8de2c974531586bc…` |
 | `benchmarks/case_poiseuille/out/r1_rung_16.json` | `cb6fe15ce60fe263…` |
 | `benchmarks/case_poiseuille/out/r1_rung_8.json` | `5deab5e1159f179d…` |
@@ -140,12 +141,10 @@ error-vs-tolerance chart rather than a field contour.
   the mismatch grows or a new one appears; the correct fix is to regenerate the
   combined artifact with one normalisation.
 * The record does **not** re-run the solver: it re-derives functionals from
-  committed raw data. Reproducibility of the *integration* was attempted
-  separately -- `run.py --constant-rung 8` was submitted to the cluster queue
-  (job `cj4283`, 1 core, 1800 s wall) and was still **queued** when this mission
-  closed, so it is reported as `not_run`, not as passed.
+  committed raw data. Reproducibility of the *integration* is a separate question
+  (see §6 for what was and was not run in this mission).
 * `basis = stored` entries are weaker evidence by construction; they are counted
-  separately (20 of 53) and never presented as
+  separately (20 of 55) and never presented as
   recomputed.
 * The two failing rungs of the combined case are an honest FAIL carried through
   from the study; this record deliberately does not re-grade them to the finest

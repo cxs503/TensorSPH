@@ -65,7 +65,11 @@ TOL_PCT = 5.0          # anchor tolerance: < 5 %
 # unaffected -- but the published convergence trend mixes two gauges.  The test
 # pins the size of the mismatch so it cannot silently grow, and any *new*
 # violation fails.
-KNOWN_BINDING_EXCEPTIONS = {"CP_profile_rms@Hdx8": 0.20}
+# the rung-8 gauge mismatch (stored value normalised by U_w while rungs 12/16
+# used max|u_a| over their rows) was repaired at root: ``combined.py`` and
+# ``rebase_gauge.py`` now normalise by one closed-form continuum gauge (== U_w
+# here), so nothing is expected to need an exception any more
+KNOWN_BINDING_EXCEPTIONS: dict[str, float] = {}
 BIND_RTOL = 1e-6       # raw-recompute vs stored summary must agree to this
 INTERIOR_BAND = (0.15, 0.85)
 
@@ -73,6 +77,24 @@ INTERIOR_BAND = (0.15, 0.85)
 # --------------------------------------------------------------------------- #
 # small independent numerics
 # --------------------------------------------------------------------------- #
+def gauge_scale(g: float, wall_speed: float, height: float, nu: float) -> float:
+    """Continuum gauge of the profile-error gates (closed form, row independent).
+
+    ``max|u_a|`` over ``0 <= y <= H`` for the Couette-Poiseuille profile: the
+    endpoints ``u(0)=0``, ``u(H)=U_w`` and the parabola vertex
+    ``y* = H/2 + nu U_w/(g H)``.  Equals ``U_w`` for the combined configuration
+    (the predeclared C1 normaliser) and ``g H^2/(8 nu)`` for a static-wall
+    Poiseuille leg, so one declaration serves every configuration.
+    """
+    cands = [0.0, abs(wall_speed)]
+    if g != 0.0:
+        y_star = 0.5 * height + nu * wall_speed / (g * height)
+        if 0.0 < y_star < height:
+            cands.append(abs(g * y_star * (height - y_star) / (2.0 * nu)
+                             + wall_speed * y_star / height))
+    return max(cands)
+
+
 def sha256(path: Path) -> str:
     h = hashlib.sha256()
     h.update(path.read_bytes())
@@ -294,13 +316,14 @@ def conformance_combined(artifacts, recs, notes):
     for run in d["runs"]:
         rung = run["resolution_H_over_dx"]
         rows = run["rows"]
-        scale = max(abs(r["u_analytic"]) for r in rows)
+        scale = gauge_scale(g, U_w, H, nu)
         rms_pct = 100.0 * rms([(r["u"] - r["u_analytic"]) / scale for r in rows])
         recs.append(_functional(
             f"CP_profile_rms@Hdx{rung}", "combined profile RMS", rms_pct, scale,
             rms_pct, TOL_PCT, "recomputed", rung=rung,
             stored=run["profile_rms_pct"],
-            note="normalised by max|analytic profile|"))
+            note=("normalised by the declared continuum gauge "
+                  "max|u_a| over 0<=y<=H (== U_w for this configuration)")))
         zc = zero_crossing(rows, "y", "u")
         zc_ana = ana["zero_crossing_y"]
         zc_pct = None if zc is None else 100.0 * abs(zc - zc_ana) / H
@@ -343,6 +366,38 @@ def conformance_combined(artifacts, recs, notes):
 # --------------------------------------------------------------------------- #
 # steady-window / drift / uncertainty: consistency of the declared gates
 # --------------------------------------------------------------------------- #
+def conformance_legs(artifacts, recs, notes):
+    """Leg records: measured rows usable, their analytic column is not.
+
+    ``legs[*].rows[].u_analytic`` stores the *combined* reference, so the leg
+    diagnostics (``profile_worst_row_pct``, ``tau_*_pct``) cannot be re-derived
+    from the committed file.  No gate reads the leg records, so this is recorded
+    as ``not_recomputable`` evidence rather than discovered later as a
+    "recomputation disagrees" surprise.
+    """
+    path = OUT / "legs_row_audit.json"
+    if not path.exists():
+        notes.append("legs_row_audit.json missing: leg diagnostic reproducibility unknown")
+        return
+    audit = json.loads(path.read_text())
+    artifacts[str(path.relative_to(REPO))] = sha256(path)
+    for name, a in (audit.get("legs") or {}).items():
+        recs.append({
+            "id": f"CP_leg_{name}_diagnostics",
+            "rung_H_over_dx": 8,
+            "quantity": "leg profile diagnostics from committed rows",
+            "value": a.get("own_reference_declared_gauge_pct"),
+            "reference": a.get("stored_profile_rms_pct"),
+            "error_percent": None,
+            "tolerance_percent": TOL_PCT,
+            "pass": None,
+            "basis": "not_recomputable",
+            "note": ("leg rows carry the combined analytic column (off by "
+                     f"{a.get('max_abs_column_minus_own_reference'):.4f} m/s); "
+                     "gate-free, quarantined in out/legs_row_audit.json"),
+        })
+
+
 def conformance_supporting(artifacts, recs, notes):
     for name, key in (("steady_window.json", "gates"),
                       ("steady_drift.json", "gates"),
@@ -402,6 +457,7 @@ def build() -> dict:
     conformance_r1(artifacts, recs, notes)
     conformance_r2(artifacts, recs, notes)
     conformance_combined(artifacts, recs, notes)
+    conformance_legs(artifacts, recs, notes)
     conformance_supporting(artifacts, recs, notes)
     conformance_independent_audit(artifacts, recs, notes)
 
@@ -420,6 +476,8 @@ def build() -> dict:
             "n_functionals": len(recs),
             "n_recomputed_from_raw": sum(1 for r in recs if r["basis"] == "recomputed"),
             "n_stored": sum(1 for r in recs if r["basis"] == "stored"),
+            "n_not_recomputable": sum(1 for r in recs
+                                      if r["basis"] == "not_recomputable"),
             "n_failed": sum(1 for r in recs if r["pass"] is False),
             "worst": None if worst is None else {
                 "id": worst["id"], "error_percent": worst["error_percent"],
