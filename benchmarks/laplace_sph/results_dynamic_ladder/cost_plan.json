@@ -1,0 +1,91 @@
+{
+ "calibration": {
+  "job": "dx8_nu01",
+  "n_particles": 780,
+  "steps": 120,
+  "wall_s": 283.63714385032654,
+  "threads": 8
+ },
+ "cost_exponent": 1.5,
+ "threads_now": 4,
+ "rows": [
+  {
+   "job": "dx8_nu01",
+   "role": "ladder",
+   "R_over_dx": 8.0,
+   "nu_factor": 0.01,
+   "steps": 120,
+   "n_particles": 780,
+   "record_present": true,
+   "estimated_wall_s": null,
+   "measured_wall_s": 283.63714385032654
+  },
+  {
+   "job": "dx12_nu01",
+   "role": "ladder",
+   "R_over_dx": 12.0,
+   "nu_factor": 0.01,
+   "steps": 120,
+   "n_particles": 1733,
+   "record_present": false,
+   "estimated_wall_s": 1878.663679613779,
+   "measured_wall_s": null
+  },
+  {
+   "job": "dx16_nu01",
+   "role": "ladder",
+   "R_over_dx": 16.0,
+   "nu_factor": 0.01,
+   "steps": 120,
+   "n_particles": 3090,
+   "record_present": false,
+   "estimated_wall_s": 4472.897172257444,
+   "measured_wall_s": null
+  },
+  {
+   "job": "dx24_nu01",
+   "role": "ladder",
+   "R_over_dx": 24.0,
+   "nu_factor": 0.01,
+   "steps": 120,
+   "n_particles": 6853,
+   "record_present": false,
+   "estimated_wall_s": 14773.122289145003,
+   "measured_wall_s": null
+  },
+  {
+   "job": "dx16_nu03",
+   "role": "nu_sweep",
+   "R_over_dx": 16.0,
+   "nu_factor": 0.003,
+   "steps": 120,
+   "n_particles": 3090,
+   "record_present": false,
+   "estimated_wall_s": 4472.897172257444,
+   "measured_wall_s": null
+  },
+  {
+   "job": "dx16_nu30",
+   "role": "nu_sweep",
+   "R_over_dx": 16.0,
+   "nu_factor": 0.03,
+   "steps": 120,
+   "n_particles": 3090,
+   "record_present": false,
+   "estimated_wall_s": 4472.897172257444,
+   "measured_wall_s": null
+  },
+  {
+   "job": "dx12_horizon",
+   "role": "horizon",
+   "R_over_dx": 12.0,
+   "nu_factor": 0.01,
+   "steps": 600,
+   "n_particles": 1733,
+   "record_present": false,
+   "estimated_wall_s": 9393.318398068895,
+   "measured_wall_s": null
+  }
+ ],
+ "total_wall_s": 39747.43302745033
+}
