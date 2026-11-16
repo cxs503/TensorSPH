@@ -1,3 +1,5 @@
+> **后续修正（m23211）**：本文档 3.2/3.3 节对 `x_couette_viscous_time_top_h16` 使用的`worsens_with_resolution: true`（14.20 % → 17.08 %）**不被数据支持**——H/dx=8 的读数取自该档位唯一的情形“无任何可采纳点，回退取最后一点”，与 H/dx=16 的稳态读数属不同可采纳性类别。裁定见 `docs/xval_method_selection_admissibility_matched_ladder_m23211.md`：类别 `trend_untestable`，排除结论改由“该档位任何终端时间都超 15 %（最好情形 16.02 %）”支撑。其余裁定不变。
+
 > **后续修正（m22957）**：本文档中 `resolution_attributable` 的两条裁定已被`docs/xval_method_selection_resolution_ladder_guard_m22957.md` 修正——一档配对不构成收敛证据。`x_transport_velocity_coarse` 现为 `resolution_window`（四位阶梯非单调，最细档 16.39% 重新超限），`x_couette_wall_shear` 现为`resolution_pair_only`（仅两档）。其余裁定不变，决策无泄漏、无变化。
 
 # 方法选择账本的两类开口：审计误报 + 超 15% 记录逐条裁定（m22787）
