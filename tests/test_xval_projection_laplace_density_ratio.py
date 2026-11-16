@@ -14,7 +14,13 @@ The gates were declared in ``scripts/xval_projection_laplace/density_ratio.py``
 (``GATES``) *before* the sweep ran and are re-stated here.  The one gate the
 measurement broke -- the 5 % band for ``R/dx >= 20`` at high contrast -- is
 recorded as a strict ``xfail``, not relaxed: the defect is registered, and the
-day it is fixed this test starts failing loudly.
+day it is fixed this test starts failing loudly.  It was fixed in round 4 by the
+rho-blind force-density operator (``poisson_weighting="force_density"``), and the
+last block of this file gates the *record* instead of the physics: the shipped
+figure, the interface-invariance control (which must be able to fail), the
+arm-explicit summary keys, and ``check_density_ratio_doc.py --check``, which
+compares every number in the document against this JSON at the precision it was
+printed with.
 """
 from __future__ import annotations
 
@@ -29,7 +35,12 @@ import torch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from tensorsph.laplace_isph import hex_block, laplace_isph_case  # noqa: E402
+from tensorsph.laplace_isph import (  # noqa: E402
+    cell_linked_pairs, hex_block, laplace_isph_case, smooth_indicator,
+)
+
+sys.path.insert(0, str(ROOT / "scripts" / "xval_projection_laplace"))
+import check_density_ratio_doc  # noqa: E402
 
 torch.set_num_threads(2)
 
@@ -217,3 +228,91 @@ def test_measurement_reproduced_live():
                                                                abs=1e-6)
     assert r["dp_flux_over_theory"] == pytest.approx(1.0 + row["flux_err_pct"] / 100.0,
                                                      abs=1e-9)
+
+
+# --------------------------------------------------------------------------- #
+# record integrity (m23102): the control must be able to fail, and the doc
+# must still agree with the JSON it cites
+# --------------------------------------------------------------------------- #
+def test_summary_resolution_keys_are_arm_explicit(payload):
+    """Every resolution map names its operator.
+
+    Adding the force-density arm silently re-pointed
+    ``resolution_err_pct_by_ratio`` from the ``density`` table of the doc to the
+    rho-blind one; a reader checking the record then compared two different
+    operators.  The arm-neutral key is gone on purpose (it fails loudly rather
+    than returning the wrong arm).
+    """
+    s = payload["summary"]
+    assert "resolution_err_pct_by_ratio" not in s
+    assert s["resolution_err_pct_by_ratio_density"]["1000"]["40.0"] == \
+        pytest.approx(-12.73214757, abs=1e-6)
+    assert s["resolution_err_pct_by_ratio_force_density"]["1000"]["40.0"] == \
+        pytest.approx(-0.93206560, abs=1e-6)
+
+
+def test_interface_control_is_not_vacuous(payload):
+    """The column the round-3 control reported was ``mass/(mass/area) == area``.
+
+    It returned 0.0 for every input, so "per-phase cell volume spread 0.0" was
+    an identity, not a measurement.  The rebuilt control is checked here on its
+    own three numbers: the cell volume must reproduce the analytic triangular
+    cell area, the measured mass ratio must be the ratio, and the colour field
+    must be invariant.
+    """
+    ctrl = payload["controls"]
+    area = 0.001 ** 2 * math.sqrt(3.0) / 2.0
+    assert ctrl["cell_area_analytic_m2"] == pytest.approx(area, rel=1e-15)
+    assert ctrl["cell_volume_rel_spread"] <= GATES["vol_phase_spread_max"]
+    assert ctrl["cell_volume_vs_analytic_ppm"] <= \
+        GATES["cell_volume_vs_analytic_ppm_max"]
+    assert ctrl["mass_ratio_measured"]["1000"] == pytest.approx(1000.0, rel=1e-12)
+    assert ctrl["color_max_abs_diff_max"] <= GATES["color_field_max_abs_diff_max"]
+    # ... and it is a *measurement*: the mean cell volume is the lattice constant
+    # recovered from ``mass``/density, not the area re-typed into the formula.
+    assert ctrl["cell_volume_mean_m2"] == pytest.approx(area, rel=1e-12)
+
+
+def test_interface_control_has_teeth():
+    """The wrong volume model must be caught, with 13 decades of margin.
+
+    If the density leaks into the cell volume (``vol = mass/rho0`` for both
+    phases -- the natural way to get this wrong), the Shepard colour field of a
+    1000:1 carrier moves by O(0.1), against a gate of 1e-12.  This is the test
+    the old control could not have passed for the negative: it had no response.
+    """
+    dx, h = 0.001, 1.3e-3
+    area = dx * dx * math.sqrt(3.0) / 2.0
+    pos, mass, liquid, _ = hex_block(0.02, dx, 0.012, 1000.0, rho_vapour=1.0)
+    pairs = cell_linked_pairs(pos, 2.0 * h)
+    vol_right = mass / (mass / area)
+    right = smooth_indicator(pos, liquid, vol_right, pairs, h)
+    wrong = smooth_indicator(pos, liquid, mass / 1000.0, pairs, h)
+    moved = float((wrong - right).abs().max())
+    assert moved > 1e-2, f"control blind to the density leak ({moved:.2e})"
+
+
+def test_figure_is_shipped():
+    """The artifact table advertises a figure; it has to be in the tree."""
+    fig = RESULTS / "density_ratio.png"
+    assert fig.exists(), "results/density_ratio.png missing"
+    assert fig.open("rb").read(8) == b"\x89PNG\r\n\x1a\n"
+    assert fig.stat().st_size > 20_000
+
+
+def test_doc_tables_match_the_measurement():
+    """Every number in the doc is re-derived from the JSON, at its own precision."""
+    problems = check_density_ratio_doc.check()
+    assert problems == [], "\n".join(problems)
+
+
+def test_doc_gate_catches_drift(tmp_path):
+    """The drift gate is only worth its runtime if it fails on a moved digit."""
+    doc = (ROOT / "docs" / "xval_projection_laplace_density_ratio.md").read_text()
+    drifted = doc.replace("| 1000 | 3.6298 |", "| 1000 | 3.6398 |", 1)
+    assert drifted != doc
+    bad = tmp_path / "drifted.md"
+    bad.write_text(drifted)
+    problems = check_density_ratio_doc.check(
+        json_path=check_density_ratio_doc.JSON_PATH, doc_path=bad)
+    assert any("table A" in p for p in problems), problems
