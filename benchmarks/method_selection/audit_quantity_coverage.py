@@ -164,15 +164,39 @@ def _couette_finest(doc: dict) -> dict:
     return max(doc["ladder"], key=lambda row: row["resolution_H_over_dx"])
 
 
+#: The Couette artefact defines its "interior" rows *by position in the channel*,
+#: not by index into the row list: ``profile_metrics`` in
+#: ``benchmarks/couette/run.py`` accumulates the interior L2 over
+#: ``0.15 <= y_over_H <= 0.85`` (and ``line_fit`` / ``make_doc.py`` use the same
+#: band).  A positional ``rows[1:-1]`` slice coincides with that band only when
+#: the resolution happens to place exactly one row outside it at each end -- true
+#: at H/dx = 8, false at H/dx = 16 (two rows outside at each end), which is why
+#: the independent recomputation of the H/dx = 16 design artefact used to
+#: disagree with the stored value (mission 22787).
+COUETTE_INTERIOR_LO = 0.15
+COUETTE_INTERIOR_HI = 0.85
+
+
+def _couette_interior_rows(doc: dict) -> list[dict]:
+    rows = _couette_finest(doc)["metrics"]["rows"]
+    band = [r for r in rows
+            if COUETTE_INTERIOR_LO <= float(r["y_over_H"]) <= COUETTE_INTERIOR_HI]
+    if not band:
+        raise ValueError(
+            f"no Couette row inside the declared interior band "
+            f"{COUETTE_INTERIOR_LO}..{COUETTE_INTERIOR_HI} of y/H")
+    return band
+
+
 def r_couette_l2(doc: dict) -> float:
     """``metrics.interior_l2``: RMS of the per-row relative error, *interior rows only*.
 
-    The artefact defines "interior" as every row except the two wall-adjacent ones
-    (``rows[0]`` and ``rows[-1]``); the recomputation follows that definition and
-    the all-row RMS is banked separately below, so the definition cannot hide the
-    wall-adjacent error.
+    The recomputation follows the artefact's own definition of "interior" (the
+    ``0.15 .. 0.85`` band of ``y/H``, see :data:`COUETTE_INTERIOR_LO`), not a
+    positional slice, and the all-row RMS is banked separately below, so the
+    definition cannot hide the wall-adjacent error.
     """
-    rows = _couette_finest(doc)["metrics"]["rows"][1:-1]
+    rows = _couette_interior_rows(doc)
     return math.sqrt(sum(float(r["rel_err"]) ** 2 for r in rows) / len(rows)) * 100.0
 
 
@@ -585,8 +609,10 @@ def audit() -> dict:
             "integrity_ok": None,
             "within_owner_tolerance": None,
             "own_gate_passed": None,
+            "registry_kind": None,
         }
         if record is not None:
+            row["registry_kind"] = record.get("kind")
             row["integrity_ok"] = (
                 abs(float(record["measured_pct"]) - recomputed)
                 <= INTEGRITY_RTOL * max(1.0, abs(recomputed))
@@ -657,6 +683,11 @@ def audit() -> dict:
         "integrity_failures": integrity_failures,
         "stored_vs_recomputed_mismatches": stored_mismatches,
         "records_over_owner_tolerance": [row["extractor"] for row in over_owner],
+        "records_over_owner_tolerance_by_kind": {
+            kind: [row["extractor"] for row in over_owner
+                   if row["registry_kind"] == kind]
+            for kind in ("accuracy", "robustness")
+        },
         "records_missing_own_gate": [row["extractor"] for row in own_gate_missed],
         "unbacked_gates": [dict(item) for item in UNBACKED_GATES],
         "artefact_verdicts": verdicts,
@@ -803,7 +834,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"coverage_complete={result['coverage_complete']} "
           f"gated={result['gated_quantities']} "
           f"integrity_failures={result['integrity_failures']} "
-          f"over_owner={result['records_over_owner_tolerance']}")
+          f"over_owner={result['records_over_owner_tolerance']} "
+          f"over_owner_by_kind={result['records_over_owner_tolerance_by_kind']}")
     print("wrote", OUT_JSON.relative_to(ROOT), OUT_MD.relative_to(ROOT), OUT_PNG.relative_to(ROOT))
     return 0
 
