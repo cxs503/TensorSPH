@@ -1,0 +1,22 @@
+{
+ "R_over_dx": 24.0,
+ "dx_m": 0.0008333333333333334,
+ "h_m": 0.0010833333333333335,
+ "n_particles": 6853,
+ "n_pairs": 60114,
+ "n_liquid": 2089,
+ "a_norm": 38.19079176781285,
+ "solenoidal_fraction": 0.48009001039354404,
+ "solenoidal_abs": 18.335017616746946,
+ "irrotational_abs": 33.50169704426961,
+ "irrotationality": 0.4800900103935523,
+ "adjointness_defect": 2.8391340497299e-16,
+ "reconstruction_defect": 1.778320285946364e-17,
+ "orthogonality": -1.7425154706775288e-15,
+ "cg_iterations": 3832,
+ "v_ref_m_per_s": 0.06,
+ "dt_s": 0.00042022018650230623,
+ "t_ref_s": 0.33333333333333337,
+ "umax_over_vref_predicted": 12.528793515864415,
+ "wall_s": 92.14258885383606
+}
