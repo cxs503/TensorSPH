@@ -1,0 +1,67 @@
+{
+ "axis": "deadrise_response",
+ "beta_deg": 30.0,
+ "case": "CASE-SPH-WEDGE-ENTRY-2D",
+ "config": {
+  "alpha_visc": 0.03,
+  "beta_deg": 30.0,
+  "c0_factor": 20.0,
+  "courant": 0.35,
+  "dx": 0.004,
+  "frames": 61,
+  "gap_jitter_dx": 0.2239137435296747,
+  "phase_x_dx": 0.2280171359446247,
+  "realisation_scale": 1.0,
+  "realisation_seed": 2,
+  "velocity": 1.0
+ },
+ "design": {
+  "bin_grid": [
+   6,
+   8,
+   10,
+   12,
+   16,
+   20,
+   30
+  ],
+  "c0_factor": 20.0,
+  "dx": 0.004,
+  "frame_count": "61",
+  "gate": 0.15,
+  "statistic": "by_frames[\"61\"].resolution_band.peak_median"
+ },
+ "environment": {
+  "platform": "Linux-6.6.52-1.7.lns23.loongarch64-loongarch64-with-glibc2.38",
+  "python": "3.11.6",
+  "threads": 4,
+  "torch": "2.7.1"
+ },
+ "observed": {
+  "judgeable": null,
+  "n_bins_used": [
+   6,
+   8,
+   10,
+   12,
+   16,
+   20
+  ],
+  "peak_median": 8.675697592743056,
+  "spread_rel": 0.11857644735802476
+ },
+ "realisation": {
+  "gap_jitter_dx": 0.2239137435296747,
+  "phase_x_dx": 0.2280171359446247,
+  "seed": 2
+ },
+ "reference": {
+  "C": 2.720699046351327,
+  "cp_com": 6.92,
+  "cp_eim": 6.9,
+  "cp_wagner": 8.402203300817021
+ },
+ "script": "benchmarks/case_sph_wedge_entry_2d/deadrise_response.py",
+ "steps": 352,
+ "wall_seconds": 15.8
+}
