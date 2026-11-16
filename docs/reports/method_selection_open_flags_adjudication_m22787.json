@@ -81,7 +81,7 @@
       "artifact": "benchmarks/couette/out/results.json",
       "audit_catalogue": true,
       "banked_pct": 32.64941126108171,
-      "class": "resolution_attributable",
+      "class": "resolution_pair_only",
       "decision_linkage": {
         "endorsed_within_standard": [],
         "excluded_by": [
@@ -96,10 +96,45 @@
         "strict_modifier": [],
         "strict_primary": []
       },
+      "downgrades": [
+        "resolution_pair_only: only 2 rung(s) committed: a pair is consistent with convergence but cannot demonstrate it"
+      ],
       "evidence": [
+        "resolution ladder (2 rungs, H/dx): only 2 rung(s) committed: a pair is consistent with convergence but cannot demonstrate it",
         "same quantity at H/dx=16.0: 0.48% <= 15.0% (record x_couette_wall_shear_design)"
       ],
       "extractor": "x_couette_wall_shear",
+      "ladder_guard": {
+        "class": "resolution_pair_only",
+        "details": "the only committed multi-rung artefact is the design-time run (H/dx = 8, 16); the over-tolerance record comes from a different artefact (benchmarks/couette/out/results.json) that has a single rung at H/dx = 8, and the two artefacts stop at different terminal times, so their shared rung is deliberately not merged. An H/dx = 32 rung is the missing evidence that would make this a trend",
+        "finest_pct": 0.47810226678850043,
+        "finest_rung": 16.0,
+        "finest_within_standard": true,
+        "method": "wcsph_wall_no_slip",
+        "monotone": true,
+        "n_rungs": 2,
+        "parameter": "H/dx",
+        "passing_rungs": [
+          8.0,
+          16.0
+        ],
+        "quantity": "bottom-wall shear error vs the analytic Couette value [%]",
+        "reason": "only 2 rung(s) committed: a pair is consistent with convergence but cannot demonstrate it",
+        "refinement": "increasing",
+        "reversals": [],
+        "rungs": {
+          "16": 0.47810226678850043,
+          "8": 4.338367283344287
+        },
+        "sources": [
+          "benchmarks/couette/out_design/results.json"
+        ],
+        "tolerance_pct": 15.0,
+        "window": {
+          "max": 16.0,
+          "min": 8.0
+        }
+      },
       "method": "wcsph_wall_no_slip",
       "own_gate_passed": false,
       "own_gate_pct": 5.0,
@@ -270,7 +305,7 @@
       "artifact": "docs/xval_sphinx_tvc/data/grid_dx004.json",
       "audit_catalogue": true,
       "banked_pct": 16.96262081604608,
-      "class": "resolution_attributable",
+      "class": "resolution_window",
       "decision_linkage": {
         "endorsed_within_standard": [],
         "excluded_by": [
@@ -285,10 +320,62 @@
         "strict_modifier": [],
         "strict_primary": []
       },
+      "downgrades": [
+        "resolution_window: 4 rungs; the pass covers only the measured window, not the refinement sequence: error rises under refinement (0.03->0.02: +1.83 pp, 0.02->0.01: +3.91 pp); finest rung 0.01 measures 16.39% > 15%"
+      ],
       "evidence": [
+        "resolution ladder (4 rungs, dx [m]): 4 rungs; the pass covers only the measured window, not the refinement sequence: error rises under refinement (0.03->0.02: +1.83 pp, 0.02->0.01: +3.91 pp); finest rung 0.01 measures 16.39% > 15%",
         "same quantity at dx [m]=0.03: 10.81% <= 15.0% (record x_transport_velocity)"
       ],
       "extractor": "x_transport_velocity_coarse",
+      "ladder_guard": {
+        "class": "resolution_window",
+        "details": "the pass at dx = 0.02/0.03 m is a calibrated window: the coefficient alpha = 0.10 is not resolution independent (docs/xval_sphinx_tvc/RESOLUTION_LADDER.md sections 2-3)",
+        "finest_pct": 16.38573465320491,
+        "finest_rung": 0.01,
+        "finest_within_standard": false,
+        "method": "transport_velocity_correction",
+        "monotone": false,
+        "n_rungs": 4,
+        "parameter": "dx [m]",
+        "passing_rungs": [
+          0.03,
+          0.02
+        ],
+        "quantity": "front-position mean relative error Z/a vs Martin & Moyce (1952) digitised points [%]",
+        "reason": "4 rungs; the pass covers only the measured window, not the refinement sequence: error rises under refinement (0.03->0.02: +1.83 pp, 0.02->0.01: +3.91 pp); finest rung 0.01 measures 16.39% > 15%",
+        "refinement": "decreasing",
+        "reversals": [
+          {
+            "coarse_pct": 10.646706528059385,
+            "coarse_rung": 0.03,
+            "fine_pct": 12.480203376603916,
+            "fine_rung": 0.02,
+            "increase_pp": 1.8334968485445309
+          },
+          {
+            "coarse_pct": 12.480203376603916,
+            "coarse_rung": 0.02,
+            "fine_pct": 16.38573465320491,
+            "fine_rung": 0.01,
+            "increase_pp": 3.9055312766009944
+          }
+        ],
+        "rungs": {
+          "0.01": 16.38573465320491,
+          "0.02": 12.480203376603916,
+          "0.03": 10.646706528059385,
+          "0.04": 17.059208092684724
+        },
+        "sources": [
+          "docs/xval_sphinx_tvc/data/ladder_dense.json"
+        ],
+        "tolerance_pct": 15.0,
+        "window": {
+          "max": 0.03,
+          "min": 0.02
+        }
+      },
       "method": "transport_velocity_correction",
       "own_gate_passed": false,
       "own_gate_pct": 15.0,
@@ -348,8 +435,11 @@
     "reading_mobility": [
       "x_couette_viscous_time_mobility_h8"
     ],
-    "resolution_attributable": [
-      "x_couette_wall_shear",
+    "resolution_attributable": [],
+    "resolution_pair_only": [
+      "x_couette_wall_shear"
+    ],
+    "resolution_window": [
       "x_transport_velocity_coarse"
     ]
   },
@@ -379,5 +469,86 @@
   ],
   "owner_tolerance_pct": 15.0,
   "registry_records": 30,
+  "resolution_ladder_guard": {
+    "transport_velocity_correction": {
+      "class": "resolution_window",
+      "details": "the pass at dx = 0.02/0.03 m is a calibrated window: the coefficient alpha = 0.10 is not resolution independent (docs/xval_sphinx_tvc/RESOLUTION_LADDER.md sections 2-3)",
+      "finest_pct": 16.38573465320491,
+      "finest_rung": 0.01,
+      "finest_within_standard": false,
+      "method": "transport_velocity_correction",
+      "monotone": false,
+      "n_rungs": 4,
+      "parameter": "dx [m]",
+      "passing_rungs": [
+        0.03,
+        0.02
+      ],
+      "quantity": "front-position mean relative error Z/a vs Martin & Moyce (1952) digitised points [%]",
+      "reason": "4 rungs; the pass covers only the measured window, not the refinement sequence: error rises under refinement (0.03->0.02: +1.83 pp, 0.02->0.01: +3.91 pp); finest rung 0.01 measures 16.39% > 15%",
+      "refinement": "decreasing",
+      "reversals": [
+        {
+          "coarse_pct": 10.646706528059385,
+          "coarse_rung": 0.03,
+          "fine_pct": 12.480203376603916,
+          "fine_rung": 0.02,
+          "increase_pp": 1.8334968485445309
+        },
+        {
+          "coarse_pct": 12.480203376603916,
+          "coarse_rung": 0.02,
+          "fine_pct": 16.38573465320491,
+          "fine_rung": 0.01,
+          "increase_pp": 3.9055312766009944
+        }
+      ],
+      "rungs": {
+        "0.01": 16.38573465320491,
+        "0.02": 12.480203376603916,
+        "0.03": 10.646706528059385,
+        "0.04": 17.059208092684724
+      },
+      "sources": [
+        "docs/xval_sphinx_tvc/data/ladder_dense.json"
+      ],
+      "tolerance_pct": 15.0,
+      "window": {
+        "max": 0.03,
+        "min": 0.02
+      }
+    },
+    "wcsph_wall_no_slip": {
+      "class": "resolution_pair_only",
+      "details": "the only committed multi-rung artefact is the design-time run (H/dx = 8, 16); the over-tolerance record comes from a different artefact (benchmarks/couette/out/results.json) that has a single rung at H/dx = 8, and the two artefacts stop at different terminal times, so their shared rung is deliberately not merged. An H/dx = 32 rung is the missing evidence that would make this a trend",
+      "finest_pct": 0.47810226678850043,
+      "finest_rung": 16.0,
+      "finest_within_standard": true,
+      "method": "wcsph_wall_no_slip",
+      "monotone": true,
+      "n_rungs": 2,
+      "parameter": "H/dx",
+      "passing_rungs": [
+        8.0,
+        16.0
+      ],
+      "quantity": "bottom-wall shear error vs the analytic Couette value [%]",
+      "reason": "only 2 rung(s) committed: a pair is consistent with convergence but cannot demonstrate it",
+      "refinement": "increasing",
+      "reversals": [],
+      "rungs": {
+        "16": 0.47810226678850043,
+        "8": 4.338367283344287
+      },
+      "sources": [
+        "benchmarks/couette/out_design/results.json"
+      ],
+      "tolerance_pct": 15.0,
+      "window": {
+        "max": 16.0,
+        "min": 8.0
+      }
+    }
+  },
   "schema_version": "1.0"
 }

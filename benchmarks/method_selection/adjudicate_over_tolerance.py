@@ -27,10 +27,14 @@ So this script classifies each over-tolerance record from data only:
     reading across a sweep, not the error against a reference.  Comparing a spread
     with an accuracy standard is a category error, and the record must not be
     counted among accuracy failures.
-``resolution_attributable``
+``resolution_attributable`` / ``resolution_window`` / ``resolution_pair_only``
     The same quantity, same method, measured on a finer rung of the same
-    benchmark, is within the standard.  The over-tolerance value is then a
-    discretisation symptom that the registry's missing resolution column hides.
+    benchmark, is within the standard *and* the full committed resolution ladder
+    holds up (``resolution_ladder_guard``): non-increasing error under
+    refinement and the finest rung inside the standard.  When the ladder
+    regresses or runs out of rungs the pair is downgraded to
+    ``resolution_window`` (the pass is a calibrated-window property, not
+    convergence) or ``resolution_pair_only`` (monotonicity untested).
 ``genuine_accuracy_failure``
     Neither of the above: an accuracy claim against an analytic reference that
     really is above 15 %.
@@ -68,7 +72,8 @@ BENCH_DIR = ROOT / "benchmarks" / "method_selection"
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(BENCH_DIR))
 
-import audit_quantity_coverage as aqc  # noqa: E402  (the independent recomputations)
+import audit_quantity_coverage as aqc
+import resolution_ladder_guard as rlg  # noqa: E402  (the independent recomputations)
 
 AUDIT_JSON = ROOT / "docs" / "reports" / "method_selection_coverage_audit_m20432.json"
 REGISTRY_JSON = ROOT / "docs" / "reports" / "method_selection_registry.json"
@@ -219,7 +224,24 @@ def classify(over_record: dict, registry_by_extractor: dict[str, dict],
         fine_record = registry_by_extractor[pair["fine"]]
         entry["problems"].extend(
             _check_pairing(pair, registry_by_extractor[extractor], fine_record))
-        entry["class"] = "resolution_attributable"
+        guard = rlg.classify_method(over_record["method"])
+        if guard is None:
+            entry["class"] = "resolution_attributable"
+            entry["evidence"].append(
+                "no resolution ladder is declared for this method: the class "
+                "rests on the single pair only")
+        else:
+            entry["class"] = guard["class"]
+            entry["ladder_guard"] = guard
+            entry["evidence"].append(
+                f"resolution ladder ({guard['n_rungs']} rungs, "
+                f"{guard['parameter']}): {guard['reason']}")
+            if guard["class"] != "resolution_attributable":
+                # Not a data contradiction (``problems`` stays empty): the pair
+                # is real, the *label* is downgraded.  Kept in its own channel so
+                # a reader cannot mistake the record for a convergence pass.
+                entry.setdefault("downgrades", []).append(
+                    f"{guard['class']}: {guard['reason']}")
         entry["pair"] = {
             "fine_extractor": pair["fine"],
             "parameter": pair["parameter"],
@@ -374,7 +396,8 @@ def decision_linkage(method: str, strict: dict, banked_pct: float) -> dict:
 # Driver
 # --------------------------------------------------------------------------- #
 #: Every class the adjudication may hand out, in report order.
-ADJUDICATION_CLASSES = ("resolution_attributable", "reading_mobility",
+ADJUDICATION_CLASSES = ("resolution_attributable", "resolution_window",
+                        "resolution_pair_only", "reading_mobility",
                         "genuine_accuracy_failure", "documented_trap_arm")
 
 
@@ -506,6 +529,10 @@ def build() -> dict:
         "decision_leaks": leaks,
         "endorsed_with_trap_arm": endorsed_with_trap_arm,
         "endorsed_with_spread": endorsed_with_spread,
+        "resolution_ladder_guard": {
+            spec["method"]: rlg.classify_method(spec["method"])
+            for spec in rlg.LADDERS
+        },
         "adjudications": adjudications,
     }
 
@@ -562,11 +589,25 @@ def render_markdown(result: dict) -> str:
             f"{entry['registry_kind']} | {entry['banked_pct']:.3g} | "
             f"{recomputed} | **{entry['class']}** | {role} |")
     lines.append("")
-    lines.append("## 分辨率响应（resolution-attributable 的证据）\n")
+    lines.append("## 分辨率响应（resolution_* 类别的证据）\n")
+    lines.append(
+        "一个「粗档 > 15% ≥ 细档」的配对只是与收敛相容，不是收敛的证据。"
+        "`resolution_ladder_guard.py` 从仓库自带的完整分辨率阶梯重新判级："
+        "阶梯 ≥3 档、误差随加密不增、最细档在标准内，才给 `resolution_attributable`；"
+        "阶梯回落或最细档重新超限给 `resolution_window`（通过区间是标定窗口的性质，"
+        "不是收敛）；档数不足给 `resolution_pair_only`（单调性未测）。\n")
     for entry in result["adjudications"]:
-        if entry["class"] != "resolution_attributable":
+        if entry["class"] not in ("resolution_attributable", "resolution_window",
+                                  "resolution_pair_only"):
             continue
         pair = entry["pair"]
+        guard = entry.get("ladder_guard")
+        if guard:
+            lines.append(f"- `{entry['extractor']}` → **{entry['class']}**："
+                         f"阶梯 {guard['rungs']}（{guard['parameter']}），"
+                         f"最细档 {guard['finest_pct']:.2f}%，"
+                         f"窗口 {guard['window']}")
+            lines.append(f"  - {guard['reason']}")
         lines.append(f"### `{entry['extractor']}` vs `{pair['fine_extractor']}`\n")
         lines.append(f"- 参数：{pair['parameter']}，粗 `{pair['coarse_value']:g}` → "
                      f"细 `{pair['fine_value']:g}`")
@@ -589,7 +630,8 @@ def render_markdown(result: dict) -> str:
         "- `reading_mobility`：登记记录的 `kind` 必须是 `robustness`，且其值是"
         "同一读数的极差（本脚本从 sweeps 产物重算并比对）。")
     lines.append(
-        "- `resolution_attributable`：配对记录必须是同一方法的同一量，且粗档 > 15% ≥ 细档；"
+        "- `resolution_attributable` / `resolution_window` / `resolution_pair_only`："
+        "配对记录必须是同一方法的同一量，且粗档 > 15% ≥ 细档，再由完整阶梯定级；"
         "配对不成立时脚本把问题写进 `problems`（测试会因此变红）。")
     lines.append(
         "- `genuine_accuracy_failure`：没有更细档的同类记录落在 15% 以内；"
@@ -601,6 +643,8 @@ def render_figure(result: dict, path: Path) -> None:
     entries = result["adjudications"]
     colors = {
         "resolution_attributable": "#1f77b4",
+        "resolution_window": "#ff7f0e",
+        "resolution_pair_only": "#8c564b",
         "reading_mobility": "#9467bd",
         "genuine_accuracy_failure": "#d62728",
         "documented_trap_arm": "#2ca02c",
