@@ -38,11 +38,11 @@
    "steady_drift": 0.03544607381972969,
    "interior_l2_pct": 2.989112839512717,
    "flux_ratio": 1.0390664101578293,
-   "secant1_sliding_pct": 27.523791790008534,
-   "secant1_fixed_pct": 4.338367283344291,
-   "fit4_sliding_pct": 2.8319381177425385,
-   "fit8_sliding_pct": 8.498001506640806,
-   "interior_slope_pct": 6.626416529927948,
+   "secant1_sliding_pct": -27.523791790008534,
+   "secant1_fixed_pct": -4.338367283344291,
+   "fit4_sliding_pct": -2.8319381177425385,
+   "fit8_sliding_pct": -8.498001506640806,
+   "interior_slope_pct": -6.626416529927948,
    "gradient_over_analytic_per_spacing": [
     0.9566163271665573,
     0.9710066020488739,
@@ -86,12 +86,7 @@
      "u_over_U": 0.8965584635734558
     }
    ],
-   "wall_clock_s": 19.162809133529663,
-   "secant1_sliding_signed_pct": -27.523791790008534,
-   "secant1_fixed_signed_pct": -4.338367283344291,
-   "fit4_sliding_signed_pct": -2.8319381177425385,
-   "fit8_sliding_signed_pct": -8.498001506640806,
-   "interior_slope_signed_pct": -6.626416529927948
+   "wall_clock_s": 17.09868884086609
   },
   {
    "resolution_H_over_dx": 8,
@@ -265,6 +260,5 @@
    "fit8_sliding_signed_pct": -13.303210621788386,
    "interior_slope_signed_pct": -4.112325890080914
   }
- ],
- "sign_convention": "all *_pct readings are |1 - slope/slope_exact| in percent; the signed ratio-1 value is kept in *_signed_pct"
+ ]
 }
