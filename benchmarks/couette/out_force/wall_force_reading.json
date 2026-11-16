@@ -1,0 +1,450 @@
+{
+  "case": "plane_couette_channel",
+  "anchor": "XVAL-SPH-METHOD-SELECTION-2026-11-12",
+  "generated_by": "benchmarks/couette/wall_force_reading.py",
+  "quantity": "tangential force the fluid exerts on each wall, per unit depth, divided by the period length: |1 - tau_force/tau_exact| [%], tau_exact = rho nu U/H = 40.000 Pa",
+  "setup": {
+    "height_m": 0.1,
+    "viscosity_m2_s": 0.02,
+    "wall_speed_m_s": 0.2,
+    "sound_speed_m_s": 20.0,
+    "wall_friction": 1.0,
+    "columns": 12,
+    "wall_layers": 3,
+    "viscous_times_by_arm": "per arm (1.2 primary grid, 3.6 ladder point)",
+    "averaging_fraction": 0.2,
+    "banked_records": {
+      "H_over_dx_8": 14.203286170959451,
+      "H_over_dx_16": 17.076468467712292
+    }
+  },
+  "recipe": {
+    "periodic3": "wall lattice tiled in x with the same three non-overlapping copies as the fluid cloud; loads summed over the x in [0,L) copy, time-averaged over the last 20 % of the run",
+    "legacy": "single wall band extended 3 dx past both x ends with the x in [0,L) filter of diag_wall_force.py (reproduction only)"
+  },
+  "verdict": {
+    "gates": {
+      "third_law_residual_pct": 1.0,
+      "copy_invariance_pct": 1.0,
+      "wall_force_pct": 5.0,
+      "owner_tolerance_pct": 15.0
+    },
+    "periodic3": [
+      {
+        "resolution_H_over_dx": 8,
+        "top_pct": -10.807171617420085,
+        "bottom_pct": -21.94408422240075,
+        "third_law_pct": -0.15294820090457997,
+        "copy_invariance_pct": 1.5827104005064108,
+        "force_gate": false,
+        "owner_standard": false,
+        "third_law_ok": true,
+        "copy_invariance_ok": false,
+        "bookkeeping_ok": false
+      },
+      {
+        "resolution_H_over_dx": 8,
+        "top_pct": -9.786341454530255,
+        "bottom_pct": -17.711223245232034,
+        "third_law_pct": -0.17143083175951565,
+        "copy_invariance_pct": 1.3077295993221583,
+        "force_gate": false,
+        "owner_standard": false,
+        "third_law_ok": true,
+        "copy_invariance_ok": false,
+        "bookkeeping_ok": false
+      },
+      {
+        "resolution_H_over_dx": 16,
+        "top_pct": -7.043683561206193,
+        "bottom_pct": -10.329513061983487,
+        "third_law_pct": 0.06877956034862978,
+        "copy_invariance_pct": 1.3172383338563165,
+        "force_gate": false,
+        "owner_standard": true,
+        "third_law_ok": true,
+        "copy_invariance_ok": false,
+        "bookkeeping_ok": false
+      }
+    ],
+    "legacy_third_law_pct": [
+      -10.43990222903771,
+      -8.863132666079654
+    ],
+    "all_bookkeeping_ok": false,
+    "all_third_law_ok": true,
+    "all_under_owner_standard": false,
+    "all_under_force_gate": false
+  },
+  "arms": [
+    {
+      "layout": "legacy",
+      "resolution_H_over_dx": 8,
+      "viscous_times": 1.2,
+      "steps": 2462,
+      "dt": 0.00024375,
+      "n_fluid": 96,
+      "n_wall": 108,
+      "samples": 492,
+      "averaged_span_s": 0.11992499999999999,
+      "length_m": 0.15000000000000002,
+      "tau_exact_pa": 40.0,
+      "tau_top_force_pa": 27.866953314158323,
+      "tau_bottom_force_pa": 31.791877391215582,
+      "err_top_force_pct": -30.33261671460419,
+      "err_bottom_force_pct": -20.52030652196104,
+      "third_law_residual_pct": -10.43990222903771,
+      "copy_invariance_pct": 35.91347225851699,
+      "tau_top_all_pa": 15.188372458222757,
+      "tau_bottom_all_pa": 17.426488487808786,
+      "net_force_on_fluid_measured_pa": -59.6588307053739,
+      "err_top_secant_pct": -27.523791790008534,
+      "err_bottom_secant_pct": -4.338367283344291,
+      "interior_l2_pct": 2.989112839512717,
+      "flux_ratio": 1.0390664101578293,
+      "profile": [
+        {
+          "y_over_H": 0.0625,
+          "u_over_U": 0.10761338286101818
+        },
+        {
+          "y_over_H": 0.18750000000000003,
+          "u_over_U": 0.22719042375683784
+        },
+        {
+          "y_over_H": 0.3125,
+          "u_over_U": 0.3485662490129471
+        },
+        {
+          "y_over_H": 0.4375,
+          "u_over_U": 0.4720216989517212
+        },
+        {
+          "y_over_H": 0.5625,
+          "u_over_U": 0.5930529162287712
+        },
+        {
+          "y_over_H": 0.6875,
+          "u_over_U": 0.7052993029356003
+        },
+        {
+          "y_over_H": 0.8125000000000001,
+          "u_over_U": 0.8059632033109665
+        },
+        {
+          "y_over_H": 0.9375000000000001,
+          "u_over_U": 0.8965584635734558
+        }
+      ],
+      "wall_clock_s": 21.04996371269226
+    },
+    {
+      "layout": "legacy",
+      "resolution_H_over_dx": 16,
+      "viscous_times": 1.2,
+      "steps": 4923,
+      "dt": 0.000121875,
+      "n_fluid": 192,
+      "n_wall": 108,
+      "samples": 984,
+      "averaged_span_s": 0.11992499999999999,
+      "length_m": 0.07500000000000001,
+      "tau_exact_pa": 40.0,
+      "tau_top_force_pa": 29.78728884119328,
+      "tau_bottom_force_pa": 34.679236531580685,
+      "err_top_force_pct": -25.531777897016795,
+      "err_bottom_force_pct": -13.30190867104829,
+      "third_law_residual_pct": -8.863132666079654,
+      "copy_invariance_pct": 38.88708725908153,
+      "tau_top_all_pa": 16.204822767717726,
+      "tau_bottom_all_pa": 19.12440162794807,
+      "net_force_on_fluid_measured_pa": -64.46652537277396,
+      "err_top_secant_pct": -20.867085456848045,
+      "err_bottom_secant_pct": -0.47810226678850487,
+      "interior_l2_pct": 2.932782292647436,
+      "flux_ratio": 1.0441549919778481,
+      "profile": [
+        {
+          "y_over_H": 0.03125,
+          "u_over_U": 0.06247451063245535
+        },
+        {
+          "y_over_H": 0.09375000000000001,
+          "u_over_U": 0.12467569671571255
+        },
+        {
+          "y_over_H": 0.15625,
+          "u_over_U": 0.18792124465107918
+        },
+        {
+          "y_over_H": 0.21875,
+          "u_over_U": 0.2514726482331753
+        },
+        {
+          "y_over_H": 0.28125,
+          "u_over_U": 0.3152799606323242
+        },
+        {
+          "y_over_H": 0.34375,
+          "u_over_U": 0.3790084272623062
+        },
+        {
+          "y_over_H": 0.40625000000000006,
+          "u_over_U": 0.44234711676836014
+        },
+        {
+          "y_over_H": 0.46875000000000006,
+          "u_over_U": 0.5047441646456718
+        },
+        {
+          "y_over_H": 0.53125,
+          "u_over_U": 0.5657458677887917
+        },
+        {
+          "y_over_H": 0.59375,
+          "u_over_U": 0.6248702481389046
+        },
+        {
+          "y_over_H": 0.65625,
+          "u_over_U": 0.6819762289524078
+        },
+        {
+          "y_over_H": 0.71875,
+          "u_over_U": 0.7371193915605545
+        },
+        {
+          "y_over_H": 0.7812500000000001,
+          "u_over_U": 0.790737196803093
+        },
+        {
+          "y_over_H": 0.84375,
+          "u_over_U": 0.8433989435434341
+        },
+        {
+          "y_over_H": 0.9062500000000001,
+          "u_over_U": 0.8960051089525223
+        },
+        {
+          "y_over_H": 0.96875,
+          "u_over_U": 0.9454631805419922
+        }
+      ],
+      "wall_clock_s": 53.10039305686951
+    },
+    {
+      "layout": "periodic3",
+      "resolution_H_over_dx": 8,
+      "viscous_times": 1.2,
+      "steps": 2462,
+      "dt": 0.00024375,
+      "n_fluid": 96,
+      "n_wall": 216,
+      "samples": 492,
+      "averaged_span_s": 0.11992499999999999,
+      "length_m": 0.15000000000000002,
+      "tau_exact_pa": 40.0,
+      "tau_top_force_pa": 35.67713135303197,
+      "tau_bottom_force_pa": 31.2223663110397,
+      "err_top_force_pct": -10.807171617420085,
+      "err_bottom_force_pct": -21.94408422240075,
+      "third_law_residual_pct": -0.15294820090457997,
+      "copy_invariance_pct": 1.5827104005064108,
+      "tau_top_all_pa": 35.0440471928294,
+      "tau_bottom_all_pa": 31.23538888674549,
+      "net_force_on_fluid_measured_pa": -66.89949766407167,
+      "err_top_secant_pct": -24.686312675476053,
+      "err_bottom_secant_pct": -10.824649035930655,
+      "interior_l2_pct": 2.783424437826817,
+      "flux_ratio": 1.0266473586671054,
+      "profile": [
+        {
+          "y_over_H": 0.0625,
+          "u_over_U": 0.11932061053812504
+        },
+        {
+          "y_over_H": 0.18750000000000003,
+          "u_over_U": 0.23078979924321175
+        },
+        {
+          "y_over_H": 0.3125,
+          "u_over_U": 0.34662287682294846
+        },
+        {
+          "y_over_H": 0.4375,
+          "u_over_U": 0.46488892287015915
+        },
+        {
+          "y_over_H": 0.5625,
+          "u_over_U": 0.581139475107193
+        },
+        {
+          "y_over_H": 0.6875,
+          "u_over_U": 0.6897407025098801
+        },
+        {
+          "y_over_H": 0.8125000000000001,
+          "u_over_U": 0.7899724692106247
+        },
+        {
+          "y_over_H": 0.9375000000000001,
+          "u_over_U": 0.8841145783662796
+        }
+      ],
+      "wall_clock_s": 24.022940397262573
+    },
+    {
+      "layout": "periodic3",
+      "resolution_H_over_dx": 8,
+      "viscous_times": 3.6,
+      "steps": 7385,
+      "dt": 0.00024375,
+      "n_fluid": 96,
+      "n_wall": 216,
+      "samples": 1477,
+      "averaged_span_s": 0.36001875,
+      "length_m": 0.15000000000000002,
+      "tau_exact_pa": 40.0,
+      "tau_top_force_pa": 36.0854634181879,
+      "tau_bottom_force_pa": 32.91551070190719,
+      "err_top_force_pct": -9.786341454530255,
+      "err_bottom_force_pct": -17.711223245232034,
+      "third_law_residual_pct": -0.17143083175951565,
+      "copy_invariance_pct": 1.3077295993221583,
+      "tau_top_all_pa": 35.562371578459036,
+      "tau_bottom_all_pa": 32.696732656148434,
+      "net_force_on_fluid_measured_pa": -69.0009741200951,
+      "err_top_secant_pct": -16.72295331954954,
+      "err_bottom_secant_pct": -23.234306275844585,
+      "interior_l2_pct": 2.199503750225769,
+      "flux_ratio": 0.9884617826901375,
+      "profile": [
+        {
+          "y_over_H": 0.0625,
+          "u_over_U": 0.118933180347085
+        },
+        {
+          "y_over_H": 0.18750000000000003,
+          "u_over_U": 0.21489029750227928
+        },
+        {
+          "y_over_H": 0.3125,
+          "u_over_U": 0.3198186680674553
+        },
+        {
+          "y_over_H": 0.4375,
+          "u_over_U": 0.4313189908862114
+        },
+        {
+          "y_over_H": 0.5625,
+          "u_over_U": 0.5486351251602173
+        },
+        {
+          "y_over_H": 0.6875,
+          "u_over_U": 0.6651363521814346
+        },
+        {
+          "y_over_H": 0.8125000000000001,
+          "u_over_U": 0.7755091041326523
+        },
+        {
+          "y_over_H": 0.9375000000000001,
+          "u_over_U": 0.8796054124832153
+        }
+      ],
+      "wall_clock_s": 62.75667071342468
+    },
+    {
+      "layout": "periodic3",
+      "resolution_H_over_dx": 16,
+      "viscous_times": 1.2,
+      "steps": 4923,
+      "dt": 0.000121875,
+      "n_fluid": 192,
+      "n_wall": 216,
+      "samples": 984,
+      "averaged_span_s": 0.11992499999999999,
+      "length_m": 0.07500000000000001,
+      "tau_exact_pa": 40.0,
+      "tau_top_force_pa": 37.18252657551752,
+      "tau_bottom_force_pa": 35.868194775206604,
+      "err_top_force_pct": -7.043683561206193,
+      "err_bottom_force_pct": -10.329513061983487,
+      "third_law_residual_pct": 0.06877956034862978,
+      "copy_invariance_pct": 1.3172383338563165,
+      "tau_top_all_pa": 36.655631241974994,
+      "tau_bottom_all_pa": 35.70210706035403,
+      "net_force_on_fluid_measured_pa": -73.05072135072413,
+      "err_top_secant_pct": -17.773127555847058,
+      "err_bottom_secant_pct": -0.7274731993675454,
+      "interior_l2_pct": 2.6713050390990882,
+      "flux_ratio": 1.0360419278731567,
+      "profile": [
+        {
+          "y_over_H": 0.03125,
+          "u_over_U": 0.06523298565298319
+        },
+        {
+          "y_over_H": 0.09375000000000001,
+          "u_over_U": 0.1272783149033785
+        },
+        {
+          "y_over_H": 0.15625,
+          "u_over_U": 0.18962541595101357
+        },
+        {
+          "y_over_H": 0.21875,
+          "u_over_U": 0.2521475590765476
+        },
+        {
+          "y_over_H": 0.28125,
+          "u_over_U": 0.3147614374756813
+        },
+        {
+          "y_over_H": 0.34375,
+          "u_over_U": 0.3772582858800888
+        },
+        {
+          "y_over_H": 0.40625000000000006,
+          "u_over_U": 0.4393082857131958
+        },
+        {
+          "y_over_H": 0.46875000000000006,
+          "u_over_U": 0.5004805698990822
+        },
+        {
+          "y_over_H": 0.53125,
+          "u_over_U": 0.5603110790252686
+        },
+        {
+          "y_over_H": 0.59375,
+          "u_over_U": 0.6184081360697746
+        },
+        {
+          "y_over_H": 0.65625,
+          "u_over_U": 0.6746222078800201
+        },
+        {
+          "y_over_H": 0.71875,
+          "u_over_U": 0.7290500402450562
+        },
+        {
+          "y_over_H": 0.7812500000000001,
+          "u_over_U": 0.7820645719766617
+        },
+        {
+          "y_over_H": 0.84375,
+          "u_over_U": 0.8341914415359497
+        },
+        {
+          "y_over_H": 0.9062500000000001,
+          "u_over_U": 0.8861016482114792
+        },
+        {
+          "y_over_H": 0.96875,
+          "u_over_U": 0.9374934434890747
+        }
+      ],
+      "wall_clock_s": 56.48011040687561
+    }
+  ]
+}
