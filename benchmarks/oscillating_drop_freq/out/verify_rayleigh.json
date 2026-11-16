@@ -1,0 +1,50 @@
+{
+  "quasi_static": [
+    {
+      "radius_over_dx": 12,
+      "eps": 0.02,
+      "mode": 2,
+      "n_particles": 451,
+      "q_amplitude": 0.0556446637877853,
+      "omega_sq_measured": 0.24507212018735172,
+      "omega_sq_exact": 3.4559999999999986,
+      "g_stiffness_ratio": 0.07091207181346985,
+      "freq_ratio": 0.2662932064726208,
+      "error_pct": -73.37067935273792,
+      "passes_gate": false,
+      "m_eff": 2.0029260503818813,
+      "f_eff": -0.027313813882695895
+    },
+    {
+      "radius_over_dx": 12,
+      "eps": 0.05,
+      "mode": 2,
+      "n_particles": 455,
+      "q_amplitude": 0.08565206871521897,
+      "omega_sq_measured": 0.2798830566486434,
+      "omega_sq_exact": 3.4559999999999986,
+      "g_stiffness_ratio": 0.08098468074324175,
+      "freq_ratio": 0.2845780749517463,
+      "error_pct": -71.54219250482537,
+      "passes_gate": false,
+      "m_eff": 2.0225230304900768,
+      "f_eff": -0.04848506036346658
+    }
+  ],
+  "meta": {
+    "wall_seconds": 2.13,
+    "ladder": [
+      12
+    ],
+    "gate_pct": 6.0,
+    "n_cases": 2,
+    "n_pass": 0,
+    "pass_rate": 0.0
+  },
+  "reference": {
+    "paper": "Rayleigh (1879), Proc. R. Soc. Lond. 29:71",
+    "formula": "\u03c9_m\u00b2 = \u03c3 \u00b7 m(m\u00b2\u22121) / (\u03c1\u2080 R\u00b3)",
+    "omega_m2": 1.8590320061795598,
+    "period_m2": 3.3798155633113436
+  }
+}
