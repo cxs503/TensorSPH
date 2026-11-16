@@ -115,7 +115,8 @@ def test_adjudication_covers_every_registry_record_over_the_standard(
 
 def test_every_record_has_a_known_class(adjudication):
     known = {"resolution_attributable", "resolution_window",
-             "resolution_pair_only", "reading_mobility",
+             "resolution_pair_only", "transient_reading",
+             "reading_window_time", "reading_mobility",
              "genuine_accuracy_failure", "documented_trap_arm"}
     assert {a["class"] for a in adjudication["adjudications"]} <= known
     for name, members in adjudication["classes"].items():

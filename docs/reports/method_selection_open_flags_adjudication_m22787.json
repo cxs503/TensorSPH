@@ -81,7 +81,7 @@
       "artifact": "benchmarks/couette/out/results.json",
       "audit_catalogue": true,
       "banked_pct": 32.64941126108171,
-      "class": "resolution_pair_only",
+      "class": "transient_reading",
       "decision_linkage": {
         "endorsed_within_standard": [],
         "excluded_by": [
@@ -97,10 +97,12 @@
         "strict_primary": []
       },
       "downgrades": [
-        "resolution_pair_only: only 2 rung(s) committed: a pair is consistent with convergence but cannot demonstrate it"
+        "resolution_pair_only: only 2 rung(s) committed: a pair is consistent with convergence but cannot demonstrate it",
+        "transient_reading overrides resolution_pair_only: at the record's own grid every longer terminal time measures less error and 3 of 4 are inside 15% (first pass at 1.2 H^2/nu: 4.34%); the over-tolerance value is a pre-steady reading, not a grid effect; no passing level cleared the steadiness gate"
       ],
       "evidence": [
         "resolution ladder (2 rungs, H/dx): only 2 rung(s) committed: a pair is consistent with convergence but cannot demonstrate it",
+        "terminal-time ladder at the record's own grid (H/dx=8, 4 levels): at the record's own grid every longer terminal time measures less error and 3 of 4 are inside 15% (first pass at 1.2 H^2/nu: 4.34%); the over-tolerance value is a pre-steady reading, not a grid effect; no passing level cleared the steadiness gate",
         "same quantity at H/dx=16.0: 0.48% <= 15.0% (record x_couette_wall_shear_design)"
       ],
       "extractor": "x_couette_wall_shear",
@@ -171,7 +173,46 @@
           }
         ]
       },
-      "registry_kind": "accuracy"
+      "registry_kind": "accuracy",
+      "transient_guard": {
+        "admissible_levels": [],
+        "class": "transient_reading",
+        "details": "the --quick artefact stops at t_end = 0.3 H^2/nu, a quarter of the DESIGN.md protocol; the time axis is swept at the record's own H/dx with the same estimator and gates",
+        "every_longer_level_below_record": true,
+        "extractor": "x_couette_wall_shear",
+        "levels": {
+          "0.6": 22.593489289283763,
+          "1.2": 4.338367283344291,
+          "2.4": 9.006215631961844,
+          "3.6": 9.549750387668631
+        },
+        "matched_protocol_resolution": {},
+        "method": "wcsph_wall_no_slip",
+        "n_levels": 4,
+        "passing_levels": [
+          "1.2",
+          "2.4",
+          "3.6"
+        ],
+        "passing_levels_steady": [],
+        "quantity": "bottom-wall shear |1 - tau_SPH/tau_exact| [%]",
+        "reason": "at the record's own grid every longer terminal time measures less error and 3 of 4 are inside 15% (first pass at 1.2 H^2/nu: 4.34%); the over-tolerance value is a pre-steady reading, not a grid effect; no passing level cleared the steadiness gate",
+        "record": {
+          "artifact": "benchmarks/couette/out/results.json",
+          "error_pct": 32.64941126108171,
+          "resolution_H_over_dx": 8.0,
+          "steady_drift": 0.05451178360024535,
+          "t_end": 0.15,
+          "viscous_times": 0.29999999999999993
+        },
+        "record_level_viscous_times": 0.29999999999999993,
+        "record_pct": 32.64941126108171,
+        "resolution_H_over_dx": 8.0,
+        "sources": [
+          "benchmarks/couette/out_design/viscous_time_convergence.json"
+        ],
+        "tolerance_pct": 15.0
+      }
     },
     {
       "artifact": "benchmarks/couette/out_design/viscous_time_convergence.json",
@@ -435,12 +476,14 @@
     "reading_mobility": [
       "x_couette_viscous_time_mobility_h8"
     ],
+    "reading_window_time": [],
     "resolution_attributable": [],
-    "resolution_pair_only": [
-      "x_couette_wall_shear"
-    ],
+    "resolution_pair_only": [],
     "resolution_window": [
       "x_transport_velocity_coarse"
+    ],
+    "transient_reading": [
+      "x_couette_wall_shear"
     ]
   },
   "decision_leaks": [],
@@ -550,5 +593,46 @@
       }
     }
   },
-  "schema_version": "1.0"
+  "schema_version": "1.0",
+  "transient_reading_guard": {
+    "x_couette_wall_shear": {
+      "admissible_levels": [],
+      "class": "transient_reading",
+      "details": "the --quick artefact stops at t_end = 0.3 H^2/nu, a quarter of the DESIGN.md protocol; the time axis is swept at the record's own H/dx with the same estimator and gates",
+      "every_longer_level_below_record": true,
+      "extractor": "x_couette_wall_shear",
+      "levels": {
+        "0.6": 22.593489289283763,
+        "1.2": 4.338367283344291,
+        "2.4": 9.006215631961844,
+        "3.6": 9.549750387668631
+      },
+      "matched_protocol_resolution": {},
+      "method": "wcsph_wall_no_slip",
+      "n_levels": 4,
+      "passing_levels": [
+        "1.2",
+        "2.4",
+        "3.6"
+      ],
+      "passing_levels_steady": [],
+      "quantity": "bottom-wall shear |1 - tau_SPH/tau_exact| [%]",
+      "reason": "at the record's own grid every longer terminal time measures less error and 3 of 4 are inside 15% (first pass at 1.2 H^2/nu: 4.34%); the over-tolerance value is a pre-steady reading, not a grid effect; no passing level cleared the steadiness gate",
+      "record": {
+        "artifact": "benchmarks/couette/out/results.json",
+        "error_pct": 32.64941126108171,
+        "resolution_H_over_dx": 8.0,
+        "steady_drift": 0.05451178360024535,
+        "t_end": 0.15,
+        "viscous_times": 0.29999999999999993
+      },
+      "record_level_viscous_times": 0.29999999999999993,
+      "record_pct": 32.64941126108171,
+      "resolution_H_over_dx": 8.0,
+      "sources": [
+        "benchmarks/couette/out_design/viscous_time_convergence.json"
+      ],
+      "tolerance_pct": 15.0
+    }
+  }
 }
