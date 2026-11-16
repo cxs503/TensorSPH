@@ -43,6 +43,11 @@ import csv
 import json
 from pathlib import Path
 
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import record_integrity as ri  # noqa: E402  (same directory)
+
 import matplotlib
 
 matplotlib.use("Agg")
@@ -158,6 +163,8 @@ def score_run(run: dict) -> dict:
         "peak_height_m": peak_m, "peak_time_s": peak_t,
         "arrival_time_s": arrival,
         "max_bypass_particles": max(s["n_bypass"]),
+        # gate: the record's second operator must be usable at all
+        "record_integrity": ri.integrity(s),
         "height_operator_max_m": max(s["height_operator_m"]),
         "front_at_first_wetting_s": first_crossing(t, s["front_x_m"], 2.476),
         "rows": rows, "verdict": verdict,
