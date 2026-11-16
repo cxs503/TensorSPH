@@ -26,6 +26,17 @@
    "peak_time_s": 1.588275,
    "arrival_time_s": 0.5027811754237288,
    "max_bypass_particles": 518.0,
+   "record_integrity": {
+    "samples": 468,
+    "admissible": false,
+    "reason": "height operator identically zero over 354 wet samples while slab peaks at 0.1202 m: the two operators read the same station mask, so this record was not produced by the committed gauge code",
+    "wet_samples": 354,
+    "wet_samples_with_zero_height": 354,
+    "height_degenerate": true,
+    "height_max_m": 0.0,
+    "slab_max_m": 0.120192,
+    "first_wet_s": 0.500175
+   },
    "height_operator_max_m": 0.0,
    "front_at_first_wetting_s": 0.4809213304875736,
    "rows": [
@@ -76,6 +87,17 @@
    "peak_time_s": 1.00737,
    "arrival_time_s": 0.4677733677581864,
    "max_bypass_particles": 628.0,
+   "record_integrity": {
+    "samples": 327,
+    "admissible": false,
+    "reason": "height operator identically zero over 194 wet samples while slab peaks at 0.0933 m: the two operators read the same station mask, so this record was not produced by the committed gauge code",
+    "wet_samples": 194,
+    "wet_samples_with_zero_height": 194,
+    "height_degenerate": true,
+    "height_max_m": 0.0,
+    "slab_max_m": 0.0933,
+    "first_wet_s": 0.46683
+   },
    "height_operator_max_m": 0.0,
    "front_at_first_wetting_s": 0.44271689491525423,
    "rows": [
