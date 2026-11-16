@@ -214,9 +214,9 @@ much is the chosen member of the solution set.
 
 ## 5. Not done (unknown, not "passed")
 
-* The resolution ladder (`dx = 0.02` only) — the interior-band profile error has
-  no measured convergence order yet, because a second resolution needs the
-  300-particle Newton solve again at 4x the particle count.
+✓ The resolution ladder is now measured at dx = 0.04 and 0.02 (periodic tank):
+  density error converges at order ~1.5, pressure error at ~1.5.
+  See `docs/verification_lake_at_rest_resolution_ladder.md`.
 * A per-particle (non-mirror) reconstruction minimising both components, which is
   the obvious way to attack F1: it turns the system into 2N equations and N
   unknowns, and the best achievable compromise is not known.
