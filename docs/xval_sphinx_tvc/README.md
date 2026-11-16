@@ -434,3 +434,5 @@ Still open: a numeric diff against a live SPHinXsys build (gap 2), hexagonal
 lattices, and the adaptive `h_ratio` branch (not ported).
 Still open: a numeric diff against a live SPHinXsys build (gap 2), the `TruncatedLinear`
 limiter variants (source not transcribed), and the adaptive `h_ratio` branch (not ported).
+Still open: a numeric diff against a live SPHinXsys build (gap 2) and the adaptive `h_ratio`
+branch (not ported).
