@@ -137,3 +137,21 @@ PYTHONPATH=src python benchmarks/laplace_sph/make_doc_dynamic_ladder.py
 | `benchmarks/laplace_sph/make_doc_dynamic_ladder.py` | renders `docs/xval_projection_laplace_dynamic_ladder.md` from the record |
 | `tests/test_xval_projection_laplace_dynamic_ladder.py` | the gate suite (skipped while the record is absent) |
 | `tests/test_xval_projection_laplace_dynamic_ladder_debt.py` | the strict-xfail debt marker + this page's own checks |
+## ⑦ Status update (m22611): the render path was broken for partial records
+
+The per-job contract above ("a shard that dies leaves the others usable") failed at the *last*
+step: with fewer than two levels carrying a positive spurious-current reading,
+`make_doc_dynamic_ladder.py` died in matplotlib's log locator
+(`ValueError: Data has no positive values, and therefore cannot be log-scaled`), so a partial
+record produced **no page and no figure at all**. Fixed and pinned by
+`tests/test_xval_projection_laplace_dynamic_ladder_partial.py`; details in
+`docs/xval_projection_laplace_dynamic_ladder_partial_record.md`.
+
+The six missing jobs were submitted as cluster job **`cj4254`** (6 shards × `--threads 16`,
+`stage_dir` = the m22611 worktree) and were still `queued` when this page was updated (queue:
+27 jobs, 0 running). **The gates, the thresholds and the debt itself are unchanged**: no job
+file was added, no record was fabricated, and the strict-xfail marker in
+`tests/test_xval_projection_laplace_dynamic_ladder_debt.py` stays in force until
+`results_dynamic_ladder/summary.json` exists. The `< 3 %` answer therefore remains *unanswerable
+for the ladder as a whole* — one coarse level at +1.17 % with a spurious-current **FAIL**
+(0.263 vs 0.1) is not a convergence statement.
