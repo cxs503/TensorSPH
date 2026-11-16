@@ -1,0 +1,1326 @@
+{
+  "reference": {
+    "series_path": "/srv/tensor/agent/work/m23077/docs/m20884/outputs/kleefsman_h2_ref/h2_fig19.csv",
+    "peak_m": 0.36999999999999994,
+    "peak_time_s": 1.7143,
+    "arrival_interp_s": 0.3481105263157894,
+    "arrival_sample_s": 0.3591,
+    "arrival_definition_band_rel": 0.03156892094162478,
+    "anchored": {
+      "peak_m": 0.37,
+      "arrival_s": 0.3591
+    },
+    "tolerance_rel": 0.1,
+    "protocol": {
+      "operator": "slab",
+      "station_offset_m": 0.05,
+      "aperture_m": 0.08,
+      "peak_filter_window_s": 0.03,
+      "arrival_threshold_m": 0.02
+    },
+    "digitisation_uncertainty": {
+      "peak_height_m": 0.005,
+      "arrival_time_s": 0.01,
+      "reason": "1 px = 0.0038 m vertical, 0.0116 s horizontal; line thickness 3-6 px"
+    }
+  },
+  "grids": [
+    {
+      "tag": "dx0.01",
+      "dx": 0.01,
+      "t_end": 2.600098,
+      "csv": "results/peak_horizon/dx0.01_time_series.csv",
+      "producer": "results/peak_horizon/dx0.01.json",
+      "optional": false,
+      "status": "scored",
+      "gauges": {
+        "slab@2.228": {
+          "status": "measured",
+          "t_end_s": 2.600098,
+          "samples": 903,
+          "peak_m": 0.36741227272727267,
+          "peak_time_s": 1.436751,
+          "peak_m_raw": 0.368274,
+          "peak_time_s_raw": 1.428542,
+          "arrival_time_s_interp": 0.38685663372674534,
+          "arrival_time_s_sample": 0.389764,
+          "event": {
+            "peak_m": 0.36741227272727267,
+            "peak_time_s": 1.436751,
+            "raw_max_m": 0.368274,
+            "window_s": [
+              1.4143,
+              2.0143
+            ]
+          },
+          "censored": false,
+          "station_x_m": 2.228,
+          "operator": "slab",
+          "role": "committed_secondary",
+          "delta_s_to_gate": 1.0000000000000002,
+          "rows": [
+            {
+              "metric": "peak_height",
+              "ref": 0.36999999999999994,
+              "got": 0.36741227272727267,
+              "signed_rel_error": -0.006993857493857486,
+              "rel_error": 0.006993857493857486,
+              "pass": true
+            },
+            {
+              "metric": "arrival_time_interp",
+              "ref": 0.3481105263157894,
+              "got": 0.38685663372674534,
+              "signed_rel_error": 0.11130403846451707,
+              "rel_error": 0.11130403846451707,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_sample",
+              "ref": 0.3591,
+              "got": 0.389764,
+              "signed_rel_error": 0.08539125591757178,
+              "rel_error": 0.08539125591757178,
+              "pass": true
+            }
+          ]
+        },
+        "height@2.228": {
+          "status": "measured",
+          "t_end_s": 2.600098,
+          "samples": 903,
+          "peak_m": 0.3696393636363636,
+          "peak_time_s": 1.359854,
+          "peak_m_raw": 0.385649,
+          "peak_time_s_raw": 1.346329,
+          "arrival_time_s_interp": 0.39183010822922326,
+          "arrival_time_s_sample": 0.392695,
+          "event": {
+            "peak_m": 0.3648985454545455,
+            "peak_time_s": 1.436751,
+            "raw_max_m": 0.367433,
+            "window_s": [
+              1.4143,
+              2.0143
+            ]
+          },
+          "censored": false,
+          "station_x_m": 2.228,
+          "operator": "height",
+          "role": "committed_secondary",
+          "delta_s_to_gate": 1.0000000000000002,
+          "rows": [
+            {
+              "metric": "peak_height",
+              "ref": 0.36999999999999994,
+              "got": 0.3696393636363636,
+              "signed_rel_error": -0.000974692874692738,
+              "rel_error": 0.000974692874692738,
+              "pass": true
+            },
+            {
+              "metric": "arrival_time_interp",
+              "ref": 0.3481105263157894,
+              "got": 0.39183010822922326,
+              "signed_rel_error": 0.12559109423130024,
+              "rel_error": 0.12559109423130024,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_sample",
+              "ref": 0.3591,
+              "got": 0.392695,
+              "signed_rel_error": 0.09355332776385421,
+              "rel_error": 0.09355332776385421,
+              "pass": true
+            }
+          ]
+        },
+        "surface@2.228": {
+          "status": "measured",
+          "t_end_s": 2.600098,
+          "samples": 903,
+          "peak_m": 0.3796393636363636,
+          "peak_time_s": 1.359854,
+          "peak_m_raw": 0.395649,
+          "peak_time_s_raw": 1.346329,
+          "arrival_time_s_interp": 0.38508786652977417,
+          "arrival_time_s_sample": 0.386832,
+          "event": {
+            "peak_m": 0.37489854545454543,
+            "peak_time_s": 1.436751,
+            "raw_max_m": 0.377433,
+            "window_s": [
+              1.4143,
+              2.0143
+            ]
+          },
+          "censored": false,
+          "station_x_m": 2.228,
+          "operator": "surface",
+          "role": "committed_secondary",
+          "delta_s_to_gate": 1.0000000000000002,
+          "rows": [
+            {
+              "metric": "peak_height",
+              "ref": 0.36999999999999994,
+              "got": 0.3796393636363636,
+              "signed_rel_error": 0.026052334152334166,
+              "rel_error": 0.026052334152334166,
+              "pass": true
+            },
+            {
+              "metric": "arrival_time_interp",
+              "ref": 0.3481105263157894,
+              "got": 0.38508786652977417,
+              "signed_rel_error": 0.10622298786920521,
+              "rel_error": 0.10622298786920521,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_sample",
+              "ref": 0.3591,
+              "got": 0.386832,
+              "signed_rel_error": 0.07722639933166259,
+              "rel_error": 0.07722639933166259,
+              "pass": true
+            }
+          ]
+        },
+        "slab@2.220": {
+          "status": "not_measured",
+          "station_x_m": 2.22,
+          "operator": "slab",
+          "role": "lattice_gate_anchor",
+          "why": "column 'slab_x2.220' absent from results/peak_horizon/dx0.01_time_series.csv"
+        },
+        "height@2.220": {
+          "status": "not_measured",
+          "station_x_m": 2.22,
+          "operator": "height",
+          "role": "lattice_gate_anchor",
+          "why": "column 'height_x2.220' absent from results/peak_horizon/dx0.01_time_series.csv"
+        },
+        "surface@2.220": {
+          "status": "not_measured",
+          "station_x_m": 2.22,
+          "operator": "surface",
+          "role": "lattice_gate_anchor",
+          "why": "column 'surface_x2.220' absent from results/peak_horizon/dx0.01_time_series.csv"
+        },
+        "slab@2.426": {
+          "status": "measured",
+          "t_end_s": 2.600098,
+          "samples": 903,
+          "peak_m": 0.48129863636363646,
+          "peak_time_s": 1.1518,
+          "peak_m_raw": 0.483169,
+          "peak_time_s_raw": 1.156832,
+          "arrival_time_s_interp": 0.4378479407704297,
+          "arrival_time_s_sample": 0.439457,
+          "event": {
+            "peak_m": 0.382439,
+            "peak_time_s": 1.414658,
+            "raw_max_m": 0.383169,
+            "window_s": [
+              1.4143,
+              2.0143
+            ]
+          },
+          "censored": false,
+          "station_x_m": 2.426,
+          "operator": "slab",
+          "role": "committed_primary_excluded",
+          "delta_s_to_gate": 1.1980000000000002,
+          "rows": [
+            {
+              "metric": "peak_height",
+              "ref": 0.36999999999999994,
+              "got": 0.48129863636363646,
+              "signed_rel_error": 0.3008071253071258,
+              "rel_error": 0.3008071253071258,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_interp",
+              "ref": 0.3481105263157894,
+              "got": 0.4378479407704297,
+              "signed_rel_error": 0.25778426008650696,
+              "rel_error": 0.25778426008650696,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_sample",
+              "ref": 0.3591,
+              "got": 0.439457,
+              "signed_rel_error": 0.22377332219437487,
+              "rel_error": 0.22377332219437487,
+              "pass": false
+            }
+          ]
+        },
+        "height@2.426": {
+          "status": "measured",
+          "t_end_s": 2.600098,
+          "samples": 903,
+          "peak_m": 0.47731181818181806,
+          "peak_time_s": 1.136668,
+          "peak_m_raw": 0.478056,
+          "peak_time_s_raw": 1.146761,
+          "arrival_time_s_interp": 0.4446245993048659,
+          "arrival_time_s_sample": 0.445244,
+          "event": {
+            "peak_m": 0.37456833333333334,
+            "peak_time_s": 1.414658,
+            "raw_max_m": 0.375421,
+            "window_s": [
+              1.4143,
+              2.0143
+            ]
+          },
+          "censored": false,
+          "station_x_m": 2.426,
+          "operator": "height",
+          "role": "committed_primary_excluded",
+          "delta_s_to_gate": 1.1980000000000002,
+          "rows": [
+            {
+              "metric": "peak_height",
+              "ref": 0.36999999999999994,
+              "got": 0.47731181818181806,
+              "signed_rel_error": 0.2900319410319409,
+              "rel_error": 0.2900319410319409,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_interp",
+              "ref": 0.3481105263157894,
+              "got": 0.4446245993048659,
+              "signed_rel_error": 0.27725123399894974,
+              "rel_error": 0.27725123399894974,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_sample",
+              "ref": 0.3591,
+              "got": 0.445244,
+              "signed_rel_error": 0.2398886104149262,
+              "rel_error": 0.2398886104149262,
+              "pass": false
+            }
+          ]
+        },
+        "surface@2.426": {
+          "status": "measured",
+          "t_end_s": 2.600098,
+          "samples": 903,
+          "peak_m": 0.4873118181818183,
+          "peak_time_s": 1.136668,
+          "peak_m_raw": 0.488056,
+          "peak_time_s_raw": 1.146761,
+          "arrival_time_s_interp": 0.43597986979166664,
+          "arrival_time_s_sample": 0.436542,
+          "event": {
+            "peak_m": 0.38456833333333335,
+            "peak_time_s": 1.414658,
+            "raw_max_m": 0.385421,
+            "window_s": [
+              1.4143,
+              2.0143
+            ]
+          },
+          "censored": false,
+          "station_x_m": 2.426,
+          "operator": "surface",
+          "role": "committed_primary_excluded",
+          "delta_s_to_gate": 1.1980000000000002,
+          "rows": [
+            {
+              "metric": "peak_height",
+              "ref": 0.36999999999999994,
+              "got": 0.4873118181818183,
+              "signed_rel_error": 0.31705896805896855,
+              "rel_error": 0.31705896805896855,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_interp",
+              "ref": 0.3481105263157894,
+              "got": 0.43597986979166664,
+              "signed_rel_error": 0.25241794439782694,
+              "rel_error": 0.25241794439782694,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_sample",
+              "ref": 0.3591,
+              "got": 0.436542,
+              "signed_rel_error": 0.21565580618212202,
+              "rel_error": 0.21565580618212202,
+              "pass": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "tag": "dx0.02",
+      "dx": 0.02,
+      "t_end": 3.0002,
+      "csv": "results/audit_t30/dx0.02/time_series.csv",
+      "producer": "results/audit_t30/dx0.02/metrics.json",
+      "optional": false,
+      "status": "scored",
+      "gauges": {
+        "slab@2.228": {
+          "status": "measured",
+          "t_end_s": 3.0002,
+          "samples": 752,
+          "peak_m": 0.38170400000000004,
+          "peak_time_s": 1.488,
+          "peak_m_raw": 0.385012,
+          "peak_time_s_raw": 1.492,
+          "arrival_time_s_interp": 0.3893124393288032,
+          "arrival_time_s_sample": 0.392,
+          "event": {
+            "peak_m": 0.38170400000000004,
+            "peak_time_s": 1.488,
+            "raw_max_m": 0.385012,
+            "window_s": [
+              1.4143,
+              2.0143
+            ]
+          },
+          "censored": false,
+          "station_x_m": 2.228,
+          "operator": "slab",
+          "role": "committed_secondary",
+          "delta_s_to_gate": 1.0000000000000002,
+          "rows": [
+            {
+              "metric": "peak_height",
+              "ref": 0.36999999999999994,
+              "got": 0.38170400000000004,
+              "signed_rel_error": 0.03163243243243272,
+              "rel_error": 0.03163243243243272,
+              "pass": true
+            },
+            {
+              "metric": "arrival_time_interp",
+              "ref": 0.3481105263157894,
+              "got": 0.3893124393288032,
+              "signed_rel_error": 0.11835871051953586,
+              "rel_error": 0.11835871051953586,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_sample",
+              "ref": 0.3591,
+              "got": 0.392,
+              "signed_rel_error": 0.091617933723197,
+              "rel_error": 0.091617933723197,
+              "pass": true
+            }
+          ]
+        },
+        "height@2.228": {
+          "status": "measured",
+          "t_end_s": 3.0002,
+          "samples": 752,
+          "peak_m": 0.3989341428571428,
+          "peak_time_s": 1.408,
+          "peak_m_raw": 0.400765,
+          "peak_time_s_raw": 1.412,
+          "arrival_time_s_interp": 0.3997810718358039,
+          "arrival_time_s_sample": 0.4,
+          "event": {
+            "peak_m": 0.3920775,
+            "peak_time_s": 1.416,
+            "raw_max_m": 0.397516,
+            "window_s": [
+              1.4143,
+              2.0143
+            ]
+          },
+          "censored": false,
+          "station_x_m": 2.228,
+          "operator": "height",
+          "role": "committed_secondary",
+          "delta_s_to_gate": 1.0000000000000002,
+          "rows": [
+            {
+              "metric": "peak_height",
+              "ref": 0.36999999999999994,
+              "got": 0.3989341428571428,
+              "signed_rel_error": 0.0782003861003861,
+              "rel_error": 0.0782003861003861,
+              "pass": true
+            },
+            {
+              "metric": "arrival_time_interp",
+              "ref": 0.3481105263157894,
+              "got": 0.3997810718358039,
+              "signed_rel_error": 0.14843143660970887,
+              "rel_error": 0.14843143660970887,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_sample",
+              "ref": 0.3591,
+              "got": 0.4,
+              "signed_rel_error": 0.11389585073795615,
+              "rel_error": 0.11389585073795615,
+              "pass": false
+            }
+          ]
+        },
+        "surface@2.228": {
+          "status": "measured",
+          "t_end_s": 3.0002,
+          "samples": 752,
+          "peak_m": 0.41893414285714287,
+          "peak_time_s": 1.408,
+          "peak_m_raw": 0.420765,
+          "peak_time_s_raw": 1.412,
+          "arrival_time_s_interp": 0.3869385836027035,
+          "arrival_time_s_sample": 0.388,
+          "event": {
+            "peak_m": 0.4120775,
+            "peak_time_s": 1.416,
+            "raw_max_m": 0.417516,
+            "window_s": [
+              1.4143,
+              2.0143
+            ]
+          },
+          "censored": false,
+          "station_x_m": 2.228,
+          "operator": "surface",
+          "role": "committed_secondary",
+          "delta_s_to_gate": 1.0000000000000002,
+          "rows": [
+            {
+              "metric": "peak_height",
+              "ref": 0.36999999999999994,
+              "got": 0.41893414285714287,
+              "signed_rel_error": 0.13225444015444035,
+              "rel_error": 0.13225444015444035,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_interp",
+              "ref": 0.3481105263157894,
+              "got": 0.3869385836027035,
+              "signed_rel_error": 0.11153945184550695,
+              "rel_error": 0.11153945184550695,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_sample",
+              "ref": 0.3591,
+              "got": 0.388,
+              "signed_rel_error": 0.08047897521581743,
+              "rel_error": 0.08047897521581743,
+              "pass": true
+            }
+          ]
+        },
+        "slab@2.220": {
+          "status": "not_measured",
+          "station_x_m": 2.22,
+          "operator": "slab",
+          "role": "lattice_gate_anchor",
+          "why": "column 'slab_x2.220' absent from results/audit_t30/dx0.02/time_series.csv"
+        },
+        "height@2.220": {
+          "status": "not_measured",
+          "station_x_m": 2.22,
+          "operator": "height",
+          "role": "lattice_gate_anchor",
+          "why": "column 'height_x2.220' absent from results/audit_t30/dx0.02/time_series.csv"
+        },
+        "surface@2.220": {
+          "status": "not_measured",
+          "station_x_m": 2.22,
+          "operator": "surface",
+          "role": "lattice_gate_anchor",
+          "why": "column 'surface_x2.220' absent from results/audit_t30/dx0.02/time_series.csv"
+        },
+        "slab@2.426": {
+          "status": "measured",
+          "t_end_s": 3.0002,
+          "samples": 752,
+          "peak_m": 0.47670571428571423,
+          "peak_time_s": 1.116,
+          "peak_m_raw": 0.478204,
+          "peak_time_s_raw": 1.12,
+          "arrival_time_s_interp": 0.44091977333730986,
+          "arrival_time_s_sample": 0.444,
+          "event": {
+            "peak_m": 0.36845442857142857,
+            "peak_time_s": 1.456,
+            "raw_max_m": 0.370432,
+            "window_s": [
+              1.4143,
+              2.0143
+            ]
+          },
+          "censored": false,
+          "station_x_m": 2.426,
+          "operator": "slab",
+          "role": "committed_primary_excluded",
+          "delta_s_to_gate": 1.1980000000000002,
+          "rows": [
+            {
+              "metric": "peak_height",
+              "ref": 0.36999999999999994,
+              "got": 0.47670571428571423,
+              "signed_rel_error": 0.28839382239382244,
+              "rel_error": 0.28839382239382244,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_interp",
+              "ref": 0.3481105263157894,
+              "got": 0.44091977333730986,
+              "signed_rel_error": 0.26660856252685755,
+              "rel_error": 0.26660856252685755,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_sample",
+              "ref": 0.3591,
+              "got": 0.444,
+              "signed_rel_error": 0.23642439431913126,
+              "rel_error": 0.23642439431913126,
+              "pass": false
+            }
+          ]
+        },
+        "height@2.426": {
+          "status": "measured",
+          "t_end_s": 3.0002,
+          "samples": 752,
+          "peak_m": 0.5019225714285714,
+          "peak_time_s": 0.712,
+          "peak_m_raw": 0.517466,
+          "peak_time_s_raw": 0.716,
+          "arrival_time_s_interp": 0.4540684757798631,
+          "arrival_time_s_sample": 0.456,
+          "event": {
+            "peak_m": 0.3701535,
+            "peak_time_s": 1.416,
+            "raw_max_m": 0.371284,
+            "window_s": [
+              1.4143,
+              2.0143
+            ]
+          },
+          "censored": false,
+          "station_x_m": 2.426,
+          "operator": "height",
+          "role": "committed_primary_excluded",
+          "delta_s_to_gate": 1.1980000000000002,
+          "rows": [
+            {
+              "metric": "peak_height",
+              "ref": 0.36999999999999994,
+              "got": 0.5019225714285714,
+              "signed_rel_error": 0.3565474903474906,
+              "rel_error": 0.3565474903474906,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_interp",
+              "ref": 0.3481105263157894,
+              "got": 0.4540684757798631,
+              "signed_rel_error": 0.3043801938007287,
+              "rel_error": 0.3043801938007287,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_sample",
+              "ref": 0.3591,
+              "got": 0.456,
+              "signed_rel_error": 0.26984126984127,
+              "rel_error": 0.26984126984127,
+              "pass": false
+            }
+          ]
+        },
+        "surface@2.426": {
+          "status": "measured",
+          "t_end_s": 3.0002,
+          "samples": 752,
+          "peak_m": 0.5219225714285715,
+          "peak_time_s": 0.712,
+          "peak_m_raw": 0.537466,
+          "peak_time_s_raw": 0.716,
+          "arrival_time_s_interp": 0.4355690385902298,
+          "arrival_time_s_sample": 0.436,
+          "event": {
+            "peak_m": 0.39015350000000004,
+            "peak_time_s": 1.416,
+            "raw_max_m": 0.391284,
+            "window_s": [
+              1.4143,
+              2.0143
+            ]
+          },
+          "censored": false,
+          "station_x_m": 2.426,
+          "operator": "surface",
+          "role": "committed_primary_excluded",
+          "delta_s_to_gate": 1.1980000000000002,
+          "rows": [
+            {
+              "metric": "peak_height",
+              "ref": 0.36999999999999994,
+              "got": 0.5219225714285715,
+              "signed_rel_error": 0.4106015444015447,
+              "rel_error": 0.4106015444015447,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_interp",
+              "ref": 0.3481105263157894,
+              "got": 0.4355690385902298,
+              "signed_rel_error": 0.2512377697970044,
+              "rel_error": 0.2512377697970044,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_sample",
+              "ref": 0.3591,
+              "got": 0.436,
+              "signed_rel_error": 0.2141464773043721,
+              "rel_error": 0.2141464773043721,
+              "pass": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "tag": "dx0.04",
+      "dx": 0.04,
+      "t_end": 3.0002,
+      "csv": "results/audit_t30/dx0.04/time_series.csv",
+      "producer": "results/audit_t30/dx0.04/metrics.json",
+      "optional": false,
+      "status": "scored",
+      "gauges": {
+        "slab@2.228": {
+          "status": "measured",
+          "t_end_s": 3.0002,
+          "samples": 752,
+          "peak_m": 0.40026642857142863,
+          "peak_time_s": 1.536,
+          "peak_m_raw": 0.401237,
+          "peak_time_s_raw": 1.544,
+          "arrival_time_s_interp": 0.40739362618432384,
+          "arrival_time_s_sample": 0.408,
+          "event": {
+            "peak_m": 0.40026642857142863,
+            "peak_time_s": 1.536,
+            "raw_max_m": 0.401237,
+            "window_s": [
+              1.4143,
+              2.0143
+            ]
+          },
+          "censored": false,
+          "station_x_m": 2.228,
+          "operator": "slab",
+          "role": "committed_secondary",
+          "delta_s_to_gate": 1.0000000000000002,
+          "rows": [
+            {
+              "metric": "peak_height",
+              "ref": 0.36999999999999994,
+              "got": 0.40026642857142863,
+              "signed_rel_error": 0.08180115830115865,
+              "rel_error": 0.08180115830115865,
+              "pass": true
+            },
+            {
+              "metric": "arrival_time_interp",
+              "ref": 0.3481105263157894,
+              "got": 0.40739362618432384,
+              "signed_rel_error": 0.17029964734463557,
+              "rel_error": 0.17029964734463557,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_sample",
+              "ref": 0.3591,
+              "got": 0.408,
+              "signed_rel_error": 0.13617376775271514,
+              "rel_error": 0.13617376775271514,
+              "pass": false
+            }
+          ]
+        },
+        "height@2.228": {
+          "status": "measured",
+          "t_end_s": 3.0002,
+          "samples": 752,
+          "peak_m": 0.3848277142857143,
+          "peak_time_s": 1.528,
+          "peak_m_raw": 0.387657,
+          "peak_time_s_raw": 1.524,
+          "arrival_time_s_interp": 0.43580196170014013,
+          "arrival_time_s_sample": 0.436,
+          "event": {
+            "peak_m": 0.3848277142857143,
+            "peak_time_s": 1.528,
+            "raw_max_m": 0.387657,
+            "window_s": [
+              1.4143,
+              2.0143
+            ]
+          },
+          "censored": false,
+          "station_x_m": 2.228,
+          "operator": "height",
+          "role": "committed_secondary",
+          "delta_s_to_gate": 1.0000000000000002,
+          "rows": [
+            {
+              "metric": "peak_height",
+              "ref": 0.36999999999999994,
+              "got": 0.3848277142857143,
+              "signed_rel_error": 0.04007490347490361,
+              "rel_error": 0.04007490347490361,
+              "pass": true
+            },
+            {
+              "metric": "arrival_time_interp",
+              "ref": 0.3481105263157894,
+              "got": 0.43580196170014013,
+              "signed_rel_error": 0.25190687656713134,
+              "rel_error": 0.25190687656713134,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_sample",
+              "ref": 0.3591,
+              "got": 0.436,
+              "signed_rel_error": 0.2141464773043721,
+              "rel_error": 0.2141464773043721,
+              "pass": false
+            }
+          ]
+        },
+        "surface@2.228": {
+          "status": "measured",
+          "t_end_s": 3.0002,
+          "samples": 752,
+          "peak_m": 0.42482771428571425,
+          "peak_time_s": 1.528,
+          "peak_m_raw": 0.427657,
+          "peak_time_s_raw": 1.524,
+          "arrival_time_s_interp": 0.4017932796843828,
+          "arrival_time_s_sample": 0.404,
+          "event": {
+            "peak_m": 0.42482771428571425,
+            "peak_time_s": 1.528,
+            "raw_max_m": 0.427657,
+            "window_s": [
+              1.4143,
+              2.0143
+            ]
+          },
+          "censored": false,
+          "station_x_m": 2.228,
+          "operator": "surface",
+          "role": "committed_secondary",
+          "delta_s_to_gate": 1.0000000000000002,
+          "rows": [
+            {
+              "metric": "peak_height",
+              "ref": 0.36999999999999994,
+              "got": 0.42482771428571425,
+              "signed_rel_error": 0.14818301158301167,
+              "rel_error": 0.14818301158301167,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_interp",
+              "ref": 0.3481105263157894,
+              "got": 0.4017932796843828,
+              "signed_rel_error": 0.15421180720026517,
+              "rel_error": 0.15421180720026517,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_sample",
+              "ref": 0.3591,
+              "got": 0.404,
+              "signed_rel_error": 0.12503480924533572,
+              "rel_error": 0.12503480924533572,
+              "pass": false
+            }
+          ]
+        },
+        "slab@2.220": {
+          "status": "not_measured",
+          "station_x_m": 2.22,
+          "operator": "slab",
+          "role": "lattice_gate_anchor",
+          "why": "column 'slab_x2.220' absent from results/audit_t30/dx0.04/time_series.csv"
+        },
+        "height@2.220": {
+          "status": "not_measured",
+          "station_x_m": 2.22,
+          "operator": "height",
+          "role": "lattice_gate_anchor",
+          "why": "column 'height_x2.220' absent from results/audit_t30/dx0.04/time_series.csv"
+        },
+        "surface@2.220": {
+          "status": "not_measured",
+          "station_x_m": 2.22,
+          "operator": "surface",
+          "role": "lattice_gate_anchor",
+          "why": "column 'surface_x2.220' absent from results/audit_t30/dx0.04/time_series.csv"
+        },
+        "slab@2.426": {
+          "status": "measured",
+          "t_end_s": 3.0002,
+          "samples": 752,
+          "peak_m": 0.42717371428571427,
+          "peak_time_s": 0.904,
+          "peak_m_raw": 0.433823,
+          "peak_time_s_raw": 0.912,
+          "arrival_time_s_interp": 0.4603949539979133,
+          "arrival_time_s_sample": 0.464,
+          "event": {
+            "peak_m": 0.36879275,
+            "peak_time_s": 1.416,
+            "raw_max_m": 0.378087,
+            "window_s": [
+              1.4143,
+              2.0143
+            ]
+          },
+          "censored": false,
+          "station_x_m": 2.426,
+          "operator": "slab",
+          "role": "committed_primary_excluded",
+          "delta_s_to_gate": 1.1980000000000002,
+          "rows": [
+            {
+              "metric": "peak_height",
+              "ref": 0.36999999999999994,
+              "got": 0.42717371428571427,
+              "signed_rel_error": 0.15452355212355226,
+              "rel_error": 0.15452355212355226,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_interp",
+              "ref": 0.3481105263157894,
+              "got": 0.4603949539979133,
+              "signed_rel_error": 0.3225539568437662,
+              "rel_error": 0.3225539568437662,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_sample",
+              "ref": 0.3591,
+              "got": 0.464,
+              "signed_rel_error": 0.2921191868560291,
+              "rel_error": 0.2921191868560291,
+              "pass": false
+            }
+          ]
+        },
+        "height@2.426": {
+          "status": "measured",
+          "t_end_s": 3.0002,
+          "samples": 752,
+          "peak_m": 0.40928099999999995,
+          "peak_time_s": 0.908,
+          "peak_m_raw": 0.425458,
+          "peak_time_s_raw": 0.92,
+          "arrival_time_s_interp": 0.48414582084182756,
+          "arrival_time_s_sample": 0.488,
+          "event": {
+            "peak_m": 0.35082024999999994,
+            "peak_time_s": 1.416,
+            "raw_max_m": 0.365164,
+            "window_s": [
+              1.4143,
+              2.0143
+            ]
+          },
+          "censored": false,
+          "station_x_m": 2.426,
+          "operator": "height",
+          "role": "committed_primary_excluded",
+          "delta_s_to_gate": 1.1980000000000002,
+          "rows": [
+            {
+              "metric": "peak_height",
+              "ref": 0.36999999999999994,
+              "got": 0.40928099999999995,
+              "signed_rel_error": 0.10616486486486491,
+              "rel_error": 0.10616486486486491,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_interp",
+              "ref": 0.3481105263157894,
+              "got": 0.48414582084182756,
+              "signed_rel_error": 0.39078190471790947,
+              "rel_error": 0.39078190471790947,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_sample",
+              "ref": 0.3591,
+              "got": 0.488,
+              "signed_rel_error": 0.3589529379003064,
+              "rel_error": 0.3589529379003064,
+              "pass": false
+            }
+          ]
+        },
+        "surface@2.426": {
+          "status": "measured",
+          "t_end_s": 3.0002,
+          "samples": 752,
+          "peak_m": 0.449281,
+          "peak_time_s": 0.908,
+          "peak_m_raw": 0.465458,
+          "peak_time_s_raw": 0.92,
+          "arrival_time_s_interp": 0.46580876800289406,
+          "arrival_time_s_sample": 0.468,
+          "event": {
+            "peak_m": 0.39082025,
+            "peak_time_s": 1.416,
+            "raw_max_m": 0.405164,
+            "window_s": [
+              1.4143,
+              2.0143
+            ]
+          },
+          "censored": false,
+          "station_x_m": 2.426,
+          "operator": "surface",
+          "role": "committed_primary_excluded",
+          "delta_s_to_gate": 1.1980000000000002,
+          "rows": [
+            {
+              "metric": "peak_height",
+              "ref": 0.36999999999999994,
+              "got": 0.449281,
+              "signed_rel_error": 0.21427297297297312,
+              "rel_error": 0.21427297297297312,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_interp",
+              "ref": 0.3481105263157894,
+              "got": 0.46580876800289406,
+              "signed_rel_error": 0.3381059542575692,
+              "rel_error": 0.3381059542575692,
+              "pass": false
+            },
+            {
+              "metric": "arrival_time_sample",
+              "ref": 0.3591,
+              "got": 0.468,
+              "signed_rel_error": 0.30325814536340867,
+              "rel_error": 0.30325814536340867,
+              "pass": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "tag": "dx0.02_gate",
+      "dx": 0.02,
+      "t_end": 3.0,
+      "csv": "results/gate_ambiguity/dx0.02/time_series.csv",
+      "producer": "results/gate_ambiguity/dx0.02/metrics.json",
+      "optional": true,
+      "status": "not_run",
+      "gauges": {}
+    }
+  ],
+  "ladder": {
+    "station_x_m": 2.228,
+    "operator": "slab",
+    "peak": {
+      "quantity": "peak_height_m",
+      "status": "ok",
+      "order_observed": 0.3772051858800637,
+      "levels": [
+        {
+          "dx": 0.01,
+          "value": 0.36741227272727267,
+          "tag": "dx0.01"
+        },
+        {
+          "dx": 0.02,
+          "value": 0.38170400000000004,
+          "tag": "dx0.02"
+        },
+        {
+          "dx": 0.04,
+          "value": 0.40026642857142863,
+          "tag": "dx0.04"
+        }
+      ],
+      "value_h0": null,
+      "non_asymptotic": true,
+      "monotone": true,
+      "band_from_finest_two": [
+        0.36741227272727267,
+        0.38170400000000004
+      ],
+      "why": "observed order not usable (p outside [0.5, 6] or non-monotone approach); no Richardson limit claimed"
+    },
+    "arrival": {
+      "quantity": "arrival_time_s_interp",
+      "status": "ok",
+      "order_observed": 2.8802211111424723,
+      "levels": [
+        {
+          "dx": 0.01,
+          "value": 0.38685663372674534,
+          "tag": "dx0.01"
+        },
+        {
+          "dx": 0.02,
+          "value": 0.3893124393288032,
+          "tag": "dx0.02"
+        },
+        {
+          "dx": 0.04,
+          "value": 0.40739362618432384,
+          "tag": "dx0.04"
+        }
+      ],
+      "value_h0": 0.3864706603506549,
+      "gci_fine_rel": 0.0012471460433939598,
+      "monotone": true,
+      "non_asymptotic": false
+    },
+    "shape_vs_reference": [
+      {
+        "tag": "dx0.01",
+        "dx": 0.01,
+        "rms": 0.05464725111298583,
+        "rms_rel_to_ref_rms": 0.6687779218516839,
+        "rms_rel_to_ref_peak": 0.1476952732783401,
+        "best_lag_s": -0.25,
+        "rms_lagged": 0.04833104356364602,
+        "lag_at_scan_edge": false,
+        "lag_scan_s": 0.4,
+        "n_points": 451.0
+      },
+      {
+        "tag": "dx0.02",
+        "dx": 0.02,
+        "rms": 0.06280409029783617,
+        "rms_rel_to_ref_rms": 0.768602045624056,
+        "rms_rel_to_ref_peak": 0.1697407845887464,
+        "best_lag_s": -0.27,
+        "rms_lagged": 0.051832837674996114,
+        "lag_at_scan_edge": false,
+        "lag_scan_s": 0.4,
+        "n_points": 451.0
+      },
+      {
+        "tag": "dx0.04",
+        "dx": 0.04,
+        "rms": 0.05180834881909244,
+        "rms_rel_to_ref_rms": 0.6340351829621365,
+        "rms_rel_to_ref_peak": 0.1400225643759255,
+        "best_lag_s": -0.11,
+        "rms_lagged": 0.04706722295417586,
+        "lag_at_scan_edge": false,
+        "lag_scan_s": 0.4,
+        "n_points": 451.0
+      }
+    ]
+  },
+  "station_sensitivity": [],
+  "station_8mm_estimate": [
+    {
+      "tag": "dx0.01",
+      "dx": 0.01,
+      "local_front_speed_m_s": 3.883014801530247,
+      "implied_shift_s": 0.002060254830047854,
+      "implied_shift_rel": 0.005325628800004259,
+      "source": "slab arrival at 2.228 and 2.426 on the same record",
+      "confirmation": "results/gate_ambiguity/dx0.02 (job cj4566)"
+    },
+    {
+      "tag": "dx0.02",
+      "dx": 0.02,
+      "local_front_speed_m_s": 3.8366639897996437,
+      "implied_shift_s": 0.0020851448084245115,
+      "implied_shift_rel": 0.005355967592557329,
+      "source": "slab arrival at 2.228 and 2.426 on the same record",
+      "confirmation": "results/gate_ambiguity/dx0.02 (job cj4566)"
+    },
+    {
+      "tag": "dx0.04",
+      "dx": 0.04,
+      "local_front_speed_m_s": 3.735755464398631,
+      "implied_shift_s": 0.0021414677904480596,
+      "implied_shift_rel": 0.005256507841090179,
+      "source": "slab arrival at 2.228 and 2.426 on the same record",
+      "confirmation": "results/gate_ambiguity/dx0.02 (job cj4566)"
+    }
+  ],
+  "station_sensitivity_measured": [
+    {
+      "tag": "dx0.02",
+      "dx": 0.02,
+      "source": "results/station_lattice/stations_dx0.02_t3.0.json",
+      "aperture_m_lattice_run": 0.08,
+      "arrival_2.220_s": 0.3870653950067547,
+      "arrival_2.228_s": 0.3893124393288032,
+      "arrival_delta_rel": -0.005771827701993192,
+      "peak_2.220_m": 0.3940430068969727,
+      "peak_2.228_m": 0.38170400000000004,
+      "peak_delta_rel": 0.0323261136822581
+    },
+    {
+      "tag": "dx0.04",
+      "dx": 0.04,
+      "source": "results/station_lattice/stations_dx0.04_t3.0.json",
+      "aperture_m_lattice_run": 0.08,
+      "arrival_2.220_s": 0.4034170730480096,
+      "arrival_2.228_s": 0.40739362618432384,
+      "arrival_delta_rel": -0.009760960605984184,
+      "peak_2.220_m": 0.4011390516493056,
+      "peak_2.228_m": 0.40026642857142863,
+      "peak_delta_rel": 0.002180105588648492
+    }
+  ],
+  "front_speed": {
+    "gate_x_m": 1.228,
+    "station_x_m": 2.228,
+    "experimental": {
+      "arrival_interp_s": 0.3481105263157894,
+      "speed_m_s": 2.8726508519677667
+    },
+    "rows": [
+      {
+        "tag": "dx0.01",
+        "dx": 0.01,
+        "operator": "slab",
+        "arrival_interp_s": 0.38685663372674534,
+        "speed_m_s": 2.5849369322340388,
+        "speed_deficit_rel": -0.10015624402688682
+      },
+      {
+        "tag": "dx0.01",
+        "dx": 0.01,
+        "operator": "height",
+        "arrival_interp_s": 0.39183010822922326,
+        "speed_m_s": 2.5521264930845833,
+        "speed_deficit_rel": -0.11157790326785594
+      },
+      {
+        "tag": "dx0.01",
+        "dx": 0.01,
+        "operator": "surface",
+        "arrival_interp_s": 0.38508786652977417,
+        "speed_m_s": 2.596809941096086,
+        "speed_deficit_rel": -0.09602312466296756
+      },
+      {
+        "tag": "dx0.02",
+        "dx": 0.02,
+        "operator": "slab",
+        "arrival_interp_s": 0.3893124393288032,
+        "speed_m_s": 2.568630999112325,
+        "speed_deficit_rel": -0.10583251098795662
+      },
+      {
+        "tag": "dx0.02",
+        "dx": 0.02,
+        "operator": "height",
+        "arrival_interp_s": 0.3997810718358039,
+        "speed_m_s": 2.5013690503354176,
+        "speed_deficit_rel": -0.12924710337771156
+      },
+      {
+        "tag": "dx0.02",
+        "dx": 0.02,
+        "operator": "surface",
+        "arrival_interp_s": 0.3869385836027035,
+        "speed_m_s": 2.5843894674167958,
+        "speed_deficit_rel": -0.10034682229255665
+      },
+      {
+        "tag": "dx0.04",
+        "dx": 0.04,
+        "operator": "slab",
+        "arrival_interp_s": 0.40739362618432384,
+        "speed_m_s": 2.454628486375861,
+        "speed_deficit_rel": -0.14551798569796964
+      },
+      {
+        "tag": "dx0.04",
+        "dx": 0.04,
+        "operator": "height",
+        "arrival_interp_s": 0.43580196170014013,
+        "speed_m_s": 2.2946202355281384,
+        "speed_deficit_rel": -0.20121854211543916
+      },
+      {
+        "tag": "dx0.04",
+        "dx": 0.04,
+        "operator": "surface",
+        "arrival_interp_s": 0.4017932796843828,
+        "speed_m_s": 2.4888420253955506,
+        "speed_deficit_rel": -0.1336078926226997
+      }
+    ]
+  },
+  "verdict": {
+    "verdict": "BORDERLINE",
+    "why": "arrival tolerance is not decidable: +11.1% against the interpolated reference (0.3481 s) but +8.5% against the sample-quantised one (0.3591 s); the reference-definition band is 3.2%",
+    "station_x_m": 2.228,
+    "grid_tag": "dx0.01",
+    "dx": 0.01,
+    "operator": "slab",
+    "peak": {
+      "got": 0.36741227272727267,
+      "ref": 0.36999999999999994,
+      "signed_rel_error": -0.006993857493857486,
+      "pass": true
+    },
+    "arrival": {
+      "got": 0.38685663372674534,
+      "interp": {
+        "ref": 0.3481105263157894,
+        "signed_rel_error": 0.11130403846451707,
+        "pass": false
+      },
+      "sample": {
+        "ref": 0.3591,
+        "signed_rel_error": 0.08539125591757178,
+        "pass": true
+      }
+    },
+    "arrival_needed_for_10pct_s": {
+      "vs_interp": 0.3829215789473684,
+      "vs_sample": 0.39501000000000003,
+      "shortfall_s": 0.003935054779376945,
+      "shortfall_rel": 0.010276398604106373
+    },
+    "peak_time_s": 1.436751,
+    "peak_time_rel_error_vs_reference": 0.1619022341480488,
+    "censored": false,
+    "rule": "Acceptance verdict at the admissible station.\n\n    Rule (stated before the numbers are looked at, so the verdict cannot be\n    reverse-engineered from them):\n\n    * station   : 2.228 m (the only station on disk that the lattice audit does\n                  not exclude; 2.426 m is EXCLUDED_BY_LATTICE).\n    * operator  : frozen ``slab``.\n    * grid      : finest available with an uncensored peak.\n    * PASS      : both peak and arrival within ``tol`` for **both** reference\n                  arrival definitions -- a pass must not depend on which of the\n                  two digitisation conventions one happens to pick.\n    * BORDERLINE: one definition inside, the other outside -> the tolerance is\n                  not decidable at the current reference precision; reported as\n                  such, never rounded to PASS.\n    * FAIL      : both definitions outside.\n    "
+  }
+}
