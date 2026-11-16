@@ -28,6 +28,13 @@ def fmt(v, spec=".3f", dash="—"):
     return format(v, spec)
 
 
+def _positive_curve(ys):
+    """True when a matplotlib log axis can carry ``ys``."""
+    return (len(ys) >= 2
+            and all(isinstance(y, (int, float)) and math.isfinite(y) and y > 0
+                    for y in ys))
+
+
 def make_figure(s: dict, path: Path):
     import matplotlib
     matplotlib.use("Agg")
@@ -57,11 +64,16 @@ def make_figure(s: dict, path: Path):
     gate = s["gates_declared"]["spurious_gate_finest"]["value"]
     b.axhline(gate, color="C3", ls="--", lw=1.0,
               label="Adami gate %.2f" % gate)
-    b.loglog(x, ys, "s-", color="C2", label=r"$\max|u|/v_{ref}$")
-    b.loglog(x, [r["umean_over_vref"] for r in lad], "^--", color="C4",
-             label=r"$\overline{|u|}/v_{ref}$")
+    ys_mean = [r["umean_over_vref"] for r in lad]
+    log_umax, log_umean = _positive_curve(ys), _positive_curve(ys_mean)
+    (b.loglog if log_umax else b.plot)(x, ys, "s-", color="C2",
+                                       label=r"$\max|u|/v_{ref}$")
+    (b.loglog if log_umean else b.plot)(x, ys_mean, "^--", color="C4",
+                                        label=r"$\overline{|u|}/v_{ref}$")
+    if not (log_umax and log_umean):
+        b.set_title("(b) spurious currents (linear: partial record)")
     order = s["orders"]["spurious_in_R_over_dx"]
-    if math.isfinite(order):
+    if log_umax and math.isfinite(order):
         y0 = ys[0] * (x[0] / x[0]) ** 0
         b.loglog(x, [y0 * (xi / x[0]) ** order for xi in x], ":",
                  color="0.35", lw=1.0, label="fit order %.2f" % order)
@@ -102,7 +114,8 @@ def make_figure(s: dict, path: Path):
               s["gates_declared"]["viscosity_independence_pct"]["value"],
               color="0.85")
     d.axhline(0, color="0.6", lw=0.6)
-    d.set_xscale("log")
+    if vs and all(r["nu_factor"] > 0 for r in vs):
+        d.set_xscale("log")
     d.set_xlabel(r"$\nu / \sqrt{\sigma R/\rho}$")
     d.set_ylabel(r"$\Delta p$ error [%]")
     d.set_title("(d) viscosity independence at $R/\\Delta x$ = %d"
