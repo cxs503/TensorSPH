@@ -1,0 +1,210 @@
+{
+ "source_record": "benchmarks/laplace_sph/results_dynamic_ladder/diagnose_solenoid.json",
+ "levels_R_over_dx": [
+  8.0,
+  12.0,
+  16.0,
+  24.0
+ ],
+ "solenoidal_fraction": [
+  0.15698882520638974,
+  0.26713871140192147,
+  0.3694040962143472,
+  0.48009001039354404
+ ],
+ "solenoidal_abs": [
+  0.9606899361123465,
+  3.1024356313315193,
+  6.9692733868366465,
+  18.335017616746946
+ ],
+ "declared_order_min": 0.5,
+ "declared_gates": {
+  "adjoint_exact": 1e-10,
+  "reconstruction_exact": 1e-06,
+  "solenoidal_decay_order_min": 0.5,
+  "solenoidal_fraction_finest": 0.1,
+  "consistency_with_march": 3.0
+ },
+ "gate_orders": {
+  "solenoidal_fraction_decay_order": -1.0244723026160878,
+  "solenoidal_abs_decay_order": -2.6924996700672263,
+  "solenoidal_fraction_slope": 1.0244723026160878,
+  "solenoidal_abs_slope": 2.6924996700672263,
+  "H1_artifact_hypothesis_supported": false
+ },
+ "gate_verdicts": {
+  "adjoint_exact": {
+   "measured": 1.7333761568743933e-15,
+   "declared": 1e-10,
+   "op": "<=",
+   "pass": true
+  },
+  "reconstruction_exact": {
+   "measured": 1.778320285946364e-17,
+   "declared": 1e-06,
+   "op": "<=",
+   "pass": true
+  },
+  "solenoidal_decay_order_min": {
+   "measured": -1.0244723026160878,
+   "declared": 0.5,
+   "op": ">=",
+   "pass": false
+  },
+  "solenoidal_fraction_finest": {
+   "measured": 0.48009001039354404,
+   "declared": 0.1,
+   "op": "<=",
+   "pass": false
+  },
+  "consistency_with_march": {
+   "measured": 5.133291154651819,
+   "declared": 3.0,
+   "op": "<=",
+   "pass": false,
+   "note": "predicted/recorded spurious current at R/dx = 8"
+  }
+ },
+ "fits": {
+  "fraction_power_law": {
+   "kind": "power_law",
+   "C": 0.01987321138236828,
+   "exponent": 1.0244723026160867,
+   "decay_order": -1.0244723026160867,
+   "rmse_rel": 0.06818122621462845,
+   "max_rel": 0.07880002751472769
+  },
+  "fraction_michaelis": {
+   "kind": "michaelis",
+   "f_inf": 0.9999999999999999,
+   "x_half": 29.838419614552123,
+   "f_inf_at_bound": true,
+   "rmse_rel": 0.1828989914643367,
+   "max_rel": 0.34675395127515674
+  },
+  "fraction_linear": {
+   "kind": "linear_in_R_over_dx",
+   "slope": 0.019927687707898215,
+   "intercept": 0.019490095185577334,
+   "rmse_rel": 0.08506715159083603,
+   "max_rel": 0.13964542771469207
+  },
+  "abs_power_law": {
+   "kind": "power_law",
+   "C": 0.003726445816892557,
+   "exponent": 2.6924996700672246,
+   "decay_order": -2.6924996700672246,
+   "rmse_rel": 0.052643794078255486,
+   "max_rel": 0.06631589425532537
+  }
+ },
+ "holdout": {
+  "fit_levels": [
+   8.0,
+   12.0,
+   16.0
+  ],
+  "held_out_level": 24.0,
+  "predicted": 0.6179923344628385,
+  "measured": 0.48009001039354404,
+  "rel_error_pct": 28.724264426217044,
+  "exponent_from_fit_levels": 1.2395612013048407
+ },
+ "monotone_increasing": true,
+ "artifact_hypothesis_supported": false,
+ "verdict": {
+  "decay_order_4level": -1.0244723026160878,
+  "declared_min": 0.5,
+  "pass": false,
+  "statement": "the solenoidal fraction of the discrete CSF traction does NOT fall with R/dx at the pre-registered minimum order"
+ },
+ "extrapolation": {
+  "saturating_f_inf": 0.9999999999999999,
+  "saturating_x_half": 29.838419614552123,
+  "x_at_90pct_of_asymptote": 268.5457765309691,
+  "power_law_fraction_at_Rdx_64": 1.4081515866153484,
+  "caveat": "extrapolation beyond the measured range; reported to bound the claim, not as a result"
+ },
+ "marched_cross_check": {
+  "present": [
+   {
+    "job": "dx8_nu01",
+    "R_over_dx": 8.0,
+    "n_particles": 780,
+    "umax_over_vref": 0.26289546143178827,
+    "dp_rel_error_pct": 1.1722720603636994,
+    "steps": 120,
+    "t_over_t_sigma": 12.000000000000002
+   },
+   {
+    "job": "dx12_nu01",
+    "R_over_dx": 12.0,
+    "n_particles": 1733,
+    "umax_over_vref": 0.28600690646228477,
+    "dp_rel_error_pct": 2.1939618875712386,
+    "steps": 120,
+    "t_over_t_sigma": 11.999999999999998
+   }
+  ],
+  "missing_levels": [
+   16,
+   24
+  ],
+  "umax_decay_order": -0.20780947411614292,
+  "umax_decay_order_note": "fitted on 2 level(s) only -- two points is a slope, not a fit"
+ },
+ "young_laplace": [
+  {
+   "arm": "static, mls curvature (shipped arm)",
+   "R_over_dx": 10.0,
+   "pct": 0.9714066814682676,
+   "in_acceptance_arm": true
+  },
+  {
+   "arm": "static, mls curvature (shipped arm)",
+   "R_over_dx": 13.333333333333334,
+   "pct": 0.6061815203874721,
+   "in_acceptance_arm": true
+  },
+  {
+   "arm": "static, mls curvature (shipped arm)",
+   "R_over_dx": 20.0,
+   "pct": -0.21326281493778687,
+   "in_acceptance_arm": true
+  },
+  {
+   "arm": "static, fit_quadratic (negative control)",
+   "R_over_dx": 10.0,
+   "pct": -23.010132076774592,
+   "in_acceptance_arm": false
+  },
+  {
+   "arm": "static, fit_quadratic (negative control)",
+   "R_over_dx": 13.333333333333334,
+   "pct": -23.692946339144484,
+   "in_acceptance_arm": false
+  },
+  {
+   "arm": "static, fit_quadratic (negative control)",
+   "R_over_dx": 20.0,
+   "pct": -24.456987691186328,
+   "in_acceptance_arm": false
+  },
+  {
+   "arm": "marched, projection_adjoint (120 steps)",
+   "R_over_dx": 8.0,
+   "pct": 1.1722720603636994,
+   "in_acceptance_arm": true
+  },
+  {
+   "arm": "marched, projection_adjoint (120 steps)",
+   "R_over_dx": 12.0,
+   "pct": 2.1939618875712386,
+   "in_acceptance_arm": true
+  }
+ ],
+ "young_laplace_max_error_pct": 2.1939618875712386,
+ "young_laplace_all_under_15pct": true,
+ "young_laplace_all_under_3pct": true
+}
