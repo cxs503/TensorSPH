@@ -1,0 +1,216 @@
+{
+ "axis": "deadrise_response",
+ "case": "CASE-SPH-WEDGE-ENTRY-2D",
+ "design": {
+  "angles": [
+   20.0,
+   30.0,
+   40.0
+  ],
+  "crosscheck": "EIM",
+  "diagnostic": "wagner_1932",
+  "gate": 0.15,
+  "primary": "COM",
+  "reference_angle": 30.0,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "statistic": "by_frames[\"61\"].resolution_band.peak_median"
+ },
+ "grids": {
+  "0.002": {
+   "dx": 0.002,
+   "ratios": [
+    {
+     "beta_deg": 20.0,
+     "cp_measured": 20.00487423555475,
+     "cp_measured_band_spread": 0.30592449247407993,
+     "cp_measured_rel_sd": 0.06756598151395064,
+     "ratio_measured": 2.4486751764191204,
+     "ratio_reference": {
+      "COM": 2.569364161849711,
+      "EIM": 2.5710144927536227,
+      "wagner_1932": 2.3357567795247145
+     },
+     "ratio_uncertainty": 0.33454289973199947,
+     "residual_vs_ratio": {
+      "COM": -0.04697231603935259,
+      "EIM": -0.047584063286813194,
+      "wagner_1932": 0.048343388268954346
+     },
+     "resolvable_outside_own_uncertainty": false,
+     "verdict": "NOT_JUDGEABLE"
+    }
+   ],
+   "readings": {
+    "20": {
+     "band_spread_median": 0.30592449247407993,
+     "estimator_uncertainty": 0.30592449247407993,
+     "judgeable": false,
+     "n_realisations": 2,
+     "peak_median": 20.00487423555475,
+     "peak_median_per_seed": [
+      20.96063438292619,
+      19.04911408818331
+     ],
+     "reference": {
+      "C": 4.315727438431242,
+      "cp_com": 17.78,
+      "cp_eim": 17.74,
+      "cp_wagner": 19.62550332282829
+     },
+     "rel_sd": 0.06756598151395064,
+     "seeds": [
+      1,
+      2
+     ]
+    },
+    "30": {
+     "band_spread_median": 0.13538521583087,
+     "estimator_uncertainty": 0.13538521583087,
+     "judgeable": true,
+     "n_realisations": 2,
+     "peak_median": 8.169672494009339,
+     "peak_median_per_seed": [
+      7.796347789244058,
+      8.54299719877462
+     ],
+     "reference": {
+      "C": 2.720699046351327,
+      "cp_com": 6.92,
+      "cp_eim": 6.9,
+      "cp_wagner": 8.402203300817021
+     },
+     "rel_sd": 0.06462448293185993,
+     "seeds": [
+      1,
+      2
+     ]
+    }
+   },
+   "verdict": "NO_JUDGEABLE_ANGLE"
+  },
+  "0.004": {
+   "dx": 0.004,
+   "ratios": [
+    {
+     "beta_deg": 20.0,
+     "cp_measured": 15.868485527004912,
+     "cp_measured_band_spread": 0.1280346920888049,
+     "cp_measured_rel_sd": 0.02962183828421246,
+     "ratio_measured": 1.8290731502995672,
+     "ratio_reference": {
+      "COM": 2.569364161849711,
+      "EIM": 2.5710144927536227,
+      "wagner_1932": 2.3357567795247145
+     },
+     "ratio_uncertainty": 0.1775009139131155,
+     "residual_vs_ratio": {
+      "COM": -0.2881222609632731,
+      "EIM": -0.2885792143705177,
+      "wagner_1932": -0.21692482439385175
+     },
+     "resolvable_outside_own_uncertainty": true,
+     "verdict": "FAIL"
+    },
+    {
+     "beta_deg": 40.0,
+     "cp_measured": 5.581194617631636,
+     "cp_measured_band_spread": 0.4611548667696287,
+     "cp_measured_rel_sd": 0.1461216514627,
+     "ratio_measured": 0.6433136422712713,
+     "ratio_reference": {
+      "COM": 0.4710982658959537,
+      "EIM": 0.472463768115942,
+      "wagner_1932": 0.5360965388585711
+     },
+     "ratio_uncertainty": 0.4772604144563324,
+     "residual_vs_ratio": {
+      "COM": 0.3655614737782815,
+      "EIM": 0.36161476431649464,
+      "wagner_1932": 0.1999958881304873
+     },
+     "resolvable_outside_own_uncertainty": false,
+     "verdict": "NOT_JUDGEABLE"
+    }
+   ],
+   "readings": {
+    "20": {
+     "band_spread_median": 0.1280346920888049,
+     "estimator_uncertainty": 0.1280346920888049,
+     "judgeable": true,
+     "n_realisations": 3,
+     "peak_median": 15.868485527004912,
+     "peak_median_per_seed": [
+      15.868485527004912,
+      16.19081950819807,
+      15.269878968523384
+     ],
+     "reference": {
+      "C": 4.315727438431242,
+      "cp_com": 17.78,
+      "cp_eim": 17.74,
+      "cp_wagner": 19.62550332282829
+     },
+     "rel_sd": 0.02962183828421246,
+     "seeds": [
+      1,
+      2,
+      3
+     ]
+    },
+    "30": {
+     "band_spread_median": 0.12293775685978725,
+     "estimator_uncertainty": 0.12293775685978725,
+     "judgeable": true,
+     "n_realisations": 3,
+     "peak_median": 8.675697592743056,
+     "peak_median_per_seed": [
+      8.680133018521044,
+      8.675697592743056,
+      7.509238437524159
+     ],
+     "reference": {
+      "C": 2.720699046351327,
+      "cp_com": 6.92,
+      "cp_eim": 6.9,
+      "cp_wagner": 8.402203300817021
+     },
+     "rel_sd": 0.08140812490467494,
+     "seeds": [
+      1,
+      2,
+      3
+     ]
+    },
+    "40": {
+     "band_spread_median": 0.4611548667696287,
+     "estimator_uncertainty": 0.4611548667696287,
+     "judgeable": false,
+     "n_realisations": 3,
+     "peak_median": 5.581194617631636,
+     "peak_median_per_seed": [
+      5.581194617631636,
+      5.75932582213798,
+      4.35513840618009
+     ],
+     "reference": {
+      "C": 1.8720021656916068,
+      "cp_com": 3.26,
+      "cp_eim": 3.26,
+      "cp_wagner": 4.504392108354066
+     },
+     "rel_sd": 0.1461216514627,
+     "seeds": [
+      1,
+      2,
+      3
+     ]
+    }
+   },
+   "verdict": "RESPONSE_NOT_CONSISTENT"
+  }
+ }
+}
