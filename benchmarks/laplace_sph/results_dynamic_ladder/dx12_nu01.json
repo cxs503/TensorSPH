@@ -1,0 +1,151 @@
+{
+ "radius_m": 0.02,
+ "dx_m": 0.0016666666666666668,
+ "h_m": 0.002166666666666667,
+ "dt_s": 0.0011885621738690257,
+ "R_over_dx": 12.0,
+ "R_over_h": 9.23076923076923,
+ "n_particles": 1733,
+ "n_liquid": 520,
+ "sigma": 0.072,
+ "rho0": 1000.0,
+ "nu_m2_per_s": 1.1999999999999999e-05,
+ "nu_factor": 0.01,
+ "pin_outer": true,
+ "curvature_method": "mls",
+ "v_ref_m_per_s": 0.06,
+ "diverged": false,
+ "steps_completed": 12,
+ "umax_over_vref_final": 0.28600690646228477,
+ "umean_over_vref_final": 0.02818486156684307,
+ "area_ratio_final": 1.0076923076923077,
+ "dp_final_Pa": 3.678982627952564,
+ "dp_theory_Pa": 3.5999999999999996,
+ "dp_rel_error_pct": 2.1939618875712386,
+ "history": [
+  {
+   "step": 10,
+   "t_over_t_sigma": 1.0,
+   "umax_over_vref": 0.07172476562140012,
+   "umean_over_vref": 0.0078248417935462,
+   "dp_Pa": 3.580622199655441,
+   "area_ratio": 1.0,
+   "div_after_over_div_before": 9.447888386153809e-07,
+   "cg_iterations": 794
+  },
+  {
+   "step": 20,
+   "t_over_t_sigma": 2.0,
+   "umax_over_vref": 0.1358068387625706,
+   "umean_over_vref": 0.014801467672476785,
+   "dp_Pa": 3.5547380819459646,
+   "area_ratio": 1.0,
+   "div_after_over_div_before": 9.990894056686873e-07,
+   "cg_iterations": 813
+  },
+  {
+   "step": 30,
+   "t_over_t_sigma": 2.9999999999999996,
+   "umax_over_vref": 0.18682937082880627,
+   "umean_over_vref": 0.02033744030305437,
+   "dp_Pa": 3.530995761155704,
+   "area_ratio": 1.001923076923077,
+   "div_after_over_div_before": 9.91543865712935e-07,
+   "cg_iterations": 870
+  },
+  {
+   "step": 40,
+   "t_over_t_sigma": 4.0,
+   "umax_over_vref": 0.21839770240641776,
+   "umean_over_vref": 0.0239093331295333,
+   "dp_Pa": 3.5309874944003212,
+   "area_ratio": 1.0038461538461538,
+   "div_after_over_div_before": 9.877601451957733e-07,
+   "cg_iterations": 817
+  },
+  {
+   "step": 50,
+   "t_over_t_sigma": 5.0,
+   "umax_over_vref": 0.22961082765097132,
+   "umean_over_vref": 0.025467596985872174,
+   "dp_Pa": 3.574094433434589,
+   "area_ratio": 1.0038461538461538,
+   "div_after_over_div_before": 9.50172038665704e-07,
+   "cg_iterations": 821
+  },
+  {
+   "step": 60,
+   "t_over_t_sigma": 5.999999999999999,
+   "umax_over_vref": 0.24742752021813755,
+   "umean_over_vref": 0.025289880409491174,
+   "dp_Pa": 3.6156526014039057,
+   "area_ratio": 1.0038461538461538,
+   "div_after_over_div_before": 9.879355364369333e-07,
+   "cg_iterations": 797
+  },
+  {
+   "step": 70,
+   "t_over_t_sigma": 7.0,
+   "umax_over_vref": 0.25510274926516135,
+   "umean_over_vref": 0.023816411806413782,
+   "dp_Pa": 3.642884628861011,
+   "area_ratio": 1.0038461538461538,
+   "div_after_over_div_before": 9.780384843971376e-07,
+   "cg_iterations": 727
+  },
+  {
+   "step": 80,
+   "t_over_t_sigma": 8.0,
+   "umax_over_vref": 0.25134896563299175,
+   "umean_over_vref": 0.02196107796022171,
+   "dp_Pa": 3.6257039627514818,
+   "area_ratio": 1.0057692307692307,
+   "div_after_over_div_before": 9.606638469842607e-07,
+   "cg_iterations": 699
+  },
+  {
+   "step": 90,
+   "t_over_t_sigma": 9.0,
+   "umax_over_vref": 0.23738123954917698,
+   "umean_over_vref": 0.02098601499227421,
+   "dp_Pa": 3.617590245314739,
+   "area_ratio": 1.0057692307692307,
+   "div_after_over_div_before": 9.814995267762805e-07,
+   "cg_iterations": 643
+  },
+  {
+   "step": 100,
+   "t_over_t_sigma": 10.0,
+   "umax_over_vref": 0.23583751806091358,
+   "umean_over_vref": 0.022053635947566763,
+   "dp_Pa": 3.6130431578258024,
+   "area_ratio": 1.0057692307692307,
+   "div_after_over_div_before": 9.77392349667235e-07,
+   "cg_iterations": 664
+  },
+  {
+   "step": 110,
+   "t_over_t_sigma": 11.0,
+   "umax_over_vref": 0.2684164466290525,
+   "umean_over_vref": 0.024745380422021113,
+   "dp_Pa": 3.6486595782061584,
+   "area_ratio": 1.0038461538461538,
+   "div_after_over_div_before": 9.769189493076266e-07,
+   "cg_iterations": 669
+  },
+  {
+   "step": 120,
+   "t_over_t_sigma": 11.999999999999998,
+   "umax_over_vref": 0.28600690646228477,
+   "umean_over_vref": 0.02818486156684307,
+   "dp_Pa": 3.678982627952564,
+   "area_ratio": 1.0076923076923077,
+   "div_after_over_div_before": 9.43790863739635e-07,
+   "cg_iterations": 665
+  }
+ ],
+ "wall_s": 519.3804473876953,
+ "job": "dx12_nu01",
+ "role": "ladder",
+ "threads": 6
+}
