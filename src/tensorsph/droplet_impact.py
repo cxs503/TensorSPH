@@ -809,7 +809,7 @@ def drop_wall_wall_pairs(pairs: torch.Tensor, fluid_count: int) -> torch.Tensor:
 
 def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None,
         wall_vel=None, wall_accel=None, state=None, split: bool = False,
-        wrap_width: float | None = None):
+        wrap_width: float | None = None, nu_field: torch.Tensor | None = None):
     """Compute WCSPH RHS with pair-based compact-support interactions.
 
     ``state`` is an optional mutable dict carrying the cross-step scalar of the
@@ -851,6 +851,17 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None,
     within the support is in it, because the pair list is *not* rebuilt here
     (see :func:`tensorsph.lake_at_rest.periodic_pairs`).
 
+    ``nu_field`` overrides the constant ``cfg.viscosity`` with a per-particle
+    *kinematic* viscosity, shape ``(n,)``. It exists so a generalised-Newtonian
+    closure (:mod:`tensorsph.rheology`) can drive this operator: the fluid/fluid
+    pair value is the arithmetic mean of the two particles' viscosities, and a
+    fluid/wall pair uses the fluid partner's value, which is the right rule for
+    a mirror ghost because that ghost *is* the image of the same fluid particle.
+    The wall blend factor (``cfg.wall_friction``) multiplies it as before, so the
+    no-slip mechanism is untouched. ``None`` (the default) is the constant path,
+    bit for bit; ``nu_field = full(n, cfg.viscosity)`` reproduces it as well,
+    which ``tests/test_case_poiseuille_powerlaw.py`` pins.
+
     Returns ``(rho, pressure, acceleration)`` for the fluid particles.
     """
     h = cfg.h_factor * cfg.dx
@@ -879,6 +890,17 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None,
         raise ValueError("pairs must be a long tensor with shape (pair_count, 2)")
     if pairs.device != pos.device:
         raise ValueError("pairs and pos must be on the same device")
+    if nu_field is not None:
+        if not torch.is_tensor(nu_field) or nu_field.shape != (n,):
+            raise ValueError(
+                f"nu_field must be a tensor of shape ({n},), got "
+                f"{None if not torch.is_tensor(nu_field) else tuple(nu_field.shape)}")
+        if nu_field.device != pos.device or nu_field.dtype != pos.dtype:
+            raise ValueError("nu_field must share pos device and dtype")
+        if not bool(torch.isfinite(nu_field).all()):
+            raise ValueError("nu_field must be finite")
+        if bool((nu_field < 0).any()):
+            raise ValueError("nu_field must be non-negative")
 
     zero = torch.zeros(n, dtype=pos.dtype, device=pos.device)
     rho_all = torch.zeros(n + nw, dtype=pos.dtype, device=pos.device)
@@ -1131,16 +1153,26 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None,
     # contribute (the wall is static), so the mask only has to separate
     # fluid-fluid from fluid-wall.
     fluid_pair = (i < n) & (j < n)
+    if nu_field is None:
+        visc_nu = cfg.viscosity
+    else:
+        nu_pad = torch.cat((nu_field, nu_field.new_zeros(nw)))
+        visc_nu = torch.where(
+            fluid_pair,
+            0.5 * (nu_pad[i] + nu_pad[j]),
+            torch.where(i < n, nu_pad[i], nu_pad[j]))
     if nw and cfg.wall_friction > 0.0:
         crossing = torch.logical_xor(i < n, j < n)
         blend = (fluid_pair.to(pos.dtype)
                  + cfg.wall_friction * crossing.to(pos.dtype))
-        visc_scale = (VISCOUS_LAPLACIAN_FACTOR * cfg.viscosity * blend)[:, None]
+        visc_scale = (VISCOUS_LAPLACIAN_FACTOR * visc_nu * blend)[:, None]
     elif nw:
-        visc_scale = (VISCOUS_LAPLACIAN_FACTOR * cfg.viscosity
+        visc_scale = (VISCOUS_LAPLACIAN_FACTOR * visc_nu
                       * fluid_pair.to(pos.dtype))[:, None]
     else:
-        visc_scale = VISCOUS_LAPLACIAN_FACTOR * cfg.viscosity
+        visc_scale = VISCOUS_LAPLACIAN_FACTOR * visc_nu
+        if nu_field is not None:
+            visc_scale = visc_scale[:, None]
     dv = all_vel[i] - all_vel[j]
     denom = distance.square() + 0.01 * h * h
     laplace_weight = torch.relu(-(delta * grad_w).sum(dim=1)) / denom
