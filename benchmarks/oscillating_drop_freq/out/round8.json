@@ -1,0 +1,100 @@
+{
+  "case": "SPH-OSC-DROP-FREQ",
+  "round": 8,
+  "study": "comprehensive synthesis of rounds 1-7",
+  "reference": "Rayleigh 1879; Lamb 1932 Art. 275; ASME V&V 20-2009",
+  "generated": "2026-11-16T00:46:40Z",
+  "wall_seconds": 1.3,
+  "meta_analysis": {
+    "gate": {
+      "pass_rows": 10,
+      "total_rows": 10,
+      "pass_rate": 1.0,
+      "threshold_pct": 6.0
+    },
+    "validation": {
+      "pass_rows": 3,
+      "total_rows": 10,
+      "pass_rate": 0.3,
+      "method": "ASME V&V 20-2009 (GCI + estimator control bias)"
+    },
+    "convergence": {
+      "p_median": 1.93,
+      "p_range": [
+        0.2,
+        4.0
+      ],
+      "first_order_assumption_held": false,
+      "monotone_rows": 8,
+      "non_monotone_rows": 2
+    },
+    "systematic_bias": {
+      "l3_q_inf_error_mean_pct": -2.4620937025637035,
+      "l3_q_inf_error_std_pct": 0.1495023363963329,
+      "l3_rows_analysed": 5,
+      "l2_differential_q_inf_bias": -0.001014366565776581,
+      "l2_differential_rows": 2
+    },
+    "dynamic_arm": {
+      "status": "FAIL",
+      "reason": "divergence in every configuration (including sigma->0 control)",
+      "round": 5,
+      "note": "pressure + continuity + axis-source subsystem is not stable"
+    },
+    "established_facts": [
+      "6% gate met at R/dx=24 for all 10 channel rows",
+      "Observed order p \u2248 1.93 for l=3 (not p=1 as assumed in round 4)",
+      "l=3 mode has systematic -2.5% asymptotic bias (V&V 20 FAIL)",
+      "l=2 differential channel (A') passes V&V 20 with Q_inf \u2248 0.999",
+      "First-order convergence assumption (round 4) is falsified",
+      "Dynamic arm diverges in all tested configurations (round 5)",
+      "delta-SPH inflates the free surface (round 6)",
+      "Estimator bias (level-set control) \u2264 0.05% (negligible)"
+    ],
+    "open_questions": [
+      "Source of -2.5% l=3 bias: curvature estimation? interface reconstruction?",
+      "l=2 non-monotonicity: grid alignment effect? needs orientation ensemble",
+      "Dynamic arm instability: root cause in density/pressure evolution",
+      "R/dx=32/40 results: never retrieved from cluster (cj4101)",
+      "Whether bias decreases with higher resolution (untested beyond 24)"
+    ]
+  },
+  "verdict": {
+    "anchor": "CASE-SPH-OSC-DROP-FREQ",
+    "reference": "Rayleigh 1879, Proc. R. Soc. Lond. 29:71; Lamb 1932 Art. 275",
+    "gate": {
+      "threshold_pct": 6.0,
+      "pass_rate": 1.0,
+      "status": "PASS"
+    },
+    "asymptotic_validation": {
+      "method": "ASME V&V 20-2009",
+      "pass_rate": 0.3,
+      "status": "PARTIAL"
+    },
+    "dynamic_arm": {
+      "status": "FAIL",
+      "note": "divergence in every configuration (including sigma->0 control)"
+    },
+    "overall": "PARTIAL",
+    "recommendation": "Anchor gate (6% at R/dx=24) is met, but asymptotic validation reveals a systematic -2.5% bias for l=3 that does not vanish with resolution. The dynamic arm is non-functional. Recommend: (1) investigate l=3 bias source (curvature? reconstruction?), (2) fix dynamic arm instability, (3) run R/dx=32/40 to confirm bias persistence.",
+    "established_facts": [
+      "6% gate met at R/dx=24 for all 10 channel rows",
+      "Observed order p \u2248 1.93 for l=3 (not p=1 as assumed in round 4)",
+      "l=3 mode has systematic -2.5% asymptotic bias (V&V 20 FAIL)",
+      "l=2 differential channel (A') passes V&V 20 with Q_inf \u2248 0.999",
+      "First-order convergence assumption (round 4) is falsified",
+      "Dynamic arm diverges in all tested configurations (round 5)",
+      "delta-SPH inflates the free surface (round 6)",
+      "Estimator bias (level-set control) \u2264 0.05% (negligible)"
+    ],
+    "open_questions": [
+      "Source of -2.5% l=3 bias: curvature estimation? interface reconstruction?",
+      "l=2 non-monotonicity: grid alignment effect? needs orientation ensemble",
+      "Dynamic arm instability: root cause in density/pressure evolution",
+      "R/dx=32/40 results: never retrieved from cluster (cj4101)",
+      "Whether bias decreases with higher resolution (untested beyond 24)"
+    ]
+  },
+  "figure": "/srv/tensor/agent/work/m22652/docs/figures/case_sph_osc_drop_freq_round8_synthesis.png"
+}
