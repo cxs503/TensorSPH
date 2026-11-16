@@ -34,14 +34,14 @@
   },
   "registry_backed_pct": 10.810360584937099,
   "methods_without_evidence": [],
-  "records": 29,
+  "records": 30,
   "figures": [
     "figure_tvc_front.png",
     "figure_registry_coverage.png"
   ],
   "figure_digests": {
     "figure_tvc_front.png": "2f80a38fe695cbdfb777ec262226dcd80576e59b1db4a5de833679b3b824bc40",
-    "figure_registry_coverage.png": "ef3efb4b170e0028c2facd248b387f25eab42509631571e738566af88fd7a6e3"
+    "figure_registry_coverage.png": "d4f214b09b4490d4f634cfb6aebddd1d252677c2c7f1a9ac85bc3ab2b6949468"
   },
   "owner_tolerance_pct": 15.0
 }
