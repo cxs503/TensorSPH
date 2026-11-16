@@ -54,7 +54,8 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from tensorsph.csf_consistent import mls_divergence  # noqa: E402
 from tensorsph.laplace_isph import (  # noqa: E402
-    csf_state_two_phase, hex_block, laplace_isph_case, pressure_poisson,
+    cell_linked_pairs, csf_state_two_phase, hex_block, laplace_isph_case,
+    pressure_poisson, smooth_indicator,
 )
 
 OUT = Path(__file__).resolve().parent / "results"
@@ -70,6 +71,13 @@ GATES = {
     "naive_err_min_pct_at_ratio_1000": 15.0,
     "sigma_zero_max_pa": 1e-9,
     "vol_phase_spread_max": 1e-12,
+    # the interface-invariance control (m23102): the cell volume must reproduce
+    # the analytic triangular cell area, and the colour field must be invariant
+    # across the ratio ladder up to float64 round-off (measured 6e-17; a volume
+    # model that lets the density into ``vol`` moves it by O(0.1), 13 decades
+    # above this gate).
+    "cell_volume_vs_analytic_ppm_max": 1.0,
+    "color_field_max_abs_diff_max": 1e-12,
 }
 
 RATIOS = [1, 2, 5, 10, 30, 100, 300, 1000]
@@ -185,21 +193,73 @@ def sweep_diffuse(ratio=1000, levels=RES_LEVELS):
     return rows
 
 
+def interface_control(ratios=(1, 10, 1000), radius=RADIUS, dx=DX, outer=OUTER):
+    """Is the interface *really* held fixed when the density ratio moves?
+
+    Round 3 claims "the lattice, the cell volume ``V`` and therefore the colour
+    function are held fixed".  The first version of this control evaluated
+    ``mass / (mass / area)``, which is the constant ``area`` for every input: it
+    could not fail, so it certified nothing (m23102).  This one is built on the
+    same helpers the solver uses and each of its three numbers can move:
+
+    * ``cell_volume_rel_spread`` -- ``vol_i = m_i / rho_i`` with the per-phase
+      density ``rho_i = m_i / dx^2 sqrt(3)/2``; identical cell volume in both
+      phases is what makes the colour function ratio-blind.
+    * ``cell_volume_vs_analytic_ppm`` -- the same ``vol`` against the analytic
+      triangular cell area.  This is the part that pins the *mass model* instead
+      of restating the algebra ``mass/(mass/area) == area``.
+    * ``color_max_abs_diff`` -- the Shepard colour field at each ratio minus the
+      ratio-1 field, element-wise.  The claim is bit-identity, so the gate is
+      ``== 0``, not a tolerance; a density leak into ``smooth_indicator`` (e.g.
+      cell volume taken as ``mass/rho0`` for both phases) shows up here.
+    """
+    h = 1.3 * dx
+    area = dx * dx * math.sqrt(3.0) / 2.0
+    ref = None
+    spreads, vols, ppm = [], [], []
+    mass_ratio, color_diff = {}, {}
+    for ratio in ratios:
+        pos, mass, liquid, _ = hex_block(radius, dx, outer, RHO_L,
+                                         rho_vapour=RHO_L / ratio)
+        rho_phase = mass / area
+        vol = mass / rho_phase
+        pairs = cell_linked_pairs(pos, 2.0 * h)
+        color = smooth_indicator(pos, liquid, vol, pairs, h)
+        if ref is None:
+            ref = color
+        spreads.append(float((vol.max() - vol.min()) / vol.mean()))
+        vols.append(float(vol.mean()))
+        ppm.append(float((vol.mean() / area - 1.0) * 1e6))
+        mass_ratio[str(ratio)] = float(mass[liquid].mean() / mass[~liquid].mean())
+        color_diff[str(ratio)] = float((color - ref).abs().max())
+    return {
+        "ratios": [int(r) for r in ratios],
+        "cell_area_analytic_m2": area,
+        "cell_volume_mean_m2": vols[0],
+        "cell_volume_rel_spread": max(spreads),
+        "cell_volume_vs_analytic_ppm": max(abs(p) for p in ppm),
+        "mass_ratio_measured": mass_ratio,
+        "mass_ratio_rel_err": {k: v / float(k) - 1.0 for k, v in mass_ratio.items()},
+        "color_max_abs_diff": color_diff,
+        "color_max_abs_diff_max": max(color_diff.values()),
+    }
+
+
 def controls(ratio=1000):
     zero = laplace_isph_case(radius=RADIUS, dx=DX, outer=OUTER, sigma=0.0,
                              rho0=RHO_L, rho_vapour=RHO_L / ratio)
+    ctrl = interface_control()
+    ctrl["sigma_zero"] = {"dp_measured_Pa": zero["dp_measured_Pa"],
+                          "dp_flux_Pa": zero["dp_flux_Pa"]}
+    # back-compatible name of the new control (round-3 schema)
+    ctrl["vol_phase_spread"] = ctrl["cell_volume_rel_spread"]
     pos, mass, liquid, _ = hex_block(RADIUS, DX, OUTER, RHO_L,
                                      rho_vapour=RHO_L / ratio)
-    area = DX * DX * math.sqrt(3.0) / 2.0
-    vol = mass / (mass / area)
-    return {
-        "sigma_zero": {"dp_measured_Pa": zero["dp_measured_Pa"],
-                       "dp_flux_Pa": zero["dp_flux_Pa"]},
-        "vol_phase_spread": float((vol.max() - vol.min()) / vol.mean()),
-        "mass_per_phase": {"liquid": float(mass[liquid].mean()),
-                           "vapour": float(mass[~liquid].mean())},
-        "n_liquid": int(liquid.sum()), "n_vapour": int((~liquid).sum()),
-    }
+    ctrl["n_liquid"] = int(liquid.sum())
+    ctrl["n_vapour"] = int((~liquid).sum())
+    ctrl["mass_per_phase"] = {"liquid": float(mass[liquid].mean()),
+                              "vapour": float(mass[~liquid].mean())}
+    return ctrl
 
 
 def summarise(ratio_rows, res_rows, trans_rows, diff_rows, ctrl):
@@ -212,9 +272,15 @@ def summarise(ratio_rows, res_rows, trans_rows, diff_rows, ctrl):
     res_ok = [r for r in res_rows if r["R_over_dx"] >= 20]
     res_fd_ok = [r for r in res_rows if r["R_over_dx"] >= 20 and r["arm"] == "force_density"]
     trans_err = [r["err_pct"] for r in trans_rows]
-    by_res = {}
+    # The two resolution arms are kept apart on purpose: the round-3 key
+    # ``resolution_err_pct_by_ratio`` silently changed meaning when the
+    # force-density arm (m20771) was added -- a reader comparing it against the
+    # ``density`` table in the doc saw the wrong arm (m23102).  Every map now
+    # carries its arm in the name.
+    by_res_density, by_res_fd = {}, {}
     for r in res_rows:
-        by_res.setdefault(r["ratio"], {})[r["R_over_dx"]] = r["err_pct"]
+        target = by_res_fd if r["arm"] == "force_density" else by_res_density
+        target.setdefault(r["ratio"], {})[r["R_over_dx"]] = r["err_pct"]
     return {
         "gates": GATES,
         "density_arm_err_pct_by_ratio": {r["ratio"]: r["err_pct"] for r in dens},
@@ -234,7 +300,8 @@ def summarise(ratio_rows, res_rows, trans_rows, diff_rows, ctrl):
         "naive_err_pct_by_ratio": {r["ratio"]: r["err_pct"] for r in naive},
         "naive_err_pct_ratio_1000": next(r["err_pct"] for r in naive
                                          if r["ratio"] == 1000),
-        "resolution_err_pct_by_ratio": by_res,
+        "resolution_err_pct_by_ratio_density": by_res_density,
+        "resolution_err_pct_by_ratio_force_density": by_res_fd,
         "resolution_max_abs_err_pct_R_over_dx_ge_20": max(
             abs(r["err_pct"]) for r in res_ok),
         "resolution_max_abs_err_pct_R_over_dx_ge_20_force_density": max(
@@ -245,7 +312,13 @@ def summarise(ratio_rows, res_rows, trans_rows, diff_rows, ctrl):
         "translation_max_abs_err_pct": max(abs(e) for e in trans_err),
         "sigma_zero_dp_Pa": ctrl["sigma_zero"]["dp_measured_Pa"],
         "sigma_zero_flux_Pa": ctrl["sigma_zero"]["dp_flux_Pa"],
-        "vol_phase_spread": ctrl["vol_phase_spread"],
+        "vol_phase_spread": ctrl["cell_volume_rel_spread"],   # round-3 name
+        "cell_volume_rel_spread": ctrl["cell_volume_rel_spread"],
+        "cell_volume_vs_analytic_ppm": ctrl["cell_volume_vs_analytic_ppm"],
+        "color_max_abs_diff_by_ratio": ctrl["color_max_abs_diff"],
+        "color_max_abs_diff_max": ctrl["color_max_abs_diff_max"],
+        "mass_ratio_measured": ctrl["mass_ratio_measured"],
+        "mass_ratio_rel_err": ctrl["mass_ratio_rel_err"],
         "mass_per_phase": ctrl["mass_per_phase"],
     }
 
@@ -283,26 +356,42 @@ def make_figure(summary, ratio_rows, res_rows, trans_rows, diff_rows, path):
     styles = {1: ("o-", "navy"), 10: ("s-", "darkorange"),
               1000: ("^-", "darkgreen")}
     for ratio in (1, 10, 1000):
-        rows = [r for r in res_rows if r["ratio"] == ratio]
+        rows = [r for r in res_rows
+                if r["ratio"] == ratio and r["arm"] == "force_density"]
         st, col = styles[ratio]
         a.plot([r["R_over_dx"] for r in rows], [r["err_pct"] for r in rows], st,
-               color=col, label="$\\rho_l/\\rho_v=%d$" % ratio)
+               color=col, label="$\\rho_l/\\rho_v=%d$  force-density" % ratio)
+    for ratio in (10, 1000):
+        rows = [r for r in res_rows
+                if r["ratio"] == ratio and r["arm"] == "density"]
+        st, col = styles[ratio]
+        a.plot([r["R_over_dx"] for r in rows], [r["err_pct"] for r in rows],
+               st[:-1] + ":", color=col, alpha=0.8,
+               label="$\\rho_l/\\rho_v=%d$  $1/\\rho$ operator" % ratio)
     a.axhspan(-15, 15, color="orange", alpha=0.10, label="owner gate 15 %")
     a.axhspan(-5, 5, color="green", alpha=0.10, label="5 % band")
     a.axhline(0, color="k", lw=0.6)
     a.set_xlabel("$R/\\Delta x$")
     a.set_ylabel("error  [%]")
-    a.set_title("B  resolution, by density ratio (density-weighted)")
-    a.legend(fontsize=7.5)
+    a.set_title("B  resolution: rho-blind force density vs $1/\\rho$ operator")
+    a.legend(fontsize=6.5, ncol=2)
     a.grid(alpha=0.3)
 
     a = ax[1][0]
-    a.plot([r["R_over_dx"] for r in res_rows if r["ratio"] == 1000],
-           [r["flux_err_pct"] for r in res_rows if int(r["ratio"]) == 1000],
-           "s--", color="darkgreen", label="traction flux $-\\int\\rho a_r dA/2\\pi R$")
-    a.plot([r["R_over_dx"] for r in res_rows if r["ratio"] == 1000],
-           [r["err_pct"] for r in res_rows if int(r["ratio"]) == 1000],
-           "^-", color="darkgreen", alpha=0.45, label="$\\Delta p$ (Poisson)")
+    dens1000 = [r for r in res_rows
+                if r["ratio"] == 1000 and r["arm"] == "density"]
+    fd1000 = [r for r in res_rows
+              if r["ratio"] == 1000 and r["arm"] == "force_density"]
+    a.plot([r["R_over_dx"] for r in dens1000],
+           [r["flux_err_pct"] for r in dens1000],
+           "s--", color="darkgreen",
+           label="traction flux $-\\int\\rho a_r dA/2\\pi R$ (rho-blind)")
+    a.plot([r["R_over_dx"] for r in dens1000],
+           [r["err_pct"] for r in dens1000],
+           "^-", color="crimson", alpha=0.6, label="$\\Delta p$, $1/\\rho$ operator")
+    a.plot([r["R_over_dx"] for r in fd1000],
+           [r["err_pct"] for r in fd1000],
+           "o-", color="navy", label="$\\Delta p$, force-density operator")
     a.plot([r["R_over_dx"] for r in diff_rows], [r["err_pct"] for r in diff_rows],
            "v:", color="purple", label="diffuse-density ablation")
     a.axhline(0, color="k", lw=0.6)
