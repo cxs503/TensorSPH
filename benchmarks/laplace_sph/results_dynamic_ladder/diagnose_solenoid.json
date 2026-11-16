@@ -10,7 +10,9 @@
   "h_over_dx": 1.3,
   "levels_R_over_dx": [
    8,
-   12
+   12,
+   16,
+   24
   ],
   "curvature": "mls (div n of the twice-smoothed normal)",
   "split": "helmholtz_split, A = D D^T PCG rel_tol 1e-10",
@@ -87,19 +89,60 @@
    "t_ref_s": 0.33333333333333337,
    "umax_over_vref_predicted": 2.0665484590529166,
    "wall_s": 69.75950860977173
+  },
+  {
+   "R_over_dx": 16.0,
+   "dx_m": 0.00125,
+   "h_m": 0.0016250000000000001,
+   "n_particles": 3090,
+   "n_pairs": 26763,
+   "n_liquid": 926,
+   "a_norm": 18.866259086614775,
+   "solenoidal_fraction": 0.3694040962143472,
+   "solenoidal_abs": 6.9692733868366465,
+   "irrotational_abs": 17.53182706915628,
+   "irrotationality": 0.36940409621436426,
+   "adjointness_defect": 9.630223873024834e-16,
+   "reconstruction_defect": 1.203642292469426e-17,
+   "orthogonality": 5.727024732594262e-15,
+   "cg_iterations": 2578,
+   "v_ref_m_per_s": 0.06,
+   "dt_s": 0.0007719937774108748,
+   "t_ref_s": 0.33333333333333337,
+   "umax_over_vref_predicted": 5.35364557893077,
+   "wall_s": 26.995891571044922
+  },
+  {
+   "R_over_dx": 24.0,
+   "dx_m": 0.0008333333333333334,
+   "h_m": 0.0010833333333333335,
+   "n_particles": 6853,
+   "n_pairs": 60114,
+   "n_liquid": 2089,
+   "a_norm": 38.19079176781285,
+   "solenoidal_fraction": 0.48009001039354404,
+   "solenoidal_abs": 18.335017616746946,
+   "irrotational_abs": 33.50169704426961,
+   "irrotationality": 0.4800900103935523,
+   "adjointness_defect": 2.8391340497299e-16,
+   "reconstruction_defect": 1.778320285946364e-17,
+   "orthogonality": -1.7425154706775288e-15,
+   "cg_iterations": 3832,
+   "v_ref_m_per_s": 0.06,
+   "dt_s": 0.00042022018650230623,
+   "t_ref_s": 0.33333333333333337,
+   "umax_over_vref_predicted": 12.528793515864415,
+   "wall_s": 92.14258885383606
   }
  ],
  "orders": {
-  "solenoidal_fraction_decay_order": -1.3110706826319913,
-  "solenoidal_abs_decay_order": -2.891225499514438,
-  "solenoidal_fraction_slope": 1.3110706826319913,
-  "solenoidal_abs_slope": 2.891225499514438,
+  "solenoidal_fraction_decay_order": -1.0244723026160878,
+  "solenoidal_abs_decay_order": -2.6924996700672263,
+  "solenoidal_fraction_slope": 1.0244723026160878,
+  "solenoidal_abs_slope": 2.6924996700672263,
   "H1_artifact_hypothesis_supported": false
  },
- "levels_not_measured": [
-  16,
-  24
- ],
+ "levels_not_measured": [],
  "march_reference": {
   "R_over_dx": 8.0,
   "umax_over_vref": 0.1790878949903455,
@@ -115,19 +158,19 @@
    "pass": true
   },
   "reconstruction_exact": {
-   "measured": 7.088037703667767e-18,
+   "measured": 1.778320285946364e-17,
    "declared": 1e-06,
    "op": "<=",
    "pass": true
   },
   "solenoidal_decay_order_min": {
-   "measured": -1.3110706826319913,
+   "measured": -1.0244723026160878,
    "declared": 0.5,
    "op": ">=",
    "pass": false
   },
   "solenoidal_fraction_finest": {
-   "measured": 0.26713871140192147,
+   "measured": 0.48009001039354404,
    "declared": 0.1,
    "op": "<=",
    "pass": false
@@ -140,5 +183,5 @@
    "note": "predicted/recorded spurious current at R/dx = 8"
   }
  },
- "wall_s_total": 110.21403002738953
+ "wall_s_total": 229.3525104522705
 }
