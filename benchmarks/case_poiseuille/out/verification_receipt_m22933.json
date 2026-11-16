@@ -1,0 +1,34 @@
+{
+  "mission_id": 22933,
+  "anchor": "CASE-POISEUILLE-SPH",
+  "repo": "TensorSPH",
+  "branch": "agent/m22933",
+  "report_id": 20591,
+  "commit": "1814d021",
+  "doc": "docs/case_poiseuille_gauge_ruling.md",
+  "figure": "docs/figures/case_poiseuille_gauge_ruling.png",
+  "tests_run": [
+    "pytest tests/test_case_poiseuille_gauge_rebase.py tests/test_case_poiseuille_pool_conformance.py -q -> 19 passed"
+  ],
+  "checks": {
+    "gauge_equals_U_w_for_combined_configuration": true,
+    "gauge_resolution_independent_and_cross_implementation_identical": true,
+    "rebased_summary_rederivable_from_own_rows_rel_tol": 1e-09,
+    "old_rule_reproduction_of_stored_values": {
+      "combined_Hdx8": "declared_U_w (sampled rule rel diff 1.908e-01 -> the rung that carried the other gauge)",
+      "combined_Hdx12": "sampled rule rel diff 0.0e+00",
+      "combined_Hdx16": "sampled rule rel diff 0.0e+00"
+    },
+    "gate_flips": [],
+    "pool_binding_max_rel_diff_before": 0.19,
+    "pool_binding_max_rel_diff_after": 6e-12,
+    "known_binding_exceptions_after": {},
+    "pool_verdict": "FAIL (unchanged: pre-existing honest FAIL CP_backflow_peak@Hdx8/12)",
+    "legs_row_analytic_column_defect": "quarantined in benchmarks/case_poiseuille/out/legs_row_audit.json, gate-free, not hand-edited",
+    "couette_zero_division_fixed": true
+  },
+  "not_run": {
+    "full_combined_py_rerun": "local compute guard (load15 130-175 on 128 cores) blocked the on-machine run; --quick end-to-end verification submitted to the cluster as cj4482 and reported as not_waiting if still queued",
+    "cluster_job_cj4482": "submitted, queued behind ~78 jobs at submission time; not fetched"
+  }
+}
