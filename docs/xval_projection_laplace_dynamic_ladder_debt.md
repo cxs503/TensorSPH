@@ -1,3 +1,9 @@
+> **Status update (m22962).** `dx16_nu01` and `dx12_horizon` are now in the tree (fetched
+> from `cj4390`/`cj4391`) and both **diverge**: at step 3 (NaN) and step 181 respectively.
+> H1/H2 are therefore decided *negatively*, not merely unbacked; `dx24_nu01` and the `nu`
+> sweep still have no record. Adjudication:
+> `docs/xval_projection_laplace_horizon_instability.md`.
+
 # Evidence debt: the dynamic projection-SPH Young-Laplace ladder is not measured
 
 *Anchor:* `XVAL-SPH-PROJECTION-SPH-YOUNG-LAPLACE` (TensorSPH) · acceptance `< 15 %` on the
