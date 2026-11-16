@@ -114,11 +114,21 @@ def test_transport_velocity_record_is_no_longer_called_attributable(adjudication
     assert any("resolution_window" in d for d in entry["downgrades"])
 
 
-def test_couette_wall_shear_record_is_pair_only(adjudication):
+def test_couette_wall_shear_record_is_a_transient_reading(adjudication):
+    """The resolution label was never the cause: the same grid recovers."""
     entry = next(a for a in adjudication["adjudications"]
                  if a["extractor"] == "x_couette_wall_shear")
-    assert entry["class"] == "resolution_pair_only"
+    # the grid verdict is still banked, unhidden...
     assert entry["ladder_guard"]["n_rungs"] < rlg.MIN_RUNGS
+    assert entry["ladder_guard"]["class"] == "resolution_pair_only"
+    # ...but it does not carry the record: the terminal-time axis does
+    assert entry["class"] == "transient_reading"
+    guard = entry["transient_guard"]
+    assert guard["resolution_H_over_dx"] == guard["record"]["resolution_H_over_dx"]
+    assert guard["every_longer_level_below_record"] is True
+    assert guard["passing_levels"]
+    assert any("transient_reading overrides resolution_pair_only" in d
+               for d in entry["downgrades"])
 
 
 def test_no_record_is_called_attributable_without_a_clean_ladder(adjudication):
