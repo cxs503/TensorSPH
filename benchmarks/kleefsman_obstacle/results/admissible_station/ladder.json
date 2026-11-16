@@ -1,0 +1,98 @@
+{
+  "station_x_m": 2.228,
+  "operator": "slab",
+  "peak": {
+    "quantity": "peak_height_m",
+    "status": "ok",
+    "order_observed": 0.3772051858800637,
+    "levels": [
+      {
+        "dx": 0.01,
+        "value": 0.36741227272727267,
+        "tag": "dx0.01"
+      },
+      {
+        "dx": 0.02,
+        "value": 0.38170400000000004,
+        "tag": "dx0.02"
+      },
+      {
+        "dx": 0.04,
+        "value": 0.40026642857142863,
+        "tag": "dx0.04"
+      }
+    ],
+    "value_h0": null,
+    "non_asymptotic": true,
+    "monotone": true,
+    "band_from_finest_two": [
+      0.36741227272727267,
+      0.38170400000000004
+    ],
+    "why": "observed order not usable (p outside [0.5, 6] or non-monotone approach); no Richardson limit claimed"
+  },
+  "arrival": {
+    "quantity": "arrival_time_s_interp",
+    "status": "ok",
+    "order_observed": 2.8802211111424723,
+    "levels": [
+      {
+        "dx": 0.01,
+        "value": 0.38685663372674534,
+        "tag": "dx0.01"
+      },
+      {
+        "dx": 0.02,
+        "value": 0.3893124393288032,
+        "tag": "dx0.02"
+      },
+      {
+        "dx": 0.04,
+        "value": 0.40739362618432384,
+        "tag": "dx0.04"
+      }
+    ],
+    "value_h0": 0.3864706603506549,
+    "gci_fine_rel": 0.0012471460433939598,
+    "monotone": true,
+    "non_asymptotic": false
+  },
+  "shape_vs_reference": [
+    {
+      "tag": "dx0.01",
+      "dx": 0.01,
+      "rms": 0.05464725111298583,
+      "rms_rel_to_ref_rms": 0.6687779218516839,
+      "rms_rel_to_ref_peak": 0.1476952732783401,
+      "best_lag_s": -0.25,
+      "rms_lagged": 0.04833104356364602,
+      "lag_at_scan_edge": false,
+      "lag_scan_s": 0.4,
+      "n_points": 451.0
+    },
+    {
+      "tag": "dx0.02",
+      "dx": 0.02,
+      "rms": 0.06280409029783617,
+      "rms_rel_to_ref_rms": 0.768602045624056,
+      "rms_rel_to_ref_peak": 0.1697407845887464,
+      "best_lag_s": -0.27,
+      "rms_lagged": 0.051832837674996114,
+      "lag_at_scan_edge": false,
+      "lag_scan_s": 0.4,
+      "n_points": 451.0
+    },
+    {
+      "tag": "dx0.04",
+      "dx": 0.04,
+      "rms": 0.05180834881909244,
+      "rms_rel_to_ref_rms": 0.6340351829621365,
+      "rms_rel_to_ref_peak": 0.1400225643759255,
+      "best_lag_s": -0.11,
+      "rms_lagged": 0.04706722295417586,
+      "lag_at_scan_edge": false,
+      "lag_scan_s": 0.4,
+      "n_points": 451.0
+    }
+  ]
+}
