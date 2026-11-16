@@ -1,0 +1,125 @@
+{
+  "case": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST",
+  "question": "does the acceptance verdict hinge on an unverifiable H2 coordinate?",
+  "inputs": {
+    "reference_json": "benchmarks/kleefsman_obstacle/reference.json",
+    "attribution": "benchmarks/kleefsman_obstacle/results/arrival_attribution/attribution.json",
+    "front_series": "results/{,audit_t30/}dx{0.01,0.02,0.04}/time_series.csv"
+  },
+  "geometry": {
+    "h0_m": 0.55,
+    "gate_x_m": 1.228,
+    "box_face_x_m": 2.476,
+    "arrival_threshold_m": 0.02
+  },
+  "ritter": {
+    "c0_gate_m_s": 4.6456431201718456,
+    "locus_speed_m_s": 3.3168090447508396,
+    "note": "ideal infinite-reservoir dry-bed fan; sets an upper bound on the front speed, so gamma <= 1"
+  },
+  "stations": {
+    "primary (0.05 m up of box face)": 2.426,
+    "upstream (0.248 m up of box face)": 2.2279999999999998
+  },
+  "ritter_arrival_at_stations_s": {
+    "primary (0.05 m up of box face)": 0.3611905249402124,
+    "upstream (0.248 m up of box face)": 0.30149459510869137
+  },
+  "traces": [
+    {
+      "trace": "experiment_interp",
+      "arrival_s": 0.3481,
+      "provenance": "digitised experiment trace, linear interpolation between the two bracketing samples (score_t30.arrival(mode='interp')); the value the frozen protocol reads",
+      "x_implied_m": 2.3825812284777674,
+      "ritter_locus_speed_m_s": 3.3168090447508396,
+      "primary (0.05 m up of box face)": {
+        "station_x_m": 2.426,
+        "required_gamma": 1.0376056447578639,
+        "ritter_arrival_s": 0.3611905249402124,
+        "arrival_deficit_s": -0.0130905249402124
+      },
+      "upstream (0.248 m up of box face)": {
+        "station_x_m": 2.2279999999999998,
+        "required_gamma": 0.8661148954573151,
+        "ritter_arrival_s": 0.30149459510869137,
+        "arrival_deficit_s": 0.046605404891308655
+      }
+    },
+    {
+      "trace": "experiment_sample",
+      "arrival_s": 0.3591,
+      "provenance": "digitised experiment trace, first sample >= threshold",
+      "x_implied_m": 2.4190661279700265,
+      "ritter_locus_speed_m_s": 3.3168090447508396,
+      "primary (0.05 m up of box face)": {
+        "station_x_m": 2.426,
+        "required_gamma": 1.005821567641917,
+        "ritter_arrival_s": 0.3611905249402124,
+        "arrival_deficit_s": -0.002090524940212446
+      },
+      "upstream (0.248 m up of box face)": {
+        "station_x_m": 2.2279999999999998,
+        "required_gamma": 0.8395839462787286,
+        "ritter_arrival_s": 0.30149459510869137,
+        "arrival_deficit_s": 0.05760540489130861
+      }
+    },
+    {
+      "trace": "comflow_vof",
+      "arrival_s": 0.3707,
+      "provenance": "paper's own COMFLOW curve, traced independently; cross-check agreement 0.0323",
+      "x_implied_m": 2.4575411128891362,
+      "ritter_locus_speed_m_s": 3.3168090447508396,
+      "primary (0.05 m up of box face)": {
+        "station_x_m": 2.426,
+        "required_gamma": 0.9743472482875974,
+        "ritter_arrival_s": 0.3611905249402124,
+        "arrival_deficit_s": 0.009509475059787553
+      },
+      "upstream (0.248 m up of box face)": {
+        "station_x_m": 2.2279999999999998,
+        "required_gamma": 0.8133115595055068,
+        "ritter_arrival_s": 0.30149459510869137,
+        "arrival_deficit_s": 0.06920540489130861
+      }
+    }
+  ],
+  "solver_front_trend": [
+    {
+      "grid": "dx0.02",
+      "front_arrival_upstream_s": 0.38952447281872693,
+      "front_arrival_primary_s": 0.4397402175271909,
+      "gamma_upstream": 0.7740068112459727,
+      "gamma_primary": 0.8213725070936423,
+      "d_gamma_per_m": 0.23922068609934086
+    },
+    {
+      "grid": "dx0.04",
+      "front_arrival_upstream_s": 0.41468608068394325,
+      "front_arrival_primary_s": 0.4666602304177126,
+      "gamma_upstream": 0.7270429588845501,
+      "gamma_primary": 0.7739903711462767,
+      "d_gamma_per_m": 0.23710814273599248
+    }
+  ],
+  "discrimination": [
+    {
+      "trace": "experiment_interp",
+      "required_d_gamma_per_m": 0.8661148954573151,
+      "solver_d_gamma_per_m": 0.23816441441766667,
+      "trend_ratio_hypothesis_over_solver": 3.636625973594937
+    },
+    {
+      "trace": "experiment_sample",
+      "required_d_gamma_per_m": 0.8395839462787283,
+      "solver_d_gamma_per_m": 0.23816441441766667,
+      "trend_ratio_hypothesis_over_solver": 3.525228352571421
+    },
+    {
+      "trace": "comflow_vof",
+      "required_d_gamma_per_m": 0.8133115595055066,
+      "solver_d_gamma_per_m": 0.23816441441766667,
+      "trend_ratio_hypothesis_over_solver": 3.414916378226051
+    }
+  ]
+}

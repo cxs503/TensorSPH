@@ -1,0 +1,480 @@
+{
+  "case": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST",
+  "protocol": {
+    "operator": "slab",
+    "station_offset_m": 0.05,
+    "aperture_m": 0.08,
+    "peak_filter_window_s": 0.03,
+    "arrival_threshold_m": 0.02
+  },
+  "tolerance_rel": 0.1,
+  "anchors": {
+    "peak_m": 0.37,
+    "peak_time_s": 1.7027,
+    "arrival_time_s": 0.3591,
+    "tolerance_rel": 0.1,
+    "arrival_interp_s": 0.3481105263157894,
+    "arrival_anchor_s": 0.3591
+  },
+  "reference_curve_controls": {
+    "t_span_s": [
+      0.3475,
+      5.9653
+    ],
+    "n_samples": 380,
+    "peak_at_filtered": [
+      0.36999999999999994,
+      1.7143
+    ],
+    "arrival_interp_s": 0.3481105263157894,
+    "arrival_anchor_s": 0.3591,
+    "note": "the anchor (0.3591 s) is the sample-quantised crossing; the interpolated crossing of the same curve is 0.3481 s, a 3 % spread that the table reports both ways"
+  },
+  "rows": [
+    {
+      "grid": "dx0.04",
+      "dx": 0.04,
+      "operator": "slab",
+      "station_x_m": 2.228,
+      "offset_m": 0.24799999999999978,
+      "primary": false,
+      "peak_m": 0.40026642857142863,
+      "peak_time_s": 1.536,
+      "arrival_time_s": 0.40739362618432384,
+      "arrival_time_sample_s": 0.408,
+      "peak_rel_error": 0.08180115830115849,
+      "peak_time_rel_error": 0.09790333000528575,
+      "arrival_rel_error": 0.17029964734463557,
+      "arrival_rel_error_anchored": 0.13448517455952066,
+      "peak_pass": true,
+      "arrival_pass": false,
+      "arrival_pass_anchored": false,
+      "t_end_s": 3.0002,
+      "aperture_m": 0.08
+    },
+    {
+      "grid": "dx0.04",
+      "dx": 0.04,
+      "operator": "slab",
+      "station_x_m": 2.426,
+      "offset_m": 0.04999999999999982,
+      "primary": true,
+      "peak_m": 0.42717371428571427,
+      "peak_time_s": 0.904,
+      "arrival_time_s": 0.4603949539979133,
+      "arrival_time_sample_s": 0.464,
+      "peak_rel_error": 0.1545235521235521,
+      "peak_time_rel_error": 0.46907852234686087,
+      "arrival_rel_error": 0.3225539568437662,
+      "arrival_rel_error_anchored": 0.2820800723974195,
+      "peak_pass": false,
+      "arrival_pass": false,
+      "arrival_pass_anchored": false,
+      "t_end_s": 3.0002,
+      "aperture_m": 0.08
+    },
+    {
+      "grid": "dx0.04",
+      "dx": 0.04,
+      "operator": "surface",
+      "station_x_m": 2.228,
+      "offset_m": 0.24799999999999978,
+      "primary": false,
+      "peak_m": 0.42482771428571425,
+      "peak_time_s": 1.528,
+      "arrival_time_s": 0.4017932796843828,
+      "arrival_time_sample_s": 0.404,
+      "peak_rel_error": 0.1481830115830115,
+      "peak_time_rel_error": 0.10260175016150823,
+      "arrival_rel_error": 0.15421180720026517,
+      "arrival_rel_error_anchored": 0.1188896677370727,
+      "peak_pass": false,
+      "arrival_pass": false,
+      "arrival_pass_anchored": false,
+      "t_end_s": 3.0002,
+      "aperture_m": 0.08
+    },
+    {
+      "grid": "dx0.04",
+      "dx": 0.04,
+      "operator": "surface",
+      "station_x_m": 2.426,
+      "offset_m": 0.04999999999999982,
+      "primary": false,
+      "peak_m": 0.449281,
+      "peak_time_s": 0.908,
+      "arrival_time_s": 0.46580876800289406,
+      "arrival_time_sample_s": 0.468,
+      "peak_rel_error": 0.21427297297297296,
+      "peak_time_rel_error": 0.46672931226874964,
+      "arrival_rel_error": 0.3381059542575692,
+      "arrival_rel_error_anchored": 0.29715613478945724,
+      "peak_pass": false,
+      "arrival_pass": false,
+      "arrival_pass_anchored": false,
+      "t_end_s": 3.0002,
+      "aperture_m": 0.08
+    },
+    {
+      "grid": "dx0.04",
+      "dx": 0.04,
+      "operator": "height",
+      "station_x_m": 2.228,
+      "offset_m": 0.24799999999999978,
+      "primary": false,
+      "peak_m": 0.3848277142857143,
+      "peak_time_s": 1.528,
+      "arrival_time_s": 0.43580196170014013,
+      "arrival_time_sample_s": 0.436,
+      "peak_rel_error": 0.04007490347490345,
+      "peak_time_rel_error": 0.10260175016150823,
+      "arrival_rel_error": 0.25190687656713134,
+      "arrival_rel_error_anchored": 0.21359499220311934,
+      "peak_pass": true,
+      "arrival_pass": false,
+      "arrival_pass_anchored": false,
+      "t_end_s": 3.0002,
+      "aperture_m": 0.08
+    },
+    {
+      "grid": "dx0.04",
+      "dx": 0.04,
+      "operator": "height",
+      "station_x_m": 2.426,
+      "offset_m": 0.04999999999999982,
+      "primary": false,
+      "peak_m": 0.40928099999999995,
+      "peak_time_s": 0.908,
+      "arrival_time_s": 0.48414582084182756,
+      "arrival_time_sample_s": 0.488,
+      "peak_rel_error": 0.10616486486486475,
+      "peak_time_rel_error": 0.46672931226874964,
+      "arrival_rel_error": 0.39078190471790947,
+      "arrival_rel_error_anchored": 0.34822005246958393,
+      "peak_pass": false,
+      "arrival_pass": false,
+      "arrival_pass_anchored": false,
+      "t_end_s": 3.0002,
+      "aperture_m": 0.08
+    },
+    {
+      "grid": "dx0.02",
+      "dx": 0.02,
+      "operator": "slab",
+      "station_x_m": 2.228,
+      "offset_m": 0.24799999999999978,
+      "primary": false,
+      "peak_m": 0.38170400000000004,
+      "peak_time_s": 1.488,
+      "arrival_time_s": 0.3893124393288032,
+      "arrival_time_sample_s": 0.392,
+      "peak_rel_error": 0.031632432432432564,
+      "peak_time_rel_error": 0.1260938509426206,
+      "arrival_rel_error": 0.11835871051953586,
+      "arrival_rel_error_anchored": 0.08413377702256543,
+      "peak_pass": true,
+      "arrival_pass": false,
+      "arrival_pass_anchored": true,
+      "t_end_s": 3.0002,
+      "aperture_m": 0.08
+    },
+    {
+      "grid": "dx0.02",
+      "dx": 0.02,
+      "operator": "slab",
+      "station_x_m": 2.426,
+      "offset_m": 0.04999999999999982,
+      "primary": true,
+      "peak_m": 0.47670571428571423,
+      "peak_time_s": 1.116,
+      "arrival_time_s": 0.44091977333730986,
+      "arrival_time_sample_s": 0.444,
+      "peak_rel_error": 0.2883938223938223,
+      "peak_time_rel_error": 0.3445703882069654,
+      "arrival_rel_error": 0.26660856252685755,
+      "arrival_rel_error_anchored": 0.22784676507187382,
+      "peak_pass": false,
+      "arrival_pass": false,
+      "arrival_pass_anchored": false,
+      "t_end_s": 3.0002,
+      "aperture_m": 0.08
+    },
+    {
+      "grid": "dx0.02",
+      "dx": 0.02,
+      "operator": "surface",
+      "station_x_m": 2.228,
+      "offset_m": 0.24799999999999978,
+      "primary": false,
+      "peak_m": 0.41893414285714287,
+      "peak_time_s": 1.408,
+      "arrival_time_s": 0.3869385836027035,
+      "arrival_time_sample_s": 0.388,
+      "peak_rel_error": 0.13225444015444018,
+      "peak_time_rel_error": 0.17307805250484534,
+      "arrival_rel_error": 0.11153945184550695,
+      "arrival_rel_error_anchored": 0.07752320691368289,
+      "peak_pass": false,
+      "arrival_pass": false,
+      "arrival_pass_anchored": true,
+      "t_end_s": 3.0002,
+      "aperture_m": 0.08
+    },
+    {
+      "grid": "dx0.02",
+      "dx": 0.02,
+      "operator": "surface",
+      "station_x_m": 2.426,
+      "offset_m": 0.04999999999999982,
+      "primary": false,
+      "peak_m": 0.5219225714285715,
+      "peak_time_s": 0.712,
+      "arrival_time_s": 0.4355690385902298,
+      "arrival_time_sample_s": 0.436,
+      "peak_rel_error": 0.4106015444015445,
+      "peak_time_rel_error": 0.5818406060962003,
+      "arrival_rel_error": 0.2512377697970044,
+      "arrival_rel_error_anchored": 0.21294636198894404,
+      "peak_pass": false,
+      "arrival_pass": false,
+      "arrival_pass_anchored": false,
+      "t_end_s": 3.0002,
+      "aperture_m": 0.08
+    },
+    {
+      "grid": "dx0.02",
+      "dx": 0.02,
+      "operator": "height",
+      "station_x_m": 2.228,
+      "offset_m": 0.24799999999999978,
+      "primary": false,
+      "peak_m": 0.3989341428571428,
+      "peak_time_s": 1.408,
+      "arrival_time_s": 0.3997810718358039,
+      "arrival_time_sample_s": 0.4,
+      "peak_rel_error": 0.07820038610038595,
+      "peak_time_rel_error": 0.17307805250484534,
+      "arrival_rel_error": 0.14843143660970887,
+      "arrival_rel_error_anchored": 0.11328619280368683,
+      "peak_pass": true,
+      "arrival_pass": false,
+      "arrival_pass_anchored": false,
+      "t_end_s": 3.0002,
+      "aperture_m": 0.08
+    },
+    {
+      "grid": "dx0.02",
+      "dx": 0.02,
+      "operator": "height",
+      "station_x_m": 2.426,
+      "offset_m": 0.04999999999999982,
+      "primary": false,
+      "peak_m": 0.5019225714285714,
+      "peak_time_s": 0.712,
+      "arrival_time_s": 0.4540684757798631,
+      "arrival_time_sample_s": 0.456,
+      "peak_rel_error": 0.3565474903474904,
+      "peak_time_rel_error": 0.5818406060962003,
+      "arrival_rel_error": 0.3043801938007287,
+      "arrival_rel_error_anchored": 0.264462477805244,
+      "peak_pass": false,
+      "arrival_pass": false,
+      "arrival_pass_anchored": false,
+      "t_end_s": 3.0002,
+      "aperture_m": 0.08
+    }
+  ],
+  "primary_rows": {
+    "dx0.04": {
+      "grid": "dx0.04",
+      "dx": 0.04,
+      "operator": "slab",
+      "station_x_m": 2.426,
+      "offset_m": 0.04999999999999982,
+      "primary": true,
+      "peak_m": 0.42717371428571427,
+      "peak_time_s": 0.904,
+      "arrival_time_s": 0.4603949539979133,
+      "arrival_time_sample_s": 0.464,
+      "peak_rel_error": 0.1545235521235521,
+      "peak_time_rel_error": 0.46907852234686087,
+      "arrival_rel_error": 0.3225539568437662,
+      "arrival_rel_error_anchored": 0.2820800723974195,
+      "peak_pass": false,
+      "arrival_pass": false,
+      "arrival_pass_anchored": false,
+      "t_end_s": 3.0002,
+      "aperture_m": 0.08
+    },
+    "dx0.02": {
+      "grid": "dx0.02",
+      "dx": 0.02,
+      "operator": "slab",
+      "station_x_m": 2.426,
+      "offset_m": 0.04999999999999982,
+      "primary": true,
+      "peak_m": 0.47670571428571423,
+      "peak_time_s": 1.116,
+      "arrival_time_s": 0.44091977333730986,
+      "arrival_time_sample_s": 0.444,
+      "peak_rel_error": 0.2883938223938223,
+      "peak_time_rel_error": 0.3445703882069654,
+      "arrival_rel_error": 0.26660856252685755,
+      "arrival_rel_error_anchored": 0.22784676507187382,
+      "peak_pass": false,
+      "arrival_pass": false,
+      "arrival_pass_anchored": false,
+      "t_end_s": 3.0002,
+      "aperture_m": 0.08
+    }
+  },
+  "verdict": "FAIL",
+  "ladders": [
+    {
+      "stations_x_m": 2.426,
+      "operator": "slab",
+      "quantity": "peak_m",
+      "grids": [
+        "dx0.04",
+        "dx0.02"
+      ],
+      "values": {
+        "dx0.04": 0.42717371428571427,
+        "dx0.02": 0.47670571428571423
+      },
+      "finest_pair": [
+        "dx0.02",
+        "dx0.04"
+      ],
+      "ratio": 2.0,
+      "pair_difference": -0.049531999999999965,
+      "richardson_p1_assumed": 0.5262377142857142,
+      "richardson_p2_assumed": 0.4932163809523809
+    },
+    {
+      "stations_x_m": 2.426,
+      "operator": "slab",
+      "quantity": "arrival_time_s",
+      "grids": [
+        "dx0.04",
+        "dx0.02"
+      ],
+      "values": {
+        "dx0.04": 0.4603949539979133,
+        "dx0.02": 0.44091977333730986
+      },
+      "finest_pair": [
+        "dx0.02",
+        "dx0.04"
+      ],
+      "ratio": 2.0,
+      "pair_difference": 0.01947518066060344,
+      "richardson_p1_assumed": 0.4214445926767064,
+      "richardson_p2_assumed": 0.43442804645044203
+    },
+    {
+      "stations_x_m": 2.426,
+      "operator": "slab",
+      "quantity": "peak_time_s",
+      "grids": [
+        "dx0.04",
+        "dx0.02"
+      ],
+      "values": {
+        "dx0.04": 0.904,
+        "dx0.02": 1.116
+      },
+      "finest_pair": [
+        "dx0.02",
+        "dx0.04"
+      ],
+      "ratio": 2.0,
+      "pair_difference": -0.21200000000000008,
+      "richardson_p1_assumed": 1.3280000000000003,
+      "richardson_p2_assumed": 1.1866666666666668
+    },
+    {
+      "stations_x_m": 2.228,
+      "operator": "slab",
+      "quantity": "arrival_time_s",
+      "grids": [
+        "dx0.04",
+        "dx0.02"
+      ],
+      "values": {
+        "dx0.04": 0.40739362618432384,
+        "dx0.02": 0.3893124393288032
+      },
+      "finest_pair": [
+        "dx0.02",
+        "dx0.04"
+      ],
+      "ratio": 2.0,
+      "pair_difference": 0.018081186855520626,
+      "richardson_p1_assumed": 0.3712312524732826,
+      "richardson_p2_assumed": 0.3832853770436297
+    },
+    {
+      "stations_x_m": 2.228,
+      "operator": "slab",
+      "quantity": "peak_m",
+      "grids": [
+        "dx0.04",
+        "dx0.02"
+      ],
+      "values": {
+        "dx0.04": 0.40026642857142863,
+        "dx0.02": 0.38170400000000004
+      },
+      "finest_pair": [
+        "dx0.02",
+        "dx0.04"
+      ],
+      "ratio": 2.0,
+      "pair_difference": 0.01856242857142859,
+      "richardson_p1_assumed": 0.36314157142857145,
+      "richardson_p2_assumed": 0.37551652380952383
+    }
+  ],
+  "break_even": {
+    "dx0.04": {
+      "stations_checked_m": [
+        0.04999999999999982,
+        0.24799999999999978
+      ],
+      "arrival_rel_error": {
+        "0.050": 0.3225539568437662,
+        "0.248": 0.17029964734463557
+      },
+      "arrival_rel_error_anchored": {
+        "0.050": 0.2820800723974195,
+        "0.248": 0.13448517455952066
+      },
+      "smallest_passing_offset_m": null,
+      "committed_offset_m": 0.05,
+      "note": "the arrival would pass at or beyond this offset from the box face; the paper's raster figure cannot discriminate 0.05 m from 0.248 m, so this is the coordinate uncertainty the verdict absorbs"
+    },
+    "dx0.02": {
+      "stations_checked_m": [
+        0.04999999999999982,
+        0.24799999999999978
+      ],
+      "arrival_rel_error": {
+        "0.050": 0.26660856252685755,
+        "0.248": 0.11835871051953586
+      },
+      "arrival_rel_error_anchored": {
+        "0.050": 0.22784676507187382,
+        "0.248": 0.08413377702256543
+      },
+      "smallest_passing_offset_m": null,
+      "committed_offset_m": 0.05,
+      "note": "the arrival would pass at or beyond this offset from the box face; the paper's raster figure cannot discriminate 0.05 m from 0.248 m, so this is the coordinate uncertainty the verdict absorbs"
+    }
+  },
+  "peaks_reference_time_s": 1.7027,
+  "window_covers_reference_peak": {
+    "dx0.04": true,
+    "dx0.02": true
+  }
+}
