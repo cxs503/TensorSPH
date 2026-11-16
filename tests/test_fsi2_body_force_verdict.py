@@ -17,6 +17,16 @@ trustworthy.
    verdict must refuse to state PASS/FAIL and defer.
 4. Gate boundary -- the owner threshold is applied at exactly 15 % (inclusive)
    and the decisive FAIL band starts above it.
+
+The synthetic signals below are *analysis-layer* fixtures, not physical FSI2
+runs: the injected ``PERIOD = 0.25 s`` is deliberately outside the physical
+VIV Strouhal band for ``(U_mean, D) = (0.2, 0.1)`` (``[1.67, 3.85] s``), so the
+``physical_admissibility`` precondition (added in ``m22030``) would downgrade
+every one of them to ``WITHHELD``.  These tests therefore run with
+``enforce_admissibility=False`` -- they assert the *analysis* recovers the
+injected answer and applies the owner gate, not that the fixture is a physical
+solution.  The physical screen is exercised separately in
+``test_fsi2_verdict_admissibility.py``.
 """
 from __future__ import annotations
 
@@ -68,7 +78,7 @@ def _payload(cd_mean=3.2, cd_amp=0.96, cl_amp=0.22, n=4000, dt=1e-3,
 
 def test_known_answer_recovered_exactly():
     """Injected Turek-Hron coefficients must come back to <0.1 %."""
-    v = build_verdict(_payload())
+    v = build_verdict(_payload(), enforce_admissibility=False)
     fit = v["coefficients"]["fit_arm"]
     assert fit["cd_mean"] == pytest.approx(3.2, rel=1e-3)
     assert fit["cd_amplitude"] == pytest.approx(0.96, rel=1e-3)
@@ -81,7 +91,7 @@ def test_known_answer_recovered_exactly():
 
 def test_viv_period_measured_not_assumed():
     """The window actually spans the periodic regime: period is recovered."""
-    v = build_verdict(_payload())
+    v = build_verdict(_payload(), enforce_admissibility=False)
     p = v["window"]["period_s"]
     assert p == pytest.approx(PERIOD, rel=0.02)
     assert v["window"]["periods_in_window"] >= 1.0
@@ -92,14 +102,14 @@ def test_partial_artefact_without_summary_still_judged():
     """A checkpointed run has no summary block; the verdict must survive it."""
     p = _payload(n=1500)
     assert "summary" not in p
-    v = build_verdict(p)
+    v = build_verdict(p, enforce_admissibility=False)
     assert v["n_steps"] == 1500
     assert v["coefficients"]["fit_arm"]["cd_mean"] == pytest.approx(3.2, rel=1e-3)
 
 
 def test_startup_ramp_is_withheld_not_failed():
     """No periodic regime -> defer; never claim PASS/FAIL on start-up data."""
-    v = build_verdict(_payload(n=400, ramp=True))
+    v = build_verdict(_payload(n=400, ramp=True), enforce_admissibility=False)
     assert v["regime_ok"] is False
     assert v["gates"]["fit_arm"]["verdict"] == "WITHHELD"
     assert v["gates"]["tip"]["verdict"] == "WITHHELD"
@@ -107,10 +117,10 @@ def test_startup_ramp_is_withheld_not_failed():
 
 def test_gate_boundary_is_inclusive_at_15pct():
     """Exactly +15 % passes the owner gate; +16 % does not."""
-    ok = build_verdict(_payload(cd_mean=3.2 * 1.15))
+    ok = build_verdict(_payload(cd_mean=3.2 * 1.15), enforce_admissibility=False)
     assert ok["gates"]["fit_arm"]["rows"][0]["pass_15"] is True
     assert ok["gates"]["fit_arm"]["rows"][0]["pass_3"] is False
-    bad = build_verdict(_payload(cd_mean=3.2 * 1.16))
+    bad = build_verdict(_payload(cd_mean=3.2 * 1.16), enforce_admissibility=False)
     assert bad["gates"]["fit_arm"]["rows"][0]["pass_15"] is False
     assert bad["gates"]["fit_arm"]["verdict"] == "FAIL"
 
