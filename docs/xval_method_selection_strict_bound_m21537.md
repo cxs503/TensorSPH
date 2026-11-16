@@ -24,7 +24,7 @@
 |---|---|---|---|---|---|---|---|
 | regular wave in a flume | wcsph_delta_sph | 5.53 | ✔ | wcsph_delta_sph | 5.53 | ✔ | — |
 | Sod shock tube | compressible_riemann | 0.78 | ✔ | compressible_riemann | 0.78 | ✔ | — |
-| capillary droplet (Laplace law) | csf_surface_tension | 23.80 | ✘ | （无） | -- | ✘ | `csf_surface_tension` 23.80% |
+| capillary droplet (Laplace law) | csf_surface_tension | 45.69 | ✘ | （无） | -- | ✘ | `csf_surface_tension` 45.69% |
 | planar Couette channel | isph_projection | 0.87 | ✔ | isph_projection | 0.87 | ✔ | `wcsph_wall_no_slip` 17.08% |
 | Gresho vortex (smooth inviscid, periodic) | （无） | -- | ✘ | （无） | -- | ✘ | — |
 | 1-D transient conduction | heat_conduction_operator | 0.15 | ✔ | heat_conduction_operator | 0.15 | ✔ | — |
@@ -115,10 +115,10 @@
 - none
 
 ## strict bound (worst live accuracy record <= 15%)
-- excluded csf_surface_tension [primary]: worst live accuracy record 23.8% (CASE-LAPLACE-SPH (consistent CSF): delta_s-weighted mean curvature rel. error) exceeds the 15% owner standard
+- excluded csf_surface_tension [primary]: worst live accuracy record 45.7% (CASE-LAPLACE-SPH (quasi-static, time-averaged): bulk pressure vs vacuum over the 4-6 t_sigma window, worst rung of dx = 3/2/1.5 mm (analytic value sigma/R)) exceeds the 15% owner standard
 
 ## notes
-- strict bound: csf_surface_tension is evidence-backed (SELECTED) but worst live accuracy record 23.8% (CASE-LAPLACE-SPH (consistent CSF): delta_s-weighted mean curvature rel. error) exceeds the 15% owner standard
+- strict bound: csf_surface_tension is evidence-backed (SELECTED) but worst live accuracy record 45.7% (CASE-LAPLACE-SPH (quasi-static, time-averaged): bulk pressure vs vacuum over the 4-6 t_sigma window, worst rung of dx = 3/2/1.5 mm (analytic value sigma/R)) exceeds the 15% owner standard
 - rule 'capillary' fired but no candidate is selectable (csf_surface_tension=SELECTED)
 - regime locked: rule 'capillary' identifies the physics of this case but none of its candidates can be put forward (csf_surface_tension=SELECTED); no later rule is substituted, because its schemes cannot represent this regime -- the honest answer is WITHHELD
 - no rule produced an evidence-backed scheme: profile outside the validated regime of this repository, do not run silently

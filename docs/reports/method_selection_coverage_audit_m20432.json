@@ -847,7 +847,7 @@
     "x_couette_viscous_time_top_h16",
     "x_transport_velocity_coarse"
   ],
-  "registry_records": 29,
+  "registry_records": 30,
   "schema_version": "1.0",
   "stored_vs_recomputed_mismatches": [
     "x_couette_design"

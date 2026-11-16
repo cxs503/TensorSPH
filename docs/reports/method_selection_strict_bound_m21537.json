@@ -64,7 +64,7 @@
         "endorsed_above_tolerance": [],
         "excluded": []
       },
-      "card": "# method-selection decision\n\n## profile\n- acoustic_mach: 0.9\n- has_free_surface: False\n- gravity_waves: False\n- shock_advection: True\n- capillary_dominated: False\n- density_ratio: 1.0\n- reynolds: 100.0\n- thermal_transport: False\n- tensile_stretching: False\n- smooth_inviscid_vortex: False\n- domain: closed\n\n## verdict\n- accuracy bound: 0.777% over every live accuracy record of the schemes put forward (owner standard 15%) -- set by compressible_riemann (CASE-SPH-SOD-SHOCK-COMPRESSIBLE)\n- within owner standard: YES\n\n## primary scheme\n- compressible_riemann: SELECTED\n- why: [shock] acoustic Mach 0.9 and explicit shock flag >= 0.3: weak compressibility assumption breaks down\n- claimed bound: 0.777% (owner standard 15%; passing records only)\n- reference: Sod (1978) J. Comput. Phys. 27:1 (reference); Zhang, Hu & Adams (2017) J. Comput. Phys. 338:210 (Riemann WCSPH dissipation)\n\n## modifiers\n- none\n\n## strict bound (worst live accuracy record <= 15%)\n- nothing excluded: every scheme put forward is inside the owner standard\n\n## evidence depth\n- compressible_riemann: SINGLE SOURCE (1 benchmark family)\n- caveat: the bound of compressible_riemann has not been reproduced on a second benchmark family -- treat it as a measured data point, not an independently confirmed bound\n"
+      "card": "# method-selection decision\n\n## profile\n- acoustic_mach: 0.9\n- has_free_surface: False\n- gravity_waves: False\n- shock_advection: True\n- capillary_dominated: False\n- density_ratio: 1.0\n- reynolds: 100.0\n- thermal_transport: False\n- tensile_stretching: False\n- smooth_inviscid_vortex: False\n- domain: closed\n\n## verdict\n- accuracy bound: 0.777% over every live accuracy record of the schemes put forward (owner standard 15%) -- set by compressible_riemann (CASE-SPH-SOD-SHOCK-COMPRESSIBLE)\n- within owner standard: YES\n\n## primary scheme\n- compressible_riemann: SELECTED\n- why: [shock] acoustic Mach 0.9 and explicit shock flag >= 0.3: weak compressibility assumption breaks down\n- claimed bound: 0.777% (owner standard 15%; passing records only)\n- reference: Sod (1978) J. Comput. Phys. 27:1 (reference); Zhang, Hu & Adams (2017) J. Comput. Phys. 338:210 (Riemann WCSPH dissipation)\n\n## modifiers\n- none\n\n## strict bound (worst live accuracy record <= 15%)\n- nothing excluded: every scheme put forward is inside the owner standard\n\n## evidence depth\n- compressible_riemann: 2 benchmark families, 2 records; spread 0.363 pp over live records\n"
     },
     {
       "label": "capillary droplet (Laplace law)",
@@ -81,8 +81,8 @@
           "density_diffusion",
           "compression_regularization"
         ],
-        "headline_bound_pct": 23.79926667246913,
-        "headline_quantity": "csf_surface_tension: CASE-LAPLACE-SPH (consistent CSF)",
+        "headline_bound_pct": 45.69297615786225,
+        "headline_quantity": "csf_surface_tension: CASE-LAPLACE-SPH (quasi-static, time-averaged)",
         "within_owner_standard": false,
         "endorsed_above_tolerance": [
           "csf_surface_tension"
@@ -99,13 +99,13 @@
           {
             "method": "csf_surface_tension",
             "role": "primary",
-            "worst_accuracy_pct": 23.79926667246913,
-            "worst_accuracy_case": "CASE-LAPLACE-SPH (consistent CSF)",
-            "quantity": "delta_s-weighted mean curvature rel. error"
+            "worst_accuracy_pct": 45.69297615786225,
+            "worst_accuracy_case": "CASE-LAPLACE-SPH (quasi-static, time-averaged)",
+            "quantity": "bulk pressure vs vacuum over the 4-6 t_sigma window, worst rung of dx = 3/2/1.5 mm (analytic value sigma/R)"
           }
         ]
       },
-      "card": "# method-selection decision\n\n## profile\n- acoustic_mach: 0.05\n- has_free_surface: True\n- gravity_waves: False\n- shock_advection: False\n- capillary_dominated: True\n- density_ratio: 1.0\n- reynolds: 100.0\n- thermal_transport: False\n- tensile_stretching: False\n- smooth_inviscid_vortex: False\n- domain: closed\n\n## verdict\n- accuracy bound: unavailable (no accuracy record among the schemes put forward; owner standard 15%)\n- within owner standard: NO (nothing was selected)\n\n## primary scheme\n- none (WITHHELD: no evidence-backed rule fired)\n\n## modifiers\n- none\n\n## strict bound (worst live accuracy record <= 15%)\n- excluded csf_surface_tension [primary]: worst live accuracy record 23.8% (CASE-LAPLACE-SPH (consistent CSF): delta_s-weighted mean curvature rel. error) exceeds the 15% owner standard\n\n## notes\n- strict bound: csf_surface_tension is evidence-backed (SELECTED) but worst live accuracy record 23.8% (CASE-LAPLACE-SPH (consistent CSF): delta_s-weighted mean curvature rel. error) exceeds the 15% owner standard\n- rule 'capillary' fired but no candidate is selectable (csf_surface_tension=SELECTED)\n- regime locked: rule 'capillary' identifies the physics of this case but none of its candidates can be put forward (csf_surface_tension=SELECTED); no later rule is substituted, because its schemes cannot represent this regime -- the honest answer is WITHHELD\n- no rule produced an evidence-backed scheme: profile outside the validated regime of this repository, do not run silently\n- modifiers withheld: no primary scheme was selected, so no add-on term can be applied\n"
+      "card": "# method-selection decision\n\n## profile\n- acoustic_mach: 0.05\n- has_free_surface: True\n- gravity_waves: False\n- shock_advection: False\n- capillary_dominated: True\n- density_ratio: 1.0\n- reynolds: 100.0\n- thermal_transport: False\n- tensile_stretching: False\n- smooth_inviscid_vortex: False\n- domain: closed\n\n## verdict\n- accuracy bound: unavailable (no accuracy record among the schemes put forward; owner standard 15%)\n- within owner standard: NO (nothing was selected)\n\n## primary scheme\n- none (WITHHELD: no evidence-backed rule fired)\n\n## modifiers\n- none\n\n## strict bound (worst live accuracy record <= 15%)\n- excluded csf_surface_tension [primary]: worst live accuracy record 45.7% (CASE-LAPLACE-SPH (quasi-static, time-averaged): bulk pressure vs vacuum over the 4-6 t_sigma window, worst rung of dx = 3/2/1.5 mm (analytic value sigma/R)) exceeds the 15% owner standard\n\n## notes\n- strict bound: csf_surface_tension is evidence-backed (SELECTED) but worst live accuracy record 45.7% (CASE-LAPLACE-SPH (quasi-static, time-averaged): bulk pressure vs vacuum over the 4-6 t_sigma window, worst rung of dx = 3/2/1.5 mm (analytic value sigma/R)) exceeds the 15% owner standard\n- rule 'capillary' fired but no candidate is selectable (csf_surface_tension=SELECTED)\n- regime locked: rule 'capillary' identifies the physics of this case but none of its candidates can be put forward (csf_surface_tension=SELECTED); no later rule is substituted, because its schemes cannot represent this regime -- the honest answer is WITHHELD\n- no rule produced an evidence-backed scheme: profile outside the validated regime of this repository, do not run silently\n- modifiers withheld: no primary scheme was selected, so no add-on term can be applied\n"
     },
     {
       "label": "planar Couette channel",
