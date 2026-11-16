@@ -1,0 +1,36 @@
+{
+ "radius_m": 0.02,
+ "dx_m": 0.00125,
+ "h_m": 0.0016250000000000001,
+ "dt_s": 0.0007719937774108748,
+ "R_over_dx": 16.0,
+ "R_over_h": 12.307692307692307,
+ "n_particles": 3090,
+ "n_liquid": 926,
+ "sigma": 0.072,
+ "rho0": 1000.0,
+ "nu_m2_per_s": 1.1999999999999999e-05,
+ "nu_factor": 0.01,
+ "pin_outer": true,
+ "curvature_method": "mls",
+ "v_ref_m_per_s": 0.06,
+ "diverged": true,
+ "steps_completed": 0,
+ "umax_over_vref_final": NaN,
+ "umean_over_vref_final": NaN,
+ "area_ratio_final": NaN,
+ "dp_final_Pa": NaN,
+ "dp_theory_Pa": 3.5999999999999996,
+ "dp_rel_error_pct": NaN,
+ "history": [
+  {
+   "step": 3,
+   "diverged": true,
+   "umax_over_vref": NaN
+  }
+ ],
+ "wall_s": 39.23376655578613,
+ "job": "dx16_nu01",
+ "role": "ladder",
+ "threads": 24
+}

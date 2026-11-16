@@ -1,3 +1,9 @@
+> **Superseded (m22962).** The saturating-steady-current reading below was fitted on a
+> 120-step window. The 600-step record `results_dynamic_ladder/dx12_horizon.json` keeps
+> rising to `t = 18 t_sigma` and diverges at step 181, and `R/dx = 16` diverges at step 3.
+> The window-level numbers here stand; the *plateau* conclusion does not. See
+> `docs/xval_projection_laplace_horizon_instability.md`.
+
 # The residual current of the projection-SPH drop accumulates in time
 
 **Anchor** `XVAL-SPH-PROJECTION-SPH-YOUNG-LAPLACE` · repo **TensorSPH** · mission **m22813**
