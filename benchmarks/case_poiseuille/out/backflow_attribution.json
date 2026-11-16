@@ -1,0 +1,570 @@
+{
+ "case": "poiseuille-combined-couette",
+ "anchor": "CASE-POISEUILLE-SPH",
+ "title": "attribution of the honest C6 backflow-peak FAIL (from committed rows)",
+ "generated_by": "benchmarks/case_poiseuille/backflow_attribution_from_rows.py",
+ "plan": {
+  "mode": "postprocess_published_rows",
+  "runs_started": 0,
+  "resolutions": [
+   8,
+   12,
+   16
+  ],
+  "column_sweep": {},
+  "boundary_probe": [],
+  "note": "no solver was run here; rows come from out/combined.json"
+ },
+ "parameters": {
+  "height": 0.1,
+  "viscosity": 0.01,
+  "rho0": 1000.0,
+  "g": -4.905,
+  "wall_speed": 1.47,
+  "sound_speed": 20.0,
+  "h_factor": 1.3,
+  "support_over_dx": 2.6,
+  "t_end": 1.0,
+  "steady_window": [
+   0.8,
+   1.0
+  ],
+  "gate_C6_pct": 5.0
+ },
+ "crossover": {
+  "resolution": 12.980152671755722,
+  "criterion": "y_ext/dx >= support_over_dx = 2*h_factor",
+  "tested": false
+ },
+ "analytic": {
+  "extremum_y": 0.020030581039755357,
+  "extremum_u": -0.09840022935779819,
+  "extremum_row_over_dx": 0.20030581039755357
+ },
+ "hypotheses": {
+  "H1": "C6 FAIL iff the extremum row is inside one kernel support (y_ext/dx < 2.6)",
+  "H2": "the declared raw-min estimator is the cause; the interior fit rescues it",
+  "H0": "the coarse error is transverse quadrature noise (8 columns per row)"
+ },
+ "declared_gate": {
+  "estimator": "raw row minimum, tolerance 5 %",
+  "verdict_preserved": "FAIL at the coarse rungs"
+ },
+ "resolution_sweep": [
+  {
+   "resolution_H_over_dx": 8,
+   "n_cols": 8,
+   "n_fluid": 64,
+   "dx": 0.0125,
+   "dt": 0.00024375,
+   "steps": 4103,
+   "wall_clock_s": 29.913202047348022,
+   "declared": {
+    "estimator": "min_k u_k, graded against the closed form at that row",
+    "y_at_min": 0.018750000000000003,
+    "u_min": -0.1101207435131073,
+    "u_min_analytic_at_same_row": -0.09799804687500008,
+    "peak_pct": -12.37034514939889,
+    "pass_5pct": false
+   },
+   "extremum_row_over_dx": 1.5000000000000002,
+   "support_over_dx": 2.6,
+   "inside_kernel_support": true,
+   "row_residual_at_min_pct": -12.37034514939889,
+   "fit": {
+    "estimator": "extremum of polyfit(y, u, 2) on 0.15<=y/H<=0.85",
+    "y": 0.020015969009794743,
+    "u": -0.11048671432027908,
+    "u_analytic": -0.09840022935779819,
+    "pct": -12.28298454318902,
+    "pass_5pct": false,
+    "y_pct": -0.07294860758963269,
+    "n_rows": 6,
+    "curvature_a": 244.7307054872626
+   },
+   "scale": {
+    "gauge": 1.47,
+    "peak_abs": 0.09840022935779819,
+    "gauge_over_peak": 14.93898956937241,
+    "C6_tolerance_m_s": 0.004920011467889909,
+    "C6_tolerance_in_gauge_pct": 0.33469465767958567,
+    "max_abs_row_error": 0.014461079510775576,
+    "max_row_error_pct_of_gauge": 0.9837469054949372,
+    "rms_error_pct_of_gauge": 0.8839930317415519,
+    "max_row_error_pct_of_peak": 14.696184760091253,
+    "rms_error_pct_of_peak": 13.205962680584937,
+    "note": "peak is gauge/(peak) smaller, so 5 % of it is that much tighter"
+   },
+   "fit_coefficients": {
+    "a": 244.7307054872626,
+    "b": -9.797044433556506,
+    "c": -0.012438045435454528,
+    "a_pct": -0.21174088185010762,
+    "b_pct": -0.28453502741472714,
+    "c_m_s": -0.012438045435454528,
+    "c_pct_of_peak": -12.640260613852742
+   },
+   "profile_rms_pct": 0.8839930317415519,
+   "tau_bottom_pct": -0.28453502741472353,
+   "tau_top_pct": -0.19350754902226286,
+   "rows": [
+    {
+     "y": 0.00625,
+     "y_over_H": 0.0625,
+     "y_over_dx": 0.5,
+     "u": -0.06564726274121892,
+     "u_analytic": -0.05182617187500005,
+     "residual_pct_of_peak": -14.045791312094693
+    },
+    {
+     "y": 0.018750000000000003,
+     "y_over_H": 0.18750000000000003,
+     "y_over_dx": 1.5000000000000002,
+     "u": -0.1101207435131073,
+     "u_analytic": -0.09799804687500008,
+     "residual_pct_of_peak": -12.319784940772093
+    },
+    {
+     "y": 0.03125,
+     "y_over_H": 0.3125,
+     "y_over_dx": 2.5,
+     "u": -0.0794825479388237,
+     "u_analytic": -0.06752929687500009,
+     "residual_pct_of_peak": -12.147584555275552
+    },
+    {
+     "y": 0.043750000000000004,
+     "y_over_H": 0.4375,
+     "y_over_dx": 3.5,
+     "u": 0.027273912998762997,
+     "u_analytic": 0.03958007812499997,
+     "residual_pct_of_peak": -12.506236221757055
+    },
+    {
+     "y": 0.05625,
+     "y_over_H": 0.5625,
+     "y_over_dx": 4.5,
+     "u": 0.21066579087214035,
+     "u_analytic": 0.22333007812499983,
+     "residual_pct_of_peak": -12.87018062408189
+    },
+    {
+     "y": 0.06875,
+     "y_over_H": 0.6875,
+     "y_over_dx": 5.5,
+     "u": 0.47101113200187683,
+     "u_analytic": 0.4837207031249998,
+     "residual_pct_of_peak": -12.916200710172184
+    },
+    {
+     "y": 0.08125000000000002,
+     "y_over_H": 0.8125000000000001,
+     "y_over_dx": 6.500000000000001,
+     "u": 0.807056958025152,
+     "u_analytic": 0.8207519531250003,
+     "residual_pct_of_peak": -13.917645506751006
+    },
+    {
+     "y": 0.09375000000000001,
+     "y_over_H": 0.9375000000000001,
+     "y_over_dx": 7.500000000000001,
+     "u": 1.2199627486142246,
+     "u_analytic": 1.2344238281250002,
+     "residual_pct_of_peak": -14.696184760091253
+    }
+   ]
+  },
+  {
+   "resolution_H_over_dx": 12,
+   "n_cols": 8,
+   "n_fluid": 96,
+   "dx": 0.008333333333333333,
+   "dt": 0.0001625,
+   "steps": 6154,
+   "wall_clock_s": 49.57408308982849,
+   "declared": {
+    "estimator": "min_k u_k, graded against the closed form at that row",
+    "y_at_min": 0.020833333333333332,
+    "u_min": -0.1063292148438367,
+    "u_min_analytic_at_same_row": -0.09824218750000008,
+    "peak_pct": -8.231725646211427,
+    "pass_5pct": false
+   },
+   "extremum_row_over_dx": 2.5,
+   "support_over_dx": 2.6,
+   "inside_kernel_support": true,
+   "row_residual_at_min_pct": -8.231725646211427,
+   "fit": {
+    "estimator": "extremum of polyfit(y, u, 2) on 0.15<=y/H<=0.85",
+    "y": 0.01977987250035837,
+    "u": -0.10649139305493516,
+    "u_analytic": -0.09840022935779819,
+    "pct": -8.222708168409111,
+    "pass_5pct": false,
+    "y_pct": -1.2516288913406861,
+    "n_rows": 8,
+    "curvature_a": 243.8519477457198
+   },
+   "scale": {
+    "gauge": 1.47,
+    "peak_abs": 0.09840022935779819,
+    "gauge_over_peak": 14.93898956937241,
+    "C6_tolerance_m_s": 0.004920011467889909,
+    "C6_tolerance_in_gauge_pct": 0.33469465767958567,
+    "max_abs_row_error": 0.008087027343836622,
+    "max_row_error_pct_of_gauge": 0.550137914546709,
+    "rms_error_pct_of_gauge": 0.4157549079857304,
+    "max_row_error_pct_of_peak": 8.218504567129576,
+    "rms_error_pct_of_peak": 6.210958233814212,
+    "note": "peak is gauge/(peak) smaller, so 5 % of it is that much tighter"
+   },
+   "fit_coefficients": {
+    "a": 243.8519477457198,
+    "b": -9.646720870748778,
+    "c": -0.0110859386199567,
+    "a_pct": -0.5700518875760253,
+    "b_pct": -1.8145458447961795,
+    "c_m_s": -0.0110859386199567,
+    "c_pct_of_peak": -11.266171524505847
+   },
+   "profile_rms_pct": 0.4157549079857304,
+   "tau_bottom_pct": -1.814545844796176,
+   "tau_top_pct": -0.2583335158822626,
+   "rows": [
+    {
+     "y": 0.004166666666666667,
+     "y_over_H": 0.041666666666666664,
+     "y_over_dx": 0.5,
+     "u": -0.042542832818898285,
+     "u_analytic": -0.036679687500000016,
+     "residual_pct_of_peak": -5.958467126716728
+    },
+    {
+     "y": 0.0125,
+     "y_over_H": 0.125,
+     "y_over_dx": 1.5,
+     "u": -0.08909847248684276,
+     "u_analytic": -0.08449218750000004,
+     "residual_pct_of_peak": -4.681173018503411
+    },
+    {
+     "y": 0.020833333333333332,
+     "y_over_H": 0.20833333333333331,
+     "y_over_dx": 2.5,
+     "u": -0.1063292148438367,
+     "u_analytic": -0.09824218750000008,
+     "residual_pct_of_peak": -8.218504567129576
+    },
+    {
+     "y": 0.029166666666666667,
+     "y_over_H": 0.29166666666666663,
+     "y_over_dx": 3.5,
+     "u": -0.08497709713198921,
+     "u_analytic": -0.07792968750000007,
+     "residual_pct_of_peak": -7.161984964855817
+    },
+    {
+     "y": 0.0375,
+     "y_over_H": 0.37499999999999994,
+     "y_over_dx": 4.5,
+     "u": -0.02995186468416994,
+     "u_analytic": -0.023554687500000004,
+     "residual_pct_of_peak": -6.501181171955228
+    },
+    {
+     "y": 0.04583333333333333,
+     "y_over_H": 0.45833333333333326,
+     "y_over_dx": 5.5,
+     "u": 0.059552459892901505,
+     "u_analytic": 0.06488281249999983,
+     "residual_pct_of_peak": -5.417012380851628
+    },
+    {
+     "y": 0.05416666666666667,
+     "y_over_H": 0.5416666666666666,
+     "y_over_dx": 6.5,
+     "u": 0.18151857365261426,
+     "u_analytic": 0.1873828125,
+     "residual_pct_of_peak": -5.959578433564901
+    },
+    {
+     "y": 0.0625,
+     "y_over_H": 0.625,
+     "y_over_dx": 7.5,
+     "u": 0.338575848124244,
+     "u_analytic": 0.3439453124999998,
+     "residual_pct_of_peak": -5.456760020580457
+    },
+    {
+     "y": 0.07083333333333333,
+     "y_over_H": 0.7083333333333333,
+     "y_over_dx": 8.5,
+     "u": 0.5286860953677784,
+     "u_analytic": 0.5345703124999996,
+     "residual_pct_of_peak": -5.979881521236394
+    },
+    {
+     "y": 0.07916666666666666,
+     "y_over_H": 0.7916666666666666,
+     "y_over_dx": 9.5,
+     "u": 0.7538231448693709,
+     "u_analytic": 0.7592578124999996,
+     "residual_pct_of_peak": -5.523023336528458
+    },
+    {
+     "y": 0.0875,
+     "y_over_H": 0.8749999999999999,
+     "y_over_dx": 10.5,
+     "u": 1.0117688179016113,
+     "u_analytic": 1.0180078124999996,
+     "residual_pct_of_peak": -6.34042688630567
+    },
+    {
+     "y": 0.09583333333333333,
+     "y_over_H": 0.9583333333333333,
+     "y_over_dx": 11.5,
+     "u": 1.3043459437110207,
+     "u_analytic": 1.3108203124999998,
+     "residual_pct_of_peak": -6.579627741961061
+    }
+   ]
+  },
+  {
+   "resolution_H_over_dx": 16,
+   "n_cols": 8,
+   "n_fluid": 128,
+   "dx": 0.00625,
+   "dt": 0.000121875,
+   "steps": 8205,
+   "wall_clock_s": 75.80565142631531,
+   "declared": {
+    "estimator": "min_k u_k, graded against the closed form at that row",
+    "y_at_min": 0.021875000000000002,
+    "u_min": -0.09885427897626703,
+    "u_min_analytic_at_same_row": -0.09756591796875008,
+    "peak_pct": -1.3205031370991696,
+    "pass_5pct": true
+   },
+   "extremum_row_over_dx": 3.5,
+   "support_over_dx": 2.6,
+   "inside_kernel_support": false,
+   "row_residual_at_min_pct": -1.3205031370991696,
+   "fit": {
+    "estimator": "extremum of polyfit(y, u, 2) on 0.15<=y/H<=0.85",
+    "y": 0.019874236089154448,
+    "u": -0.1005496247924605,
+    "u_analytic": -0.09840022935779819,
+    "pct": -2.184339862508643,
+    "pass_5pct": true,
+    "y_pct": -0.7805312800991979,
+    "n_rows": 12,
+    "curvature_a": 243.87011960339552
+   },
+   "scale": {
+    "gauge": 1.47,
+    "peak_abs": 0.09840022935779819,
+    "gauge_over_peak": 14.93898956937241,
+    "C6_tolerance_m_s": 0.004920011467889909,
+    "C6_tolerance_in_gauge_pct": 0.33469465767958567,
+    "max_abs_row_error": 0.0037965644489634798,
+    "max_row_error_pct_of_gauge": 0.2582696904056789,
+    "rms_error_pct_of_gauge": 0.160898342445789,
+    "max_row_error_pct_of_peak": 3.858288211055479,
+    "rms_error_pct_of_peak": 2.4036586595269522,
+    "note": "peak is gauge/(peak) smaller, so 5 % of it is that much tighter"
+   },
+   "fit_coefficients": {
+    "a": 243.87011960339552,
+    "b": -9.69346466417643,
+    "c": -0.004224522163601201,
+    "a_pct": -0.5626423635492263,
+    "b_pct": -1.3387820440058307,
+    "c_m_s": -0.004224522163601201,
+    "c_pct_of_peak": -4.293203573987817
+   },
+   "profile_rms_pct": 0.16089834244578902,
+   "tau_bottom_pct": -1.3387820440058271,
+   "tau_top_pct": -0.3682364397637331,
+   "rows": [
+    {
+     "y": 0.003125,
+     "y_over_H": 0.03125,
+     "y_over_dx": 0.5,
+     "u": -0.031706096773797814,
+     "u_analytic": -0.028308105468750025,
+     "residual_pct_of_peak": -3.453235147137895
+    },
+    {
+     "y": 0.009375000000000001,
+     "y_over_H": 0.09375000000000001,
+     "y_over_dx": 1.5000000000000002,
+     "u": -0.07381344789808447,
+     "u_analytic": -0.07055419921875006,
+     "residual_pct_of_peak": -3.3122368724195663
+    },
+    {
+     "y": 0.015625,
+     "y_over_H": 0.15625,
+     "y_over_dx": 2.5,
+     "u": -0.09711089052937248,
+     "u_analytic": -0.09364013671875004,
+     "residual_pct_of_peak": -3.5271806105270844
+    },
+    {
+     "y": 0.021875000000000002,
+     "y_over_H": 0.21875,
+     "y_over_dx": 3.5,
+     "u": -0.09885427897626703,
+     "u_analytic": -0.09756591796875008,
+     "residual_pct_of_peak": -1.3093069151620276
+    },
+    {
+     "y": 0.028125,
+     "y_over_H": 0.28125,
+     "y_over_dx": 4.5,
+     "u": -0.08344928175210953,
+     "u_analytic": -0.08233154296875012,
+     "residual_pct_of_peak": -1.1359107500604944
+    },
+    {
+     "y": 0.034375,
+     "y_over_H": 0.34375,
+     "y_over_dx": 5.5,
+     "u": -0.048880602487108925,
+     "u_analytic": -0.0479370117187502,
+     "residual_pct_of_peak": -0.9589314725351763
+    },
+    {
+     "y": 0.04062500000000001,
+     "y_over_H": 0.40625000000000006,
+     "y_over_dx": 6.500000000000001,
+     "u": 0.004212441727180372,
+     "u_analytic": 0.005617675781249942,
+     "residual_pct_of_peak": -1.4280800596103547
+    },
+    {
+     "y": 0.04687500000000001,
+     "y_over_H": 0.46875000000000006,
+     "y_over_dx": 7.500000000000001,
+     "u": 0.07730772481723265,
+     "u_analytic": 0.07833251953124987,
+     "residual_pct_of_peak": -1.04145561520076
+    },
+    {
+     "y": 0.053125000000000006,
+     "y_over_H": 0.53125,
+     "y_over_dx": 8.5,
+     "u": 0.1687979901378805,
+     "u_analytic": 0.1702075195312499,
+     "residual_pct_of_peak": -1.4324452316509853
+    },
+    {
+     "y": 0.059375000000000004,
+     "y_over_H": 0.59375,
+     "y_over_dx": 9.5,
+     "u": 0.2799452136863362,
+     "u_analytic": 0.28124267578124984,
+     "residual_pct_of_peak": -1.3185559661613087
+    },
+    {
+     "y": 0.065625,
+     "y_over_H": 0.65625,
+     "y_over_dx": 10.5,
+     "u": 0.40959250926971436,
+     "u_analytic": 0.4114379882812499,
+     "residual_pct_of_peak": -1.8754824288316356
+    },
+    {
+     "y": 0.07187500000000001,
+     "y_over_H": 0.71875,
+     "y_over_dx": 11.5,
+     "u": 0.5587314692410555,
+     "u_analytic": 0.56079345703125,
+     "residual_pct_of_peak": -2.095511162577485
+    },
+    {
+     "y": 0.07812500000000001,
+     "y_over_H": 0.7812500000000001,
+     "y_over_dx": 12.500000000000002,
+     "u": 0.7268040667880665,
+     "u_analytic": 0.7293090820312503,
+     "residual_pct_of_peak": -2.5457412645606645
+    },
+    {
+     "y": 0.084375,
+     "y_over_H": 0.84375,
+     "y_over_dx": 13.5,
+     "u": 0.9144774079322815,
+     "u_analytic": 0.9169848632812498,
+     "residual_pct_of_peak": -2.548221041081985
+    },
+    {
+     "y": 0.09062500000000001,
+     "y_over_H": 0.9062500000000001,
+     "y_over_dx": 14.500000000000002,
+     "u": 1.1206327893517234,
+     "u_analytic": 1.1238208007812502,
+     "residual_pct_of_peak": -3.239841462091267
+    },
+    {
+     "y": 0.096875,
+     "y_over_H": 0.96875,
+     "y_over_dx": 15.5,
+     "u": 1.3460203300822864,
+     "u_analytic": 1.3498168945312499,
+     "residual_pct_of_peak": -3.858288211055479
+    }
+   ]
+  }
+ ],
+ "boundary_probe": [],
+ "column_sweep": {},
+ "verdict_table": {
+  "n": 3,
+  "hits": [
+   {
+    "resolution_H_over_dx": 8,
+    "n_cols": 8,
+    "extremum_row_over_dx": 1.5000000000000002,
+    "predicted_fail": true,
+    "observed_fail": true,
+    "peak_pct": -12.37034514939889
+   },
+   {
+    "resolution_H_over_dx": 12,
+    "n_cols": 8,
+    "extremum_row_over_dx": 2.5,
+    "predicted_fail": true,
+    "observed_fail": true,
+    "peak_pct": -8.231725646211427
+   },
+   {
+    "resolution_H_over_dx": 16,
+    "n_cols": 8,
+    "extremum_row_over_dx": 3.5,
+    "predicted_fail": false,
+    "observed_fail": false,
+    "peak_pct": -1.3205031370991696
+   }
+  ],
+  "misses": [],
+  "hypothesis_H1_supported": true
+ },
+ "column_effect": {},
+ "unconcluded": {
+  "H1_crossover_14_vs_12": "not tested here (needs H/dx = 14; queued: cj4530 full, cj4546 quick)",
+  "H0_column_sweep": "not tested here (needs n_cols = 16/32/64; queued: cj4530)",
+  "H2_status": "falsified: with the fitted constant c kept in the peak value, the interior fit fails wherever the raw minimum fails"
+ },
+ "summary": {
+  "worst_declared_peak_pct": -12.37034514939889,
+  "worst_declared_at_Hdx": 8,
+  "worst_fit_pct": -12.28298454318902,
+  "worst_fit_at_Hdx": 8,
+  "declared_verdict_at_Hdx8_independent_of_n_cols": false,
+  "wall_clock_s": 9.770604372024536
+ },
+ "device": "cpu",
+ "torch": "2.7.1",
+ "python": "3.11.6"
+}
