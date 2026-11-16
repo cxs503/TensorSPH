@@ -42,6 +42,12 @@ gates G1–G9 and their thresholds are predeclared in `DESIGN.md`.
 | `make_wall_shear_harmonic_doc.py` | figure + `../../docs/case_poiseuille_wall_shear_harmonic.md` generator |
 | `../../tests/test_case_poiseuille_wall_shear_harmonic.py` | closed-form/estimator/control tests + artifact and note binding |
 
+| `backflow_level.py` | attribution of the published C6 FAIL (level vs shape; C6 = level term + shape term); gates L0–L6, post-processes `out/combined.json`, no solver run |
+| `out/backflow_level.json` | per-rung decomposition, observed order of the level bias, gate verdicts |
+| `extra_rungs.py` | adds H/dx = 24, 32, 48 on the same ladder + a t = 4 s long-time control (does the level bias decay?); cluster job cj4578 |
+| `make_backflow_level_doc.py` | figures + `../../docs/case_poiseuille_backflow_level.md` generator |
+| `../../tests/test_case_poiseuille_backflow_level.py` | midpoint-rule/identity/shear-falsifier tests + artifact binding (18 tests) |
+
 ## Run
 
 ```bash
@@ -53,6 +59,10 @@ PYTHONPATH=.:src python3 benchmarks/case_poiseuille/steady_drift.py     # trend-
 PYTHONPATH=.:src python3 benchmarks/case_poiseuille/steady_drift.py --extend  # + window at t ~ 3.5 s, ~4 min
 PYTHONPATH=.:src python3 benchmarks/case_poiseuille/wall_shear_harmonic.py  # pulsatile drag, ~1 s (post-process)
 PYTHONPATH=.:src python3 benchmarks/case_poiseuille/make_wall_shear_harmonic_doc.py
+PYTHONPATH=.:src python3 benchmarks/case_poiseuille/backflow_level.py            # C6 attribution, ~1 s (post-process)
+PYTHONPATH=.:src python3 benchmarks/case_poiseuille/make_backflow_level_doc.py   # figures + note
+PYTHONPATH=.:src python3 benchmarks/case_poiseuille/extra_rungs.py               # finer rungs + long-time control (cluster)
+
 ```
 
 Exit status is non-zero when a gate fails; `--quick` grades one resolution and
