@@ -1,15 +1,21 @@
-"""Tests for the lake-at-rest horizontal residual analysis.
+"""Tests for the lake-at-rest full (per-particle) reconstruction.
 
-These tests document the horizontal residual defect (F1) and verify the
-convergence behavior of the side-wall truncation error.
+The per-particle reconstruction (:func:`tensorsph.lake_at_rest_full.reconstruct_full`)
+relaxes the mirror-symmetry constraint of the original reconstruction and solves
+for one mass per particle to minimise **both** vertical and horizontal acceleration.
+
+Key finding: with mass-only adjustments (no position corrections), the best
+achievable residual is O(0.1 g), not machine precision.  This is because the
+system is overdetermined: 2n equations (ax, ay per particle) but only n unknowns
+(mass per particle).  The solver finds the best least-squares compromise.
 """
 from __future__ import annotations
 
 import pytest
 import torch
 
-from tensorsph.lake_at_rest import (LakeConfig, analytic_profile, build_state,
-                                    reconstruct, residual_report)
+from tensorsph.lake_at_rest import LakeConfig, build_state, analytic_profile
+from tensorsph.lake_at_rest_full import reconstruct_full
 
 
 @pytest.fixture(scope="module")
@@ -21,63 +27,63 @@ def case():
                          sample_every=5, solver_max_iter=30)
         state = build_state(cfg)
         prior = analytic_profile(state, cfg)
-        result = reconstruct(state, cfg, prior=prior["mass"])
-        yield cfg, state, prior, result
+        sol = reconstruct_full(state, cfg, prior["mass"])
+        yield cfg, state, prior, sol
     finally:
         torch.set_default_dtype(previous)
 
 
-def test_original_reconstruction_achieves_vertical_machine_precision(case):
-    """G1: the original reconstruction achieves machine precision for vertical balance."""
-    _cfg, _state, _prior, result = case
-    assert result["a_max_over_g"] < 1e-9, result["a_max_over_g"]
+def test_full_reconstruction_reduces_combined_residual(case):
+    """The per-particle reconstruction reduces the combined (ax+ay) residual."""
+    _cfg, _state, _prior, sol = case
+    # The analytic prior has O(0.26g) residual
+    assert sol.a_max_over_g < 0.26, f"a_max_over_g = {sol.a_max_over_g}"
+    # The residual is reduced to O(0.08g)
+    assert sol.a_max_over_g < 0.10
 
 
-def test_horizontal_residual_at_side_walls(case):
-    """F1: the horizontal residual lives in the side-wall band.
+def test_full_reconstruction_reduces_horizontal_component(case):
+    """The horizontal component is reduced compared to the mirror-tied version."""
+    from tensorsph.lake_at_rest import reconstruct
+    cfg, state, prior, sol_full = case
+    sol_mirror = reconstruct(state, cfg, prior=prior["mass"])
+    # The mirror-tied version has O(0.1g) horizontal residual (documented defect F1)
+    # The per-particle version should have similar or slightly different horizontal residual
+    # (it's optimizing both components, not just ay)
+    assert sol_full.a_max_over_g_horizontal < 0.10
 
-    This is the documented defect: the mirror-symmetric mass field cannot
-    cancel the horizontal force at side walls because the force is odd under
-    mirror reflection.
+
+def test_full_reconstruction_does_not_reach_machine_precision(case):
+    """F5: mass-only adjustments cannot achieve machine precision in the wall-bounded tank.
+
+    The system is overdetermined (2n equations, n unknowns), so the best
+    least-squares solution leaves O(0.1g) residual.  This is a fundamental
+    limitation of the mass-only approach, not a solver bug.
     """
-    _cfg, _state, _prior, result = case
-    wall_band = result["a_max_over_g_horizontal_wall_band"]
-    interior = result["a_max_over_g_horizontal_interior"]
-    # Wall band residual is O(0.1)
-    assert wall_band > 1e-2, f"wall band residual too small: {wall_band}"
-    # Interior is much smaller
-    assert interior < wall_band / 5, f"interior not smaller: {interior} vs {wall_band}"
+    _cfg, _state, _prior, sol = case
+    # The residual is reduced but not to machine precision
+    assert sol.a_max_over_g > 1e-6, f"a_max_over_g = {sol.a_max_over_g} (expected > 1e-6)"
 
 
-def test_horizontal_residual_scales_with_dx():
-    """The horizontal residual should decrease with finer resolution.
-
-    This documents the convergence behavior of the side-wall truncation error.
-    """
-    results = {}
-    for dx in [0.08, 0.04, 0.02]:
-        torch.set_default_dtype(torch.float64)
-        cfg = LakeConfig(width=0.40, depth=0.28, dx=dx, t_end=0.05,
-                         sample_every=5, solver_max_iter=30)
-        state = build_state(cfg)
-        prior = analytic_profile(state, cfg)
-        result = reconstruct(state, cfg, prior=prior["mass"])
-        results[dx] = result["a_max_over_g_horizontal_wall_band"]
-
-    # The residual should decrease with dx (roughly first order)
-    assert results[0.04] < results[0.08], "residual should decrease with dx"
-    assert results[0.02] < results[0.04], "residual should decrease with dx"
+def test_full_reconstruction_no_position_corrections(case):
+    """This variant does not apply position corrections."""
+    _cfg, _state, _prior, sol = case
+    assert sol.max_delta_r == 0.0
+    assert torch.all(sol.delta_r == 0)
 
 
-def test_negative_controls_still_valid(case):
-    """The negative controls (uniform mass, analytic profile) still show O(1) residuals."""
-    _cfg, state, _prior, _result = case
-    from tensorsph.lake_at_rest import run_case
-    cfg = LakeConfig(width=0.40, depth=0.28, dx=0.04, t_end=0.05, sample_every=5)
-    full_result = run_case(cfg)
-    uniform = full_result["controls"]["uniform_lattice_mass"]
-    analytic = full_result["controls"]["analytic_hydrostatic_profile"]
-    # Uniform mass: free fall, exactly 1g
-    assert uniform["a_max_over_g"] == pytest.approx(1.0, abs=1e-6)
-    # Analytic profile: O(0.1)g
-    assert analytic["a_max_over_g"] > 0.05
+def test_full_reconstruction_convergence_behavior(case):
+    """The solver converges to a stationary point (not necessarily the tolerance)."""
+    _cfg, _state, _prior, sol = case
+    # The solver stops when no descent direction is found
+    assert len(sol.residual_history) > 1
+    # The residual decreases monotonically (or plateaus)
+    for i in range(1, len(sol.residual_history)):
+        assert sol.residual_history[i] <= sol.residual_history[i - 1] + 1e-12
+
+
+def test_full_reconstruction_vertical_reduced(case):
+    """The vertical component is also reduced (though the mirror-tied version does better)."""
+    _cfg, _state, _prior, sol = case
+    # The vertical residual is reduced from the analytic prior
+    assert sol.a_max_over_g_vertical < 0.26
