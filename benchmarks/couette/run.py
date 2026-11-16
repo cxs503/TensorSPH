@@ -686,6 +686,10 @@ def main(argv=None) -> int:
     parser.add_argument("--threads", type=int, default=1)
     parser.add_argument("--extended", action="store_true",
                         help="add H/dx = 32 to the ladder")
+    parser.add_argument("--viscous-times", type=float, default=None,
+                        help="terminal time in units of H^2/nu (default 1.2); "
+                             "0.3 reproduces the --quick reading, 1.2 is the "
+                             "DESIGN.md protocol")
     parser.add_argument("--quick", action="store_true",
                         help="single coarse resolution and a short run")
     parser.add_argument("--figure", action="store_true",
@@ -718,8 +722,10 @@ def main(argv=None) -> int:
         t_end_override = 0.15
 
     def run(resolution, viscosity, speed, friction, label):
+        unit = (VISCOUS_TIMES if args.viscous_times is None
+                else args.viscous_times)
         te = (t_end_override if t_end_override is not None
-              else VISCOUS_TIMES * args.height ** 2 / viscosity)
+              else unit * args.height ** 2 / viscosity)
         ta = AVERAGE_FRACTION * te
         print(f"[couette] {label}: H/dx={resolution} nu={viscosity} U={speed} "
               f"f={friction} t_end={te:.3f}", flush=True)
@@ -776,6 +782,8 @@ def main(argv=None) -> int:
         "h_factor": H_FACTOR,
         "wall_layers": WALL_LAYERS,
         "gates": GATES,
+        "viscous_times": (VISCOUS_TIMES if args.viscous_times is None
+                          else args.viscous_times),
         "device": str(device),
         "torch": torch.__version__,
         "ladder": ladder,
