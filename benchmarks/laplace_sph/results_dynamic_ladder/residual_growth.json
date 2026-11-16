@@ -1,0 +1,122 @@
+{
+ "case": "CASE-LAPLACE-SPH-DYNAMIC-RESIDUAL-GROWTH",
+ "anchor": "XVAL-SPH-PROJECTION-SPH-YOUNG-LAPLACE",
+ "levels_present": [
+  8.0,
+  12.0
+ ],
+ "levels_missing": [
+  "dx16_nu01",
+  "dx24_nu01"
+ ],
+ "source_records": [
+  "benchmarks/laplace_sph/results_dynamic_ladder/dx8_nu01.json",
+  "benchmarks/laplace_sph/results_dynamic_ladder/dx12_nu01.json"
+ ],
+ "rows": [
+  {
+   "job": "dx8_nu01",
+   "R_over_dx": 8.0,
+   "n_particles": 780,
+   "steps": 120,
+   "t_over_t_sigma_end": 12.000000000000002,
+   "nu_factor": 0.01,
+   "threads": 8,
+   "wall_s": 283.63714385032654,
+   "umax_start": 0.05879524756640193,
+   "umax_end": 0.26289546143178827,
+   "growth_ratio": 4.471372641723814,
+   "plateau": 0.2367680481156626,
+   "rise_to_90pct_t_sigma": 10.000000000000002,
+   "t_of_peak": 12.000000000000002,
+   "plateau_over_first": 4.026992961433873,
+   "slope_per_t_sigma": 0.014788688821914212,
+   "intercept": 0.08478447597871495,
+   "r2_linear": 0.8428094656033054,
+   "slope_per_100_t_sigma": 1.478868882191421,
+   "umean_start": 0.00750217746390823,
+   "umean_end": 0.03442124962915272,
+   "umean_slope_per_100_t_sigma": 0.19121516611494038,
+   "umean_r2_linear": 0.7808963728075416,
+   "dp_err_start_pct": 0.7166998798220803,
+   "dp_err_end_pct": 1.1722720603636994,
+   "dp_err_range_pct": 3.965110575845654,
+   "area_drift_end_pct": -0.4310344827586299,
+   "max_div_ratio": 9.997832018802365e-07,
+   "adami_gate": 0.1,
+   "adami_pass_end": false
+  },
+  {
+   "job": "dx12_nu01",
+   "R_over_dx": 12.0,
+   "n_particles": 1733,
+   "steps": 120,
+   "t_over_t_sigma_end": 11.999999999999998,
+   "nu_factor": 0.01,
+   "threads": 6,
+   "wall_s": 519.3804473876953,
+   "umax_start": 0.07172476562140012,
+   "umax_end": 0.28600690646228477,
+   "growth_ratio": 3.9875613950692435,
+   "plateau": 0.25134896563299175,
+   "rise_to_90pct_t_sigma": 5.0,
+   "t_of_peak": 11.999999999999998,
+   "plateau_over_first": 3.504353948812321,
+   "slope_per_t_sigma": 0.014200889438390563,
+   "intercept": 0.12635178957445176,
+   "r2_linear": 0.7126005224725112,
+   "slope_per_100_t_sigma": 1.4200889438390563,
+   "umean_start": 0.0078248417935462,
+   "umean_end": 0.02818486156684307,
+   "umean_slope_per_100_t_sigma": 0.10449621867042906,
+   "umean_r2_linear": 0.47267179034281515,
+   "dp_err_start_pct": -0.5382722317932909,
+   "dp_err_end_pct": 2.1939618875712386,
+   "dp_err_range_pct": 4.110975932006755,
+   "area_drift_end_pct": 0.7692307692307665,
+   "max_div_ratio": 9.990894056686873e-07,
+   "adami_gate": 0.1,
+   "adami_pass_end": false
+  }
+ ],
+ "verdicts": {
+  "residual_saturates_not_unbounded": {
+   "measured_r2_linear_max": 0.8428094656033054,
+   "declared": 0.9,
+   "op": "<=",
+   "pass": true,
+   "note": "low R^2 here is evidence *for* a plateau, not against it"
+  },
+  "plateau_reached_within_march": {
+   "measured_max": 10.000000000000002,
+   "declared": 6.0,
+   "op": "<=",
+   "pass": false
+  },
+  "adami_gate_all_levels": {
+   "measured_max": 0.28600690646228477,
+   "declared": 0.1,
+   "op": "<=",
+   "pass": false
+  },
+  "mean_current_is_the_residual": {
+   "measured_r2_min": 0.47267179034281515,
+   "declared": 0.9,
+   "op": ">=",
+   "pass": false
+  },
+  "laplace_jump_inside_owner_gate": {
+   "measured_max": 2.1939618875712386,
+   "declared": 15.0,
+   "op": "<=",
+   "pass": true
+  },
+  "plateau_falls_with_dx": {
+   "measured_ratio_finest_over_coarsest": 1.0615831301282945,
+   "declared": 1.0,
+   "op": "<=",
+   "pass": false,
+   "note": "two points only; a ratio below 1 is necessary but not sufficient for a residual that refines away"
+  }
+ }
+}
