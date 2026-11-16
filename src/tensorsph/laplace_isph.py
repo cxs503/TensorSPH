@@ -401,7 +401,8 @@ def laplace_isph_case(radius: float = 0.02, dx: float = 0.002,
                       curvature_stencil: float = 4.0,
                       out_band=(1.25, 1.45), core_frac: float = 0.5,
                       center=None, angle: float = 0.0,
-                      rho_vapour=None, poisson_weighting: str = "density"):
+                      rho_vapour=None, poisson_weighting: str = "density",
+                      return_fields: bool = False):
     """One static equilibrium of the projection-SPH droplet.
 
     ``variant``
@@ -410,6 +411,11 @@ def laplace_isph_case(radius: float = 0.02, dx: float = 0.002,
         ``delta_unit``  model curvature with ``delta_s`` rescaled so that its
                         measured normal integral is 1
         ``gauge``       both replaced (instrument check: must return 1.000)
+
+    ``return_fields``
+        Also return the per-particle fields (``pos``, ``p``, ``|resid|``,
+        ``|a_CSF|``, phase mask) under the ``fields`` key, for field maps.  Off
+        by default: the scalar record is what the gates read.
 
     ``rho_vapour``
         Vapour density.  ``None`` (default) = the historical equal-density
@@ -516,6 +522,30 @@ def laplace_isph_case(radius: float = 0.02, dx: float = 0.002,
     a_local = torch.linalg.vector_norm(acc[active], dim=1).clamp_min(1e-300)
     resid_rel_local = float((resid_norm / a_local).median())
 
+    # Per-phase breakdown of the same dimensionless residual.  The density ratio
+    # does its damage in the *light* phase (``a = f/rho`` grows as ``1/rho``),
+    # but a median over all active particles is dominated by the liquid
+    # (``n_liquid/n_active ~ 0.3`` here), so the global instrument above is
+    # phase-blind.  Reported for both phases so the momentum imbalance can be
+    # attributed instead of averaged away; see
+    # scripts/xval_projection_laplace/density_ratio_momentum_balance.py.
+    def _phase_resid(mask):
+        if not bool(mask.any()):
+            return {"n": 0, "median_over_local_csf_acc": float("nan"),
+                    "mean_over_local_csf_acc": float("nan"),
+                    "mean_abs_m_per_s2": float("nan"),
+                    "max_abs_m_per_s2": float("nan")}
+        rel = resid_norm[mask] / a_local[mask]
+        return {"n": int(mask.sum()),
+                "median_over_local_csf_acc": float(rel.median()),
+                "mean_over_local_csf_acc": float(rel.mean()),
+                "mean_abs_m_per_s2": float(resid_norm[mask].mean()),
+                "max_abs_m_per_s2": float(resid_norm[mask].max())}
+
+    liq_active = liquid[active]
+    residual_phase = {"liquid": _phase_resid(liq_active),
+                      "vapour": _phase_resid(~liq_active)}
+
     # Independent cross-check of the jump: the radial integral of the CSF
     # traction, -int rho a_r dr.  It never touches the pressure solve, so
     # agreement between the two routes is what makes the number trustworthy.
@@ -567,6 +597,13 @@ def laplace_isph_case(radius: float = 0.02, dx: float = 0.002,
             torch.linalg.vector_norm(resid[~active], dim=1).median() / a_scale
         ) if bool((~active).any()) else 0.0,
         "residual_acc_max": float(resid_norm.max()),
+        "residual_phase": residual_phase,
+        # full-length fields (not the ``active``-reduced statistics above), for
+        # the field maps of scripts/xval_projection_laplace/density_ratio_momentum.py
+        **({"fields": {"pos": pos, "p": p, "liquid": liquid, "active": active,
+                       "resid_norm": torch.linalg.vector_norm(resid, dim=1),
+                       "acc_norm": torch.linalg.vector_norm(acc, dim=1)}}
+           if return_fields else {}),
         "v_ref_m_per_s": v_ref,
         "cg_iterations": int(n_cg),
     }
