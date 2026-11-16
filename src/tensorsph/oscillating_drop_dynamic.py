@@ -482,7 +482,7 @@ def _accelerations(pos_p: torch.Tensor, vel_p: torch.Tensor, rho_p: torch.Tensor
     # to 17 near the axis, where delta_s is ~1/500 of its peak)
     band = ((state.color > 0.25) & (state.color < 0.75)).to(kappa.dtype)
     f = cfg.sigma * kappa * state.delta_s * band
-    accel = accel + (f / rho)[:, None] * state.normal
+    accel = accel - (f / rho)[:, None] * state.normal
 
     # --- axisymmetric continuity source: -rho v_rho / rho_axis --------------
     drho = drho - rho * vel[:, 0] / rho_axis

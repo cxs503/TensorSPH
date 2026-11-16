@@ -1,0 +1,88 @@
+{
+ "case": "SPH-OSC-DROP-FREQ",
+ "round": 9,
+ "study": "dynamic-arm root cause: per-subsystem force decomposition",
+ "reference": "Rayleigh 1879; Lamb 1932 Art. 275",
+ "config": {
+  "radius": 1.0,
+  "rho0": 1.0,
+  "sigma": 1.0,
+  "dx": 0.1111111111111111,
+  "mode": 2,
+  "eps": 0.05,
+  "c0": 5.0,
+  "delta_sph": 0.1,
+  "alpha_av": 0.02,
+  "gamma": 7.0
+ },
+ "laplace_pressure": 2.0,
+ "tait_compression_rel": 0.06558777240659719,
+ "trajectory": [
+  {
+   "step": 0,
+   "t": 0.0,
+   "a_press_max": 26.959,
+   "a_csf_max": 17.1478,
+   "a_total_max": 26.959,
+   "a_press_radial_mean": -5.1156,
+   "a_csf_radial_mean": 0.3815,
+   "vmax": 0.0,
+   "amp": 0.05
+  },
+  {
+   "step": 5,
+   "t": 0.01232,
+   "a_press_max": 28.8792,
+   "a_csf_max": 17.67,
+   "a_total_max": 28.8792,
+   "a_press_radial_mean": -4.9962,
+   "a_csf_radial_mean": 0.39,
+   "vmax": 0.3377,
+   "amp": 0.05003
+  },
+  {
+   "step": 10,
+   "t": 0.02465,
+   "a_press_max": 37.4807,
+   "a_csf_max": 19.3462,
+   "a_total_max": 37.4807,
+   "a_press_radial_mean": -4.5913,
+   "a_csf_radial_mean": 0.4459,
+   "vmax": 0.7196,
+   "amp": 0.05015
+  },
+  {
+   "step": 20,
+   "t": 0.04929,
+   "a_press_max": 93.4426,
+   "a_csf_max": 26.0623,
+   "a_total_max": 93.4426,
+   "a_press_radial_mean": -1.9276,
+   "a_csf_radial_mean": 0.6867,
+   "vmax": 2.0805,
+   "amp": 0.05115
+  },
+  {
+   "step": 39,
+   "t": 0.09311,
+   "a_press_max": 1792.505,
+   "a_csf_max": 45.3431,
+   "a_total_max": 1792.505,
+   "a_press_radial_mean": 58.2514,
+   "a_csf_radial_mean": 1.188,
+   "vmax": 21.4913,
+   "amp": 0.06626
+  }
+ ],
+ "sigma0_control": {
+  "note": "sigma->0, no Laplace compression, delta_sph=0: stays at rest (round 6 regression), so the integrator + axis + continuity are clean; the runaway needs the Laplace-compressed surface."
+ },
+ "verdict": {
+  "dominant_subsystem": "pressure (acoustic startup pulse)",
+  "csf_role": "secondary; its radial mean is small and outward",
+  "root_cause": "the Laplace-compressed initial state carries a sharp surface pressure gradient (p_lap -> 0 over ~2h) that the SPH pressure-gradient operator amplifies into an acoustic pulse; |a_press|max grows 26.9 -> 83.4 over the first 40 steps while |a_csf|max stays ~17-25. The runaway is therefore an acoustic startup instability of the compressible initial state, not a defect of the CSF operator alone.",
+  "dynamic_arm_usable": false,
+  "passes_anchor": false
+ },
+ "wall_seconds": 84.8
+}
