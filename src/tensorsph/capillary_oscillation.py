@@ -48,6 +48,7 @@ import torch
 
 from .droplet_impact import Config, rhs, suggested_dt
 from .neighbor_search import PairListCache
+from .particle_shifting import shift_positions
 from .transport_velocity_correction import transport_velocity_correction
 
 __all__ = [
@@ -136,8 +137,26 @@ def run_point(radius_over_dx: int, sigma: float, periods: float,
               tvc_alpha: float = 0.0,
               tvc_every: int = 1,
               tvc_max_shift: float | None = None,
-              tvc_limiter=None) -> dict:
-    """Integrate one drop-oscillation point and return every reading + reference."""
+              tvc_limiter=None,
+              shift_strength: float = 0.0,
+              shift_every: int = 1,
+              shift_limit: float = 0.25,
+              shift_free_surface: float = 0.95,
+              shift_v_ref: float | None = None) -> dict:
+    """Integrate one drop-oscillation point and return every reading + reference.
+
+    ``tvc_*`` is the ported SPHinXsys transport-velocity correction and
+    ``shift_*`` the Lind et al. (2012) particle shifting
+    (:func:`tensorsph.particle_shifting.shift_positions`); both default to off
+    (``alpha = 0`` / ``strength = 0``), which reproduces the historical
+    trajectory bit for bit.  They are different operators with different
+    free-surface behaviour: TVC moves particles along ``-grad(1)`` (outward at a
+    free surface), shifting projects the displacement onto the *tangential*
+    plane there, so the interface is redistributed rather than pushed.
+    ``shift_v_ref`` defaults to Lind's instantaneous maximum speed with the
+    ``0.05 * c0`` floor that ``dam_break`` uses, so a drop relaxing at rest
+    still redistributes.
+    """
     device = torch.device(device)
     dx = radius / radius_over_dx
     cfg = Config(
@@ -171,11 +190,15 @@ def run_point(radius_over_dx: int, sigma: float, periods: float,
     dp_exact = sigma / radius
 
     t, steps = 0.0, 0
-    times, qs, ps = [], [], []
+    times, qs, ps, rmaxes = [], [], [], []
     max_r_over_R, escaped = 0.0, 0
     t_first_escape = float("nan")
     # transport-velocity-correction bookkeeping (all zero when tvc_alpha = 0.0)
     tvc_steps, tvc_shift_peak, tvc_h_grad1_sum = 0, 0.0, 0.0
+    # particle-shifting bookkeeping (all zero when shift_strength = 0.0)
+    shift_steps, shift_peak_over_h = 0, 0.0
+    shift_clipped_sum, shift_fs_sum = 0.0, 0.0
+    shift_v_ref_last = float("nan")
     t0 = time.time()
     while t < t_end:
         pairs, _ = cache.get(pos)
@@ -199,6 +222,30 @@ def run_point(radius_over_dx: int, sigma: float, periods: float,
             tvc_h_grad1_sum += h * float(
                 torch.linalg.vector_norm(tvc.gradient_integral, dim=1).mean())
             tvc_steps += 1
+        if shift_strength > 0.0 and steps > 0 and steps % shift_every == 0:
+            # Lind et al. (2012) shifting, wired the way ``dam_break`` wires it:
+            # volumes from this step's summation density, positions moved, mass
+            # and velocity untouched.  At the free surface the displacement is
+            # projected onto the tangent plane, so the interface is redistributed
+            # instead of being pushed along the normal (the failure mode of TVC
+            # documented in docs/xval_method_selection_csf_dynamic_m22526.md).
+            pairs_now, _ = cache.get(pos)
+            v_max = float(torch.linalg.vector_norm(vel, dim=1).max()) \
+                if vel.numel() else 0.0
+            v_ref = (max(v_max, 0.05 * sound_speed) if shift_v_ref is None
+                     else float(shift_v_ref))
+            pos, st = shift_positions(
+                pos, mass / density, h, dt=cfg.dt, v_ref=v_ref,
+                strength=shift_strength, limit=shift_limit,
+                free_surface=shift_free_surface, pairs=pairs_now,
+                return_state=True)
+            shift_steps += 1
+            shift_v_ref_last = v_ref
+            shift_peak_over_h = max(
+                shift_peak_over_h,
+                float(torch.linalg.vector_norm(st.shift, dim=1).max()) / h)
+            shift_clipped_sum += float(st.clipped)
+            shift_fs_sum += float(st.free_surface.double().mean())
         t += cfg.dt
         steps += 1
         cfg.dt = suggested_dt(cfg)
@@ -211,6 +258,7 @@ def run_point(radius_over_dx: int, sigma: float, periods: float,
             times.append(t)
             qs.append(mode_amplitude(pos, mass, mode))
             ps.append(interior_pressure(pos, pressure, radius))
+            rmaxes.append(float(r_now.max()) / radius)
     wall_s = time.time() - t0
 
     period, n_cross = period_from_crossings(times, qs)
@@ -246,11 +294,23 @@ def run_point(radius_over_dx: int, sigma: float, periods: float,
         "tvc_steps": int(tvc_steps),
         "tvc_shift_peak_over_h": (tvc_shift_peak / h if h > 0.0 else 0.0),
         "tvc_mean_h_grad1": (tvc_h_grad1_sum / tvc_steps if tvc_steps else 0.0),
+        "shift_strength": float(shift_strength),
+        "shift_every": int(shift_every),
+        "shift_limit": float(shift_limit),
+        "shift_free_surface": float(shift_free_surface),
+        "shift_steps": int(shift_steps),
+        "shift_peak_over_h": float(shift_peak_over_h),
+        "shift_clipped_fraction_mean": (shift_clipped_sum / shift_steps
+                                        if shift_steps else 0.0),
+        "shift_free_surface_fraction_mean": (shift_fs_sum / shift_steps
+                                             if shift_steps else 0.0),
+        "shift_v_ref_last": float(shift_v_ref_last),
         "r_mean_over_R": float(torch.linalg.norm(pos, dim=1).mean()) / radius,
         "containment_max_r_over_R": max_r_over_R,
         "t_first_escape_s": t_first_escape,
         "escaped_particles": escaped,
         "series": {"t": [round(x, 6) for x in times],
                    "q": [round(x, 8) for x in qs],
-                   "p_interior": [round(x, 6) for x in ps]},
+                   "p_interior": [round(x, 6) for x in ps],
+                   "max_r_over_R": [round(x, 6) for x in rmaxes]},
     }
