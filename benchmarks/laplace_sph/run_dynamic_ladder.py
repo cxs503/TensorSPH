@@ -355,6 +355,68 @@ def summarize():
     return summary
 
 
+COST_EXP = 1.5   # wall time ~ n_particles * PCG iterations; a Laplacian's
+#                  iteration count grows like n**0.5, so t ~ n**1.5.
+
+
+def plan():
+    """Cost plan of the declared ladder, calibrated on the records already on disk.
+
+    The dynamic arm is a *queued* compute job (7 marches of 120-600 projection
+    steps), so a unit that wants to run it needs to know what it costs before it
+    submits.  The estimate is ``t = t_cal (n/n_cal)**COST_EXP
+    (steps/steps_cal)`` with the calibration taken from the cheapest record that
+    exists (``dx8_nu01``: two orders of magnitude cheaper than the finest level).
+    Particle counts come from the same ``hex_block`` lattice the runner uses, so
+    they are exact, not fitted.  The exponent is an assumption and is printed
+    with the table: a level whose *measured* wall time is available overrides
+    the estimate (``estimated_wall_s = None``, ``measured_wall_s`` set).
+    """
+    from tensorsph.laplace_isph import hex_block
+
+    names = {s["name"] for s in job_specs()}
+    cal = None
+    if OUTDIR.exists():
+        for path in sorted(OUTDIR.glob("*.json")):
+            if path.stem not in names:
+                continue
+            blob = json.loads(path.read_text())
+            if "wall_s" in blob and blob.get("n_particles"):
+                cal = blob
+                break
+    rows = []
+    for s in job_specs():
+        dx = LEVELS[s["level"]]
+        pos, _mass, _liquid, _half = hex_block(R, dx, OUTER, RHO)
+        n = int(pos.shape[0])
+        path = OUTDIR / (s["name"] + ".json")
+        row = {"job": s["name"], "role": s["role"], "R_over_dx": R / dx,
+               "nu_factor": s["nu_factor"], "steps": s["steps"],
+               "n_particles": n, "record_present": path.exists(),
+               "estimated_wall_s": None, "measured_wall_s": None}
+        if path.exists():
+            blob = json.loads(path.read_text())
+            row["measured_wall_s"] = blob.get("wall_s")
+        if row["measured_wall_s"] is None and cal is not None:
+            cal_steps = cal["history"][-1]["step"] if cal.get("history") else 1
+            row["estimated_wall_s"] = (cal["wall_s"]
+                                       * (n / cal["n_particles"]) ** COST_EXP
+                                       * (s["steps"] / cal_steps)
+                                       * (int(cal.get("threads") or 1)
+                                          / int(torch.get_num_threads())))
+        rows.append(row)
+    total = sum((r["measured_wall_s"] if r["measured_wall_s"] is not None
+                 else (r["estimated_wall_s"] or 0.0)) for r in rows)
+    return {"calibration": None if cal is None else {
+                "job": cal.get("job"), "n_particles": cal["n_particles"],
+                "steps": cal["history"][-1]["step"], "wall_s": cal["wall_s"],
+                "threads": cal.get("threads")},
+            "cost_exponent": COST_EXP,
+            "threads_now": int(torch.get_num_threads()),
+            "rows": rows,
+            "total_wall_s": total}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--job", default=None)
@@ -362,6 +424,8 @@ def main():
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--summarize", action="store_true")
     ap.add_argument("--threads", type=int, default=None)
+    ap.add_argument("--plan", action="store_true",
+                    help="print the cost plan of the declared ladder")
     args = ap.parse_args()
 
     if args.threads:
@@ -373,6 +437,12 @@ def main():
         return
     if args.summarize:
         summarize()
+        return
+    if args.plan:
+        pl = plan()
+        print(json.dumps(pl, indent=1))
+        print("total wall [s] (measured where available): %.0f"
+              % pl["total_wall_s"], flush=True)
         return
     if args.shard:
         i, n = (int(t) for t in args.shard.split("/"))
