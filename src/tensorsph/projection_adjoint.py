@@ -605,7 +605,8 @@ def relax_projection_balanced(radius: float = 0.02, dx: float = 0.002,
                               sample_every: int = 10, nu_factor: float = 0.0,
                               pin_outer: bool = True, balanced: bool = True,
                               rel_tol: float = 1e-6, cg_max_iter: int = 4000,
-                              keep_fields: bool = False):
+                              keep_fields: bool = False,
+                              stability_report: bool = False):
     """March projection SPH on a static drop with a *well-balanced* capillary force.
 
     Same time loop as :func:`relax_projection_consistent`; the one change is
@@ -647,6 +648,7 @@ def relax_projection_balanced(radius: float = 0.02, dx: float = 0.002,
     fields = None
 
     for step in range(1, steps + 1):
+        pos_in = pos
         pairs = cell_linked_pairs(pos, 2.0 * h)
         st = csf_state_two_phase(pos, mass, liquid, h, rho0, sigma,
                                  curvature_method=curvature_method)
@@ -670,8 +672,22 @@ def relax_projection_balanced(radius: float = 0.02, dx: float = 0.002,
         pos = pos + dt * u
         vmax = float(torch.linalg.vector_norm(u, dim=1).max())
         if (not bool(torch.isfinite(u).all())) or vmax > 1.0e3 * v_ref:
-            history.append({"step": step, "diverged": True,
-                            "umax_over_vref": vmax / v_ref})
+            broke = {"step": step, "diverged": True,
+                     "umax_over_vref": vmax / v_ref}
+            if stability_report:
+                # Same contract as relax_projection_consistent: the breaking
+                # step is the only one whose lattice health is decisive, and it
+                # is measured on the step's *entry* state so that "the lattice
+                # already carried a NaN" is distinguishable from "a finite
+                # traction produced a huge u^*".
+                broke["finite_pos_in"] = bool(torch.isfinite(pos_in).all())
+                broke["finite_acc"] = bool(torch.isfinite(st["acc"]).all())
+                broke["finite_u_star"] = bool(torch.isfinite(u_star).all())
+                broke["solenoidal_fraction"] = sol_frac
+                if broke["finite_pos_in"] and broke["finite_acc"]:
+                    broke["lattice"] = lattice_health(pos_in, pairs, st, dx,
+                                                      radius, v_ref)
+            history.append(broke)
             diverged = True
             break
         if step % sample_every == 0 or step == steps:
@@ -694,6 +710,9 @@ def relax_projection_balanced(radius: float = 0.02, dx: float = 0.002,
             }
             if q is not None and bool(band.any()):
                 row["dp_potential_Pa"] = float(rho0 * (q[core].mean() - q[band].mean()))
+            if stability_report:
+                row["lattice"] = lattice_health(pos_in, pairs, st, dx,
+                                                radius, v_ref)
             history.append(row)
         if keep_fields:
             # decimated final state: enough for a cloud map, small enough for JSON
