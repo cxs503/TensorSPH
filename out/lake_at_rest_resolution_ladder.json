@@ -1,0 +1,53 @@
+{
+  "case": "CASE-SPH-LAKE-AT-REST",
+  "ladder": [
+    {
+      "dx": 0.04,
+      "equilibrium": {
+        "a_max_over_g": 2.053403318939739e-13,
+        "a_max_over_g_horizontal": 2.0461602737230204e-13,
+        "converged": true,
+        "iterations": 11
+      },
+      "h": 0.052000000000000005,
+      "n_fluid": 70,
+      "n_pairs": 700,
+      "n_wall": 30,
+      "profile_error": {
+        "density_max_rel": 0.0007172970817858074,
+        "n_interior": 20,
+        "pressure_max_rel": 0.09928946641468164,
+        "y_max": 0.18,
+        "y_min": 0.14
+      },
+      "width": 0.4
+    },
+    {
+      "convergence": {
+        "density_order": 1.5055613885525276,
+        "dx_ratio": 2.0,
+        "pressure_order": 1.5135768583157494
+      },
+      "dx": 0.02,
+      "equilibrium": {
+        "a_max_over_g": 7.295557294539867e-13,
+        "a_max_over_g_horizontal": 1.3877674635232945e-12,
+        "converged": true,
+        "iterations": 14
+      },
+      "h": 0.026000000000000002,
+      "n_fluid": 300,
+      "n_pairs": 3000,
+      "n_wall": 60,
+      "profile_error": {
+        "density_max_rel": 0.00025262709362161795,
+        "n_interior": 180,
+        "pressure_max_rel": 0.03477532053345229,
+        "y_max": 0.23,
+        "y_min": 0.07
+      },
+      "width": 0.4
+    }
+  ],
+  "variant": "periodic_x"
+}
