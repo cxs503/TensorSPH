@@ -62,6 +62,9 @@ FIG_DIR = ROOT / "docs/figures"
 BETA_DEG = 30.0
 BETA = math.radians(BETA_DEG)
 GATE = 0.15
+# fig filename suffix; empty for the historical (pre-bandfix) campaign so
+# that committed figures keep their names (m23280)
+FIG_SUFFIX = ""
 
 
 def rel_err(obs: float, ref: float) -> float:
@@ -103,7 +106,21 @@ def grade(ladder: dict, refs: dict, model: str) -> dict:
             "verdict": case, "reason": why}
 
 
-def main() -> dict:
+def main(ladder_path=None, out_dir=None, fig_dir=None, fig_suffix="") -> dict:
+    """Grade a ladder artefact against the literature reference set.
+
+    Defaults reproduce the committed m21430 artefacts; the keyword arguments let a
+    later campaign (m23280: the same runs re-measured on the fixed resolution band)
+    be graded through *this* code path instead of a re-implementation.
+    """
+    global LADDER, OUT_DIR, FIG_DIR, FIG_SUFFIX
+    if ladder_path is not None:
+        LADDER = Path(ladder_path)
+    if out_dir is not None:
+        OUT_DIR = Path(out_dir)
+    if fig_dir is not None:
+        FIG_DIR = Path(fig_dir)
+    FIG_SUFFIX = fig_suffix
     refs = load_refs()
     ladder = json.loads(LADDER.read_text())
     band30 = band(BETA_DEG, refs)
@@ -205,7 +222,7 @@ def fig_ladder(out: dict, refs: dict) -> Path:
     ax.grid(alpha=0.3)
     ax.legend(loc="upper right", fontsize=8, framealpha=0.9, bbox_to_anchor=(1.0, 0.86))
     fig.tight_layout()
-    p = FIG_DIR / "case_sph_wedge_entry_2d_regrade_ladder.png"
+    p = FIG_DIR / f"case_sph_wedge_entry_2d_regrade_ladder{FIG_SUFFIX}.png"
     fig.savefig(p, dpi=160)
     plt.close(fig)
     return p
@@ -234,7 +251,7 @@ def fig_boundary(refs: dict) -> Path:
     ax.grid(alpha=0.3, which="both")
     ax.legend(fontsize=8, ncol=2)
     fig.tight_layout()
-    p = FIG_DIR / "case_sph_wedge_entry_2d_regrade_boundary.png"
+    p = FIG_DIR / f"case_sph_wedge_entry_2d_regrade_boundary{FIG_SUFFIX}.png"
     fig.savefig(p, dpi=160)
     plt.close(fig)
     return p
@@ -261,11 +278,18 @@ def fig_profile(out: dict, tau, repo, eq10) -> Path:
     ax.grid(alpha=0.3)
     ax.legend(fontsize=8)
     fig.tight_layout()
-    p = FIG_DIR / "case_sph_wedge_entry_2d_regrade_profile.png"
+    p = FIG_DIR / f"case_sph_wedge_entry_2d_regrade_profile{FIG_SUFFIX}.png"
     fig.savefig(p, dpi=160)
     plt.close(fig)
     return p
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    ap = argparse.ArgumentParser(description="regrade the wedge ladder against refs")
+    ap.add_argument("--ladder", type=Path, default=None)
+    ap.add_argument("--out", type=Path, default=None)
+    ap.add_argument("--fig-dir", type=Path, default=None)
+    ap.add_argument("--fig-suffix", default="")
+    a = ap.parse_args()
+    main(a.ladder, a.out, a.fig_dir, a.fig_suffix)
