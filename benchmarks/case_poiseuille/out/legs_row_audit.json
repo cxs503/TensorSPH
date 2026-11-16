@@ -1,0 +1,36 @@
+{
+  "defect": "legs[].rows[].u_analytic carries the combined reference",
+  "legs": {
+    "poiseuille": {
+      "g": -4.905,
+      "wall_speed": 0.0,
+      "max_abs_column_minus_own_reference": 1.378125,
+      "stored_profile_rms_pct": 2.0929323015264987,
+      "own_reference_sampled_gauge_pct": 2.0929323015264987,
+      "own_reference_declared_gauge_pct": 2.0602302343151466,
+      "rms_reproducible_from_rows": true,
+      "stored_profile_worst_row_pct": 94.67949228443035,
+      "own_reference_worst_pct": 2.2638806302401693,
+      "worst_reproducible_from_rows": false,
+      "gate_bearing": false,
+      "note": "annotated, not rewritten: repairing the column needs a re-graded artifact (or a solver re-run), and no gate reads it"
+    },
+    "couette": {
+      "g": 0.0,
+      "wall_speed": 1.47,
+      "max_abs_column_minus_own_reference": 0.6035449218750001,
+      "stored_profile_rms_pct": 0.04927146375408442,
+      "own_reference_sampled_gauge_pct": 0.04927146375408442,
+      "own_reference_declared_gauge_pct": 0.046191997269454145,
+      "rms_reproducible_from_rows": true,
+      "stored_profile_worst_row_pct": 41.14314011754854,
+      "own_reference_worst_pct": 0.09137326824224554,
+      "worst_reproducible_from_rows": false,
+      "gate_bearing": false,
+      "note": "annotated, not rewritten: repairing the column needs a re-graded artifact (or a solver re-run), and no gate reads it"
+    }
+  },
+  "source_artifact": "benchmarks/case_poiseuille/out/combined.json",
+  "source_sha256_after_rebase": "e73d06b0b5089b374bc5bdcf22c93257e359aea836951e990d191574f6bd8a56",
+  "generated_by": "benchmarks/case_poiseuille/rebase_gauge.py"
+}

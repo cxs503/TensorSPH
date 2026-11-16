@@ -118,7 +118,7 @@
           "u_residual": -0.014461079510775576
         }
       ],
-      "profile_rms_pct": 0.8839930317415521,
+      "profile_rms_pct": 0.8839930317415519,
       "profile_worst_row_pct": 0.9837469054949372,
       "zero_crossing_y": 0.04055652665430852,
       "zero_crossing_y_analytic": 0.040061162079510715,
@@ -160,7 +160,16 @@
         "peak_pct": -12.37034514939889,
         "sign_ok": true
       },
-      "wall_clock_s": 29.913202047348022
+      "wall_clock_s": 29.913202047348022,
+      "summary_superseded": [
+        {
+          "profile_rms_pct": 0.8839930317415521,
+          "profile_worst_row_pct": 0.9837469054949372,
+          "gauge": 1.2344238281250002,
+          "gauge_rule": "max|u_analytic| over the graded rows (resolution dependent)"
+        }
+      ],
+      "profile_rms_gauge": 1.47
     },
     {
       "label": "combined_Hdx12",
@@ -259,8 +268,8 @@
           "u_residual": -0.006474368788979001
         }
       ],
-      "profile_rms_pct": 0.46624217591915273,
-      "profile_worst_row_pct": 0.6169440057282164,
+      "profile_rms_pct": 0.4157549079857304,
+      "profile_worst_row_pct": 0.550137914546709,
       "zero_crossing_y": 0.04028867946937195,
       "zero_crossing_y_analytic": 0.040061162079510715,
       "zero_crossing_pct_of_H": 0.22751738986123704,
@@ -301,7 +310,16 @@
         "peak_pct": -8.231725646211427,
         "sign_ok": true
       },
-      "wall_clock_s": 49.57408308982849
+      "wall_clock_s": 49.57408308982849,
+      "summary_superseded": [
+        {
+          "profile_rms_pct": 0.46624217591915273,
+          "profile_worst_row_pct": 0.6169440057282164,
+          "gauge": 1.3108203124999998,
+          "gauge_rule": "max|u_analytic| over the graded rows (resolution dependent)"
+        }
+      ],
+      "profile_rms_gauge": 1.47
     },
     {
       "label": "combined_Hdx16",
@@ -428,8 +446,8 @@
           "u_residual": -0.0037965644489634798
         }
       ],
-      "profile_rms_pct": 0.17522418363080736,
-      "profile_worst_row_pct": 0.2812651452463788,
+      "profile_rms_pct": 0.16089834244578902,
+      "profile_worst_row_pct": 0.2582696904056789,
       "zero_crossing_y": 0.04012912033846439,
       "zero_crossing_y_analytic": 0.040061162079510715,
       "zero_crossing_pct_of_H": 0.06795825895367785,
@@ -470,7 +488,16 @@
         "peak_pct": -1.3205031370991696,
         "sign_ok": true
       },
-      "wall_clock_s": 75.80565142631531
+      "wall_clock_s": 75.80565142631531,
+      "summary_superseded": [
+        {
+          "profile_rms_pct": 0.17522418363080736,
+          "profile_worst_row_pct": 0.2812651452463788,
+          "gauge": 1.3498168945312499,
+          "gauge_rule": "max|u_analytic| over the graded rows (resolution dependent)"
+        }
+      ],
+      "profile_rms_gauge": 1.47
     }
   ],
   "superposition": {
@@ -667,6 +694,15 @@
       "analytic_own": {
         "g": -4.905,
         "wall_speed": 0.0
+      },
+      "row_column_defect": {
+        "what": "rows[].u_analytic is the combined reference, not this leg's",
+        "max_abs_error_m_s": 1.378125,
+        "profile_rms_reproducible_from_rows": true,
+        "profile_worst_row_reproducible_from_rows": false,
+        "repaired": false,
+        "gate_bearing": false,
+        "audit": "benchmarks/case_poiseuille/out/legs_row_audit.json"
       }
     },
     "couette": {
@@ -784,6 +820,15 @@
       "analytic_own": {
         "g": 0.0,
         "wall_speed": 1.47
+      },
+      "row_column_defect": {
+        "what": "rows[].u_analytic is the combined reference, not this leg's",
+        "max_abs_error_m_s": 0.6035449218750001,
+        "profile_rms_reproducible_from_rows": true,
+        "profile_worst_row_reproducible_from_rows": false,
+        "repaired": false,
+        "gate_bearing": false,
+        "audit": "benchmarks/case_poiseuille/out/legs_row_audit.json"
       }
     }
   },
@@ -799,7 +844,8 @@
     ],
     "profile_rms_pct": 0.001572472880394585,
     "profile_worst_pct": 0.0022265664980371746,
-    "zero_crossing_pct_of_H": 0.003531881643537016
+    "zero_crossing_pct_of_H": 0.003531881643537016,
+    "profile_rms_gauge": 1.47
   },
   "static_wall_control": {
     "resolution_H_over_dx": 8,
@@ -824,5 +870,31 @@
   "torch": "2.7.1",
   "python": "3.11.6",
   "wall_clock_s": 9.770604372024536,
-  "generated_by": "benchmarks/case_poiseuille/run_combined_stage.py --stage assemble"
+  "generated_by": "benchmarks/case_poiseuille/run_combined_stage.py --stage assemble",
+  "summary_rebase": {
+    "rule": "profile-error normaliser = max|u_a| over the continuum channel 0 <= y <= H (endpoints u(0)=0, u(H)=U_w and the parabola vertex y* = H/2 + nu U_w/(g H)); equals U_w for the combined configuration",
+    "superseded_rule": "max|u_analytic| over the graded rows (resolution dependent)",
+    "solver_rerun": false,
+    "measured_rows_touched": false,
+    "declared_gauge_m_s": 1.47,
+    "gauge_by_rung": {
+      "combined_Hdx8": 1.47,
+      "combined_Hdx12": 1.47,
+      "combined_Hdx16": 1.47
+    },
+    "old_rule_reproduction_rel_diff": {
+      "combined_Hdx8": 0.19083896997745312,
+      "combined_Hdx12": 0.0,
+      "combined_Hdx16": 0.0
+    },
+    "stored_gauge_rule_by_rung": {
+      "combined_Hdx8": "declared_U_w",
+      "combined_Hdx12": "sampled_max_abs_u_a",
+      "combined_Hdx16": "sampled_max_abs_u_a"
+    },
+    "legs_row_column_defect": "out/legs_row_audit.json (quarantined, not repaired)",
+    "gate_flips": [],
+    "generated_by": "benchmarks/case_poiseuille/rebase_gauge.py",
+    "source_sha256_before_rebase": "cbb05f4eca58a8b416203746a0112bca80852de2b96d4ffa5ab5f0a5899f10d5"
+  }
 }

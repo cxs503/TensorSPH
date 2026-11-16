@@ -8,7 +8,8 @@
   "benchmarks/case_poiseuille/out/r1_rung_12.json": "8de2c974531586bcaa5278f59a081d71e12fe94d5bda781b14212178caf8ab9d",
   "benchmarks/case_poiseuille/out/r1_rung_16.json": "cb6fe15ce60fe2638c2ef93108bd6bff0dfcaf20d75e976af4d566ece849089e",
   "benchmarks/case_poiseuille/out/result.json": "740c748b870eef76825fa656557df2dd6e51945da9fc3ee29a41ec39371b5194",
-  "benchmarks/case_poiseuille/out/combined.json": "cbb05f4eca58a8b416203746a0112bca80852de2b96d4ffa5ab5f0a5899f10d5",
+  "benchmarks/case_poiseuille/out/combined.json": "e73d06b0b5089b374bc5bdcf22c93257e359aea836951e990d191574f6bd8a56",
+  "benchmarks/case_poiseuille/out/legs_row_audit.json": "a03ca47a87df41d2f71a7579fcc8fbc8edb0a09da35d2c46bb757f13792c14d5",
   "benchmarks/case_poiseuille/out/steady_window.json": "9a2d35630e869be4728927c0dca25475627da5c0be8a04e50a9159d639f9eb91",
   "benchmarks/case_poiseuille/out/steady_drift.json": "2f18bf596ecf018c62a942c3413e19f05d11d9c955d86a1f94513ff22b71ec59",
   "benchmarks/case_poiseuille/out/uncertainty.json": "072405a3fed9680c9572bf0bf4c4b1f0930df17a60cc3b353ec80c02a6a3ee0b",
@@ -262,15 +263,15 @@
    "id": "CP_profile_rms@Hdx8",
    "rung_H_over_dx": 8,
    "quantity": "combined profile RMS",
-   "value": 1.052693351386356,
-   "reference": 1.2344238281250002,
-   "error_percent": 1.052693351386356,
+   "value": 0.8839930317415519,
+   "reference": 1.47,
+   "error_percent": 0.8839930317415519,
    "tolerance_percent": 5.0,
    "pass": true,
    "basis": "recomputed",
-   "stored_error_percent": 0.8839930317415521,
-   "binding_rel_diff": 0.19083896997745312,
-   "note": "normalised by max|analytic profile|"
+   "stored_error_percent": 0.8839930317415519,
+   "binding_rel_diff": 0.0,
+   "note": "normalised by the declared continuum gauge max|u_a| over 0<=y<=H (== U_w for this configuration)"
   },
   {
    "id": "CP_zero_crossing@Hdx8",
@@ -343,15 +344,15 @@
    "id": "CP_profile_rms@Hdx12",
    "rung_H_over_dx": 12,
    "quantity": "combined profile RMS",
-   "value": 0.46624217591915273,
-   "reference": 1.3108203124999998,
-   "error_percent": 0.46624217591915273,
+   "value": 0.4157549079857304,
+   "reference": 1.47,
+   "error_percent": 0.4157549079857304,
    "tolerance_percent": 5.0,
    "pass": true,
    "basis": "recomputed",
-   "stored_error_percent": 0.46624217591915273,
+   "stored_error_percent": 0.4157549079857304,
    "binding_rel_diff": 0.0,
-   "note": "normalised by max|analytic profile|"
+   "note": "normalised by the declared continuum gauge max|u_a| over 0<=y<=H (== U_w for this configuration)"
   },
   {
    "id": "CP_zero_crossing@Hdx12",
@@ -424,15 +425,15 @@
    "id": "CP_profile_rms@Hdx16",
    "rung_H_over_dx": 16,
    "quantity": "combined profile RMS",
-   "value": 0.17522418363080736,
-   "reference": 1.3498168945312499,
-   "error_percent": 0.17522418363080736,
+   "value": 0.16089834244578902,
+   "reference": 1.47,
+   "error_percent": 0.16089834244578902,
    "tolerance_percent": 5.0,
    "pass": true,
    "basis": "recomputed",
-   "stored_error_percent": 0.17522418363080736,
+   "stored_error_percent": 0.16089834244578902,
    "binding_rel_diff": 0.0,
-   "note": "normalised by max|analytic profile|"
+   "note": "normalised by the declared continuum gauge max|u_a| over 0<=y<=H (== U_w for this configuration)"
   },
   {
    "id": "CP_zero_crossing@Hdx16",
@@ -500,6 +501,30 @@
    "pass": true,
    "basis": "stored",
    "note": "needs d<u>/dt from the sampled mean; stored value graded at 2 %"
+  },
+  {
+   "id": "CP_leg_poiseuille_diagnostics",
+   "rung_H_over_dx": 8,
+   "quantity": "leg profile diagnostics from committed rows",
+   "value": 2.0602302343151466,
+   "reference": 2.0929323015264987,
+   "error_percent": null,
+   "tolerance_percent": 5.0,
+   "pass": null,
+   "basis": "not_recomputable",
+   "note": "leg rows carry the combined analytic column (off by 1.3781 m/s); gate-free, quarantined in out/legs_row_audit.json"
+  },
+  {
+   "id": "CP_leg_couette_diagnostics",
+   "rung_H_over_dx": 8,
+   "quantity": "leg profile diagnostics from committed rows",
+   "value": 0.046191997269454145,
+   "reference": 0.04927146375408442,
+   "error_percent": null,
+   "tolerance_percent": 5.0,
+   "pass": null,
+   "basis": "not_recomputable",
+   "note": "leg rows carry the combined analytic column (off by 0.6035 m/s); gate-free, quarantined in out/legs_row_audit.json"
   },
   {
    "id": "support:steady_window:S1_extended_run_reproduces_committed_window@H/dx=12",
@@ -663,9 +688,10 @@
   }
  ],
  "summary": {
-  "n_functionals": 53,
+  "n_functionals": 55,
   "n_recomputed_from_raw": 33,
   "n_stored": 20,
+  "n_not_recomputable": 2,
   "n_failed": 2,
   "worst": {
    "id": "CP_backflow_peak@Hdx8",
@@ -673,26 +699,18 @@
    "tolerance_percent": 5.0
   },
   "max_abs_error_percent_anchor_scope": 12.37034514939889,
-  "binding_max_rel_diff": 0.19083896997745312,
-  "binding_ok": false,
+  "binding_max_rel_diff": 5.980614606418587e-12,
+  "binding_ok": true,
   "all_pass": false,
   "failed_ids": [
    "CP_backflow_peak@Hdx8",
    "CP_backflow_peak@Hdx12"
   ],
-  "n_binding_violations": 1,
+  "n_binding_violations": 0,
   "n_unknown_binding_violations": 0
  },
  "not_graded": [],
  "generated_by": "benchmarks/case_poiseuille/pool_conformance.py",
- "binding_violations": [
-  {
-   "id": "CP_profile_rms@Hdx8",
-   "binding_rel_diff": 0.19083896997745312,
-   "recomputed_error_percent": 1.052693351386356,
-   "stored_error_percent": 0.8839930317415521,
-   "known": true
-  }
- ],
+ "binding_violations": [],
  "verdict": "FAIL"
 }

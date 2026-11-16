@@ -8,9 +8,10 @@ artifact.  This test binds the *whole* record to the raw data with
 1. does every graded functional still sit inside its declared tolerance;
 2. can every stored summary percentage still be re-derived from the raw rows
    (to 1e-6 relative) -- i.e. has no artifact drifted away from its verdict;
-3. is the set of binding failures still the one pinned, known exception
-   (the combined case's C1 at H/dx = 8 uses a different profile normalisation
-   than the rungs 12/16), and no new one;
+3. is the set of binding failures empty -- the one historical exception (the
+   combined case's C1 at H/dx = 8 used a different profile normalisation than
+   the rungs 12/16) was repaired at root by ``rebase_gauge.py``, so any binding
+   failure now is a regression;
 4. are the source artifacts the same bytes the record was generated from
    (SHA-256 pins), so an artifact edit forces a regeneration instead of a
    silent re-grade.
@@ -66,23 +67,24 @@ def test_recomputation_is_wired_to_raw_data(record):
     """A gate that only reads stored percentages would not be a conformance check."""
     s = record["summary"]
     assert s["n_recomputed_from_raw"] >= 30, s
-    assert s["n_functionals"] == s["n_recomputed_from_raw"] + s["n_stored"]
+    assert s["n_functionals"] == (s["n_recomputed_from_raw"] + s["n_stored"]
+                                  + s["n_not_recomputable"])
     # the recomputed anchor functionals must actually bind
     assert s["binding_max_rel_diff"] is not None
 
 
-def test_no_unknown_binding_violation(record):
-    """Stored summary vs raw rows: only the pinned gauge exception may disagree."""
-    unknown = [v for v in record["binding_violations"] if not v["known"]]
-    assert unknown == [], f"artifact/verdict drift: {unknown}"
-    known = [v for v in record["binding_violations"] if v["known"]]
-    assert len(known) == 1
-    v = known[0]
-    assert v["id"] == "CP_profile_rms@Hdx8"
-    # both readings are inside the 5 % tolerance; the defect is the *gauge*
-    assert abs(v["recomputed_error_percent"]) < pc.TOL_PCT
-    assert abs(v["stored_error_percent"]) < pc.TOL_PCT
-    assert abs(v["binding_rel_diff"]) <= pc.KNOWN_BINDING_EXCEPTIONS[v["id"]]
+def test_no_binding_violation_remains(record):
+    """Stored summary vs raw rows must now agree everywhere (no exception left).
+
+    The single historical exception -- ``CP_profile_rms@Hdx8`` graded on ``U_w``
+    while rungs 12/16 used ``max|u_a|`` over their rows -- was repaired at root
+    (one closed-form continuum gauge in ``combined.py`` and here, plus
+    ``rebase_gauge.py`` rebasing the committed summary from its own rows), so a
+    binding failure is a regression, not a tolerated state.
+    """
+    assert pc.KNOWN_BINDING_EXCEPTIONS == {}
+    assert record["binding_violations"] == [], record["binding_violations"]
+    assert record["summary"]["n_unknown_binding_violations"] == 0
 
 
 def test_anchor_scope_within_tolerance(record):
