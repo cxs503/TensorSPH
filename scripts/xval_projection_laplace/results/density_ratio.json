@@ -22,7 +22,9 @@
    "translation_spread_pct": 5.0,
    "naive_err_min_pct_at_ratio_1000": 15.0,
    "sigma_zero_max_pa": 1e-09,
-   "vol_phase_spread_max": 1e-12
+   "vol_phase_spread_max": 1e-12,
+   "cell_volume_vs_analytic_ppm_max": 1.0,
+   "color_field_max_abs_diff_max": 1e-12
   },
   "density_arm_err_pct_by_ratio": {
    "1": -0.21326281493778687,
@@ -64,7 +66,30 @@
    "1000": 46846.2194978988
   },
   "naive_err_pct_ratio_1000": 46846.2194978988,
-  "resolution_err_pct_by_ratio": {
+  "resolution_err_pct_by_ratio_density": {
+   "1": {
+    "10.0": 0.9714066814682676,
+    "15.0": 0.05826857654436246,
+    "20.0": -0.21326281493778687,
+    "30.0": -0.3434558215403838,
+    "40.0": -0.9320656034453756
+   },
+   "10": {
+    "10.0": -0.18947304042513657,
+    "15.0": -1.351081335669757,
+    "20.0": -2.026549462901217,
+    "30.0": -5.263830757156452,
+    "40.0": -8.320781521299415
+   },
+   "1000": {
+    "10.0": 2.6713298382387896,
+    "15.0": 1.6746398632847548,
+    "20.0": 0.828325614211467,
+    "30.0": -6.357913661497583,
+    "40.0": -12.732147571502416
+   }
+  },
+  "resolution_err_pct_by_ratio_force_density": {
    "1": {
     "10.0": 0.9714066814682454,
     "15.0": 0.05826857654436246,
@@ -100,24 +125,67 @@
   "translation_max_abs_err_pct": 1.0444163499006676,
   "sigma_zero_dp_Pa": 0.0,
   "sigma_zero_flux_Pa": 0.0,
-  "vol_phase_spread": 0.0,
+  "vol_phase_spread": 1.2225867502743817e-16,
+  "cell_volume_rel_spread": 1.2225867502743817e-16,
+  "cell_volume_vs_analytic_ppm": 4.440892098500626e-10,
+  "color_max_abs_diff_by_ratio": {
+   "1": 0.0,
+   "10": 5.551115123125783e-17,
+   "1000": 0.0
+  },
+  "color_max_abs_diff_max": 5.551115123125783e-17,
+  "mass_ratio_measured": {
+   "1": 0.9999999999999999,
+   "10": 10.000000000000004,
+   "1000": 1000.0000000000011
+  },
+  "mass_ratio_rel_err": {
+   "1": -1.1102230246251565e-16,
+   "10": 4.440892098500626e-16,
+   "1000": 1.1102230246251565e-15
+  },
   "mass_per_phase": {
    "liquid": 0.000866025403784439,
    "vapour": 8.66025403784438e-07
   }
  },
  "controls": {
+  "ratios": [
+   1,
+   10,
+   1000
+  ],
+  "cell_area_analytic_m2": 8.660254037844386e-07,
+  "cell_volume_mean_m2": 8.660254037844381e-07,
+  "cell_volume_rel_spread": 1.2225867502743817e-16,
+  "cell_volume_vs_analytic_ppm": 4.440892098500626e-10,
+  "mass_ratio_measured": {
+   "1": 0.9999999999999999,
+   "10": 10.000000000000004,
+   "1000": 1000.0000000000011
+  },
+  "mass_ratio_rel_err": {
+   "1": -1.1102230246251565e-16,
+   "10": 4.440892098500626e-16,
+   "1000": 1.1102230246251565e-15
+  },
+  "color_max_abs_diff": {
+   "1": 0.0,
+   "10": 5.551115123125783e-17,
+   "1000": 0.0
+  },
+  "color_max_abs_diff_max": 5.551115123125783e-17,
   "sigma_zero": {
    "dp_measured_Pa": 0.0,
    "dp_flux_Pa": 0.0
   },
-  "vol_phase_spread": 0.0,
+  "vol_phase_spread": 1.2225867502743817e-16,
+  "n_liquid": 1452,
+  "n_vapour": 3321,
   "mass_per_phase": {
    "liquid": 0.000866025403784439,
    "vapour": 8.66025403784438e-07
-  },
-  "n_liquid": 1452,
-  "n_vapour": 3321
+  }
  },
  "density_ratio": [
   {

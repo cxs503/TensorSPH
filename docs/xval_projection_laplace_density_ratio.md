@@ -27,6 +27,16 @@ knob that moves.
 | `scripts/xval_projection_laplace/results/density_ratio.png` | fig. 1 (4 panels) |
 | `tests/test_xval_projection_laplace_density_ratio.py` | 11 gates + 1 strict xfail (the measured defect) |
 | `src/tensorsph/laplace_isph.py` | `rho_vapour=`, `poisson_weighting=`; `rho=` operator in `pressure_poisson` |
+| `scripts/xval_projection_laplace/check_density_ratio_doc.py` | drift gate: every table cell and claim below is compared against the JSON (m23102) |
+
+![fig. 1](../scripts/xval_projection_laplace/results/density_ratio.png)
+
+*Fig. 1 — A: the jump against the density ratio (both operators, ±3 % band);
+B: resolution, rho-blind force-density arm (solid) vs the `1/rho` operator
+(dotted), with the round-3 failing gate and the owner's 15 % gate; C: who owns
+the error at 1000:1 (traction flux, both `dp` arms, diffuse-density ablation);
+D: lattice translation. Every panel is drawn from `results/density_ratio.json`
+by `density_ratio.py` — no hand-placed numbers.*
 
 ## ① Case and parameters
 
@@ -122,8 +132,19 @@ listed so the negative results are on the record)
 * `sigma = 0` at ratio 1000: `dp = 0.0 Pa` and `dp_flux = 0.0 Pa` (exact).
 * Translation invariance at ratio 1000, `R/dx = 20`: spread **0.82 %**,
   max |err| 1.04 %.
-* Per-phase cell volume spread: **0.0** (mass ratio 1000.0 exactly) — the colour
-  function, and hence the interface, is unchanged by the ratio.
+* **Interface invariance (rebuilt, m23102).** The round-3 wording was
+  "per-phase cell volume spread 0.0, mass ratio 1000.0 exactly", but the control
+  evaluated `mass/(mass/area)`, which is the constant `area` for *any* input: it
+  could not fail, so it certified nothing. The control now rebuilds the lattice
+  at ratios 1/10/1000 through `hex_block` + `smooth_indicator` and reports:
+  cell-volume spread **1.2e-16**, deviation from the analytic cell area
+  (**4.4e-10** ppm, i.e. `vol_i = m_i/rho_i` reproduces `dx^2 sqrt(3)/2`),
+  measured mass ratio 1000.0000000000011, and colour-field difference
+  **5.6e-17** against the ratio-1 carrier (float64 round-off only). A volume
+  model that lets the density into `vol` (e.g. `vol = mass/rho0` in both
+  phases) moves the colour field by O(0.1) — 13 decades above the gate — so the
+  control now has detection power; the falsification is a unit test
+  (`test_interface_control_has_teeth`).
 
 ## ③ Notes, limits, and what to fix next
 
@@ -206,8 +227,15 @@ to `1e-9`), and the resolution band passes at every `R/dx >= 20`.
   the `mls_divergence` source and the stiff `1/rho` harmonic pair mean, not as
   physics (the `diffuse` ablation, three times worse, is unchanged and still
   falsified).
-* **Controls unchanged**: `sigma = 0` returns `dp = 0` exactly; translation
-  spread `0.82 %`; per-phase cell volume spread `0`.
+* **Controls**: `sigma = 0` returns `dp = 0` exactly; translation spread
+  `0.82 %`; the interface-invariance control was rebuilt in m23102 (round-3's
+  version could not fail — see §D).
+* **Summary keys are arm-explicit (m23102).** Adding the `force_density` arm
+  silently changed the meaning of `summary.resolution_err_pct_by_ratio`: it had
+  been the `density` table of §②B and became the rho-blind table of §⑤.2, so a
+  reader checking the doc against the JSON compared different operators. The
+  key is now `resolution_err_pct_by_ratio_density` and
+  `..._force_density` (`resolution_max_abs_err_pct_...` follows the same rule).
 
 ### ⑤.2 Error verdict (force-density arm)
 
@@ -226,3 +254,52 @@ at **every** resolution and **every** ratio up to 1000 (max `|err| = 0.93 %` at
 `R/dx=40`), and it is bit-identical to the equal-density regression.  The
 round-3 live defect (the `1/rho` arm's refined-mesh drift) is closed; the
 `density` arm remains on the record as the ablation that motivated it.
+
+---
+
+## ⑥ Record integrity (m23102)
+
+Nothing physical changed in this round. Three defects in *how the round-3/4
+record is kept* were fixed, because they are the failure mode that outlives the
+physics: a published number that stops matching its artifact.
+
+1. **The advertised figure was not in the tree.** The artifact table cited
+   `scripts/xval_projection_laplace/results/density_ratio.png`, the generator
+   wrote it, and it was never committed — so the record could be read but not
+   reproduced from the repository alone. The figure is now shipped, and panels B
+   and C show both operators, so the round-3 failing gate and its round-4 fix
+   are visible in one picture instead of in two prose sections.
+2. **A control with no detection power.** §D's "per-phase cell volume spread
+   0.0" evaluated `mass/(mass/area) == area` — an identity, not a measurement.
+   It is replaced by a three-number control (cell-volume spread vs the analytic
+   lattice area, measured mass ratio, colour-field difference against the
+   ratio-1 carrier), each of which moves if the mass/volume model or the phase
+   density changes; the unit test also runs the *wrong* volume model and
+   requires the control to catch it.
+3. **An arm-dependent key under an arm-neutral name.** See §⑤; every resolution
+   map in the summary now carries its operator in the key.
+
+The doc is also gated against the JSON:
+
+```
+$ python scripts/xval_projection_laplace/check_density_ratio_doc.py --check
+OK    doc tables, claims, summary keys and figure all match density_ratio.json
+```
+
+It parses the two result tables, the round-4 verdict table, five sentence-level
+claims and the control numbers, and compares each displayed number at the
+precision actually printed (half a unit in the last place). It runs in <1 s and
+never re-solves the Poisson equation; the sweep remains the only producer of the
+JSON. `tests/test_xval_projection_laplace_density_ratio.py` runs it as a gate,
+together with a live re-measurement of one row at ratio 100 and the check that
+the whole JSON still reproduces. Six of the 19 gates in
+`tests/test_xval_projection_laplace_density_ratio.py` belong to this record
+(figure shipped, control not vacuous, control has teeth, arm-explicit keys,
+doc == JSON, drift gate fires on a moved digit).
+
+**Reproduction.** `python scripts/xval_projection_laplace/density_ratio.py`
+(~50 s, 8 cores) rewrites the JSON and the PNG; on this branch the regenerated
+JSON is **bit-identical** for every measured row (`dp`, `err_pct`,
+`flux_err_pct`, `resolution`, `translation`, `diffuse_density`), the only value
+that changed being the control that was vacuous. So the record in §②–§⑤ is a
+live measurement, not a transcription.
