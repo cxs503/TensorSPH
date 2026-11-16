@@ -96,10 +96,11 @@ def run_point(resolution: int, viscous_times: float, device) -> dict:
     return row
 
 
-def summarise(points: list[dict]) -> dict:
+def summarise(points: list[dict],
+              resolutions: tuple[int, ...] | None = None) -> dict:
     """Per resolution: does the reading stop moving once the drift gate passes?"""
     per_res: dict[str, dict] = {}
-    for resolution in RESOLUTIONS:
+    for resolution in (resolutions or RESOLUTIONS):
         rows = sorted((p for p in points if p["resolution_H_over_dx"] == resolution),
                       key=lambda p: p["viscous_times"])
         admissible = [r for r in rows if r["admissible"]]
@@ -181,12 +182,25 @@ def main(argv: list[str] | None = None) -> int:
                         help="skip the PNG (headless compute nodes have no matplotlib)")
     parser.add_argument("--figure-only", action="store_true",
                         help="re-plot an existing result file without running the solver")
+    parser.add_argument("--resolutions", default=",".join(str(r) for r in RESOLUTIONS),
+                        help="comma-separated H/dx rungs (default: the committed ladder "
+                             f"{','.join(str(r) for r in RESOLUTIONS)})")
+    parser.add_argument("--viscous-times", default=",".join(f"{v:g}" for v in VISCOUS_TIMES_SWEPT),
+                        help="comma-separated t_end/(H^2/nu) tiers "
+                             f"(default: the committed sweep {VISCOUS_TIMES_SWEPT})")
+    parser.add_argument("--out", default=str(RESULT_PATH),
+                        help="result artefact path (default: the committed sweep; "
+                             "an extension ladder must use its own file)")
     args = parser.parse_args(argv)
+    resolutions = tuple(int(r) for r in str(args.resolutions).split(",") if r.strip())
+    viscous_times = tuple(float(v) for v in str(args.viscous_times).split(",") if v.strip())
+    result_path = Path(args.out)
+    figure_path = result_path.with_suffix(".png")
 
     if args.figure_only:
-        doc = json.loads(RESULT_PATH.read_text())
-        make_figure(doc["points"], doc["summary"], FIGURE_PATH)
-        print(f"[couette-conv] re-plotted {FIGURE_PATH}", flush=True)
+        doc = json.loads(result_path.read_text())
+        make_figure(doc["points"], doc["summary"], figure_path)
+        print(f"[couette-conv] re-plotted {figure_path}", flush=True)
         return 0
 
     import torch
@@ -194,21 +208,21 @@ def main(argv: list[str] | None = None) -> int:
     device = couette.resolve_device(args.device)
 
     cached: dict[str, dict] = {}
-    if args.cached and RESULT_PATH.exists():
-        doc = json.loads(RESULT_PATH.read_text())
+    if args.cached and result_path.exists():
+        doc = json.loads(result_path.read_text())
         cached = {p["label"]: p for p in doc.get("points", [])}
 
     points: list[dict] = []
-    for viscous_times in VISCOUS_TIMES_SWEPT:
-        for resolution in RESOLUTIONS:
-            label = f"r{resolution}-vt{viscous_times:g}"
+    for tier in viscous_times:
+        for resolution in resolutions:
+            label = f"r{resolution}-vt{tier:g}"
             if label in cached:
                 print(f"[couette-conv] {label}: cached", flush=True)
                 points.append(cached[label])
                 continue
-            points.append(run_point(resolution, viscous_times, device))
+            points.append(run_point(resolution, tier, device))
 
-    summary = summarise(points)
+    summary = summarise(points, resolutions)
     payload = {
         "case": "plane_couette_channel",
         "quantity": "wall-shear reading |1 - tau_SPH/tau_exact| vs run length",
@@ -222,32 +236,32 @@ def main(argv: list[str] | None = None) -> int:
         "gates": dict(couette.GATES),
         "design_viscous_times": couette.VISCOUS_TIMES,
         "average_fraction": AVERAGE_FRACTION,
-        "viscous_times_swept": list(VISCOUS_TIMES_SWEPT),
-        "resolutions": list(RESOLUTIONS),
+        "viscous_times_swept": list(viscous_times),
+        "resolutions": list(resolutions),
         "generated_by": "benchmarks/couette/viscous_time_convergence.py",
         "points": points,
         "summary": summary,
     }
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    result_path.parent.mkdir(parents=True, exist_ok=True)
     # Numbers first: the JSON artefact is the evidence, the PNG is reporting.
-    RESULT_PATH.write_text(json.dumps(payload, indent=2) + "\n")
+    result_path.write_text(json.dumps(payload, indent=2) + "\n")
     try:
-        print(f"[couette-conv] wrote {RESULT_PATH.relative_to(REPO)}", flush=True)
+        print(f"[couette-conv] wrote {result_path.relative_to(REPO)}", flush=True)
     except ValueError:  # --out outside the repo root (tests, scratch dirs)
-        print(f"[couette-conv] wrote {RESULT_PATH}", flush=True)
+        print(f"[couette-conv] wrote {result_path}", flush=True)
     if args.no_figure:
         print("[couette-conv] --no-figure: PNG skipped", flush=True)
     else:
         try:
-            make_figure(points, summary, FIGURE_PATH)
+            make_figure(points, summary, figure_path)
         except RuntimeError as exc:
             # Headless node: keep the numbers, report the missing plot.
             print(f"[couette-conv] figure skipped: {exc}", flush=True)
         else:
             try:
-                print(f"[couette-conv] wrote {FIGURE_PATH.relative_to(REPO)}", flush=True)
+                print(f"[couette-conv] wrote {figure_path.relative_to(REPO)}", flush=True)
             except ValueError:
-                print(f"[couette-conv] wrote {FIGURE_PATH}", flush=True)
+                print(f"[couette-conv] wrote {figure_path}", flush=True)
     for resolution, block in summary.items():
         print(f"[couette-conv] H/dx={resolution}: converged "
               f"{block['converged_error_pct']:.2f} % "
