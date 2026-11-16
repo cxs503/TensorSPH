@@ -7,8 +7,8 @@
 - 登记表记录数：30
 - 产物自带门限的量：25
 - 覆盖完整（每个自带门限的量都有对应登记记录）：**是**
-- 复算与登记值不一致：['x_couette_design']
-- 产物内已存百分比与复算不一致：['x_couette_design']
+- 复算与登记值不一致：无
+- 产物内已存百分比与复算不一致：无
 
 ## 2 逐量审计表
 
@@ -31,7 +31,7 @@
 | `wcsph_wall_no_slip` | RMS relative error including the two wall-adjacent rows | direct | 6 | - | - | - | - |
 | `wcsph_wall_no_slip` | cross-channel mass-flux error |Q_SPH / Q_exact - 1| | direct | 7.16 | 7.16 | 5 | 是 | **否** |
 | `wcsph_wall_no_slip` | wall-shear error at the moving wall |tau_SPH / tau_exact - 1| | direct | 32.6 | 32.6 | 5 | **否** | **否** |
-| `wcsph_wall_no_slip` | interior L2 velocity error vs u = U y / H at t_end = 1.2 H^2/nu | direct | 2.85 | 2.93 | 5 | 是 | 是 |
+| `wcsph_wall_no_slip` | interior L2 velocity error vs u = U y / H at t_end = 1.2 H^2/nu | direct | 2.93 | 2.93 | 5 | 是 | 是 |
 | `wcsph_wall_no_slip` | cross-channel mass-flux error |Q_SPH / Q_exact - 1| | direct | 4.42 | 4.42 | 5 | 是 | 是 |
 | `wcsph_wall_no_slip` | wall-shear error at the moving wall |tau_SPH / tau_exact - 1| | direct | 0.478 | 0.478 | 5 | 是 | 是 |
 | `wcsph_wall_no_slip` | bottom-wall shear reading at the steady end of the sweep | direct | 9.55 | 9.55 | 5 | 是 | **否** |

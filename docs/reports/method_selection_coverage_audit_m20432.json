@@ -61,9 +61,7 @@
   "coverage_complete": true,
   "gated_quantities": 25,
   "generated_by": "benchmarks/method_selection/audit_quantity_coverage.py",
-  "integrity_failures": [
-    "x_couette_design"
-  ],
+  "integrity_failures": [],
   "methods": [
     {
       "claimed_pct": 0.7768408089469451,
@@ -310,6 +308,7 @@
       "quantity": "worst target wave-height error over the gauges",
       "recompute_kind": "direct",
       "recomputed_pct": 2.9679295205491987,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": true,
       "stored_pct": 2.9679295205491987,
       "within_owner_tolerance": true
@@ -329,6 +328,7 @@
       "quantity": "max relative error of the Riemann invariants",
       "recompute_kind": "direct",
       "recomputed_pct": 0.7768408089469451,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": true,
       "stored_pct": 0.7768408089469451,
       "within_owner_tolerance": true
@@ -348,6 +348,7 @@
       "quantity": "max normalised error vs the erfc similarity solution",
       "recompute_kind": "direct",
       "recomputed_pct": 0.00021805730765489528,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": null,
       "stored_pct": null,
       "within_owner_tolerance": true
@@ -367,6 +368,7 @@
       "quantity": "delta_p error vs 2 sigma / R",
       "recompute_kind": "direct",
       "recomputed_pct": 5.599315638814639,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": true,
       "stored_pct": 5.59931563881463,
       "within_owner_tolerance": true
@@ -386,6 +388,7 @@
       "quantity": "band-mean curvature vs 1/R, plain (no delta_s weighting)",
       "recompute_kind": "direct",
       "recomputed_pct": 43.86572928236552,
+      "registry_kind": null,
       "stored_matches_recomputed": null,
       "stored_pct": null,
       "within_owner_tolerance": null
@@ -405,6 +408,7 @@
       "quantity": "delta_s-weighted curvature error (dx = 3 mm rung)",
       "recompute_kind": "direct",
       "recomputed_pct": 23.799266672469123,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": true,
       "stored_pct": 23.79926667246913,
       "within_owner_tolerance": false
@@ -424,6 +428,7 @@
       "quantity": "cut-force error |F_SPH / sigma - 1|",
       "recompute_kind": "direct",
       "recomputed_pct": 5.986710404320461,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": null,
       "stored_pct": null,
       "within_owner_tolerance": true
@@ -443,6 +448,7 @@
       "quantity": "worst decay-rate error over all three ladders",
       "recompute_kind": "direct",
       "recomputed_pct": 1.020838022307835,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": true,
       "stored_pct": 1.0208380223078255,
       "within_owner_tolerance": true
@@ -462,6 +468,7 @@
       "quantity": "final-amplitude error after the finite run",
       "recompute_kind": "direct",
       "recomputed_pct": 0.4819784767019275,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": null,
       "stored_pct": null,
       "within_owner_tolerance": true
@@ -481,6 +488,7 @@
       "quantity": "centreline velocity error vs the Poiseuille parabola (finest rung)",
       "recompute_kind": "direct",
       "recomputed_pct": 0.8665938382240945,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": null,
       "stored_pct": null,
       "within_owner_tolerance": true
@@ -500,6 +508,7 @@
       "quantity": "momentum-budget wall shear vs rho g H / 2 (finest rung)",
       "recompute_kind": "direct",
       "recomputed_pct": 0.04583375643014698,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": null,
       "stored_pct": null,
       "within_owner_tolerance": true
@@ -519,6 +528,7 @@
       "quantity": "max interior-band hydrostatic pressure error",
       "recompute_kind": "stored",
       "recomputed_pct": 5.532656212791526,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": null,
       "stored_pct": null,
       "within_owner_tolerance": true
@@ -538,6 +548,7 @@
       "quantity": "front-position deviation with shifting on vs off",
       "recompute_kind": "direct",
       "recomputed_pct": 8.832573890686035,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": true,
       "stored_pct": 8.832573890686035,
       "within_owner_tolerance": true
@@ -557,6 +568,7 @@
       "quantity": "interior L2 velocity error vs u = U y / H (finest rung)",
       "recompute_kind": "direct",
       "recomputed_pct": 5.654072500230903,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": true,
       "stored_pct": 5.654072500230903,
       "within_owner_tolerance": true
@@ -576,6 +588,7 @@
       "quantity": "RMS relative error including the two wall-adjacent rows",
       "recompute_kind": "direct",
       "recomputed_pct": 6.003610875879608,
+      "registry_kind": null,
       "stored_matches_recomputed": null,
       "stored_pct": null,
       "within_owner_tolerance": null
@@ -595,6 +608,7 @@
       "quantity": "cross-channel mass-flux error |Q_SPH / Q_exact - 1|",
       "recompute_kind": "direct",
       "recomputed_pct": 7.159256050363205,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": null,
       "stored_pct": null,
       "within_owner_tolerance": true
@@ -614,6 +628,7 @@
       "quantity": "wall-shear error at the moving wall |tau_SPH / tau_exact - 1|",
       "recompute_kind": "direct",
       "recomputed_pct": 32.64941126108171,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": null,
       "stored_pct": null,
       "within_owner_tolerance": false
@@ -626,14 +641,15 @@
       "extractor": "x_couette_design",
       "gate_note": "artefact gate interior_l2 = 0.05",
       "gate_pct": 5.0,
-      "integrity_ok": false,
+      "integrity_ok": true,
       "label": "plane Couette, design terminal time (profile)",
       "method": "wcsph_wall_no_slip",
       "own_gate_passed": true,
       "quantity": "interior L2 velocity error vs u = U y / H at t_end = 1.2 H^2/nu",
       "recompute_kind": "direct",
-      "recomputed_pct": 2.851417051373197,
-      "stored_matches_recomputed": false,
+      "recomputed_pct": 2.9327822926474356,
+      "registry_kind": "accuracy",
+      "stored_matches_recomputed": true,
       "stored_pct": 2.932782292647436,
       "within_owner_tolerance": true
     },
@@ -652,6 +668,7 @@
       "quantity": "cross-channel mass-flux error |Q_SPH / Q_exact - 1|",
       "recompute_kind": "direct",
       "recomputed_pct": 4.415499197784811,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": null,
       "stored_pct": null,
       "within_owner_tolerance": true
@@ -671,6 +688,7 @@
       "quantity": "wall-shear error at the moving wall |tau_SPH / tau_exact - 1|",
       "recompute_kind": "direct",
       "recomputed_pct": 0.47810226678850487,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": null,
       "stored_pct": null,
       "within_owner_tolerance": true
@@ -690,6 +708,7 @@
       "quantity": "bottom-wall shear reading at the steady end of the sweep",
       "recompute_kind": "direct",
       "recomputed_pct": 9.549750387668631,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": null,
       "stored_pct": null,
       "within_owner_tolerance": true
@@ -709,6 +728,7 @@
       "quantity": "moving-wall shear reading at the steady end of the sweep",
       "recompute_kind": "direct",
       "recomputed_pct": 14.203286170959451,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": null,
       "stored_pct": null,
       "within_owner_tolerance": true
@@ -728,6 +748,7 @@
       "quantity": "mobility of the bottom-wall reading across admissible runs [pp]",
       "recompute_kind": "direct",
       "recomputed_pct": 18.255122005939473,
+      "registry_kind": "robustness",
       "stored_matches_recomputed": null,
       "stored_pct": null,
       "within_owner_tolerance": false
@@ -747,6 +768,7 @@
       "quantity": "bottom-wall shear reading at the steady end of the sweep",
       "recompute_kind": "direct",
       "recomputed_pct": 1.811376214027427,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": null,
       "stored_pct": null,
       "within_owner_tolerance": true
@@ -766,6 +788,7 @@
       "quantity": "moving-wall shear reading at the steady end of the sweep",
       "recompute_kind": "direct",
       "recomputed_pct": 17.076468467712292,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": null,
       "stored_pct": null,
       "within_owner_tolerance": false
@@ -785,6 +808,7 @@
       "quantity": "mobility of the bottom-wall reading across admissible runs [pp]",
       "recompute_kind": "direct",
       "recomputed_pct": 0.0,
+      "registry_kind": "robustness",
       "stored_matches_recomputed": null,
       "stored_pct": null,
       "within_owner_tolerance": true
@@ -804,6 +828,7 @@
       "quantity": "mean relative error of Z/a vs Martin & Moyce",
       "recompute_kind": "direct",
       "recomputed_pct": 10.810360584937099,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": true,
       "stored_pct": 10.810360584937099,
       "within_owner_tolerance": true
@@ -823,6 +848,7 @@
       "quantity": "same quantity on the coarse rung",
       "recompute_kind": "direct",
       "recomputed_pct": 16.96262081604608,
+      "registry_kind": "accuracy",
       "stored_matches_recomputed": true,
       "stored_pct": 16.96262081604608,
       "within_owner_tolerance": false
@@ -847,11 +873,20 @@
     "x_couette_viscous_time_top_h16",
     "x_transport_velocity_coarse"
   ],
+  "records_over_owner_tolerance_by_kind": {
+    "accuracy": [
+      "x_csf_curvature",
+      "x_couette_wall_shear",
+      "x_couette_viscous_time_top_h16",
+      "x_transport_velocity_coarse"
+    ],
+    "robustness": [
+      "x_couette_viscous_time_mobility_h8"
+    ]
+  },
   "registry_records": 30,
   "schema_version": "1.0",
-  "stored_vs_recomputed_mismatches": [
-    "x_couette_design"
-  ],
+  "stored_vs_recomputed_mismatches": [],
   "unbacked_gates": [
     {
       "artifact": "benchmarks/couette/out/results.json",

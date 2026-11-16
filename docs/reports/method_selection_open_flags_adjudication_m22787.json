@@ -1,0 +1,383 @@
+{
+  "adjudications": [
+    {
+      "artifact": "benchmarks/case_conduction_2d/result.json",
+      "audit_catalogue": false,
+      "banked_pct": 834.6029833103374,
+      "class": "documented_trap_arm",
+      "decision_linkage": {
+        "endorsed_within_standard": [
+          {
+            "headline_bound_pct": 0.15037283680667207,
+            "profile": "1-D transient conduction",
+            "status": "SELECTED",
+            "within_owner_standard": true
+          }
+        ],
+        "excluded_by": [],
+        "strict_modifier": [],
+        "strict_primary": [
+          {
+            "headline_bound_pct": 0.15037283680667207,
+            "profile": "1-D transient conduction",
+            "status": "SELECTED",
+            "within_owner_standard": true
+          }
+        ]
+      },
+      "evidence": [
+        "the artefact calls this arm a documented trap and reports the shipped 2-D-calibrated arm at 2.42% in the same file"
+      ],
+      "extractor": "x_conduction_2d_one_d_calibration",
+      "method": "heat_conduction_operator",
+      "own_gate_passed": false,
+      "own_gate_pct": 3.0,
+      "problems": [],
+      "quantity": "same family and resolution, but the 1-D lattice factor (1.0218) applied in 2-D: ~870 % -- O(dx) dimensional mismatch",
+      "recomputed_pct": 834.6029833103374,
+      "rederived": {
+        "artefact_note": "the 1-D-calibrated and uncalibrated arms are documented traps; the banked record reads the 2-D-calibrated arm (main_run)",
+        "shipped_arm_pct": 2.419585031905687,
+        "source": "benchmarks/case_conduction_2d/result.json",
+        "trap_arm_pct": 834.6029833103374
+      },
+      "registry_kind": "accuracy"
+    },
+    {
+      "artifact": "benchmarks/csf_consistent/validation_report.json",
+      "audit_catalogue": true,
+      "banked_pct": 23.79926667246913,
+      "class": "genuine_accuracy_failure",
+      "decision_linkage": {
+        "endorsed_within_standard": [],
+        "excluded_by": [
+          {
+            "cites_this_record": false,
+            "profile": "capillary droplet (Laplace law)",
+            "role": "primary",
+            "worst_accuracy_case": "CASE-LAPLACE-SPH (quasi-static, time-averaged)",
+            "worst_accuracy_pct": 45.69297615786225
+          }
+        ],
+        "strict_modifier": [],
+        "strict_primary": []
+      },
+      "evidence": [
+        "accuracy claim against an analytic reference; no finer-rung record of the same quantity is inside the standard"
+      ],
+      "extractor": "x_csf_curvature",
+      "method": "csf_surface_tension",
+      "own_gate_passed": false,
+      "own_gate_pct": 15.0,
+      "problems": [],
+      "quantity": "delta_s-weighted curvature error (dx = 3 mm rung)",
+      "recomputed_pct": 23.799266672469123,
+      "rederived": {
+        "recomputed_pct": 23.799266672469123
+      },
+      "registry_kind": "accuracy"
+    },
+    {
+      "artifact": "benchmarks/couette/out/results.json",
+      "audit_catalogue": true,
+      "banked_pct": 32.64941126108171,
+      "class": "resolution_attributable",
+      "decision_linkage": {
+        "endorsed_within_standard": [],
+        "excluded_by": [
+          {
+            "cites_this_record": false,
+            "profile": "planar Couette channel",
+            "role": "primary",
+            "worst_accuracy_case": "CASE-COUETTE-VISCOUS-TIME (moving wall, H/dx=16)",
+            "worst_accuracy_pct": 17.076468467712292
+          }
+        ],
+        "strict_modifier": [],
+        "strict_primary": []
+      },
+      "evidence": [
+        "same quantity at H/dx=16.0: 0.48% <= 15.0% (record x_couette_wall_shear_design)"
+      ],
+      "extractor": "x_couette_wall_shear",
+      "method": "wcsph_wall_no_slip",
+      "own_gate_passed": false,
+      "own_gate_pct": 5.0,
+      "pair": {
+        "coarse_pct": 32.64941126108171,
+        "coarse_value": 8.0,
+        "fine_case": "plane Couette channel (design-time run)",
+        "fine_extractor": "x_couette_wall_shear_design",
+        "fine_pct": 0.47810226678850487,
+        "fine_source": "benchmarks/couette/out_design/results.json",
+        "fine_value": 16.0,
+        "parameter": "H/dx"
+      },
+      "problems": [],
+      "quantity": "wall-shear error at the moving wall |tau_SPH / tau_exact - 1|",
+      "recomputed_pct": 32.64941126108171,
+      "rederived": {
+        "coarse_pct": 32.64941126108171,
+        "fine_pct": 0.47810226678850487,
+        "kind": "bottom-wall shear error vs H/dx",
+        "series": [
+          {
+            "artifact": "benchmarks/couette/out/results.json",
+            "values": {
+              "8": 32.64941126108171
+            }
+          },
+          {
+            "artifact": "benchmarks/couette/out_design/results.json",
+            "values": {
+              "16": 0.47810226678850487,
+              "8": 4.338367283344291
+            }
+          }
+        ]
+      },
+      "registry_kind": "accuracy"
+    },
+    {
+      "artifact": "benchmarks/couette/out_design/viscous_time_convergence.json",
+      "audit_catalogue": true,
+      "banked_pct": 18.255122005939473,
+      "class": "reading_mobility",
+      "decision_linkage": {
+        "endorsed_within_standard": [],
+        "excluded_by": [
+          {
+            "cites_this_record": false,
+            "profile": "planar Couette channel",
+            "role": "primary",
+            "worst_accuracy_case": "CASE-COUETTE-VISCOUS-TIME (moving wall, H/dx=16)",
+            "worst_accuracy_pct": 17.076468467712292
+          }
+        ],
+        "strict_modifier": [],
+        "strict_primary": []
+      },
+      "evidence": [
+        "registry record kind=robustness: the quantity is the spread of a reading across the sweep, not an error against a reference"
+      ],
+      "extractor": "x_couette_viscous_time_mobility_h8",
+      "method": "wcsph_wall_no_slip",
+      "own_gate_passed": false,
+      "own_gate_pct": 5.0,
+      "problems": [],
+      "quantity": "mobility of the bottom-wall reading across admissible runs [pp]",
+      "recomputed_pct": 18.255122005939473,
+      "rederived": {
+        "bottom_readings_pct": [
+          22.593489289283763,
+          4.338367283344291,
+          9.006215631961844,
+          9.549750387668631
+        ],
+        "bottom_spread_pct": 18.255122005939473,
+        "n_admissible": 0,
+        "n_points": 4,
+        "resolution_H_over_dx": 8.0,
+        "source": "benchmarks/couette/out_design/viscous_time_convergence.json"
+      },
+      "registry_kind": "robustness"
+    },
+    {
+      "artifact": "benchmarks/couette/out_design/viscous_time_convergence.json",
+      "audit_catalogue": true,
+      "banked_pct": 17.076468467712292,
+      "class": "genuine_accuracy_failure",
+      "decision_linkage": {
+        "endorsed_within_standard": [],
+        "excluded_by": [
+          {
+            "cites_this_record": true,
+            "profile": "planar Couette channel",
+            "role": "primary",
+            "worst_accuracy_case": "CASE-COUETTE-VISCOUS-TIME (moving wall, H/dx=16)",
+            "worst_accuracy_pct": 17.076468467712292
+          }
+        ],
+        "strict_modifier": [],
+        "strict_primary": []
+      },
+      "evidence": [
+        "accuracy claim against an analytic reference; no finer-rung record of the same quantity is inside the standard"
+      ],
+      "extractor": "x_couette_viscous_time_top_h16",
+      "method": "wcsph_wall_no_slip",
+      "own_gate_passed": false,
+      "own_gate_pct": 5.0,
+      "problems": [],
+      "quantity": "moving-wall shear reading at the steady end of the sweep",
+      "recomputed_pct": 17.076468467712292,
+      "rederived": {
+        "recomputed_pct": 17.076468467712292,
+        "resolution_response": {
+          "16": {
+            "bottom_pct_at_steady_end": 1.811376214027427,
+            "n_admissible": 1,
+            "n_points": 4,
+            "top_pct_at_steady_end": 17.076468467712292
+          },
+          "8": {
+            "bottom_pct_at_steady_end": 9.549750387668631,
+            "n_admissible": 0,
+            "n_points": 4,
+            "top_pct_at_steady_end": 14.203286170959451
+          }
+        },
+        "worsens_with_resolution": true
+      },
+      "registry_kind": "accuracy"
+    },
+    {
+      "artifact": "benchmarks/csf_consistent/relax_quasistatic.json",
+      "audit_catalogue": false,
+      "banked_pct": 45.69297615786225,
+      "class": "genuine_accuracy_failure",
+      "decision_linkage": {
+        "endorsed_within_standard": [],
+        "excluded_by": [
+          {
+            "cites_this_record": true,
+            "profile": "capillary droplet (Laplace law)",
+            "role": "primary",
+            "worst_accuracy_case": "CASE-LAPLACE-SPH (quasi-static, time-averaged)",
+            "worst_accuracy_pct": 45.69297615786225
+          }
+        ],
+        "strict_modifier": [],
+        "strict_primary": []
+      },
+      "evidence": [
+        "outside the coverage audit's recomputation catalogue: the value is the artefact's stored number, verified only against the artefact text"
+      ],
+      "extractor": "x_csf_laplace_quasistatic",
+      "method": "csf_surface_tension",
+      "own_gate_passed": false,
+      "own_gate_pct": 15.0,
+      "problems": [],
+      "quantity": "bulk pressure vs vacuum over the 4-6 t_sigma window, worst rung of dx = 3/2/1.5 mm (analytic value sigma/R)",
+      "recomputed_pct": null,
+      "rederived": {
+        "recompute_kind": "stored_only",
+        "source": "benchmarks/csf_consistent/relax_quasistatic.json"
+      },
+      "registry_kind": "accuracy"
+    },
+    {
+      "artifact": "docs/xval_sphinx_tvc/data/grid_dx004.json",
+      "audit_catalogue": true,
+      "banked_pct": 16.96262081604608,
+      "class": "resolution_attributable",
+      "decision_linkage": {
+        "endorsed_within_standard": [],
+        "excluded_by": [
+          {
+            "cites_this_record": true,
+            "profile": "breaking wave over a slope",
+            "role": "modifier",
+            "worst_accuracy_case": "XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.04 m)",
+            "worst_accuracy_pct": 16.96262081604608
+          }
+        ],
+        "strict_modifier": [],
+        "strict_primary": []
+      },
+      "evidence": [
+        "same quantity at dx [m]=0.03: 10.81% <= 15.0% (record x_transport_velocity)"
+      ],
+      "extractor": "x_transport_velocity_coarse",
+      "method": "transport_velocity_correction",
+      "own_gate_passed": false,
+      "own_gate_pct": 15.0,
+      "pair": {
+        "coarse_pct": 16.96262081604608,
+        "coarse_value": 0.04,
+        "fine_case": "XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.03 m)",
+        "fine_extractor": "x_transport_velocity",
+        "fine_pct": 10.810360584937099,
+        "fine_source": "docs/xval_sphinx_tvc/data/grid_dx003.json",
+        "fine_value": 0.03,
+        "parameter": "dx [m]"
+      },
+      "problems": [],
+      "quantity": "same quantity on the coarse rung",
+      "recomputed_pct": 16.96262081604608,
+      "rederived": {
+        "coarse_pct": 16.96262081604608,
+        "fine_pct": 10.810360584937099,
+        "kind": "front-position mean error vs dx [m]",
+        "series": [
+          {
+            "artifact": "registry records (both grids)",
+            "values": {
+              "0.03": 10.810360584937099,
+              "0.04": 16.96262081604608
+            }
+          }
+        ]
+      },
+      "registry_kind": "accuracy"
+    }
+  ],
+  "anchor": "XVAL-SPH-METHOD-SELECTION-2026-11-12",
+  "audit_coverage_gap": [
+    "x_conduction_2d_one_d_calibration",
+    "x_csf_laplace_quasistatic"
+  ],
+  "audit_integrity_failures": [],
+  "audit_over_tolerance_records": [
+    "x_csf_curvature",
+    "x_couette_wall_shear",
+    "x_couette_viscous_time_mobility_h8",
+    "x_couette_viscous_time_top_h16",
+    "x_transport_velocity_coarse"
+  ],
+  "audit_source": "docs/reports/method_selection_coverage_audit_m20432.json",
+  "classes": {
+    "documented_trap_arm": [
+      "x_conduction_2d_one_d_calibration"
+    ],
+    "genuine_accuracy_failure": [
+      "x_csf_curvature",
+      "x_couette_viscous_time_top_h16",
+      "x_csf_laplace_quasistatic"
+    ],
+    "reading_mobility": [
+      "x_couette_viscous_time_mobility_h8"
+    ],
+    "resolution_attributable": [
+      "x_couette_wall_shear",
+      "x_transport_velocity_coarse"
+    ]
+  },
+  "decision_leaks": [],
+  "endorsed_with_spread": [],
+  "endorsed_with_trap_arm": [
+    "x_conduction_2d_one_d_calibration"
+  ],
+  "generated_by": "benchmarks/method_selection/adjudicate_over_tolerance.py",
+  "mission": 22787,
+  "over_tolerance_accuracy_records": [
+    "x_conduction_2d_one_d_calibration",
+    "x_csf_curvature",
+    "x_couette_wall_shear",
+    "x_couette_viscous_time_top_h16",
+    "x_csf_laplace_quasistatic",
+    "x_transport_velocity_coarse"
+  ],
+  "over_tolerance_records": [
+    "x_conduction_2d_one_d_calibration",
+    "x_csf_curvature",
+    "x_couette_wall_shear",
+    "x_couette_viscous_time_mobility_h8",
+    "x_couette_viscous_time_top_h16",
+    "x_csf_laplace_quasistatic",
+    "x_transport_velocity_coarse"
+  ],
+  "owner_tolerance_pct": 15.0,
+  "registry_records": 30,
+  "schema_version": "1.0"
+}
