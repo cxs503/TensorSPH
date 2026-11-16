@@ -1,0 +1,253 @@
+{
+  "anchor": "XVAL-SPH-METHOD-SELECTION-2026-11-12",
+  "generated_by": "benchmarks/method_selection/admissibility_matched_ladder.py",
+  "owner_tolerance_pct": 15.0,
+  "provenance": [
+    {
+      "artifact": "benchmarks/couette/out_design/viscous_time_convergence.json",
+      "sha256": "b5c8b3223d886726a9fd2a788589187d959dd612e9eda08eb250bc7dc02d5681",
+      "resolutions": [
+        8,
+        16
+      ],
+      "viscous_times_swept": [
+        0.6,
+        1.2,
+        2.4,
+        3.6
+      ],
+      "n_points": 8
+    }
+  ],
+  "ladder_top": {
+    "8": [
+      {
+        "tier": 0.6,
+        "t_end": 0.30000000000000004,
+        "pct": 7.531964778900169,
+        "steady_drift": 0.04280832303387419,
+        "admissible": false,
+        "label": "r8-vt0.6"
+      },
+      {
+        "tier": 1.2,
+        "t_end": 0.6000000000000001,
+        "pct": 27.523791790008534,
+        "steady_drift": 0.03544607381972969,
+        "admissible": false,
+        "label": "r8-vt1.2"
+      },
+      {
+        "tier": 2.4,
+        "t_end": 1.2000000000000002,
+        "pct": 21.722590923309305,
+        "steady_drift": 0.09856687983010003,
+        "admissible": false,
+        "label": "r8-vt2.4"
+      },
+      {
+        "tier": 3.6,
+        "t_end": 1.8000000000000005,
+        "pct": 14.203286170959451,
+        "steady_drift": 0.08628284022754817,
+        "admissible": false,
+        "label": "r8-vt3.6"
+      }
+    ],
+    "16": [
+      {
+        "tier": 0.6,
+        "t_end": 0.30000000000000004,
+        "pct": 16.024136543274082,
+        "steady_drift": 0.02203978884831852,
+        "admissible": false,
+        "label": "r16-vt0.6"
+      },
+      {
+        "tier": 1.2,
+        "t_end": 0.6000000000000001,
+        "pct": 20.867085456848045,
+        "steady_drift": 0.015471064421142459,
+        "admissible": false,
+        "label": "r16-vt1.2"
+      },
+      {
+        "tier": 2.4,
+        "t_end": 1.2000000000000002,
+        "pct": 20.60840129852284,
+        "steady_drift": 0.02600130733153952,
+        "admissible": false,
+        "label": "r16-vt2.4"
+      },
+      {
+        "tier": 3.6,
+        "t_end": 1.8000000000000005,
+        "pct": 17.076468467712292,
+        "steady_drift": 0.006767901296596721,
+        "admissible": true,
+        "label": "r16-vt3.6"
+      }
+    ]
+  },
+  "ladder_bottom": {
+    "8": [
+      {
+        "tier": 0.6,
+        "t_end": 0.30000000000000004,
+        "pct": 22.593489289283763,
+        "steady_drift": 0.04280832303387419,
+        "admissible": false,
+        "label": "r8-vt0.6"
+      },
+      {
+        "tier": 1.2,
+        "t_end": 0.6000000000000001,
+        "pct": 4.338367283344291,
+        "steady_drift": 0.03544607381972969,
+        "admissible": false,
+        "label": "r8-vt1.2"
+      },
+      {
+        "tier": 2.4,
+        "t_end": 1.2000000000000002,
+        "pct": 9.006215631961844,
+        "steady_drift": 0.09856687983010003,
+        "admissible": false,
+        "label": "r8-vt2.4"
+      },
+      {
+        "tier": 3.6,
+        "t_end": 1.8000000000000005,
+        "pct": 9.549750387668631,
+        "steady_drift": 0.08628284022754817,
+        "admissible": false,
+        "label": "r8-vt3.6"
+      }
+    ],
+    "16": [
+      {
+        "tier": 0.6,
+        "t_end": 0.30000000000000004,
+        "pct": 15.051989257335684,
+        "steady_drift": 0.02203978884831852,
+        "admissible": false,
+        "label": "r16-vt0.6"
+      },
+      {
+        "tier": 1.2,
+        "t_end": 0.6000000000000001,
+        "pct": 0.47810226678850487,
+        "steady_drift": 0.015471064421142459,
+        "admissible": false,
+        "label": "r16-vt1.2"
+      },
+      {
+        "tier": 2.4,
+        "t_end": 1.2000000000000002,
+        "pct": 0.5622416734695657,
+        "steady_drift": 0.02600130733153952,
+        "admissible": false,
+        "label": "r16-vt2.4"
+      },
+      {
+        "tier": 3.6,
+        "t_end": 1.8000000000000005,
+        "pct": 1.811376214027427,
+        "steady_drift": 0.006767901296596721,
+        "admissible": true,
+        "label": "r16-vt3.6"
+      }
+    ]
+  },
+  "claims": [
+    {
+      "claim_id": "moving_wall_worsens_with_resolution",
+      "asserted_by": "benchmarks/method_selection/adjudicate_over_tolerance.py (field rederived.worsens_with_resolution)",
+      "extractor": "x_couette_viscous_time_top_h16",
+      "method": "wcsph_wall_no_slip",
+      "wall": "top",
+      "banked_pct": 17.076468467712292,
+      "registry_status": "banked",
+      "quantities": "wall-shear error at the MOVING wall, |1 - tau_SPH/tau_exact|, at the steady end of the viscous-time sweep, H/dx=16 (the bottom-wall reading alone does not evidence the whole no-slip condition)",
+      "coarse_rung": 8,
+      "fine_rung": 16,
+      "coarse_reading": {
+        "label": "r8-vt3.6",
+        "tier": 3.6,
+        "pct": 14.203286170959451,
+        "steady_drift": 0.08628284022754817,
+        "admissible": false,
+        "n_admissible": 0,
+        "n_points": 4,
+        "fallback_to_last_point": true
+      },
+      "fine_reading": {
+        "label": "r16-vt3.6",
+        "tier": 3.6,
+        "pct": 17.076468467712292,
+        "steady_drift": 0.006767901296596721,
+        "admissible": true,
+        "n_admissible": 1,
+        "n_points": 4,
+        "fallback_to_last_point": false
+      },
+      "admissible_rungs": [
+        16
+      ],
+      "matched_trend": null,
+      "class": "trend_untestable",
+      "problems": [
+        "H/dx=8 has no admissible point (4 tiers, steady_drift gate 3.54e-02); its reading 14.203 % at 3.6 H^2/nu is a startup-transient value (drift 8.628e-02)"
+      ],
+      "robustness": [
+        {
+          "rung": 16,
+          "min_pct": 16.024136543274082,
+          "max_pct": 20.867085456848045,
+          "min_tier": 0.6,
+          "all_tiers_over_standard": true,
+          "admissible_tiers": [
+            3.6
+          ]
+        }
+      ],
+      "time_insensitive_exceedance": true,
+      "admissible_rung_count": 1,
+      "verdict": "moving_wall_worsens_with_resolution: NOT ESTABLISHED as a resolution trend -- only 1 rung(s) of the sweep have an admissible reading, so a matched-admissibility ladder does not exist; independent evidence H/dx=16: best case over all terminal-time tiers 16.024 % at 0.6 H^2/nu (still above the 15 % standard)",
+      "decision_linkage": {
+        "strict_artifact": "docs/reports/method_selection_strict_bound_m21537.json",
+        "rows": [
+          {
+            "label": "planar Couette channel",
+            "mode": "strict",
+            "decision": {
+              "method": "wcsph_wall_no_slip",
+              "role": "primary",
+              "worst_accuracy_pct": 17.076468467712292,
+              "worst_accuracy_case": "CASE-COUETTE-VISCOUS-TIME (moving wall, H/dx=16)",
+              "quantity": "wall-shear error at the MOVING wall, |1 - tau_SPH/tau_exact|, at the steady end of the viscous-time sweep, H/dx=16 (the bottom-wall reading alone does not evidence the whole no-slip condition)"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "design_reading": {
+    "extractor": "x_couette_wall_shear_design",
+    "rung": 16,
+    "design_tier": 1.2,
+    "banked_pct": 0.47810226678850487,
+    "recomputed_pct": 0.47810226678850487,
+    "recomputed_vs_banked_pct": 0.0,
+    "steady_drift": 0.015471064421142459,
+    "admissible": false,
+    "admissible_reading": {
+      "tier": 3.6,
+      "pct": 1.811376214027427,
+      "steady_drift": 0.006767901296596721
+    },
+    "class": "design_reading_not_admissible",
+    "within_owner_standard": true,
+    "note": "the banked design-time reading is reproduced from the sweep to 0.00e+00 % but its run does not clear the run's own steady_drift gate; the admissible reading of the same rung is reported alongside so the accuracy claim can be read on either"
+  }
+}
