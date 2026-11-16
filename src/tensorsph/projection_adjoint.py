@@ -464,8 +464,24 @@ def relax_projection_consistent(radius: float = 0.02, dx: float = 0.002,
         pos = pos + dt * u
         vmax = float(torch.linalg.vector_norm(u, dim=1).max())
         if (not bool(torch.isfinite(u).all())) or vmax > 1.0e3 * v_ref:
-            history.append({"step": step, "diverged": True,
-                            "umax_over_vref": vmax / v_ref})
+            broke = {"step": step, "diverged": True,
+                     "umax_over_vref": vmax / v_ref}
+            if stability_report:
+                # The breaking step is the only one whose lattice health is
+                # decisive, and it used to be the one step with no lattice
+                # block: the mass of a blow-up is spent in the step before the
+                # trip, so the samples that exist are all pre-critical.  State
+                # is measured on the *entry* state of the step (``pos_in`` and
+                # the CSF state of it), and the finiteness of the intermediate
+                # quantities is recorded so "the lattice already had a NaN" is
+                # distinguishable from "a finite traction produced a huge u*".
+                broke["finite_pos_in"] = bool(torch.isfinite(pos_in).all())
+                broke["finite_acc"] = bool(torch.isfinite(st["acc"]).all())
+                broke["finite_u_star"] = bool(torch.isfinite(u_star).all())
+                if broke["finite_pos_in"] and broke["finite_acc"]:
+                    broke["lattice"] = lattice_health(pos_in, pairs, st, dx,
+                                                      radius, v_ref)
+            history.append(broke)
             diverged = True
             break
         if step % sample_every == 0 or step == steps:
