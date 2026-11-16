@@ -75,6 +75,9 @@ __all__ = [
     "wake_plane_drag",
     "cv_momentum",
     "potential_flow_cylinder",
+    "control_volume_force_unsteady",
+    "moving_cylinder_potential_flow",
+    "moving_cylinder_load",
 ]
 
 _TWO_PI = 2.0 * math.pi
@@ -501,6 +504,7 @@ def control_volume_force_unsteady(
     traction: Optional[torch.Tensor] = None,
     reconstruct: str = "fit",
     h_window: Optional[float] = None,
+    surface_velocity: Optional[torch.Tensor] = None,
     momentum_rate_total: Optional[torch.Tensor] = None,
 ) -> Dict[str, object]:
     """Full unsteady control-volume force on the body inside a circular surface.
@@ -522,6 +526,22 @@ def control_volume_force_unsteady(
                           it is the only place the body enters (the panel/pair
                           arms need the body *surface*, this channel needs only
                           its area).
+    ``surface_velocity``  velocity of the **control surface itself** in the
+                          frame the field is given in -- needed whenever the
+                          surface is attached to a moving/deforming body.  A
+                          control surface that translates cannot be treated as
+                          a fixed one: the momentum crossing it is transported
+                          by the *relative* velocity ``(u - u_s).n``, and the
+                          absolute ``u.n`` leaves an ``O(R u u_s)`` residue that
+                          does not cancel against the pressure flux (measured at
+                          ``+250 %`` of the added-mass load at ``R = 5a``, see
+                          ``docs/xval_fsi2/MOVING_BODY_FARFIELD.md``).  Accepts
+                          a uniform ``(dim,)`` vector or a per-particle
+                          ``(N, dim)`` array (a deforming surface), which is
+                          reconstructed onto the bins like ``vel``.
+                          ``momentum_rate`` must then be the derivative taken on
+                          the *same relative lattice* (i.e. the frame-relative
+                          ``d/dt``, which is the moving-volume derivative).
     ``momentum_rate_total`` optional control arm: the derivative of the *raw*
                           ``int rho u dV``.  When supplied, the returned
                           ``force_naive`` is the literal (unsplit) form of (1),
@@ -555,7 +575,29 @@ def control_volume_force_unsteady(
     mask = filled.to(u_b.dtype)
     mask2 = mask[:, None]
 
-    un = (u_b * n).sum(dim=-1)
+    us_b = None
+    if surface_velocity is not None:
+        sv = torch.as_tensor(surface_velocity, dtype=pos.dtype,
+                             device=pos.device)
+        if sv.ndim == 1:
+            if sv.numel() != pos.shape[1]:
+                raise ValueError("surface_velocity must match the spatial "
+                                 "dimension")
+            us_b = sv.reshape(1, -1).expand(surf["bin_points"].shape[0], -1)
+        elif sv.ndim == 2:
+            if tuple(sv.shape) != tuple(pos.shape):
+                raise ValueError("per-particle surface_velocity must have the "
+                                 "shape of pos")
+            fit_us, mean_us, ok_us = reconstruct_surface_values(
+                surf["bin_points"], sub_pos, sv[sel], h_win, sub_vol)
+            us_b = fit_us if reconstruct == "fit" else mean_us
+            filled = filled & ok_us
+            mask = filled.to(u_b.dtype)
+            mask2 = mask[:, None]
+        else:
+            raise ValueError("surface_velocity must be (dim,) or (N, dim)")
+    un = (u_b * n).sum(dim=-1) if us_b is None \
+        else ((u_b - us_b) * n).sum(dim=-1)
     f_mom = -((rho * u_b * un[:, None]) * mask2 * ds).sum(dim=0)
     f_pres = -(((p_b - p_ref)[:, None] * n) * mask2 * ds).sum(dim=0)
     f_visc = None
@@ -638,4 +680,77 @@ def unsteady_potential_flow_cylinder(pos: torch.Tensor, a: float,
     speed2 = (vel * vel).sum(dim=-1)
     pressure = (p_inf + 0.5 * rho * (u_inf ** 2 - speed2)
                 - rho * u_dot * (r + a * a / r) * cos_t)
+    return vel, pressure
+
+
+def moving_cylinder_load(a: float, rho: float, u_dot, body_acc):
+    """Closed-form inertial load on a translating cylinder in an accelerating stream.
+
+    Collinear (both along ``+x``), inviscid, 2-D, unbounded fluid::
+
+        F_x = rho * pi * a**2 * (2 * u_dot - body_acc)
+
+    which collects the two classical pieces: the Froude-Krylov (displaced mass)
+    term ``rho A_b u_dot`` and the added-mass term ``rho C_a A_b (u_dot -
+    body_acc)`` with ``C_a = 1`` for a circle, ``A_b = pi a**2``.  Two special
+    cases that the repository already uses are recovered: a **fixed** cylinder
+    in an accelerating stream (``body_acc = 0``) is ``2 rho pi a**2 u_dot``
+    (``C_M = 2``), and an **accelerating** cylinder in still fluid
+    (``u_dot = 0``) is ``-rho pi a**2 body_acc`` (added mass only).
+    Scalars or tensors are accepted; tensors are returned elementwise.
+    """
+    scale = rho * math.pi * a * a
+    return scale * (2.0 * u_dot - body_acc)
+
+
+def moving_cylinder_potential_flow(pos: torch.Tensor, a: float, u_inf: float,
+                                   u_dot: float, body_vel: float,
+                                   body_acc: float, rho: float,
+                                   centre: Optional[torch.Tensor] = None,
+                                   p_inf: float = 0.0):
+    """Exact potential flow for a cylinder *translating* in an accelerating stream.
+
+    All motion is collinear along ``+x``: the undisturbed stream is ``u_inf``
+    with acceleration ``u_dot``, the cylinder centre sits at ``centre`` (lab
+    frame) and moves with ``body_vel`` / ``body_acc``.  This is the field the
+    moving-surface branch of :func:`control_volume_force_unsteady` is audited
+    against, in the same way :func:`unsteady_potential_flow_cylinder` covers the
+    fixed-body case.
+
+    Derivation (snapshot; ``X = x - centre``, ``r = |X|``, ``W = u_inf -
+    body_vel`` the relative stream, ``c = W a**2``)::
+
+        Phi      = u_inf * x + c cos(t) / r
+        u        = grad Phi  ->  u_x = u_inf - c cos(2t)/r**2,
+                                 u_y =        - c sin(2t)/r**2
+        p - p_inf = -rho [ u_dot * x + d_t Psi ] - rho (|u|**2 - u_inf**2)/2
+        Psi      = c cos(t)/r
+        d_t Psi  = (u_dot - body_acc) a**2 cos(t)/r
+                   - c * body_vel * (1 - 2 cos(t)**2) / r**2
+
+    ``u_inf * x`` in the pressure is the ramp of the accelerating stream in the
+    *lab* frame, so ``pos`` and ``centre`` must be lab-frame coordinates (two
+    snapshots of the same run then differ by the body displacement).  The
+    perturbation form of the estimator removes exactly that ramp, leaving an
+    ``O(1)`` pressure offset that integrates to zero on a closed surface.
+    ``body_vel = body_acc = 0`` reduces to
+    :func:`unsteady_potential_flow_cylinder`.
+    """
+    if centre is None:
+        centre = torch.zeros(2, dtype=pos.dtype, device=pos.device)
+    rel = pos - centre
+    r = torch.linalg.norm(rel, dim=1).clamp_min(1e-12)
+    cos_t = rel[:, 0] / r
+    sin_t = rel[:, 1] / r
+    w_rel = float(u_inf) - float(body_vel)
+    c = w_rel * a * a
+    inv_r2 = 1.0 / (r * r)
+    vel = torch.stack((u_inf - c * (cos_t * cos_t - sin_t * sin_t) * inv_r2,
+                       -2.0 * c * cos_t * sin_t * inv_r2), dim=-1)
+    speed2 = (vel * vel).sum(dim=-1)
+    inv_r = 1.0 / r
+    d_t_psi = ((u_dot - body_acc) * a * a * cos_t * inv_r
+               - c * body_vel * (1.0 - 2.0 * cos_t * cos_t) * inv_r2)
+    pressure = (p_inf - rho * (u_dot * pos[:, 0] + d_t_psi)
+                - 0.5 * rho * (speed2 - u_inf * u_inf))
     return vel, pressure
