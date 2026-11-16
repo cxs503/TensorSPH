@@ -1,3 +1,5 @@
+> **后续修正（m22957）**：本文档中 `resolution_attributable` 的两条裁定已被`docs/xval_method_selection_resolution_ladder_guard_m22957.md` 修正——一档配对不构成收敛证据。`x_transport_velocity_coarse` 现为 `resolution_window`（四位阶梯非单调，最细档 16.39% 重新超限），`x_couette_wall_shear` 现为`resolution_pair_only`（仅两档）。其余裁定不变，决策无泄漏、无变化。
+
 # 方法选择账本的两类开口：审计误报 + 超 15% 记录逐条裁定（m22787）
 
 **锚点**: `XVAL-SPH-METHOD-SELECTION-2026-11-12` ｜ **仓库**: TensorSPH ｜ **任务**: m22787（自找活·验证欠账）
