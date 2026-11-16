@@ -118,7 +118,14 @@ def test_committed_artefact_is_internally_consistent(path):
     assert row["spread_rel"] == pytest.approx(rel, rel=1e-9)
     # the resolution-band statistic must be a subset of the same rows
     band = row["resolution_band"]
-    sub = [r["cp_peak_gated"] for r in row["rows"] if r["n_bins"] in band["n_bins_used"]]
+    # m22695: the band statistic is measured at the band's own bin counts, which
+    # may lie outside BIN_GRID (<= 30).  Prefer the artefact's own band peaks;
+    # fall back to the legacy rows lookup for artefacts written before that key.
+    if "band_peaks" in band:
+        sub = [r["cp_peak_gated"] for r in band["band_peaks"]]
+    else:
+        sub = [r["cp_peak_gated"] for r in row["rows"]
+               if r["n_bins"] in band["n_bins_used"]]
     assert band["peak_median"] == pytest.approx(ep.spread(sub)[2], rel=1e-9)
     # the reference the artefact compares against is the in-repo analytic value
     assert doc["wagner_cp_max"] == pytest.approx(ep.wagner_peak_over_q(math.radians(30.0)))
