@@ -364,6 +364,40 @@ class Kleefsman3DRun:
     def arrival(self) -> float | None:
         return arrival_time(self.times, self.slab, self.cfg.arrival_threshold)
 
+    def operator_consistency(self) -> dict:
+        """Self-consistency gate for the two gauge operators.
+
+        ``slab_height`` and ``peak_height`` screen the fluid with the *same*
+        band mask, so both are functions of the same particle set at the same
+        instant.  The slab operator is therefore a lower-bound witness for the
+        height operator: ``slab = n*dx^3/(aperture*width)`` means ``n`` particles
+        are in the band, and ``n`` particles that are all exactly on the floor
+        plane are not a fluid state this solver produces.  A sample that reports
+        metres of water while the highest wetted point is 0.0 is consequently a
+        *record* defect, not a physical reading.
+
+        The gate deliberately tolerates the one degenerate case that is real:
+        when the aperture is narrower than a particle spacing the band can hold
+        a single particle that sits on the floor, which genuinely gives
+        ``slab <= dx`` and ``height == 0`` (reproduced at dx = 0.10).  Only
+        samples carrying more than ``2*dx`` of water are counted as impossible,
+        and a record is inadmissible as soon as one such sample exists.
+        """
+        zero_wet = [s for s, h in zip(self.slab, self.height)
+                    if s > 2.0 * self.cfg.dx and h <= 0.0]
+        wet = sum(1 for s in self.slab if s > 0.0)
+        return {
+            "wet_samples": int(wet),
+            "impossible_samples": len(zero_wet),
+            "worst_impossible_slab_m": max(zero_wet) if zero_wet else 0.0,
+            "height_column_admissible": not zero_wet,
+            "reason": ("" if not zero_wet else
+                       "samples report slab > 2*dx of water while the highest "
+                       "wetted point in the same band is 0.0; the two columns "
+                       "were not produced by these operators on one particle "
+                       "set (see docs/audit_kleefsman_3d_height_operator_m22745.md)"),
+        }
+
     def to_dict(self) -> dict:
         peak_h, peak_t = self.peak()
         return {
