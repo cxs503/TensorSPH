@@ -1,0 +1,118 @@
+{
+ "case": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST",
+ "arm": "3-D (0.403 m box in 1.00 m tank: 40 % blockage, the experimental geometry)",
+ "reference": {
+  "peak_height_m": 0.37,
+  "peak_time_s": 1.7027,
+  "arrival_time_s": 0.3591,
+  "arrival_threshold_m": 0.02,
+  "source": "Kleefsman et al. (2005) J. Comput. Phys. 206:363-393, doi:10.1016/j.jcp.2004.12.007, Fig. 19 right panel (digitised in m20884)"
+ },
+ "tolerance_rel": 0.1,
+ "runs": [
+  {
+   "tag": "dx0.05",
+   "dx": 0.05,
+   "job": "cj3887",
+   "node": "n315",
+   "job_rc": 0,
+   "samples": 468,
+   "t_last_s": 2.048963,
+   "t_end_requested_s": 2.6,
+   "reached_t_end": false,
+   "window_covers_reference_peak": true,
+   "peak_censored": false,
+   "peak_height_m": 0.120192,
+   "peak_time_s": 1.588275,
+   "arrival_time_s": 0.5027811754237288,
+   "max_bypass_particles": 518.0,
+   "height_operator_max_m": 0.0,
+   "front_at_first_wetting_s": 0.4809213304875736,
+   "rows": [
+    {
+     "metric": "peak_height_m",
+     "ref": 0.37,
+     "got": 0.120192,
+     "got_time_s": 1.588275,
+     "rel_error": 0.6751567567567568,
+     "decided": true,
+     "pass": false,
+     "note": ""
+    },
+    {
+     "metric": "arrival_time_s",
+     "ref": 0.3591,
+     "got": 0.5027811754237288,
+     "rel_error": 0.4001146628341098,
+     "decided": true,
+     "pass": false,
+     "note": ""
+    }
+   ],
+   "verdict": "FAIL",
+   "protocol": {
+    "sound_speed": 20.0,
+    "wall_layers": 3,
+    "obstacle_z": 0.0,
+    "station_offset": 0.05,
+    "gauge_aperture": 0.08,
+    "arrival_threshold": 0.02,
+    "output_every": 5
+   }
+  },
+  {
+   "tag": "dx0.04",
+   "dx": 0.04,
+   "job": "cj3888",
+   "node": "n315",
+   "job_rc": 0,
+   "samples": 327,
+   "t_last_s": 1.14426,
+   "t_end_requested_s": 2.6,
+   "reached_t_end": false,
+   "window_covers_reference_peak": false,
+   "peak_censored": false,
+   "peak_height_m": 0.0933,
+   "peak_time_s": 1.00737,
+   "arrival_time_s": 0.4677733677581864,
+   "max_bypass_particles": 628.0,
+   "height_operator_max_m": 0.0,
+   "front_at_first_wetting_s": 0.44271689491525423,
+   "rows": [
+    {
+     "metric": "peak_height_m",
+     "ref": 0.37,
+     "got": 0.0933,
+     "got_time_s": 1.00737,
+     "rel_error": null,
+     "decided": false,
+     "pass": null,
+     "note": "record ends at t=1.144 s < reference peak 1.7027 s: WITHHELD"
+    },
+    {
+     "metric": "arrival_time_s",
+     "ref": 0.3591,
+     "got": 0.4677733677581864,
+     "rel_error": 0.3026270335789096,
+     "decided": true,
+     "pass": false,
+     "note": ""
+    }
+   ],
+   "verdict": "FAIL",
+   "protocol": {
+    "sound_speed": 20.0,
+    "wall_layers": 3,
+    "obstacle_z": 0.0,
+    "station_offset": 0.05,
+    "gauge_aperture": 0.08,
+    "arrival_threshold": 0.02,
+    "output_every": 5
+   }
+  }
+ ],
+ "n_decided_metrics": 3,
+ "all_nonzero_height_operator": true,
+ "verdict": "FAIL",
+ "why": "at least one decided metric is outside the 10 % band"
+}
