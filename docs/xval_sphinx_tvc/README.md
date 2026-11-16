@@ -432,3 +432,5 @@ shipped coefficient.
   回传后重跑 `make_shift_bound_doc.py` 即可扩表。
 Still open: a numeric diff against a live SPHinXsys build (gap 2), hexagonal
 lattices, and the adaptive `h_ratio` branch (not ported).
+Still open: a numeric diff against a live SPHinXsys build (gap 2), the `TruncatedLinear`
+limiter variants (source not transcribed), and the adaptive `h_ratio` branch (not ported).
