@@ -308,16 +308,29 @@ def control_volume_force(pos: torch.Tensor, vel: torch.Tensor,
 
 
 def cv_momentum(pos: torch.Tensor, vel: torch.Tensor, rho: float,
-                centre: torch.Tensor, radius: float, dx: float) -> torch.Tensor:
-    """``int_CV rho u dV`` per unit thickness (raw, no uniform-part removal).
+                centre: torch.Tensor, radius: float, dx: float,
+                volumes: Optional[torch.Tensor] = None,
+                frame_vel: Optional[torch.Tensor] = None) -> torch.Tensor:
+    """``int_CV rho (u - frame_vel) dV`` per unit thickness.
 
-    Returned for bookkeeping only.  See the module docstring: the unsteady term
-    of (1) is not formed from it here because its uniform part diverges with
-    the control-volume radius and must be cancelled against the pressure flux.
+    The control volume is the fluid inside the circle; ``volumes`` defaults to a
+    uniform ``dx**2`` per particle.  Supplying ``frame_vel`` removes the uniform
+    part of the flow, which is what makes the time derivative of this integral
+    usable as the accumulation term of (1): the raw integral carries the ``R**2``
+    uniform contribution that must be cancelled against the pressure flux (see
+    :func:`control_volume_force_unsteady`, which performs that cancellation with
+    analytic areas).  With ``frame_vel=None`` this is the raw momentum, kept for
+    the unsplit control arm and for bookkeeping.
     """
     rel = pos - centre
     inside = torch.linalg.norm(rel, dim=1) <= radius
-    return rho * dx * dx * vel[inside].sum(dim=0)
+    vol = (volumes if volumes is not None
+           else torch.full((pos.shape[0],), dx * dx, dtype=pos.dtype,
+                           device=pos.device))[inside]
+    u = vel[inside]
+    if frame_vel is not None:
+        u = u - torch.as_tensor(frame_vel, dtype=pos.dtype).reshape(-1)
+    return rho * (vol.unsqueeze(-1) * u).sum(dim=0)
 
 
 def wake_plane_drag(pos: torch.Tensor, vel: torch.Tensor, pressure: torch.Tensor,
@@ -396,3 +409,233 @@ def potential_flow_cylinder(pos: torch.Tensor, a: float, u_inf: float,
 def potential_flow_tip_speed(a: float, u_inf: float, circulation: float) -> float:
     """Maximum surface speed of :func:`potential_flow_cylinder` (for CFL notes)."""
     return abs(2.0 * u_inf) + abs(circulation) / (_TWO_PI * a)
+
+# --------------------------------------------------------------------------- #
+# Unsteady (accumulation) term of identity (1)
+# --------------------------------------------------------------------------- #
+# Why the naive form is unusable
+# ------------------------------
+# Written literally on the *total* field, ``-d/dt int rho u dV`` and the
+# pressure flux carry a spatially uniform part that scales like ``R**2`` (the
+# momentum of the uniform stream and the uniform pressure gradient
+# ``p_unif = -rho a_f . (x - c)`` implied by an accelerating free stream).  For
+# a body whose own inertia load scales like ``rho A_body a_f`` the two big terms
+# are ``R**2 / A_body`` times the answer and only their difference survives, so
+# the estimator inherits the *relative* error of the big terms amplified by that
+# factor.  The cure is the standard perturbation split (the CV form of the
+# Froude-Krylov / added-mass decomposition):
+#
+#   u = u_f(t) + u',      p = p_f(t, x) + p',   p_f = -rho a_f . (x - c)
+#
+#   F_on_body = +rho A_body a_f                       displaced mass (Froude-Krylov)
+#               - d/dt int_CV rho u' dV               fluid perturbation momentum
+#               - oint_S [ rho u (u.n) + (p' - p_ref) n ] dS
+#               + oint_S tau.n dS                     caller hook
+#
+# Derivation of the middle line: the uniform parts cancel as
+# ``-rho A_fluid a_f + rho pi R**2 a_f = rho A_body a_f`` with
+# ``A_fluid = pi R**2 - A_body`` the fluid area inside the control surface
+# (``oint (x-c) n dS = pi R**2 I``).  Both areas are analytic, so no lattice
+# jaggedness enters the cancellation.  For a circular cylinder in an oscillating
+# stream this line reproduces the textbook split ``C_M = 1 + C_a = 2``:
+# ``rho A_body a_f`` is the ``1`` and the perturbation terms supply the ``C_a``.
+
+__all__.extend([
+    "d_dt_periodic",
+    "cv_fluid_area",
+    "control_volume_force_unsteady",
+    "unsteady_potential_flow_cylinder",
+])
+
+
+def d_dt_periodic(values: torch.Tensor, dt: float,
+                  periodic: bool = True) -> torch.Tensor:
+    """Second-order accurate ``d/dt`` of a uniformly sampled series.
+
+    ``values`` is ``(N_t, ...)``; the difference runs along dim 0.  With
+    ``periodic=True`` the series is wrapped (appropriate for a periodic sampling
+    of a harmonic field) and the truncation error is ``-(dt**2/6) d3/dt3``;
+    with ``periodic=False`` the two ends fall back to a second-order one-sided
+    stencil.  A first-order backward difference is *not* offered on purpose: on
+    a harmonic signal it biases the amplitude by ``O(Omega dt)`` and that bias
+    would masquerade as a force error.
+    """
+    if dt <= 0.0:
+        raise ValueError("dt must be positive")
+    if values.shape[0] < 3:
+        raise ValueError("need at least 3 samples for a second-order difference")
+    if periodic:
+        return (torch.roll(values, -1, 0) - torch.roll(values, 1, 0)) / (2.0 * dt)
+    out = torch.empty_like(values)
+    out[1:-1] = (values[2:] - values[:-2]) / (2.0 * dt)
+    out[0] = (-3.0 * values[0] + 4.0 * values[1] - values[2]) / (2.0 * dt)
+    out[-1] = (3.0 * values[-1] - 4.0 * values[-2] + values[-3]) / (2.0 * dt)
+    return out
+
+
+def cv_fluid_area(radius: float, body_area: float = 0.0) -> float:
+    """``pi R**2 - A_body``: the fluid cross-section inside the control surface."""
+    a = math.pi * radius ** 2 - body_area
+    if a <= 0.0:
+        raise ValueError("body_area must be smaller than the control surface")
+    return a
+
+
+def control_volume_force_unsteady(
+    pos: torch.Tensor,
+    vel: torch.Tensor,
+    pressure: torch.Tensor,
+    rho: float,
+    centre: torch.Tensor,
+    radius: float,
+    dx: float,
+    *,
+    momentum_rate: torch.Tensor,
+    frame_vel: torch.Tensor,
+    frame_acc: torch.Tensor,
+    body_area: float = 0.0,
+    p_ref: float = 0.0,
+    n_bins: Optional[int] = None,
+    band: Optional[float] = None,
+    volumes: Optional[torch.Tensor] = None,
+    traction: Optional[torch.Tensor] = None,
+    reconstruct: str = "fit",
+    h_window: Optional[float] = None,
+    momentum_rate_total: Optional[torch.Tensor] = None,
+) -> Dict[str, object]:
+    """Full unsteady control-volume force on the body inside a circular surface.
+
+    Implements identity (1) of the module docstring in the perturbation form
+    documented above the function.  Inputs:
+
+    ``momentum_rate``     ``d/dt int_CV rho (u - frame_vel) dV`` (N, per unit
+                          thickness), i.e. the derivative of
+                          :func:`cv_momentum` with ``frame_vel`` supplied.  The
+                          caller forms it from a time series with
+                          :func:`d_dt_periodic`; the same ``pos`` lattice and
+                          ``radius`` must be used for every sample.
+    ``frame_vel``         undisturbed (free-stream) velocity ``u_f(t)``.
+    ``frame_acc``         its time derivative ``a_f(t)`` -- *the caller is
+                          responsible for consistency*; the displaced-mass term
+                          is built from it.
+    ``body_area``         cross-sectional area of the body inside the surface;
+                          it is the only place the body enters (the panel/pair
+                          arms need the body *surface*, this channel needs only
+                          its area).
+    ``momentum_rate_total`` optional control arm: the derivative of the *raw*
+                          ``int rho u dV``.  When supplied, the returned
+                          ``force_naive`` is the literal (unsplit) form of (1),
+                          which is the estimator the previous round could not
+                          ship because of the ``R**2`` cancellation.
+    """
+    if reconstruct not in ("fit", "mean"):
+        raise ValueError("reconstruct must be 'fit' or 'mean'")
+    frame_vel = torch.as_tensor(frame_vel, dtype=pos.dtype).reshape(-1)
+    frame_acc = torch.as_tensor(frame_acc, dtype=pos.dtype).reshape(-1)
+    if frame_vel.numel() != pos.shape[1] or frame_acc.numel() != pos.shape[1]:
+        raise ValueError("frame_vel / frame_acc must match the spatial dimension")
+
+    surf = circular_surface_bins(pos, centre, radius, dx, n_bins=n_bins,
+                                 band=band, volumes=volumes)
+    sel = surf["sel"]
+    sub_pos = pos[sel]
+    sub_vol = volumes[sel] if volumes is not None else None
+    h_win = 1.6 * dx if h_window is None else h_window
+
+    # perturbation pressure p' = p + rho a_f . (x - c)
+    p_pert = pressure[sel] + rho * ((sub_pos - centre) @ frame_acc)
+    fit_u, mean_u, ok_u = reconstruct_surface_values(
+        surf["bin_points"], sub_pos, vel[sel], h_win, sub_vol)
+    fit_p, mean_p, ok_p = reconstruct_surface_values(
+        surf["bin_points"], sub_pos, p_pert, h_win, sub_vol)
+    filled = ok_u & ok_p
+    u_b, p_b = (fit_u, fit_p) if reconstruct == "fit" else (mean_u, mean_p)
+    n = surf["normals"]
+    ds = surf["ds"]
+    mask = filled.to(u_b.dtype)
+    mask2 = mask[:, None]
+
+    un = (u_b * n).sum(dim=-1)
+    f_mom = -((rho * u_b * un[:, None]) * mask2 * ds).sum(dim=0)
+    f_pres = -(((p_b - p_ref)[:, None] * n) * mask2 * ds).sum(dim=0)
+    f_visc = None
+    if traction is not None:
+        f_visc = (traction * mask2 * ds).sum(dim=0)
+
+    displaced = rho * float(body_area) * frame_acc          # Froude-Krylov
+    accum = -momentum_rate
+    total = displaced + accum + f_mom + f_pres
+    if f_visc is not None:
+        total = total + f_visc
+
+    out: Dict[str, object] = {
+        "force": total,
+        "force_displaced_mass": displaced.detach(),
+        "force_unsteady": accum.detach(),
+        "force_momentum_flux": f_mom.detach(),
+        "force_pressure": f_pres.detach(),
+        "force_viscous": None if f_visc is None else f_visc.detach(),
+        "fluid_area": cv_fluid_area(float(radius), float(body_area)),
+        "coverage": float(filled.to(torch.float64).mean()),
+        "n_bins": int(surf["n_bins"]),
+        "n_surface_particles": int(sel.sum()),
+    }
+    if reconstruct == "mean":
+        un_m = (mean_u * n).sum(dim=-1)
+        out["force_mean_reconstruction"] = -(
+            rho * mean_u * un_m[:, None] + (mean_p - p_ref)[:, None] * n
+        ).mul(mask2 * ds).sum(dim=0)
+    if momentum_rate_total is not None:
+        # literal, unsplit (1): -d/dt int rho u dV - oint [rho u (u.n) + p n] dS
+        pa = pressure[sel]
+        fit_pn, mean_pn, _ = reconstruct_surface_values(
+            surf["bin_points"], sub_pos, pa, h_win, sub_vol)
+        p_nt = fit_pn if reconstruct == "fit" else mean_pn
+        f_pres_t = -(((p_nt - p_ref)[:, None] * n) * mask2 * ds).sum(dim=0)
+        naive = -momentum_rate_total + f_mom + f_pres_t
+        if f_visc is not None:
+            naive = naive + f_visc
+        out["force_naive"] = naive.detach()
+        out["force_naive_pressure"] = f_pres_t.detach()
+    return out
+
+
+def unsteady_potential_flow_cylinder(pos: torch.Tensor, a: float,
+                                     u_inf: float, u_dot: float, rho: float,
+                                     centre: Optional[torch.Tensor] = None,
+                                     p_inf: float = 0.0):
+    """Potential flow past a fixed circular cylinder in an *accelerating* stream.
+
+    ``u_inf`` / ``u_dot`` are the instantaneous uniform stream and its time
+    derivative along ``+x``; the stream is evaluated as a snapshot, so the pair
+    ``(u_inf, u_dot)`` is all the field needs.  Velocity from the stream
+    function ``phi = U(t) (r + a**2/r) cos(theta)``:
+
+        u_r = U (1 - a**2/r**2) cos t,   u_t = -U (1 + a**2/r**2) sin t
+
+    and pressure from the *unsteady* Bernoulli equation,
+    ``p = -rho dphi/dt - rho|u|**2/2 + rho U**2/2 + p_inf``:
+
+        p - p_inf = -rho u_dot (r + a**2/r) cos t + rho (U**2 - |u|**2)/2
+
+    so that ``p -> p_inf - rho u_dot x`` as ``r -> inf``, which is the pressure
+    field that accelerates the uniform stream.  The exact load on the cylinder
+    is ``F_x = 2 rho pi a**2 u_dot`` (``C_M = 2``: displaced mass ``rho pi a**2``
+    plus added mass ``C_a = 1``) and ``F_y = 0`` -- the reference this module is
+    audited against.
+    """
+    if centre is None:
+        centre = torch.zeros(2, dtype=pos.dtype, device=pos.device)
+    rel = pos - centre
+    r = torch.linalg.norm(rel, dim=1).clamp_min(1e-12)
+    cos_t = rel[:, 0] / r
+    sin_t = rel[:, 1] / r
+    eps = a * a / (r * r)
+    u_r = u_inf * (1.0 - eps) * cos_t
+    u_t = -u_inf * (1.0 + eps) * sin_t
+    vel = torch.stack((u_r * cos_t - u_t * sin_t,
+                       u_r * sin_t + u_t * cos_t), dim=-1)
+    speed2 = (vel * vel).sum(dim=-1)
+    pressure = (p_inf + 0.5 * rho * (u_inf ** 2 - speed2)
+                - rho * u_dot * (r + a * a / r) * cos_t)
+    return vel, pressure
