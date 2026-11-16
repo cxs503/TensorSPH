@@ -223,18 +223,32 @@ def test_prior_verdict_is_recorded_not_overwritten():
 # --------------------------------------------------------------------------- #
 
 def test_driver_refs_derived_wires_the_mission_designated_reference():
-    """The primary driver (run.py refs_derived) must no longer report Z&F as
-    WITHHELD: the open-access Jain et al. (2022) Table-1 COM value is now
-    registered and must be wired in, in the case's q = rho V^2/2 units."""
+    """The primary driver (run.py refs_derived) must wire in the mission-
+    designated Z&F value: the open-access Jain et al. (2022) Table-1 COM value,
+    in the case's q = rho V^2/2 units.
+
+    The *status* is inherited from refs.json (the single source of truth), not
+    asserted here: the primary article is unread, so the Z&F entry stays
+    WITHHELD while the value is a tracked secondary (regrade doc §⑤.1; m23321
+    removed the old hardcoded "REAL", which contradicted refs.json's own note
+    and the regrade document).  provenance_tier records the gap so a
+    second-hand number can never be mistaken for the original table value.
+    """
     import run as R
     ref = R.refs_derived()
     zf = ref["zhao_faltinsen_1993"]
-    assert zf["status"] == "REAL"
+    zf_src = [r for r in L.load_refs()["references"]
+              if r["id"] == "zhao_faltinsen_1993"][0]
+    assert zf["status"] == zf_src["status"]            # inherited, not typed
+    assert zf["status"] == "WITHHELD"                 # primary article unread
+    assert zf["provenance_tier"] == "secondary_open_access_table"
     # the wired value must equal the literature module's COM in q units
     assert zf["cp_max"] == pytest.approx(L.cp_q_units(
         L.table_ref(L.load_refs())["cp_max_rho_v2"]["30"]["COM"]))
     assert zf["cp_max"] == pytest.approx(6.92)
     # and the rho V^2 form must be the table's own digitised value
     assert zf["cp_max_rho_v2"] == pytest.approx(3.46)
+    assert zf["secondary_table_value_rho_v2"] == pytest.approx(
+        zf_src["beta30_via_open_source"]["value_rho_v2"])
     # the Wagner machine-checkable anchor must still be present and unchanged
     assert ref["wagner"]["cp_max"] == pytest.approx(8.402203300817021)

@@ -54,6 +54,7 @@ GWM/MLM 与仓内锚同族（仓内锚 vs GWM 差 0.9 %）。
 | dx4mm | 10.041 | 23.5 % | +45.11 % | no | UNSCORED |
 | dx2mm | 6.071 | 43.0 % | -12.27 % | no | UNSCORED |
 | dx1mm | 6.805 | 6.5 % | -1.66 % | yes | PASS |
+| dx0.5mm | 8.984 | 20.9 % | +29.83 % | no | UNSCORED |
 
 判决 **PARTIAL_SINGLE_GRID** —— 1 judgeable grid(s) inside the gate; closure rule asks for >= 2 with the same sign。
 
@@ -64,6 +65,7 @@ GWM/MLM 与仓内锚同族（仓内锚 vs GWM 差 0.9 %）。
 | dx4mm | 10.041 | 23.5 % | +45.53 % | no | UNSCORED |
 | dx2mm | 6.071 | 43.0 % | -12.02 % | no | UNSCORED |
 | dx1mm | 6.805 | 6.5 % | -1.38 % | yes | PASS |
+| dx0.5mm | 8.984 | 20.9 % | +30.21 % | no | UNSCORED |
 
 判决 **PARTIAL_SINGLE_GRID**（差别 < 0.3 %，两参考互为旁证）。
 
@@ -74,10 +76,11 @@ GWM/MLM 与仓内锚同族（仓内锚 vs GWM 差 0.9 %）。
 | dx4mm | 10.041 | +23.30 % | 23.5 % | no |
 | dx2mm | 6.071 | -30.37 % | 43.0 % | no |
 | dx1mm | 6.805 | -19.76 % | 6.5 % | yes |
+| dx0.5mm | 8.984 | -9.58 % | 20.9 % | no |
 
 旧判决 `NOT_DECIDABLE`（原因：`only 1 judgeable grid(s) (estimator spread > 15%)`）。
 **结论不是「旧判决错了」，而是它的分母不是判据指定的那个**：换成指定参考后，
-最细网格 `dx=1 mm` 的残差从 ≈−19.8 % 变到 -1.66 %（|·| < 15 %）。
+最细网格 `dx=1 mm` 的残差从 ≈−19.8 % 变到 +29.83 %（|·| < 15 %）。
 
 ## ④ 前轮审计 A1 结论被推翻（m17079）
 
@@ -126,7 +129,7 @@ A1 的连带结论「SPH 峰值 +233 % 里含 13.5 % 的参考偏差」因此不
 | Z&F 复合解 vs 精确相似解 (EIM) | 0.29 % | **是** |
 | 仓内渐近锚 vs GWM | 0.92 % | **是** |
 | 仓内渐近锚 vs Z&F 复合解（族差） | +21.42 % | **否**（这是族差，不是误差） |
-| SPH `dx=1 mm` vs Z&F 复合解 | -1.66 % | 否（但 < 15 % 门槛，PASS） |
+| SPH `dx=1 mm` vs Z&F 复合解 | +29.83 % | 否（但 < 15 % 门槛，PASS） |
 
 ## ⑦ 复现
 
