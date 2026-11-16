@@ -15,7 +15,7 @@
 | analytic reference | `dp = sigma/R` = 3.6000 Pa |
 | velocity scale `v_ref` | 0.0600 m/s |
 | kernel / curvature | cubic spline `h = 1.3 dx`; mls (div n of the twice-smoothed normal) |
-| resolutions | `R/dx` in [8, 12] |
+| resolutions | `R/dx` in [8, 12, 16, 24] |
 | split | helmholtz_split, A = D D^T PCG rel_tol 1e-10 |
 
 ## ② Method
@@ -30,17 +30,19 @@ Predictor: `max|a_sol| t_ref / v_ref` with `t_ref = sqrt(rho R^3/sigma)` — an 
 |---|---|---|---|---|---|---|---|---|---|---|
 | 8 | 780 | 6.119 | 0.9607 | 6.044 | 0.1570 | 0.1570 | 4.0e-16 | 3.1e-18 | 1133 | 0.919 |
 | 12 | 1733 | 11.61 | 3.102 | 11.19 | 0.2671 | 0.2671 | 1.7e-15 | 7.1e-18 | 1786 | 2.067 |
+| 16 | 3090 | 18.87 | 6.969 | 17.53 | 0.3694 | 0.3694 | 9.6e-16 | 1.2e-17 | 2578 | 5.354 |
+| 24 | 6853 | 38.19 | 18.34 | 33.5 | 0.4801 | 0.4801 | 2.8e-16 | 1.8e-17 | 3832 | 12.529 |
 
-Fitted **decay orders** (positive = the quantity falls as `R/dx` grows): solenoidal fraction -1.311, solenoidal amplitude -2.891; the raw slopes are +1.311 and +2.891.
+Fitted **decay orders** (positive = the quantity falls as `R/dx` grows): solenoidal fraction -1.024, solenoidal amplitude -2.692; the raw slopes are +1.024 and +2.692.
 
 ### Gate verdicts (declared values copied verbatim into the JSON)
 
 | gate | measured | declared | verdict |
 |---|---|---|---|
 | `adjoint_exact` | 1.733e-15 | <= 1e-10 | **PASS** |
-| `reconstruction_exact` | 7.088e-18 | <= 1e-06 | **PASS** |
-| `solenoidal_decay_order_min` | -1.311 | >= 0.5 | **FAIL** |
-| `solenoidal_fraction_finest` | 0.2671 | <= 0.1 | **FAIL** |
+| `reconstruction_exact` | 1.778e-17 | <= 1e-06 | **PASS** |
+| `solenoidal_decay_order_min` | -1.024 | >= 0.5 | **FAIL** |
+| `solenoidal_fraction_finest` | 0.4801 | <= 0.1 | **FAIL** |
 | `consistency_with_march` | 5.133 | <= 3 | **FAIL** |
 
 ## ④ Figure
@@ -56,10 +58,8 @@ Fitted **decay orders** (positive = the quantity falls as `R/dx` grows): solenoi
 
 ## ⑥ Error statement
 
-* The physics reference here is **zero** (an equilibrated drop must not accelerate solenoidal-ly). The claim is a **decay order**, not a percentage: measured -1.311 against a declared minimum of 0.50 — FAIL.
-* **< 3 % ?** Not applicable as a percentage — but the equivalent statement is that the finest level's solenoidal fraction is 0.2671 (declared gate 0.10) and the recorded spurious current at `R/dx = 8` is 0.179 against the 0.1 line, i.e. the same defect at 0.1570. Operator identities are exact to round-off (adjoint 1.7e-15, reconstruction 7.1e-18).
-
-* **Levels [16, 24] were not measured in this run** (the one-shot Poisson solve costs 40 s at `R/dx = 8` and 70 s at 12 on the agent host; the finer levels exceed the local short-test budget and the marching ladder that would cover them is queued separately as `cj3847`). The trend below therefore rests on the levels listed in ③ and no claim is made beyond them.
+* The physics reference here is **zero** (an equilibrated drop must not accelerate solenoidal-ly). The claim is a **decay order**, not a percentage: measured -1.024 against a declared minimum of 0.50 — FAIL.
+* **< 3 % ?** Not applicable as a percentage — but the equivalent statement is that the finest level's solenoidal fraction is 0.4801 (declared gate 0.10) and the recorded spurious current at `R/dx = 8` is 0.179 against the 0.1 line, i.e. the same defect at 0.1570. Operator identities are exact to round-off (adjoint 1.7e-15, reconstruction 1.8e-17).
 
 ## ⑦ Reproduce
 
