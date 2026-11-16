@@ -114,7 +114,8 @@ def test_adjudication_covers_every_registry_record_over_the_standard(
 
 
 def test_every_record_has_a_known_class(adjudication):
-    known = {"resolution_attributable", "reading_mobility",
+    known = {"resolution_attributable", "resolution_window",
+             "resolution_pair_only", "reading_mobility",
              "genuine_accuracy_failure", "documented_trap_arm"}
     assert {a["class"] for a in adjudication["adjudications"]} <= known
     for name, members in adjudication["classes"].items():
@@ -132,11 +133,17 @@ def test_pairing_checks_do_not_report_problems(adjudication):
 # --------------------------------------------------------------------------- #
 # 3. Each class is justified by data, not by a label
 # --------------------------------------------------------------------------- #
-def test_resolution_attributable_records_pass_on_the_finer_rung(
+def test_resolution_records_pass_on_the_finer_rung(
         adjudication, registry_by_extractor):
+    """The pair invariant holds for every resolution-* class (m22957).
+
+    The *label* now comes from the ladder guard, the *pair* invariant is
+    unchanged: coarse rung above the standard, finer rung inside it, same
+    method, and both numbers re-derived from the artefacts.
+    """
     entries = [a for a in adjudication["adjudications"]
-               if a["class"] == "resolution_attributable"]
-    assert entries, "expected at least one resolution-attributable record"
+               if a["class"].startswith("resolution_")]
+    assert entries, "expected at least one resolution-graded record"
     for entry in entries:
         pair = entry["pair"]
         coarse = registry_by_extractor[entry["extractor"]]
@@ -212,7 +219,8 @@ def test_no_decision_leak(adjudication, registry_by_extractor):
     # Only live accuracy claims can leak; a spread record and a documented trap
     # arm are not accuracy claims for the shipped configuration (they are
     # reported separately as endorsed_with_spread / endorsed_with_trap_arm).
-    live = {"resolution_attributable", "genuine_accuracy_failure"}
+    live = {"resolution_attributable", "resolution_window",
+            "resolution_pair_only", "genuine_accuracy_failure"}
     over_methods = {registry_by_extractor[a["extractor"]]["method"]
                     for a in adjudication["adjudications"]
                     if a["class"] in live}
