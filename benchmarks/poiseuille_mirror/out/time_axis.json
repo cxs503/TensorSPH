@@ -1,0 +1,131 @@
+{
+ "case": "plane_poiseuille_channel_mirror_wall",
+ "anchor": "CASE-POISEUILLE-SPH",
+ "study": "run-length axis at the certified Ma and dt (closes the ma_envelope open item; out-of-sample test of Psi)",
+ "resolution_H_over_dx": 12,
+ "tolerance_pct": 5.0,
+ "hypotheses": "H_TIME / H_PSI / H_MA_DT (see module docstring)",
+ "declared_points": [
+  {
+   "id": "T1_runlen_2s",
+   "g": 9.81,
+   "cs": 20.0,
+   "t_end": 2.0,
+   "role": "the run named by the Ma-envelope open item: run length doubled at the certified Ma and dt"
+  },
+  {
+   "id": "T2_runlen_4s",
+   "g": 9.81,
+   "cs": 20.0,
+   "t_end": 4.0,
+   "role": "out-of-sample Psi point: predicted fail if the accumulated index, and not Ma, sets the boundary"
+  },
+  {
+   "id": "T3_runlen_8s",
+   "g": 9.81,
+   "cs": 20.0,
+   "t_end": 8.0,
+   "role": "Psi extrapolation, 2.2x beyond the in-sample failing point"
+  }
+ ],
+ "points": [],
+ "raw_rows": [],
+ "evidence": {
+  "available": true,
+  "artifact": "benchmarks/poiseuille_mirror/out/ma_envelope.json",
+  "dt_p3": 0.000325,
+  "dt_p4": 0.000325,
+  "dts_equal": true,
+  "certified_dt": 0.0001625,
+  "p3": {
+   "t_end": 1.0,
+   "dt": 0.000325,
+   "psi_index": 18.04769809440313,
+   "max_mach": 0.12265172004699706,
+   "reynolds_number": 12.263665199279785,
+   "profile_rms_interior_pct": 1.2507372212442234,
+   "wall_shear_worst_abs_pct": 0.3673422079350952,
+   "u_max_error_pct": 0.009502134799443951,
+   "steady_drift": 0.00029157998641626034,
+   "passes_all_gates": true
+  },
+  "p4": {
+   "t_end": 2.0,
+   "dt": 0.000325,
+   "psi_index": 32.92680572485551,
+   "max_mach": 0.12594954967498778,
+   "reynolds_number": 11.713027954101562,
+   "profile_rms_interior_pct": 4.572264805135974,
+   "wall_shear_worst_abs_pct": 11.559325542950605,
+   "u_max_error_pct": -4.480913728019898,
+   "steady_drift": 0.053343387745331865,
+   "passes_all_gates": false
+  },
+  "p0": {
+   "t_end": 1.0,
+   "dt": 0.0001625,
+   "psi_index": 9.025131509001852,
+   "max_mach": 0.06137929558753967,
+   "reynolds_number": 12.264536619186401,
+   "profile_rms_interior_pct": 1.2341170812769142,
+   "wall_shear_worst_abs_pct": 0.37626892338913365,
+   "u_max_error_pct": 0.016608515281535396,
+   "passes_all_gates": true
+  },
+  "run_length_ratio_p4_over_p3": 2.0,
+  "psi_ratio_p4_over_p3": 1.824432431915881,
+  "rms_amplification_p4_over_p3": 3.655655822401705,
+  "shear_amplification_p4_over_p3": 31.46745811739933,
+  "dt_over_certified": 2.0,
+  "dt_candidate": "ELIMINATED_AS_SUFFICIENT_CAUSE",
+  "dt_candidate_statement": "P3 and P4 share dt = 3.250e-04 s (2.00x the certified dt) and differ only in run length (1 s vs 2 s); P3 passes every gate and P4 fails profile RMS and wall shear. A doubled dt is therefore not sufficient to break the band: within this pair the discriminating variable is the run length (Psi 18.0 -> 32.9).",
+  "still_open": "The same run length has never been run at the *certified* Ma and dt, so the failure cannot yet be attributed to accumulated time alone rather than to the higher Ma; that is exactly point T1 (t_end = 2.0 s, c_s = 20), which this module declares and grades."
+ },
+ "verdict": {
+  "tolerance_pct": 5.0,
+  "resolution_H_over_dx": 12,
+  "rule_version": "v1",
+  "operating_point": {
+   "g": 9.81,
+   "nu": 0.01,
+   "cs": 20.0,
+   "H": 0.1,
+   "dx": 0.008333333333333333,
+   "u_max_analytic": 1.2262500000000003,
+   "psi_per_second": 9.022134375000006,
+   "certified_dt": 0.0001625
+  },
+  "predictions": {
+   "T1_runlen_2s": {
+    "t_end": 2.0,
+    "psi_analytic": 18.04426875000001
+   },
+   "T2_runlen_4s": {
+    "t_end": 4.0,
+    "psi_analytic": 36.08853750000002
+   },
+   "T3_runlen_8s": {
+    "t_end": 8.0,
+    "psi_analytic": 72.17707500000004
+   }
+  },
+  "in_sample_band": {
+   "artifact": "benchmarks/poiseuille_mirror/out/ma_envelope.json",
+   "available": true,
+   "psi_passing_max": 20.28431030777105,
+   "psi_failing_min": 32.587245000749476,
+   "n_in_sample": 7,
+   "status": "MIXED_MA_TIME",
+   "open_item": "Two candidates survive and are not separated by the present sweep: (i) Ma-dependent growth of particle disorder, (ii) the doubled dt that comes with the lowered c_s (P3/P4 run at dt = 3.25e-4 vs 1.63e-4 for P0). The discriminating run is c_s = 20 with t_end = 2.0 (twenty-three thousand steps, ~160 s), which does not fit the 120 s local execution cap; a cluster submission sat queued >30 min without dispatch and was abandoned. Until that run exists, the Psi index must not be quoted as a stability criterion."
+  },
+  "declared_points": [
+   "T1_runlen_2s",
+   "T2_runlen_4s",
+   "T3_runlen_8s"
+  ],
+  "available_points": [],
+  "points": {},
+  "status": "NOT_RUN",
+  "statement": "None of the declared run-length points has an artifact on disk, so this study makes no claim about the run-length axis. What the committed seven-point sweep already settles is recorded separately in existing_evidence(): the doubled-dt candidate is eliminated as a sufficient cause, and the certified-Ma long run (T1) remains the missing discriminator."
+ }
+}
