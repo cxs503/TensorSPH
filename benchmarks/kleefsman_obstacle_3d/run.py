@@ -36,6 +36,31 @@ HERE = Path(__file__).resolve().parent
 DEFAULT_OUT = HERE / "results"
 
 
+def _code_revision() -> dict:
+    """Which code produced this record, resolved at write time.
+
+    The recovered 3-D records of m22606 carry a gauge column that the committed
+    operators cannot produce, and their manifest holds no revision, so the
+    question "which code wrote this?" cannot be answered after the fact.  The
+    revision travels with the record instead.
+    """
+    import hashlib
+    rev = {"git": None, "operator_sha1": None}
+    try:
+        import subprocess
+        rev["git"] = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=str(ROOT), capture_output=True,
+            text=True, timeout=10).stdout.strip() or None
+    except Exception:                                    # noqa: BLE001
+        pass
+    src = ROOT / "src" / "tensorsph" / "kleefsman_obstacle_3d.py"
+    try:
+        rev["operator_sha1"] = hashlib.sha1(src.read_bytes()).hexdigest()
+    except OSError:
+        pass
+    return rev
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--dx", type=float, default=0.04)
@@ -158,7 +183,9 @@ def main(argv: list[str] | None = None) -> int:
     meta = json.loads(meta_path.read_text())
     meta.update({"complete": True, "aborted": False, "dt": cfg.dt,
                  "steps": run.steps, "simulated_time_s": run.simulated_time,
-                 "wall_clock_s": round(time.time() - t0, 1)})
+                 "wall_clock_s": round(time.time() - t0, 1),
+                 "operator_consistency": run.operator_consistency(),
+                 "code_revision": _code_revision()})
     meta_path.write_text(json.dumps(meta, indent=1) + "\n")
 
     print(f"[{tag}] verdict={verdict['verdict']} "
