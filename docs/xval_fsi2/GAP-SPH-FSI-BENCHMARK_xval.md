@@ -255,9 +255,30 @@ holds the 3 % gate on the same field at the same spacing.  Consequence for the
 a +36 % order channel bias of its own on top of whatever the fluid solve does, so
 the -98 % deficit must not be read as a pure fluid-solver error.
 
-Not done (honest): the unsteady term ``-d/dt int rho u dV`` of the identity is
-**not** implemented (its uniform part diverges like ``R^2`` in 2-D and must be
+Not done (honest; **superseded by §13**): the unsteady term ``-d/dt int rho u dV`` of the identity was **not** implemented at round 3 (its uniform part diverges like ``R^2`` in 2-D and must be
 discretised together with the pressure flux), so only steady / time-averaged
 loads are covered; the viscous flux is a caller-supplied hook; and no transient
 SPH field was involved, so the comparison against Turek-Hron / Schaefer-Turek
 ``Cd``/``Cl`` remains **not_run**.
+
+<!-- UNSTEADY-FARFIELD:BEGIN -->
+
+## 13. Update (round 4, same anchor): the accumulation term is in -- the far-field channel now carries oscillating loads
+
+Round 3 (`§12`) shipped only the *steady* control-volume identity and withheld `-d/dt int rho u dV` because in 2-D its uniform part grows like `R**2` and cancels against the pressure flux. Round 4 implements the perturbation (displaced-mass + added-mass) split that removes the cancellation, `src/tensorsph/farfield_force.py::control_volume_force_unsteady`, and audits it on an oscillating stream past a fixed cylinder, where the load is known in closed form before the run (`F_x = 2 rho pi a**2 u_dot`, `C_M = 2`). Driver `benchmarks/xval_fsi2/unsteady_farfield_audit.py`, document `UNSTEADY_FARFIELD_TERM.md`, guards `tests/test_unsteady_farfield.py`.
+
+| arm | worst inertia-amplitude error |
+|---|---|
+| perturbation form (shipped), `dx/a <= 0.05` | +0.0018 % |
+| same, plain bin-average surface | +0.0901 % |
+| steady-only (round-3 estimator, same field) | +4950.0 % |
+| literal unsplit (1) | +38.19 % |
+| cross component `F_y` (exact 0) | 1.21e-02 % |
+| phase lag (exact 0) | +0.000 deg |
+| wiring null, accelerating uniform stream, no body | 2.78e-15 of `rho R**2 U0 Omega` |
+
+Read-out: the accumulation term is now usable, and the 3 % target is met in every audited configuration with `dx/a <= 0.05`. Two hard-won details are recorded: (i) the two uniform pieces must cancel with *analytic* areas (`rho A_body a_f` survives; a sampled `A_fluid` reintroduces the `R**2` amplification), and (ii) a control surface whose bins are not all filled fails the null test at `1e-1` -- a truncated integration domain, not physics. The load also decomposes cleanly into displaced mass (`C_M` piece 1) and added mass (`C_a = 1` for the cylinder), so the channel can report `C_a` directly.
+
+Not done (honest): a body *moving* in still fluid (oscillating-cylinder added mass) is not covered -- its far-field volume integral has an `ln(R/a)` split dependence that needs its own field generator; the viscous flux still rides the caller hook; and no *transient SPH* field was used, so the Turek-Hron / Schaefer-Turek `Cd`/`Cl` comparison remains **not_run**. The next round's target is unchanged: a real SPH transient under the far-field channel, with the viscous traction supplied.
+
+<!-- UNSTEADY-FARFIELD:END -->
