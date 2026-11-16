@@ -61,7 +61,9 @@ Reynolds number ``U_w H / nu = 14.7``: laminar, as the anchor.
 
 Predeclared gates (thresholds fixed before the ladder was run)
 --------------------------------------------------------------
-C1 combined profile RMS error, all rows, normalised by ``U_w``       <= 5 %
+C1 combined profile RMS error, all rows, normalised by the gauge
+   ``gauge_scale`` = max|u_a| over the continuum channel, which for
+   this configuration is exactly ``U_w``                              <= 5 %
 C2 zero-crossing position error, ``|y* - y*_analytic| / H``          <= 5 %
 C3 superposition residual ``u_CP - (u_P + u_C)``, RMS over rows
    normalised by ``U_w``                                            <= 5 %
@@ -148,6 +150,39 @@ def analytic_profile(y, height: float = HEIGHT, g: float = G_ADVERSE,
     """Steady Couette-Poiseuille profile ``g y (H-y) / (2 nu) + U_w y / H``."""
     y = np.asarray(y, dtype=float)
     return g * y * (height - y) / (2.0 * nu) + wall_speed * y / height
+
+
+def gauge_scale(height: float = HEIGHT, g: float = G_ADVERSE,
+                nu: float = VISCOSITY, wall_speed: float = WALL_SPEED) -> float:
+    """Normalising velocity used by the profile-error gates (C1, C7).
+
+    The predeclared gate text says C1 is "normalised by ``U_w``".  One constant
+    has to serve three driving configurations, so the gauge is defined once, in
+    closed form, as the maximum of ``|u_a|`` over the **continuum** channel
+    ``0 <= y <= H``: the two endpoints plus the parabola vertex
+    ``y* = H/2 + nu U_w / (g H)``.  Being a property of the declared parameters
+    and not of the sampled rows, the gauge does not move with resolution, so a
+    resolution ladder is read on a single scale.
+
+    * combined / moving wall (``g != 0``, ``U_w != 0``): ``U_w`` whenever the
+      reversed layer is shallower than the wall speed -- exactly this case
+      (``|u_min| = 0.098 < U_w = 1.47``), so the declared ``U_w`` normalisation
+      is honoured verbatim;
+    * static-wall Poiseuille leg (``U_w = 0``): ``g H^2 / (8 nu)``, the
+      closed-form centre-line value (no division by a zero wall speed);
+    * Couette leg (``g = 0``): ``U_w``.
+    """
+    g, nu, uw, h = float(g), float(nu), float(wall_speed), float(height)
+    candidates = [0.0, abs(uw)]                     # u(0) = 0, u(H) = U_w
+    if g != 0.0:
+        y_star = 0.5 * h + nu * uw / (g * h)
+        if 0.0 < y_star < h:
+            candidates.append(abs(g * y_star * (h - y_star) / (2.0 * nu)
+                                  + uw * y_star / h))
+    scale = max(candidates)
+    if scale <= 0.0:
+        raise ValueError("degenerate configuration: no velocity datum to normalise by")
+    return scale
 
 
 def analytic_wall_shear(height: float = HEIGHT, g: float = G_ADVERSE,
@@ -289,7 +324,12 @@ def run_channel(resolution: int, device, g: float = G_ADVERSE,
     y = np.asarray(case["y_rows"], dtype=float)
     u = _window_profiles(case)
     case.update({"resolution_H_over_dx": resolution, "y": y, "u_profile": u,
-                 "u_analytic": analytic_profile(y), "length": length,
+                 # the run's OWN closed form: the leg runs were previously
+                 # stamped with the combined reference (module defaults), which
+                 # made their stored analytic column unusable (see
+                 # out/legs_row_audit.json)
+                 "u_analytic": analytic_profile(y, g=g, wall_speed=wall_speed),
+                 "length": length,
                  "dx": dx, "g": g, "wall_speed": wall_speed})
     return case
 
@@ -301,7 +341,9 @@ def grade_run(case: dict, label: str) -> dict:
     # (one driver at a time) are different problems, not perturbed versions of
     # the combined one
     u_a = analytic_profile(y, g=case["g"], wall_speed=case["wall_speed"])
-    scale = float(np.max(np.abs(u_a)))
+    # closed-form continuum gauge, NOT max|u_a| over these rows: the row set
+    # moves with resolution, so a sampled maximum would move the gauge with it
+    scale = gauge_scale(g=case["g"], wall_speed=case["wall_speed"])
     ana = analytic_wall_shear(g=case["g"], wall_speed=case["wall_speed"])
     ext = analytic_extrema()
     ystar_ana = analytic_zero_crossing()
@@ -339,6 +381,7 @@ def grade_run(case: dict, label: str) -> dict:
                   "u": float(uu), "u_analytic": float(aa),
                   "u_residual": float(uu - aa)}
                  for yy, uu, aa in zip(y, u, u_a)],
+        "profile_rms_gauge": scale,
         "profile_rms_pct": 100.0 * _rms((u - u_a) / scale),
         "profile_worst_row_pct": 100.0 * float(np.max(np.abs(u - u_a)) / scale),
         "zero_crossing_y": ystar,
@@ -349,11 +392,15 @@ def grade_run(case: dict, label: str) -> dict:
         "tau_top_analytic": ana["tau_top"],
         "tau_bottom_pct": 100.0 * (fit["tau_bottom"] - ana["tau_bottom"]) / ana["tau_bottom"],
         "tau_top_pct": 100.0 * (fit["tau_top"] - ana["tau_top"]) / ana["tau_top"],
+        # a Couette leg has g = 0, so the budget normaliser is zero and the
+        # closure is undefined rather than divergent: report it as such instead
+        # of raising (leg records are diagnostic only -- C5 grades the rungs)
         "momentum_budget": {
             "net_drag_per_area": float(net),
             "body_force_per_area": float(budget),
-            "ratio": float(net / budget),
-            "pct": 100.0 * (net / budget - 1.0),
+            "ratio": float(net / budget) if budget else float("nan"),
+            "pct": 100.0 * (net / budget - 1.0) if budget else float("nan"),
+            "defined": bool(budget),
             "drift_slope": drift["slope"],
             "drift_stderr": drift["stderr"],
             "window": [DRIFT_FROM, case["sample_times"][-1]],
@@ -385,7 +432,7 @@ def reference_check(nx: int = 401, n_steps: int = 12000) -> dict:
     y_fd = sol["y"]
     u_fd = sol["samples"][-1]
     u_ana = analytic_profile(y_fd)
-    scale = abs(WALL_SPEED)
+    scale = gauge_scale()       # == U_w for this configuration (asserted in tests)
     return {
         "scheme": sol["scheme"],
         "nx": nx,
@@ -393,6 +440,7 @@ def reference_check(nx: int = 401, n_steps: int = 12000) -> dict:
         "dy": sol["dy"],
         "dt": sol["dt"],
         "wall_values": [0.0, WALL_SPEED],
+        "profile_rms_gauge": scale,
         "profile_rms_pct": 100.0 * _rms((u_fd - u_ana) / scale),
         "profile_worst_pct": 100.0 * float(np.max(np.abs(u_fd - u_ana)) / scale),
         "zero_crossing_pct_of_H": 100.0 * abs(
