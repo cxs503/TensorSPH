@@ -262,7 +262,19 @@ def refs_derived() -> dict:
             # literature_refs.py.  The value is read out of refs.json (never
             # typed) and converted to the case's q = rho V^2 / 2 units by
             # literature_refs.cp_q_units (Table 1 is P/(rho V^2), so x2).
-            "status": "REAL",
+            # Status is NOT asserted here: it is inherited from refs.json, the
+            # single source of truth.  The primary article is unread, so that
+            # entry is WITHHELD while the *value* below comes from a tracked
+            # secondary table; provenance_tier records the gap so a reader can
+            # never mistake a second-hand number for the original table value.
+            # (m23321: this field used to hardcode "REAL", contradicting both
+            # refs.json's own note and the regrade document.)
+            "status": _zf_source()["status"],
+            "provenance_tier": ("secondary_open_access_table"
+                                if _zf_source().get("beta30_via_open_source")
+                                else "primary_table"),
+            "secondary_table_value_rho_v2": float(
+                (_zf_source().get("beta30_via_open_source") or {}).get("value_rho_v2")),
             "cp_max": float(cp_q_units(
                 table_ref(load_refs())["cp_max_rho_v2"]["30"]["COM"])),
             "cp_max_rho_v2": float(
@@ -572,3 +584,11 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+def _zf_source() -> dict:
+    """The ``zhao_faltinsen_1993`` record exactly as ``refs.json`` states it."""
+    for r in load_refs()["references"]:
+        if r["id"] == "zhao_faltinsen_1993":
+            return r
+    raise KeyError("zhao_faltinsen_1993 missing from refs.json")
