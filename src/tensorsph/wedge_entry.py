@@ -101,6 +101,8 @@ __all__ = [
     "wagner_peak_tau",
     "wagner_p_over_q",
     "wagner_peak_over_q",
+    "wagner_force_coefficient",
+    "force_coefficient_from_profile",
     "resolved_band_tau",
     "band_peak",
     "profile_l2_rel_error",
@@ -232,6 +234,59 @@ def wagner_peak_over_q(beta: float) -> float:
     """Analytic peak of (2) in units of ``q``: ``C^2 + 1`` (``C >= 1``) / ``2C``."""
     C = wagner_c_coeff(beta)
     return C * C + 1.0 if C >= 1.0 else 2.0 * C
+
+
+def wagner_force_coefficient(beta: float) -> float:
+    """Wagner slamming force coefficient ``C_s = pi^2 / tan(beta)``.
+
+    From the added-mass route, *not* by integrating the pressure profile: the
+    ``-s^2`` term of (2) carries a ``1/sqrt(1-tau)`` cusp at the spray root
+    whose integral diverges, so the force of the linearised outer solution is
+    not defined as a profile integral.  With ``m_a = (pi/2) rho c^2`` and
+    ``c = C V t`` the force per unit length is ``F = d/dt[m_a V] = pi rho C^2
+    V^3 t`` and
+
+        C_s = F / (0.5 rho V^2 c) = 2 pi C = pi^2 / tan(beta)
+
+    which is *time independent*.  This is the same quantity as
+    :func:`tensorsph.slamming.slamming_force_coefficient`; it is re-exposed here
+    so the wedge-entry case can quote its reference without importing the
+    campaign module.  ``beta`` in radians.
+    """
+    return math.pi ** 2 / math.tan(beta)
+
+
+def force_coefficient_from_profile(tau_seq, cp_seq, tau_max: float = 1.0) -> float:
+    """Slamming force coefficient ``C_s = 2 ∫_0^1 cp(tau) dtau`` from a binned profile.
+
+    ``tau_seq``/``cp_seq`` are paired bin centres and mean wall pressures in
+    units of ``q = rho V^2/2`` (the ``profile_tau``/``profile_p_over_q`` pair of
+    :meth:`WedgeImpact.diagnostics`).  With ``x = c tau`` the force per unit
+    length is ``F = 2 q c ∫_0^1 cp dtau`` and ``C_s = F / (q c)``.
+
+    The trapezoid rule is applied on the bins whose centres lie inside
+    ``[0, tau_max]``; bins outside the window or with non-finite values are
+    skipped and a gap between two usable bins is bridged by a straight line
+    (the standard trapezoid convention).  Returns ``nan`` if fewer than two
+    usable bins remain.  Unlike the peak, this is an *integral* reading: the
+    square-root cusp of (2) is averaged over the last bin instead of being
+    sampled, which is exactly the robustness the peak metric lacks
+    (docs/case_sph_wedge_entry_2d_phase_ladder_consistency_m23321.md §7-4).
+    """
+    pts = []
+    for tau, val in zip(tau_seq, cp_seq):
+        if not (isinstance(val, (int, float)) and math.isfinite(val)):
+            continue
+        if tau < 0.0 or tau > tau_max:
+            continue
+        pts.append((float(tau), float(val)))
+    if len(pts) < 2:
+        return float("nan")
+    pts.sort(key=lambda p: p[0])
+    total = 0.0
+    for (t0, v0), (t1, v1) in zip(pts, pts[1:]):
+        total += 0.5 * (v0 + v1) * (t1 - t0)
+    return 2.0 * total
 
 
 def resolved_band_tau(c: float, dx: float, cells: float = 3.0) -> float:
@@ -998,6 +1053,15 @@ class WedgeImpact:
         if cfg.cell_offset and x_jet > 0.0:
             x_jet += 0.5 * self.dx
 
+        # ---- slamming force coefficient (integral reading) -------------- #
+        # C_s = 2 ∫_0^1 cp dtau, an *integral* reading of the wall pressure:
+        # the square-root cusp of (2) is averaged over the last bin instead of
+        # being sampled, so it is far less sensitive to the discrete phase than
+        # the peak (docs/case_sph_wedge_entry_2d_phase_ladder_consistency_m23321.md
+        # §7-4).  Reference: wagner_force_coefficient(beta) = pi^2/tan(beta).
+        cs_profile = (force_coefficient_from_profile(prof_tau, prof_val, 1.0)
+                      if cfg.profile_bins > 0 else float("nan"))
+
         return {
             "t": self.time,
             "c": wet.value,
@@ -1007,6 +1071,7 @@ class WedgeImpact:
             "p_max_interior": p_int,
             "p_centre": p_centre,
             "p_near_peak": p_near_peak,
+            "cs_profile": cs_profile,
             "x_jet": x_jet,
             "profile_tau": prof_tau,
             "profile_p_over_q": prof_val,
