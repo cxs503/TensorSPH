@@ -30,6 +30,9 @@
     "wellbalanced.json",
     "wb_operator.json",
     "mechanism.json",
+    "rest_split.json",
+    "closure_response.json",
+    "switch_horizon.json",
     "MANIFEST.sha256",
     "channel.json"
   ]
