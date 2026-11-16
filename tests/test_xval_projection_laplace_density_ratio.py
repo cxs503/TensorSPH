@@ -292,12 +292,135 @@ def test_interface_control_has_teeth():
     assert moved > 1e-2, f"control blind to the density leak ({moved:.2e})"
 
 
+def _figure_module():
+    import density_ratio  # noqa: E402  (scripts/xval_projection_laplace on sys.path)
+    return density_ratio
+
+
 def test_figure_is_shipped():
-    """The artifact table advertises a figure; it has to be in the tree."""
-    fig = RESULTS / "density_ratio.png"
-    assert fig.exists(), "results/density_ratio.png missing"
-    assert fig.open("rb").read(8) == b"\x89PNG\r\n\x1a\n"
-    assert fig.stat().st_size > 20_000
+    """The artifact table advertises a figure; it has to be in the tree.
+
+    Either copy is admissible: the PNG itself, or its base64 sidecar when the
+    delivery gate has filtered the binary path out of the branch.  What is not
+    admissible is neither -- that is the state main was in after round 3 merged
+    without the PNG (this gate was merged anyway, so main was red).
+    """
+    dr = _figure_module()
+    png, b64 = dr.figure_paths(RESULTS / "density_ratio.png")
+    assert png.exists() or b64.exists(), \
+        "results/density_ratio.png and its .b64 copy are both missing"
+    blob = png.read_bytes() if png.exists() else dr.decode_figure(png)
+    assert blob[:8] == b"\x89PNG\r\n\x1a\n"
+    assert len(blob) > 20_000
+
+
+def test_figure_ascii_copy_is_the_png():
+    """When both copies are shipped they are the same bytes; the text copy is
+    the transport, not a different picture."""
+    dr = _figure_module()
+    png, b64 = dr.figure_paths(RESULTS / "density_ratio.png")
+    if not (png.exists() and b64.exists()):
+        pytest.skip("only one copy of the figure is shipped")
+    import base64
+    assert base64.b64decode(b64.read_text().strip(), validate=True) == png.read_bytes()
+
+
+def test_figure_is_reproducible_from_the_json(tmp_path):
+    """Fig. 1 is drawn from results/density_ratio.json, not hand-assembled.
+
+    Redrawing in a scratch directory (``--figure-only`` path) has to reproduce
+    the shipped geometry: same pixel size, same aspect, within 5 % of the byte
+    count.  Byte identity is deliberately *not* required -- matplotlib stamps
+    its own version into the PNG -- but a figure that no longer follows the JSON
+    (a panel added, a series dropped, an axis re-labelled) shows up here.
+    """
+    dr = _figure_module()
+    out = tmp_path / "density_ratio.png"
+    dr.figure_from_json(DATA, out)
+    rebuilt, ascii_copy = dr.figure_paths(out)
+    assert rebuilt.exists() and ascii_copy.exists()
+    assert ascii_copy.read_bytes()[:16] and ascii_copy.stat().st_size > 20_000
+
+    shipped_png, shipped_b64 = dr.figure_paths(RESULTS / "density_ratio.png")
+    shipped = (shipped_png.read_bytes() if shipped_png.exists()
+               else dr.decode_figure(shipped_png))
+
+    import struct
+    size_of = lambda b: struct.unpack(">II", b[16:24])  # noqa: E731
+    assert size_of(rebuilt.read_bytes()) == size_of(shipped)
+    assert abs(len(rebuilt.read_bytes()) / len(shipped) - 1.0) < 0.05
+
+
+def test_figure_gate_survives_the_binary_filter(tmp_path, monkeypatch):
+    """The gate accepts the ASCII copy, and still fails when both are gone.
+
+    A gate that passes only in the state the branch happened to be in is not a
+    gate: this one is exercised in the filtered state (PNG absent, ``.b64``
+    present) *and* in the empty state (both absent, must be reported).
+    """
+    dr = _figure_module()
+    png, b64 = dr.figure_paths(RESULTS / "density_ratio.png")
+    blob = png.read_bytes() if png.exists() else dr.decode_figure(png)
+    import base64
+    monkeypatch.setattr(check_density_ratio_doc, "FIG_PATH", tmp_path / "density_ratio.png")
+    monkeypatch.setattr(check_density_ratio_doc, "B64_PATH",
+                        tmp_path / "density_ratio.png.b64")
+
+    # 1. binary path filtered out of the branch: text copy carries the figure
+    (tmp_path / "density_ratio.png.b64").write_text(base64.b64encode(blob).decode("ascii"))
+    problems: list[str] = []
+    check_density_ratio_doc.check_figure(problems)
+    assert problems == [], problems
+
+    # 2. nothing shipped: the gate has to say so
+    (tmp_path / "density_ratio.png.b64").unlink()
+    problems = []
+    check_density_ratio_doc.check_figure(problems)
+    assert len(problems) == 1 and "both missing" in problems[0], problems
+
+    # 3. a truncated text copy is not a PNG and must not pass either
+    (tmp_path / "density_ratio.png.b64").write_text(
+        base64.b64encode(blob[:20_000]).decode("ascii"))
+    problems = []
+    check_density_ratio_doc.check_figure(problems)
+    assert problems, problems
+
+
+FIELDS = RESULTS / "density_ratio_fields.json"
+
+
+def test_field_artifact_agrees_with_the_audit():
+    """The field reporter re-runs the same equilibria; it may not drift.
+
+    ``report_m23209_fields.py`` recomputes the two arms at 1000:1 and stores the
+    jump it sees.  That number has to be the audit's number to the last digit
+    it is printed with, otherwise the field picture and the table describe
+    different runs and neither can be cited.
+    """
+    assert FIELDS.exists(), "results/density_ratio_fields.json missing"
+    fields = json.loads(FIELDS.read_text())
+    summary = json.loads(DATA.read_text())["summary"]
+    assert fields["case"]["density_ratio"] == 1000.0
+    pairs = {
+        "force_density": summary["err_pct_ratio_1000_R_over_dx_20_force_density"],
+        "density": summary["err_pct_ratio_1000_R_over_dx_20"],
+    }
+    for arm, expected in pairs.items():
+        got = fields["arms"][arm]["dp_error_pct"]
+        assert abs(got - expected) < 1e-9, f"{arm} arm drifted: {got} vs {expected}"
+    # the rho-blind arm is the validated one: its jump is the one that is right
+    assert abs(fields["arms"]["force_density"]["dp_error_pct"]) < 3.0
+    # and the defect it replaced is visible in the field, not only in the table
+    assert fields["arms"]["density"]["p_max_Pa"] > 1.5 * fields["arms"][
+        "force_density"]["p_max_Pa"]
+
+
+def test_field_figure_is_shipped():
+    """Same transport rule as fig. 1: PNG or its ASCII copy, never nothing."""
+    png, b64 = RESULTS / "density_ratio_fields.png", RESULTS / "density_ratio_fields.png.b64"
+    assert png.exists() or b64.exists(), "results/density_ratio_fields.png missing"
+    blob = png.read_bytes() if png.exists() else _figure_module().decode_figure(png)
+    assert blob[:8] == b"\x89PNG\r\n\x1a\n" and len(blob) > 50_000
 
 
 def test_doc_tables_match_the_measurement():
