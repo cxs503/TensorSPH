@@ -1,0 +1,9 @@
+{
+  "title": "CASE-SPH-LAKE-AT-REST: Resolution Ladder (Periodic Tank)",
+  "summary": "Measured the convergence of interior-band profile errors for the lake-at-rest case in the laterally periodic tank at dx=0.04 and dx=0.02. Density error converges at order ~1.5 (7.17e-04 → 2.53e-04), pressure error at ~1.5 (9.93e-02 → 3.48e-02). Both equilibrium components remain at machine precision across resolutions. This fills the documented gap in verification_lake_at_rest.md §5.",
+  "scenario_key": "CASE-SPH-LAKE-AT-REST",
+  "mission_id": 22972,
+  "tags": ["verification", "resolution-ladder", "convergence", "lake-at-rest", "periodic", "sph"],
+  "markdown": "# Lake at Rest: Resolution Ladder\n\n## Key Results\n\n| dx | N | a_y/g | a_x/g | density error | pressure error |\n|----|---|-------|-------|---------------|----------------|\n| 0.04 | 70 | 2.05e-13 | 2.05e-13 | 7.17e-04 | 9.93e-02 |\n| 0.02 | 300 | 7.30e-13 | 1.39e-12 | 2.53e-04 | 3.48e-02 |\n\n## Convergence Order\n- Density: 1.506 (2-pt, dx=0.04→0.02)\n- Pressure: 1.514 (2-pt, dx=0.04→0.02)\n\n## Verdict\nPASS — profile errors converge at ~1.5 order, consistent with SPH cubic spline on regular lattice.\n\n## Artifacts\n- `benchmarks/lake_at_rest/resolution_ladder.py`\n- `tests/test_lake_at_rest_resolution_ladder.py` (6 tests, all pass)\n- `docs/verification_lake_at_rest_resolution_ladder.md`\n- `out/lake_at_rest_resolution_ladder.json`",
+  "figures": []
+}
