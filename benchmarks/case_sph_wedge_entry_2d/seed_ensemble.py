@@ -288,6 +288,83 @@ def aggregate(out_dir: Path, bias_path: Path) -> dict:
             "scale_check": _scale_check(rows),
         })
 
+    # ---- A1 design effect (m23165) ------------------------------------- #
+    # The realisation CI above assumes independent realisations.  A1 reports
+    # pairwise Pearson correlations of the per-frame ``cp_centre`` series, and
+    # on this case they are well above zero, so the naive CI is a *lower*
+    # bound (the dangerous direction flagged in the module docstring).  The
+    # standard cluster-sampling remedy is applied, unchanged in form:
+    #     deff = 1 + (N - 1) * rho_bar ,  N_eff = N / deff
+    # with rho_bar the median pairwise correlation; the CI is then recomputed
+    # on N_eff.  rho <= 0 leaves the naive CI untouched (deff = 1).
+    for g in grids:
+        ind = g["independence"]
+        n = g["n_realisations"]
+        rho = ind["pairwise_median"]
+        deff = 1.0 if (rho != rho or rho <= 0.0) else 1.0 + (n - 1) * rho
+        n_eff = n / deff if deff > 0 else float("nan")
+        sd = g["residual_sd"]
+        u_ci_eff = float("nan")
+        if n_eff == n_eff and n_eff > 0 and sd == sd:
+            u_ci_eff = t95(max(1, int(round(n_eff)) - 1)) * sd / math.sqrt(n_eff)
+        terms = [v for v in (u_ci_eff, g["U_band"]) if v == v]
+        u_corr = max(terms) if terms else float("nan")
+        # Two admissible conventions, both reported so neither overstates:
+        #   (A) textbook design effect: widen the naive CI by sqrt(deff),
+        #       keeping df = N - 1  -> ``u_ci_deff_keepdf``;
+        #   (B) recompute on N_eff, which also drops df to N_eff - 1
+        #       -> ``u_ci_eff``  (more conservative; N_eff ~ 1 makes t explode).
+        u_ci_deff_keepdf = (t95(max(1, n - 1)) * g["residual_sd"] / math.sqrt(n_eff)
+                            if (n_eff == n_eff and n_eff > 0
+                                and g["residual_sd"] == g["residual_sd"])
+                            else float("nan"))
+        terms_kd = [v for v in (u_ci_deff_keepdf, g["U_band"]) if v == v]
+        u_corr_keepdf = max(terms_kd) if terms_kd else float("nan")
+        g["design_effect"] = {
+            "rho_median": rho, "deff": deff, "n_eff": n_eff,
+            "U_ci_naive_independence": g["U_realisation_ci"],
+            "U_ci_design_effect": u_ci_eff,
+            "U_ci_design_effect_keep_df": u_ci_deff_keepdf,
+            "U_corrected_keep_df": u_corr_keepdf,
+            "U_corrected_range": [min(v for v in (u_corr, u_corr_keepdf) if v == v)
+                                  if any(v == v for v in (u_corr, u_corr_keepdf))
+                                  else float("nan"),
+                                  max(v for v in (u_corr, u_corr_keepdf) if v == v)
+                                  if any(v == v for v in (u_corr, u_corr_keepdf))
+                                  else float("nan")],
+            "U_corrected": u_corr,
+            "judgeable_corrected": bool(u_corr == u_corr and u_corr <= GATE),
+            "note": ("deff > 1 means the realisations share a common signal, so "
+                     "the naive CI understates the uncertainty; the corrected "
+                     "value is the one to read"),
+        }
+
+    # ---- denominators (m23165) ------------------------------------------ #
+    # The ledger acceptance is Cp_max vs Zhao & Faltinsen (1993) (COM), while
+    # the closure rule judges the *same-operator* Wagner residual.  The two
+    # denominators are far apart on this case, so a reading can pass one and
+    # fail the other; both residuals are therefore reported side by side and
+    # never mixed into a single number.
+    try:
+        import literature_refs as lr
+        com_q = lr.designated_cp_max(30.0)
+        wag_q = lr.wagner_peak_eq10(math.radians(30.0))
+    except Exception:                                    # pragma: no cover
+        com_q = wag_q = float("nan")
+    for g in grids:
+        obs = g["obs_median"]
+        g["denominators"] = {
+            "com_q_units": com_q,
+            "wagner_point_q_units": wag_q,
+            "residual_vs_com": ((obs / com_q - 1.0)
+                                if com_q == com_q and com_q else float("nan")),
+            "residual_vs_wagner": ((obs / wag_q - 1.0)
+                                   if wag_q == wag_q and wag_q else float("nan")),
+            "note": ("residual_vs_com is the ledger criterion (Zhao & Faltinsen "
+                     "1993, via refs.json); residual_vs_wagner is the "
+                     "same-operator diagnostic the closure rule uses"),
+        }
+
     rows_for_rule = [{"tag": g["tag"], "dx": g["dx"], "residual": g["residual_median"],
                       "uncertainty": g["uncertainty"], "judgeable": g["judgeable"],
                       "obs_peak": g["obs_median"],
@@ -309,6 +386,8 @@ def aggregate(out_dir: Path, bias_path: Path) -> dict:
             },
             "grids": grids,
             "rule_inputs": rows_for_rule,
+            "design_effect_rule": ("U_corrected = max(t95(N_eff-1)*sd/sqrt(N_eff), "
+                                   "median band spread), N_eff = N/(1+(N-1)*rho_bar)"),
             "verdict": verdict}
 
 
