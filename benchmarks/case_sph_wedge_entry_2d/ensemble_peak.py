@@ -79,6 +79,15 @@ from tensorsph.wedge_entry import (  # noqa: E402
 # --- predeclared estimator design (fixed before the first run) ------------- #
 FRAME_COUNTS = (7, 13, 25, 41, 61)   # growing ensemble size (>5 = old window)
 BIN_GRID = (6, 8, 10, 12, 16, 20, 30)
+# Candidate bin counts for the *resolution band* estimator.  BIN_GRID stops at
+# 30 bins, which cannot represent the physically admissible band at the two
+# finest grids (a band of width [1,4] particle spacings needs ~60 bins at
+# dx = 1 mm and ~120 at dx = 0.5 mm, see ``resolution_bin_band``); the band was
+# therefore truncated to one side and, at dx = 0.5 mm, collapsed to a single
+# member whose "spread" is 0 by construction.  BAND_GRID spans the band up to
+# 240 bins and is a superset of BIN_GRID so the historical H1 statistic is
+# unchanged.  (m22695)
+BAND_GRID = (6, 8, 10, 12, 16, 20, 24, 30, 40, 50, 60, 80, 120, 160, 240)
 MIN_BIN_SAMPLES = 4                  # a bin needs >= 4 pooled samples
 TAU_MAX = 1.2
 SPREAD_TOL = 0.15                    # acceptance tolerance of the case (15 %)
@@ -162,7 +171,8 @@ def resolution_bin_band(c_last: float, dx: float):
     """
     lo = int(math.floor(TAU_MAX * c_last / (4.0 * dx)))
     hi = int(math.ceil(TAU_MAX * c_last / (1.0 * dx)))
-    return max(4, lo), min(240, hi), [n for n in BIN_GRID if lo <= n <= hi]
+    lo_b, hi_b = max(4, lo), min(240, hi)
+    return lo_b, hi_b, [n for n in BAND_GRID if lo_b <= n <= hi_b]
 
 
 def jackknife_halves(shots):
@@ -262,9 +272,22 @@ def analyse(case: dict, bin_grid=None) -> dict:
         lo, hi, med, rel = spread(peaks)
         c_last = sel[-1]["c_sph"] if sel else float("nan")
         rb_lo, rb_hi, rb_bins = resolution_bin_band(c_last, case["cfg"]["dx"])
-        rb_peaks = [row["cp_peak_gated"] for row in rows
-                    if row["n_bins"] in rb_bins]
-        rb_lo_v, rb_hi_v, rb_med, rb_rel = spread(rb_peaks)
+        # The band statistic must be measured at the band's own bin counts, not
+        # read out of ``rows`` (which only holds BIN_GRID <= 30): otherwise the
+        # candidate list is silently truncated to the coarse half of the band.
+        rb_band_peaks = []
+        for nb in rb_bins:
+            pk = gated_peak(*binned(taus, cps, nb))[0]
+            rb_band_peaks.append({"n_bins": nb, "cp_peak_gated": pk})
+        rb_peaks = [r["cp_peak_gated"] for r in rb_band_peaks]
+        rb_est = sum(1 for v in rb_peaks if v == v) >= 2
+        if rb_est:
+            rb_lo_v, rb_hi_v, rb_med, rb_rel = spread(rb_peaks)
+        else:
+            # A one-member "band" has no spread: 0.0 would be a fabricated zero
+            # (m22695 defect), so the quantity is declared not estimable.
+            rb_lo_v, rb_hi_v, rb_med, rb_rel = spread(rb_peaks)
+            rb_rel = float("nan")
         half = n_frames // 2
         jk = {}
         for tag, sub in (("early_half", sel[:half]), ("late_half", sel[half:])):
@@ -280,8 +303,8 @@ def analyse(case: dict, bin_grid=None) -> dict:
         # disagrees with the stricter one on 2 of 4 grids (see
         # docs/case_sph_wedge_entry_2d_stationarity_m22545.md), so
         # ``judgeable_stationarity`` is the field to read.
-        unc_declared = max(rb_rel, jk_rel) if (rb_rel == rb_rel and jk_rel == jk_rel) \
-            else float("nan")
+        _terms = [v for v in (rb_rel, jk_rel) if v == v]
+        unc_declared = max(_terms) if _terms else float("nan")
         by_frames[str(n_frames)] = {
             "n_frames": n_frames, "pooled_samples": len(cps),
             "mean_wet_nodes": statistics.mean(s["n_wet"] for s in sel),
@@ -291,6 +314,12 @@ def analyse(case: dict, bin_grid=None) -> dict:
             "err_vs_wagner_median": (med - ref) / ref if med == med else float("nan"),
             "resolution_band": {"n_bins_range": [rb_lo, rb_hi],
                                 "n_bins_used": rb_bins,
+                                "band_peaks": rb_band_peaks,
+                                "n_members": sum(1 for v in rb_peaks if v == v),
+                                "estimable": bool(rb_est),
+                                "candidate_grid": "BAND_GRID",
+                                "band_truncated": bool(rb_hi > max(BAND_GRID)),
+                                "band_clipped_low": bool(rb_lo < min(BAND_GRID)),
                                 "peak_min": rb_lo_v, "peak_max": rb_hi_v,
                                 "peak_median": rb_med, "spread_rel": rb_rel,
                                 "err_vs_wagner_median": (
