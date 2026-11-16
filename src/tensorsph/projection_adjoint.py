@@ -81,6 +81,7 @@ __all__ = [
     "helmholtz_split",
     "irrotationality_defect",
     "relax_projection_consistent",
+    "radial_band_stats",
     "relax_projection_balanced",
 ]
 
@@ -253,6 +254,92 @@ def _viscous_acceleration(pos, u, vol, pairs, h, nu, box=None):
     return nu * torch.stack([lap, lap_y], dim=1)
 
 
+# --------------------------------------------------------------------------- #
+# where does the residual live?  radial band decomposition
+# --------------------------------------------------------------------------- #
+BAND_EDGES = (0.8, 1.2)   # r/R: liquid bulk | interface shell | vapour carrier
+
+
+def radial_band_stats(pos, u, radius: float, v_ref: float,
+                      edges=BAND_EDGES, profile: bool = False,
+                      profile_bins: int = 24):
+    """Split ``|u|/v_ref`` by radial band around the drop surface.
+
+    Why this exists
+    ---------------
+    The declared spurious-current gate is ``max|u|/v_ref <= 0.10`` over **all**
+    particles (Adami et al. 2012).  That single number is not interpretable on
+    its own: a projection scheme can leave a large *interface-shell* residual
+    (the curvature estimate is a second derivative of the colour field, so its
+    noise is one order higher than the velocity it drives) while the liquid
+    bulk is at rest, or it can leave a bulk current that genuinely never
+    decays.  The two mean opposite things about the formulation, so a claim
+    that "the spurious current does / does not refine away" needs the band
+    split, not the max.
+
+    Bands are geometric in ``r/R`` (the only length scale in the problem):
+    ``r/R < 0.8`` liquid bulk, ``0.8 <= r/R <= 1.2`` interface shell,
+    ``r/R > 1.2`` vapour carrier.  Speeds are normalised by ``v_ref``
+    (``sqrt(sigma/(rho R))``), the same scale the gate uses, and each band
+    reports its own max and mean so an empty band is reported as ``n = 0``
+    rather than as a zero speed.
+    """
+    speed = torch.linalg.vector_norm(u, dim=1)
+    r = torch.linalg.vector_norm(pos, dim=1)
+    ratio = r / radius
+    masks = {
+        "liquid_core": ratio < edges[0],
+        "interface_shell": (ratio >= edges[0]) & (ratio <= edges[1]),
+        "vapour_carrier": ratio > edges[1],
+    }
+    v = max(float(v_ref), 1e-300)
+    out = {}
+    for name, m in masks.items():
+        if not bool(m.any()):
+            out[name] = {"n": 0, "max_over_vref": float("nan"),
+                         "mean_over_vref": float("nan")}
+            continue
+        sub = speed[m]
+        out[name] = {"n": int(m.sum()),
+                     "max_over_vref": float(sub.max()) / v,
+                     "mean_over_vref": float(sub.mean()) / v}
+    # geometry of the worst particle: is the residual radial (a breathing mode of
+    # the drop, which moves the area) or tangential (a lattice current, which
+    # does not)?
+    k = int(torch.argmax(speed))
+    rr = float(r[k])
+    if rr > 0.0:
+        e_r = pos[k] / r[k]
+        u_r = float((u[k] * e_r).sum())
+    else:                                     # pragma: no cover - centre particle
+        u_r = 0.0
+    s_k = float(speed[k])
+    out["umax_r_over_R"] = rr / radius
+    out["umax_radial_fraction"] = (abs(u_r) / s_k) if s_k > 0.0 else float("nan")
+    if profile:
+        # Binned radial profile (max/mean per bin, empty bins reported as n = 0)
+        # so the shape of the residual -- bulk current vs a single shell peak --
+        # can be drawn instead of asserted.
+        lo, hi = float(ratio.min()), float(ratio.max())
+        spin = max(hi - lo, 1e-12) / profile_bins
+        idx = torch.clamp(((ratio - lo) / spin).floor().to(torch.long), 0,
+                          profile_bins - 1)
+        rows = []
+        for b in range(profile_bins):
+            m = idx == b
+            if not bool(m.any()):
+                rows.append({"r_over_R": lo + (b + 0.5) * spin, "n": 0,
+                             "max_over_vref": float("nan"),
+                             "mean_over_vref": float("nan")})
+                continue
+            rows.append({"r_over_R": lo + (b + 0.5) * spin,
+                         "n": int(m.sum()),
+                         "max_over_vref": float(speed[m].max()) / v,
+                         "mean_over_vref": float(speed[m].mean()) / v})
+        out["profile"] = rows
+    return out
+
+
 def relax_projection_consistent(radius: float = 0.02, dx: float = 0.002,
                                sigma: float = 0.072, rho0: float = 1000.0,
                                outer: float = 0.012, h_factor: float = 1.3,
@@ -262,7 +349,8 @@ def relax_projection_consistent(radius: float = 0.02, dx: float = 0.002,
                                nu_factor: float = 0.0,
                                pin_outer: bool = True,
                                rel_tol: float = 1e-6,
-                               cg_max_iter: int = 4000):
+                               cg_max_iter: int = 4000,
+                               band_report: bool = False):
     """March projection SPH on a static drop; a correct equilibrium must not move.
 
     ``nu_factor`` sets ``nu = nu_factor * sqrt(sigma R / rho)`` (a *physical*
@@ -332,7 +420,7 @@ def relax_projection_consistent(radius: float = 0.02, dx: float = 0.002,
             area = float((r_now < radius).sum()) * area_scale
             core = r_now < 0.5 * radius
             band = (r_now > 1.25 * radius) & (r_now < 1.45 * radius)
-            history.append({
+            sample = {
                 "step": step,
                 "t_over_t_sigma": step * dt / t_sigma,
                 "umax_over_vref": float(speed.max() / v_ref),
@@ -342,7 +430,13 @@ def relax_projection_consistent(radius: float = 0.02, dx: float = 0.002,
                 "area_ratio": area / area0,
                 "div_after_over_div_before": info["div_after_over_div_before"],
                 "cg_iterations": info["cg_iterations"],
-            })
+            }
+            if band_report:
+                # Off by default: the shipped ladder records must stay
+                # byte-reproducible, and this only adds keys.
+                sample["bands"] = radial_band_stats(pos, u, radius, v_ref,
+                                                    profile=(step == steps))
+            history.append(sample)
 
     last = history[-1] if history else {}
     dp_theory = sigma / radius
