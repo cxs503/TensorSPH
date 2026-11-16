@@ -135,3 +135,34 @@ def test_recorded_numbers_come_from_the_shipped_operator():
         recorded["reconstruct"]["a_y_max_over_g"], rel=1e-9)
     assert live["a_max_over_g"] < ANCHOR_TOLERANCE
     assert live["a_max_over_g_horizontal"] > 1.0e7 * ANCHOR_TOLERANCE
+
+# --------------------------------------------------------------------------- #
+# figure integrity: the two published figures must be the ones the doc points to
+# --------------------------------------------------------------------------- #
+DOC = Path(__file__).parent.parent / "docs" / "verification_lake_at_rest_wall_gap.md"
+FIGURES = (
+    "lake_wall_gap_resolution.png",
+    "lake_wall_gap_columns.png",
+)
+_PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
+
+
+def test_published_figures_are_valid_and_referenced():
+    """The wall-gap evidence ships two figures; a missing or corrupt PNG, or a
+    doc that points at a figure that is not shipped, would let the visual claim
+    rot silently.  This pins both: the bytes are real PNGs of non-trivial size,
+    and the doc names exactly the files that are present."""
+    fig_dir = Path(__file__).parent.parent / "docs" / "figures"
+    for name in FIGURES:
+        path = fig_dir / name
+        assert path.exists(), f"{name} is not shipped: the doc's figure is a dangling reference"
+        payload = path.read_bytes()
+        assert payload[:8] == _PNG_MAGIC, f"{name} is not a PNG (magic bytes drifted)"
+        assert len(payload) > 10_000, f"{name} is suspiciously small ({len(payload)} B): likely a placeholder"
+    doc = DOC.read_text()
+    for name in FIGURES:
+        assert name in doc, f"{name} is not referenced by {DOC.name}"
+    # no figure the doc names is absent from the shipped set
+    import re
+    named = set(re.findall(r"lake_wall_gap_\w+\.png", doc))
+    assert named <= set(FIGURES), f"doc names unshipped figures: {sorted(named - set(FIGURES))}"
