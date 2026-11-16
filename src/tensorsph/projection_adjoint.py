@@ -245,6 +245,54 @@ def project_velocity(pos, u_star, vol, pairs, h, rho, dt, gauge: int = 0,
 # --------------------------------------------------------------------------- #
 # time marching
 # --------------------------------------------------------------------------- #
+def lattice_health(pos, pairs, st, dx: float, radius: float, v_ref: float):
+    """Diagnostics of the *lattice*, to tell an instability from a formulation bias.
+
+    Why this exists
+    ---------------
+    A marched projection run can lose ``max|u|/v_ref <= 0.1`` in two very
+    different ways, and the velocity number alone cannot distinguish them:
+
+    * the **lattice breaks** -- particles overlap, the neighbour count collapses
+      below the kernel support, the colour function stops being a partition of
+      unity, ``|grad c|`` and ``kappa`` spike on single pairs and the CSF
+      traction explodes.  The cure is a particle/regularisation defect, not a
+      physics change;
+    * the **traction is mis-projected** -- the lattice is healthy and the
+      spurious current grows anyway, i.e. the discretisation of the CSF force
+      keeps injecting a solenoidal component.
+
+    The quantities below are the smallest set that separates the two: the
+    smallest inter-particle distance in units of ``dx`` (pair overlap), the
+    lower tail of the neighbour count, the colour-function overshoot outside
+    ``[0, 1]``, the two interface derivatives (``kappa`` and ``|grad c|`` scaled
+    so that a converged run reports ``O(1)``) and the CSF acceleration in units
+    of ``sigma / (rho R^2)``.  All are reported as maxima (or minima) -- this is
+    a breakage detector, not a convergence metric.
+    """
+    n = pos.shape[0]
+    out = {}
+    if pairs.numel() == 0:
+        return out
+    i, j = pairs[:, 0], pairs[:, 1]
+    cum = torch.bincount(torch.cat([i, j]), minlength=n).to(torch.float64)
+    out["nn_min"] = float(cum.min())
+    out["nn_median"] = float(cum.median())
+    d_pair = torch.linalg.vector_norm(pos[i] - pos[j], dim=1)
+    out["pair_min_over_dx"] = float(d_pair.min()) / dx
+    k = max(1, int(0.01 * d_pair.numel()))
+    out["pair_p01_over_dx"] = float(d_pair.kthvalue(k).values) / dx
+    colour = st["color"]
+    out["color_min"] = float(colour.min())
+    out["color_max"] = float(colour.max())
+    out["kappa_R_max"] = float(st["kappa"].abs().max()) * radius
+    out["gradc_dx_max"] = float(st["delta_s"].abs().max()) * dx
+    a_ref = v_ref ** 2 / radius          # sigma / (rho R^2)
+    out["acc_over_aref_max"] = float(
+        torch.linalg.vector_norm(st["acc"], dim=1).max()) / a_ref
+    return out
+
+
 def _viscous_acceleration(pos, u, vol, pairs, h, nu, box=None):
     """``nu * lap(u)`` with the pair Laplacian (component-wise)."""
     if nu <= 0.0:
@@ -350,7 +398,8 @@ def relax_projection_consistent(radius: float = 0.02, dx: float = 0.002,
                                pin_outer: bool = True,
                                rel_tol: float = 1e-6,
                                cg_max_iter: int = 4000,
-                               band_report: bool = False):
+                               band_report: bool = False,
+                               stability_report: bool = False):
     """March projection SPH on a static drop; a correct equilibrium must not move.
 
     ``nu_factor`` sets ``nu = nu_factor * sqrt(sigma R / rho)`` (a *physical*
@@ -366,7 +415,11 @@ def relax_projection_consistent(radius: float = 0.02, dx: float = 0.002,
     discrete divergence ratio.  ``rel_tol = 1e-6`` on the CG residual is the
     default: it leaves a residual divergence of 1e-6 of the pre-projection one,
     five decades below the solenoidal CSF residual that actually limits the run,
-    for about a third of the cost of 1e-10.  ``cg_max_iter`` caps the CG so that
+    for about a third of the cost of 1e-10.  ``cg_max_iter`` ``stability_report`` adds a ``"lattice"`` block per sample (see
+    :func:`lattice_health`); it is off by default so that the shipped ladder
+    records stay byte-reproducible, and it is what tells a broken lattice from
+    a mis-projected traction when a marched run loses the spurious gate.
+    ``cg_max_iter`` caps the CG so that
     a run whose lattice is already broken (the inviscid control) degrades into a
     reported leftover divergence instead of hanging in a 20 000-iteration
     solve; the per-sample ``div_after_over_div_before`` makes that visible.
@@ -397,6 +450,7 @@ def relax_projection_consistent(radius: float = 0.02, dx: float = 0.002,
     diverged = False
 
     for step in range(1, steps + 1):
+        pos_in = pos
         pairs = cell_linked_pairs(pos, 2.0 * h)
         st = csf_state_two_phase(pos, mass, liquid, h, rho0, sigma,
                                  curvature_method=curvature_method)
@@ -431,6 +485,9 @@ def relax_projection_consistent(radius: float = 0.02, dx: float = 0.002,
                 "div_after_over_div_before": info["div_after_over_div_before"],
                 "cg_iterations": info["cg_iterations"],
             }
+            if stability_report:
+                sample["lattice"] = lattice_health(pos_in, pairs, st, dx,
+                                                   radius, v_ref)
             if band_report:
                 # Off by default: the shipped ladder records must stay
                 # byte-reproducible, and this only adds keys.

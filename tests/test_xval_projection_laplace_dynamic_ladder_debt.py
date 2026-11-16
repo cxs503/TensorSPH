@@ -35,14 +35,24 @@ DOC = ROOT / "docs" / "xval_projection_laplace_dynamic_ladder_debt.md"
 sys.path.insert(0, str(BENCH))
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "dynamic projection-SPH Young-Laplace ladder record absent: harness, gates "
-    "and doc generator are in tree but results_dynamic_ladder/summary.json is "
-    "not; see docs/xval_projection_laplace_dynamic_ladder_debt.md"))
 def test_dynamic_ladder_record_present():
+    """The strict xfail this used to be fired when the record landed (m22962).
+
+    The debt is now *partly* closed: 4 of 7 jobs exist and the summariser runs.
+    The remaining sub-debt is asserted, not assumed -- a record that silently
+    grew to 7 jobs must update this test together with the adjudication page.
+    """
     assert SUMMARY.exists(), (
         "no ladder record: run benchmarks/laplace_sph/run_dynamic_ladder.py "
         "(7 jobs) then --summarize; see the debt page for the job list")
+    blob = json.loads(SUMMARY.read_text())
+    assert blob["n_jobs_present"] == 4 and blob["n_jobs_expected"] == 7
+    # the two arms that decide H1/H2 are measured and both are diverged records
+    for job in ("dx16_nu01", "dx12_horizon"):
+        rec = json.loads((RES / (job + ".json")).read_text())
+        assert rec["diverged"] is True
+    adjudication = ROOT / "docs" / "xval_projection_laplace_horizon_instability.md"
+    assert adjudication.exists(), "a diverged ladder needs an adjudication page"
 
 
 def test_debt_is_documented():
