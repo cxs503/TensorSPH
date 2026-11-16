@@ -33,10 +33,12 @@ Two references exist:
 * ``wagner_1932`` - closed form of the same idealisation, computed by the
   driver from ``tensorsph.wedge_entry`` (never typed in by hand).  This is the
   primary, machine-checkable verdict.
-* ``zhao_faltinsen_1993`` - the mission-designated reference.  Its
-  beta = 30 deg table/figure value could not be read (closed access, see
-  ``refs.json``), so it is reported ``WITHHELD``: the driver will grade against
-  it automatically the moment a value + coordinates are filled in.
+* ``zhao_faltinsen_1993`` - the mission-designated reference.  The primary
+  article is closed access, so the entry's status stays ``WITHHELD`` (inherited
+  from ``refs.json``, the single source of truth); its beta = 30 deg value is
+  wired in from the peer-reviewed open-access Table 1 of Jain et al. (2022) as
+  a tracked secondary (``provenance_tier = secondary_open_access_table``), in
+  the case's q = rho V^2/2 units (m21430; status contract per m23321).
 
 Stages
 ------
@@ -70,6 +72,12 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 sys.path.insert(0, str(ROOT / "src"))
+# run.py is also loaded via importlib by tests/test_case_sph_wedge_entry_2d.py
+# (and friends) without the case dir on sys.path; bootstrap it so the sibling
+# literature_refs import resolves in every load mode (m23975: the bare import
+# added in m22109 broke full-suite collection).
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
 
 import torch  # noqa: E402
 
