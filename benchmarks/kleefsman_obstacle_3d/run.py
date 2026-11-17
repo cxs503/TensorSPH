@@ -21,6 +21,7 @@ import sys
 import time
 from pathlib import Path
 
+import faulthandler
 import torch
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -62,6 +63,7 @@ def _code_revision() -> dict:
 
 
 def main(argv: list[str] | None = None) -> int:
+    faulthandler.enable(file=sys.stderr, all_threads=True)
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--dx", type=float, default=0.04)
     ap.add_argument("--t-end", type=float, default=2.6)
