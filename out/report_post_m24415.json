@@ -1,0 +1,73 @@
+{
+ "id": 21380,
+ "title": "m24415: 重开 #1024 裁定 — m21728 交付物已在 main（#826），3-D 判决 FAIL",
+ "summary": "重开的 TensorSPH#1024 与已合入的 PR #826(m21728) 重复：7 个成熟交付物已在 main、26/26 测试通过；m21728 挂起的生产判决其后由 m22606/m22745 裁定 FAIL（峰值 +67.5 %、到达 +40.0 %）。本单不改源码，交付带 commit 级证据的裁定记录。",
+ "scenario_key": "sph_free_surface_impact",
+ "mission_id": 24415,
+ "stage": null,
+ "tags": [
+  "SPH",
+  "Kleefsman",
+  "dam-break",
+  "obstacle",
+  "3D",
+  "blockage",
+  "duplicate-mission",
+  "audit",
+  "FAIL"
+ ],
+ "figures": [],
+ "status": "published",
+ "created_by": 1,
+ "created_at": "2026-11-17T14:59:24.297178+00:00",
+ "markdown": "# m24415 — 重开 TensorSPH#1024（m21728 成熟交付物）的裁定与验证\n\n**结论先行**：本单是已关闭 PR #1024 的重开单，其功能要点（m21728 的 7 个成熟交付物）**早已经\nPR #826 于 2026-11-15 合入 main**，且 m21728 当时挂起（WITHHELD）的生产判决其后已由\nm22606/m22745 裁定为 **FAIL** 并入库。重开单 m24415 与已合入工作重复；本单交付一份带\ncommit 级证据的裁定/验证记录，**不改任何源码**（重落 7 文件将产生空 diff，回退 539 行旧版\n`src` 则是回归）。\n\n## ① 案例介绍\n\nKleefsman et al. (2005) 水槽溃决撞箱算例（`CASE-SPH-KLEEFSMAN-DAMBREAK-OBST` 3-D 臂）：\n槽 3.22×1.00×1.00 m，水柱 1.228×0.550 m 跨满宽度，x=2.476 m 处 0.161×0.161×**0.403** m\n方箱（挡 40 % 宽度、60 % 旁通）。m21728 交付的 3-D 算例把第三维还原、方箱给回真实 0.403 m\n宽，量测协议与 2-D 冻结协议逐项同口径（孔径 0.08 m、站位 x=2.426、到达阈值 0.02 m），\n并新增 2-D 恒为 0 的旁通计数 `bypass_count` 作为几何差的直接测量。\n\n| 量 | 实验值（Kleefsman Fig.19 数字化） |\n|---|---|\n| H2 峰值 / 时刻 | 0.370 m @ 1.7027 s |\n| H2 到达（0.02 m） | 0.3591 s |\n\n## ② 怎么做的（本单实际动作）\n\n本单**不新增功能**（功能已在 main）。动作是**审计 + 裁定**：\n1. `git merge-base --is-ancestor 2d4a82b3 HEAD` → 确认 PR #826(m21728) 的合入是本分支祖先；\n2. `git cat-file -e HEAD:<path>` ×7 → 7 个交付物全部在 HEAD 树内；\n3. `pytest tests/test_kleefsman_obstacle_3d.py -q` → **26 passed, 1 warning in 4.12s**；\n4. 读 `results/recovered/verdict.json` → m21728 挂起的生产判决其后已被 m22606/m22745 裁定；\n5. 把上述证据写成 `docs/verification_m24415_m21728_duplicate_resolution.md`（本单唯一新增文件）。\n\n工具链：git 取证 + pytest + 直接读已入库 JSON，**零手抄数字**。\n\n## ③ 计算结果（程序化注入）\n\nm21728 交付物在 main 的状态（HEAD = `d3716b204d`）：\n\n| 交付物 | 在 HEAD？ | 行数 |\n|---|---|---|\n| src/tensorsph/kleefsman_obstacle_3d.py | 是 | 731 |\n| tests/test_kleefsman_obstacle_3d.py | 是 | 262 |\n| benchmarks/kleefsman_obstacle_3d/run.py | 是 | 205 |\n| benchmarks/kleefsman_obstacle_3d/make_doc.py | 是 | 172 |\n| docs/verification_kleefsman_3d_blockage_m21728.md | 是 | 172 |\n| scripts/post_report_m21728.py | 是 | 137 |\n| out/report_post_m21728.json | 是 | 71 |\n\nm21728 挂起、其后被 m22606/m22745 裁定入库的 3-D 生产判决（`recovered/verdict.json`）：\n\n| run | job | 峰值 vs 0.370 m | 到达 vs 0.3591 s | 判决 |\n|---|---|---|---|---|\n| dx=0.05 | cj3887 | 0.1202 m（+67.5 %） | 0.5028 s（+40.0 %） | **FAIL** |\n| dx=0.04 | cj3888 | 0.0933 m（n/a (censored)，记录止于 1.144 s<1.703 s，截断） | 0.4678 s（+30.3 %） | **FAIL** |\n\n## ④ 结果图\n\n**本单无图，理由**：纯文档/审计任务，未做任何新计算，不存在新场量云图或新时程曲线；\n用旧算例的图冒充本单结果属于粉饰，故不附。3-D 时程/旁通图的生成器\n`benchmarks/kleefsman_obstacle_3d/make_doc.py` 已在 main，随时可复现。\n\n## ⑤ 注意点 / 局限\n\n1. **重复单**：m24415 与已合入的 #826(m21728) 内容重合；重落 7 文件 = 空 diff，回退旧版 = 回归，\n   二者皆非有效完成，故本单以裁定记录收口。\n2. main 上另有 **7 条先于本单存在**的 kleefsman 测试失败（production_report / sound_speed_family /\n   t30_decidability / text_landmarks×4），全部不在 m21728 的 7 文件内、在干净 main 上同样失败，\n   与本单无关；本单未触碰这些路径。\n3. 3-D 判决 FAIL 的归因（旁通/算子/网格）属后续算例工作，不在本单范围。\n\n## ⑥ 误差判定（显式回答「是否 < 3 %」）\n\n| 关键量 | 基准 | 最佳 3-D 实测（cj3887） | 相对误差 | < 3 %？ |\n|---|---|---|---|---|\n| H2 峰值 | 0.370 m | 0.1202 m | **+67.5 %** | **否** |\n| H2 到达 | 0.3591 s | 0.5028 s | **+40.0 %** | **否** |\n\n**显式回答：否。** 3-D 阻塞算例在冻结 <10 % 验收下两项均 FAIL，更谈不上 <3 %；\n本单不声明任何精度达标。\n",
+ "ownership": {
+  "mission_id": 24415,
+  "owner": "1",
+  "bypass": null,
+  "figures_checked": 0
+ },
+ "readback": {
+  "submission_id": "29004385d6e14f398fba6aa1ed0d70a2",
+  "report_id": 21380,
+  "ok": true,
+  "readback": {
+   "ok": true,
+   "record_missing": false,
+   "codes": [],
+   "checks": [
+    {
+     "field": "markdown",
+     "ok": true,
+     "expected_digest": "e15adca3c469565dd6218ca79424c8637167fb0127410b99baf218926aca591b",
+     "observed_digest": "e15adca3c469565dd6218ca79424c8637167fb0127410b99baf218926aca591b",
+     "code": "",
+     "detail": ""
+    },
+    {
+     "field": "figures",
+     "ok": true,
+     "expected_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+     "observed_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+     "code": "",
+     "detail": ""
+    },
+    {
+     "field": "mission_id",
+     "ok": true,
+     "expected_digest": "939c8fe28a3cb010a262772c9a5a49ce18ef9d2c3c29964227d347416d11859e",
+     "observed_digest": "939c8fe28a3cb010a262772c9a5a49ce18ef9d2c3c29964227d347416d11859e",
+     "code": "",
+     "detail": ""
+    }
+   ],
+   "checked_fields": [
+    "markdown",
+    "figures",
+    "mission_id"
+   ]
+  },
+  "ledger_ok": true,
+  "ledger_error": null
+ }
+}
