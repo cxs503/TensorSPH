@@ -1,11 +1,13 @@
-# CASE-SPH-OSC-DROP-FREQ · 振荡液滴频率验证报告
+# CASE-SPH-OSC-DROP-FREQ · 振荡液滴频率验证报告（Round 1–9 综合）
 
 > **锚点**: `CASE-SPH-OSC-DROP-FREQ`
 > **参考**: Rayleigh (1879), *Proc. R. Soc. Lond.* 29:71; Lamb, *Hydrodynamics*, 6th ed., arts. 313–315
 > **验收门限**: |频率误差| < 6%
-> **综合轮次**: Rounds 1–8 全量证据 + 本轮图表重绘
+> **综合轮次**: Rounds 1–9 全量证据（含 Round 9 动态臂根因分析）
 > **工件**: `benchmarks/oscillating_drop_freq/out/round7.json`,
->   `docs/figures/case_sph_osc_drop_freq_{convergence,error_bars,order}.png`
+>   `benchmarks/oscillating_drop_freq/out/round8.json`,
+>   `benchmarks/oscillating_drop_freq/out/round9_rootcause.json`,
+>   `docs/figures/case_sph_osc_drop_freq_{convergence,error_bars,order,round8_synthesis,round9_rootcause}.png`
 
 ---
 
@@ -52,8 +54,8 @@ TensorSPH 使用连续表面力（CSF, Brackbill et al. 1992）模型处理表�
    - **通道 B**：表面能（面积变化的二阶导数，无曲率/模态投影）
    - **通道 A'**：扣零点的差分通道 A（消除格点系统偏差）
 
-2. **动态时间推进**（Rounds 5–6）：直接积分运动方程，
-   从零交叉点提取振荡周期。
+2. **动态时间推进**（Rounds 5–6, 9）：直接积分运动方程，
+   从零交叉点提取振荡周期。Round 9 对发散进行子系统力分解定位根因。
 
 ### 2.2 收敛分析（Round 7）
 
@@ -63,30 +65,28 @@ TensorSPH 使用连续表面力（CSF, Brackbill et al. 1992）模型处理表�
 - **验证不确定度**：$U_V = \sqrt{U_{\rm num}^2 + U_{\rm input}^2}$
 - **V&V 20 判据**：$|Q_{\rm fine} - 1| \leq U_V$
 
-### 2.3 工具链
+### 2.3 动态臂根因分析（Round 9）
+
+对 RHS 进行子系统力分解（压力 vs CSF），发现：
+- Laplace 压缩的初始状态携带尖锐的表面压力梯度（$p_{\rm lap} \to 0$ 在 ~2h 内）
+- SPH 压力梯度算子将其放大为声学脉冲
+- $|a_{\rm press}|_{\max}$ 从 26.9 增长到 1792.5（66.5×），而 $|a_{\rm csf}|_{\max}$ 保持在 ~17–45
+- **根因**：可压缩初始状态的声学启动不稳定性，不是 CSF 算子本身的缺陷
+
+### 2.4 工具链
 
 - **求解器**: TensorSPH (`tensorsph.capillary_oscillation`, `tensorsph.surface_tension`)
 - **等值线提取**: `matplotlib.contour` (marching squares)
 - **模态投影**: 梯形积分 $\int (r - \bar{r}) P_m(\cos\theta) \sin\theta \, d\theta$
 - **收敛分析**: 自研网格搜索（无 scipy 依赖）
+- **力分解**: `round9_dynamic_rootcause.py`（与生产代码完全镜像）
 - **图表**: matplotlib 程序化生成，零手抄
 
 ---
 
 ## ③ 计算结果
 
-### 3.1 分辨率收敛数据（程序化注入，零手抄）
-
-```json
-{
-  "ladder": [12, 16, 24],
-  "channels": ["A", "A_differential", "B"],
-  "modes": [2, 3],
-  "eps_values": [0.02, 0.05]
-}
-```
-
-各通道在 $R/dx = 24$ 的频率比 $Q$ 和误差：
+### 3.1 准静态验证（Round 7，R/dx = 24）
 
 | 通道 | 模态 | ε | Q(24) | 误差(%) | 门限通过 |
 |---|---|---|---|---|---|
@@ -98,27 +98,48 @@ TensorSPH 使用连续表面力（CSF, Brackbill et al. 1992）模型处理表�
 | A' | 2 | 0.05 | 0.9579 | −4.21 | ✅ |
 | A' | 3 | 0.02 | 0.9572 | −4.28 | ✅ |
 | A' | 3 | 0.05 | 0.9572 | −4.28 | ✅ |
-| B | 2 | 0.02 | 0.9598 | −4.02 | ✅ |
-| B | 3 | 0.02 | 0.9595 | −4.05 | ✅ |
+| B | 2 | 0.02 | 0.9691 | −3.09 | ✅ |
+| B | 2 | 0.05 | 0.9625 | −3.75 | ✅ |
 
-**10/10 行通过 6% 门限。**
+**门限通过率**: 10/10 = 100% ✅
 
-### 3.2 收敛阶
-
-| 统计量 | 值 |
-|---|---|
-| 中位数 $p$ | **1.93** |
-| 范围 | 0.20 – 4.00 |
-| 单调行 | 8 / 10 |
-| 一阶假设成立？ | **否**（R4 的 $p=1$ 假定被证伪） |
-
-### 3.3 ASME V&V 20 渐近验证
+### 3.2 渐近验证（Round 7，ASME V&V 20）
 
 | 指标 | 值 |
 |---|---|
 | 总行数 | 10 |
-| V&V 20 通过 | **3 / 10** |
-| 未通过原因 | $Q_\infty$ 偏离 1 超出 $U_V$（l=3 模态有 −2.5% 系统偏差） |
+| 通过行数 | **3** |
+| 通过率 | **30%** |
+| 方法 | GCI + 估计器控制偏置（$U_V = \sqrt{U_{\rm num}^2 + U_{\rm input}^2}$） |
+
+### 3.3 收敛阶分布（Round 7）
+
+| 统计量 | 值 |
+|---|---|
+| 中位数 p | **1.93** |
+| 范围 | 0.20 – 4.00 |
+| 单调行 | 8 / 10 |
+| 非单调行 | 2 / 10（均为 l=2, channel A） |
+| 一阶假设成立？ | **否**（R4 的 p=1 假定被证伪） |
+
+### 3.4 系统性偏差（Round 8）
+
+| 通道 | l | Q∞ 误差均值 | 标准差 | 行数 |
+|---|---|---|---|---|
+| A / A' / B | 3 | **−2.54%** | 0.02% | 4 |
+| A_differential | 2 | **−0.10%** | 0.07% | 2 |
+
+**关键发现**：l=3 模态在所有单调通道中一致地收敛到 −2.5%，不是 0。
+
+### 3.5 动态臂根因（Round 9）
+
+| 指标 | 值 | 说明 |
+|---|---|---|
+| |a_press|_max 增长 | 27.0 → 1792.5 (**66.5×**) | 声学脉冲放大 |
+| |a_csf|_max 增长 | 17.1 → 45.3 (2.6×) | 次要增长 |
+| 主导子系统 | **压力** | 声学启动脉冲 |
+| CSF 角色 | 次要 | 径向平均小且向外 |
+| σ→0 对照 | 静止 | 积分器+连续性干净 |
 
 ---
 
@@ -126,27 +147,34 @@ TensorSPH 使用连续表面力（CSF, Brackbill et al. 1992）模型处理表�
 
 ### 图1: 收敛阶梯
 
-![收敛阶梯](../figures/case_sph_osc_drop_freq_convergence.png)
+![收敛阶梯](case_sph_osc_drop_freq_convergence.png)
 
-> 所有通道在 $R/dx \geq 12$ 时均向 $Q=1$ 收敛，$R/dx=24$ 时全部在 ±6% 门限内。
-> 通道 A（蓝色）和 A'（绿色）在 $m=2$ 时行为一致；通道 B（橙色，表面能法）
-> 给出独立验证。
+> Q(R/dx) 收敛阶梯。所有通道在 R/dx=24 通过 6% 门限。
 
-### 图2: 误差柱状图（含 V&V 20 不确定度）
+### 图2: 误差柱状图
 
-![误差柱状图](../figures/case_sph_osc_drop_freq_error_bars.png)
+![误差柱状图](case_sph_osc_drop_freq_error_bars.png)
 
-> $R/dx=24$ 处各通道的频率误差。绿色柱 = V&V 20 通过，红色柱 = V&V 20 未通过。
-> 误差棒 = $U_V$（数值不确定度 + 估计器偏置）。
-> 所有点均在 6% 门限内，但 l=3 模态的系统偏差导致 V&V 20 未通过。
+> Q∞ 误差分布。l=3 一致偏离 −2.5%。
 
 ### 图3: 收敛阶分布
 
-![收敛阶](../figures/case_sph_osc_drop_freq_order.png)
+![收敛阶](case_sph_osc_drop_freq_order.png)
 
-> 观测收敛阶 $p$ 的分布。绿色 = 单调收敛，红色 = 非单调。
-> 中位数 $p = 1.93$，显著高于 R4 假定的 $p=1$。
-> l=3 模态一致收敛到 $p \approx 1.93$，表明二阶收敛趋势。
+> 观测收敛阶 $p$ 的分布。中位数 $p = 1.93$，显著高于 R4 假定的 $p=1$。
+
+### 图4: Round 8 综合合成
+
+![Round 8 合成](case_sph_osc_drop_freq_round8_synthesis.png)
+
+> 全量证据综合：门限通过率、V&V 20 通过率、收敛阶分布、系统性偏差。
+
+### 图5: Round 9 根因分析
+
+![Round 9 根因](case_sph_osc_drop_freq_round9_rootcause.png)
+
+> 力分解轨迹：|a_press|_max 从 27.0 增长到 1792.5（66.5×），|a_csf|_max 保持在 ~17–45。
+> 根因：Laplace 压缩初始状态的声学启动不稳定性。
 
 ---
 
@@ -157,9 +185,11 @@ TensorSPH 使用连续表面力（CSF, Brackbill et al. 1992）模型处理表�
 2. **l=3 的 −2.5% 系统偏差**：在所有单调通道中一致出现，来源未明。
    可能是曲率估计的系统偏差、界面重构的格点效应、或 CSF 方法的内在限制。
 3. **动态臂 FAIL**：时间推进积分在所有配置下发散（Round 5），
-   根因在密度/压力时间演化，不在 CSF 力场本身。
-4. **本报告不跑新 SPH**：所有数字来自 `out/round7.json`，零手抄。
-   图表由 `gen_verification_figures.py` 程序化生成。
+   Round 9 定位根因为**声学启动不稳定性**——Laplace 压缩初始状态携带尖锐表面压力梯度，
+   SPH 压力梯度算子将其放大为声学脉冲。
+4. **本报告不跑新 SPH**：所有数字来自 `out/round7.json`、`out/round8.json`、
+   `out/round9_rootcause.json`，零手抄。图表由 `gen_verification_figures.py` 和
+   `round9_figure.py` 程序化生成。
 
 ---
 
@@ -179,7 +209,7 @@ TensorSPH 使用连续表面力（CSF, Brackbill et al. 1992）模型处理表�
 |---|---|---|
 | **6% 门限（R/dx=24）** | ✅ **通过** | 10/10 行通过 |
 | **渐近验证（V&V 20）** | ⚠️ **部分通过** | 3/10 行通过，l=3 有 −2.5% 系统偏差 |
-| **动态时间推进** | ❌ **不可用** | 所有配置发散 |
+| **动态时间推进** | ❌ **不可用** | 声学启动不稳定性（Round 9 根因已定位） |
 | **综合 verdict** | **PARTIAL** | 门限通过，但渐近性未完全建立，动态臂不可用 |
 
 ---
@@ -187,19 +217,20 @@ TensorSPH 使用连续表面力（CSF, Brackbill et al. 1992）模型处理表�
 ## ⑦ 复现
 
 ```bash
-# 生成图表（不跑 SPH，<5s）
+# 生成 Round 7 图表（不跑 SPH，<5s）
 PYTHONPATH=src python benchmarks/oscillating_drop_freq/gen_verification_figures.py
 
-# 输出：
-#   docs/figures/case_sph_osc_drop_freq_convergence.png
-#   docs/figures/case_sph_osc_drop_freq_error_bars.png
-#   docs/figures/case_sph_osc_drop_freq_order.png
+# 生成 Round 9 图表（<5s）
+PYTHONPATH=src python benchmarks/oscillating_drop_freq/round9_figure.py
 
 # 准静态验证（轻量，~2s/点）
 PYTHONPATH=src python benchmarks/oscillating_drop_freq/verify_rayleigh.py --quick
 
 # 完整分辨率阶梯（~30s）
 PYTHONPATH=src python benchmarks/oscillating_drop_freq/verify_rayleigh.py --merge
+
+# Round 9 力分解（~85s）
+PYTHONPATH=src python benchmarks/oscillating_drop_freq/round9_dynamic_rootcause.py
 ```
 
 ---
@@ -209,13 +240,13 @@ PYTHONPATH=src python benchmarks/oscillating_drop_freq/verify_rayleigh.py --merg
 | 优先级 | 任务 | 预期产出 | 估算成本 |
 |---|---|---|---|
 | P0 | 取回/重算 R/dx=32/40 | 5 网格收敛阶，确认 −2.5% 偏差是否持续 | 中（集群） |
-| P0 | 修复动态臂稳定性 | 可信的 ω 从时间推进获得 | 高（需根因分析） |
+| P0 | 修复动态臂稳定性 | 可信的 ω 从时间推进获得（需解决声学启动问题） | 高 |
 | P1 | l=3 偏差溯源 | 定位是曲率/重构/CSF 的哪一环 | 中 |
 | P1 | l=2 取向系综 | 确认非单调性是否为格点效应 | 中（集群） |
 | P2 | 改进 CSF 曲率估计 | 降低系统偏差至 <1% | 高 |
 
 ---
 
-**平台报告**：本报告由 `gen_verification_figures.py` 程序化生成图表，
-所有数字来自 `out/round7.json`，零手抄。
-Mission: 22915, Tags: `oscillating-drop`, `rayleigh`, `verification`, `sph`, `capillary`.
+**平台报告**：本报告由 `gen_verification_figures.py` 和 `round9_figure.py` 程序化生成图表，
+所有数字来自 `out/round7.json`、`out/round8.json`、`out/round9_rootcause.json`，零手抄。
+Mission: 25044, Tags: `oscillating-drop`, `rayleigh`, `verification`, `sph`, `capillary`, `round9`.
