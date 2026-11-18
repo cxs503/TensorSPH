@@ -743,6 +743,19 @@ def stable_dt(cfg: RTConfig, max_speed: float) -> float:
     return cfg.safety_dt * min(cfg.dt_cap, dt_c, dt_g, dt_v)
 
 
+from .registry import capability  # noqa: E402  (capability registry, m25063)
+
+
+@capability(
+    id="sph.case.rayleigh_taylor",
+    kind="solver",
+    maturity="developing",
+    wired=False,
+    tested=True,
+    verified=False,
+    test_path="tests/test_rayleigh_taylor.py",
+    evidence={"grade": "MECHANICS", "note": "Rayleigh-Taylor instability with eigenfunction-decay reference; no external error band yet"},
+)
 def run_case(cfg: RTConfig, snapshot: bool = True, progress=None) -> dict:
     """Integrate the perturbed two-layer column and fit the growth rate."""
     torch.manual_seed(0)

@@ -56,6 +56,19 @@ def tail_x(time: float, depth0: float, dam_x: float = 0.0,
     return dam_x - wave_speed(depth0, gravity) * time
 
 
+from .registry import capability  # noqa: E402  (capability registry, m25063)
+
+
+@capability(
+    id="sph.case.ritter",
+    kind="solver",
+    maturity="developing",
+    wired=False,
+    tested=True,
+    verified=False,
+    test_path="tests/test_ritter.py",
+    evidence={"grade": "MECHANICS", "note": "Ritter (1962) dam-break front/tail closed forms used as SPH reference; SPH-vs-Ritter error band not yet measured in this registry"},
+)
 def front_x(time: float, depth0: float, dam_x: float = 0.0,
             gravity: float = GRAVITY) -> float:
     """Leading edge, ``x_dam + 2 c0 t``. Its speed is ``2 c0``."""

@@ -1577,6 +1577,20 @@ def _write_manifest(out: Path, cfg: Config, device: torch.device, initial_n: int
     return metadata
 
 
+from .registry import capability  # noqa: E402  (capability registry, m25063)
+
+
+@capability(
+    id="sph.solver.wcsp",
+    kind="solver",
+    maturity="developing",
+    wired=True,
+    tested=True,
+    verified=False,
+    test_path="tests/test_droplet_impact.py",
+    evidence={"grade": "MECHANICS", "note": "core WCSPH solver (droplet impact demo); conservation/stability mechanics only, no analytic error band"},
+    endpoint="cli:python -m tensorsph",
+)
 def run(cfg: Config, output: str | Path, plot: bool = True):
     """Run the case, write artifacts, and enforce numerical acceptance gates.
 

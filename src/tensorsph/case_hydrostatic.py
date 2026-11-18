@@ -282,6 +282,20 @@ def _pool(cfg: HydrostaticConfig):
     return pos, mass, solver
 
 
+from .registry import capability  # noqa: E402  (capability registry, m25063)
+
+
+@capability(
+    id="sph.case.hydrostatic",
+    kind="solver",
+    maturity="mature",
+    wired=True,
+    tested=True,
+    verified=True,
+    test_path="tests/test_case_hydrostatic.py",
+    evidence={"grade": "ANALYTIC", "max_error_pct": 0.771, "note": "p(y)=rho0*g*(H-y) still-water profile; predeclared gate 1.0% PASS at 0.7710% (dev_report_case_hydrostatic_evidence.md)"},
+    endpoint="cli:python -m tensorsph --case hydrostatic",
+)
 def run_case(dx: float = 0.02, tank_width: float = 1.0, depth: float = DEPTH,
              seconds: float = 8.0, sound_speed: float = 20.0, bands: int = 8,
              average_from: float = 0.5, sample_every: int = 5,

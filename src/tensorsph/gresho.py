@@ -180,6 +180,19 @@ def u_theta(r: torch.Tensor, cfg: GreshoConfig) -> torch.Tensor:
                        torch.where(r <= ro, outer, torch.zeros_like(r)))
 
 
+from .registry import capability  # noqa: E402  (capability registry, m25063)
+
+
+@capability(
+    id="sph.case.gresho",
+    kind="solver",
+    maturity="developing",
+    wired=False,
+    tested=True,
+    verified=False,
+    test_path="tests/test_gresho_vortex.py",
+    evidence={"grade": "MECHANICS", "note": "Gresho vortex decay vs analytic reference table; Lz-invariant audit in case"},
+)
 def analytic_reference(cfg: GreshoConfig, samples: int = 200001) -> dict:
     """Radial tables plus the residuals that prove the closed form is exact.
 

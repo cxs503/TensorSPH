@@ -684,6 +684,19 @@ def _floe_launch_speed(impulse: float, cfg: IceSplashConfig) -> float:
     return impulse / _floe_mass_per_depth(cfg)
 
 
+from .registry import capability  # noqa: E402  (capability registry, m25063)
+
+
+@capability(
+    id="sph.ice.splash",
+    kind="solver",
+    maturity="developing",
+    wired=True,
+    tested=True,
+    verified=False,
+    test_path="tests/test_ice_splash.py",
+    evidence={"grade": "MECHANICS", "note": "ice-splash over deck (dam-break family); mechanics tests only"},
+)
 def run_case(cfg: IceSplashConfig, device: torch.device | None = None,
              snapshot_times=None) -> IceSplashRun:
     """Integrate the bow ice-splash event and return its gauges.

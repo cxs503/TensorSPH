@@ -1,0 +1,425 @@
+{
+  "repo": "TensorSPH",
+  "mode": "static",
+  "source_commit": "317b6b6cdffb0c3b6b0af6088b284d4b4b65c2e1",
+  "package_root": "/root/tp-agent/work/m25063/src/tensorsph",
+  "count": 19,
+  "capabilities": [
+    {
+      "id": "sph.case.capillary_oscillation",
+      "kind": "solver",
+      "maturity": "developing",
+      "module_path": "tensorsph.capillary_oscillation",
+      "entry": "run_point",
+      "params": {},
+      "wired": false,
+      "tested": true,
+      "verified": false,
+      "test_path": "tests/test_droplet_oscillation.py",
+      "evidence": {
+        "grade": "MECHANICS",
+        "note": "capillary droplet oscillation vs Rayleigh (1917) 2D mode frequency; frequency-ratio checks, no absolute error band registered"
+      },
+      "endpoint": null
+    },
+    {
+      "id": "sph.case.dam_break",
+      "kind": "solver",
+      "maturity": "developing",
+      "module_path": "tensorsph.dam_break",
+      "entry": "run_case",
+      "params": {},
+      "wired": true,
+      "tested": true,
+      "verified": false,
+      "test_path": "tests/test_dam_break.py",
+      "evidence": {
+        "grade": "MECHANICS",
+        "note": "2D dam break; Ritter front-position reference available in ritter.py, SPH error band not yet measured here"
+      },
+      "endpoint": null
+    },
+    {
+      "id": "sph.case.dam_break_3d",
+      "kind": "solver",
+      "maturity": "developing",
+      "module_path": "tensorsph.dam_break_3d",
+      "entry": "run_case",
+      "params": {},
+      "wired": true,
+      "tested": true,
+      "verified": false,
+      "test_path": "tests/test_dam_break_3d.py",
+      "evidence": {
+        "grade": "MECHANICS",
+        "note": "3D dam break; mechanics/conservation tests only"
+      },
+      "endpoint": null
+    },
+    {
+      "id": "sph.case.gresho",
+      "kind": "solver",
+      "maturity": "developing",
+      "module_path": "tensorsph.gresho",
+      "entry": "analytic_reference",
+      "params": {},
+      "wired": false,
+      "tested": true,
+      "verified": false,
+      "test_path": "tests/test_gresho_vortex.py",
+      "evidence": {
+        "grade": "MECHANICS",
+        "note": "Gresho vortex decay vs analytic reference table; Lz-invariant audit in case"
+      },
+      "endpoint": null
+    },
+    {
+      "id": "sph.case.hydrostatic",
+      "kind": "solver",
+      "maturity": "mature",
+      "module_path": "tensorsph.case_hydrostatic",
+      "entry": "run_case",
+      "params": {},
+      "wired": true,
+      "tested": true,
+      "verified": true,
+      "test_path": "tests/test_case_hydrostatic.py",
+      "evidence": {
+        "grade": "ANALYTIC",
+        "max_error_pct": 0.771,
+        "note": "p(y)=rho0*g*(H-y) still-water profile; predeclared gate 1.0% PASS at 0.7710% (dev_report_case_hydrostatic_evidence.md)"
+      },
+      "endpoint": "cli:python -m tensorsph --case hydrostatic"
+    },
+    {
+      "id": "sph.case.kleefsman_obstacle",
+      "kind": "solver",
+      "maturity": "developing",
+      "module_path": "tensorsph.kleefsman_obstacle",
+      "entry": "run_case",
+      "params": {},
+      "wired": false,
+      "tested": true,
+      "verified": false,
+      "test_path": "tests/test_kleefsman_obstacle.py",
+      "evidence": {
+        "grade": "MECHANICS",
+        "note": "Kleefsman-style obstacle wave case; mechanics tests only"
+      },
+      "endpoint": null
+    },
+    {
+      "id": "sph.case.lake_at_rest",
+      "kind": "solver",
+      "maturity": "developing",
+      "module_path": "tensorsph.lake_at_rest",
+      "entry": "run_case",
+      "params": {},
+      "wired": true,
+      "tested": true,
+      "verified": false,
+      "test_path": "tests/test_lake_at_rest.py",
+      "evidence": {
+        "grade": "MECHANICS",
+        "note": "still-lake conservation anchor (periodic tank meets machine-precision tolerance; wall-bounded variant is a documented honest FAIL)"
+      },
+      "endpoint": null
+    },
+    {
+      "id": "sph.case.poiseuille_duct",
+      "kind": "solver",
+      "maturity": "mature",
+      "module_path": "tensorsph.case_poiseuille_duct",
+      "entry": "run_case",
+      "params": {},
+      "wired": true,
+      "tested": true,
+      "verified": true,
+      "test_path": "tests/test_case_poiseuille_duct.py",
+      "evidence": {
+        "grade": "ANALYTIC",
+        "max_error_pct": 2.72,
+        "note": "mirror-wall duct Poiseuille vs closed-form: centre-line +0.38%, profile RMS 2.72%, wall shear -0.35% (DELIVERABLE_POISEUILLE_MIRROR.md, all gates <=5%)"
+      },
+      "endpoint": "cli:python -m tensorsph --case poiseuille_duct"
+    },
+    {
+      "id": "sph.case.rayleigh_taylor",
+      "kind": "solver",
+      "maturity": "developing",
+      "module_path": "tensorsph.rayleigh_taylor",
+      "entry": "run_case",
+      "params": {},
+      "wired": false,
+      "tested": true,
+      "verified": false,
+      "test_path": "tests/test_rayleigh_taylor.py",
+      "evidence": {
+        "grade": "MECHANICS",
+        "note": "Rayleigh-Taylor instability with eigenfunction-decay reference; no external error band yet"
+      },
+      "endpoint": null
+    },
+    {
+      "id": "sph.case.ritter",
+      "kind": "solver",
+      "maturity": "developing",
+      "module_path": "tensorsph.ritter",
+      "entry": "front_x",
+      "params": {},
+      "wired": false,
+      "tested": true,
+      "verified": false,
+      "test_path": "tests/test_ritter.py",
+      "evidence": {
+        "grade": "MECHANICS",
+        "note": "Ritter (1962) dam-break front/tail closed forms used as SPH reference; SPH-vs-Ritter error band not yet measured in this registry"
+      },
+      "endpoint": null
+    },
+    {
+      "id": "sph.case.slamming",
+      "kind": "solver",
+      "maturity": "developing",
+      "module_path": "tensorsph.slamming",
+      "entry": "added_mass_law",
+      "params": {},
+      "wired": false,
+      "tested": true,
+      "verified": false,
+      "test_path": "tests/test_slamming.py",
+      "evidence": {
+        "grade": "MECHANICS",
+        "note": "Wagner (1971) pressure shape + added-mass slamming laws; analytic-shape tests, no SPH error band yet"
+      },
+      "endpoint": null
+    },
+    {
+      "id": "sph.case.sloshing",
+      "kind": "solver",
+      "maturity": "developing",
+      "module_path": "tensorsph.sloshing",
+      "entry": "run_case",
+      "params": {},
+      "wired": true,
+      "tested": true,
+      "verified": false,
+      "test_path": "tests/test_case_sloshing_first_mode.py",
+      "evidence": {
+        "grade": "MECHANICS",
+        "note": "first-mode sloshing resonance; mechanics tests only"
+      },
+      "endpoint": null
+    },
+    {
+      "id": "sph.case.stokes_second",
+      "kind": "solver",
+      "maturity": "developing",
+      "module_path": "tensorsph.stokes2",
+      "entry": "run_case",
+      "params": {},
+      "wired": false,
+      "tested": true,
+      "verified": false,
+      "test_path": "tests/test_stokes2.py",
+      "evidence": {
+        "grade": "MECHANICS",
+        "note": "oscillatory Couette (Stokes 2nd problem) vs Crank-Nicolson reference; transient Couette deliverable is an honest FAIL at the 8% gate (DELIVERABLE_COUETTE_TRANSIENT.md)"
+      },
+      "endpoint": null
+    },
+    {
+      "id": "sph.case.taylor_green",
+      "kind": "solver",
+      "maturity": "developing",
+      "module_path": "tensorsph.taylor_green",
+      "entry": "run_case",
+      "params": {},
+      "wired": true,
+      "tested": true,
+      "verified": false,
+      "test_path": "tests/test_taylor_green_benchmark.py",
+      "evidence": {
+        "grade": "MECHANICS",
+        "note": "Taylor-Green vortex decay benchmark with convergence study; error band vs literature not yet measured"
+      },
+      "endpoint": null
+    },
+    {
+      "id": "sph.case.wave_flume",
+      "kind": "solver",
+      "maturity": "developing",
+      "module_path": "tensorsph.wave_flume",
+      "entry": "run_case",
+      "params": {},
+      "wired": true,
+      "tested": true,
+      "verified": false,
+      "test_path": "tests/test_wave_flume.py",
+      "evidence": {
+        "grade": "MECHANICS",
+        "note": "regular-wave flume (piston + sponge); honest FAIL at H/dx=2.6: wave-height error 65.5%, reflection 82% (DELIVERABLE_WAVE_FLUME_M17051.md); convergence campaign pending"
+      },
+      "endpoint": null
+    },
+    {
+      "id": "sph.compressible.sod",
+      "kind": "solver",
+      "maturity": "developing",
+      "module_path": "tensorsph.compressible.sod",
+      "entry": "run_sod_sph",
+      "params": {},
+      "wired": true,
+      "tested": true,
+      "verified": false,
+      "test_path": "tests/test_compressible_sod.py",
+      "evidence": {
+        "grade": "MECHANICS",
+        "note": "Sod (1978) shock tube SPH vs exact Riemann; documented 64% L2 density error + negative convergence order (docs/audit/audit_verdict_compressible_sod.md) - honest FAIL"
+      },
+      "endpoint": null
+    },
+    {
+      "id": "sph.fsi.turek_hron",
+      "kind": "fsi",
+      "maturity": "developing",
+      "module_path": "tensorsph.fsi2_turek_hron",
+      "entry": "FSI2Case",
+      "params": {},
+      "wired": true,
+      "tested": true,
+      "verified": false,
+      "test_path": "tests/test_fsi2_turek_hron.py",
+      "evidence": {
+        "grade": "MECHANICS",
+        "note": "FSI2 (Turek-Hron) fluid-structure benchmark case; modal/parameter-gate/similarity companions in fsi2_* modules"
+      },
+      "endpoint": null
+    },
+    {
+      "id": "sph.ice.splash",
+      "kind": "solver",
+      "maturity": "developing",
+      "module_path": "tensorsph.ice_splash",
+      "entry": "run_case",
+      "params": {},
+      "wired": true,
+      "tested": true,
+      "verified": false,
+      "test_path": "tests/test_ice_splash.py",
+      "evidence": {
+        "grade": "MECHANICS",
+        "note": "ice-splash over deck (dam-break family); mechanics tests only"
+      },
+      "endpoint": null
+    },
+    {
+      "id": "sph.solver.wcsp",
+      "kind": "solver",
+      "maturity": "developing",
+      "module_path": "tensorsph.droplet_impact",
+      "entry": "run",
+      "params": {},
+      "wired": true,
+      "tested": true,
+      "verified": false,
+      "test_path": "tests/test_droplet_impact.py",
+      "evidence": {
+        "grade": "MECHANICS",
+        "note": "core WCSPH solver (droplet impact demo); conservation/stability mechanics only, no analytic error band"
+      },
+      "endpoint": "cli:python -m tensorsph"
+    }
+  ],
+  "problems": [
+    {
+      "severity": "warning",
+      "code": "WIRED_SOLVER_WITHOUT_ENDPOINT",
+      "capability_id": "sph.compressible.sod",
+      "detail": "wired solver capability without an endpoint TensorPhysics could call",
+      "source": "src/tensorsph/compressible/sod.py:368",
+      "file": "src/tensorsph/compressible/sod.py",
+      "line": 368
+    },
+    {
+      "severity": "warning",
+      "code": "WIRED_SOLVER_WITHOUT_ENDPOINT",
+      "capability_id": "sph.case.dam_break",
+      "detail": "wired solver capability without an endpoint TensorPhysics could call",
+      "source": "src/tensorsph/dam_break.py:306",
+      "file": "src/tensorsph/dam_break.py",
+      "line": 306
+    },
+    {
+      "severity": "warning",
+      "code": "WIRED_SOLVER_WITHOUT_ENDPOINT",
+      "capability_id": "sph.case.dam_break_3d",
+      "detail": "wired solver capability without an endpoint TensorPhysics could call",
+      "source": "src/tensorsph/dam_break_3d.py:535",
+      "file": "src/tensorsph/dam_break_3d.py",
+      "line": 535
+    },
+    {
+      "severity": "warning",
+      "code": "WIRED_SOLVER_WITHOUT_ENDPOINT",
+      "capability_id": "sph.ice.splash",
+      "detail": "wired solver capability without an endpoint TensorPhysics could call",
+      "source": "src/tensorsph/ice_splash.py:690",
+      "file": "src/tensorsph/ice_splash.py",
+      "line": 690
+    },
+    {
+      "severity": "warning",
+      "code": "WIRED_SOLVER_WITHOUT_ENDPOINT",
+      "capability_id": "sph.case.lake_at_rest",
+      "detail": "wired solver capability without an endpoint TensorPhysics could call",
+      "source": "src/tensorsph/lake_at_rest.py:698",
+      "file": "src/tensorsph/lake_at_rest.py",
+      "line": 698
+    },
+    {
+      "severity": "warning",
+      "code": "WIRED_SOLVER_WITHOUT_ENDPOINT",
+      "capability_id": "sph.case.sloshing",
+      "detail": "wired solver capability without an endpoint TensorPhysics could call",
+      "source": "src/tensorsph/sloshing.py:335",
+      "file": "src/tensorsph/sloshing.py",
+      "line": 335
+    },
+    {
+      "severity": "warning",
+      "code": "WIRED_SOLVER_WITHOUT_ENDPOINT",
+      "capability_id": "sph.case.taylor_green",
+      "detail": "wired solver capability without an endpoint TensorPhysics could call",
+      "source": "src/tensorsph/taylor_green.py:356",
+      "file": "src/tensorsph/taylor_green.py",
+      "line": 356
+    },
+    {
+      "severity": "warning",
+      "code": "WIRED_SOLVER_WITHOUT_ENDPOINT",
+      "capability_id": "sph.case.wave_flume",
+      "detail": "wired solver capability without an endpoint TensorPhysics could call",
+      "source": "src/tensorsph/wave_flume.py:844",
+      "file": "src/tensorsph/wave_flume.py",
+      "line": 844
+    }
+  ],
+  "summary": {
+    "count": 19,
+    "by_maturity": {
+      "mature": 2,
+      "developing": 17,
+      "planned": 0
+    },
+    "by_kind": {
+      "fsi": 1,
+      "solver": 18
+    },
+    "wired": 12,
+    "tested": 19,
+    "verified": 2,
+    "with_endpoint": 3
+  },
+  "error_count": 0
+}

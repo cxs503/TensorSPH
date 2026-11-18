@@ -300,6 +300,19 @@ def tvc_limiter_callable(cfg: "DamBreakConfig"):
     raise ValueError(f"unknown tvc_limiter {name!r}")
 
 
+from .registry import capability  # noqa: E402  (capability registry, m25063)
+
+
+@capability(
+    id="sph.case.dam_break",
+    kind="solver",
+    maturity="developing",
+    wired=True,
+    tested=True,
+    verified=False,
+    test_path="tests/test_dam_break.py",
+    evidence={"grade": "MECHANICS", "note": "2D dam break; Ritter front-position reference available in ritter.py, SPH error band not yet measured here"},
+)
 def run_case(cfg: DamBreakConfig, pair_skin_factor: float | None = None,
              snapshot_times=None):
     """Integrate the dam break and return the measured trajectory.

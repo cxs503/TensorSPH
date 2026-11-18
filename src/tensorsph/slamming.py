@@ -136,6 +136,19 @@ def slamming_force_coefficient(rho: float, V: float, beta: float, t: float) -> f
     return added_mass_force(rho, V, beta, t) / (0.5 * rho * V * V * c)
 
 
+from .registry import capability  # noqa: E402  (capability registry, m25063)
+
+
+@capability(
+    id="sph.case.slamming",
+    kind="solver",
+    maturity="developing",
+    wired=False,
+    tested=True,
+    verified=False,
+    test_path="tests/test_slamming.py",
+    evidence={"grade": "MECHANICS", "note": "Wagner (1971) pressure shape + added-mass slamming laws; analytic-shape tests, no SPH error band yet"},
+)
 def added_mass_law(V: float = 1.0, beta: float = math.radians(20.0),
                    rho: float = 1000.0, t0: float = 1.0e-3,
                    ratio: float = 10.0) -> dict:

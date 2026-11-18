@@ -127,6 +127,19 @@ def period_from_crossings(times, values) -> tuple[float, int]:
     return 2.0 * sum(half) / len(half), len(crossings)
 
 
+from .registry import capability  # noqa: E402  (capability registry, m25063)
+
+
+@capability(
+    id="sph.case.capillary_oscillation",
+    kind="solver",
+    maturity="developing",
+    wired=False,
+    tested=True,
+    verified=False,
+    test_path="tests/test_droplet_oscillation.py",
+    evidence={"grade": "MECHANICS", "note": "capillary droplet oscillation vs Rayleigh (1917) 2D mode frequency; frequency-ratio checks, no absolute error band registered"},
+)
 def run_point(radius_over_dx: int, sigma: float, periods: float,
               device="cpu", eps: float = 0.05,
               radius: float = RADIUS_DEFAULT, mode: int = MODE_DEFAULT,
