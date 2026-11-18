@@ -1,0 +1,74 @@
+{
+  "id": 21580,
+  "title": "FSI2 周期性窗口 VIV 判定管道重开复核（第3轮，m24712）",
+  "summary": "重开 TensorSPH#1029（mission m21860）：FSI2 周期性窗口 VIV 判定管道 （make_viv_report / run_body_force_transient / verdict_body_force_transient + VIV_PERIODIC_VERDICT.md + 图 + 守护测试）已并入 main（PR #839）。本单从当前 main 切枝全链路复核：8 项交付物齐备，本地守护测试 5 项全过；dx=0.05 工件非物理解（2.41×c0），判定如实 WITHHELD，锚点验收未达成。",
+  "scenario_key": "sph_fsi_viv_periodic",
+  "mission_id": 24712,
+  "stage": null,
+  "tags": [
+    "SPH",
+    "FSI",
+    "VIV",
+    "reopen",
+    "round3"
+  ],
+  "figures": [
+    {
+      "name": "viv_dx005_round3.png",
+      "caption": "Measured tip_y and body_drag from the dx=0.05 Aitken artifact (350-step local partial) vs Turek-Hron FSI2 benchmark amplitudes. The field is nonphysical (blow-up 2.41x c0), so the verdict is WITHHELD."
+    }
+  ],
+  "status": "published",
+  "created_by": 1,
+  "created_at": "2026-11-18T03:10:42.761487+00:00",
+  "markdown": "# FSI2 周期性窗口 VIV 判定管道 — 重开复核（第3轮，m24712）\n\n**锚点**：`XVAL-SPH-FSI2-BENCHMARK-AND-FORCE-FROM-FLUID`　**仓**：TensorSPH　**域**：SPH / FSI\n\n## ① 案例介绍\nTurek–Hron FSI2（LNCSE 53, 2006）：2-D 通道 2.5 × 0.41 m，D = 0.1 m 刚性圆柱 +\nL = 0.35 m、t = 0.02 m 弹性梁，Re = 100，ρ_s/ρ_f = 1。入口抛物型，U_mean = 0.2 m/s。\n本单复核的是 m21860 已成熟的 FSI2 周期性窗口 VIV 判定管道交付物（已并入 main 经 PR #839）。\n\n| 量 | 基准值 | 出处 |\n|---|---|---|\n| 梁尖 `tip_x_amplitude` | 0.0028 m | Turek–Hron 2006 |\n| 梁尖 `tip_y_amplitude` | 0.0082 m | Turek–Hron 2006 |\n| `drag_mean` | 3.2 | 同上 |\n| `drag_amplitude` | 0.96 | 同上 |\n| `lift_amplitude` | 0.22 | 同上 |\n\n## ② 怎么做的\n从当前 main 切枝（agent/m24712），复核 8 项交付物齐备：\n`make_viv_report.py` / `run_body_force_transient.py` / `verdict_body_force_transient.py` /\n`VIV_PERIODIC_VERDICT.md` / `viv_dx005.png` / `viv_error_bars.png` /\n`viv_dx005_local_partial.json` / `test_fsi2_viv_verdict_pipeline.py`。\n本地守护测试 `tests/test_fsi2_viv_verdict_pipeline.py` 5 项全过（87.7 s）。\n判定由 `verdict_body_force_transient.build_verdict` 给出，未改阈值、未改判据。\n\n## ③ 计算结果\n本单复核工件 `viv_dx005_local_partial.json`（dx=0.05，350 步，Aitken 界面）：\n\n| 梁尖/力系数 | 基准 (Turek–Hron) | 实测 | 相对误差 | <15 % |\n|---|---|---|---|---|\n| tip_x_amplitude | 0.0028 | 0.118615 | +4136.26 % | 否 |\n| tip_y_amplitude | 0.0082 | 0.17941 | +2087.92 % | 否 |\n| drag_mean | 3.2 | 29.1266 | +810.21 % | 否 |\n| drag_amplitude | 0.96 | 298.367 | +30979.94 % | 否 |\n| lift_amplitude | 0.22 | 665.869 | +302567.77 % | 否 |\n\n判定：**WITHHELD**（非物理解：`max|v| = 12.04 m/s` = 2.41 × c0；梁尖 1.238 m = 3.54 × 梁长）。\n锚点验收（<15 %）本轮仍未达成，`WITHHELD` 不是 PASS。\n\n## ④ 误差判定（显式回答「是否 <3 %」）\n| 量 | 门槛 | 本次最坏相对误差 | <15 % | <3 % | 可判定 |\n|---|---|---|---|---|---|\n| dx=0.05 tip | 15 % | +31276.35 % | 否 | 否 | 否（非物理解） |\n| dx=0.05 fit_arm | 15 % | +109547154.21 % | 否 | 否 | 否（非物理解） |\n\n## ⑤ 注意点\n1. 两个长时工件（dx=0.05 发散、dx=0.02 过阻尼）均不满足可判定性，方向相反，\n   说明强耦合路径在两个分辨率上都没有收敛到物理解；`dx` 不是这里的控制参数。\n2. 骨架离散被 `max(15, …)` 静默夹住，一条 dx 梯子不能当收敛证据。\n3. 下一步该做的是先让 dx=0.02 的场有物理量级的 `Cd`（0.05 → 3.2 差 60 倍），\n   指向载荷通道或体积力标度，不是离散误差。\n\n## ⑥ 复现\n```bash\nPYTHONPATH=src python -m pytest tests/test_fsi2_viv_verdict_pipeline.py -q\n```\n",
+  "ownership": {
+    "mission_id": 24712,
+    "owner": "1",
+    "bypass": null,
+    "figures_checked": 1
+  },
+  "readback": {
+    "submission_id": "9255a602064d465f95aefed1ab8a5e5f",
+    "report_id": 21580,
+    "ok": true,
+    "readback": {
+      "ok": true,
+      "record_missing": false,
+      "codes": [],
+      "checks": [
+        {
+          "field": "markdown",
+          "ok": true,
+          "expected_digest": "2f7c018c8a6c5e97e771e486c6587d668f4384edb3a5f470a4c5916ba0012321",
+          "observed_digest": "2f7c018c8a6c5e97e771e486c6587d668f4384edb3a5f470a4c5916ba0012321",
+          "code": "",
+          "detail": ""
+        },
+        {
+          "field": "figures",
+          "ok": true,
+          "expected_digest": "b8dfded02c97b1abee4eb43d73abbd1ca3e07b03842a30e347c40cbdefaefaf8",
+          "observed_digest": "b8dfded02c97b1abee4eb43d73abbd1ca3e07b03842a30e347c40cbdefaefaf8",
+          "code": "",
+          "detail": ""
+        },
+        {
+          "field": "mission_id",
+          "ok": true,
+          "expected_digest": "90efd5f59012eff1777776a12aa6339a6add8ed603fe0fd04d4e052e3d9552a3",
+          "observed_digest": "90efd5f59012eff1777776a12aa6339a6add8ed603fe0fd04d4e052e3d9552a3",
+          "code": "",
+          "detail": ""
+        }
+      ],
+      "checked_fields": [
+        "markdown",
+        "figures",
+        "mission_id"
+      ]
+    },
+    "ledger_ok": true,
+    "ledger_error": null
+  }
+}
