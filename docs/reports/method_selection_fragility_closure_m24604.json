@@ -1,0 +1,77 @@
+{
+ "mission": 24604,
+ "anchor": "XVAL-SPH-METHOD-SELECTION-2026-11-12",
+ "generated_at": "2026-11-17T22:15:58Z",
+ "main_commit": "bcca7a557950783e7cdb7c6b82ebdf42983435f7",
+ "pr1026_head": "4ad970a9274b16f6ff9eca7fe16730c7751ce883",
+ "pr1026_state": "closed-unmerged (owner ruling 2026-11-05)",
+ "per_file": [
+  {
+   "file": "benchmarks/method_selection/audit_decision_fragility.py",
+   "status": "identical",
+   "sha256_main": "962d83f37ea1d46f20bce3fd9e186d8f66f984f0d3e8a6b57a81b86e05998dba"
+  },
+  {
+   "file": "benchmarks/method_selection/strict_bound_profiles.py",
+   "status": "identical",
+   "sha256_main": "50a0b2d4d2c199f3ebd4e035a7eb8d824079e6b0ce37f16a60629d97b5bd93b2"
+  },
+  {
+   "file": "docs/dev_report_method_selection_fragility_m21797.md",
+   "status": "identical",
+   "sha256_main": "de4dc2d93d57a6074df79df987901b8a06d25404127ca9a25f2b390274e6abfa"
+  },
+  {
+   "file": "docs/figures/method_selection_fragility/evidence_depth.png",
+   "status": "updated-in-main",
+   "sha256_main": "1a132a6734fc4281eab655b054ce86a36c07755c4089689b53ca82459e1ffc68"
+  },
+  {
+   "file": "docs/figures/method_selection_strict_bound/modes.png",
+   "status": "updated-in-main",
+   "sha256_main": "4daa9a3d1daf65d703fb3fdf16fdb7355923c47b496938a8ca70bd1397e1753c"
+  },
+  {
+   "file": "docs/reports/method_selection_fragility_m21797.json",
+   "status": "updated-in-main",
+   "sha256_main": "9e1afafc9e35d90452556e4338bdb6bd8838f9927f69de446733a9d9e4f40016"
+  },
+  {
+   "file": "docs/reports/method_selection_strict_bound_m21537.json",
+   "status": "updated-in-main",
+   "sha256_main": "dfd13996ef1c24c754d05b1e7d69e2a9f90fae8697b02f63117c019214bdb848"
+  },
+  {
+   "file": "docs/xval_method_selection_fragility_m21797.md",
+   "status": "updated-in-main",
+   "sha256_main": "6cd3ef8cf04b32d37013748959d0cddd9a431cd15499a6a0f10d3213a62a08f5"
+  },
+  {
+   "file": "docs/xval_method_selection_strict_bound_m21537.md",
+   "status": "updated-in-main",
+   "sha256_main": "ba860aea0e17339e04fb6a1a3b0dc22a71ddd53487dcf76235e8aaf0b728c049"
+  },
+  {
+   "file": "src/tensorsph/method_selection.py",
+   "status": "identical",
+   "sha256_main": "75c3135f6f0592e28dc1ff56b5086e5ca69eb95a897fa22557c1f9fef79a5631"
+  },
+  {
+   "file": "tests/test_method_selection_fragility.py",
+   "status": "updated-in-main",
+   "sha256_main": "acab841deceb98a2c6ad04615606e627bd60ec2b615f5792c73238dd0cc456ba"
+  }
+ ],
+ "n_identical": 4,
+ "n_updated_in_main": 7,
+ "n_missing": 0,
+ "anti_drift_ok": true,
+ "test_summary": "23 passed, 1 warning in 10.55s",
+ "tests_ok": true,
+ "registry_n_records": 30,
+ "fragility_n_records": 30,
+ "fragility_n_families": 13,
+ "fragility_invariants_ok": true,
+ "fragility_n_depth_mismatches": 0,
+ "verdict": "ALL-INTACT"
+}
