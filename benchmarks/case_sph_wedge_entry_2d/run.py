@@ -369,6 +369,7 @@ def grade(arts: dict, ref: dict) -> dict:
                          whose limit depends on ``dx`` (see docs, sec. 5).
     """
     w = ref["wagner"]
+    zf = ref["zhao_faltinsen_1993"]
     tau_peak = (math.sqrt(max(0.0, 1.0 - 1.0 / (w["C"] ** 2)))
                 if w["C"] > 1 else 0.0)
     ladder = sorted([a for a in arts.values() if a["kind"] == "ladder"],
@@ -401,7 +402,7 @@ def grade(arts: dict, ref: dict) -> dict:
             "max_rho_ratio": max([r["max_rho_ratio"] for r in a["series"]
                                   if _finite(r.get("max_rho_ratio"))]
                                  or [float("nan")]),
-            "cp_max_reference": w["cp_max"],
+            "cp_max_reference": zf["cp_max"],
             "cp_centre_reference": w["cp_centre"],
             # Compressibility error budget: a density excursion max(rho/rho0)
             # alone produces p = B[(rho/rho0)^gamma - 1] with B = rho0 c0^2/gamma,
