@@ -293,6 +293,19 @@ class CaseResult:
     cases: Dict[str, Any] = field(default_factory=dict)
 
 
+from .registry import capability  # noqa: E402  (capability registry, m25063)
+
+
+@capability(
+    id="sph.case.stokes_second",
+    kind="solver",
+    maturity="developing",
+    wired=False,
+    tested=True,
+    verified=False,
+    test_path="tests/test_stokes2.py",
+    evidence={"grade": "MECHANICS", "note": "oscillatory Couette (Stokes 2nd problem) vs Crank-Nicolson reference; transient Couette deliverable is an honest FAIL at the 8% gate (DELIVERABLE_COUETTE_TRANSIENT.md)"},
+)
 def run_case(gap: float, dx: float, viscosity: float, omega: float,
              amplitude: float, length: float = None, periods: float = 2.0,
              settle_periods: float = 0.0, sound_speed: float = None,

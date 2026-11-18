@@ -329,6 +329,20 @@ def _bin_cells(cfg: DuctConfig, pos: torch.Tensor, u_mean: torch.Tensor,
             "rows": rows}
 
 
+from .registry import capability  # noqa: E402  (capability registry, m25063)
+
+
+@capability(
+    id="sph.case.poiseuille_duct",
+    kind="solver",
+    maturity="mature",
+    wired=True,
+    tested=True,
+    verified=True,
+    test_path="tests/test_case_poiseuille_duct.py",
+    evidence={"grade": "ANALYTIC", "max_error_pct": 2.72, "note": "mirror-wall duct Poiseuille vs closed-form: centre-line +0.38%, profile RMS 2.72%, wall shear -0.35% (DELIVERABLE_POISEUILLE_MIRROR.md, all gates <=5%)"},
+    endpoint="cli:python -m tensorsph --case poiseuille_duct",
+)
 def run_case(cfg: DuctConfig, resolution: int, device=None, verbose: bool = False,
              steps: int | None = None) -> dict:
     """Integrate the duct from rest and return the time-averaged velocity field.
@@ -431,7 +445,7 @@ def run_ladder(cfg: DuctConfig, resolutions=(8, 12, 16), device=None,
         out["wall_clock_s"] = time.time() - t0
         runs.append(out)
         print(f"  aspect={cfg.aspect:g} H/dx={res:3d} u_c={out['u_centre_measured']:.5f} "
-              f"(analytic {out['u_centre_analytic']:.5f}) "
+              f"(analytic {out['profile']['u_centre_analytic']:.5f}) "
               f"coreL2={out['profile']['core_l2_error_pct']:.2f}% "
               f"ghosts={out['n_ghost']} {out['wall_clock_s']:.1f}s", flush=True)
     return {"aspect": cfg.aspect, "slip": cfg.slip, "resolutions": list(resolutions),
@@ -744,7 +758,7 @@ def main(argv=None) -> int:
     (outdir / f"{kind}.json").write_text(json.dumps(out, indent=1, sort_keys=True,
                                                     default=float))
     print(f"{args.only}: u_centre={out['u_centre_measured']:.5f} "
-          f"(analytic {out['u_centre_analytic']:.5f}) "
+          f"(analytic {out['profile']['u_centre_analytic']:.5f}) "
           f"coreL2={out['profile']['core_l2_error_pct']:.2f}% {out['wall_clock_s']:.1f}s")
     return 0
 

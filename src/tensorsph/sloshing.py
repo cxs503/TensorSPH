@@ -329,6 +329,19 @@ class SloshingRun:
         return extract_frequency(self.surface_elevations[x_probe], dt)
 
 
+from .registry import capability  # noqa: E402  (capability registry, m25063)
+
+
+@capability(
+    id="sph.case.sloshing",
+    kind="solver",
+    maturity="developing",
+    wired=True,
+    tested=True,
+    verified=False,
+    test_path="tests/test_case_sloshing_first_mode.py",
+    evidence={"grade": "MECHANICS", "note": "first-mode sloshing resonance; mechanics tests only"},
+)
 def run_case(cfg: SloshingConfig, pair_skin_factor: float | None = None):
     """Integrate the sloshing case and return measured quantities."""
     validate_case(cfg)

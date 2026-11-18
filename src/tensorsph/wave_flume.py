@@ -838,6 +838,19 @@ class WaveFlumeRun:
         return (self.mass_final - self.mass) / self.mass
 
 
+from .registry import capability  # noqa: E402  (capability registry, m25063)
+
+
+@capability(
+    id="sph.case.wave_flume",
+    kind="solver",
+    maturity="developing",
+    wired=True,
+    tested=True,
+    verified=False,
+    test_path="tests/test_wave_flume.py",
+    evidence={"grade": "MECHANICS", "note": "regular-wave flume (piston + sponge); honest FAIL at H/dx=2.6: wave-height error 65.5%, reflection 82% (DELIVERABLE_WAVE_FLUME_M17051.md); convergence campaign pending"},
+)
 def run_case(cfg: WaveFlumeConfig, snapshot_times=None,
              probe_positions=None) -> WaveFlumeRun:
     """Integrate the flume and return the gauge records and snapshots.

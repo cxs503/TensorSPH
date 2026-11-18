@@ -529,6 +529,19 @@ class DamBreak3DRun:
 # run_case
 # --------------------------------------------------------------------------- #
 
+from .registry import capability  # noqa: E402  (capability registry, m25063)
+
+
+@capability(
+    id="sph.case.dam_break_3d",
+    kind="solver",
+    maturity="developing",
+    wired=True,
+    tested=True,
+    verified=False,
+    test_path="tests/test_dam_break_3d.py",
+    evidence={"grade": "MECHANICS", "note": "3D dam break; mechanics/conservation tests only"},
+)
 def run_case(cfg: DamBreak3DConfig, pair_skin_factor: float | None = None,
              snapshot_times=None, seed: int | None = None):
     """Integrate the 3-D dam break and return the measured trajectory.

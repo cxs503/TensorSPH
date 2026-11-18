@@ -350,6 +350,19 @@ def ref_vs_got(spec: CaseSpec, run: dict, cfg: TGVConfig) -> dict:
     }
 
 
+from .registry import capability  # noqa: E402  (capability registry, m25063)
+
+
+@capability(
+    id="sph.case.taylor_green",
+    kind="solver",
+    maturity="developing",
+    wired=True,
+    tested=True,
+    verified=False,
+    test_path="tests/test_taylor_green_benchmark.py",
+    evidence={"grade": "MECHANICS", "note": "Taylor-Green vortex decay benchmark with convergence study; error band vs literature not yet measured"},
+)
 def run_case(spec: CaseSpec, dx: float, *, viscosity: float | None = None,
              t_end: float | None = None, u0: float | None = None) -> dict:
     """Run one Taylor-Green case and attach the reference-side diagnostics."""

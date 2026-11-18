@@ -97,6 +97,19 @@ from .neighbor_search import cell_linked_pairs
 # Case configuration
 # --------------------------------------------------------------------------- #
 
+from .registry import capability  # noqa: E402  (capability registry, m25063)
+
+
+@capability(
+    id="sph.fsi.turek_hron",
+    kind="fsi",
+    maturity="developing",
+    wired=True,
+    tested=True,
+    verified=False,
+    test_path="tests/test_fsi2_turek_hron.py",
+    evidence={"grade": "MECHANICS", "note": "FSI2 (Turek-Hron) fluid-structure benchmark case; modal/parameter-gate/similarity companions in fsi2_* modules"},
+)
 @dataclass
 class FSI2Case:
     """Turek-Hron FSI2 configuration.

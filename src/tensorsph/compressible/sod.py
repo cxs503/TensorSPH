@@ -362,6 +362,19 @@ def contact_force_check(cfg: Optional[SodSPHConfig] = None,
     return out
 
 
+from ..registry import capability  # noqa: E402  (capability registry, m25063)
+
+
+@capability(
+    id="sph.compressible.sod",
+    kind="solver",
+    maturity="developing",
+    wired=True,
+    tested=True,
+    verified=False,
+    test_path="tests/test_compressible_sod.py",
+    evidence={"grade": "MECHANICS", "note": "Sod (1978) shock tube SPH vs exact Riemann; documented 64% L2 density error + negative convergence order (docs/audit/audit_verdict_compressible_sod.md) - honest FAIL"},
+)
 def run_sod_sph(cfg: SodSPHConfig, output_times: Optional[List[float]] = None) -> dict:
     """Run the compressible SPH Sod shock tube; return snapshots + diagnostics."""
     gamma = cfg.gamma

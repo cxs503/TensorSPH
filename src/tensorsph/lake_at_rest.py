@@ -692,6 +692,19 @@ def _row_profiles(pos, cfg: LakeConfig, rho, pressure, mass=None):
     return rows
 
 
+from .registry import capability  # noqa: E402  (capability registry, m25063)
+
+
+@capability(
+    id="sph.case.lake_at_rest",
+    kind="solver",
+    maturity="developing",
+    wired=True,
+    tested=True,
+    verified=False,
+    test_path="tests/test_lake_at_rest.py",
+    evidence={"grade": "MECHANICS", "note": "still-lake conservation anchor (periodic tank meets machine-precision tolerance; wall-bounded variant is a documented honest FAIL)"},
+)
 def run_case(cfg: LakeConfig, verbose: bool = False) -> dict:
     """Full case: build, reconstruct, verify the rest, and cross-check the physics."""
     torch_dtype = cfg.torch_dtype

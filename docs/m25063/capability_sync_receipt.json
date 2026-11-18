@@ -1,0 +1,26 @@
+{
+  "repo": "TensorSPH",
+  "upserted": 19,
+  "tombstoned": 0,
+  "source_commit": "317b6b6cdffb0c3b6b0af6088b284d4b4b65c2e1",
+  "client": {
+    "mode": "static",
+    "count": 19,
+    "summary": {
+      "count": 19,
+      "by_maturity": {
+        "mature": 2,
+        "developing": 17,
+        "planned": 0
+      },
+      "by_kind": {
+        "fsi": 1,
+        "solver": 18
+      },
+      "wired": 12,
+      "tested": 19,
+      "verified": 2,
+      "with_endpoint": 3
+    }
+  }
+}

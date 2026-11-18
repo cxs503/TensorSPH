@@ -438,6 +438,19 @@ def _peak_metrics(times: list[float], height: list[float],
     return peak, peak_time, arrival
 
 
+from .registry import capability  # noqa: E402  (capability registry, m25063)
+
+
+@capability(
+    id="sph.case.kleefsman_obstacle",
+    kind="solver",
+    maturity="developing",
+    wired=False,
+    tested=True,
+    verified=False,
+    test_path="tests/test_kleefsman_obstacle.py",
+    evidence={"grade": "MECHANICS", "note": "Kleefsman-style obstacle wave case; mechanics tests only"},
+)
 def run_case(cfg: KleefsmanConfig, resume: dict | None = None,
              time_budget: float | None = None) -> KleefsmanRun:
     """Integrate the case to ``cfg.t_end`` and return the probe diagnostics.
