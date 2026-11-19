@@ -69,7 +69,12 @@ def synthetic(monkeypatch, tmp_path):
                arrival=0.38, verdict="FAIL")
     _write_run(results, "dx0.05_zc", dx=0.05, obstacle_z=0.3, peak=0.42,
                arrival=0.37, verdict="FAIL")
-    _write_run(results, "dx0.06_zc", dx=0.06, obstacle_z=0.3, peak=0.42,
+    # dx = 0.04, not 0.06: the 0.161 m box must be spanned by >= 3 cells, so
+    # the coarsest admissible rung is 0.161/3 = 0.053667 m (rung_gate m22082).
+    # A centred-arm rung at dx = 0.06 would be rejected by validate_case and
+    # the arm would never reach a fit -- the very trap the rung gate exists to
+    # stop.
+    _write_run(results, "dx0.04_zc", dx=0.04, obstacle_z=0.3, peak=0.42,
                arrival=0.42, verdict="FAIL")
     monkeypatch.setattr(pr, "RESULTS", results)
     monkeypatch.setattr(pr, "OUTDIR", tmp_path / "out")
@@ -80,11 +85,11 @@ def synthetic(monkeypatch, tmp_path):
 
 def test_runs_are_grouped_by_box_spanwise_position(synthetic):
     tags = pr.discovered_tags()
-    assert tags == ["dx0.04", "dx0.05", "dx0.05_zc", "dx0.06_zc"]
+    assert tags == ["dx0.04", "dx0.04_zc", "dx0.05", "dx0.05_zc"]
     arms = pr.group_by_arm(tags)
     assert set(arms) == {"z0", "z0p3"}
     assert arms["z0"] == ["dx0.04", "dx0.05"]
-    assert arms["z0p3"] == ["dx0.05_zc", "dx0.06_zc"]
+    assert arms["z0p3"] == ["dx0.04_zc", "dx0.05_zc"]
 
 
 def test_report_never_ladders_across_geometries(synthetic):
