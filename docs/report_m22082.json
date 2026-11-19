@@ -1,9 +1,9 @@
 {
- "title": "Kleefsman 3-D 臂：生产作业 rc=255/1 而队列报 succeeded，dx=0.08 被自身校验器否决",
- "summary": "复核 11-15 三个 3-D 生产作业的真实结局：全部失败（rc 255/255/1）但计算门报 succeeded。修正两处缺陷（dx=0.08 违反 3 格判据；崩溃前不落盘导致零证据），重建为 0.05/0.04/0.03 有效梯子并重新递交。生产数值如实 WITHHELD。",
- "scenario_key": "kleefsman-dambreak-obstacle",
- "mission_id": 22082,
- "tags": ["CASE-SPH-KLEEFSMAN-DAMBREAK-OBST", "TensorSPH", "3D", "verification-debt", "evidence-gate"],
- "markdown": "## 1 案例介绍\nKleefsman et al. (2005, JCP 206:363, doi:10.1016/j.jcp.2004.12.007) 带障碍物溃坝：水槽 3.22x1.00x1.00 m，水柱 1.228x0.550 m，方箱 0.161x0.161x0.403 m，上游面 x=2.476 m；H2 测点（箱前）实验峰值 0.370 m @ 1.7027 s，到达 0.3591 s，容差 10%。2-D 臂为 100% 堵水（满宽箱），实测峰值 0.4768 m（dx=0.02，冻结 slab 算子）＝+28.9%；3-D 臂保留 40% 堵水，用来测量而非断言「旁通臂解释 +29% 残差」。\n\n## 2 怎么做的\n(1) 不信任队列状态，直接读作业日志 jobs/cj*.log 的 rc 与末样本；(2) 用案例自身 validate_case 判定每个网格档是否可用；(3) 修驱动：run_case 增 on_sample 逐样本落盘、运行前写 complete:false 的 meta、异常时写 aborted+error；run.to_dict() 输出完整 fingerprint；(4) 修梯子：rung_validity/valid_rungs、RUNGS_REJECTED、按键计数的协议比较（失败关闭）、complete 由 t_last>=t_end 推断；(5) 重新递交 3 个有效档。\n\n## 3 计算结果\n\n| 作业 | 档 | 队列状态 | 进程 rc | 末样本 | 真实结局 |\n|---|---|---|---|---|---|\n| cj3661 | dx=0.04 | succeeded | 255 | t=2.036 s (slab 0.131 m) | glibc abort: free(): corrupted unsorted chunks |\n| cj3662 | dx=0.03 | succeeded | 255 | t=0.579 s (slab 0.053 m) | 同上 |\n| cj3758 | dx=0.08 | succeeded | 1 | — | ValueError: obstacle length 0.161 m is under-resolved at dx=0.08（0 s 计算）|\n\n网格档可用性（validate_case 判定）：请求 [0.08,0.05,0.04,0.03] → 可用 [0.05,0.04,0.03]，最大可用 dx = 0.161/3 = 0.053667 m。\n\n重递作业：cj3887 (dx=0.05)、cj3888 (dx=0.04)、cj3889 (dx=0.03)，收工时全部仍在排队（前约 34 个作业），故不声明任何 3-D 峰值/到达数值。\n\n## 4 结果图\n本单不附场量云图：3-D 臂从未产生过一个完整运行的场或序列；唯一存在的 3-D 序列是 cj3661 的截断日志（t<=2.036 s），比实验峰值时刻 1.7027 s 少 0.33 s 以上窗口，其最大值为构造性删失（score() 自身即拒绝此类最大值为可通过）。把截断序列与实验曲线画在一起会诱导读出运行未到达的峰值，故不画，并在此显式说明理由。\n\n## 5 注意点\n* 计算门 succeeded/rc 0 是派发状态，不是运行结局：三个作业进程 rc 分别为 255/255/1。以队列状态作证据不成立。\n* 堆损坏非本案例特有：2812 份作业日志中 82 份（2.9%）含同一 abort，n315:38 / n330:44，跨无关案例；且有同一命令一次 abort（cj2937）一次成功（cj3094）的记录，故按间歇性节点/分配器故障处理——未证明（无进程内复现器，且两次 abort 时刻 2.04 s / 0.58 s 不同，确定性数值缺陷不会如此）。\n* 上一轮 m21869 的「仍在运行、结果一放即可判定」已被证伪：三个作业早已失败，结果永远不会到来。\n\n## 6 误差判定\n\n| 量 | 值 | vs 参考 | <10%? |\n|---|---|---|---|\n| 3-D 峰值（任档） | 无完整运行 | — | 未知（不声明）|\n| 3-D 到达（任档） | 无完整运行 | — | 未知（不声明）|\n| 2-D slab 峰值 dx=0.02（既有）| 0.4768 m vs 0.370 | +28.9% | 否 |\n| 2-D 到达 dx=0.02（既有）| 0.4409 s vs 0.3591 | +22.8% | 否 |\n\n结论：锚点验收（峰值与到达 <10%）未通过、也未获新数据；本单交付的是让该判定可被真正到达的闸门修复（有效档 + 崩溃不丢证据 + 拒绝把被否档/截断序列混入拟合），生产数值诚实 WITHHELD。",
- "figures": []
+  "title": "TensorSPH Kleefsman 3-D Rung Gate Verification",
+  "summary": "Verification of the 3-D Kleefsman obstacle case ladder admission rules and protocol comparability guards.",
+  "scenario_key": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST-3D",
+  "mission_id": "m22082",
+  "tags": ["kleefsman", "3d", "rung-gate", "ladder", "verification"],
+  "markdown": "docs/verification_kleefsman_3d_rung_gate_m22082.md",
+  "figures": []
 }
