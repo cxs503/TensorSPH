@@ -240,8 +240,8 @@ def main() -> int:
         "scaling arms and shipped switches only -- no new physics, no fitted",
         "constants.",
         "",
-        "Reference protocol: `dx = {:g} m`, `H = {:g} m`, `W = {:g} m`,",
-        "`h = {:.2f} dx`, `c0 = {:g} m/s`, lateral periodicity on, frozen pair",
+        "Reference protocol: `dx = {:g} m`, `H = {:g} m`, `W = {:g} m`,\n"
+        "`h = {:.2f} dx`, `c0 = {:g} m/s`, lateral periodicity on, frozen pair\n"
         "list, `{}` particles per arm, exponential band `${:.0e} .. {:.0e}$`.".format(
             base["config"]["dx"], base["config"]["depth"], base["config"]["width"],
             base["config"]["h_factor"], base["config"]["sound_speed"],

@@ -14,9 +14,9 @@ negative stiffness belongs to. This study asks that question with
 scaling arms and shipped switches only -- no new physics, no fitted
 constants.
 
-Reference protocol: `dx = {:g} m`, `H = {:g} m`, `W = {:g} m`,
-`h = {:.2f} dx`, `c0 = {:g} m/s`, lateral periodicity on, frozen pair
-list, `0.02` particles per arm, exponential band `$3e-01 .. 4e-01$`.
+Reference protocol: `dx = 0.02 m`, `H = 0.3 m`, `W = 0.4 m`,
+`h = 1.30 dx`, `c0 = 20 m/s`, lateral periodicity on, frozen pair
+list, `300` particles per arm, exponential band `$1e-06 .. 1e-03$`.
 
 ## 2. Arms
 
