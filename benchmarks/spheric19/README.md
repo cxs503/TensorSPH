@@ -104,3 +104,7 @@ of solid-wall penetration. There is also a genuine floor crossing before
 the main bending response: at t = 0.26858 s a particle first exceeded 0.25
 particle spacings below the floor near x = 0.620 m. The output records both
 the first such envelope excursion and the location of the largest one.
+
+### Fixed-wall contact comparison
+
+With normal contact enabled at 5 mm spacing, the three marker errors become 12.96 mm (18.00%), 5.35 mm (10.37%), 3.10 mm (10.60%). The total absolute contact impulse on the fluid is 13.03 N·s per metre of span. The maximum trial excursion is 0.079 mm and the maximum after contact is 0.000 mm. The wall constraint changes the response at all markers. It does not establish experimental agreement. The [paired experimental and computed displacements](comparison.csv) include both spacings and the half-CFL control at their original experimental sample times.
