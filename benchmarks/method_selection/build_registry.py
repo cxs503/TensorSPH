@@ -53,6 +53,15 @@ MARKER = "<!--INSERT-GENERATED-TABLES-->"
 # --------------------------------------------------------------------------- #
 # Extractors: (committed artefact) -> (measured error in percent)
 # --------------------------------------------------------------------------- #
+def x_delta_plus_ellipse(runs: list) -> float:
+    return 100 * max(abs(e) for run in runs for e in run["moment_relative_errors"])
+
+
+def x_delta_plus_plate(runs: list) -> float:
+    finest = min(runs, key=lambda run: run["dx_m"])
+    return 100 * max(m["rmse_over_measured_peak"] for m in finest["markers"].values())
+
+
 def x_wave_flume(doc: dict) -> float:
     return abs(float(doc["worst_error_percent"]))
 
@@ -271,6 +280,28 @@ class Source:
 
 
 SOURCES: tuple[Source, ...] = (
+    Source(
+        extractor="x_delta_plus_ellipse",
+        method="sun_delta_plus",
+        case="ELLIPTICAL-DROP",
+        quantity="maximum absolute relative axis-stretch error at t=0.4, R/dx=8,12,16",
+        gate_pct=1.0,
+        path="benchmarks/delta_plus/ellipse_results.json",
+        fn=x_delta_plus_ellipse,
+        precondition="single-phase, zero gravity, unit initial radius and strain rate",
+    ),
+    Source(
+        extractor="x_delta_plus_plate",
+        method="sun_delta_plus",
+        case="SPHERIC-19-ELASTIC-PLATE",
+        quantity="largest marker RMSE divided by its measured peak at 5 mm "
+                 "(displacement metric only, density-regime check failed)",
+        gate_pct=OWNER_TOLERANCE_PCT,
+        path="benchmarks/delta_plus/spheric19_results.json",
+        fn=x_delta_plus_plate,
+        precondition="H=0.30 m, no phase alignment. At 5 mm the maximum density deviation "
+                     "is 2.908%, exceeding the 1% weak-compressibility gate.",
+    ),
     Source(
         extractor="x_wave_flume",
         method="wcsph_delta_sph",

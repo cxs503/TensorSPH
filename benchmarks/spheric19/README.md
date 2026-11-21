@@ -30,7 +30,7 @@ alignment or amplitude fitting.
 
 ## Model and interface
 
-The fluid uses the TensorSPH single-phase WCSPH density-summation solver and
+The default fluid method uses the TensorSPH single-phase WCSPH density-summation solver and
 its hydrostatic mass initialization. It models an open water surface, free-slip
 walls and a single row of moving plate stations on the centreline. The gate
 lift is piecewise linear with a final hold. The plate stiffness and inertia
@@ -108,3 +108,48 @@ the first such envelope excursion and the location of the largest one.
 ### Fixed-wall contact comparison
 
 With normal contact enabled at 5 mm spacing, the three marker errors become 12.96 mm (18.00%), 5.35 mm (10.37%), 3.10 mm (10.60%). The total absolute contact impulse on the fluid is 13.03 N·s per metre of span. The maximum trial excursion is 0.079 mm and the maximum after contact is 0.000 mm. The wall constraint changes the response at all markers. It does not establish experimental agreement. The [paired experimental and computed displacements](comparison.csv) include both spacings and the half-CFL control at their original experimental sample times.
+
+## Delta-plus SPH comparison
+
+Select Sun's single-resolution 2-D formulation via the fluid method switch.
+The benchmark keeps the same gate history, plate geometry, FEM properties,
+experimental data, sound speed of 60 m/s and end time of 0.46 s. The two
+fluid methods differ in density evolution, kernel, stabilization and wall
+treatment. This is a solver comparison. The shift has its own isolated
+[operator and analytic free-drop checks](../delta_plus/README.md).
+
+```sh
+python benchmarks/spheric19/run.py --method delta-plus --dx .02 --output out/delta20
+python benchmarks/spheric19/run.py --method delta-plus --dx .01 --output out/delta10
+python benchmarks/spheric19/run.py --method delta-plus --dx .01 --courant .11 --output out/delta10-half
+python benchmarks/spheric19/run.py --method delta-plus --dx .005 --output out/delta5
+python benchmarks/spheric19/plot.py out/test19-5mm out/delta5 --output out/methods5.png
+```
+
+| Δx (mm) | CFL | Marker 1 RMSE (mm) | Marker 2 RMSE (mm) | Marker 3 RMSE (mm) | Peak Mach | Max density deviation |
+|---:|---:|---:|---:|---:|---:|---:|
+| 20 | 0.22 | 22.35 | 16.40 | 11.07 | 0.0312 | 0.529% |
+| 10 | 0.22 | 14.70 | 8.61 | 6.03 | 0.0388 | 0.765% |
+| 10 | 0.11 | 14.69 | 8.61 | 6.03 | 0.0389 | 0.768% |
+| 5 | 0.22 | 7.95 | 4.91 | 4.06 | 0.0516 | 2.908% |
+
+![Both fluid methods at 5 mm with the measured marker displacements](../delta_plus/test19_5mm.png)
+
+At 10 mm the upper-marker RMSE drops from 17.10 to 14.70 mm. The middle
+and lower errors rise from 7.59 to 8.61 mm and from 2.76 to 6.03 mm.
+At this spacing halving the fluid CFL changes each RMSE by less than
+0.01 mm. The computed half-rise times are late by 12.05, 16.16 and 14.95 ms
+at CFL 0.22. The default WCSPH control produces identical per-step marker
+histories to its previous 10 mm record.
+
+At 5 mm the δ⁺-SPH errors normalized by the corresponding measured peaks are 11.04%, 9.52% and 13.87%. Signed half-rise timing errors (simulation minus experiment) are +7.48, +7.22 and +9.52 ms.
+
+The JSON diagnostic checks peak fluid Mach ≤ 0.10 and maximum relative
+density departure ≤ 1% at every δ⁺-SPH step. Exceedances retain their first
+time and values. This regime check is independent of marker agreement.
+The 5 mm run first crossed the density limit at t = 0.26432 s and reached
+2.908% with peak Mach 0.0516. All three marker scores meet the 15%
+repository tolerance, while the weak-compressibility gate fails.
+All runs use pressure traction and omit the optional post-step tank contact.
+[Machine-readable results](../delta_plus/spheric19_results.json) and
+[all 62 paired experimental samples](comparison.csv) retain both methods.

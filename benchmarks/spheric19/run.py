@@ -46,6 +46,7 @@ def main():
 
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--gate", type=Path, default=HERE / "gate_fig2.dat")
+    p.add_argument("--method", choices=("wcsph", "delta-plus"), default="wcsph")
     p.add_argument("--dx", type=float, default=.01)
     p.add_argument("--elements", type=int, default=8)
     p.add_argument("--courant", type=float, default=.22)
@@ -60,7 +61,7 @@ def main():
                            density=1161.54, elements=args.elements)
     history, report = simulate(GateMotion.read(args.gate), strip, dx=args.dx,
                                end=args.end, courant=args.courant, sound_speed=args.sound_speed,
-                               contact=args.tank_contact)
+                               contact=args.tank_contact, method=args.method)
     ref = np.genfromtxt(HERE / "markers_h030_fig3.csv", delimiter=",", names=True)
     scores = compare(history, ref)
     report.update(elements=args.elements, markers=scores,

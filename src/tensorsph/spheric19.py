@@ -14,6 +14,7 @@ import math
 import torch
 
 from .dam_break import DamBreakConfig, make_column
+from .delta_plus import delta_plus_step
 from .droplet_impact import rhs, stable_dt, wall_lattice
 from .neighbor_search import PairListCache
 
@@ -82,7 +83,7 @@ def tank_contact(previous, pos, velocity, mass, width, height):
 
 
 def simulate(gate, strip, *, dx=.01, height=.3, end=.46, courant=.22, sound_speed=60.,
-             contact=False):
+             contact=False, method="wcsph"):
     """Advance both solvers and return synchronous marker histories and diagnostics.
 
     The supplied strip has length 0.09 m and implements station_weights, sample
@@ -100,14 +101,36 @@ def simulate(gate, strip, *, dx=.01, height=.3, end=.46, courant=.22, sound_spee
     cfg = DamBreakConfig(dx=dx, pool_width=.8, pool_depth=.6, tank_height=.6,
                          column_width=.2, column_height=height, sound_speed=sound_speed,
                          viscosity=1.e-6, max_courant=courant, density_calibration=True)
+    if method not in ("wcsph", "delta-plus"):
+        raise ValueError("method must be wcsph or delta-plus")
+    reference_speed = math.sqrt(2*cfg.gravity*height)
+    if method == "delta-plus":
+        cfg.h_factor = 2.
+        cfg.wall_layers = 4
     cpu = torch.device("cpu")
     pos, mass = make_column(cfg, cpu)
     pos, mass = pos.double(), mass.double()
+    max_density_error = max_shift_dx = 0.
+    first_regime_exit = None
+    if method == "delta-plus":
+        # Exact initial barotropic hydrostatics, p = c0²(rho-rho0).
+        density = cfg.rho0*torch.exp(cfg.gravity*(height - pos[:, 1])/sound_speed**2)
+        mass = density * dx**2
+        max_density_error = float((density/cfg.rho0-1).abs().max())
+        if max_density_error > .01:
+            first_regime_exit = {"t_s": 0., "mach": 0.,
+                                 "relative_density_deviation": max_density_error}
     velocity = torch.zeros_like(pos)
     tank = wall_lattice(cfg, cpu, top=.6).double()
     # The first gate row is one full cell from the last water cell centre.
     y = (torch.arange(math.ceil(.6/dx), dtype=pos.dtype) + .5)*dx
     gate0 = torch.stack((torch.full_like(y, .2 + dx/2), y), dim=1)
+    if method == "delta-plus":
+        # For slip ghosts the sign of the unit normal is immaterial.
+        floor = tank[:, 1] < 0
+        tank_normal = torch.stack((~floor, floor), dim=1).to(pos)
+        gate_normal = torch.zeros_like(gate0)
+        gate_normal[:, 0] = 1
     panels = round(strip.length / dx)
     arcs = (torch.arange(panels, dtype=pos.dtype) + .5) * (strip.length / panels)
     interface = strip.station_weights(arcs)
@@ -131,16 +154,36 @@ def simulate(gate, strip, *, dx=.01, height=.3, end=.46, courant=.22, sound_spee
         peak_mach = max(peak_mach, speed / cfg.sound_speed)
         dt = min(end - t, stable_dt(cfg, max(speed, abs(rate), float(plate_v.norm(dim=1).max()))))
         pairs, _ = cache.get(torch.cat((pos, wall)))
-        _, _, acceleration, loads = rhs(pos, velocity, mass, cfg, pairs=pairs, wall=wall,
-                                        wall_vel=wall_v, dt=dt, split=True)
-        reactions = loads["reaction"]
+        previous = pos
+        if method == "delta-plus":
+            tangent = torch.gradient(plate, dim=0)[0]
+            plate_normal = torch.stack((-tangent[:, 1], tangent[:, 0]), dim=1)
+            wall_normal = torch.cat((tank_normal, gate_normal, plate_normal))
+            step = delta_plus_step(pos, velocity, density, mass, dx=dx, dt=dt,
+                                   sound_speed=sound_speed, reference_speed=reference_speed,
+                                   rho0=cfg.rho0, gravity=cfg.gravity, viscosity=cfg.viscosity,
+                                   pairs=pairs, wall=wall, wall_velocity=wall_v,
+                                   wall_normal=wall_normal)
+            pos, velocity, density = step.position, step.velocity, step.density
+            acceleration, reactions = step.acceleration, step.wall_reaction
+            density_error = float((density/cfg.rho0-1).abs().max())
+            step_mach = float(velocity.norm(dim=1).max())/sound_speed
+            max_density_error = max(max_density_error, density_error)
+            peak_mach = max(peak_mach, step_mach)
+            if first_regime_exit is None and (step_mach > .1 or density_error > .01):
+                first_regime_exit = {"t_s": t+dt, "mach": step_mach,
+                                     "relative_density_deviation": density_error}
+            max_shift_dx = max(max_shift_dx, float(step.shift.norm(dim=1).max())/dx)
+        else:
+            _, _, acceleration, loads = rhs(pos, velocity, mass, cfg, pairs=pairs, wall=wall,
+                                            wall_vel=wall_v, dt=dt, split=True)
+            reactions = loads["reaction"]
+            velocity = velocity + dt * acceleration
+            pos = pos + dt * velocity
         # Independent balance of horizontal momentum per step, including all boundaries.
         imbalance = abs(float((acceleration[:, 0]*mass).sum() + reactions[:, 0].sum()))
         peak_balance = max(peak_balance, imbalance)
         strip.advance(interface, reactions[-panels:], dt)
-        velocity = velocity + dt * acceleration
-        previous = pos
-        pos = pos + dt * velocity
         if not bool(pos.isfinite().all() & velocity.isfinite().all()):
             raise FloatingPointError(f"non-finite fluid state at {t:g} s")
         # The experimental tank is open above y=0.60 m. Report envelope excursions
@@ -162,7 +205,14 @@ def simulate(gate, strip, *, dx=.01, height=.3, end=.46, courant=.22, sound_spee
                 first_large_excursion = dict(worst_position)
         points, _ = strip.sample(markers)
         history.append((t, *points[:, 0].tolist()))
-    return history, {"dx_m": dx, "height_m": height, "courant_limit": courant,
+    method_info = {"method": method, "h_over_dx": cfg.h_factor}
+    if method == "delta-plus":
+        method_info.update(max_density_relative_deviation=max_density_error,
+                           max_shift_over_dx=max_shift_dx, reference_speed_m_s=reference_speed,
+                           weak_compressibility_gate=("pass" if first_regime_exit is None
+                                                      else "fail"),
+                           first_weak_compressibility_exit=first_regime_exit)
+    return history, {**method_info, "dx_m": dx, "height_m": height, "courant_limit": courant,
                      "sound_speed_m_per_s": sound_speed,
                      "fluid_particles": len(pos), "steps": len(history)-1,
                      "peak_fluid_mach": max(peak_mach, float(velocity.norm(dim=1).max())
