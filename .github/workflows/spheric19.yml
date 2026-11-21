@@ -1,0 +1,33 @@
+name: SPHERIC 19 coupled integration
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/spheric19.yml"
+      - "src/tensorsph/spheric19.py"
+      - "src/tensorsph/dam_break.py"
+      - "src/tensorsph/droplet_impact.py"
+      - "src/tensorsph/neighbor_search.py"
+      - "benchmarks/spheric19/**"
+      - "tests/test_spheric19.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  impact:
+    runs-on: ci-loong64
+    timeout-minutes: 15
+    env:
+      OMP_NUM_THREADS: "1"
+      TORCH_DEVICE_BACKEND_AUTOLOAD: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install both solver revisions
+        run: |
+          python -m pip install "scipy>=1.11" -e ".[test]"
+          python -m pip install --no-deps "git+https://github.com/cxs503/TensorFEM.git@d281d065d08d88573965226cce3c978243541054"
+      - name: Exercise the two-way interface
+        run: |
+          python -c "from tensorfem.dynamic_strip import DynamicStrip2D"
+          python -m pytest -q tests/test_spheric19.py

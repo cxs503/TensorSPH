@@ -193,3 +193,7 @@ The CSF model (`cfg.surface_tension_coefficient > 0`) defaults to
 +25 % into the 15 % gate (+0.9 % at `dx = 0.0015 m`) at the cost of one extra
 neighbour search per step. Verification: `docs/verification_surface_tension_curvature.md`,
 harness `benchmarks/csf_curvature_fit/`.
+
+The [SPHERIC Test 19 coupled benchmark](benchmarks/spheric19/README.md) drives
+the measured lift gate, transfers particle wall reactions to a TensorFEM strip,
+and compares all three horizontal displacement histories with the experiment.
