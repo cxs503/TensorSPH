@@ -4,10 +4,14 @@ on:
     paths:
       - ".github/workflows/spheric19.yml"
       - "src/tensorsph/spheric19.py"
+      - "src/tensorsph/delta_plus.py"
+      - "src/tensorsph/density_diffusion.py"
+      - "tests/test_delta_plus.py"
       - "src/tensorsph/dam_break.py"
       - "src/tensorsph/droplet_impact.py"
       - "src/tensorsph/neighbor_search.py"
       - "benchmarks/spheric19/**"
+      - "benchmarks/delta_plus/**"
       - "tests/test_spheric19.py"
   workflow_dispatch:
 
@@ -30,4 +34,4 @@ jobs:
       - name: Exercise the two-way interface
         run: |
           python -c "from tensorfem.dynamic_strip import DynamicStrip2D"
-          python -m pytest -q tests/test_spheric19.py
+          python -m pytest -q tests/test_spheric19.py tests/test_delta_plus.py

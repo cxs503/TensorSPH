@@ -19,7 +19,8 @@ def main():
     for root in args.runs:
         report = json.loads((root / "metrics.json").read_text())
         curve = np.genfromtxt(root / "markers.csv", delimiter=",", names=True)
-        label = (f'{report["dx_m"]*1000:g} mm, '
+        method = "δ⁺-SPH" if report.get("method") == "delta-plus" else "WCSPH"
+        label = (f'{method} · {report["dx_m"]*1000:g} mm, '
                  f'CFL {report["courant_limit"]:g}, c₀ {report["sound_speed_m_per_s"]:g} m/s')
         if report.get("tank_contact"):
             label += " + tank contact"

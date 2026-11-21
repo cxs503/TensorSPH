@@ -96,6 +96,8 @@ python -m tensorsph.method_selection --json /tmp/prof.json     # CLI 判型（�
 
 | 方法 | 算例 | 度量 | 实测误差 [%] | 本算例门 [%] | <15% | 过本门 | 来源 |
 |---|---|---|---|---|---|---|---|
+| `sun_delta_plus` | ELLIPTICAL-DROP | maximum absolute relative axis-stretch error at t=0.4, R/dx=8,12,16 | 0.6597 | 1 | ✔ | ✔ | `benchmarks/delta_plus/ellipse_results.json` |
+| `sun_delta_plus` | SPHERIC-19-ELASTIC-PLATE | largest marker RMSE divided by its measured peak at 5 mm (displacement metric only, density-regime check failed) | 13.87 | 15 | ✔ | ✔ | `benchmarks/delta_plus/spheric19_results.json` |
 | `wcsph_delta_sph` | CASE-WAVE-FLUME | max gauge wave-height error vs piston-transfer target (H/dx=3.2, delta=0.1) | 2.968 | 10 | ✔ | ✔ | `docs/reports/wave_flume_numbers.json` |
 | `compressible_riemann` | CASE-SPH-SOD-SHOCK-COMPRESSIBLE | max abs relative error over the gated shock quantities (rho*, p*, u*, wave positions) | 0.7768 | 5 | ✔ | ✔ | `benchmarks/case_sod_shock_compressible/result.json` |
 | `compressible_riemann` | CASE-SPH-STRONG-SHOCK-CONTACT (1000:1 driver, 10.3x contact jump) | max abs relative error over the gated star-plateau values (rho*_L, rho*_R, p*, u*) and the contact/shock positions | 0.4142 | 5 | ✔ | ✔ | `benchmarks/case_strong_shock_contact/result.json` |
@@ -127,7 +129,7 @@ python -m tensorsph.method_selection --json /tmp/prof.json     # CLI 判型（�
 | `transport_velocity_correction` | XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.03 m) | mean relative error of the front position Z/a vs the Martin & Moyce (1952) digitised points, alpha=0.10 over all particles | 10.81 | 15 | ✔ | ✔ | `docs/xval_sphinx_tvc/data/grid_dx003.json` |
 | `transport_velocity_correction` | XVAL-SPH-TRANSPORT-VELOCITY-CORRECTION (dam break, dx=0.04 m) | same quantity on the coarser rung: records the alpha=0.10 arm is resolution-sensitive (kept in the registry, fails the owner standard) | 16.96 | 15 | ✘ | ✘ | `docs/xval_sphinx_tvc/data/grid_dx004.json` |
 
-登记记录 30 条，覆盖 10 个方法；最坏误差 834.6%。缺失源文件：无。
+登记记录 32 条，覆盖 11 个方法；最坏误差 834.6%。缺失源文件：无。
 
 
 ### 3.2 路由矩阵（候选算例画像 → 选定方法）
@@ -161,11 +163,12 @@ python -m tensorsph.method_selection --json /tmp/prof.json     # CLI 判型（�
 | `heat_conduction_operator` | 0.1504 | 0.1504 | +0 | - | 2 | ✔ |
 | `isph_projection` | 0.8666 | 0.8666 | +0 | - | 2 | ✔ |
 | `particle_shifting` | 8.833 | 8.833 | +0 | - | 1 | ✔ |
+| `sun_delta_plus` | 13.87 | 13.87 | +0 | - | 2 | ✔ |
 | `transport_velocity_correction` | 10.81 | 16.96 | +6.152 | - | 2 | ✘ |
 | `wcsph_delta_sph` | 2.968 | 2.968 | +0 | - | 1 | ✔ |
 | `wcsph_wall_no_slip` | 14.2 | 17.08 | +2.873 | 18.26 | 7 | ✘ |
 
-10 个有证据的方法中，3 个的宣称上界**低于**自己最差的活accuracy 记录（最大差额 39.71 pp）；3 个方法的真实精度上界超出 15% owner 标准：`csf_surface_tension`, `transport_velocity_correction`, `wcsph_wall_no_slip`。
+11 个有证据的方法中，3 个的宣称上界**低于**自己最差的活accuracy 记录（最大差额 39.71 pp）；3 个方法的真实精度上界超出 15% owner 标准：`csf_surface_tension`, `transport_velocity_correction`, `wcsph_wall_no_slip`。
 
 
 ### 3.4 图

@@ -47,6 +47,7 @@ from .eos_hydrostatics import (
     eos_hydrostatic_pressure,
     pointwise_eos_pressure,
 )
+from .delta_plus import DeltaPlusStep, delta_plus_step
 from .dam_break import DamBreakConfig, make_column, run_case
 from .dam_break_3d import (
     DamBreak3DConfig,
@@ -123,7 +124,7 @@ from .ice_thermal import (
     run_three_field,
     strength_band,
 )
-from . import wall_mirror
+from . import wall_mirror as wall_mirror
 from .stokes_second import (
     CASE_KEY as STOKES_SECOND_CASE_KEY,
     finite_depth,
@@ -161,6 +162,7 @@ from .sphinxys_css import (
 )
 
 __all__ = [
+    "DeltaPlusStep", "delta_plus_step",
     "Config", "SimulationUnstableError", "__version__", "acoustic_courant",
     "apply_boundary", "boundary_box", "cubic_spline_gradient",
     "cubic_spline_kernel", "density_diffusion_rate",

@@ -98,6 +98,14 @@ class MethodSpec:
 
 
 METHODS: dict[str, MethodSpec] = {
+    "sun_delta_plus": MethodSpec(
+        key="sun_delta_plus",
+        family="weakly compressible SPH",
+        modules=("tensorsph.delta_plus",),
+        summary="2-D single-resolution δ⁺-SPH with evolved density, corrected diffusion "
+                "and interface-aware positional shifting",
+        citation="Sun et al. (2017), CMAME 315, 25–49, doi:10.1016/j.cma.2016.10.028",
+    ),
     "wcsph_delta_sph": MethodSpec(
         key="wcsph_delta_sph",
         family="weakly compressible SPH",

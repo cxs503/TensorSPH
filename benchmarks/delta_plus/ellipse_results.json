@@ -1,0 +1,80 @@
+[
+  {
+    "cells_per_radius": 8,
+    "end": 0.4,
+    "courant": 0.2,
+    "particles": 208,
+    "steps": 169,
+    "analytic_stretches": [
+      1.4647738180049041,
+      0.6826992588944896
+    ],
+    "moment_stretches": [
+      1.455110231935143,
+      0.6824487265814468
+    ],
+    "moment_relative_errors": [
+      -0.006597323048089021,
+      -0.00036697317270917296
+    ],
+    "envelope_stretches": [
+      1.4718011305077132,
+      0.6826430688419827
+    ],
+    "peak_relative_density_deviation": 0.002942000984569537,
+    "peak_mach": 0.059046702763854854,
+    "final_momentum_norm": 6.355287432313019e-14
+  },
+  {
+    "cells_per_radius": 12,
+    "end": 0.4,
+    "courant": 0.2,
+    "particles": 448,
+    "steps": 254,
+    "analytic_stretches": [
+      1.4647738180049041,
+      0.6826992588944896
+    ],
+    "moment_stretches": [
+      1.458659101318383,
+      0.683731795481413
+    ],
+    "moment_relative_errors": [
+      -0.004174512550237819,
+      0.0015124325586577392
+    ],
+    "envelope_stretches": [
+      1.46548940689583,
+      0.6812637172456477
+    ],
+    "peak_relative_density_deviation": 0.002056015620738094,
+    "peak_mach": 0.05984268273741948,
+    "final_momentum_norm": 2.027538396501466e-13
+  },
+  {
+    "cells_per_radius": 16,
+    "end": 0.4,
+    "courant": 0.2,
+    "particles": 812,
+    "steps": 339,
+    "analytic_stretches": [
+      1.4647738180049041,
+      0.6826992588944896
+    ],
+    "moment_stretches": [
+      1.4606807499310928,
+      0.6842618109103087
+    ],
+    "moment_relative_errors": [
+      -0.0027943345405957443,
+      0.0022887852820425714
+    ],
+    "envelope_stretches": [
+      1.4714176389572247,
+      0.6812010073409276
+    ],
+    "peak_relative_density_deviation": 0.0018587042001951826,
+    "peak_mach": 0.061810029427788585,
+    "final_momentum_norm": 2.6645352591003757e-14
+  }
+]

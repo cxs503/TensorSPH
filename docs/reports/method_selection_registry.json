@@ -9,6 +9,7 @@
     "heat_conduction_operator",
     "isph_projection",
     "particle_shifting",
+    "sun_delta_plus",
     "transport_velocity_correction",
     "wcsph_delta_sph",
     "wcsph_wall_no_slip"
@@ -18,6 +19,36 @@
   "mission": 18056,
   "owner_tolerance_pct": 15.0,
   "records": [
+    {
+      "case": "ELLIPTICAL-DROP",
+      "extractor": "x_delta_plus_ellipse",
+      "gate_pct": 1.0,
+      "kind": "accuracy",
+      "measured_pct": 0.6597323048089021,
+      "method": "sun_delta_plus",
+      "own_gate_passed": true,
+      "precondition": "single-phase, zero gravity, unit initial radius and strain rate",
+      "quantity": "maximum absolute relative axis-stretch error at t=0.4, R/dx=8,12,16",
+      "source": "benchmarks/delta_plus/ellipse_results.json",
+      "source_sha256": "300d929f7307366c77d56efdba8e144b1262fc9335db35d7564f3ed8d4088539",
+      "status": "banked",
+      "within_owner_tolerance": true
+    },
+    {
+      "case": "SPHERIC-19-ELASTIC-PLATE",
+      "extractor": "x_delta_plus_plate",
+      "gate_pct": 15.0,
+      "kind": "accuracy",
+      "measured_pct": 13.86603945858928,
+      "method": "sun_delta_plus",
+      "own_gate_passed": true,
+      "precondition": "H=0.30 m, no phase alignment. At 5 mm the maximum density deviation is 2.908%, exceeding the 1% weak-compressibility gate.",
+      "quantity": "largest marker RMSE divided by its measured peak at 5 mm (displacement metric only, density-regime check failed)",
+      "source": "benchmarks/delta_plus/spheric19_results.json",
+      "source_sha256": "2a19556d43a2df38b9b63d2ed4325f630cc1e53e66af7fdce617eb32aa76a5fa",
+      "status": "banked",
+      "within_owner_tolerance": true
+    },
     {
       "case": "CASE-WAVE-FLUME",
       "extractor": "x_wave_flume",
