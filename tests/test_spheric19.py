@@ -63,6 +63,9 @@ def test_real_fem_receives_impact_and_returns_moving_markers(method, end):
     gate = GateMotion.read(DATA / "gate_fig2.dat")
     rows, info = simulate(gate, strip, dx=.02, end=end, method=method)
     top = [r[1] for r in rows]
+    assert info["absolute_station_work_J"] > 0
+    assert info["partition_work_residual_J"] == pytest.approx(
+        info["plate_work_on_fluid_J"] + info["plate_work_on_structure_J"])
     assert max(top) > .005
     assert max(top) > max(r[3] for r in rows)
     assert rows[-1][0] == pytest.approx(end)

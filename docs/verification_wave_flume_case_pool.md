@@ -1,5 +1,8 @@
 # CASE-WAVE-FLUME 验证报告（m18258 终态）
 
+2026-11-21 复算发现，D16、D20 的固定步数积分均提前终止且超出弱可压缩判据。最新的完整记录、静水对照及造波试验见[两档水槽复核](../benchmarks/wave_flume/verification_20261121/README.md)。
+
+
 **日期**: 2026-11-13  
 **席位**: tp-qa-2 (verifier)  
 **锚点**: `CASE-WAVE-FLUME`（算例池·规则波生成）  

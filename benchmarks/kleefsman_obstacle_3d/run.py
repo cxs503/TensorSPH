@@ -58,13 +58,17 @@ def _code_revision() -> dict:
     src = ROOT / "src" / "tensorsph" / "kleefsman_obstacle_3d.py"
     try:
         rev["operator_sha1"] = hashlib.sha1(src.read_bytes()).hexdigest()
+        rev["source_sha256"] = {name: hashlib.sha256(src.with_name(name).read_bytes()).hexdigest()
+                                for name in (src.name, "marin_probes.py", "dam_break_3d.py")}
     except OSError:
         pass
     return rev
 
 
 SERIES_COLUMNS = ["t_s", "slab_height_m", "height_operator_m", "front_x_m", "n_bypass",
-                  "Fx_N", "Fy_N", "Fz_N", "Mx_Nm", "My_Nm", "Mz_Nm"]
+                  "Fx_N", "Fy_N", "Fz_N", "Mx_Nm", "My_Nm", "Mz_Nm", "H2_local_m",
+                  *[f"P{i}_Pa" for i in range(1, 9)], *[f"P{i}_support" for i in range(1, 9)],
+                  *[f"J_{kind}_{axis}_Ns" for kind in ("sph", "clamp") for axis in "xyz"]]
 
 
 def resume_series(path, checkpoint_times):
@@ -167,13 +171,17 @@ def main(argv: list[str] | None = None) -> int:
                          for r in (row["t_s"], row["slab_height_m"],
                                    row["height_operator_m"], row["front_x_m"],
                                    row["n_bypass"], *row["obstacle_sph_force_N"],
-                                   *row["obstacle_sph_moment_Nm"])])
+                                   *row["obstacle_sph_moment_Nm"], row["H2_local_m"],
+                                   *row["tap_pressure_Pa"], *row["tap_support"],
+                                   *row["obstacle_sph_impulse_Ns"],
+                                   *row["obstacle_clamp_impulse_Ns"])])
         csv_fh.flush()
 
     # fingerprint written before the run, so a run that never returns still
     # leaves the protocol it was run under (the ladder refuses to compare a
     # series whose protocol cannot be established).
     meta_path = out_dir / f"{tag}_meta.json"
+    code_revision = _code_revision()
     meta_path.write_text(json.dumps({
         "tag": tag, "dx": cfg.dx, "t_end": cfg.t_end, "dt": None,
         "sound_speed": cfg.sound_speed, "wall_layers": cfg.wall_layers,
@@ -222,11 +230,12 @@ def main(argv: list[str] | None = None) -> int:
                  "steps": run.steps, "simulated_time_s": run.simulated_time,
                  "wall_clock_s": round(time.time() - t0, 1),
                  "operator_consistency": run.operator_consistency(),
-                 "code_revision": _code_revision()})
+                 "code_revision": code_revision})
     meta_path.write_text(json.dumps(meta, indent=1) + "\n")
 
-    print(f"[{tag}] verdict={verdict['verdict']} "
-          f"peak={verdict['run']['peak_height_m']:.4f} m "
+    print(f"[{tag}] workbook-H2 verdict={verdict['verdict']} "
+          f"local_peak={verdict['run']['local_h2_peak_m']:.4f} m "
+          f"slab_peak={verdict['run']['peak_height_m']:.4f} m "
           f"@ {verdict['run']['peak_time_s']:.4f} s, "
           f"arrival={verdict['run']['arrival_time_s']}, "
           f"wall={verdict['run']['wall_clock_s']:.0f} s", flush=True)

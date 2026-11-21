@@ -195,3 +195,38 @@ def test_record_integrity_accepts_final_partial_stride_and_rejects_missing_times
     assert solver_record_integrity(record)["passed"]
     record["times"] = clock[:-1]
     assert "sample_count" in solver_record_integrity(record)["issues"]
+
+
+def test_forced_wave_campaign_reports_phase_and_reflection_on_a_known_signal():
+    import runpy
+    from pathlib import Path
+
+    script = Path(__file__).resolve().parents[1] / "benchmarks/wave_flume/regular_wave_campaign.py"
+    assess = runpy.run_path(str(script))["assess"]
+    record = _synthetic_record(duration=5.0)
+    record["config"]["sound_speed"] = 30.0
+    record["diagnostics"] = dict(
+        simulated_time=5.0, max_speed=0.1, max_density_compression=0.001,
+        steps_taken=len(record["times"]) - 1, escaped=0,
+    )
+    result = assess(record)
+    assert result["requested_clock_reached"] and result["height_assessed"]
+    assert result["reflection_ratio"] < 1e-6
+    assert max(abs(g["phase_error_deg"]) for g in result["gauges"]) < 0.1
+    assert not result["passed"]  # the analytic signal has no solver step history
+
+
+def test_partial_solver_record_cannot_pass_even_with_a_valid_earlier_window():
+    r = _synthetic_record(duration=5.0)
+    n = len(r["times"])
+    r["config"].update(output_every=1, sound_speed=30)
+    r["requested_duration_s"] = 6.0
+    r["diagnostics"] = dict(steps_taken=n-1, simulated_time=5., max_speed=.2,
+                            max_density_compression=.001)
+    r["speed_history"] = [.2] * n
+    r["compression_history"] = [.001] * n
+    r["paddle_offset"] = [0.] * n
+    grade = grade_regular_record(r, start=3., end=5.)
+    assert grade["window_covered"] and grade["record_integrity"]["passed"]
+    assert grade["height_within_tolerance"] and grade["regime"]["stable"]
+    assert not grade["requested_duration_met"] and not grade["passed"]

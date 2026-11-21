@@ -153,3 +153,23 @@ repository tolerance, while the weak-compressibility gate fails.
 All runs use pressure traction and omit the optional post-step tank contact.
 [Machine-readable results](../delta_plus/spheric19_results.json) and
 [all 62 paired experimental samples](comparison.csv) retain both methods.
+
+
+## Interface work at 10 mm
+
+At each step the fluid is advanced with the old wall velocity, while TensorFEM
+advances the strip under the frozen station forces. The fluid boundary work
+uses minus force dotted with that prescribed velocity times dt. Structural
+work uses the same force dotted with the actual station displacement over the
+subcycles. Their signed sum measures the explicit coupling discrepancy, in J for
+one metre of span. It does not measure the entire fluid or beam energy budget.
+
+| CFL | Work on structure (J) | Signed sum (J) | Sum / absolute station work | Upper marker peak-normalized RMSE |
+|---|---:|---:|---:|---:|
+| 0.22 | 0.43795 | 0.002273 | 0.0887% | 20.41% |
+| 0.11 | 0.43786 | 0.001469 | 0.0573% | 20.40% |
+
+Both runs cover 0.46 s. Peak horizontal force imbalance stays below 1.4e-13 N.
+Halving the time step improves work balance while the marker discrepancy persists.
+Reproduce with `python benchmarks/spheric19/run.py --method delta-plus --dx .01 --courant .22 --output out/work22`
+and repeat at CFL 0.11. [Measured results and FEM source revision](interface_work.json)

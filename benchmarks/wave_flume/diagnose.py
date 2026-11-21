@@ -29,6 +29,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
+from tensorsph.wave_flume import stability_verdict as stability_verdict  # noqa: E402
 from tensorsph.wave_flume import (  # noqa: E402
     WaveFlumeConfig,
     flume_wave_spec,
@@ -67,34 +68,6 @@ VARIANTS = {
     # Both absorbing measures plus the wave-phase velocity smoothing.
     "active_xsph": {"active_absorption": 1.0, "xsph": 0.05},
 }
-
-
-def stability_verdict(metrics: dict, sound_speed: float,
-                      compression_limit: float = 0.01,
-                      mach_limit: float = 0.5) -> dict:
-    """Judge whether a flume record is a *wave* or a numerical event.
-
-    Two independent red flags are reported, because they fail differently:
-
-    * ``mach`` = ``max|v| / c0``.  Weakly compressible SPH assumes ``M << 1``;
-      a record whose peak particle speed exceeds half the artificial sound speed
-      is not resolving an acoustic-free gravity wave any more.
-    * ``compression`` = ``max(rho/rho0) - 1``.  Tait's equation of state is used
-      at O(1 %) density variation; 45 % is a shock in a gravity-wave case.
-
-    Both are reported with the measured value *and* the flag, so a caller can
-    print a number instead of a boolean.
-    """
-    speed = float(metrics.get("max_speed", float("nan")))
-    comp = float(metrics.get("max_compression", float("nan")))
-    mach = speed / sound_speed if sound_speed > 0 else float("nan")
-    return {
-        "mach": mach,
-        "compression": comp,
-        "mach_flag": bool(mach > mach_limit),
-        "compression_flag": bool(comp > compression_limit),
-        "stable": not (mach > mach_limit or comp > compression_limit),
-    }
 
 
 def build_config(args, overrides: dict) -> tuple[WaveFlumeConfig, float]:

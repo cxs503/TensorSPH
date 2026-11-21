@@ -21,6 +21,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
+from tensorsph.wave_flume import stability_verdict  # noqa: E402
 from tensorsph.wave_flume import (  # noqa: E402
     WaveFlumeConfig,
     flume_wave_spec,
@@ -80,10 +81,8 @@ def build_config(args) -> WaveFlumeConfig:
         wave_height=height,
         wave_period=args.wave_period or 1.0,
         dx=dx,
-        # The acoustic Courant limit fixes the step; take it here so that
-        # ``--simulate-time`` is the time actually simulated (the driver also
-        # clamps dt, and a step shorter than requested would silently cut the run
-        # short because the step count is fixed).
+        # The nominal step budget supplies a reproducible initial Courant step.
+        # run_case continues to the requested physical time after adaptive reductions.
         dt=_step(args),
         steps=int(math.ceil(args.simulate_time / _step(args))),
         output_every=args.output_every,
@@ -93,6 +92,7 @@ def build_config(args) -> WaveFlumeConfig:
         active_absorption=args.active_absorption,
         settle_time=args.settle,
         xsph=args.xsph,
+        xsph_advection_only=args.xsph_advection_only,
         xsph_settle=args.xsph_settle,
         viscosity_settle=args.viscosity_settle,
         sound_speed=args.sound_speed,
@@ -152,12 +152,16 @@ def main(argv=None) -> int:
                         help="override the derived sponge length")
     parser.add_argument("--xsph", type=float, default=0.0,
                         help="XSPH velocity-smoothing coefficient")
+    parser.add_argument("--xsph-advection-only", action="store_true",
+                        help="smooth only particle advection and retain the momentum velocity")
     parser.add_argument("--xsph-settle", type=float, default=0.0)
     parser.add_argument("--viscosity-settle", type=float, default=0.0)
     parser.add_argument("--settle", type=float, default=0.0,
                         help="seconds the paddle is held at rest before the wave")
     parser.add_argument("--dt", type=float, default=4.0e-4)
     parser.add_argument("--max-courant", type=float, default=0.25)
+    parser.add_argument("--stop-on-regime-exit", action="store_true",
+                        help="save the record at the first flume stability limit violation")
     parser.add_argument("--simulate-time", type=float, default=5.0)
     parser.add_argument("--output-every", type=int, default=40)
     parser.add_argument("--snapshots", type=int, default=4)
@@ -171,7 +175,8 @@ def main(argv=None) -> int:
     spec = flume_wave_spec(cfg)
     stamps = snapshot_times_for(cfg, args)
     try:
-        run = run_case(cfg, snapshot_times=stamps)
+        run = run_case(cfg, snapshot_times=stamps, duration_s=args.simulate_time,
+                       stop_on_regime_exit=args.stop_on_regime_exit)
     except (FloatingPointError, ValueError) as exc:
         # A case that goes numerically unstable is a *result*, not a crash: the
         # record says so and the analysis reports it instead of losing the run.
@@ -184,7 +189,11 @@ def main(argv=None) -> int:
         print(f"FAILED {out}: {exc}")
         return 2
 
+    regime = stability_verdict({"max_speed": run.max_speed,
+                                "max_compression": run.max_density_compression}, cfg.sound_speed)
+    complete = run.simulated_time >= args.simulate_time - 1.e-12
     record = {
+        "requested_duration_s": args.simulate_time, "complete": complete, "regime": regime,
         "case": args.case,
         "config": run.config,
         "spec": {
@@ -201,7 +210,7 @@ def main(argv=None) -> int:
             "length_scale": spec.length_scale,
         },
         "diagnostics": {
-            "steps_taken": run.steps_taken,
+            "steps_taken": run.steps_taken, "first_regime_exit": run.first_regime_exit,
             "simulated_time": run.simulated_time,
             "dt": run.dt,
             "mass": run.mass,
@@ -230,6 +239,9 @@ def main(argv=None) -> int:
           f"{run.config['particle_count']} particles, "
           f"max|v| {run.max_speed:.3f} m/s, compression "
           f"{run.max_density_compression:.2e}")
+    if not complete or not regime["stable"]:
+        print(f"outside wave validation: completed={complete}, regime={regime}")
+        return 1
     if not math.isfinite(run.max_speed):
         return 1
     return 0

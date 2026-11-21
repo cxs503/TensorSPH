@@ -47,6 +47,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "benchmarks" / "kleefsman_obstacle"))
 
+from tensorsph.marin_probes import H2_ARRIVAL_S, H2_PEAK_M  # noqa: E402
 from convergence_analysis import (  # noqa: E402
     DEFAULT_WINDOW,
     gci_fine,
@@ -75,6 +76,7 @@ FROZEN_PROTOCOL = {
 # rung admissibility: the case's own validator has the last word
 # --------------------------------------------------------------------------- #
 MAX_ADMISSIBLE_DX = 0.161 / 3.0     # box must be >= 3 cells across
+
 
 
 def rung_validity(dx: float) -> dict:
@@ -279,10 +281,14 @@ def load_run(results_dir: Path, tag: str) -> dict:
     reached = bool(times and t_end is not None
                    and times[-1] >= float(t_end) - max(1e-6, 1e-3 * float(t_end)))
     complete = bool(meta["complete"]) if "complete" in meta else reached
+    ref = meta.get("reference", {}).get("peak_height_m")
+    verdict = meta.get("verdict")
+    if ref is not None and ref != H2_PEAK_M:
+        verdict = "SUPERSEDED"
     entry = {
         "tag": tag,
         "dx": float(run.get("dx", meta.get("dx", float("nan")))),
-        "verdict": meta.get("verdict"),
+        "verdict": verdict,
         "censored": meta.get("censored"),
         "window_covers_reference_peak": meta.get("window_covers_reference_peak"),
         "peak_m": run.get("peak_height_m"),
@@ -379,8 +385,8 @@ def analyse(results_dir: Path, tags: list[str]) -> dict:
                    if len(arr) >= 2 else {"status": "INSUFFICIENT_LEVELS"})
         out["peak_ladder"] = peak_fit
         out["arrival_ladder"] = arr_fit
-        out["peak_vs_reference"] = converges_toward(peak_fit, 0.370)
-        out["arrival_vs_reference"] = converges_toward(arr_fit, 0.3591)
+        out["peak_vs_reference"] = converges_toward(peak_fit, H2_PEAK_M)
+        out["arrival_vs_reference"] = converges_toward(arr_fit, H2_ARRIVAL_S)
     out["status"] = "OK"
     return out
 

@@ -138,6 +138,7 @@ def simulate(gate, strip, *, dx=.01, height=.3, end=.46, courant=.22, sound_spee
     clamp = pos.new_tensor([.6, 0.])
     cache = PairListCache(2*cfg.h_factor*dx, .3*dx, fluid_count=len(pos))
     t = peak_mach = peak_balance = max_escape = 0.
+    wall_work = strip_work = swept_work = 0.
     contact_impulse = peak_trial_escape = 0.
     worst_position = None
     first_large_excursion = None
@@ -183,7 +184,15 @@ def simulate(gate, strip, *, dx=.01, height=.3, end=.46, courant=.22, sound_spee
         # Independent balance of horizontal momentum per step, including all boundaries.
         imbalance = abs(float((acceleration[:, 0]*mass).sum() + reactions[:, 0].sum()))
         peak_balance = max(peak_balance, imbalance)
-        strip.advance(interface, reactions[-panels:], dt)
+        panel_force = reactions[-panels:]
+        strip.advance(interface, panel_force, dt)
+        plate_after, _ = strip.sample(interface)
+        # Explicit fluid wall velocity is frozen at the beginning of the step.
+        # The subcycled structure traverses its actual station displacements.
+        wall_work += dt * float((panel_force*plate_v).sum())
+        work = (panel_force*(plate_after-plate)).sum(dim=1)
+        strip_work += float(work.sum())
+        swept_work += float(work.abs().sum())
         if not bool(pos.isfinite().all() & velocity.isfinite().all()):
             raise FloatingPointError(f"non-finite fluid state at {t:g} s")
         # The experimental tank is open above y=0.60 m. Report envelope excursions
@@ -218,6 +227,12 @@ def simulate(gate, strip, *, dx=.01, height=.3, end=.46, courant=.22, sound_spee
                      "peak_fluid_mach": max(peak_mach, float(velocity.norm(dim=1).max())
                                             / cfg.sound_speed),
                      "max_horizontal_force_imbalance_N": peak_balance,
+                     "plate_work_on_fluid_J": -wall_work,
+                     "plate_work_on_structure_J": strip_work,
+                     "absolute_station_work_J": swept_work,
+                     "partition_work_residual_J": strip_work-wall_work,
+                     "partition_work_relative_to_absolute": (
+                         abs(strip_work-wall_work)/swept_work if swept_work else None),
                      "tank_contact": contact,
                      "total_absolute_tank_contact_impulse_Ns": contact_impulse,
                      "max_trial_escape_m": max(peak_trial_escape, max_escape),

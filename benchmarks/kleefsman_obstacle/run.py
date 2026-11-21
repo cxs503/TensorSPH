@@ -107,7 +107,9 @@ def main() -> int:
                 row.append(f"{v[idx]:.6f}" if idx < len(v) else "nan")
             fh.write(",".join(row) + "\n")
 
-    exp = ref["experimental_values"]
+    from tensorsph.marin_probes import H2_ARRIVAL_S, H2_PEAK_M
+    exp = {"peak_height_m": H2_PEAK_M, "arrival_time_s": H2_ARRIVAL_S,
+           "status": "SPHERIC Test 2 original workbook"}
     tol = ref["tolerance"]["relative"]
     verdict, rows = "WITHHELD", []
     if exp.get("peak_height_m") is not None:
@@ -118,7 +120,9 @@ def main() -> int:
             rows.append({"metric": name, "ref": want, "got": got, "unit": unit,
                          "rel_error": err, "pass": bool(err < tol)})
         verdict = "PASS" if all(r["pass"] for r in rows) else "FAIL"
-    metrics["comparison"] = {"verdict": verdict, "tolerance": tol, "rows": rows,
+    metrics["comparison"] = {"scope": "2-D proxy at the configured station",
+                             "source": "SPHERIC Test 2 experimental workbook, H2",
+                             "verdict": verdict, "tolerance": tol, "rows": rows,
                              "experimental_status": exp["status"]}
 
     (outdir / "metrics.json").write_text(json.dumps(metrics, indent=2))

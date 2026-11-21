@@ -275,6 +275,8 @@ def repro_command(config, diagnostics, spec, out_path, *, threads=20, snapshots=
         parts.append(f"  --simulate-time {_num(sim_time, '{:.4f}')}")
     if cfg.get("output_every") is not None:
         parts.append(f"  --output-every {int(cfg['output_every'])}")
+    if cfg.get("xsph_advection_only"):
+        parts.append("  --xsph-advection-only")
     parts.append(f"  --snapshots {snapshots}")
     dt = cfg.get("dt_requested")
     if dt is not None:

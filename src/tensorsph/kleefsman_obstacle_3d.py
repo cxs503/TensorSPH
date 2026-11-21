@@ -8,20 +8,15 @@ The experiment (Kleefsman et al. 2005, Fig. 17/19) has a 1.00 m wide tank and a
 0.403 m wide box, so only 40 % of the width is blocked and 60 % of the water
 bypasses the box along its side.
 
-That difference is not cosmetic.  In the 2-D runs the surge piles up against a
-full-width wall and forms a run-up jet of 0.42-0.54 m in front of the box, while
-the experimental H2 gauge never sees more than 0.370 m.  Every committed 2-D
-verdict of this case therefore failed the peak metric by 15-52 % (missions
-m21324, m21586), and the residual was *attributed* to the blockage without ever
-being measured.  This module measures it: it is the same solver, the same gauge
-protocol and the same reference, with the third dimension of the tank restored
-and the box given its real 0.403 m width.
+The SPHERIC Test 2 workbook gives a 0.3408 m H2 peak in the interval
+0.35–2.6 s. The 3-D case resolves both bypass channels and records local
+pressure along the upstream and top faces of the box.
 
 What is measured
 ----------------
-The H2 station is x=2.228 m measured from the upstream wall. The 0.08 m
-aperture slab reports volume divided by aperture times the blocked width.
-This finite-area average approximates the experimental centreline probe.
+The H2 station is x=2.228 m from the upstream wall. The historical 0.08 m
+slab averages over the blocked width. A second instrument integrates the
+water volume per unit horizontal area near the experimental centreline.
 Bypass is measured explicitly (``n_bypass``: fluid particles downstream of the
 box that are outside the box's spanwise extent), so the geometry difference is
 a reported number and not an assumption.
@@ -31,8 +26,8 @@ Scope / limitations, stated up front
 * The box is centred across the tank. The 0.744 m dimension is measured
   from the downstream wall to the box centre (see the dimensioned Fig. 15, doi:10.3970/cmes.2008.025.133).
 * The tank walls are free-slip (``wall_friction = 0``, the solver default).
-* Only the *peak* and *arrival* of the in-front-of-box water height are
-  claimed.  Pressure-impulse comparisons on the box face are not attempted.
+* The water-level score uses both probes. The separate MARIN comparison
+  measures pressure peaks, pressure impulses and box momentum transfer.
 """
 from __future__ import annotations
 
@@ -52,6 +47,8 @@ from .dam_break_3d import (
 )
 from .droplet_impact import next_dt
 from .neighbor_search import PairListCache
+from .marin_probes import (H2_ARRIVAL_S, H2_PEAK_M, H2_PEAK_TIME_S,
+                           centreline_height, sensor_positions, tap_pressures)
 
 # ---- experimental geometry (Kleefsman et al. 2005; see reference.json) ------
 TANK_LENGTH_M = 3.22
@@ -72,10 +69,10 @@ FROZEN_APERTURE_M = 0.08
 FROZEN_STATION_OFFSET_M = OBSTACLE_X_M - H2_X_M
 FROZEN_ARRIVAL_THRESHOLD_M = 0.02
 
-# ---- digitised experimental H2 (Kleefsman 2005 Fig. 19 right panel) -------
-REFERENCE_PEAK_HEIGHT_M = 0.370
-REFERENCE_PEAK_TIME_S = 1.7027
-REFERENCE_ARRIVAL_TIME_S = 0.3591
+# ---- official SPHERIC Test 2 workbook H2 (SI units) ----------------------
+REFERENCE_PEAK_HEIGHT_M = H2_PEAK_M
+REFERENCE_PEAK_TIME_S = H2_PEAK_TIME_S
+REFERENCE_ARRIVAL_TIME_S = H2_ARRIVAL_S
 TOLERANCE_REL = 0.10
 
 
@@ -207,7 +204,7 @@ def obstacle_lattice_3d(cfg: Kleefsman3DConfig, device: torch.device) -> torch.T
 
 
 def clamp_out_of_obstacle(pos: torch.Tensor, vel: torch.Tensor,
-                          cfg: Kleefsman3DConfig) -> int:
+                          cfg: Kleefsman3DConfig, *, mass=None, body_impulse=None) -> int:
     """Project fluid particles out of the box volume and kill normal velocity.
 
     Wall particles alone cannot be trusted to stop a 9 m/s run-up jet on a
@@ -257,9 +254,12 @@ def clamp_out_of_obstacle(pos: torch.Tensor, vel: torch.Tensor,
     pos[idx] = new
 
     nv = vel[idx]
+    before = nv.clone() if body_impulse is not None else None
     nv[:, 0] = torch.where(out_x_lo | out_x_hi, torch.zeros_like(nv[:, 0]), nv[:, 0])
     nv[:, 1] = torch.where(out_y_lo | out_y_hi, torch.zeros_like(nv[:, 1]), nv[:, 1])
     nv[:, 2] = torch.where(out_z_lo | out_z_hi, torch.zeros_like(nv[:, 2]), nv[:, 2])
+    if body_impulse is not None:
+        body_impulse.add_((mass[idx, None]*(before - nv)).sum(0))
     vel[idx] = nv
     return count
 
@@ -338,9 +338,12 @@ class Kleefsman3DRun:
     cfg: Kleefsman3DConfig
     times: list[float] = field(default_factory=list)
     slab: list[float] = field(default_factory=list)
+    local_h2: list[float] = field(default_factory=list)
     height: list[float] = field(default_factory=list)
     front: list[float] = field(default_factory=list)
     bypass: list[float] = field(default_factory=list)
+    sph_impulse: list[float] = field(default_factory=lambda: [0., 0., 0.])
+    clamp_impulse: list[float] = field(default_factory=lambda: [0., 0., 0.])
     max_speed: float = 0.0
     max_density_compression: float = 0.0
     boundary_escapes: int = 0
@@ -414,6 +417,10 @@ class Kleefsman3DRun:
             "stations_x_m": [self.cfg.station_x()],
             "gauge_aperture_m": self.cfg.gauge_aperture,
             "peak_height_m": peak_h,
+            "local_h2_peak_m": max(self.local_h2) if self.local_h2 else None,
+            "local_h2_arrival_s": (arrival_time(self.times, self.local_h2,
+                                                self.cfg.arrival_threshold)
+                                   if self.local_h2 else None),
             "peak_time_s": peak_t,
             "peak_height_operator_m": max(self.height) if self.height else 0.0,
             "arrival_time_s": self.arrival(),
@@ -422,6 +429,8 @@ class Kleefsman3DRun:
             "max_density_compression": self.max_density_compression,
             "boundary_escapes": self.boundary_escapes,
             "obstacle_clamps": self.obstacle_clamps,
+            "obstacle_sph_impulse_Ns": self.sph_impulse,
+            "obstacle_clamp_impulse_Ns": self.clamp_impulse,
             "mass_error_rel": self.mass_error_rel,
             "steps": self.steps,
             "simulated_time_s": self.simulated_time,
@@ -463,8 +472,8 @@ class Kleefsman3DRun:
 # criterion, not physics, and a run has to be resumable with a longer horizon
 # precisely because the crash usually happens before the requested end.
 
-# Version 2 uses finite wall quadrature and includes the kernel self term.
-CHECKPOINT_VERSION = 2
+# Version 3 persists both obstacle reaction impulses at the post-step state.
+CHECKPOINT_VERSION = 3
 
 #: config fields that make a checkpoint of another run useless
 CHECKPOINT_FINGERPRINT_FIELDS = (
@@ -474,7 +483,7 @@ CHECKPOINT_FINGERPRINT_FIELDS = (
     "surface_pressure_closure", "adaptive_dt", "max_courant", "viscosity",
     "pool_width", "tank_depth", "tank_height", "column_width",
     "column_height", "column_depth", "obstacle_x", "obstacle_length",
-    "obstacle_height",
+    "obstacle_height", "gravity", "wall_friction", "dt", "output_every",
 )
 
 
@@ -498,12 +507,14 @@ def save_checkpoint(path, cfg, *, step, elapsed, dt, positions, velocity,
         "velocity": velocity.detach().to("cpu").clone(),
         "times": list(run.times),
         "height": list(run.height),
+        "local_h2": list(run.local_h2),
         "front": list(run.front),
         "bypass": list(run.bypass),
         "speeds": float(speeds),
         "compression": float(compression),
         "escapes": int(escapes),
         "clamps": int(clamps),
+        "sph_impulse": run.sph_impulse, "clamp_impulse": run.clamp_impulse,
     }
     if hasattr(run, "slab"):
         payload["slab"] = list(run.slab)
@@ -594,6 +605,7 @@ def run_case(cfg: Kleefsman3DConfig, device: str | torch.device = "cpu",
         start_step = state["step"] + 1
         run.times = list(state["times"])
         run.height = list(state["height"])
+        run.local_h2 = list(state["local_h2"])
         run.front = list(state["front"])
         run.bypass = list(state["bypass"])
         if hasattr(run, "slab"):
@@ -602,11 +614,21 @@ def run_case(cfg: Kleefsman3DConfig, device: str | torch.device = "cpu",
         compression = state["compression"]
         escapes = state["escapes"]
         clamps = state["clamps"]
+        run.sph_impulse = state["sph_impulse"]
+        run.clamp_impulse = state["clamp_impulse"]
         resumed = True
         if progress is not None:
             progress(elapsed, run.slab[-1] if getattr(run, "slab", None) else 0.0)
 
+    sph_impulse = torch.tensor(run.sph_impulse, device=dev, dtype=torch.float64)
+    clamp_impulse = torch.tensor(run.clamp_impulse, device=dev, dtype=torch.float64)
+    taps = sensor_positions(cfg, positions)
+    centre = obstacle.new_tensor([cfg.obstacle_x + cfg.obstacle_length/2,
+                                  cfg.obstacle_height/2, cfg.obstacle_z + cfg.obstacle_width/2])
+
     def _checkpoint(step: int) -> None:
+        run.sph_impulse = sph_impulse.tolist()
+        run.clamp_impulse = clamp_impulse.tolist()
         save_checkpoint(checkpoint_path, cfg, step=step, elapsed=elapsed, dt=dt,
                         positions=positions, velocity=velocity, run=run,
                         speeds=speeds, compression=compression,
@@ -618,8 +640,10 @@ def run_case(cfg: Kleefsman3DConfig, device: str | torch.device = "cpu",
         final = elapsed >= cfg.t_end - 1.0e-12
         sampling = step % cfg.output_every == 0 or final
         result = rhs_3d(positions, velocity, mass, cfg, pairs=pairs, wall=wall, dt=dt,
-                        return_wall_force=sampling and on_sample is not None)
-        density, _, acc = result[:3]
+                        return_wall_force=True)
+        density, pressure, acc, reaction = result
+        loads = reaction[-len(obstacle):]
+        force = loads.sum(0)
         if not torch.isfinite(acc).all():
             raise FloatingPointError(f"non-finite acceleration at step {step}")
         compression = max(compression, float(density.max()) / cfg.rho0 - 1.0)
@@ -627,19 +651,22 @@ def run_case(cfg: Kleefsman3DConfig, device: str | torch.device = "cpu",
         speeds = max(speeds, speed_now)
 
         if sampling:
+            volume = mass/density
+            run.local_h2.append(float(centreline_height(positions, volume, cfg)))
             run.times.append(elapsed)
             run.slab.append(slab_height(positions, cfg))
             run.height.append(peak_height(positions, cfg))
             run.front.append(float(positions[:, 0].max()))
             run.bypass.append(float(bypass_count(positions, cfg)))
             if on_sample is not None:
-                loads = result[3][-len(obstacle):]
-                centre = obstacle.new_tensor([cfg.obstacle_x + cfg.obstacle_length/2,
-                                              cfg.obstacle_height/2,
-                                              cfg.obstacle_z + cfg.obstacle_width/2])
+                tap_pa, support = tap_pressures(positions, pressure, density, volume, cfg, taps)
                 moment = torch.linalg.cross(obstacle-centre, loads).sum(0)
                 on_sample(len(run.times) - 1, {
-                    "obstacle_sph_force_N": loads.sum(0).tolist(),
+                    "obstacle_sph_force_N": force.tolist(),
+                    "obstacle_sph_impulse_Ns": sph_impulse.tolist(),
+                    "obstacle_clamp_impulse_Ns": clamp_impulse.tolist(),
+                    "H2_local_m": run.local_h2[-1],
+                    "tap_pressure_Pa": tap_pa.tolist(), "tap_support": support.tolist(),
                     "obstacle_sph_moment_Nm": moment.tolist(),
                     "t_s": elapsed,
                     "slab_height_m": run.slab[-1],
@@ -652,11 +679,13 @@ def run_case(cfg: Kleefsman3DConfig, device: str | torch.device = "cpu",
 
         if final:
             break
+        sph_impulse.add_(force.to(sph_impulse.dtype), alpha=dt)
         velocity = velocity + dt * acc
         positions = positions + dt * velocity
         escapes += apply_boundary_3d(positions, velocity, cfg,
                                      top=cfg.tank_top() if hasattr(cfg, "tank_top") else None)
-        clamps += clamp_out_of_obstacle(positions, velocity, cfg)
+        clamps += clamp_out_of_obstacle(positions, velocity, cfg, mass=mass,
+                                        body_impulse=clamp_impulse)
         elapsed += dt
         if cfg.adaptive_dt:
             dt = next_dt(cfg, dt, speed_now)
@@ -664,6 +693,8 @@ def run_case(cfg: Kleefsman3DConfig, device: str | torch.device = "cpu",
                 step % checkpoint_every == 0:
             _checkpoint(step)
 
+    run.sph_impulse = sph_impulse.tolist()
+    run.clamp_impulse = clamp_impulse.tolist()
     run.max_speed = speeds
     run.max_density_compression = compression
     run.boundary_escapes = escapes
@@ -684,11 +715,11 @@ def run_case(cfg: Kleefsman3DConfig, device: str | torch.device = "cpu",
 
 
 # --------------------------------------------------------------------------- #
-# Scoring against the digitised experiment
+# Scoring against the SPHERIC experimental workbook
 # --------------------------------------------------------------------------- #
 
 def score(run: Kleefsman3DRun, tolerance_rel: float = TOLERANCE_REL) -> dict:
-    """Peak and arrival of the in-front-of-box height against Kleefsman Fig. 19."""
+    """Peak and arrival of the in-front-of-box height against the SPHERIC experimental workbook."""
     peak_h, peak_t = run.peak()
     arrival = run.arrival()
     rows = []
@@ -711,17 +742,25 @@ def score(run: Kleefsman3DRun, tolerance_rel: float = TOLERANCE_REL) -> dict:
     rows[0]["assessable"] = not censored
     if censored:
         rows[0]["pass"] = False
+    has_local = bool(run.local_h2) and len(run.local_h2) == len(run.times)
+    add("H2_local_peak", REFERENCE_PEAK_HEIGHT_M, max(run.local_h2) if has_local else None)
+    add("H2_local_arrival", REFERENCE_ARRIVAL_TIME_S,
+        arrival_time(run.times, run.local_h2, run.cfg.arrival_threshold) if has_local else None)
+    rows[-2]["assessable"] = has_local and not censored
+    if not rows[-2]["assessable"]:
+        rows[-2]["pass"] = False
     passed = all(r["pass"] for r in rows) and not censored
 
     return {
         "case": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST",
+        "assessment_scope": ("SPHERIC workbook H2, local and blocked-width volume gauges; "
+                             "water level only"),
         "geometry": "3-D (0.403 m box in 1.00 m tank, 40 % blockage)",
         "reference": {
             "peak_height_m": REFERENCE_PEAK_HEIGHT_M,
             "peak_time_s": REFERENCE_PEAK_TIME_S,
             "arrival_time_s": REFERENCE_ARRIVAL_TIME_S,
-            "source": "Kleefsman et al. (2005) J. Comput. Phys. 206:363-393, "
-                      "doi:10.1016/j.jcp.2004.12.007, Fig. 19 right panel",
+            "source": "SPHERIC Test 2, test_case_2_exp_data.xls, Experimental_data / H2 (m)",
         },
         "tolerance_rel": tolerance_rel,
         "rows": rows,

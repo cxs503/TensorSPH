@@ -1,0 +1,134 @@
+[
+  {
+    "tag": "dx50",
+    "steps": 2963,
+    "fluid_particles": 5280,
+    "wall_particles": 16002,
+    "config": {
+      "tag": "dx50",
+      "dx": 0.05,
+      "t_end": 2.6,
+      "dt": 0.0008775000000000001,
+      "sound_speed": 20.0,
+      "wall_layers": 3,
+      "obstacle_z": 0.2985,
+      "obstacle_x": 2.3955,
+      "wall_operator": "finite-volume-self-v2",
+      "viscosity": 1e-06,
+      "station_x": 2.228,
+      "station_offset": 0.16749999999999998,
+      "gauge_aperture": 0.08,
+      "arrival_threshold": 0.02,
+      "output_every": 1,
+      "threads": 2,
+      "complete": true,
+      "aborted": false,
+      "steps": 2963,
+      "simulated_time_s": 2.6000325000001374,
+      "wall_clock_s": 859.7,
+      "operator_consistency": {
+        "wet_samples": 2512,
+        "impossible_samples": 0,
+        "worst_impossible_slab_m": 0.0,
+        "height_column_admissible": true,
+        "reason": ""
+      },
+      "code_revision": {
+        "git": "a700e871416ccfd395ff8b13d38ccc9086099d11",
+        "operator_sha1": "eaf8a464cbcf270354af378db7b92e9f36753efb"
+      }
+    },
+    "sha256_csv": "43018613b24cbbedf2b1a65a56e6b9a62a44199aa84b6ff1d64c6713273e14e7",
+    "max_speed_m_s": 5.749263286590576,
+    "max_density_compression": 0.1526799316406251,
+    "contacts": 1129
+  },
+  {
+    "tag": "dx40",
+    "steps": 998,
+    "fluid_particles": 9750,
+    "wall_particles": 24808,
+    "config": {
+      "tag": "dx40",
+      "dx": 0.04,
+      "t_end": 0.7,
+      "dt": 0.0007020000000000001,
+      "sound_speed": 20.0,
+      "wall_layers": 3,
+      "obstacle_z": 0.2985,
+      "obstacle_x": 2.3955,
+      "wall_operator": "finite-volume-self-v2",
+      "viscosity": 1e-06,
+      "station_x": 2.228,
+      "station_offset": 0.16749999999999998,
+      "gauge_aperture": 0.08,
+      "arrival_threshold": 0.02,
+      "output_every": 1,
+      "threads": 1,
+      "complete": true,
+      "aborted": false,
+      "steps": 998,
+      "simulated_time_s": 0.7005959999999885,
+      "wall_clock_s": 641.4,
+      "operator_consistency": {
+        "wet_samples": 443,
+        "impossible_samples": 0,
+        "worst_impossible_slab_m": 0.0,
+        "height_column_admissible": true,
+        "reason": ""
+      },
+      "code_revision": {
+        "git": "a700e871416ccfd395ff8b13d38ccc9086099d11",
+        "operator_sha1": "eaf8a464cbcf270354af378db7b92e9f36753efb"
+      }
+    },
+    "sha256_csv": "7c8b56e20f960814a482b6a2634d169daab06e50739a97c1b33407788d860e59",
+    "max_speed_m_s": 7.308101654052734,
+    "max_density_compression": 0.16256396484375002,
+    "contacts": 111
+  },
+  {
+    "tag": "dx50_half",
+    "steps": 1596,
+    "fluid_particles": 5280,
+    "wall_particles": 16002,
+    "config": {
+      "tag": "dx50_half",
+      "dx": 0.05,
+      "t_end": 0.7,
+      "dt": 0.00043875,
+      "sound_speed": 20.0,
+      "wall_layers": 3,
+      "obstacle_z": 0.2985,
+      "obstacle_x": 2.3955,
+      "wall_operator": "finite-volume-self-v2",
+      "viscosity": 1e-06,
+      "station_x": 2.228,
+      "station_offset": 0.16749999999999998,
+      "gauge_aperture": 0.08,
+      "arrival_threshold": 0.02,
+      "output_every": 1,
+      "threads": 1,
+      "complete": true,
+      "aborted": false,
+      "steps": 1596,
+      "simulated_time_s": 0.7002450000000097,
+      "wall_clock_s": 354.7,
+      "operator_consistency": {
+        "wet_samples": 693,
+        "impossible_samples": 0,
+        "worst_impossible_slab_m": 0.0,
+        "height_column_admissible": true,
+        "reason": ""
+      },
+      "code_revision": {
+        "git": "a700e871416ccfd395ff8b13d38ccc9086099d11",
+        "operator_sha1": "eaf8a464cbcf270354af378db7b92e9f36753efb"
+      }
+    },
+    "sha256_csv": "99af7bc2c60f1615b7b5329d00e98ab6fba1d804a16e536656903208091a19c0",
+    "max_speed_m_s": 5.666144847869873,
+    "max_density_compression": 0.1268604736328125,
+    "contacts": 47
+  }
+]

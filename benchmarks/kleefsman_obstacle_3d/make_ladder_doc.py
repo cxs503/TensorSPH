@@ -6,7 +6,7 @@ The figures are *derived*, never hand-drawn:
    against the digitised Kleefsman Fig. 19 reference.  Skipped (and the reason
    printed) if no run has been recovered.
 2. ``fig_peak_ladder.png``  -- peak height vs dx with the 10 % band around the
-   experimental 0.370 m, plus the fitted continuum extrapolate when the ladder
+   experimental workbook peak, plus the fitted continuum extrapolate when the ladder
    has >= 3 levels.
 3. ``fig_tool_verification.png`` -- the ladder *estimator* validated against
    synthetic data of known order: recovered p vs true p.  This panel is what
@@ -29,6 +29,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
+from tensorsph.marin_probes import H2_ARRIVAL_S, H2_PEAK_M  # noqa: E402
+
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(HERE))
@@ -37,9 +39,9 @@ import ladder  # noqa: E402
 
 RESULTS = HERE / "results"
 FIGDIR = HERE / "results" / "ladder_figs"
-REF_CSV = ROOT / "docs" / "m20884" / "outputs" / "kleefsman_h2_ref" / "h2_fig19.csv"
-REF_PEAK_M = 0.370
-REF_ARRIVAL_S = 0.3591
+REF_CSV = ROOT / "benchmarks" / "marin_box_loads" / "h2_figure19_red.csv"
+REF_PEAK_M = H2_PEAK_M
+REF_ARRIVAL_S = H2_ARRIVAL_S
 TOL = 0.10
 
 

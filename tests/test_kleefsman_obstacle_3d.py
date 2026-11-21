@@ -219,7 +219,8 @@ def test_scoring_uses_ten_percent_and_does_not_cherry_pick():
     cfg = base_cfg()
     # a run whose slab peak is exactly the reference and whose arrival is 30 %
     # late must FAIL on the arrival row
-    run = _fake_run(cfg, peak=0.370, peak_t=1.7027, arrival=0.3591 * 1.30)
+    from tensorsph.marin_probes import H2_ARRIVAL_S, H2_PEAK_M, H2_PEAK_TIME_S
+    run = _fake_run(cfg, peak=H2_PEAK_M, peak_t=H2_PEAK_TIME_S, arrival=H2_ARRIVAL_S * 1.30)
     verdict = score(run)
     peaks = {r["metric"]: r for r in verdict["rows"]}
     assert peaks["peak_height"]["pass"] is True

@@ -51,6 +51,7 @@ measured numbers, including what did not meet its target.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from itertools import count
 import math
 
 import torch
@@ -64,7 +65,7 @@ from .droplet_impact import (
     resolve_device,
     rhs,
 )
-from .neighbor_search import PairListCache
+from .neighbor_search import PairListCache, cell_linked_pairs
 
 
 __all__ = [
@@ -356,13 +357,10 @@ class WaveFlumeConfig(Config):
     # under-supported), so the first fraction of a second carries a start-up
     # transient; waiting it out gives the wave a quiet medium to propagate into.
     settle_time: float = 0.0
-    # XSPH velocity smoothing (Monaghan 1989, J. Comput. Phys. 82:1; the "delta"
-    # of DualSPHysics): v_i <- v_i + xsph * sum_j (m_j/rbar)(v_j - v_i) W_ij /
-    # sum_j (m_j/rbar) W_ij. It damps particle-scale velocity noise -- which is
-    # exactly what the under-supported free-surface shell generates in a still
-    # flume -- while a coherent wave is a smooth field and is left almost
-    # untouched. Zero disables it.
+    # The historical normalized smoother filters the momentum velocity each
+    # acoustic step. The comparison mode filters only the particle trajectory.
     xsph: float = 0.0
+    xsph_advection_only: bool = False
     # Start-up damping. The resting lattice is not an exact discrete equilibrium,
     # so the first instants carry a particle-scale churn. Both knobs below are
     # active only while ``elapsed < settle_time``: a much larger XSPH coefficient
@@ -760,12 +758,9 @@ def xsph_correction(positions: torch.Tensor, velocity: torch.Tensor,
     """One XSPH smoothing pass over the fluid-fluid pairs.
 
     ``v_i <- v_i + eps * sum_j (m_j/rho_bar)(v_j - v_i) W_ij
-    / sum_j (m_j/rho_bar) W_ij`` with ``rho_bar`` the pair mean density. The
-    operator is a weighted average, so a uniform velocity is a fixed point; it
-    removes velocity differences on the scale of the kernel (particle disorder)
-    and leaves a field that is smooth on that scale -- a wave -- alone. Pair
-    contributions are added to both ends with opposite signs so the smoothing
-    conserves total momentum exactly (the weights are symmetric).
+    / sum_j (m_j/rho_bar) W_ij`` with ``rho_bar`` the pair mean density. Uniform
+    velocity is a fixed point. Different local normalizations can break pairwise
+    momentum cancellation when the result is fed back to the momentum equation.
     """
     if epsilon <= 0.0 or pairs.numel() == 0:
         return velocity
@@ -820,6 +815,7 @@ class WaveFlumeRun:
     speed_history: list = field(default_factory=list)
     compression_history: list = field(default_factory=list)
     mass_final: float | None = None
+    first_regime_exit: dict | None = None
 
     @property
     def mass_drift(self) -> float:
@@ -841,6 +837,35 @@ class WaveFlumeRun:
 from .registry import capability  # noqa: E402  (capability registry, m25063)
 
 
+def stability_verdict(metrics: dict, sound_speed: float,
+                      compression_limit: float = 0.01,
+                      mach_limit: float = 0.5) -> dict:
+    """Judge whether a flume record is a *wave* or a numerical event.
+
+    Two independent red flags are reported, because they fail differently:
+
+    * ``mach`` = ``max|v| / c0``.  Weakly compressible SPH assumes ``M << 1``;
+      a record whose peak particle speed exceeds half the artificial sound speed
+      is not resolving an acoustic-free gravity wave any more.
+    * ``compression`` = ``max(rho/rho0) - 1``.  Tait's equation of state is used
+      at O(1 %) density variation; 45 % is a shock in a gravity-wave case.
+
+    Both are reported with the measured value *and* the flag, so a caller can
+    print a number instead of a boolean.
+    """
+    speed = float(metrics.get("max_speed", float("nan")))
+    comp = float(metrics.get("max_compression", float("nan")))
+    mach = speed / sound_speed if sound_speed > 0 else float("nan")
+    return {
+        "mach": mach,
+        "compression": comp,
+        "mach_flag": bool(mach > mach_limit),
+        "compression_flag": bool(comp > compression_limit),
+        "stable": math.isfinite(mach) and math.isfinite(comp)
+                  and mach <= mach_limit and comp <= compression_limit,
+    }
+
+
 @capability(
     id="sph.case.wave_flume",
     kind="solver",
@@ -852,7 +877,7 @@ from .registry import capability  # noqa: E402  (capability registry, m25063)
     evidence={"grade": "MECHANICS", "note": "regular-wave flume (piston + sponge); honest FAIL at H/dx=2.6: wave-height error 65.5%, reflection 82% (DELIVERABLE_WAVE_FLUME_M17051.md); convergence campaign pending"},
 )
 def run_case(cfg: WaveFlumeConfig, snapshot_times=None,
-             probe_positions=None) -> WaveFlumeRun:
+             probe_positions=None, *, duration_s=None, stop_on_regime_exit=False) -> WaveFlumeRun:
     """Integrate the flume and return the gauge records and snapshots.
 
     ``snapshot_times`` (seconds, increasing) captures the particle state and the
@@ -860,6 +885,8 @@ def run_case(cfg: WaveFlumeConfig, snapshot_times=None,
     :func:`default_probe_positions`.
     """
     validate_flume(cfg)
+    if duration_s is not None and (not math.isfinite(duration_s) or duration_s <= 0):
+        raise ValueError("duration_s must be finite and positive")
     device = resolve_device(cfg.device)
     spec = flume_wave_spec(cfg)
     probes = (tuple(probe_positions) if probe_positions is not None
@@ -888,7 +915,7 @@ def run_case(cfg: WaveFlumeConfig, snapshot_times=None,
              if skin > 0 else None)
     all_positions = torch.cat((positions, wall), dim=0)
 
-    target_time = cfg.steps * cfg.dt
+    target_time = cfg.steps * cfg.dt if duration_s is None else duration_s
     snap_targets = sorted(float(t) for t in (snapshot_times or []))
     snap_next = 0
     profiles: list = []
@@ -908,8 +935,11 @@ def run_case(cfg: WaveFlumeConfig, snapshot_times=None,
     elapsed = 0.0
     absorption_state = 0.0
     physical_viscosity = cfg.viscosity
+    first_violation = None
     step = 0
-    for step in range(cfg.steps + 1):
+    for step in count():
+        if duration_s is not None and target_time-elapsed > 1e-12:
+            dt = min(dt, target_time-elapsed)
         # --- paddle kinematics, plus the optional absorption feedback ---------
         wave_time = max(0.0, elapsed - cfg.settle_time)
         settling = elapsed < cfg.settle_time
@@ -955,7 +985,16 @@ def run_case(cfg: WaveFlumeConfig, snapshot_times=None,
         speed_scalar = float(speed_now.max()) if speed_now.numel() else 0.0
         max_speed = max(max_speed, speed_scalar)
 
-        final = step == cfg.steps or elapsed >= target_time - 1.0e-12
+        final = elapsed >= target_time - 1.e-12 or (duration_s is None and step >= cfg.steps)
+        if first_violation is None:
+            regime = stability_verdict({"max_speed": speed_scalar,
+                                        "max_compression": compression_scalar}, cfg.sound_speed)
+            if not regime["stable"]:
+                first_violation = dict(t_s=elapsed, step=step, paddle_offset_m=total_offset,
+                                       speed_xy_m=positions[speed_now.argmax()].tolist(),
+                                       compression_xy_m=positions[density.argmax()].tolist(),
+                                       **regime)
+        final = final or (stop_on_regime_exit and first_violation is not None)
         if step % cfg.output_every == 0 or final:
             times.append(elapsed)
             paddle_offset.append(total_offset)
@@ -979,13 +1018,20 @@ def run_case(cfg: WaveFlumeConfig, snapshot_times=None,
             break
 
         velocity = velocity + dt * acc
-        if xsph_now > 0.0 and pairs is not None:
-            velocity = xsph_correction(positions, velocity, mass, density,
-                                       pairs, h, xsph_now)
+        transport_v = velocity
+        if xsph_now > 0.0:
+            if pairs is None:
+                pairs = cell_linked_pairs(positions, 2.0 * h)
+            transport_v = xsph_correction(positions, velocity, mass, density,
+                                          pairs, h, xsph_now)
+            if not cfg.xsph_advection_only:
+                velocity = transport_v
         alpha = sponge_rate(positions[:, 0], cfg, spec)
         if float(alpha.max()) > 0.0:
-            velocity = velocity * (1.0 - alpha * dt).clamp_min(0.0)[:, None]
-        positions = positions + dt * velocity
+            damping = (1.0 - alpha * dt).clamp_min(0.0)[:, None]
+            velocity = velocity * damping
+            transport_v = transport_v * damping
+        positions = positions + dt * transport_v
         escaped += apply_flume_boundary(positions, velocity, cfg)
         elapsed += dt
         # Acoustic Courant control with the current maximum speed.
@@ -996,6 +1042,7 @@ def run_case(cfg: WaveFlumeConfig, snapshot_times=None,
         "dx": cfg.dx,
         "h_factor": cfg.h_factor,
         "dt_requested": cfg.dt,
+        "requested_duration_s": duration_s,
         "dt_final": dt,
         "sound_speed": cfg.sound_speed,
         "viscosity": cfg.viscosity,
@@ -1013,6 +1060,7 @@ def run_case(cfg: WaveFlumeConfig, snapshot_times=None,
         "active_absorption": cfg.active_absorption,
         "settle_time": cfg.settle_time,
         "xsph": cfg.xsph,
+        "xsph_advection_only": cfg.xsph_advection_only,
         "xsph_settle": cfg.xsph_settle,
         "viscosity_settle": cfg.viscosity_settle,
         "surface_offset_cells": cfg.surface_offset_cells,
@@ -1039,7 +1087,7 @@ def run_case(cfg: WaveFlumeConfig, snapshot_times=None,
         profiles=profiles, snapshots=snapshots,
         final_positions=positions.detach().clone(),
         speed_history=speed_history, compression_history=compression_history,
-        mass_final=float(mass.sum()),
+        mass_final=float(mass.sum()), first_regime_exit=first_violation,
     )
 
 

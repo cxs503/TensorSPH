@@ -9,10 +9,14 @@ from pathlib import Path
 import torch
 
 from tensorsph.dam_break_3d import DamBreak3DConfig, make_column_3d, rhs_3d, wall_lattice_3d
-from tensorsph.kleefsman_obstacle_3d import (REFERENCE_ARRIVAL_TIME_S, REFERENCE_PEAK_HEIGHT_M,
-                                          REFERENCE_PEAK_TIME_S, arrival_time)
+from tensorsph.kleefsman_obstacle_3d import arrival_time
 from tensorsph.neighbor_search import PairListCache
 from tensorsph.wave_ice_interaction import wave_number_under_ice
+
+
+# Frozen only to reproduce PR 1148. The original grayscale digitisation
+# confused both curves at the peak. Current assessments use the MARIN workbook.
+REFERENCE_PEAK_HEIGHT_M, REFERENCE_PEAK_TIME_S, REFERENCE_ARRIVAL_TIME_S = .370, 1.7027, .3591
 
 
 def water_load(n, courant=.20, end_s=.06):

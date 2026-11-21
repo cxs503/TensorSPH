@@ -34,6 +34,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
+from tensorsph.marin_probes import H2_ARRIVAL_S, H2_PEAK_M, H2_PEAK_TIME_S  # noqa: E402
+
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(HERE))
@@ -44,12 +46,12 @@ RESULTS = HERE / "results"
 OUTDIR = RESULTS / "production"
 FIGDIR = OUTDIR / "figs"
 DOC = ROOT / "docs" / "verification_kleefsman_3d_production_m21952.md"
-REF_CSV = ROOT / "docs" / "m20884" / "outputs" / "kleefsman_h2_ref" / "h2_fig19.csv"
+REF_CSV = ROOT / "benchmarks" / "marin_box_loads" / "h2_figure19_red.csv"
 TWOD_VERDICT = (ROOT / "benchmarks" / "kleefsman_obstacle" / "results"
                 / "h2_score" / "verdict.json")
-REF_PEAK_M = 0.370
-REF_PEAK_T = 1.7027
-REF_ARRIVAL_S = 0.3591
+REF_PEAK_M = H2_PEAK_M
+REF_PEAK_T = H2_PEAK_TIME_S
+REF_ARRIVAL_S = H2_ARRIVAL_S
 TOL = 0.10
 CASE = "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST"
 MISSION = "21952"
@@ -261,7 +263,7 @@ def build_note(analysis: dict[str, dict], figures: dict[str, str]) -> str:
       "水柱溃决，冲击 x = 2.476 m 处 0.161 × 0.161 × 0.403 m 方箱；H2 波高计在箱前，"
       "判据 = **水位时程峰值与到达时刻 vs 实验，容差 < 10 %**。")
     a("")
-    a(f"实验锚点（原文 Fig. 19 右 panel 数字化，m20884）：峰值 **{REF_PEAK_M:.3f} m @ "
+    a(f"实验锚点（SPHERIC Test 2 原始工作簿）：峰值 **{REF_PEAK_M:.3f} m @ "
       f"{REF_PEAK_T:.4f} s**；到达（阈值 0.02 m）**{REF_ARRIVAL_S:.4f} s**。")
     a("")
     a("2-D 臂把 0.403 m 方箱当作跨满 1.00 m 槽宽（100 % 阻挡），实验只挡 40 %、其余 60 % "
@@ -367,7 +369,8 @@ def build_note(analysis: dict[str, dict], figures: dict[str, str]) -> str:
     a("")
     a("## ⑥ 误差判定：关键量 vs 基准")
     a("")
-    a("| 量 | 基准（Kleefsman 2005 Fig. 19） | 本单 3-D 最优 | 相对误差 | < 3 %？ | < 10 %（账本容差）？ |")
+    a("| 量 | 基准（SPHERIC Test 2 工作簿） | 本单 3-D 最优 | 相对误差 | < 3 %？ | "
+      "< 10 %（账本容差）？ |")
     a("|---|---|---|---|---|---|")
     if all_runs:
         bp = min(all_runs, key=lambda r: abs(r["peak_m"] - REF_PEAK_M))
@@ -383,7 +386,7 @@ def build_note(analysis: dict[str, dict], figures: dict[str, str]) -> str:
         else:
             a(f"| 到达时刻（0.02 m） | {REF_ARRIVAL_S:.4f} s | 未取得 | 未取得 | 否 | 否 |")
     else:
-        a("| 箱前水位峰值 | 0.370 m | 未取得 | 未取得 | 否 | 否 |")
+        a(f"| 箱前水位峰值 | {REF_PEAK_M:.4f} m | 未取得 | 未取得 | 否 | 否 |")
     a("")
     verdict = "PASS" if all_runs and n_pass else "FAIL / 未达标"
     a(f"**总判决：`{verdict}`。** "

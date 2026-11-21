@@ -56,18 +56,21 @@ class DropFreezingResult:
 
 
 def simulate(*, cells=12, radius=.002, height=.001, plate_c=-20., initial_water_c=0.,
-             glass_depth=.001, end_s=30., safety=.8, shape="cap"):
+             glass_depth=.001, end_s=30., safety=.8, shape="cap", contact_resistance=0.):
     """Cool a spherical cap or verification slab on an isothermal or finite plate.
 
     Lengths in m, times in s. Zero glass depth selects an isothermal contact.
     With finite depth the backside is thermostatted and exterior faces insulated.
+    contact_resistance is the areal drop/plate thermal resistance (m² K/W).
     Initial liquid below 0 °C is mapped to equal enthalpy at prescribed nucleation.
     The fixed particle mass and shape omit expansion, flow and nucleation delay.
     """
     if not isinstance(cells, int) or cells < 4 or not all(map(math.isfinite, (
-            radius, height, plate_c, initial_water_c, glass_depth, end_s, safety))):
+            radius, height, plate_c, initial_water_c, glass_depth,
+            end_s, safety, contact_resistance))):
         raise ValueError("expected finite parameters and at least four cells per base radius")
-    if (min(radius, height, end_s) <= 0 or height > radius or glass_depth < 0
+    if (min(radius, height, end_s) <= 0 or height > radius
+            or glass_depth < 0 or contact_resistance < 0
             or plate_c > 0 or shape not in ("cap", "slab") or not 0 < safety <= 1):
         raise ValueError("invalid cap, plate, time horizon, shape or safety factor")
     dx = radius/cells
@@ -148,7 +151,8 @@ def simulate(*, cells=12, radius=.002, height=.001, plate_c=-20., initial_water_
         if nz_glass:
             # Equal and opposite contact flux using the two half-cell resistances.
             k = p.K_FRESH + (p.K_ICE-p.K_FRESH)*solid[bottom]
-            face = 2/(1/k + 1/GLASS_K)*(glass_t[top]-temp[bottom])/dx**2
+            resistance = .5*dx*(1/k + 1/GLASS_K) + contact_resistance
+            face = (glass_t[top]-temp[bottom])/(dx*resistance)
             glass_rates = GLASS_K*(glass_lap @ glass_t)
             glass_rates[top] -= face
             back_flux = 2*GLASS_K*(plate_c-glass_t[back])/dx**2
@@ -156,6 +160,13 @@ def simulate(*, cells=12, radius=.002, height=.001, plate_c=-20., initial_water_
             glass_t += dt/(GLASS_RHO*GLASS_CP)*glass_rates
         else:
             face = 2*(cold_potential-potential[bottom])/dx**2
+            if contact_resistance:
+                # Secant conductivity of the existing Kirchhoff potential recovers
+                # the perfect-contact stencil as the extra resistance tends to zero.
+                dtemp = plate_c-temp[bottom]
+                k_eff = torch.where(dtemp != 0, (cold_potential-potential[bottom])/dtemp,
+                                    p.K_FRESH + (p.K_ICE-p.K_FRESH)*solid[bottom])
+                face = dtemp/(dx*(.5*dx/k_eff + contact_resistance))
             back_flux = face
         rates[bottom] += face
         h += dt/p.RHO_FRESH*rates
@@ -166,7 +177,8 @@ def simulate(*, cells=12, radius=.002, height=.001, plate_c=-20., initial_water_
     return DropFreezingResult(pos, h, solid, section, history, sections, dict(
         cells_per_radius=cells, dx_m=dx, base_radius_m=radius, height_m=height, shape=shape,
         glass_depth_m=nz_glass*dx, glass_width_m=len(xy)*dx if nz_glass else 0.,
-        plate_c=plate_c, initial_water_c=initial_water_c, safety=safety,
+        contact_resistance_m2K_W=contact_resistance, plate_c=plate_c,
+        initial_water_c=initial_water_c, safety=safety,
         water_particles=len(pos), glass_particles=len(glass_t), steps=steps, dt_limit_s=dt_limit,
         final_time_s=time, final_frozen_mass_fraction=frozen, water_mass_kg=len(pos)*water_mass,
         sampled_energy_residual_over_latent=peak_residual/(len(pos)*water_mass*FRESH.latent),
