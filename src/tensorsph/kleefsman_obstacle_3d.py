@@ -19,23 +19,17 @@ and the box given its real 0.403 m width.
 
 What is measured
 ----------------
-``slab@x2.426`` and ``height@x2.426`` are computed exactly as in the 2-D case
-(frozen protocol: 0.08 m aperture, station 0.05 m upstream of the box face,
-0.02 m arrival threshold), but in 3-D the slab is a *volume* slab and the water
-height it reports is ``V / (aperture_x * blocked_width)`` -- the same
-"metres of water over the blocked width" the 2-D areal operator reports.
+The H2 station is x=2.228 m measured from the upstream wall. The 0.08 m
+aperture slab reports volume divided by aperture times the blocked width.
+This finite-area average approximates the experimental centreline probe.
 Bypass is measured explicitly (``n_bypass``: fluid particles downstream of the
 box that are outside the box's spanwise extent), so the geometry difference is
 a reported number and not an assumption.
 
 Scope / limitations, stated up front
 -----------------------------------
-* The lateral position of the box inside the 1.00 m tank is not stated in words
-  in the paper and the setup figure (Fig. 2/17) is a raster.  This module
-  therefore makes it a parameter (``obstacle_z``) and defaults to the box being
-  flush with the front side wall (``z = 0``), which is the placement used by
-  most SPH reproductions.  The bypass gap is then 0.597 m on one side; the
-  alternative (centred box, two 0.2985 m gaps) is one keyword away.
+* The box is centred across the tank. The 0.744 m dimension is measured
+  from the downstream wall to the box centre (see the dimensioned Fig. 15, doi:10.3970/cmes.2008.025.133).
 * The tank walls are free-slip (``wall_friction = 0``, the solver default).
 * Only the *peak* and *arrival* of the in-front-of-box water height are
   claimed.  Pressure-impulse comparisons on the box face are not attempted.
@@ -65,14 +59,17 @@ TANK_HEIGHT_M = 1.00
 TANK_WIDTH_M = 1.00
 COLUMN_LENGTH_M = 1.228
 COLUMN_HEIGHT_M = 0.550
-OBSTACLE_X_M = 2.476          # upstream face of the box (1.228 + 1.248)
 OBSTACLE_LENGTH_M = 0.161     # streamwise
 OBSTACLE_HEIGHT_M = 0.161
 OBSTACLE_WIDTH_M = 0.403      # spanwise; 3-D only
 
-# ---- frozen acceptance protocol (identical to the 2-D case) ---------------
+# Fig. 15 measures these dimensions from the downstream wall.
+OBSTACLE_X_M = TANK_LENGTH_M - 0.744 - OBSTACLE_LENGTH_M / 2
+H2_X_M = TANK_LENGTH_M - 0.992
+
+# ---- 3-D station, finite-area aperture and arrival threshold --------------
 FROZEN_APERTURE_M = 0.08
-FROZEN_STATION_OFFSET_M = 0.05
+FROZEN_STATION_OFFSET_M = OBSTACLE_X_M - H2_X_M
 FROZEN_ARRIVAL_THRESHOLD_M = 0.02
 
 # ---- digitised experimental H2 (Kleefsman 2005 Fig. 19 right panel) -------
@@ -100,7 +97,7 @@ class Kleefsman3DConfig(DamBreak3DConfig):
     obstacle_length: float = OBSTACLE_LENGTH_M
     obstacle_height: float = OBSTACLE_HEIGHT_M
     obstacle_width: float = OBSTACLE_WIDTH_M
-    obstacle_z: float = 0.0                    # spanwise origin of the box
+    obstacle_z: float = (TANK_WIDTH_M - OBSTACLE_WIDTH_M) / 2
     # gauge
     station_offset: float = FROZEN_STATION_OFFSET_M
     gauge_aperture: float = FROZEN_APERTURE_M
@@ -132,6 +129,8 @@ class Kleefsman3DConfig(DamBreak3DConfig):
 
 def validate_case(cfg: Kleefsman3DConfig) -> None:
     """Reject geometry that does not reproduce the published apparatus."""
+    if not math.isfinite(cfg.viscosity) or cfg.viscosity < 0:
+        raise ValueError("kinematic viscosity must be finite and non-negative")
     tol = 1.0e-9
     if abs(cfg.pool_width - TANK_LENGTH_M) > tol:
         raise ValueError("tank length must be 3.22 m (Kleefsman et al. 2005)")
@@ -146,7 +145,7 @@ def validate_case(cfg: Kleefsman3DConfig) -> None:
     if abs(cfg.column_depth - cfg.tank_depth) > tol:
         raise ValueError("the water column must span the full tank width")
     if abs(cfg.obstacle_x - OBSTACLE_X_M) > tol:
-        raise ValueError("obstacle upstream face must be at x = 2.476 m")
+        raise ValueError("obstacle upstream face must be at x = 2.3955 m")
     if abs(cfg.obstacle_height - OBSTACLE_HEIGHT_M) > tol:
         raise ValueError("obstacle height must be 0.161 m")
     if abs(cfg.obstacle_width - OBSTACLE_WIDTH_M) > tol:
@@ -436,6 +435,9 @@ class Kleefsman3DRun:
                 "t_end": self.cfg.t_end,
                 "sound_speed": self.cfg.sound_speed,
                 "wall_layers": self.cfg.wall_layers,
+                "wall_operator": "finite-volume-self-v2",
+                "viscosity": self.cfg.viscosity,
+                "obstacle_x": self.cfg.obstacle_x,
                 "obstacle_z": self.cfg.obstacle_z,
                 "station_offset": self.cfg.station_offset,
                 "gauge_aperture": self.cfg.gauge_aperture,
@@ -461,7 +463,8 @@ class Kleefsman3DRun:
 # criterion, not physics, and a run has to be resumable with a longer horizon
 # precisely because the crash usually happens before the requested end.
 
-CHECKPOINT_VERSION = 1
+# Version 2 uses finite wall quadrature and includes the kernel self term.
+CHECKPOINT_VERSION = 2
 
 #: config fields that make a checkpoint of another run useless
 CHECKPOINT_FINGERPRINT_FIELDS = (
@@ -612,23 +615,32 @@ def run_case(cfg: Kleefsman3DConfig, device: str | torch.device = "cpu",
     for step in range(start_step, max_steps + 1):
         all_positions[:fluid_count] = positions
         pairs, _ = cache.get(all_positions)
-        density, _, acc = rhs_3d(positions, velocity, mass, cfg, pairs=pairs,
-                                 wall=wall, dt=dt)
+        final = elapsed >= cfg.t_end - 1.0e-12
+        sampling = step % cfg.output_every == 0 or final
+        result = rhs_3d(positions, velocity, mass, cfg, pairs=pairs, wall=wall, dt=dt,
+                        return_wall_force=sampling and on_sample is not None)
+        density, _, acc = result[:3]
         if not torch.isfinite(acc).all():
             raise FloatingPointError(f"non-finite acceleration at step {step}")
         compression = max(compression, float(density.max()) / cfg.rho0 - 1.0)
         speed_now = float(torch.linalg.vector_norm(velocity, dim=-1).max())
         speeds = max(speeds, speed_now)
 
-        final = elapsed >= cfg.t_end - 1.0e-12
-        if step % cfg.output_every == 0 or final:
+        if sampling:
             run.times.append(elapsed)
             run.slab.append(slab_height(positions, cfg))
             run.height.append(peak_height(positions, cfg))
             run.front.append(float(positions[:, 0].max()))
             run.bypass.append(float(bypass_count(positions, cfg)))
             if on_sample is not None:
+                loads = result[3][-len(obstacle):]
+                centre = obstacle.new_tensor([cfg.obstacle_x + cfg.obstacle_length/2,
+                                              cfg.obstacle_height/2,
+                                              cfg.obstacle_z + cfg.obstacle_width/2])
+                moment = torch.linalg.cross(obstacle-centre, loads).sum(0)
                 on_sample(len(run.times) - 1, {
+                    "obstacle_sph_force_N": loads.sum(0).tolist(),
+                    "obstacle_sph_moment_Nm": moment.tolist(),
                     "t_s": elapsed,
                     "slab_height_m": run.slab[-1],
                     "height_operator_m": run.height[-1],
@@ -693,15 +705,12 @@ def score(run: Kleefsman3DRun, tolerance_rel: float = TOLERANCE_REL) -> dict:
     else:
         add("arrival_time", REFERENCE_ARRIVAL_TIME_S, arrival)
 
-    # a maximum sitting on the last samples of a record that stops before the
-    # experimental peak instant is a *censored* maximum: the run was cut short
-    # before the event the reference measures had finished.  Such a run cannot
-    # pass even if its truncated maximum happens to match the reference.
-    censored = False
-    if run.times and run.slab:
-        k_peak = max(range(len(run.slab)), key=lambda i: run.slab[i])
-        censored = bool(k_peak >= len(run.times) - 2
-                        and run.times[-1] < REFERENCE_PEAK_TIME_S)
+    # A partial trace can have an interior local maximum before the reported
+    # experimental peak. Its value is still an observation, not a validation.
+    censored = not run.times or run.times[-1] < REFERENCE_PEAK_TIME_S
+    rows[0]["assessable"] = not censored
+    if censored:
+        rows[0]["pass"] = False
     passed = all(r["pass"] for r in rows) and not censored
 
     return {

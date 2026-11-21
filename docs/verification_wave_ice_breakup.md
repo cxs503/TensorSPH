@@ -1,5 +1,7 @@
 # 波致冰场破碎与浮冰尺寸分布演化物理模型验证报告
 
+**2026-11-21 更新。** 本页保留旧版本的结果。冰板色散项已由四次波数修正为五次波数，并加入冰层惯性。修正后的汉堡冰水池对照及适用范围见[船海工程评估](marine_engineering_readiness.md)。旧版阻力倍率、断裂条件及尺寸分布仍缺独立工程验证。
+
 **模块**：`src/tensorsph/wave_ice_interaction.py`  
 **测试**：`tests/test_wave_ice_interaction.py` (38 tests, all passing)  
 **证据等级**：REAL（半解析模型 + 物理守恒律验证 + 观测值比对）  

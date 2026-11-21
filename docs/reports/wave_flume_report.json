@@ -138,7 +138,7 @@
         "group_velocity": 0.9365278339068391,
         "sinh_kh": 1.5180667501011569,
         "kinematic_viscosity": 1e-06,
-        "source": "Mei 1983 The Applied Dynamics of Ocean Surface Waves \u00a74.2; Dean & Dalrymple 1991 \u00a75.4 (Putnam & Johnson 1949)"
+        "source": "Mei 1983 The Applied Dynamics of Ocean Surface Waves §4.2; Dean & Dalrymple 1991 §5.4 (Putnam & Johnson 1949)"
       },
       "measured_loss_over_span": 0.0297795359459474,
       "theory_loss_over_span": 0.000807633742157976,
@@ -166,7 +166,7 @@
         2.5,
         5.0
       ],
-      "passed": true,
+      "passed": false,
       "record": "docs/reports/records/wf_D20.json",
       "label": "dx=0.01250 (H/dx=3.2)",
       "config": {
@@ -233,7 +233,18 @@
         "period": 1.0,
         "wavelength": 1.303843232850413,
         "length_scale": 0.0
-      }
+      },
+      "record_integrity": {
+        "passed": false,
+        "issues": [
+          "sample_count",
+          "speed_history",
+          "compression_history"
+        ],
+        "expected_samples": 371,
+        "observed_samples": 501
+      },
+      "height_within_tolerance": true
     }
   ],
   "tolerance": 0.1,

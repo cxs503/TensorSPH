@@ -38,7 +38,9 @@ from tensorsph.kleefsman_obstacle_3d import (  # noqa: E402
 )
 
 RECOVERED = BENCH / "results" / "recovered"
-CFG = Kleefsman3DConfig(dx=0.05, t_end=1.0)
+# Archived sample positions were measured in the earlier, wall-flush layout.
+CFG = Kleefsman3DConfig(dx=0.05, t_end=1.0, obstacle_x=2.476,
+                        station_offset=0.05, obstacle_z=0.0)
 
 
 def _series(t, slab, height):

@@ -1,0 +1,80 @@
+{
+  "tag": "dx50_water",
+  "run": {
+    "dx": 0.05,
+    "t_end": 0.5,
+    "dt": 0.0008775000000000001,
+    "sound_speed": 20.0,
+    "fluid_particles": 5280,
+    "wall_particles": 16002,
+    "blocked_fraction": 0.403,
+    "obstacle_z": 0.2985,
+    "obstacle_width_nominal_m": 0.403,
+    "obstacle_width_on_lattice_m": 0.4,
+    "stations_x_m": [
+      2.228
+    ],
+    "gauge_aperture_m": 0.08,
+    "peak_height_m": 0.09305210918114146,
+    "peak_time_s": 0.4606874999999949,
+    "peak_height_operator_m": 0.0686752051115036,
+    "arrival_time_s": 0.3962895299999967,
+    "arrival_threshold_m": 0.02,
+    "max_speed": 5.142543792724609,
+    "max_density_compression": 0.12616064453124998,
+    "boundary_escapes": 0,
+    "obstacle_clamps": 10,
+    "mass_error_rel": 0.0,
+    "steps": 570,
+    "simulated_time_s": 0.5001749999999938,
+    "wall_clock_s": 104.9980640411377,
+    "max_bypass_particles": 14.0,
+    "fingerprint": {
+      "t_end": 0.5,
+      "sound_speed": 20.0,
+      "wall_layers": 3,
+      "wall_operator": "finite-volume-self-v2",
+      "viscosity": 1e-06,
+      "obstacle_x": 2.3955,
+      "obstacle_z": 0.2985,
+      "station_offset": 0.16749999999999998,
+      "gauge_aperture": 0.08,
+      "arrival_threshold": 0.02
+    }
+  },
+  "kinematic_viscosity_m2_s": 1e-06,
+  "run_metadata": {
+    "tag": "dx50_water",
+    "dx": 0.05,
+    "t_end": 0.5,
+    "dt": 0.0008775000000000001,
+    "sound_speed": 20.0,
+    "wall_layers": 3,
+    "obstacle_z": 0.2985,
+    "obstacle_x": 2.3955,
+    "wall_operator": "finite-volume-self-v2",
+    "viscosity": 1e-06,
+    "station_x": 2.228,
+    "station_offset": 0.16749999999999998,
+    "gauge_aperture": 0.08,
+    "arrival_threshold": 0.02,
+    "output_every": 5,
+    "threads": 2,
+    "complete": true,
+    "aborted": false,
+    "steps": 570,
+    "simulated_time_s": 0.5001749999999938,
+    "wall_clock_s": 105.0,
+    "operator_consistency": {
+      "wet_samples": 24,
+      "impossible_samples": 0,
+      "worst_impossible_slab_m": 0.0,
+      "height_column_admissible": true,
+      "reason": ""
+    },
+    "code_revision": {
+      "git": "eae3d32b3cfc0630be8baec7c2864cfbcc5d2648",
+      "operator_sha1": "17a397371fd7ab1aaeac69d989ff9b823b8fdd92"
+    }
+  }
+}

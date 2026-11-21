@@ -22,6 +22,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import math
+from functools import lru_cache
 
 import torch
 
@@ -29,7 +30,6 @@ from .droplet_impact import (
     Config,
     cell_centres,
     hydrostatic_density,
-    lattice_mass_unit,
     next_dt,
     resolve_device,
     tait_pressure,
@@ -173,6 +173,15 @@ def validate_case(cfg: DamBreak3DConfig) -> None:
 # Particle initialisation
 # --------------------------------------------------------------------------- #
 
+@lru_cache(maxsize=64)
+def _mass_3d(dx: float, h_factor: float, rho0: float, calibrated: bool) -> float:
+    """Reference mass shared by the 3-D fluid lattice and fixed wall quadrature."""
+    if calibrated:
+        from .threed.kernel3 import calibrated_particle_mass
+        return calibrated_particle_mass(dx, h_factor * dx, rho0)
+    return rho0 * dx**3
+
+
 def make_column_3d(cfg: DamBreak3DConfig, device: torch.device,
                    seed: int | None = None):
     """Particles filling the initial 3-D water column, resting on the floor.
@@ -198,10 +207,7 @@ def make_column_3d(cfg: DamBreak3DConfig, device: torch.device,
     # Calibrated 3-D lattice mass (tensorsph.threed.kernel3): the 3-D cubic
     # lattice needs the 3-D-normalised kernel for this, so it cannot reuse the
     # 2-D helper.  ``density_calibration`` on Config used to be ignored here.
-    mass_unit = cfg.rho0 * dx * dx * dx
-    if getattr(cfg, "density_calibration", True):
-        from .threed.kernel3 import calibrated_particle_mass
-        mass_unit = calibrated_particle_mass(dx, cfg.h_factor * dx, cfg.rho0)
+    mass_unit = _mass_3d(dx, cfg.h_factor, cfg.rho0, cfg.density_calibration)
     if cfg.hydrostatic_init:
         mass = hydrostatic_density(positions[:, 1], cfg,
                                    surface=cfg.column_height) * (mass_unit / cfg.rho0)
@@ -282,10 +288,12 @@ def wall_lattice_3d(cfg: DamBreak3DConfig, device: torch.device,
 # --------------------------------------------------------------------------- #
 
 def rhs_3d(pos, vel, mass, cfg: DamBreak3DConfig, pairs=None, wall=None,
-           dt=None):
+           dt=None, *, return_wall_force=False):
     """Compute density, pressure, and acceleration for a 3-D particle set.
 
-    Same physics as the 2-D ``rhs`` but with the 3-D kernel.
+    Set ``return_wall_force`` to append the force exerted by the fluid on each
+    wall particle in N (pressure plus configured wall friction, before any
+    position/velocity clamp). The default returns the original three tensors.
     """
     n = pos.shape[0]
     nw = wall.shape[0] if wall is not None else 0
@@ -296,8 +304,8 @@ def rhs_3d(pos, vel, mass, cfg: DamBreak3DConfig, pairs=None, wall=None,
 
     if wall is not None:
         all_pos = torch.cat((pos, wall), dim=0)
-        all_mass = torch.cat((mass, torch.zeros(nw, dtype=mass.dtype,
-                                                device=mass.device)))
+        wall_mass = _mass_3d(cfg.dx, cfg.h_factor, cfg.rho0, cfg.density_calibration)
+        all_mass = torch.cat((mass, mass.new_full((nw,), wall_mass)))
     else:
         all_pos = pos
         all_mass = mass
@@ -312,7 +320,9 @@ def rhs_3d(pos, vel, mass, cfg: DamBreak3DConfig, pairs=None, wall=None,
     distance = torch.linalg.vector_norm(delta, dim=1)
     wij, grad_w = pair_kernels_3d(delta, h)
 
-    rho_all = torch.zeros(n + nw, dtype=pos.dtype, device=pos.device)
+    # Neighbour lists contain distinct pairs only. The lattice calibration
+    # includes W(0), which must enter density once per particle.
+    rho_all = all_mass / (math.pi * h**3)
     rho_all = rho_all.index_add(0, i, all_mass[j] * wij)
     rho_all = rho_all.index_add(0, j, all_mass[i] * wij)
     rho = rho_all[:n].clamp_min(0.1 * cfg.rho0)
@@ -327,7 +337,9 @@ def rhs_3d(pos, vel, mass, cfg: DamBreak3DConfig, pairs=None, wall=None,
 
     pressure = tait_pressure(rho, cfg)
     if cfg.surface_pressure_closure:
-        pressure = free_surface_pressure(pos, rho, pressure, delta, wij, i, j, cfg)
+        fluid_pair = (i < n) & (j < n)
+        pressure = free_surface_pressure(pos, rho, pressure, delta[fluid_pair], wij[fluid_pair],
+                                         i[fluid_pair], j[fluid_pair], cfg)
 
     if nw:
         bulk = cfg.rho0 * cfg.sound_speed ** 2 / cfg.gamma
@@ -395,7 +407,19 @@ def rhs_3d(pos, vel, mass, cfg: DamBreak3DConfig, pairs=None, wall=None,
     acc_visc = acc_visc.index_add(0, i, visc_i)
     acc_visc = acc_visc.index_add(0, j, visc_j)
 
-    return rho, pressure, acc_pressure + acc_visc[:n] + gravity
+    result = rho, pressure, acc_pressure + acc_visc[:n] + gravity
+    if not return_wall_force:
+        return result
+    reaction = pos.new_zeros((nw, 3))
+    if nw:
+        # Use the fluid-side viscous acceleration: the Morris volume weight
+        # contains the neighbour density and need not be symmetric at the wall.
+        sign = torch.where(i_fluid, 1., -1.)
+        pressure_force = (sign * all_mass[i] * all_mass[j])[:, None] * pair_pressure
+        fluid_visc = torch.where(i_fluid[:, None], visc_i, visc_j)
+        load = pressure_force - all_mass[fluid_idx, None] * fluid_visc
+        reaction.index_add_(0, wall_idx[crossing], load[crossing])
+    return (*result, reaction)
 
 
 # --------------------------------------------------------------------------- #
@@ -585,14 +609,8 @@ def run_case(cfg: DamBreak3DConfig, pair_skin_factor: float | None = None,
     compression_at_impact = None
     wall_impact_time = None
 
-    # Wall-particle volume for the TVC wall branch: the wall lattice uses the
-    # fluid spacing, so one lattice cell of the *calibrated* mass is the
-    # consistent volume (upstream stores V = m / rho for every particle; the
-    # 3-D walls here are massless in the RHS, so their mass cannot be borrowed
-    # from ``mass``).
-    wall_volume = (torch.full((wall.shape[0] if wall is not None else 0,),
-                              lattice_mass_unit(cfg) / cfg.rho0,
-                              dtype=positions.dtype, device=device))
+    wall_unit = _mass_3d(cfg.dx, cfg.h_factor, cfg.rho0, cfg.density_calibration)
+    wall_volume = positions.new_full((wall.shape[0],), wall_unit / cfg.rho0)
     tvc_log: list = []
 
     dt = cfg.dt

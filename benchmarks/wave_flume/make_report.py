@@ -194,7 +194,7 @@ def summary_numbers(rows, tolerance) -> dict:
         "cases_failed": len(rows) - len(ok),
         "worst_error_vs_target": worst,
         "worst_error_percent": 100.0 * worst,
-        "passed": bool(ok) and all(r["passed"] for r in ok),
+        "passed": bool(rows) and all(r.get("passed", False) for r in rows),
         "per_case": [
             {
                 "tag": r.get("_tag"),
@@ -323,7 +323,7 @@ def render(rows, tolerance, figures, repro_cmd, records) -> str:
   远小于 {100*tolerance:.0f} % 门，所以超出门的部分只能归因于数值耗散（分辨率/粘性/海绵），
   报告把两个数并列，不假设哪一个主导。
 * **判据打勾/打叉**：机器裁在 `tensorsph.wave_flume_grade.grade_regular_record`，
-  逐探头 `within_tolerance` 与本报告汇总的 `passed` 同源。
+  波高误差单列。汇总通过还要求时间采样与每次输出的速度和压缩历史符合求解器记录。
 
 ## ② 方法与实现（方程/格式出处 + 关键代码指针）
 
@@ -416,6 +416,7 @@ def main(argv=None) -> int:
     numbers["cases"] = [
         {
             "record": r.get("record"),
+            "record_integrity": r.get("record_integrity"),
             "label": r.get("label"),
             "height_cells": r.get("height_cells"),
             "target_height": r.get("target_height"),

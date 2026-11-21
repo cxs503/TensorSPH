@@ -17,7 +17,7 @@ are checkable with no digitisation at all:
 * "this second wave meets the height probe at H2 again (after about 5 s)".
 
 Every quote is stored verbatim (with page number, PDF URL and sha256) in
-``outputs/kleefsman2005_text/quotes.json`` by ``quotes_from_pdf.py``; this module
+``docs/m21534/outputs/kleefsman2005_text/quotes.json`` by ``quotes_from_pdf.py``; this module
 only *measures* our own records and binds them to those ids.  A landmark is
 ``PASS`` when the measured instant lies inside the tolerance the wording allows,
 ``FAIL`` when it does not, and ``UNKNOWN`` when the record does not cover the
@@ -34,7 +34,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-QUOTES_PATH = ROOT / "outputs" / "kleefsman2005_text" / "quotes.json"
+QUOTES_PATH = ROOT / "docs" / "m21534" / "outputs" / "kleefsman2005_text" / "quotes.json"
 THRESHOLD_M = 0.02
 
 # ``ref_s``/``tol_s`` are read off the wording itself: the snapshot bracket

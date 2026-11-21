@@ -1,21 +1,7 @@
-"""Artifact-level checks for the case-pool entry ``CASE-WAVE-FLUME``.
+"""Recompute archived gauge heights and audit the evidence behind their grading.
 
-Two things are asserted here, and they are different in kind:
-
-1. **The committed numbers are a recomputation, not prose.**  The report
-   (``docs/reports/wave_flume_report.json``) and the numbers bundle
-   (``docs/reports/wave_flume_numbers.json``) are regenerated from the raw gauge
-   records in ``runs/`` and compared field by field, so editing a digit by hand
-   breaks CI instead of the review.
-2. **The acceptance criterion is evaluated on the real solver records.**  The
-   primary production record (``H/dx = 3.2``, ``T = 1 s``, ``H/h = 0.16``) must
-   put every gauge inside the 10 % height gate; a red test here means the case
-   did *not* meet its case-pool entry, which is a reportable FAIL and not
-   something to be smoothed over.
-
-The records are the JSON written by ``benchmarks/wave_flume/run.py``; the grading
-lives in :mod:`tensorsph.wave_flume_grade` and is unit-tested on synthetic signals
-in ``tests/test_wave_flume_grade.py``.  No solver runs in this file.
+The reported D20 heights meet the height tolerance. Its sampling count and
+diagnostic traces disagree with the producer, so the overall verdict is false.
 """
 from __future__ import annotations
 
@@ -51,8 +37,8 @@ def _report():
     return json.loads(REPORT.read_text())
 
 
-def test_committed_records_are_completed_solver_runs():
-    """A committed record must be a finished solver run, not a stub."""
+def test_committed_records_contain_traces_and_run_declarations():
+    """Check trace coverage separately from verification of the producer."""
     paths = _records()
     assert paths, f"no solver record under {RUNS}; run benchmarks/wave_flume/run.py"
     for path in paths:
@@ -100,6 +86,8 @@ def test_report_is_a_recomputation_of_the_records():
         fresh = grade_regular_record(json.loads(record_path.read_text()),
                                      start=start, end=end, tolerance=tolerance)
         assert fresh["passed"] == case["passed"], case["record"]
+        assert fresh["record_integrity"] == case["record_integrity"]
+        assert fresh["height_within_tolerance"] == case["height_within_tolerance"]
         assert abs(fresh["target_height"] - case["target_height"]) < 1e-12
         assert abs(fresh["worst_error_vs_target"] - case["worst_error_vs_target"]) < 1e-12
         assert abs(fresh["attenuation"]["mu_per_m"] - case["attenuation"]["mu_per_m"]) < 1e-12

@@ -1,4 +1,5 @@
 {
+  "dispersion_record_status": "historical, before the k^5 and ice-inertia correction; see benchmarks/marine_readiness/results.json",
   "mission_id": 10660,
   "scenario_key": "p9050-n03-wave-ice-breakup",
   "module": "src/tensorsph/wave_ice_interaction.py",

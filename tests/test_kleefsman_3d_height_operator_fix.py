@@ -151,9 +151,9 @@ def test_2d_operators_zero_for_empty_strip():
 def test_3d_slab_reduces_to_2d_for_full_width():
     """When the obstacle spans the full width, 3-D slab should match 2-D slab conceptually."""
     # 3-D config with full-width obstacle
-    cfg3 = _cfg_3d(obstacle_width=1.0, gauge_aperture=0.08)
+    cfg3 = _cfg_3d(obstacle_width=1.0, obstacle_z=0., gauge_aperture=0.08)
     # 2-D config
-    cfg2 = _cfg_2d(dx=0.05, probe_offset=0.05)
+    cfg2 = _cfg_2d(dx=0.05, obstacle_x=cfg3.obstacle_x, probe_offset=cfg3.station_offset)
 
     # Create particles in the station
     n = 20

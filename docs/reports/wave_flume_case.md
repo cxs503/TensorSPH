@@ -17,7 +17,7 @@
   远小于 10 % 门，所以超出门的部分只能归因于数值耗散（分辨率/粘性/海绵），
   报告把两个数并列，不假设哪一个主导。
 * **判据打勾/打叉**：机器裁在 `tensorsph.wave_flume_grade.grade_regular_record`，
-  逐探头 `within_tolerance` 与本报告汇总的 `passed` 同源。
+  波高误差单列。汇总通过还要求时间采样与每次输出的速度和压缩历史符合求解器记录。
 
 ## ② 方法与实现（方程/格式出处 + 关键代码指针）
 
@@ -70,7 +70,7 @@
 | wf_D20 | 1.000 | 0.999 | 0.999 | 1.3052 | 1.3038 | 0.10 | 4.8140 | 0.0073 |
 
 **汇总**：判据 `CASE-WAVE-FLUME: |H_got - H_ref| / H_ref <= 10 %`，逐工况最差误差
-2.97 %，全部通过 = **True**。
+2.97 %，全部通过 = **False**。
 
 ## ⑤ 收敛性/参数敏感性
 
@@ -81,22 +81,37 @@
 ## ⑥ 失败模式与工件（repro_cmd + 工件路径）
 
 ```
-# 生产工况（与 docs/reports/records/wf_D20.json 的 config 逐项一致；集群多核）
-PYTHONPATH=src python benchmarks/wave_flume/run.py --case regular --depth 0.25 \
-  --depth-cells 20 --height-ratio 0.16 --wave-period 1.0 --simulate-time 5.0 \
-  --settle 1.0 --viscosity-settle 0.02 --xsph-settle 0.1 --xsph 0.0 \
-  --active-absorption 0.5 --ramp-periods 2.0 --sponge-length 0.9 \
-  --sponge-strength 4.0 --sponge-exponent 3.0 --density-diffusion 0.1 \
-  --viscosity 1e-6 --sound-speed 30.0 --output-every 100 --snapshots 4 \
-  --threads 20 --out docs/reports/records/wf_D20.json
-# 判级 + 图 + 报告（判据：逐探头 |H_got - H_ref| / H_ref <= 10%）
+# 生产工况（集群/多核；本地等价命令把 --threads 调小）
+PYTHONPATH=src python benchmarks/wave_flume/run.py \
+  --case regular \
+  --depth 0.25 \
+  --depth-cells 20 \
+  --height-ratio 0.1600 \
+  --wave-period 1 \
+  --gravity 9.81 \
+  --flume-length 3.2 \
+  --sound-speed 30 \
+  --viscosity 1e-06 \
+  --density-diffusion 0.1 \
+  --sponge-strength 4 \
+  --active-absorption 0.5 \
+  --ramp-periods 2 \
+  --sponge-length 0.9 \
+  --xsph 0 \
+  --xsph-settle 0.1 \
+  --viscosity-settle 0.02 \
+  --settle 1 \
+  --simulate-time 5.0000 \
+  --output-every 100 \
+  --snapshots 4 \
+  --dt 0.000135 \
+  --threads 20 \
+  --out docs/reports/records/wf_D20.json
+# 判级 + 图 + 报告
 PYTHONPATH=src python benchmarks/wave_flume/analyse.py \
-  --record docs/reports/records/wf_D20.json --start 2.5 \
+  --record docs/reports/records/wf_D20.json \
   --out docs/reports/wave_flume_report.json --figures docs/figures/wave_flume
-PYTHONPATH=src python benchmarks/wave_flume/make_report.py \
-  --report docs/reports/wave_flume_report.json \
-  --numbers docs/reports/wave_flume_numbers.json \
-  --out docs/reports/wave_flume_case.md --repro "$(cat /tmp/repro_block.txt)"
+PYTHONPATH=src python benchmarks/wave_flume/make_report.py
 ```
 
 * 工件：`docs/reports/wave_flume_report.json`（判级原始数字）、
