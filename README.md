@@ -19,6 +19,11 @@ The density-summation solver and the single-resolution δ⁺-SPH solver support 
 | 2-D dam break (B2) | front converges at observed order 0.96 and is insensitive to `c0`; **no** experimental gate |
 | 3-D operators (`tensorsph.threed`) | kernel, lattice calibration, periodic neighbour search, pressure/viscous forces and the static-wall model verified against analytic solutions — shear-wave decay within 2.7 %, hydrostatic bottom pressure within 2.7 %; **no** 3-D free surface, surface tension or multiphase (see [`docs/verification_threed.md`](docs/verification_threed.md)) |
 
+The independent [3-D cold-glass freezing benchmark](benchmarks/sessile_freezing/README.md)
+tracks latent heat and ice growth in a deposited fresh-water drop. It includes
+a planar Stefan check and an experimental timing comparison. The finest
+conducting-glass case freezes in 10.44 s versus about 18 s in the published images.
+
 The 3-D branch is separate on purpose: the shipped kernel carries the 2-D
 normalisation `10/(7 pi h^2)` and `rhs` rejects anything but a 2-D cloud, so
 `import tensorsph.threed` adds a 3-D kernel, lattice mass calibration, a triply

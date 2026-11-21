@@ -51,7 +51,11 @@ from .sph_thermal import StefanConfig, StefanResult, run_stefan_sph
 from .thermal_stress import (crack_assessment, critical_temperature_drop,
                             free_plate_stress, restrained_stress)
 
+from .sessile_drop import DropFreezingResult, simulate as simulate_sessile_drop
+
 __all__ = [
+    "DropFreezingResult", "simulate_sessile_drop",
+    "SlabConfig", "SlabResult", "analytic_temperature", "run_slab_contact",
     "brine", "conduction_slab", "coupled", "darcy", "enthalpy", "properties",
     "sph_thermal",
     "thermal_stress",
