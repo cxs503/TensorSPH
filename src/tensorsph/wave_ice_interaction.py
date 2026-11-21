@@ -37,9 +37,8 @@ floe size distribution evolution using:
   - Energy-balance-based fracture criterion
   - Statistical floe size distribution (FSD) evolution
 
-The model is validated against laboratory ice-bending tests, satellite FSD
-observations, and field wave-attenuation measurements as documented in
-``docs/verification_wave_ice_breakup.md``.
+The dispersion benchmark compares phase speeds with HSVA tank measurements.
+Fracture, floe statistics and resistance remain reduced-order estimates.
 """
 
 from __future__ import annotations
@@ -85,37 +84,11 @@ def bending_stiffness(E: float, h: float, nu: float = NU_DEFAULT) -> float:
 
 
 def wave_number_dispersion(omega: float, d: float) -> float:
-    """Solve the linear dispersion relation ω² = gk·tanh(kd) for k.
-
-    Uses Newton iteration starting from the deep-water estimate k₀ = ω²/g.
-
-    Parameters
-    ----------
-    omega : angular frequency [rad/s]
-    d : water depth [m]
-
-    Returns
-    -------
-    k : wave number [rad/m]
-    """
-    if omega <= 0:
-        return 0.0
-    # Deep-water initial guess
-    k = omega**2 / G
-    # Newton iteration: f(k) = gk*tanh(kd) - omega^2 = 0
-    for _ in range(50):
-        th = math.tanh(k * d)
-        ch = math.cosh(k * d)
-        f = G * k * th - omega**2
-        fp = G * (th + k * d / ch**2)
-        if abs(fp) < 1e-30:
-            break
-        dk = f / fp
-        k -= dk
-        if abs(dk) < 1e-12 * max(abs(k), 1e-15):
-            break
-        k = max(k, 1e-15)
-    return k
+    """Finite-depth open-water wave number in rad/m (zero for zero frequency)."""
+    from .wave_flume import wavenumber_from_omega
+    if not math.isfinite(omega):
+        raise ValueError("wave frequency must be finite")
+    return wavenumber_from_omega(omega, d, G) if omega > 0 else 0.0
 
 
 def wavelength(omega: float, d: float) -> float:
@@ -127,65 +100,43 @@ def wavelength(omega: float, d: float) -> float:
 
 
 def wave_number_under_ice(omega: float, h: float, d: float,
-                          E: float = E_DEFAULT, nu: float = NU_DEFAULT) -> float:
-    """Solve the coupled dispersion relation for waves under an elastic plate.
+                          E: float = E_DEFAULT, nu: float = NU_DEFAULT, *,
+                          rho_ice: float = RHO_ICE, rho_water: float = RHO_W) -> float:
+    """Finite-depth elastic-plate wave number, including ice inertia (SI).
 
-    The dispersion relation for flexural-gravity waves is:
-        ω² = (gk + Dk⁴/ρ_w) tanh(kd)
-
-    where D = Eh³/[12(1-ν²)] is the bending stiffness.
-
-    The ice adds bending stiffness, so for the same frequency, k_ice < k_open
-    (longer wavelength under ice).
-
-    This is solved by bisection for robustness.
-
-    Parameters
-    ----------
-    omega : angular frequency [rad/s]
-    h : ice thickness [m]
-    d : water depth [m]
-    E : Young's modulus [Pa]
-    nu : Poisson's ratio
-
-    Returns
-    -------
-    k_ice : wave number under ice [rad/m]
+    Eq. D.3 of Li et al. (2021), doi:10.1016/j.coldregions.2020.103208.
+    Zero thickness recovers open water. Setting rho_ice=0 omits mass loading.
+    No in-plane compression, edge scattering, dissipation or currents.
     """
-    if omega <= 0 or h <= 0:
+    if (not all(math.isfinite(v) for v in (omega, h, d, E, nu, rho_ice, rho_water))
+            or h < 0 or d <= 0 or E < 0 or abs(nu) >= 1 or rho_ice < 0 or rho_water <= 0):
+        raise ValueError("invalid plate, fluid or wave parameters")
+    if omega <= 0:
         return 0.0
-
-    D = bending_stiffness(E, h, nu)
     k_open = wave_number_dispersion(omega, d)
-
-    # The ice adds stiffness, so k_ice < k_open
-    # Use bisection in the range [0.01*k_open, k_open]
-    def residual(k):
-        th = math.tanh(k * d) if k * d < 500 else 1.0
-        lhs = omega**2
-        rhs = (G * k + D * k**4 / RHO_W) * th
-        return rhs - lhs
-
-    # Find bounds: residual should change sign
-    k_low = 0.01 * k_open
-    k_high = k_open
-
-    # Verify sign change
-    if residual(k_low) * residual(k_high) > 0:
-        # No sign change - return k_open as fallback
+    if h == 0:
         return k_open
 
-    # Bisection
-    for _ in range(100):
-        k_mid = 0.5 * (k_low + k_high)
-        if residual(k_mid) > 0:
-            k_high = k_mid
-        else:
-            k_low = k_mid
-        if (k_high - k_low) < 1e-10 * k_mid:
-            break
+    rigidity = bending_stiffness(E, h, nu) / rho_water
+    effective_g = G - rho_ice * h / rho_water * omega**2
+    if rigidity == 0 and effective_g <= 0:
+        raise ValueError("no propagating pure mass-loading mode at this frequency")
 
-    return 0.5 * (k_low + k_high)
+    def residual(k):
+        return (effective_g + rigidity*k**4)*k*math.tanh(k*d) - omega**2
+
+    low, high = 0.0, k_open
+    while residual(high) < 0:
+        high *= 2
+    for _ in range(100):
+        mid = (low+high)/2
+        if residual(mid) < 0:
+            low = mid
+        else:
+            high = mid
+        if high-low <= 1e-13*high:
+            break
+    return (low+high)/2
 
 
 def ice_plate_response(
@@ -214,13 +165,9 @@ def ice_plate_response(
     lambda_open = 2.0 * math.pi / k_open if k_open > 0 else float('inf')
     lambda_ice = 2.0 * math.pi / k_ice if k_ice > 0 else float('inf')
 
-    # Amplitude ratio: from energy conservation and impedance matching
-    # The group velocity ratio determines the amplitude change
-    # For waves under ice, the amplitude is modified by the impedance ratio
+    # Existing empirical edge-amplitude proxy. Propagation under a uniform
+    # plate alone does not determine transmission at the open-water edge.
     if k_ice > 0 and k_open > 0:
-        # Energy flux conservation: E_open × cg_open = E_ice × cg_ice
-        # Since E ∝ A², we get A_ice/A_open = sqrt(cg_open/cg_ice)
-        # The amplitude ratio accounts for the different restoring forces
         amp_ratio = math.sqrt(k_open / k_ice)
         amp_ratio = min(amp_ratio, 2.0)
         amp_ratio = max(amp_ratio, 0.5)

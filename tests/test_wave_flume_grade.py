@@ -159,9 +159,10 @@ def _synthetic_record(height=0.04, period=1.0, decay=0.0, depth=0.25,
             "probe_x": list(gauge_x), "times": times, "probe_eta": probe_eta}
 
 
-def test_grade_of_a_synthetic_non_decaying_record_passes():
+def test_analytic_wave_recovers_height_but_has_no_solver_step_record():
     got = grade_regular_record(_synthetic_record(decay=0.0), start=2.0)
-    assert got["passed"] is True
+    assert got["height_within_tolerance"] is True
+    assert got["passed"] is False
     assert got["worst_error_vs_target"] == pytest.approx(0.0, abs=2e-3)
     assert got["attenuation"]["mu_per_m"] == pytest.approx(0.0, abs=2e-3)
     # the analytic wave satisfies its own dispersion relation, so the two-probe
@@ -183,3 +184,14 @@ def test_spectral_amplitude_reports_the_period_and_amplitude():
     got = spectral_amplitude(t, eta)
     assert got["period"] == pytest.approx(2.0, rel=2e-2)
     assert got["amplitude"] == pytest.approx(0.03, rel=2e-2)
+def test_record_integrity_accepts_final_partial_stride_and_rejects_missing_times():
+    from tensorsph.wave_flume_grade import solver_record_integrity
+    clock = [0., .2, .3]
+    trace = [0.] * 3
+    record = {"times": clock, "config": {"output_every": 2},
+              "diagnostics": {"steps_taken": 3, "simulated_time": .3}, "probe_x": [.1],
+              "probe_eta": [trace], "paddle_offset": trace, "speed_history": trace,
+              "compression_history": trace}
+    assert solver_record_integrity(record)["passed"]
+    record["times"] = clock[:-1]
+    assert "sample_count" in solver_record_integrity(record)["issues"]

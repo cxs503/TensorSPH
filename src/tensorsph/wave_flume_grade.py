@@ -336,6 +336,37 @@ def airgap_check(time, eta, depth) -> dict:
 # Whole-record grading
 # --------------------------------------------------------------------------- #
 
+def solver_record_integrity(record: dict) -> dict:
+    """Check the sampling contract of wave_flume.run_case, including its final sample."""
+    cfg, diag = record.get("config", {}), record.get("diagnostics", {})
+    times = record.get("times", [])
+    steps, stride = diag.get("steps_taken"), cfg.get("output_every")
+    expected = None
+    issues = []
+    if type(steps) is int and steps >= 0 and type(stride) is int and stride > 0:
+        expected = 1 + (steps + stride - 1)//stride
+        if len(times) != expected:
+            issues.append("sample_count")
+    else:
+        issues.append("step_metadata")
+    end_time = diag.get("simulated_time")
+    if (not isinstance(end_time, (int, float)) or not math.isfinite(end_time)
+            or not times or not all(math.isfinite(t) for t in times) or times[0] != 0.
+            or any(b <= a for a, b in zip(times, times[1:]))
+            or not math.isclose(times[-1], end_time, abs_tol=1e-9)):
+        issues.append("sample_clock")
+    for name in ("speed_history", "compression_history", "paddle_offset"):
+        values = record.get(name, [])
+        if len(values) != len(times) or not all(math.isfinite(v) for v in values):
+            issues.append(name)
+    probes = record.get("probe_eta", [])
+    if not probes or len(probes) != len(record.get("probe_x", [])) or any(
+            len(trace) != len(times) for trace in probes):
+        issues.append("probe_shape")
+    return {"passed": not issues, "issues": issues, "expected_samples": expected,
+            "observed_samples": len(times)}
+
+
 def grade_regular_record(record: dict, start=None, end=None,
                          tolerance: float = 0.10,
                          kinematic_viscosity: float = 1.0e-6) -> dict:
@@ -349,7 +380,8 @@ def grade_regular_record(record: dict, start=None, end=None,
     Returns a dict with the per-gauge table, the attenuation fit, the physical
     damping reference, the dispersion check (measured peak period and two-probe
     wave number against ``omega^2 = g k tanh(kh)``), the reflection coefficient
-    and ``passed``.
+    and ``passed``. For a solver result the sample clock and histories must also match
+    the producer. Analytic signals can be assessed via ``height_within_tolerance``.
     """
     if record.get("failed"):
         return {"failed": True, "error": record.get("error", "run failed"),
@@ -435,7 +467,8 @@ def grade_regular_record(record: dict, start=None, end=None,
         reflection["error"] = str(exc)
 
     worst = max(abs(g.get("error_vs_target", float("inf"))) for g in valid)
-    passed = worst <= tolerance
+    integrity = solver_record_integrity(record)
+    passed = worst <= tolerance and integrity["passed"]
     return {
         "failed": False,
         "target_height": target,
@@ -452,5 +485,7 @@ def grade_regular_record(record: dict, start=None, end=None,
         "dispersion": dispersion,
         "reflection": reflection,
         "window": [float(start) if start is not None else float(times[0]), end],
+        "height_within_tolerance": worst <= tolerance,
+        "record_integrity": integrity,
         "passed": passed,
     }

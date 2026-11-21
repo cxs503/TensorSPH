@@ -5,7 +5,7 @@
   "cases_failed": 0,
   "worst_error_vs_target": 0.029679295205491986,
   "worst_error_percent": 2.9679295205491987,
-  "passed": true,
+  "passed": false,
   "per_case": [
     {
       "tag": "wf_D20",
@@ -17,12 +17,22 @@
       "theory_loss": 0.000807633742157976,
       "wavelength_error": 0.0010249172172562826,
       "reflection_ratio": 0.007323690822661432,
-      "passed": true
+      "passed": false
     }
   ],
   "cases": [
     {
       "record": "docs/reports/records/wf_D20.json",
+      "record_integrity": {
+        "passed": false,
+        "issues": [
+          "sample_count",
+          "speed_history",
+          "compression_history"
+        ],
+        "expected_samples": 371,
+        "observed_samples": 501
+      },
       "label": "dx=0.01250 (H/dx=3.2)",
       "height_cells": 3.1999999999999997,
       "target_height": 0.04,
@@ -117,7 +127,7 @@
         2.5,
         5.0
       ],
-      "passed": true,
+      "passed": false,
       "derived": {
         "kh": 1.2047432446007185,
         "height_over_depth": 0.16,
@@ -130,7 +140,7 @@
         "span_per_wavelength": 0.3749999999999999,
         "mu_times_span": 0.0008079600539942191
       },
-      "repro_record_command": "PYTHONPATH=src python benchmarks/wave_flume/run.py --case regular --depth 0.25 --depth-cells 20.0 --height-ratio 0.160 --wave-period 1.0 --out docs/reports/records/wf_D20.json"
+      "repro_record_command": "PYTHONPATH=src python benchmarks/wave_flume/run.py \\\n  --case regular \\\n  --depth 0.25 \\\n  --depth-cells 20 \\\n  --height-ratio 0.1600 \\\n  --wave-period 1 \\\n  --gravity 9.81 \\\n  --flume-length 3.2 \\\n  --sound-speed 30 \\\n  --viscosity 1e-06 \\\n  --density-diffusion 0.1 \\\n  --sponge-strength 4 \\\n  --active-absorption 0.5 \\\n  --ramp-periods 2 \\\n  --sponge-length 0.9 \\\n  --xsph 0 \\\n  --xsph-settle 0.1 \\\n  --viscosity-settle 0.02 \\\n  --settle 1 \\\n  --simulate-time 5.0000 \\\n  --output-every 100 \\\n  --snapshots 4 \\\n  --dt 0.000135 \\\n  --threads 20 \\\n  --out docs/reports/records/wf_D20.json"
     }
   ],
   "references": {

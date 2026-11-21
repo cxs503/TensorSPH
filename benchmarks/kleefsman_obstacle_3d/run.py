@@ -3,7 +3,7 @@
 Runs one grid of :mod:`tensorsph.kleefsman_obstacle_3d` to ``--t-end`` and writes
 the gauge time series plus the scored verdict to committed paths:
 
-    results/<tag>_time_series.csv   t, slab, height, front_x, bypass
+    results/<tag>_time_series.csv   t, slab, height, front_x, bypass, obstacle SPH force and moment
     results/<tag>.json              run summary + verdict vs Kleefsman Fig. 19
 
 Example (one grid per invocation, because a grid is minutes to hours of wall
@@ -29,6 +29,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from tensorsph.kleefsman_obstacle_3d import (  # noqa: E402
     Kleefsman3DConfig,
+    load_checkpoint,
     run_case,
     score,
 )
@@ -62,6 +63,32 @@ def _code_revision() -> dict:
     return rev
 
 
+SERIES_COLUMNS = ["t_s", "slab_height_m", "height_operator_m", "front_x_m", "n_bypass",
+                  "Fx_N", "Fy_N", "Fz_N", "Mx_Nm", "My_Nm", "Mz_Nm"]
+
+
+def resume_series(path, checkpoint_times):
+    """Keep exactly the samples covered by a compatible checkpoint."""
+    with path.open(newline="") as src:
+        reader = csv.reader(src)
+        if next(reader, None) != SERIES_COLUMNS:
+            raise ValueError("restart CSV has a different wall-load schema")
+        prefix = []
+        for time_s in checkpoint_times:
+            row = next(reader, None)
+            if row is None or len(row) != len(SERIES_COLUMNS) or row[0] != f"{time_s:.6f}":
+                raise ValueError("restart CSV is missing checkpoint samples")
+            prefix.append(row)
+        has_tail = next(reader, None) is not None
+    if has_tail:
+        tmp = path.with_suffix(".csv.tmp")
+        with tmp.open("w", newline="") as out:
+            writer = csv.writer(out)
+            writer.writerow(SERIES_COLUMNS)
+            writer.writerows(prefix)
+        tmp.replace(path)
+
+
 def main(argv: list[str] | None = None) -> int:
     faulthandler.enable(file=sys.stderr, all_threads=True)
     ap = argparse.ArgumentParser(description=__doc__)
@@ -70,8 +97,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--dt", type=float, default=None,
                     help="default: the acoustic Courant limit for this dx")
     ap.add_argument("--sound-speed", type=float, default=20.0)
+    ap.add_argument("--viscosity", type=float, default=Kleefsman3DConfig.viscosity,
+                    help="kinematic viscosity in m^2/s")
     ap.add_argument("--wall-layers", type=int, default=3)
-    ap.add_argument("--obstacle-z", type=float, default=0.0,
+    ap.add_argument("--obstacle-z", type=float, default=Kleefsman3DConfig.obstacle_z,
                     help="spanwise origin of the box (0 = flush with a side wall)")
     ap.add_argument("--output-every", type=int, default=5)
     ap.add_argument("--tag", default=None)
@@ -97,6 +126,7 @@ def main(argv: list[str] | None = None) -> int:
         dx=args.dx,
         t_end=args.t_end,
         sound_speed=args.sound_speed,
+        viscosity=args.viscosity,
         wall_layers=args.wall_layers,
         obstacle_z=args.obstacle_z,
         output_every=args.output_every,
@@ -122,19 +152,22 @@ def main(argv: list[str] | None = None) -> int:
                     and not args.no_resume)
     # a resumed run appends: the samples already in the checkpoint are not
     # re-emitted, so the file stays one monotone series
+    if resuming:
+        resume_series(csv_path, load_checkpoint(args.checkpoint, cfg)["times"])
     csv_fh = csv_path.open("a" if resuming else "w", newline="")
     if resuming:
         print(f"[{tag}] resuming from {args.checkpoint}", flush=True)
     writer = csv.writer(csv_fh)
-    writer.writerow(["t_s", "slab_height_m", "height_operator_m",
-                     "front_x_m", "n_bypass"])
+    if not resuming:
+        writer.writerow(SERIES_COLUMNS)
     csv_fh.flush()
 
     def on_sample(_i: int, row: dict) -> None:
         writer.writerow([f"{r:.6f}" if isinstance(r, float) else r
                          for r in (row["t_s"], row["slab_height_m"],
                                    row["height_operator_m"], row["front_x_m"],
-                                   row["n_bypass"])])
+                                   row["n_bypass"], *row["obstacle_sph_force_N"],
+                                   *row["obstacle_sph_moment_Nm"])])
         csv_fh.flush()
 
     # fingerprint written before the run, so a run that never returns still
@@ -144,7 +177,9 @@ def main(argv: list[str] | None = None) -> int:
     meta_path.write_text(json.dumps({
         "tag": tag, "dx": cfg.dx, "t_end": cfg.t_end, "dt": None,
         "sound_speed": cfg.sound_speed, "wall_layers": cfg.wall_layers,
-        "obstacle_z": cfg.obstacle_z, "station_offset": cfg.station_offset,
+        "obstacle_z": cfg.obstacle_z, "obstacle_x": cfg.obstacle_x,
+        "wall_operator": "finite-volume-self-v2", "viscosity": cfg.viscosity, "station_x": cfg.station_x(),
+        "station_offset": cfg.station_offset,
         "gauge_aperture": cfg.gauge_aperture,
         "arrival_threshold": cfg.arrival_threshold,
         "output_every": cfg.output_every,

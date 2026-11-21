@@ -1,4 +1,5 @@
 {
+ "geometry_status": "Archived 2-D convention. In Fig. 15 of doi:10.3970/cmes.2008.025.133 the 0.744 m dimension locates the box centre and H2 is 0.992 m from the downstream wall. In upstream coordinates the face is 2.3955 m and H2 is 2.228 m. For current 3-D runs see docs/marine_engineering_readiness.md.",
  "case": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST",
  "repo": "TensorSPH",
  "reference": {
@@ -107,9 +108,15 @@
   "pending_job": "cluster cj1576 (queued); rerun benchmarks/kleefsman_obstacle/gauge_convergence.py after it lands",
   "pair_spread": "peak 21.6 % (height@x2.426) -> 9.9 % (slab@x2.426) -> 1.3 % (slab@x2.228); arrival 6.2 % -> 4.2 % -> 4.4 %"
  },
+ "t30_scoring": {
+  "scope": "Historical 2-D assessment at x=2.426 m using the existing area gauge. See the 3-D study for the physical H2 station.",
+  "results": "benchmarks/kleefsman_obstacle/results/audit_t30/score.json",
+  "verdict": "FAIL",
+  "peak_criterion": {"decidable": true, "reason": "Both archived 3.0 s records cover the reference peak at 1.7027 s."}
+ },
  "arrival_attribution": {
   "what": "attribution of the 22-34 % late surge (m21173): gauge-vs-front split, fan-locus depth mapping, Richardson limit, c0 falsification, station sensitivity",
-  "verdict": "arrival FAIL on every grid and every gauge operator; peak NOT COMPARABLE (all committed runs end at 1.0-1.2 s, the reference peak is the t=1.70 s secondary impact)",
+  "verdict": "arrival FAIL on every grid and gauge operator in the short campaign; those 1.0-1.2 s runs end before the reference peak. See t30_scoring for the 3.0 s campaign.",
   "falsified_causes": [
    "acoustic compressibility (c0 20->80 moves the arrival <0.3 %)",
    "grid resolution (Richardson continuum 0.4396 s, +22.4 %)",

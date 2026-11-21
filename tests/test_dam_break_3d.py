@@ -71,14 +71,18 @@ def test_column_3d_is_inside_the_tank_and_rests_on_the_floor():
 # Test 2: Hydrostatic initialisation
 # --------------------------------------------------------------------------- #
 
-def test_hydrostatic_initialisation_3d_matches_the_analytic_profile():
-    cfg = small_case(hydrostatic_init=True)
+@pytest.mark.parametrize("calibrated", [False, True])
+def test_hydrostatic_initialisation_3d_matches_the_analytic_profile(calibrated):
+    from tensorsph.threed.kernel3 import lattice_kernel_sum
+    cfg = small_case(hydrostatic_init=True, density_calibration=calibrated)
     positions, mass = make_column_3d(cfg, torch.device("cpu"))
     expected = hydrostatic_density(positions[:, 1], cfg,
                                    surface=cfg.column_height) * cfg.dx ** 3
+    if calibrated:
+        expected /= lattice_kernel_sum(cfg.dx, cfg.h_factor*cfg.dx)
     torch.testing.assert_close(mass, expected)
 
-    uniform_cfg = small_case(hydrostatic_init=False)
+    uniform_cfg = small_case(hydrostatic_init=False, density_calibration=calibrated)
     _, uniform_mass = make_column_3d(uniform_cfg, torch.device("cpu"))
     assert float(mass.sum()) > float(uniform_mass.sum())
 

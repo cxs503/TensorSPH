@@ -1,0 +1,78 @@
+{
+  "tag": "dx50_c40",
+  "run": {
+    "dx": 0.05,
+    "t_end": 0.5,
+    "dt": 0.00043875000000000007,
+    "sound_speed": 40.0,
+    "fluid_particles": 5280,
+    "wall_particles": 16002,
+    "blocked_fraction": 0.403,
+    "obstacle_z": 0.2985,
+    "obstacle_width_nominal_m": 0.403,
+    "obstacle_width_on_lattice_m": 0.4,
+    "stations_x_m": [
+      2.228
+    ],
+    "gauge_aperture_m": 0.08,
+    "peak_height_m": 0.12406947890818859,
+    "peak_time_s": 0.47165624999999073,
+    "peak_height_operator_m": 0.05611755698919296,
+    "arrival_time_s": 0.4050645299999926,
+    "arrival_threshold_m": 0.02,
+    "max_speed": 5.866580009460449,
+    "max_density_compression": 0.051996337890624966,
+    "boundary_escapes": 0,
+    "obstacle_clamps": 13,
+    "mass_error_rel": 0.0,
+    "steps": 1140,
+    "simulated_time_s": 0.5001749999999899,
+    "wall_clock_s": 141.63200068473816,
+    "max_bypass_particles": 10.0,
+    "fingerprint": {
+      "t_end": 0.5,
+      "sound_speed": 40.0,
+      "wall_layers": 3,
+      "wall_operator": "finite-volume-self-v2",
+      "obstacle_x": 2.3955,
+      "obstacle_z": 0.2985,
+      "station_offset": 0.16749999999999998,
+      "gauge_aperture": 0.08,
+      "arrival_threshold": 0.02
+    }
+  },
+  "kinematic_viscosity_m2_s": 0.01,
+  "run_metadata": {
+    "tag": "dx50_c40",
+    "dx": 0.05,
+    "t_end": 0.5,
+    "dt": 0.00043875000000000007,
+    "sound_speed": 40.0,
+    "wall_layers": 3,
+    "obstacle_z": 0.2985,
+    "obstacle_x": 2.3955,
+    "wall_operator": "finite-volume-self-v2",
+    "station_x": 2.228,
+    "station_offset": 0.16749999999999998,
+    "gauge_aperture": 0.08,
+    "arrival_threshold": 0.02,
+    "output_every": 5,
+    "threads": 2,
+    "complete": true,
+    "aborted": false,
+    "steps": 1140,
+    "simulated_time_s": 0.5001749999999899,
+    "wall_clock_s": 141.6,
+    "operator_consistency": {
+      "wet_samples": 44,
+      "impossible_samples": 0,
+      "worst_impossible_slab_m": 0.0,
+      "height_column_admissible": true,
+      "reason": ""
+    },
+    "code_revision": {
+      "git": "eae3d32b3cfc0630be8baec7c2864cfbcc5d2648",
+      "operator_sha1": "99cad72d02af6a3e6df6b3588287cc40790872bb"
+    }
+  }
+}

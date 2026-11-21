@@ -8,6 +8,8 @@
 
 TensorSPH is the SPH solver project in the Tensor ecosystem. It is intended to provide reproducible, testable particle-based fluid simulations that can later be orchestrated by TensorPhysics and recorded by TensorPlatform.
 
+The [ship and offshore engineering assessment](docs/marine_engineering_readiness.md) links measured wave, green-water, structural and ice results to the engineering quantities each case can support.
+
 ## Implemented
 
 The density-summation solver and the single-resolution δ⁺-SPH solver support the following cases:
@@ -17,6 +19,7 @@ The density-summation solver and the single-resolution δ⁺-SPH solver support 
 | 2-D droplet impact on a pool | runs end to end; numerically bounded; **not** compared with experiment |
 | 2-D Sun δ⁺-SPH | evolved density, diffusion and interface-aware particle shifting; [analytic deforming drop](benchmarks/delta_plus/README.md) and [Test 19 comparison with TensorFEM](benchmarks/spheric19/README.md) |
 | 2-D dam break (B2) | front converges at observed order 0.96 and is insensitive to `c0`; **no** experimental gate |
+| 3-D free-surface dam break and obstacle impact | integrated wall force and moment, analytic still-water load and MARIN H2 time histories; wave arrival remains late. [Results](docs/marine_engineering_readiness.md) |
 | 3-D operators (`tensorsph.threed`) | kernel, lattice calibration, periodic neighbour search, pressure/viscous forces and the static-wall model verified against analytic solutions — shear-wave decay within 2.7 %, hydrostatic bottom pressure within 2.7 %; **no** 3-D free surface, surface tension or multiphase (see [`docs/verification_threed.md`](docs/verification_threed.md)) |
 
 The independent [3-D cold-glass freezing benchmark](benchmarks/sessile_freezing/README.md)
