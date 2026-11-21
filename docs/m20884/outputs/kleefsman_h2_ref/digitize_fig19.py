@@ -11,13 +11,11 @@ docs/kleefsman-h2-experimental-anchor.md for the audit trail.
 Two curves share the panel:
   * thick solid line, legend "COMFLOW"   -> the authors' VOF computation (NOT the reference),
   * dashed line,     legend "experiment" -> the measured water height (the reference we want).
-The two are separated by continuity: the solid curve is drawn in every pixel column, the dashed one
-is absent in the gaps between dashes, so a column holding two dark runs holds one sample of each.
-"""
+The legend identifies blue as ComFLOW and red as experiment. Use those colour
+channels directly, including where the curves cross."""
 import json
 import sys
 
-import cv2
 import numpy as np
 
 # --- axis calibration (pixel <-> data), read from the raster tick labels ------------------
@@ -36,42 +34,20 @@ def to_h(y_px):
     return H_TOP_M + (np.asarray(y_px, float) - Y_TOP_PX) * (H_BOT_M - H_TOP_M) / (Y_BOT_PX - Y_TOP_PX)
 
 
-def runs_in_column(g, x, y_lo=14, y_hi=405):
-    col = g[y_lo:y_hi, x]
-    out, s = [], None
-    for i, v in enumerate(col):
-        if v and s is None:
-            s = i
-        elif not v and s is not None:
-            out.append((s + y_lo, i - 1 + y_lo))
-            s = None
-    if s is not None:
-        out.append((s + y_lo, y_hi - 1))
-    return out
-
-
 def main(jpeg, out_prefix):
-    im = cv2.imread(jpeg, cv2.IMREAD_GRAYSCALE)
-    if im is None:
-        sys.exit(f"cannot read {jpeg}")
-    g = (im < 140).astype(np.uint8)
+    from PIL import Image
+    rgb = np.asarray(Image.open(jpeg).convert("RGB"), dtype=np.int16)
+    if rgb.shape != (450, 1182, 3):
+        raise ValueError("expected the original Figure 19 embedded image")
+    red, green, blue = rgb.transpose((2, 0, 1))
     solid, dashed = {}, {}
-    prev_solid = float(Y_BOT_PX)
-    for x in range(int(X0_PX) + 7, int(X1_PX) - 1):
-        rs = runs_in_column(g, x)
-        # drop the frame rows and the legend box (legend occupies y < 45 for x > 1040)
-        if x > 1040:
-            rs = [r for r in rs if r[0] > 60]
-        if not rs:
-            continue
-        centres = [(0.5 * (a + b), b - a + 1) for a, b in rs]
-        if len(centres) == 1:
-            solid[x] = centres[0][0]              # only the continuous curve survived
-        else:
-            centres.sort(key=lambda c: abs(c[0] - prev_solid))
-            solid[x] = centres[0][0]
-            dashed[x] = centres[1][0]
-        prev_solid = solid[x]
+    for mask, trace in (((blue-red > 45) & (blue-green > 45), solid),
+                        ((red-blue > 45) & (red-green > 45), dashed)):
+        for x in range(int(X0_PX)+1, int(X1_PX)):
+            lo = 65 if x > 1040 else 7  # exclude the legend in the upper right
+            ys = np.flatnonzero(mask[lo:414, x])
+            if len(ys):
+                trace[x] = float(np.median(ys)+lo)
     res = {}
     for name, d in (("solid_comflow", solid), ("dashed_experiment", dashed)):
         xs = np.array(sorted(d), float)
@@ -91,6 +67,10 @@ def main(jpeg, out_prefix):
               f"arrival(>2 cm)={res[name]['arrival_time_s']}")
     with open(out_prefix + ".json", "w") as f:
         json.dump(res, f, indent=1)
+    measured = res["dashed_experiment"]
+    np.savetxt(out_prefix + "_experiment.csv",
+               np.column_stack((to_t(measured["columns"]), to_h(measured["y_px"]))),
+               delimiter=",", fmt="%.7f", header="t_s,h_m", comments="")
     # overlay figure for the audit trail
     import matplotlib
     matplotlib.use("Agg")

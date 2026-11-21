@@ -1,0 +1,20 @@
+{
+  "source_pdf_sha256": "aff17ca278e2a2a8a0777a54e7541d87ab70d6a950c5911c0321d495d68b91ff",
+  "pdf_page": 22,
+  "xref": 314,
+  "embedded_jpeg_sha256": "045a454a0a5fc8ee44bdb3cc2bbee17ba6c31516e71e39dd5c818b0c24a7671a",
+  "coloured_curves": {
+    "solid_comflow": {
+      "n_columns": 468,
+      "peak_height_m": 0.37002457002457007,
+      "peak_time_s": 1.7027027027027026,
+      "arrival_time_s": 0.38223938223938225
+    },
+    "dashed_experiment": {
+      "n_columns": 498,
+      "peak_height_m": 0.3366093366093366,
+      "peak_time_s": 1.7722007722007722,
+      "arrival_time_s": 0.3590733590733591
+    }
+  }
+}

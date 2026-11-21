@@ -1,4 +1,5 @@
 {
+ "historical_reference_notice": "The archived grayscale extraction assigns the blue ComFLOW peak to experiment. For current comparisons use the original workbook in benchmarks/marin_box_loads. Archived error scores are superseded.",
  "probe": "H2 (in the tank just in front of the box)",
  "ref": "Kleefsman et al. 2005 JCP 206:363-393 doi:10.1016/j.jcp.2004.12.007, Fig. 19 right panel",
  "source_pdf": "https://pure.rug.nl/ws/files/2941055/2005JCompPhysKleefsman.pdf",

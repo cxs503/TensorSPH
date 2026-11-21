@@ -20,16 +20,18 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
+from tensorsph.marin_probes import H2_ARRIVAL_S, H2_PEAK_M, H2_PEAK_TIME_S  # noqa: E402
+
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 RES = HERE / "results"
 OUT = RES / "report"
-EXPERIMENT = ROOT / "docs" / "m20884" / "outputs" / "kleefsman_h2_ref" / "h2_fig19.csv"
+EXPERIMENT = ROOT / "benchmarks" / "marin_box_loads" / "h2_figure19_red.csv"
 TWO_D = ROOT / "benchmarks" / "kleefsman_obstacle" / "results" / "peak_horizon"
 
-REF_PEAK_H = 0.370
-REF_PEAK_T = 1.7027
-REF_ARRIVAL_T = 0.3591
+REF_PEAK_H = H2_PEAK_M
+REF_PEAK_T = H2_PEAK_TIME_S
+REF_ARRIVAL_T = H2_ARRIVAL_S
 TOL = 0.10
 
 
@@ -46,6 +48,8 @@ def load_runs():
     runs = {}
     for path in sorted(RES.glob("dx*.json")):
         data = json.loads(path.read_text())
+        if data.get("reference", {}).get("peak_height_m") != REF_PEAK_H:
+            continue  # archived verdicts used a different experimental reference
         tag = data.get("tag", path.stem)
         csv_path = RES / f"{tag}_time_series.csv"
         if not csv_path.exists():

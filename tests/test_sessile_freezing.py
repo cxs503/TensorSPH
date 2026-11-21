@@ -55,3 +55,14 @@ def test_three_dimensional_slab_against_one_phase_stefan_solution():
     benchmark = Path(__file__).resolve().parents[1]/"benchmarks"/"sessile_freezing"/"run.py"
     anchor = runpy.run_path(str(benchmark))["verify_slab"](8)
     assert abs(anchor["relative_error"]) < .03
+
+
+@pytest.mark.parametrize("glass", [0., .001])
+def test_contact_resistance_slows_freezing_and_balances_energy(glass):
+    base = simulate(cells=6, end_s=.7, glass_depth=glass)
+    resistive = simulate(cells=6, end_s=.7, glass_depth=glass, contact_resistance=.001)
+    fraction = "final_frozen_mass_fraction"
+    assert resistive.metrics[fraction] < base.metrics[fraction]
+    assert resistive.metrics["sampled_energy_residual_over_latent"] < 1e-10
+    with pytest.raises(ValueError):
+        simulate(cells=6, contact_resistance=-1.)

@@ -1,0 +1,495 @@
+{
+  "advection_D16": {
+    "requested_s": 0.3,
+    "first_regime_exit": {
+      "t_s": 0.11205729166666596,
+      "step": 662,
+      "paddle_offset_m": 8.603070298002852e-05,
+      "speed_xy_m": [
+        0.010801000520586967,
+        0.2398512065410614
+      ],
+      "compression_xy_m": [
+        2.523406744003296,
+        0.007603609003126621
+      ],
+      "mach": 0.007779638469219208,
+      "compression": 0.010134704589843668,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "simulated_s": 0.11205729166666596,
+    "requested_clock_reached": false,
+    "steps": 662,
+    "escaped": 0,
+    "regime": {
+      "mach": 0.007779638469219208,
+      "compression": 0.010134704589843668,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 28,
+      "observed_samples": 28
+    },
+    "passed": false,
+    "height_assessed": false,
+    "covers_window": false
+  },
+  "advection_D20": {
+    "requested_s": 0.3,
+    "first_regime_exit": {
+      "t_s": 0.08815624999999948,
+      "step": 651,
+      "paddle_offset_m": 4.330866741479931e-05,
+      "speed_xy_m": [
+        2.5562760829925537,
+        0.006146566942334175
+      ],
+      "compression_xy_m": [
+        0.543761134147644,
+        0.018689528107643127
+      ],
+      "mach": 0.006453288594881693,
+      "compression": 0.01035968017578126,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "simulated_s": 0.08815624999999948,
+    "requested_clock_reached": false,
+    "steps": 651,
+    "escaped": 0,
+    "regime": {
+      "mach": 0.007498981555302938,
+      "compression": 0.01035968017578126,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 28,
+      "observed_samples": 28
+    },
+    "passed": false,
+    "height_assessed": false,
+    "covers_window": false
+  },
+  "smoothing_D16": {
+    "requested_s": 5.0,
+    "first_regime_exit": null,
+    "simulated_s": 5.0,
+    "requested_clock_reached": true,
+    "steps": 29539,
+    "escaped": 0,
+    "regime": {
+      "mach": 0.004598684112230937,
+      "compression": 0.006313781738281232,
+      "mach_flag": false,
+      "compression_flag": false,
+      "stable": true
+    },
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 1183,
+      "observed_samples": 1183
+    },
+    "secondary_2p9_to_4p9_s_height_m": [
+      0.010637918862169993,
+      0.008543018259050954,
+      0.006539400556934803,
+      0.004997836157358627
+    ],
+    "covers_window": true,
+    "height_assessed": true,
+    "target_height_m": 0.04,
+    "window_s": [
+      3.0,
+      5.0
+    ],
+    "passed": false,
+    "gauges": [
+      {
+        "x_m": 1.0013591589129858,
+        "height_m": 0.01063796510388613,
+        "harmonic_residual": 0.050030688840956974,
+        "phase_error_deg": 0.0,
+        "cycle_heights_m": [
+          0.010969374703680524,
+          0.010310618837679938
+        ]
+      },
+      {
+        "x_m": 1.1643395630192874,
+        "height_m": 0.00854665589780059,
+        "harmonic_residual": 0.05731872942274402,
+        "phase_error_deg": -14.837721227258585,
+        "cycle_heights_m": [
+          0.008839444793754443,
+          0.008255917116994362
+        ]
+      },
+      {
+        "x_m": 1.327319967125589,
+        "height_m": 0.006543616465952154,
+        "harmonic_residual": 0.05711188189630929,
+        "phase_error_deg": -28.147210818997145,
+        "cycle_heights_m": [
+          0.006751035976541281,
+          0.006336199148818083
+        ]
+      },
+      {
+        "x_m": 1.4903003712318905,
+        "height_m": 0.004985725062690832,
+        "harmonic_residual": 0.06507057780772785,
+        "phase_error_deg": -39.97107527669851,
+        "cycle_heights_m": [
+          0.005100294508709365,
+          0.004872209042048294
+        ]
+      }
+    ],
+    "height_error_max_pct": 87.53568734327293,
+    "incident_height_m": 0.007428144609828049,
+    "reflection_ratio": 0.2849003261109179,
+    "split_residual": 0.3418100273112394,
+    "max_density_compression": 0.006313781738281232,
+    "peak_mach": 0.004598684112230937
+  },
+  "smoothing_D20": {
+    "requested_s": 5.0,
+    "first_regime_exit": {
+      "t_s": 4.9999895833351395,
+      "step": 36923,
+      "paddle_offset_m": -1.1258943224921224e-06,
+      "speed_xy_m": [
+        0.007867397740483284,
+        0.2603238523006439
+      ],
+      "compression_xy_m": [
+        0.8087123036384583,
+        0.2264258861541748
+      ],
+      "mach": 0.004076517621676127,
+      "compression": 0.01055804443359376,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "simulated_s": 4.9999895833351395,
+    "requested_clock_reached": false,
+    "steps": 36923,
+    "escaped": 0,
+    "regime": {
+      "mach": 0.004775645335515341,
+      "compression": 0.01055804443359376,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 1478,
+      "observed_samples": 1478
+    },
+    "secondary_2p9_to_4p9_s_height_m": [
+      0.011982969352496322,
+      0.010054628634558443,
+      0.007650314348076227,
+      0.005946516176789164
+    ],
+    "passed": false,
+    "height_assessed": false,
+    "covers_window": false
+  },
+  "still_D16": {
+    "requested_s": 0.3,
+    "first_regime_exit": {
+      "t_s": 0.11358072916666595,
+      "step": 671,
+      "paddle_offset_m": 0.0,
+      "speed_xy_m": [
+        1.4609041213989258,
+        0.17938430607318878
+      ],
+      "compression_xy_m": [
+        1.7890628576278687,
+        0.1956850290298462
+      ],
+      "mach": 0.007719274361928304,
+      "compression": 0.010167419433593672,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "simulated_s": 0.11358072916666595,
+    "requested_clock_reached": false,
+    "steps": 671,
+    "escaped": 0,
+    "regime": {
+      "mach": 0.007719274361928304,
+      "compression": 0.010167419433593672,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 28,
+      "observed_samples": 28
+    },
+    "passed": false,
+    "height_assessed": false,
+    "covers_window": false
+  },
+  "still_half_D16": {
+    "requested_s": 0.3,
+    "first_regime_exit": {
+      "t_s": 0.12001302083338153,
+      "step": 1418,
+      "paddle_offset_m": 0.0,
+      "speed_xy_m": [
+        1.601596713066101,
+        0.007226945832371712
+      ],
+      "compression_xy_m": [
+        0.9452717304229736,
+        0.023445021361112595
+      ],
+      "mach": 0.005826536814371745,
+      "compression": 0.010019714355468778,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "simulated_s": 0.12001302083338153,
+    "requested_clock_reached": false,
+    "steps": 1418,
+    "escaped": 0,
+    "regime": {
+      "mach": 0.00789318730433782,
+      "compression": 0.010019714355468778,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 58,
+      "observed_samples": 58
+    },
+    "passed": false,
+    "height_assessed": false,
+    "covers_window": false
+  },
+  "still_no_diffusion_D16": {
+    "requested_s": 0.3,
+    "first_regime_exit": {
+      "t_s": 0.27929687500001066,
+      "step": 1650,
+      "paddle_offset_m": 0.0,
+      "speed_xy_m": [
+        0.05399571359157562,
+        0.2380792796611786
+      ],
+      "compression_xy_m": [
+        0.8670263290405273,
+        0.03905664011836052
+      ],
+      "mach": 0.007473366955916087,
+      "compression": 0.010030639648437534,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "simulated_s": 0.27929687500001066,
+    "requested_clock_reached": false,
+    "steps": 1650,
+    "escaped": 0,
+    "regime": {
+      "mach": 0.008531626065572102,
+      "compression": 0.010030639648437534,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 67,
+      "observed_samples": 67
+    },
+    "passed": false,
+    "height_assessed": false,
+    "covers_window": false
+  },
+  "still_smoothing_D16": {
+    "requested_s": 0.3,
+    "first_regime_exit": null,
+    "simulated_s": 0.3,
+    "requested_clock_reached": true,
+    "steps": 1773,
+    "escaped": 0,
+    "regime": {
+      "mach": 0.0011330816894769668,
+      "compression": 0.007664306640625007,
+      "mach_flag": false,
+      "compression_flag": false,
+      "stable": true
+    },
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 72,
+      "observed_samples": 72
+    },
+    "passed": false,
+    "height_assessed": false,
+    "covers_window": false
+  },
+  "stop_D16": {
+    "requested_s": 5.0,
+    "first_regime_exit": {
+      "t_s": 0.11358072916666595,
+      "step": 671,
+      "paddle_offset_m": 8.937159723286659e-05,
+      "speed_xy_m": [
+        1.4609246253967285,
+        0.17934879660606384
+      ],
+      "compression_xy_m": [
+        1.7890604734420776,
+        0.1956818550825119
+      ],
+      "mach": 0.007556582490603129,
+      "compression": 0.010476684570312589,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "simulated_s": 0.11358072916666595,
+    "requested_clock_reached": false,
+    "steps": 671,
+    "escaped": 0,
+    "regime": {
+      "mach": 0.007582184175650279,
+      "compression": 0.010476684570312589,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 28,
+      "observed_samples": 28
+    },
+    "passed": false,
+    "height_assessed": false,
+    "covers_window": false
+  },
+  "stop_D20": {
+    "requested_s": 5.0,
+    "first_regime_exit": {
+      "t_s": 0.10007291666666605,
+      "step": 739,
+      "paddle_offset_m": 6.237346811208521e-05,
+      "speed_xy_m": [
+        1.0189613103866577,
+        0.16882619261741638
+      ],
+      "compression_xy_m": [
+        0.9187041521072388,
+        0.08138397336006165
+      ],
+      "mach": 0.0076456859707832335,
+      "compression": 0.010298950195312573,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "simulated_s": 0.10007291666666605,
+    "requested_clock_reached": false,
+    "steps": 739,
+    "escaped": 0,
+    "regime": {
+      "mach": 0.009036833047866821,
+      "compression": 0.010298950195312573,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 31,
+      "observed_samples": 31
+    },
+    "passed": false,
+    "height_assessed": false,
+    "covers_window": false
+  },
+  "wave_D12": {
+    "passed": false,
+    "error": "ValueError: wave_height/dx = 1.92: the crest is not resolved by at least two particle spacings"
+  },
+  "wave_D16": {
+    "requested_s": 5.0,
+    "first_regime_exit": null,
+    "simulated_s": 3.545066295462006,
+    "requested_clock_reached": false,
+    "steps": 29539,
+    "escaped": 139,
+    "regime": {
+      "mach": 7.899728393554687,
+      "compression": 0.240002197265625,
+      "mach_flag": true,
+      "compression_flag": true,
+      "stable": false
+    },
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 1183,
+      "observed_samples": 1183
+    },
+    "passed": false,
+    "height_assessed": false,
+    "covers_window": false
+  },
+  "wave_D20": {
+    "requested_s": 5.0,
+    "first_regime_exit": null,
+    "simulated_s": 3.344325553286015,
+    "requested_clock_reached": false,
+    "steps": 36924,
+    "escaped": 245,
+    "regime": {
+      "mach": 8.17741190592448,
+      "compression": 0.31844030761718756,
+      "mach_flag": true,
+      "compression_flag": true,
+      "stable": false
+    },
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 1478,
+      "observed_samples": 1478
+    },
+    "passed": false,
+    "height_assessed": false,
+    "covers_window": false
+  }
+}

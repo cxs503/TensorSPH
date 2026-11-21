@@ -46,3 +46,18 @@ python -m pytest -q tests/test_sessile_freezing.py
 ```
 
 The runner writes the [resolution and energy records](results.json), [finest-run time history](history.csv), figure and a PyTorch file with particle positions, final enthalpy and ice fractions. Omit `--fem-reference` for a stand-alone TensorSPH run. Use `--no-plot` to skip the figure.
+
+
+## Contact resistance and plate temperature
+
+Areal contact resistance is added in series to the half-cell thermal resistances;
+the same heat flux leaves one material and enters the other. For 12 particles
+per base radius and 1 mm conducting glass, perfect contact gives freeze times
+of 14.15, 10.75 and 8.70 s at plate temperatures −15, −20 and −25 °C. At
+−20 °C, imposing contact resistances of 0.0001, 0.0003 and 0.001 m² K/W gives
+11.79, 13.85 and 20.97 s. The 8-cell series is included as a resolution control.
+These are one-factor sensitivities. The experiment supplies no measured contact
+resistance, so agreement obtained by selecting one from the sweep would not
+validate a material parameter. Reproduce with
+`python benchmarks/sessile_freezing/contact_sensitivity.py --output out/contact.json`.
+[Temperature, duration and energy residual for each run](contact_sensitivity.json)

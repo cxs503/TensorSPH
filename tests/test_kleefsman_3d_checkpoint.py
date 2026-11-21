@@ -82,7 +82,7 @@ def test_resume_is_bit_identical_to_an_uninterrupted_run():
     assert resumed.resumed is True
     assert resumed.steps == straight.steps
     assert resumed.simulated_time == straight.simulated_time
-    for name in ("times", "slab", "height", "front"):
+    for name in ("times", "slab", "height", "front", "local_h2", "sph_impulse", "clamp_impulse"):
         got, want = getattr(resumed, name), getattr(straight, name)
         assert len(got) == len(want), f"{name}: {len(got)} vs {len(want)} samples"
         assert got == want, f"resumed {name} differs from the uninterrupted run"

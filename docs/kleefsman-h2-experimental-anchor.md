@@ -1,5 +1,8 @@
 # CASE-SPH-KLEEFSMAN-DAMBREAK-OBST — 实验锚点闭环（H2 水位时程数字化）
 
+> **H2 实验基准更正。** 原灰度提取在两曲线交叉处混淆了身份。图 19 中 0.370 m 属于蓝色 ComFLOW 曲线。公开实验工作簿给出 0.3408 m（1.7870 s）和 0.02 m 插值到达时刻 0.3674 s。上轮 0.3683 m 的计算峰高比实测高 8.08%，峰时晚 0.279 s。下文历史数值保留供复现，当前判定见[原始八路压力与水位核验](../benchmarks/marin_box_loads/README.md)。
+
+
 TensorSPH · 分支 agent/m20884 · mission 20884 · 全表数字由 `outputs/kleefsman_h2_ref/compare_h2.py`
 与 `digitize_fig19.py` 程序化注入（零手抄）。
 

@@ -537,3 +537,31 @@ def test_a_short_flume_run_stays_bounded_and_keeps_its_mass(target_dt=2.0e-4):
     assert run.max_density_compression < 0.05
     assert run.mass_drift == 0.0
     assert all(math.isfinite(value) for value in run.speed_history)
+
+
+def test_duration_control_reaches_requested_clock_beyond_nominal_steps():
+    from tensorsph.wave_flume import run_case
+
+    cfg = base_config(flume_length=1.4, depth=.2, wave_height=.04, dx=.02,
+                      dt=.0002, steps=2, output_every=2, sponge_length=.46)
+    run = run_case(cfg, duration_s=.00075, probe_positions=(.2,.3,.4))
+    assert run.steps_taken > cfg.steps
+    assert run.times[-1] == pytest.approx(.00075, abs=1e-12)
+    assert run.times.count(run.times[-1]) == 1
+
+
+def test_trajectory_smoothing_does_not_replace_momentum_velocity(monkeypatch):
+    import tensorsph.wave_flume as flume
+
+    dt = .0001
+    cfg = base_config(flume_length=1.4, depth=.2, wave_height=.04, dx=.02,
+                      dt=dt, steps=1, output_every=1, sponge_length=.46, xsph=.1)
+    monkeypatch.setattr(flume, "xsph_correction",
+                        lambda _p, v, *_args: v + v.new_tensor([.1, 0.]))
+    probes = (.2, .3, .4)
+    filtered = flume.run_case(cfg, snapshot_times=[dt], probe_positions=probes)
+    cfg.xsph_advection_only = True
+    transport = flume.run_case(cfg, snapshot_times=[dt], probe_positions=probes)
+    assert transport.speed_history[-1] < filtered.speed_history[-1]
+    torch.testing.assert_close(transport.snapshots[-1][1], filtered.snapshots[-1][1])
+    assert transport.config["xsph_advection_only"]

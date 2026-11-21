@@ -58,6 +58,7 @@ from .wave_flume import (
     dominant_omega,
     linear_dispersion_omega,
     separate_incident_reflected,
+    stability_verdict,
     wavenumber_from_period,
     wavenumber_from_two_probes,
     zero_crossing_period,
@@ -468,7 +469,15 @@ def grade_regular_record(record: dict, start=None, end=None,
 
     worst = max(abs(g.get("error_vs_target", float("inf"))) for g in valid)
     integrity = solver_record_integrity(record)
-    passed = worst <= tolerance and integrity["passed"]
+    height_ok = len(valid) == len(probe_x) and worst <= tolerance
+    diag = record.get("diagnostics", {})
+    regime = stability_verdict({"max_speed": diag.get("max_speed", math.nan),
+                                "max_compression": diag.get("max_density_compression", math.nan)},
+                               float(cfg.get("sound_speed", math.nan)))
+    covered = end <= times[-1]+1e-9 and (start is None or start >= times[0]-1e-9)
+    requested = record.get("requested_duration_s", cfg.get("requested_duration_s"))
+    reached = requested is None or times[-1] >= float(requested) - 1e-9
+    passed = height_ok and integrity["passed"] and regime["stable"] and covered and reached
     return {
         "failed": False,
         "target_height": target,
@@ -485,7 +494,9 @@ def grade_regular_record(record: dict, start=None, end=None,
         "dispersion": dispersion,
         "reflection": reflection,
         "window": [float(start) if start is not None else float(times[0]), end],
-        "height_within_tolerance": worst <= tolerance,
+        "height_within_tolerance": height_ok,
         "record_integrity": integrity,
+        "window_covered": covered, "regime": regime,
+        "requested_duration_met": reached if requested is not None else None,
         "passed": passed,
     }

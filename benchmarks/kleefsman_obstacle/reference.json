@@ -1,4 +1,5 @@
 {
+ "historical_reference_notice": "The archived grayscale extraction assigns the blue ComFLOW peak to experiment. For current comparisons use the original workbook in benchmarks/marin_box_loads. Archived error scores are superseded.",
  "geometry_status": "Archived 2-D convention. In Fig. 15 of doi:10.3970/cmes.2008.025.133 the 0.744 m dimension locates the box centre and H2 is 0.992 m from the downstream wall. In upstream coordinates the face is 2.3955 m and H2 is 2.228 m. For current 3-D runs see docs/marine_engineering_readiness.md.",
  "case": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST",
  "repo": "TensorSPH",
