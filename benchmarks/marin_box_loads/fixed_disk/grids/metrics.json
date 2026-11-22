@@ -1,0 +1,679 @@
+{
+  "workbook_sha256": "8126f8c8f6effb9e8bfb245a2d098186e9ebee2ef6e75fcb1b3166af17883d8c",
+  "protocol": {
+    "pressure_disk_diameter_m": 0.02,
+    "viscosity": 1e-06,
+    "obstacle_x": 2.3955,
+    "obstacle_z": 0.2985,
+    "wall_layers": 3,
+    "wall_operator": "finite-volume-self-v2"
+  },
+  "window_s": [
+    0.35,
+    0.7
+  ],
+  "experimental": {
+    "P1_Pa": {
+      "peak_Pa": 11266.782,
+      "peak_t_s": 0.41502500544346344,
+      "impulse_Pa_s": 1853.4838478150334,
+      "arrival_s": 0.3929544219570137,
+      "baseline_Pa": -27.381999999999998
+    },
+    "P2_Pa": {
+      "peak_Pa": 8134.688666666666,
+      "peak_t_s": 0.4260242781466923,
+      "impulse_Pa_s": 1531.0440182447446,
+      "arrival_s": 0.4099707321256869,
+      "baseline_Pa": -7.222
+    },
+    "P3_Pa": {
+      "peak_Pa": 6614.008,
+      "peak_t_s": 0.4590220962563798,
+      "impulse_Pa_s": 1302.4757814256927,
+      "arrival_s": 0.42247395219270123,
+      "baseline_Pa": -50.07466666666667
+    },
+    "P4_Pa": {
+      "peak_Pa": 7225.154666666667,
+      "peak_t_s": 0.4550200134652984,
+      "impulse_Pa_s": 1119.2789339105343,
+      "arrival_s": 0.42896212393904265,
+      "baseline_Pa": -22.554666666666662
+    },
+    "P5_Pa": {
+      "peak_Pa": 53.60166666666667,
+      "peak_t_s": 0.6970298328253124,
+      "impulse_Pa_s": 1.9386375568041307,
+      "arrival_s": null,
+      "baseline_Pa": -6.735
+    },
+    "P6_Pa": {
+      "peak_Pa": 34.306333333333335,
+      "peak_t_s": 0.6970298328253124,
+      "impulse_Pa_s": -0.9627210581781256,
+      "arrival_s": null,
+      "baseline_Pa": 3.827
+    },
+    "P7_Pa": {
+      "peak_Pa": 40.73833333333333,
+      "peak_t_s": 0.6970298328253124,
+      "impulse_Pa_s": 0.0033183043926890005,
+      "arrival_s": null,
+      "baseline_Pa": 6.128333333333334
+    },
+    "P8_Pa": {
+      "peak_Pa": 40.26466666666666,
+      "peak_t_s": 0.6970298328253124,
+      "impulse_Pa_s": 0.16415698434987824,
+      "arrival_s": null,
+      "baseline_Pa": 1.5353333333333332
+    }
+  },
+  "refinement": {
+    "dx_m": [
+      0.05,
+      0.04,
+      0.032
+    ],
+    "refinement_ratio": 1.25,
+    "taps": {
+      "P1": {
+        "peak_Pa": {
+          "changes": [
+            -8806.148438,
+            14252.496093999998
+          ],
+          "trend": "oscillating",
+          "apparent_order": null
+        },
+        "impulse_Pa_s": {
+          "changes": [
+            -295.99662797892483,
+            459.5338343380047
+          ],
+          "trend": "oscillating",
+          "apparent_order": null
+        }
+      },
+      "P2": {
+        "peak_Pa": {
+          "changes": [
+            -7818.517577999999,
+            3701.095702999999
+          ],
+          "trend": "oscillating",
+          "apparent_order": null
+        },
+        "impulse_Pa_s": {
+          "changes": [
+            -234.80370883469118,
+            255.375786722665
+          ],
+          "trend": "oscillating",
+          "apparent_order": null
+        }
+      },
+      "P3": {
+        "peak_Pa": {
+          "changes": [
+            -4548.525390999999,
+            7849.041015999999
+          ],
+          "trend": "oscillating",
+          "apparent_order": null
+        },
+        "impulse_Pa_s": {
+          "changes": [
+            -91.7564559456656,
+            167.23903857261234
+          ],
+          "trend": "oscillating",
+          "apparent_order": null
+        }
+      },
+      "P4": {
+        "peak_Pa": {
+          "changes": [
+            1366.7929689999992,
+            -488.4785159999992
+          ],
+          "trend": "oscillating",
+          "apparent_order": null
+        },
+        "impulse_Pa_s": {
+          "changes": [
+            55.66560213181759,
+            -50.926136181966626
+          ],
+          "trend": "oscillating",
+          "apparent_order": null
+        }
+      }
+    }
+  },
+  "runs": [
+    {
+      "tag": "disk50",
+      "dx_m": 0.05,
+      "diameter_m": 0.02,
+      "sound_speed_m_per_s": 20.0,
+      "body_impulse_x_Ns": {
+        "sph": 59.155491228929385,
+        "clamp": 9.731052
+      },
+      "max_compression": 0.12616064453124998,
+      "dt_s": 0.0008775000000000001,
+      "samples": 799,
+      "fluid_particles": 5280,
+      "initial_cell_volume_m3": 0.6600000000000001,
+      "obstacle_lattice_width_m": 0.4,
+      "taps": {
+        "P1": {
+          "point": {
+            "peak_Pa": 40716.976562,
+            "peak_t_s": 0.483502,
+            "impulse_Pa_s": 1730.415450395511,
+            "arrival_s": 0.4398130490333083,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 40605.667969,
+            "peak_t_s": 0.483502,
+            "impulse_Pa_s": 1728.2757726454502,
+            "arrival_s": 0.43981302277856804,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {
+            "peak_Pa": 260.40164768431663,
+            "impulse_Pa_s": -6.7552827782763725
+          },
+          "minimum_node_support_at_peak": 21
+        },
+        "P2": {
+          "point": {
+            "peak_Pa": 37111.464844,
+            "peak_t_s": 0.483502,
+            "impulse_Pa_s": 1479.6303315510595,
+            "arrival_s": 0.43991184682396756,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 36812.09375,
+            "peak_t_s": 0.483502,
+            "impulse_Pa_s": 1475.3076409243552,
+            "arrival_s": 0.4399136264252045,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {
+            "peak_Pa": 352.53230035519493,
+            "impulse_Pa_s": -3.6404163862178263
+          },
+          "minimum_node_support_at_peak": 23
+        },
+        "P3": {
+          "point": {
+            "peak_Pa": 19279.480469,
+            "peak_t_s": 0.559845,
+            "impulse_Pa_s": 840.1188235567447,
+            "arrival_s": 0.4403182622401108,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 19130.5,
+            "peak_t_s": 0.559845,
+            "impulse_Pa_s": 839.4271573912049,
+            "arrival_s": 0.440330034928279,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {
+            "peak_Pa": 189.2421660209664,
+            "impulse_Pa_s": -35.55141912332787
+          },
+          "minimum_node_support_at_peak": 31
+        },
+        "P4": {
+          "point": {
+            "peak_Pa": 5263.349609,
+            "peak_t_s": 0.664267,
+            "impulse_Pa_s": 185.78540194988136,
+            "arrival_s": 0.4509257723906427,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 5333.227539,
+            "peak_t_s": 0.664267,
+            "impulse_Pa_s": 190.66587269045777,
+            "arrival_s": 0.4500469287625283,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {
+            "peak_Pa": -26.185282045173285,
+            "impulse_Pa_s": -82.96529426991806
+          },
+          "minimum_node_support_at_peak": 30
+        },
+        "P5": {
+          "point": {
+            "peak_Pa": 533.604858,
+            "peak_t_s": 0.587925,
+            "impulse_Pa_s": 37.45487261022383,
+            "arrival_s": 0.586201800820322,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 532.806824,
+            "peak_t_s": 0.587925,
+            "impulse_Pa_s": 37.53708160337107,
+            "arrival_s": 0.5862384354324804,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {},
+          "minimum_node_support_at_peak": 5
+        },
+        "P6": {
+          "point": {
+            "peak_Pa": 802.458923,
+            "peak_t_s": 0.594067,
+            "impulse_Pa_s": 41.72603796821676,
+            "arrival_s": 0.5817521432014006,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 758.294434,
+            "peak_t_s": 0.592312,
+            "impulse_Pa_s": 41.34087617446603,
+            "arrival_s": 0.5818851828002345,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {},
+          "minimum_node_support_at_peak": 1
+        },
+        "P7": {
+          "point": {
+            "peak_Pa": 531.136475,
+            "peak_t_s": 0.58266,
+            "impulse_Pa_s": 31.88401449399349,
+            "arrival_s": 0.5813811195106443,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 408.79071,
+            "peak_t_s": 0.580027,
+            "impulse_Pa_s": 31.015091525231046,
+            "arrival_s": null,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {},
+          "minimum_node_support_at_peak": 0
+        },
+        "P8": {
+          "point": {
+            "peak_Pa": 0.0,
+            "peak_t_s": 0.35,
+            "impulse_Pa_s": 0.0,
+            "arrival_s": null,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 95.791725,
+            "peak_t_s": 0.65286,
+            "impulse_Pa_s": 1.7959676942025005,
+            "arrival_s": null,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {},
+          "minimum_node_support_at_peak": 0
+        }
+      }
+    },
+    {
+      "tag": "disk40",
+      "dx_m": 0.04,
+      "diameter_m": 0.02,
+      "sound_speed_m_per_s": 20.0,
+      "body_impulse_x_Ns": {
+        "sph": 51.675868994301986,
+        "clamp": 9.855336
+      },
+      "max_compression": 0.16256396484375002,
+      "dt_s": 0.0007020000000000001,
+      "samples": 999,
+      "fluid_particles": 9750,
+      "initial_cell_volume_m3": 0.6240000000000001,
+      "obstacle_lattice_width_m": 0.4,
+      "taps": {
+        "P1": {
+          "point": {
+            "peak_Pa": 31786.050781,
+            "peak_t_s": 0.489294,
+            "impulse_Pa_s": 1431.0221227485863,
+            "arrival_s": 0.4410404244480564,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 31799.519531,
+            "peak_t_s": 0.489294,
+            "impulse_Pa_s": 1432.2791446665253,
+            "arrival_s": 0.4410354296077269,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {
+            "peak_Pa": 182.24136697594756,
+            "impulse_Pa_s": -22.72502690784397
+          },
+          "minimum_node_support_at_peak": 18
+        },
+        "P2": {
+          "point": {
+            "peak_Pa": 29054.236328,
+            "peak_t_s": 0.489294,
+            "impulse_Pa_s": 1244.1998291953785,
+            "arrival_s": 0.44158025943973206,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 28993.576172,
+            "peak_t_s": 0.489294,
+            "impulse_Pa_s": 1240.503932089664,
+            "arrival_s": 0.44157285202482516,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {
+            "peak_Pa": 256.41900212857973,
+            "impulse_Pa_s": -18.97659915017783
+          },
+          "minimum_node_support_at_peak": 25
+        },
+        "P3": {
+          "point": {
+            "peak_Pa": 14564.908203,
+            "peak_t_s": 0.489294,
+            "impulse_Pa_s": 748.6411567127756,
+            "arrival_s": 0.44821732932483305,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 14581.974609,
+            "peak_t_s": 0.489294,
+            "impulse_Pa_s": 747.6707014455393,
+            "arrival_s": 0.44828997765559353,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {
+            "peak_Pa": 120.47107607066701,
+            "impulse_Pa_s": -42.59619164456652
+          },
+          "minimum_node_support_at_peak": 22
+        },
+        "P4": {
+          "point": {
+            "peak_Pa": 6809.083984,
+            "peak_t_s": 0.562302,
+            "impulse_Pa_s": 244.11444447859128,
+            "arrival_s": 0.47196090709374144,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 6700.020508,
+            "peak_t_s": 0.562302,
+            "impulse_Pa_s": 246.33147482227537,
+            "arrival_s": 0.47196631827654806,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {
+            "peak_Pa": -7.268137263405306,
+            "impulse_Pa_s": -77.99194933816516
+          },
+          "minimum_node_support_at_peak": 24
+        },
+        "P5": {
+          "point": {
+            "peak_Pa": 3253.489258,
+            "peak_t_s": 0.56511,
+            "impulse_Pa_s": 38.32163423171242,
+            "arrival_s": 0.5617272140707378,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 3224.688965,
+            "peak_t_s": 0.56511,
+            "impulse_Pa_s": 38.224170853781935,
+            "arrival_s": 0.5617285818791802,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {},
+          "minimum_node_support_at_peak": 9
+        },
+        "P6": {
+          "point": {
+            "peak_Pa": 1738.204712,
+            "peak_t_s": 0.56511,
+            "impulse_Pa_s": 35.31983980101539,
+            "arrival_s": 0.561869799830915,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 1692.032349,
+            "peak_t_s": 0.56511,
+            "impulse_Pa_s": 34.87393081746026,
+            "arrival_s": 0.5618777526934745,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {},
+          "minimum_node_support_at_peak": 6
+        },
+        "P7": {
+          "point": {
+            "peak_Pa": 347.379669,
+            "peak_t_s": 0.650754,
+            "impulse_Pa_s": 11.075567132214012,
+            "arrival_s": null,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 238.937271,
+            "peak_t_s": 0.674622,
+            "impulse_Pa_s": 12.412603756153965,
+            "arrival_s": null,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {},
+          "minimum_node_support_at_peak": 1
+        },
+        "P8": {
+          "point": {
+            "peak_Pa": 0.0,
+            "peak_t_s": 0.35,
+            "impulse_Pa_s": 0.0,
+            "arrival_s": null,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 0.0,
+            "peak_t_s": 0.35,
+            "impulse_Pa_s": 0.0,
+            "arrival_s": null,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {},
+          "minimum_node_support_at_peak": 0
+        }
+      }
+    },
+    {
+      "tag": "disk32",
+      "dx_m": 0.032,
+      "diameter_m": 0.02,
+      "sound_speed_m_per_s": 20.0,
+      "body_impulse_x_Ns": {
+        "sph": 60.273794614973255,
+        "clamp": 10.460061
+      },
+      "max_compression": 0.17862133789062495,
+      "dt_s": 0.0005616000000000001,
+      "samples": 1248,
+      "fluid_particles": 20026,
+      "initial_cell_volume_m3": 0.656211968,
+      "obstacle_lattice_width_m": 0.41600000000000004,
+      "taps": {
+        "P1": {
+          "point": {
+            "peak_Pa": 46385.039062,
+            "peak_t_s": 0.532397,
+            "impulse_Pa_s": 1891.660495550565,
+            "arrival_s": 0.4282305144109665,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 46052.015625,
+            "peak_t_s": 0.532397,
+            "impulse_Pa_s": 1891.81297900453,
+            "arrival_s": 0.42822091173005905,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {
+            "peak_Pa": 308.74151665488864,
+            "impulse_Pa_s": 2.067950645196115
+          },
+          "minimum_node_support_at_peak": 24
+        },
+        "P2": {
+          "point": {
+            "peak_Pa": 33118.621094,
+            "peak_t_s": 0.486346,
+            "impulse_Pa_s": 1496.5084128654921,
+            "arrival_s": 0.4322147015517452,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 32694.671875,
+            "peak_t_s": 0.486346,
+            "impulse_Pa_s": 1495.879718812329,
+            "arrival_s": 0.43189145520452293,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {
+            "peak_Pa": 301.91669545968284,
+            "impulse_Pa_s": -2.2967530007876324
+          },
+          "minimum_node_support_at_peak": 30
+        },
+        "P3": {
+          "point": {
+            "peak_Pa": 23202.289062,
+            "peak_t_s": 0.570586,
+            "impulse_Pa_s": 919.5909335987776,
+            "arrival_s": 0.43917941502758606,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 22431.015625,
+            "peak_t_s": 0.570586,
+            "impulse_Pa_s": 914.9097400181516,
+            "arrival_s": 0.4383596618297005,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {
+            "peak_Pa": 239.14406551972723,
+            "impulse_Pa_s": -29.75610348649328
+          },
+          "minimum_node_support_at_peak": 30
+        },
+        "P4": {
+          "point": {
+            "peak_Pa": 6099.963867,
+            "peak_t_s": 0.541944,
+            "impulse_Pa_s": 188.73459922226294,
+            "arrival_s": 0.4582426221894268,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 6211.541992,
+            "peak_t_s": 0.541944,
+            "impulse_Pa_s": 195.40533864030874,
+            "arrival_s": 0.4582533948739237,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {
+            "peak_Pa": -14.028940852200444,
+            "impulse_Pa_s": -82.54185505327058
+          },
+          "minimum_node_support_at_peak": 29
+        },
+        "P5": {
+          "point": {
+            "peak_Pa": 614.501221,
+            "peak_t_s": 0.660442,
+            "impulse_Pa_s": 27.593801127710115,
+            "arrival_s": 0.6603062616926123,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 588.580078,
+            "peak_t_s": 0.660442,
+            "impulse_Pa_s": 27.603035653630627,
+            "arrival_s": 0.6603314723983124,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {},
+          "minimum_node_support_at_peak": 12
+        },
+        "P6": {
+          "point": {
+            "peak_Pa": 270.739594,
+            "peak_t_s": 0.554861,
+            "impulse_Pa_s": 20.031414272095976,
+            "arrival_s": null,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 180.477905,
+            "peak_t_s": 0.653141,
+            "impulse_Pa_s": 20.256108647769803,
+            "arrival_s": null,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {},
+          "minimum_node_support_at_peak": 1
+        },
+        "P7": {
+          "point": {
+            "peak_Pa": 150.365875,
+            "peak_t_s": 0.612144,
+            "impulse_Pa_s": 6.019829698786503,
+            "arrival_s": null,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 143.081665,
+            "peak_t_s": 0.641909,
+            "impulse_Pa_s": 5.525496609598806,
+            "arrival_s": null,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {},
+          "minimum_node_support_at_peak": 1
+        },
+        "P8": {
+          "point": {
+            "peak_Pa": 0.0,
+            "peak_t_s": 0.35,
+            "impulse_Pa_s": 0.0,
+            "arrival_s": null,
+            "baseline_Pa": 0.0
+          },
+          "disk": {
+            "peak_Pa": 0.0,
+            "peak_t_s": 0.35,
+            "impulse_Pa_s": 0.0,
+            "arrival_s": null,
+            "baseline_Pa": 0.0
+          },
+          "relative_error_pct": {},
+          "minimum_node_support_at_peak": 0
+        }
+      }
+    }
+  ]
+}

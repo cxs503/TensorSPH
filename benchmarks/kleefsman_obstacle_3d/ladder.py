@@ -68,6 +68,7 @@ FROZEN_PROTOCOL = {
     "viscosity",
     "station_offset",
     "gauge_aperture",
+    "pressure_disk_diameter",
     "arrival_threshold",
 }
 
@@ -272,6 +273,8 @@ def load_run(results_dir: Path, tag: str) -> dict:
         "gauge_aperture": run.get("gauge_aperture"),
         "arrival_threshold": run.get("arrival_threshold"),
     }
+    # Records preceding support for an area probe sampled only the centre.
+    fp.setdefault("pressure_disk_diameter", 0.0)
     # Completeness is decided from the evidence, not from a promise: a record
     # that says nothing about it is complete only if its series actually
     # reaches the requested t_end.  The 11-15 production rungs died at

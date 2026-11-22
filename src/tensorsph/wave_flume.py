@@ -50,7 +50,7 @@ measured numbers, including what did not meet its target.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from itertools import count
 import math
 
@@ -378,6 +378,7 @@ class WaveFlumeConfig(Config):
     surface_offset_cells: float = 0.5
     freeboard: float = 0.03
     hydrostatic_init: bool = True
+    reference_density_increment: bool = False
     # Flume defaults: fresh-water laminar viscosity, delta-SPH density diffusion
     # for pressure noise, and an acoustic speed that keeps the O(g h/c0^2)
     # compressibility bias of the celerity below 0.3 %.
@@ -524,9 +525,9 @@ def flume_particle_mass(cfg: WaveFlumeConfig, positions: torch.Tensor,
     """Particle masses: hydrostatic Tait profile times the calibrated lattice mass.
 
     Both factors matter.  The calibrated lattice mass (:func:`lattice_mass_unit`)
-    makes the interior summation density exactly ``rho0``; the hydrostatic factor
-    ``rho(y)`` makes the initial state a discrete equilibrium instead of a column
-    that first has to collapse.  See
+    makes the uniform interior summation density equal to rho0. The hydrostatic
+    factor approximates the mass gradient. Truncated boundary support can still
+    produce a large initial acceleration.  See
     ``docs/verification_lattice_mass_calibration.md``.
     """
     unit = lattice_mass_unit(cfg)
@@ -534,6 +535,18 @@ def flume_particle_mass(cfg: WaveFlumeConfig, positions: torch.Tensor,
         return hydrostatic_density(positions[:, 1], cfg,
                                    surface=cfg.depth) * (unit / cfg.rho0)
     return torch.full((positions.shape[0],), unit, device=device)
+
+
+def flume_density_offset(cfg, pos, mass, wall):
+    """Analytic Tait density minus the raw rest-lattice density, attached to each particle."""
+    if not cfg.reference_density_increment:
+        return None
+    if (not cfg.hydrostatic_init or cfg.boundary_consistent_density
+            or cfg.density_regularization != "none" or cfg.density_renormalization):
+        raise ValueError("reference density requires hydrostatic mass and raw summation")
+    unfiltered = replace(cfg, density_diffusion=0.0)
+    raw, _, _ = rhs(pos, torch.zeros_like(pos), mass, unfiltered, wall=wall)
+    return hydrostatic_density(pos[:, 1], cfg, surface=cfg.depth) - raw
 
 
 def static_wall_lattice(cfg: WaveFlumeConfig, device) -> torch.Tensor:
@@ -907,6 +920,7 @@ def run_case(cfg: WaveFlumeConfig, snapshot_times=None,
     paddle_rest = paddle_lattice(cfg, device)
     fixed_count = fixed_wall.shape[0]
     wall = torch.cat((fixed_wall, paddle_rest), dim=0)
+    density_offset = flume_density_offset(cfg, positions, mass, wall)
     wall_vel = torch.zeros_like(wall)
     wall_accel = torch.zeros_like(wall)
 
@@ -973,7 +987,7 @@ def run_case(cfg: WaveFlumeConfig, snapshot_times=None,
 
         density, _, acc = rhs(positions, velocity, mass, cfg, pairs=pairs,
                               wall=wall, dt=dt, wall_vel=wall_vel,
-                              wall_accel=wall_accel)
+                              wall_accel=wall_accel, density_offset=density_offset)
         if not torch.isfinite(acc).all():
             raise FloatingPointError(f"non-finite acceleration at step {step}")
         compression_scalar = float(density.max().double() / cfg.rho0 - 1.0)
@@ -1042,11 +1056,14 @@ def run_case(cfg: WaveFlumeConfig, snapshot_times=None,
         "dx": cfg.dx,
         "h_factor": cfg.h_factor,
         "dt_requested": cfg.dt,
+        "max_courant": cfg.max_courant,
         "requested_duration_s": duration_s,
+        "stop_on_regime_exit": stop_on_regime_exit,
         "dt_final": dt,
         "sound_speed": cfg.sound_speed,
         "viscosity": cfg.viscosity,
         "density_diffusion": cfg.density_diffusion,
+        "reference_density_increment": cfg.reference_density_increment,
         "gravity": cfg.gravity,
         "flume_length": cfg.flume_length,
         "depth": cfg.depth,

@@ -30,9 +30,12 @@ from tensorsph.wave_flume import (  # noqa: E402
 
 
 def _step(args) -> float:
-    """Acoustic Courant step of the case (the driver clamps to the same value)."""
+    """Nominal step; preserve the original 0.25 start when no override is given."""
     h = 1.3 * args.depth / args.depth_cells
-    return min(args.dt, args.max_courant * h / args.sound_speed)
+    nominal = .25 if args.max_courant is None else args.max_courant
+    if not math.isfinite(nominal) or nominal <= 0:
+        raise ValueError("max_courant must be finite and positive")
+    return min(args.dt, nominal * h / args.sound_speed)
 
 
 def build_config(args) -> WaveFlumeConfig:
@@ -84,6 +87,7 @@ def build_config(args) -> WaveFlumeConfig:
         # The nominal step budget supplies a reproducible initial Courant step.
         # run_case continues to the requested physical time after adaptive reductions.
         dt=_step(args),
+        max_courant=(WaveFlumeConfig.max_courant if args.max_courant is None else args.max_courant),
         steps=int(math.ceil(args.simulate_time / _step(args))),
         output_every=args.output_every,
         gravity=args.gravity,
@@ -99,6 +103,7 @@ def build_config(args) -> WaveFlumeConfig:
         ramp_periods=args.ramp_periods,
         viscosity=args.viscosity,
         density_diffusion=density_diffusion,
+        reference_density_increment=args.reference_density_increment,
         density_regularization=density_regularization,
         compression_regularization_rule=args.compression_rule,
         transport_velocity=args.transport_velocity,
@@ -133,6 +138,8 @@ def main(argv=None) -> int:
     parser.add_argument("--flume-length", type=float, default=3.2)
     parser.add_argument("--sound-speed", type=float, default=30.0)
     parser.add_argument("--viscosity", type=float, default=1.0e-6)
+    parser.add_argument("--reference-density-increment", action="store_true",
+                        help="add the rest-lattice density defect before pressure evaluation")
     parser.add_argument("--density-diffusion", type=float, default=0.1,
                         help="δ-SPH density diffusion coefficient (0 to disable)")
     parser.add_argument("--density-regularization", choices=("none", "compression"),
@@ -159,7 +166,8 @@ def main(argv=None) -> int:
     parser.add_argument("--settle", type=float, default=0.0,
                         help="seconds the paddle is held at rest before the wave")
     parser.add_argument("--dt", type=float, default=4.0e-4)
-    parser.add_argument("--max-courant", type=float, default=0.25)
+    parser.add_argument("--max-courant", type=float, default=None,
+                        help="override both initial and adaptive acoustic Courant limits")
     parser.add_argument("--stop-on-regime-exit", action="store_true",
                         help="save the record at the first flume stability limit violation")
     parser.add_argument("--simulate-time", type=float, default=5.0)

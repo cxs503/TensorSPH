@@ -131,3 +131,13 @@ def test_checkpoint_carries_its_version():
     _crash(_cfg(0.02), ckpt)
     payload = torch.load(ckpt, map_location="cpu", weights_only=False)
     assert payload["version"] == CHECKPOINT_VERSION
+
+def test_point_and_area_output_protocols_cannot_share_a_checkpoint():
+    for first, second in ((.02, .0), (.0, .02)):
+        ckpt = _ckpt_path()
+        cfg = _cfg(.01)
+        cfg.pressure_disk_diameter = first
+        _crash(cfg, ckpt)
+        cfg.pressure_disk_diameter = second
+        with pytest.raises(ValueError, match="pressure_disk_diameter"):
+            load_checkpoint(ckpt, cfg)

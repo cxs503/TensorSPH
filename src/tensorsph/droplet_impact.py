@@ -809,8 +809,12 @@ def drop_wall_wall_pairs(pairs: torch.Tensor, fluid_count: int) -> torch.Tensor:
 
 def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None,
         wall_vel=None, wall_accel=None, state=None, split: bool = False,
-        wrap_width: float | None = None, nu_field: torch.Tensor | None = None):
+        wrap_width: float | None = None, nu_field: torch.Tensor | None = None,
+        density_offset: torch.Tensor | None = None):
     """Compute WCSPH RHS with pair-based compact-support interactions.
+
+    ``density_offset`` is an optional material reference correction in kg/m³,
+    added to the raw density sum before diffusion and the equation of state.
 
     ``state`` is an optional mutable dict carrying the cross-step scalar of the
     compression regularization (``AverageCompression``'s
@@ -929,6 +933,15 @@ def rhs(pos, vel, mass, cfg: Config, pairs=None, wall=None, dt=None,
     rho_all = rho_all.index_add(0, i, all_mass[j] * wij)
     rho_all = rho_all.index_add(0, j, all_mass[i] * wij)
     rho = rho_all[:n].clamp_min(0.1 * cfg.rho0)
+
+    if density_offset is not None:
+        if density_offset.shape != rho.shape or density_offset.device != rho.device:
+            raise ValueError("density_offset must match the fluid particles")
+        if density_offset.dtype != rho.dtype:
+            raise ValueError("density_offset must have the fluid dtype")
+        if cfg.density_regularization != "none" or cfg.density_renormalization:
+            raise ValueError("density_offset requires unnormalised summation density")
+        rho = (rho + density_offset).clamp_min(0.1 * cfg.rho0)
 
     if cfg.boundary_consistent_density and cfg.density_regularization != "none":
         # The compression regularizer *replaces* the summation density from a
