@@ -1,0 +1,574 @@
+{
+  "16": {
+    "production": {
+      "dx_m": 0.015625,
+      "dt_s": 0.00016927083333333334,
+      "water_weight_N_per_m": 7866.72900390625,
+      "fluid_vertical_pressure_force_over_weight": 0.7802398800849915,
+      "vertical_wall_load_over_weight": 0.780239999294281,
+      "pressure_momentum_closure_over_weight": 1.2413831029789435e-07,
+      "min_density_over_reference": 0.7715955376625061,
+      "bands": {
+        "all": {
+          "particles": 3280,
+          "pressure_rmse_over_head": 0.0773143544793129,
+          "residual_rms_g": 0.7447823882102966,
+          "residual_max_g": 2.1651101112365723,
+          "worst_residual_xy_m": [
+            3.1796875,
+            0.0234375
+          ],
+          "horizontal_max_g": 1.385718822479248,
+          "mean_vertical_residual_g": -0.21954497694969177
+        },
+        "interior": {
+          "particles": 1990,
+          "pressure_rmse_over_head": 0.0026164092123508453,
+          "residual_rms_g": 0.3476559817790985,
+          "residual_max_g": 1.080769658088684,
+          "worst_residual_xy_m": [
+            0.0859375,
+            0.1953125
+          ],
+          "horizontal_max_g": 0.015762358903884888,
+          "mean_vertical_residual_g": 0.13374218344688416
+        },
+        "surface": {
+          "particles": 597,
+          "pressure_rmse_over_head": 0.10673907399177551,
+          "residual_rms_g": 0.8163352608680725,
+          "residual_max_g": 1.0,
+          "worst_residual_xy_m": [
+            0.0546875,
+            0.2421875
+          ],
+          "horizontal_max_g": 0.0008695260039530694,
+          "mean_vertical_residual_g": -0.4124307930469513
+        },
+        "bottom": {
+          "particles": 597,
+          "pressure_rmse_over_head": 0.13894687592983246,
+          "residual_rms_g": 1.348909854888916,
+          "residual_max_g": 1.7013297080993652,
+          "worst_residual_xy_m": [
+            3.1484375,
+            0.0234375
+          ],
+          "horizontal_max_g": 0.0259675495326519,
+          "mean_vertical_residual_g": -1.1948139667510986
+        },
+        "sides": {
+          "particles": 96,
+          "pressure_rmse_over_head": 0.11479265242815018,
+          "residual_rms_g": 0.9936214685440063,
+          "residual_max_g": 2.1651101112365723,
+          "worst_residual_xy_m": [
+            3.1796875,
+            0.0234375
+          ],
+          "horizontal_max_g": 1.385718822479248,
+          "mean_vertical_residual_g": -0.27843156456947327
+        }
+      }
+    },
+    "wall_consistent": {
+      "dx_m": 0.015625,
+      "dt_s": 0.00016927083333333334,
+      "water_weight_N_per_m": 7866.72900390625,
+      "fluid_vertical_pressure_force_over_weight": 0.9594748616218567,
+      "vertical_wall_load_over_weight": 0.9594748616218567,
+      "pressure_momentum_closure_over_weight": 0.0,
+      "min_density_over_reference": 0.7715955376625061,
+      "bands": {
+        "all": {
+          "particles": 3280,
+          "pressure_rmse_over_head": 0.04810166731476784,
+          "residual_rms_g": 0.46349892020225525,
+          "residual_max_g": 1.080769658088684,
+          "worst_residual_xy_m": [
+            0.0859375,
+            0.1953125
+          ],
+          "horizontal_max_g": 0.48273804783821106,
+          "mean_vertical_residual_g": -0.04051472246646881
+        },
+        "interior": {
+          "particles": 1990,
+          "pressure_rmse_over_head": 0.0026164092123508453,
+          "residual_rms_g": 0.34763824939727783,
+          "residual_max_g": 1.080769658088684,
+          "worst_residual_xy_m": [
+            0.0859375,
+            0.1953125
+          ],
+          "horizontal_max_g": 0.010685818269848824,
+          "mean_vertical_residual_g": 0.1344159096479416
+        },
+        "surface": {
+          "particles": 597,
+          "pressure_rmse_over_head": 0.10673907399177551,
+          "residual_rms_g": 0.8163354992866516,
+          "residual_max_g": 1.0,
+          "worst_residual_xy_m": [
+            0.0546875,
+            0.2421875
+          ],
+          "horizontal_max_g": 0.0006479194853454828,
+          "mean_vertical_residual_g": -0.41243043541908264
+        },
+        "bottom": {
+          "particles": 597,
+          "pressure_rmse_over_head": 0.028742820024490356,
+          "residual_rms_g": 0.26843544840812683,
+          "residual_max_g": 0.3462934195995331,
+          "worst_residual_xy_m": [
+            3.1484375,
+            0.0234375
+          ],
+          "horizontal_max_g": 0.04044978693127632,
+          "mean_vertical_residual_g": -0.24644456803798676
+        },
+        "sides": {
+          "particles": 96,
+          "pressure_rmse_over_head": 0.0540616400539875,
+          "residual_rms_g": 0.49253717064857483,
+          "residual_max_g": 1.0744324922561646,
+          "worst_residual_xy_m": [
+            0.0390625,
+            0.1953125
+          ],
+          "horizontal_max_g": 0.48273804783821106,
+          "mean_vertical_residual_g": -0.07320426404476166
+        }
+      }
+    },
+    "reference_increment": {
+      "dx_m": 0.015625,
+      "dt_s": 0.00016927083333333334,
+      "water_weight_N_per_m": 7866.72900390625,
+      "fluid_vertical_pressure_force_over_weight": 1.0041884183883667,
+      "vertical_wall_load_over_weight": 1.0041882991790771,
+      "pressure_momentum_closure_over_weight": 6.206915514894717e-08,
+      "min_density_over_reference": 1.0000901222229004,
+      "bands": {
+        "all": {
+          "particles": 3280,
+          "pressure_rmse_over_head": 0.0008544347947463393,
+          "residual_rms_g": 0.02008754387497902,
+          "residual_max_g": 0.10162928700447083,
+          "worst_residual_xy_m": [
+            3.1953125,
+            0.2421875
+          ],
+          "horizontal_max_g": 0.053579263389110565,
+          "mean_vertical_residual_g": 0.00419460516422987
+        },
+        "interior": {
+          "particles": 1990,
+          "pressure_rmse_over_head": 1.4104050933383405e-05,
+          "residual_rms_g": 0.009205281734466553,
+          "residual_max_g": 0.009799902327358723,
+          "worst_residual_xy_m": [
+            0.0546875,
+            0.1640625
+          ],
+          "horizontal_max_g": 3.8885801245669427e-07,
+          "mean_vertical_residual_g": 0.009194753132760525
+        },
+        "surface": {
+          "particles": 597,
+          "pressure_rmse_over_head": 0.0013943713856860995,
+          "residual_rms_g": 0.0326530747115612,
+          "residual_max_g": 0.050188932567834854,
+          "worst_residual_xy_m": [
+            0.0546875,
+            0.2265625
+          ],
+          "horizontal_max_g": 2.3137052266974933e-05,
+          "mean_vertical_residual_g": 0.010404328815639019
+        },
+        "bottom": {
+          "particles": 597,
+          "pressure_rmse_over_head": 0.0014021802926436067,
+          "residual_rms_g": 0.027668572962284088,
+          "residual_max_g": 0.04573232680559158,
+          "worst_residual_xy_m": [
+            0.0859375,
+            0.0078125
+          ],
+          "horizontal_max_g": 6.805015436839312e-05,
+          "mean_vertical_residual_g": -0.018453896045684814
+        },
+        "sides": {
+          "particles": 96,
+          "pressure_rmse_over_head": 0.0007885852246545255,
+          "residual_rms_g": 0.02527250163257122,
+          "residual_max_g": 0.10162928700447083,
+          "worst_residual_xy_m": [
+            3.1953125,
+            0.2421875
+          ],
+          "horizontal_max_g": 0.053579263389110565,
+          "mean_vertical_residual_g": 0.0027743724640458822
+        }
+      }
+    },
+    "increment_no_diffusion": {
+      "dx_m": 0.015625,
+      "dt_s": 0.00016927083333333334,
+      "water_weight_N_per_m": 7866.72900390625,
+      "fluid_vertical_pressure_force_over_weight": 1.0064350366592407,
+      "vertical_wall_load_over_weight": 1.0064351558685303,
+      "pressure_momentum_closure_over_weight": 1.2413831029789435e-07,
+      "min_density_over_reference": 1.0000851154327393,
+      "bands": {
+        "all": {
+          "particles": 3280,
+          "pressure_rmse_over_head": 1.3688876606465783e-05,
+          "residual_rms_g": 0.02287393994629383,
+          "residual_max_g": 0.11216901987791061,
+          "worst_residual_xy_m": [
+            0.0078125,
+            0.2421875
+          ],
+          "horizontal_max_g": 0.05369515344500542,
+          "mean_vertical_residual_g": 0.006438464857637882
+        },
+        "interior": {
+          "particles": 1990,
+          "pressure_rmse_over_head": 1.4104050933383405e-05,
+          "residual_rms_g": 0.009259382262825966,
+          "residual_max_g": 0.009960112161934376,
+          "worst_residual_xy_m": [
+            0.0546875,
+            0.1953125
+          ],
+          "horizontal_max_g": 3.8885801245669427e-07,
+          "mean_vertical_residual_g": 0.009249212220311165
+        },
+        "surface": {
+          "particles": 597,
+          "pressure_rmse_over_head": 1.3058999684290029e-05,
+          "residual_rms_g": 0.04597809538245201,
+          "residual_max_g": 0.06513711810112,
+          "worst_residual_xy_m": [
+            0.0546875,
+            0.2265625
+          ],
+          "horizontal_max_g": 1.2151812889271696e-08,
+          "mean_vertical_residual_g": 0.010311642661690712
+        },
+        "bottom": {
+          "particles": 597,
+          "pressure_rmse_over_head": 1.2875172615167685e-05,
+          "residual_rms_g": 0.018697019666433334,
+          "residual_max_g": 0.03116133064031601,
+          "worst_residual_xy_m": [
+            0.0546875,
+            0.0078125
+          ],
+          "horizontal_max_g": 0.0,
+          "mean_vertical_residual_g": -0.006551286671310663
+        },
+        "sides": {
+          "particles": 96,
+          "pressure_rmse_over_head": 1.3688876606465783e-05,
+          "residual_rms_g": 0.027911601588129997,
+          "residual_max_g": 0.11216901987791061,
+          "worst_residual_xy_m": [
+            0.0078125,
+            0.2421875
+          ],
+          "horizontal_max_g": 0.05369515344500542,
+          "mean_vertical_residual_g": 0.0048677013255655766
+        }
+      }
+    }
+  },
+  "20": {
+    "production": {
+      "dx_m": 0.0125,
+      "dt_s": 0.00013541666666666666,
+      "water_weight_N_per_m": 7859.05322265625,
+      "fluid_vertical_pressure_force_over_weight": 0.7824467420578003,
+      "vertical_wall_load_over_weight": 0.7824468016624451,
+      "pressure_momentum_closure_over_weight": 6.212977865516223e-08,
+      "min_density_over_reference": 0.7715700268745422,
+      "bands": {
+        "all": {
+          "particles": 5120,
+          "pressure_rmse_over_head": 0.06412099301815033,
+          "residual_rms_g": 0.773142397403717,
+          "residual_max_g": 2.710383176803589,
+          "worst_residual_xy_m": [
+            0.01875000074505806,
+            0.01875000074505806
+          ],
+          "horizontal_max_g": 1.7863129377365112,
+          "mean_vertical_residual_g": -0.21731507778167725
+        },
+        "interior": {
+          "particles": 3500,
+          "pressure_rmse_over_head": 0.0023485112469643354,
+          "residual_rms_g": 0.2949921488761902,
+          "residual_max_g": 1.0906211137771606,
+          "worst_residual_xy_m": [
+            2.0687501430511475,
+            0.20624999701976776
+          ],
+          "horizontal_max_g": 0.0479804128408432,
+          "mean_vertical_residual_g": 0.09874682873487473
+        },
+        "surface": {
+          "particles": 750,
+          "pressure_rmse_over_head": 0.08539124578237534,
+          "residual_rms_g": 0.8141221404075623,
+          "residual_max_g": 1.0,
+          "worst_residual_xy_m": [
+            0.04374999925494194,
+            0.24375000596046448
+          ],
+          "horizontal_max_g": 0.007261892780661583,
+          "mean_vertical_residual_g": -0.41693806648254395
+        },
+        "bottom": {
+          "particles": 750,
+          "pressure_rmse_over_head": 0.13779529929161072,
+          "residual_rms_g": 1.6740307807922363,
+          "residual_max_g": 2.1154367923736572,
+          "worst_residual_xy_m": [
+            2.143749952316284,
+            0.01875000074505806
+          ],
+          "horizontal_max_g": 0.05257749184966087,
+          "mean_vertical_residual_g": -1.483045220375061
+        },
+        "sides": {
+          "particles": 120,
+          "pressure_rmse_over_head": 0.104967400431633,
+          "residual_rms_g": 1.1439101696014404,
+          "residual_max_g": 2.710383176803589,
+          "worst_residual_xy_m": [
+            0.01875000074505806,
+            0.01875000074505806
+          ],
+          "horizontal_max_g": 1.7863129377365112,
+          "mean_vertical_residual_g": -0.2773313820362091
+        }
+      }
+    },
+    "wall_consistent": {
+      "dx_m": 0.0125,
+      "dt_s": 0.00013541666666666666,
+      "water_weight_N_per_m": 7859.05322265625,
+      "fluid_vertical_pressure_force_over_weight": 0.9605121612548828,
+      "vertical_wall_load_over_weight": 0.9605120420455933,
+      "pressure_momentum_closure_over_weight": 1.2425955731032445e-07,
+      "min_density_over_reference": 0.7715700268745422,
+      "bands": {
+        "all": {
+          "particles": 5120,
+          "pressure_rmse_over_head": 0.035066548734903336,
+          "residual_rms_g": 0.42171749472618103,
+          "residual_max_g": 1.0906211137771606,
+          "worst_residual_xy_m": [
+            2.0687501430511475,
+            0.20624999701976776
+          ],
+          "horizontal_max_g": 0.6105141043663025,
+          "mean_vertical_residual_g": -0.03946032002568245
+        },
+        "interior": {
+          "particles": 3500,
+          "pressure_rmse_over_head": 0.0023485112469643354,
+          "residual_rms_g": 0.2949627637863159,
+          "residual_max_g": 1.0906211137771606,
+          "worst_residual_xy_m": [
+            2.0687501430511475,
+            0.20624999701976776
+          ],
+          "horizontal_max_g": 0.04127727821469307,
+          "mean_vertical_residual_g": 0.09934500604867935
+        },
+        "surface": {
+          "particles": 750,
+          "pressure_rmse_over_head": 0.08539124578237534,
+          "residual_rms_g": 0.8141223788261414,
+          "residual_max_g": 1.0,
+          "worst_residual_xy_m": [
+            0.04374999925494194,
+            0.24375000596046448
+          ],
+          "horizontal_max_g": 0.007033700123429298,
+          "mean_vertical_residual_g": -0.41693779826164246
+        },
+        "bottom": {
+          "particles": 750,
+          "pressure_rmse_over_head": 0.02823522686958313,
+          "residual_rms_g": 0.33151623606681824,
+          "residual_max_g": 0.4315039813518524,
+          "worst_residual_xy_m": [
+            3.15625,
+            0.01875000074505806
+          ],
+          "horizontal_max_g": 0.07193250954151154,
+          "mean_vertical_residual_g": -0.30443066358566284
+        },
+        "sides": {
+          "particles": 120,
+          "pressure_rmse_over_head": 0.04182294383645058,
+          "residual_rms_g": 0.4702431857585907,
+          "residual_max_g": 1.0755184888839722,
+          "worst_residual_xy_m": [
+            0.03125,
+            0.20624999701976776
+          ],
+          "horizontal_max_g": 0.6105141043663025,
+          "mean_vertical_residual_g": -0.07265058159828186
+        }
+      }
+    },
+    "reference_increment": {
+      "dx_m": 0.0125,
+      "dt_s": 0.00013541666666666666,
+      "water_weight_N_per_m": 7859.05322265625,
+      "fluid_vertical_pressure_force_over_weight": 1.0046842098236084,
+      "vertical_wall_load_over_weight": 1.0046842098236084,
+      "pressure_momentum_closure_over_weight": 6.212977865516223e-08,
+      "min_density_over_reference": 1.0000720024108887,
+      "bands": {
+        "all": {
+          "particles": 5120,
+          "pressure_rmse_over_head": 0.0005990731879137456,
+          "residual_rms_g": 0.0198697280138731,
+          "residual_max_g": 0.10184713453054428,
+          "worst_residual_xy_m": [
+            3.1937501430511475,
+            0.24375000596046448
+          ],
+          "horizontal_max_g": 0.053572580218315125,
+          "mean_vertical_residual_g": 0.004689936991780996
+        },
+        "interior": {
+          "particles": 3500,
+          "pressure_rmse_over_head": 1.4830224245088175e-05,
+          "residual_rms_g": 0.00919016171246767,
+          "residual_max_g": 0.009789381176233292,
+          "worst_residual_xy_m": [
+            2.081249952316284,
+            0.20624999701976776
+          ],
+          "horizontal_max_g": 0.00034452820545993745,
+          "mean_vertical_residual_g": 0.00917716696858406
+        },
+        "surface": {
+          "particles": 750,
+          "pressure_rmse_over_head": 0.0010839625028893352,
+          "residual_rms_g": 0.03318043425679207,
+          "residual_max_g": 0.05082821846008301,
+          "worst_residual_xy_m": [
+            2.081249952316284,
+            0.23125000298023224
+          ],
+          "horizontal_max_g": 5.191254604142159e-05,
+          "mean_vertical_residual_g": 0.010543158277869225
+        },
+        "bottom": {
+          "particles": 750,
+          "pressure_rmse_over_head": 0.0011066830484196544,
+          "residual_rms_g": 0.033126454800367355,
+          "residual_max_g": 0.055487293750047684,
+          "worst_residual_xy_m": [
+            2.143749952316284,
+            0.0062500000931322575
+          ],
+          "horizontal_max_g": 0.0003709705488290638,
+          "mean_vertical_residual_g": -0.021917210891842842
+        },
+        "sides": {
+          "particles": 120,
+          "pressure_rmse_over_head": 0.000554893456865102,
+          "residual_rms_g": 0.025343161076307297,
+          "residual_max_g": 0.10184713453054428,
+          "worst_residual_xy_m": [
+            3.1937501430511475,
+            0.24375000596046448
+          ],
+          "horizontal_max_g": 0.053572580218315125,
+          "mean_vertical_residual_g": 0.0035244636237621307
+        }
+      }
+    },
+    "increment_no_diffusion": {
+      "dx_m": 0.0125,
+      "dt_s": 0.00013541666666666666,
+      "water_weight_N_per_m": 7859.05322265625,
+      "fluid_vertical_pressure_force_over_weight": 1.006467342376709,
+      "vertical_wall_load_over_weight": 1.006467342376709,
+      "pressure_momentum_closure_over_weight": 0.0,
+      "min_density_over_reference": 1.0000680685043335,
+      "bands": {
+        "all": {
+          "particles": 5120,
+          "pressure_rmse_over_head": 1.4818287127127405e-05,
+          "residual_rms_g": 0.02171383425593376,
+          "residual_max_g": 0.11216919869184494,
+          "worst_residual_xy_m": [
+            3.1937501430511475,
+            0.24375000596046448
+          ],
+          "horizontal_max_g": 0.05372830480337143,
+          "mean_vertical_residual_g": 0.006470949854701757
+        },
+        "interior": {
+          "particles": 3500,
+          "pressure_rmse_over_head": 1.4830224245088175e-05,
+          "residual_rms_g": 0.009224086999893188,
+          "residual_max_g": 0.01002891268581152,
+          "worst_residual_xy_m": [
+            2.081249952316284,
+            0.20624999701976776
+          ],
+          "horizontal_max_g": 0.00034452820545993745,
+          "mean_vertical_residual_g": 0.00921136699616909
+        },
+        "surface": {
+          "particles": 750,
+          "pressure_rmse_over_head": 1.8292139429831877e-05,
+          "residual_rms_g": 0.04615063592791557,
+          "residual_max_g": 0.0654693990945816,
+          "worst_residual_xy_m": [
+            2.0687501430511475,
+            0.23125000298023224
+          ],
+          "horizontal_max_g": 5.191254604142159e-05,
+          "mean_vertical_residual_g": 0.010462203063070774
+        },
+        "bottom": {
+          "particles": 750,
+          "pressure_rmse_over_head": 1.014442113955738e-05,
+          "residual_rms_g": 0.023945963010191917,
+          "residual_max_g": 0.04079194366931915,
+          "worst_residual_xy_m": [
+            2.143749952316284,
+            0.0062500000931322575
+          ],
+          "horizontal_max_g": 0.0003709705488290638,
+          "mean_vertical_residual_g": -0.010103343985974789
+        },
+        "sides": {
+          "particles": 120,
+          "pressure_rmse_over_head": 1.4818286217632703e-05,
+          "residual_rms_g": 0.02719845622777939,
+          "residual_max_g": 0.11216919869184494,
+          "worst_residual_xy_m": [
+            3.1937501430511475,
+            0.24375000596046448
+          ],
+          "horizontal_max_g": 0.05372830480337143,
+          "mean_vertical_residual_g": 0.005186120513826609
+        }
+      }
+    }
+  }
+}

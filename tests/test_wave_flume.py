@@ -565,3 +565,58 @@ def test_trajectory_smoothing_does_not_replace_momentum_velocity(monkeypatch):
     assert transport.speed_history[-1] < filtered.speed_history[-1]
     torch.testing.assert_close(transport.snapshots[-1][1], filtered.snapshots[-1][1])
     assert transport.config["xsph_advection_only"]
+
+
+def test_reference_density_initializes_hydrostatics_and_retains_perturbations():
+    from tensorsph.droplet_impact import hydrostatic_density, rhs
+    from tensorsph.wave_flume import (
+        flume_density_offset, flume_particle_mass, flume_water_lattice,
+        paddle_lattice, static_wall_lattice,
+    )
+
+    cfg = base_config(depth=.2, dx=.02, wave_height=.04, density_diffusion=0.,
+                      reference_density_increment=True)
+    pos = flume_water_lattice(cfg, "cpu").double()
+    mass = flume_particle_mass(cfg, pos, "cpu")
+    wall = torch.cat((static_wall_lattice(cfg, "cpu"), paddle_lattice(cfg, "cpu"))).double()
+    v = torch.zeros_like(pos)
+    ref = flume_density_offset(cfg, pos, mass, wall)
+    rho, pressure, _ = rhs(pos, v, mass, cfg, wall=wall, density_offset=ref)
+    torch.testing.assert_close(rho, hydrostatic_density(pos[:, 1], cfg, surface=cfg.depth))
+    hydro = cfg.rho0 * cfg.gravity * (cfg.depth-pos[:, 1])
+    torch.testing.assert_close(pressure, hydro, atol=1.e-7, rtol=1.e-7)
+    compressed = pos.clone()
+    compressed[:, 1] *= .99
+    perturbed, _, _ = rhs(compressed, v, mass, cfg, wall=wall, density_offset=ref)
+    assert float((perturbed-rho).abs().max()) > 1.
+
+
+def test_rest_lattice_correction_reduces_force_error_without_an_added_body_force():
+    import runpy
+    from pathlib import Path
+
+    runner = Path(__file__).resolve().parents[1] / "benchmarks/wave_flume/hydrostatic_balance.py"
+    audit = runpy.run_path(str(runner))["audit"]
+    baseline = audit(16)
+    corrected = audit(16, reference_density_increment=True)
+    assert baseline["bands"]["all"]["residual_rms_g"] > .5
+    assert corrected["bands"]["all"]["residual_rms_g"] < .03
+    assert abs(corrected["vertical_wall_load_over_weight"] - 1) < .01
+    assert corrected["pressure_momentum_closure_over_weight"] < 1e-5
+
+
+def test_courant_override_controls_both_nominal_and_adaptive_step(tmp_path):
+    import json
+    import runpy
+    from pathlib import Path
+
+    runner = Path(__file__).resolve().parents[1] / "benchmarks/wave_flume/run.py"
+    main = runpy.run_path(str(runner))["main"]
+    output = tmp_path / "record.json"
+    rc = main(["--depth-cells", "16", "--max-courant", ".125", "--simulate-time", ".0002",
+               "--threads", "1", "--out", str(output)])
+    assert rc == 0
+    cfg = json.loads(output.read_text())["config"]
+    assert cfg["max_courant"] == .125
+    dt = .125 * cfg["h_factor"] * cfg["dx"] / cfg["sound_speed"]
+    assert cfg["dt_requested"] == pytest.approx(dt)

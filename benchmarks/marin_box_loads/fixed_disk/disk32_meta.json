@@ -1,0 +1,40 @@
+{
+ "tag": "disk32",
+ "dx": 0.032,
+ "t_end": 0.7,
+ "dt": 0.0005616000000000001,
+ "pressure_disk_diameter_m": 0.02,
+ "sound_speed": 20.0,
+ "wall_layers": 3,
+ "obstacle_z": 0.2985,
+ "obstacle_x": 2.3955,
+ "wall_operator": "finite-volume-self-v2",
+ "viscosity": 1e-06,
+ "station_x": 2.228,
+ "station_offset": 0.16749999999999998,
+ "gauge_aperture": 0.08,
+ "arrival_threshold": 0.02,
+ "output_every": 1,
+ "threads": 1,
+ "complete": true,
+ "aborted": false,
+ "steps": 1247,
+ "simulated_time_s": 0.7003152000000148,
+ "wall_clock_s": 1529.8,
+ "operator_consistency": {
+  "wet_samples": 581,
+  "impossible_samples": 0,
+  "worst_impossible_slab_m": 0.0,
+  "height_column_admissible": true,
+  "reason": ""
+ },
+ "code_revision": {
+  "git": "0b30b237952881cbb854aba686184cd15b28724c",
+  "operator_sha1": "0b060d6f8e42a3c5fd0ae07ffcddfcb25d31b17d",
+  "source_sha256": {
+   "kleefsman_obstacle_3d.py": "be2bc51f06ebe64dd20506cfa1d9e73a7d38391a960a3c47d27a9b1c0f89914d",
+   "marin_probes.py": "1a34ddc9bf1fb6df28763d1f81bbf658eeb61241091c6c03d0f7aae4417c2d37",
+   "dam_break_3d.py": "94a0cd51e5c235c042c3c07af8312048a03331ded1e0963d16ef15e8cb42998f"
+  }
+ }
+}

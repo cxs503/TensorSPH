@@ -242,7 +242,13 @@ def repro_command(config, diagnostics, spec, out_path, *, threads=20, snapshots=
     depth_cells = int(round(depth_cells)) if depth_cells else None
     period = cfg.get("wave_period", spec.get("period"))
     gravity = cfg.get("gravity", spec.get("gravity", 9.81))
-    sim_time = (diagnostics or {}).get("simulated_time")
+    diag = diagnostics or {}
+    elapsed = diag.get("simulated_time")
+    requested = cfg.get("requested_duration_s")
+    sim_time = elapsed if requested is None else requested
+    event = diag.get("first_regime_exit") or {}
+    stopped_at_event = (requested is not None and elapsed is not None and elapsed < requested
+                        and event.get("t_s") == elapsed)
     kind = cfg.get("wave_type", spec.get("kind", "regular"))
 
     parts = [
@@ -264,6 +270,7 @@ def repro_command(config, diagnostics, spec, out_path, *, threads=20, snapshots=
         ("--ramp-periods", "ramp_periods"),
         ("--sponge-length", "sponge_length"),
         ("--xsph", "xsph"),
+        ("--max-courant", "max_courant"),
         ("--xsph-settle", "xsph_settle"),
         ("--viscosity-settle", "viscosity_settle"),
         ("--settle", "settle_time"),
@@ -275,6 +282,10 @@ def repro_command(config, diagnostics, spec, out_path, *, threads=20, snapshots=
         parts.append(f"  --simulate-time {_num(sim_time, '{:.4f}')}")
     if cfg.get("output_every") is not None:
         parts.append(f"  --output-every {int(cfg['output_every'])}")
+    if cfg.get("stop_on_regime_exit", stopped_at_event):
+        parts.append("  --stop-on-regime-exit")
+    if cfg.get("reference_density_increment"):
+        parts.append("  --reference-density-increment")
     if cfg.get("xsph_advection_only"):
         parts.append("  --xsph-advection-only")
     parts.append(f"  --snapshots {snapshots}")

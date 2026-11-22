@@ -1,0 +1,744 @@
+{
+  "forced16": {
+    "paddle_held": false,
+    "reference_density_increment": true,
+    "xsph": 0.0,
+    "physical_time_s": 2.0136458333336233,
+    "complete": false,
+    "max_speed_m_s": 0.3739793300628662,
+    "min_density_ratio": 0.9278492431640625,
+    "regime": {
+      "mach": 0.012465977668762207,
+      "compression": 0.01001794433593739,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "first_exit": {
+      "t_s": 2.0136458333336233,
+      "step": 11896,
+      "paddle_offset_m": 0.00147311540227751,
+      "speed_xy_m": [
+        0.08087346702814102,
+        0.2422679215669632
+      ],
+      "compression_xy_m": [
+        0.10355934500694275,
+        0.006486209109425545
+      ],
+      "mach": 0.008515976866086324,
+      "compression": 0.01001794433593739,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "escapes": 0,
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 477,
+      "observed_samples": 477
+    },
+    "wave": {
+      "requested_s": 5.0,
+      "first_regime_exit": {
+        "t_s": 2.0136458333336233,
+        "step": 11896,
+        "paddle_offset_m": 0.00147311540227751,
+        "speed_xy_m": [
+          0.08087346702814102,
+          0.2422679215669632
+        ],
+        "compression_xy_m": [
+          0.10355934500694275,
+          0.006486209109425545
+        ],
+        "mach": 0.008515976866086324,
+        "compression": 0.01001794433593739,
+        "mach_flag": false,
+        "compression_flag": true,
+        "stable": false
+      },
+      "simulated_s": 2.0136458333336233,
+      "requested_clock_reached": false,
+      "steps": 11896,
+      "escaped": 0,
+      "regime": {
+        "mach": 0.012465977668762207,
+        "compression": 0.01001794433593739,
+        "mach_flag": false,
+        "compression_flag": true,
+        "stable": false
+      },
+      "record_integrity": {
+        "passed": true,
+        "issues": [],
+        "expected_samples": 477,
+        "observed_samples": 477
+      },
+      "passed": false,
+      "height_assessed": false,
+      "covers_window": false
+    }
+  },
+  "forced20": {
+    "paddle_held": false,
+    "reference_density_increment": true,
+    "xsph": 0.0,
+    "physical_time_s": 1.657364583333795,
+    "complete": false,
+    "max_speed_m_s": 0.33764737844467163,
+    "min_density_ratio": 0.8796317749023438,
+    "regime": {
+      "mach": 0.011254912614822388,
+      "compression": 0.010339599609374917,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "first_exit": {
+      "t_s": 1.657364583333795,
+      "step": 12239,
+      "paddle_offset_m": -0.013354100556052484,
+      "speed_xy_m": [
+        0.04007471352815628,
+        0.003896197769790888
+      ],
+      "compression_xy_m": [
+        -0.0074004135094583035,
+        0.008011988364160061
+      ],
+      "mach": 0.009086584051450094,
+      "compression": 0.010339599609374917,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "escapes": 0,
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 491,
+      "observed_samples": 491
+    },
+    "wave": {
+      "requested_s": 5.0,
+      "first_regime_exit": {
+        "t_s": 1.657364583333795,
+        "step": 12239,
+        "paddle_offset_m": -0.013354100556052484,
+        "speed_xy_m": [
+          0.04007471352815628,
+          0.003896197769790888
+        ],
+        "compression_xy_m": [
+          -0.0074004135094583035,
+          0.008011988364160061
+        ],
+        "mach": 0.009086584051450094,
+        "compression": 0.010339599609374917,
+        "mach_flag": false,
+        "compression_flag": true,
+        "stable": false
+      },
+      "simulated_s": 1.657364583333795,
+      "requested_clock_reached": false,
+      "steps": 12239,
+      "escaped": 0,
+      "regime": {
+        "mach": 0.011254912614822388,
+        "compression": 0.010339599609374917,
+        "mach_flag": false,
+        "compression_flag": true,
+        "stable": false
+      },
+      "record_integrity": {
+        "passed": true,
+        "issues": [],
+        "expected_samples": 491,
+        "observed_samples": 491
+      },
+      "passed": false,
+      "height_assessed": false,
+      "covers_window": false
+    }
+  },
+  "held16": {
+    "paddle_held": true,
+    "reference_density_increment": true,
+    "xsph": 0.0,
+    "physical_time_s": 2.0722135416669034,
+    "complete": false,
+    "max_speed_m_s": 0.2549750804901123,
+    "min_density_ratio": 0.9252122192382812,
+    "regime": {
+      "mach": 0.00849916934967041,
+      "compression": 0.010041870117187601,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "first_exit": {
+      "t_s": 2.0722135416669034,
+      "step": 12242,
+      "paddle_offset_m": 0.0,
+      "speed_xy_m": [
+        1.479087233543396,
+        0.008233880624175072
+      ],
+      "compression_xy_m": [
+        0.14181694388389587,
+        0.011808800511062145
+      ],
+      "mach": 0.006896009544531504,
+      "compression": 0.010041870117187601,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "escapes": 0,
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 491,
+      "observed_samples": 491
+    }
+  },
+  "held20": {
+    "paddle_held": true,
+    "reference_density_increment": true,
+    "xsph": 0.0,
+    "physical_time_s": 1.6201250000004468,
+    "complete": false,
+    "max_speed_m_s": 0.2883434593677521,
+    "min_density_ratio": 0.8784353637695312,
+    "regime": {
+      "mach": 0.009611448645591736,
+      "compression": 0.010084777832031211,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "first_exit": {
+      "t_s": 1.6201250000004468,
+      "step": 11964,
+      "paddle_offset_m": 0.0,
+      "speed_xy_m": [
+        0.006391524337232113,
+        0.007949584163725376
+      ],
+      "compression_xy_m": [
+        0.00977279245853424,
+        0.02915247716009617
+      ],
+      "mach": 0.008361576994260152,
+      "compression": 0.010084777832031211,
+      "mach_flag": false,
+      "compression_flag": true,
+      "stable": false
+    },
+    "escapes": 0,
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 480,
+      "observed_samples": 480
+    }
+  },
+  "quiet16": {
+    "paddle_held": true,
+    "reference_density_increment": true,
+    "xsph": 0.0,
+    "physical_time_s": 0.4,
+    "complete": true,
+    "max_speed_m_s": 0.0336504764854908,
+    "min_density_ratio": 1.0000516357421876,
+    "regime": {
+      "mach": 0.0011216825495163599,
+      "compression": 0.002836853027343711,
+      "mach_flag": false,
+      "compression_flag": false,
+      "stable": true
+    },
+    "first_exit": null,
+    "escapes": 0,
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 96,
+      "observed_samples": 96
+    }
+  },
+  "quiet20": {
+    "paddle_held": true,
+    "reference_density_increment": true,
+    "xsph": 0.0,
+    "physical_time_s": 0.4,
+    "complete": true,
+    "max_speed_m_s": 0.03141291067004204,
+    "min_density_ratio": 0.99998291015625,
+    "regime": {
+      "mach": 0.0010470970223347346,
+      "compression": 0.002975769042968812,
+      "mach_flag": false,
+      "compression_flag": false,
+      "stable": true
+    },
+    "first_exit": null,
+    "escapes": 0,
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 120,
+      "observed_samples": 120
+    }
+  },
+  "weak16": {
+    "paddle_held": false,
+    "reference_density_increment": true,
+    "xsph": 0.005,
+    "physical_time_s": 5.0,
+    "complete": true,
+    "max_speed_m_s": 0.16614371538162231,
+    "min_density_ratio": 0.9980951538085937,
+    "regime": {
+      "mach": 0.005538123846054077,
+      "compression": 0.0041342163085937855,
+      "mach_flag": false,
+      "compression_flag": false,
+      "stable": true
+    },
+    "first_exit": null,
+    "escapes": 0,
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 1183,
+      "observed_samples": 1183
+    },
+    "wave": {
+      "requested_s": 5.0,
+      "first_regime_exit": null,
+      "simulated_s": 5.0,
+      "requested_clock_reached": true,
+      "steps": 29539,
+      "escaped": 0,
+      "regime": {
+        "mach": 0.005538123846054077,
+        "compression": 0.0041342163085937855,
+        "mach_flag": false,
+        "compression_flag": false,
+        "stable": true
+      },
+      "record_integrity": {
+        "passed": true,
+        "issues": [],
+        "expected_samples": 1183,
+        "observed_samples": 1183
+      },
+      "secondary_2p9_to_4p9_s_height_m": [
+        0.029035273204213317,
+        0.027120665939049195,
+        0.024556919050299796,
+        0.023175373572660283
+      ],
+      "covers_window": true,
+      "height_assessed": true,
+      "target_height_m": 0.04,
+      "window_s": [
+        3.0,
+        5.0
+      ],
+      "passed": false,
+      "gauges": [
+        {
+          "x_m": 1.0013591589129858,
+          "height_m": 0.029022114784942776,
+          "harmonic_residual": 0.08161058054467146,
+          "phase_error_deg": 0.0,
+          "cycle_heights_m": [
+            0.029567524649982767,
+            0.02852159564725425
+          ]
+        },
+        {
+          "x_m": 1.1643395630192874,
+          "height_m": 0.027565511966621794,
+          "harmonic_residual": 0.06736772356289979,
+          "phase_error_deg": 0.5729283310033564,
+          "cycle_heights_m": [
+            0.027849922013247277,
+            0.027283917226688516
+          ]
+        },
+        {
+          "x_m": 1.327319967125589,
+          "height_m": 0.02531604653684443,
+          "harmonic_residual": 0.09367683302065337,
+          "phase_error_deg": -2.2455935226130883,
+          "cycle_heights_m": [
+            0.02444720401618793,
+            0.02618778943753489
+          ]
+        },
+        {
+          "x_m": 1.4903003712318905,
+          "height_m": 0.02352162730930922,
+          "harmonic_residual": 0.14073679295004518,
+          "phase_error_deg": -5.735242125347252,
+          "cycle_heights_m": [
+            0.021376254295762603,
+            0.02566794301169342
+          ]
+        }
+      ],
+      "height_error_max_pct": 41.19593172672697,
+      "incident_height_m": 0.02633557850241517,
+      "reflection_ratio": 0.050055048731257074,
+      "split_residual": 0.12978226573149917,
+      "max_density_compression": 0.0041342163085937855,
+      "peak_mach": 0.005538123846054077
+    },
+    "paddle_stroke_m": 0.03440480217696625,
+    "target_paddle_stroke_m": 0.03440480217696626,
+    "linear_height_from_measured_stroke_m": 0.03999999999999999,
+    "first_height_over_target": 0.7255528696235694,
+    "last_height_over_first": 0.8104725476970647
+  },
+  "weak20": {
+    "paddle_held": false,
+    "reference_density_increment": true,
+    "xsph": 0.005,
+    "physical_time_s": 5.0,
+    "complete": true,
+    "max_speed_m_s": 0.1558256596326828,
+    "min_density_ratio": 0.9913174438476563,
+    "regime": {
+      "mach": 0.00519418865442276,
+      "compression": 0.003612548828124895,
+      "mach_flag": false,
+      "compression_flag": false,
+      "stable": true
+    },
+    "first_exit": null,
+    "escapes": 0,
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 1478,
+      "observed_samples": 1478
+    },
+    "wave": {
+      "requested_s": 5.0,
+      "first_regime_exit": null,
+      "simulated_s": 5.0,
+      "requested_clock_reached": true,
+      "steps": 36924,
+      "escaped": 0,
+      "regime": {
+        "mach": 0.00519418865442276,
+        "compression": 0.003612548828124895,
+        "mach_flag": false,
+        "compression_flag": false,
+        "stable": true
+      },
+      "record_integrity": {
+        "passed": true,
+        "issues": [],
+        "expected_samples": 1478,
+        "observed_samples": 1478
+      },
+      "secondary_2p9_to_4p9_s_height_m": [
+        0.030137353679045697,
+        0.02876321986833969,
+        0.026806805455101317,
+        0.024852636935446454
+      ],
+      "covers_window": true,
+      "height_assessed": true,
+      "target_height_m": 0.04,
+      "window_s": [
+        3.0,
+        5.0
+      ],
+      "passed": false,
+      "gauges": [
+        {
+          "x_m": 0.9999529089129858,
+          "height_m": 0.03010942780975518,
+          "harmonic_residual": 0.08244791744229107,
+          "phase_error_deg": 0.0,
+          "cycle_heights_m": [
+            0.029594443735122114,
+            0.03065869075241212
+          ]
+        },
+        {
+          "x_m": 1.1629333130192874,
+          "height_m": 0.02911282030609619,
+          "harmonic_residual": 0.07200278708166599,
+          "phase_error_deg": -0.33885388589122273,
+          "cycle_heights_m": [
+            0.029119738382419266,
+            0.02915099692068885
+          ]
+        },
+        {
+          "x_m": 1.325913717125589,
+          "height_m": 0.02769109087592151,
+          "harmonic_residual": 0.08855465474779753,
+          "phase_error_deg": -1.68346036630166,
+          "cycle_heights_m": [
+            0.026301837056657756,
+            0.029094475992068262
+          ]
+        },
+        {
+          "x_m": 1.4888941212318907,
+          "height_m": 0.025207803360875074,
+          "harmonic_residual": 0.12505624506085333,
+          "phase_error_deg": -3.9911891838581974,
+          "cycle_heights_m": [
+            0.022880243869969265,
+            0.0275609301073963
+          ]
+        }
+      ],
+      "height_error_max_pct": 36.98049159781235,
+      "incident_height_m": 0.028020552007490634,
+      "reflection_ratio": 0.043316623344224314,
+      "split_residual": 0.11618358260765536,
+      "max_density_compression": 0.003612548828124895,
+      "peak_mach": 0.00519418865442276
+    },
+    "paddle_stroke_m": 0.03440480217696627,
+    "target_paddle_stroke_m": 0.03440480217696626,
+    "linear_height_from_measured_stroke_m": 0.040000000000000015,
+    "first_height_over_target": 0.7527356952438795,
+    "last_height_over_first": 0.8372063235525178
+  },
+  "weak_only16": {
+    "paddle_held": false,
+    "reference_density_increment": false,
+    "xsph": 0.005,
+    "physical_time_s": 5.0,
+    "complete": true,
+    "max_speed_m_s": 0.18740308284759521,
+    "min_density_ratio": 0.7715955200195312,
+    "regime": {
+      "mach": 0.0062467694282531735,
+      "compression": 0.005946350097656206,
+      "mach_flag": false,
+      "compression_flag": false,
+      "stable": true
+    },
+    "first_exit": null,
+    "escapes": 0,
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 1183,
+      "observed_samples": 1183
+    },
+    "wave": {
+      "requested_s": 5.0,
+      "first_regime_exit": null,
+      "simulated_s": 5.0,
+      "requested_clock_reached": true,
+      "steps": 29539,
+      "escaped": 0,
+      "regime": {
+        "mach": 0.0062467694282531735,
+        "compression": 0.005946350097656206,
+        "mach_flag": false,
+        "compression_flag": false,
+        "stable": true
+      },
+      "record_integrity": {
+        "passed": true,
+        "issues": [],
+        "expected_samples": 1183,
+        "observed_samples": 1183
+      },
+      "secondary_2p9_to_4p9_s_height_m": [
+        0.02435976737573225,
+        0.022386247681494387,
+        0.021071268644703767,
+        0.016653045664189542
+      ],
+      "covers_window": true,
+      "height_assessed": true,
+      "target_height_m": 0.04,
+      "window_s": [
+        3.0,
+        5.0
+      ],
+      "passed": false,
+      "gauges": [
+        {
+          "x_m": 1.0013591589129858,
+          "height_m": 0.02442083607834658,
+          "harmonic_residual": 0.1169271679107083,
+          "phase_error_deg": 0.0,
+          "cycle_heights_m": [
+            0.02437898026439623,
+            0.024462691769918478
+          ]
+        },
+        {
+          "x_m": 1.1643395630192874,
+          "height_m": 0.023137156456289935,
+          "harmonic_residual": 0.1392287455432998,
+          "phase_error_deg": -3.012916158079968,
+          "cycle_heights_m": [
+            0.022027692588310464,
+            0.02424853363180614
+          ]
+        },
+        {
+          "x_m": 1.327319967125589,
+          "height_m": 0.02215297433198665,
+          "harmonic_residual": 0.17507098042625704,
+          "phase_error_deg": -5.101364658875375,
+          "cycle_heights_m": [
+            0.02050902253142264,
+            0.023832719361398996
+          ]
+        },
+        {
+          "x_m": 1.4903003712318905,
+          "height_m": 0.016782407988571956,
+          "harmonic_residual": 0.17323340398027154,
+          "phase_error_deg": -9.1336223217478,
+          "cycle_heights_m": [
+            0.014520224255476076,
+            0.019058363467559663
+          ]
+        }
+      ],
+      "height_error_max_pct": 58.04398002857014,
+      "incident_height_m": 0.0215517122813403,
+      "reflection_ratio": 0.09883352402061295,
+      "split_residual": 0.5785398220783629,
+      "max_density_compression": 0.005946350097656206,
+      "peak_mach": 0.0062467694282531735
+    },
+    "paddle_stroke_m": 0.03440480217696625,
+    "target_paddle_stroke_m": 0.03440480217696626,
+    "linear_height_from_measured_stroke_m": 0.03999999999999999,
+    "first_height_over_target": 0.6105209019586645,
+    "last_height_over_first": 0.6872167658277903
+  },
+  "weak_only20": {
+    "paddle_held": false,
+    "reference_density_increment": false,
+    "xsph": 0.005,
+    "physical_time_s": 5.0,
+    "complete": true,
+    "max_speed_m_s": 0.1706589013338089,
+    "min_density_ratio": 0.7715700073242188,
+    "regime": {
+      "mach": 0.005688630044460297,
+      "compression": 0.005581420898437495,
+      "mach_flag": false,
+      "compression_flag": false,
+      "stable": true
+    },
+    "first_exit": null,
+    "escapes": 0,
+    "record_integrity": {
+      "passed": true,
+      "issues": [],
+      "expected_samples": 1478,
+      "observed_samples": 1478
+    },
+    "wave": {
+      "requested_s": 5.0,
+      "first_regime_exit": null,
+      "simulated_s": 5.0,
+      "requested_clock_reached": true,
+      "steps": 36924,
+      "escaped": 0,
+      "regime": {
+        "mach": 0.005688630044460297,
+        "compression": 0.005581420898437495,
+        "mach_flag": false,
+        "compression_flag": false,
+        "stable": true
+      },
+      "record_integrity": {
+        "passed": true,
+        "issues": [],
+        "expected_samples": 1478,
+        "observed_samples": 1478
+      },
+      "secondary_2p9_to_4p9_s_height_m": [
+        0.028094763589620278,
+        0.024490375617991195,
+        0.022863975982061722,
+        0.019375280850874817
+      ],
+      "covers_window": true,
+      "height_assessed": true,
+      "target_height_m": 0.04,
+      "window_s": [
+        3.0,
+        5.0
+      ],
+      "passed": false,
+      "gauges": [
+        {
+          "x_m": 0.9999529089129858,
+          "height_m": 0.028264207551940895,
+          "harmonic_residual": 0.1078675091047414,
+          "phase_error_deg": 0.0,
+          "cycle_heights_m": [
+            0.027382165231348756,
+            0.029156386422431416
+          ]
+        },
+        {
+          "x_m": 1.1629333130192874,
+          "height_m": 0.024850842676613326,
+          "harmonic_residual": 0.09936699616159171,
+          "phase_error_deg": -2.076989378308157,
+          "cycle_heights_m": [
+            0.02378371299641344,
+            0.025981265559839362
+          ]
+        },
+        {
+          "x_m": 1.325913717125589,
+          "height_m": 0.023790084248841534,
+          "harmonic_residual": 0.13841246531601667,
+          "phase_error_deg": -4.827951758334265,
+          "cycle_heights_m": [
+            0.02180391391162955,
+            0.02576839415977226
+          ]
+        },
+        {
+          "x_m": 1.4888941212318907,
+          "height_m": 0.019942949352495305,
+          "harmonic_residual": 0.19866607777817955,
+          "phase_error_deg": -6.92437778555195,
+          "cycle_heights_m": [
+            0.016515142773071322,
+            0.023378524413294022
+          ]
+        }
+      ],
+      "height_error_max_pct": 50.142626618761774,
+      "incident_height_m": 0.024182873897332202,
+      "reflection_ratio": 0.07934888751474073,
+      "split_residual": 0.4522493452460272,
+      "max_density_compression": 0.005581420898437495,
+      "peak_mach": 0.005688630044460297
+    },
+    "paddle_stroke_m": 0.03440480217696627,
+    "target_paddle_stroke_m": 0.03440480217696626,
+    "linear_height_from_measured_stroke_m": 0.040000000000000015,
+    "first_height_over_target": 0.7066051887985224,
+    "last_height_over_first": 0.7055902528258157
+  }
+}

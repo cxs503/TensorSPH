@@ -48,7 +48,8 @@ from .dam_break_3d import (
 from .droplet_impact import next_dt
 from .neighbor_search import PairListCache
 from .marin_probes import (H2_ARRIVAL_S, H2_PEAK_M, H2_PEAK_TIME_S,
-                           centreline_height, sensor_positions, tap_pressures)
+                           centreline_height, disk_average, sensor_positions, tap_disk_nodes,
+                           tap_node_pressures)
 
 # ---- experimental geometry (Kleefsman et al. 2005; see reference.json) ------
 TANK_LENGTH_M = 3.22
@@ -99,6 +100,7 @@ class Kleefsman3DConfig(DamBreak3DConfig):
     station_offset: float = FROZEN_STATION_OFFSET_M
     gauge_aperture: float = FROZEN_APERTURE_M
     arrival_threshold: float = FROZEN_ARRIVAL_THRESHOLD_M
+    pressure_disk_diameter: float = 0.0
     # run control
     dt: float = 2.6e-4
     t_end: float = 2.6
@@ -450,6 +452,7 @@ class Kleefsman3DRun:
                 "obstacle_z": self.cfg.obstacle_z,
                 "station_offset": self.cfg.station_offset,
                 "gauge_aperture": self.cfg.gauge_aperture,
+                "pressure_disk_diameter": self.cfg.pressure_disk_diameter,
                 "arrival_threshold": self.cfg.arrival_threshold,
             },
         }
@@ -489,7 +492,10 @@ CHECKPOINT_FINGERPRINT_FIELDS = (
 
 def checkpoint_fingerprint(cfg) -> dict:
     """The subset of ``cfg`` that decides whether a checkpoint is reusable."""
-    return {name: getattr(cfg, name) for name in CHECKPOINT_FINGERPRINT_FIELDS}
+    fields = {name: getattr(cfg, name) for name in CHECKPOINT_FINGERPRINT_FIELDS}
+    if cfg.pressure_disk_diameter:
+        fields["pressure_disk_diameter"] = cfg.pressure_disk_diameter
+    return fields
 
 
 def save_checkpoint(path, cfg, *, step, elapsed, dt, positions, velocity,
@@ -531,7 +537,8 @@ def load_checkpoint(path, cfg) -> dict:
             f"checkpoint version {payload.get('version')} != {CHECKPOINT_VERSION}")
     got = payload.get("fingerprint", {})
     want = checkpoint_fingerprint(cfg)
-    diff = {k: (got.get(k), want[k]) for k in want if got.get(k) != want[k]}
+    diff = {k: (got.get(k), want.get(k)) for k in got.keys() | want.keys()
+            if got.get(k) != want.get(k)}
     if diff:
         raise ValueError(
             "checkpoint was written for a different configuration: "
@@ -622,7 +629,7 @@ def run_case(cfg: Kleefsman3DConfig, device: str | torch.device = "cpu",
 
     sph_impulse = torch.tensor(run.sph_impulse, device=dev, dtype=torch.float64)
     clamp_impulse = torch.tensor(run.clamp_impulse, device=dev, dtype=torch.float64)
-    taps = sensor_positions(cfg, positions)
+    taps = tap_disk_nodes(cfg, sensor_positions(cfg, positions), cfg.pressure_disk_diameter)
     centre = obstacle.new_tensor([cfg.obstacle_x + cfg.obstacle_length/2,
                                   cfg.obstacle_height/2, cfg.obstacle_z + cfg.obstacle_width/2])
 
@@ -659,14 +666,19 @@ def run_case(cfg: Kleefsman3DConfig, device: str | torch.device = "cpu",
             run.front.append(float(positions[:, 0].max()))
             run.bypass.append(float(bypass_count(positions, cfg)))
             if on_sample is not None:
-                tap_pa, support = tap_pressures(positions, pressure, density, volume, cfg, taps)
+                tap_pa, support = tap_node_pressures(
+                    positions, pressure, density, volume, cfg, taps)
+                disk_pa = disk_average(tap_pa).tolist() if cfg.pressure_disk_diameter else []
+                disk_support = support.amin(dim=1).tolist() if cfg.pressure_disk_diameter else []
                 moment = torch.linalg.cross(obstacle-centre, loads).sum(0)
                 on_sample(len(run.times) - 1, {
                     "obstacle_sph_force_N": force.tolist(),
                     "obstacle_sph_impulse_Ns": sph_impulse.tolist(),
                     "obstacle_clamp_impulse_Ns": clamp_impulse.tolist(),
                     "H2_local_m": run.local_h2[-1],
-                    "tap_pressure_Pa": tap_pa.tolist(), "tap_support": support.tolist(),
+                    "tap_pressure_Pa": tap_pa[:, 0].tolist(), "tap_support": support[:, 0].tolist(),
+                    "disk_pressure_Pa": disk_pa,
+                    "disk_support": disk_support,
                     "obstacle_sph_moment_Nm": moment.tolist(),
                     "t_s": elapsed,
                     "slab_height_m": run.slab[-1],

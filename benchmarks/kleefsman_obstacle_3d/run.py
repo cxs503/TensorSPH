@@ -71,16 +71,16 @@ SERIES_COLUMNS = ["t_s", "slab_height_m", "height_operator_m", "front_x_m", "n_b
                   *[f"J_{kind}_{axis}_Ns" for kind in ("sph", "clamp") for axis in "xyz"]]
 
 
-def resume_series(path, checkpoint_times):
+def resume_series(path, checkpoint_times, columns=SERIES_COLUMNS):
     """Keep exactly the samples covered by a compatible checkpoint."""
     with path.open(newline="") as src:
         reader = csv.reader(src)
-        if next(reader, None) != SERIES_COLUMNS:
+        if next(reader, None) != columns:
             raise ValueError("restart CSV has a different wall-load schema")
         prefix = []
         for time_s in checkpoint_times:
             row = next(reader, None)
-            if row is None or len(row) != len(SERIES_COLUMNS) or row[0] != f"{time_s:.6f}":
+            if row is None or len(row) != len(columns) or row[0] != f"{time_s:.6f}":
                 raise ValueError("restart CSV is missing checkpoint samples")
             prefix.append(row)
         has_tail = next(reader, None) is not None
@@ -88,7 +88,7 @@ def resume_series(path, checkpoint_times):
         tmp = path.with_suffix(".csv.tmp")
         with tmp.open("w", newline="") as out:
             writer = csv.writer(out)
-            writer.writerow(SERIES_COLUMNS)
+            writer.writerow(columns)
             writer.writerows(prefix)
         tmp.replace(path)
 
@@ -101,6 +101,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--dt", type=float, default=None,
                     help="default: the acoustic Courant limit for this dx")
     ap.add_argument("--sound-speed", type=float, default=20.0)
+    ap.add_argument("--pressure-disk-diameter", type=float, default=0.0,
+                    help="additional circular pressure footprint diameter in metres")
     ap.add_argument("--viscosity", type=float, default=Kleefsman3DConfig.viscosity,
                     help="kinematic viscosity in m^2/s")
     ap.add_argument("--wall-layers", type=int, default=3)
@@ -131,6 +133,7 @@ def main(argv: list[str] | None = None) -> int:
         t_end=args.t_end,
         sound_speed=args.sound_speed,
         viscosity=args.viscosity,
+        pressure_disk_diameter=args.pressure_disk_diameter,
         wall_layers=args.wall_layers,
         obstacle_z=args.obstacle_z,
         output_every=args.output_every,
@@ -156,14 +159,18 @@ def main(argv: list[str] | None = None) -> int:
                     and not args.no_resume)
     # a resumed run appends: the samples already in the checkpoint are not
     # re-emitted, so the file stays one monotone series
+    columns = list(SERIES_COLUMNS)
+    if cfg.pressure_disk_diameter:
+        columns += [f"P{i}_disk_Pa" for i in range(1, 9)]
+        columns += [f"P{i}_disk_support_min" for i in range(1, 9)]
     if resuming:
-        resume_series(csv_path, load_checkpoint(args.checkpoint, cfg)["times"])
+        resume_series(csv_path, load_checkpoint(args.checkpoint, cfg)["times"], columns)
     csv_fh = csv_path.open("a" if resuming else "w", newline="")
     if resuming:
         print(f"[{tag}] resuming from {args.checkpoint}", flush=True)
     writer = csv.writer(csv_fh)
     if not resuming:
-        writer.writerow(SERIES_COLUMNS)
+        writer.writerow(columns)
     csv_fh.flush()
 
     def on_sample(_i: int, row: dict) -> None:
@@ -174,7 +181,8 @@ def main(argv: list[str] | None = None) -> int:
                                    *row["obstacle_sph_moment_Nm"], row["H2_local_m"],
                                    *row["tap_pressure_Pa"], *row["tap_support"],
                                    *row["obstacle_sph_impulse_Ns"],
-                                   *row["obstacle_clamp_impulse_Ns"])])
+                                   *row["obstacle_clamp_impulse_Ns"],
+                                   *row["disk_pressure_Pa"], *row["disk_support"])])
         csv_fh.flush()
 
     # fingerprint written before the run, so a run that never returns still
@@ -184,6 +192,7 @@ def main(argv: list[str] | None = None) -> int:
     code_revision = _code_revision()
     meta_path.write_text(json.dumps({
         "tag": tag, "dx": cfg.dx, "t_end": cfg.t_end, "dt": None,
+        "pressure_disk_diameter_m": cfg.pressure_disk_diameter,
         "sound_speed": cfg.sound_speed, "wall_layers": cfg.wall_layers,
         "obstacle_z": cfg.obstacle_z, "obstacle_x": cfg.obstacle_x,
         "wall_operator": "finite-volume-self-v2", "viscosity": cfg.viscosity, "station_x": cfg.station_x(),

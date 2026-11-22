@@ -79,3 +79,42 @@ def test_solver_target_uses_the_workbook_peak_and_arrival():
     assert (H2_PEAK_M, H2_PEAK_TIME_S, H2_ARRIVAL_S) == pytest.approx(
         (measured["measured_peak_m"], measured["measured_peak_t_s"], measured["observed_arrival_s"])
     )
+
+
+def test_fixed_area_disk_quadrature_and_dry_area():
+    from tensorsph.marin_probes import disk_average, tap_disk_nodes
+
+    for dx in (.05, .032):
+        cfg = Kleefsman3DConfig(dx=dx)
+        taps = sensor_positions(cfg, torch.empty(0, dtype=torch.float64))
+        radius = .01
+        nodes = tap_disk_nodes(cfg, taps, 2 * radius)
+        diff = nodes - taps[:, None, :]
+        assert torch.all(diff[:4, :, 0] == 0) and torch.all(diff[4:, :, 1] == 0)
+        r2 = diff.square().sum(-1)
+        torch.testing.assert_close(disk_average(r2), torch.full_like(taps[:, 0], radius**2/2))
+        torch.testing.assert_close(disk_average(r2**2), torch.full_like(taps[:, 0], radius**4/3))
+        wet = torch.zeros_like(r2)
+        wet[:, 0] = 1000.
+        assert torch.all(disk_average(wet) == 250.)
+        with pytest.raises(ValueError, match="beyond"):
+            tap_disk_nodes(cfg, taps, .05)
+
+
+def test_pressure_peaks_require_every_matching_solver_step(monkeypatch):
+    import runpy
+    from pathlib import Path
+
+    bench = Path(__file__).resolve().parents[1] / "benchmarks" / "marin_box_loads"
+    monkeypatch.syspath_prepend(str(bench))
+    check = runpy.run_path(str(bench / "footprint.py"))["check_impact_clock"]
+    dt = 0.00043875
+    steps = 1596
+    meta = dict(dt=dt, steps=steps, output_every=1, simulated_time_s=steps * dt)
+    t = np.round(np.arange(steps + 1) * dt, 6)
+    check(t, meta)
+    with pytest.raises(ValueError, match="every solver step"):
+        check(np.delete(t, 1000), meta)
+    t[1100] += 0.0001
+    with pytest.raises(ValueError, match="event clock"):
+        check(t, meta)

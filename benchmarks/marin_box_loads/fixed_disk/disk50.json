@@ -1,0 +1,108 @@
+{
+ "case": "CASE-SPH-KLEEFSMAN-DAMBREAK-OBST",
+ "assessment_scope": "SPHERIC workbook H2, local and blocked-width volume gauges; water level only",
+ "geometry": "3-D (0.403 m box in 1.00 m tank, 40 % blockage)",
+ "reference": {
+  "peak_height_m": 0.3408,
+  "peak_time_s": 1.7870422657819276,
+  "arrival_time_s": 0.3673968228757868,
+  "source": "SPHERIC Test 2, test_case_2_exp_data.xls, Experimental_data / H2 (m)"
+ },
+ "tolerance_rel": 0.1,
+ "rows": [
+  {
+   "metric": "peak_height",
+   "ref": 0.3408,
+   "got": 0.13957816377171217,
+   "rel_error": 0.5904396602942718,
+   "pass": false,
+   "assessable": false
+  },
+  {
+   "metric": "arrival_time",
+   "ref": 0.3673968228757868,
+   "got": 0.3968841239999967,
+   "rel_error": 0.08026008742644802,
+   "pass": true
+  },
+  {
+   "metric": "H2_local_peak",
+   "ref": 0.3408,
+   "got": 0.36152854561805725,
+   "rel_error": 0.06082319723608351,
+   "pass": false,
+   "assessable": false
+  },
+  {
+   "metric": "H2_local_arrival",
+   "ref": 0.3673968228757868,
+   "got": 0.3926643929845056,
+   "rel_error": 0.06877460156279452,
+   "pass": true
+  }
+ ],
+ "window_covers_reference_peak": false,
+ "censored": true,
+ "verdict": "FAIL",
+ "run": {
+  "dx": 0.05,
+  "t_end": 0.7,
+  "dt": 0.0008775000000000001,
+  "sound_speed": 20.0,
+  "fluid_particles": 5280,
+  "wall_particles": 16002,
+  "blocked_fraction": 0.403,
+  "obstacle_z": 0.2985,
+  "obstacle_width_nominal_m": 0.403,
+  "obstacle_width_on_lattice_m": 0.4,
+  "stations_x_m": [
+   2.228
+  ],
+  "gauge_aperture_m": 0.08,
+  "peak_height_m": 0.13957816377171217,
+  "local_h2_peak_m": 0.36152854561805725,
+  "local_h2_arrival_s": 0.3926643929845056,
+  "peak_time_s": 0.6142499999999906,
+  "peak_height_operator_m": 0.7085456848144531,
+  "arrival_time_s": 0.3968841239999967,
+  "arrival_threshold_m": 0.02,
+  "max_speed": 5.749263286590576,
+  "max_density_compression": 0.12616064453124998,
+  "boundary_escapes": 0,
+  "obstacle_clamps": 48,
+  "obstacle_sph_impulse_Ns": [
+   59.15912751278939,
+   0.5004361794624468,
+   -0.023938606134429573
+  ],
+  "obstacle_clamp_impulse_Ns": [
+   9.7310520876199,
+   0.0,
+   0.07458928227424622
+  ],
+  "mass_error_rel": 0.0,
+  "steps": 798,
+  "simulated_time_s": 0.7002449999999882,
+  "wall_clock_s": 259.6167206764221,
+  "max_bypass_particles": 228.0,
+  "fingerprint": {
+   "t_end": 0.7,
+   "sound_speed": 20.0,
+   "wall_layers": 3,
+   "wall_operator": "finite-volume-self-v2",
+   "viscosity": 1e-06,
+   "obstacle_x": 2.3955,
+   "obstacle_z": 0.2985,
+   "station_offset": 0.16749999999999998,
+   "gauge_aperture": 0.08,
+   "pressure_disk_diameter": 0.02,
+   "arrival_threshold": 0.02
+  }
+ },
+ "tag": "disk50",
+ "complete": true,
+ "host": {
+  "threads": 1,
+  "wall_clock_s": 259.6
+ }
+}
