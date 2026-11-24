@@ -229,3 +229,22 @@ def test_second_moment_calibrates_steady_affine_flux():
     _, power = stencil_rhs_with_wall_power_2d(field, offsets, dx, (1., 3.), conductivity=4.)
     flux = power / (3 * dx * lattice_diffusion_factor_2d(1.3, dx, mode="moment"))
     torch.testing.assert_close(flux, x.new_tensor([-8., 8.]), rtol=1e-12, atol=1e-12)
+
+
+def test_layered_path_reproduces_multilayer_series_resistance():
+    from tensorsph.heat_conduction_2d import lattice_diffusion_factor_2d, stencil_rhs_with_wall_power_2d
+
+    # A particle pair can cross more than one of these narrow layers.
+    k = torch.tensor([1., 2., 7., 1., 3., 8., 3., 5.], dtype=torch.float64)
+    dx = 1 / len(k)
+    resistance = dx / k
+    flux = 2 / resistance.sum()
+    field = (2 - flux * (resistance.cumsum(0) - .5 * resistance)).expand(5, -1)
+    h_factor = 2.
+    offsets = lattice_offsets(dx, h_factor * dx)
+    rate, power = stencil_rhs_with_wall_power_2d(
+        field, offsets, dx, (2., 0.), conductivity=k, layered_x=True)
+    assert rate.abs().max() < 1e-12
+    factor = lattice_diffusion_factor_2d(h_factor, dx, mode="moment")
+    torch.testing.assert_close(power / (5 * dx * factor), torch.stack((flux, -flux)),
+                               rtol=1e-13, atol=1e-13)

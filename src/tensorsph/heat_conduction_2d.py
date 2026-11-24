@@ -159,7 +159,8 @@ def _wall_column(value: WallTemperature, field: torch.Tensor) -> torch.Tensor:
 def stencil_rhs_2d(temperature: torch.Tensor,
                    offsets: tuple[LatticeOffsets, ...],
                    rho: float = 1.0, conductivity: torch.Tensor | None = None,
-                   *, x_wall_temperatures: tuple[WallTemperature, WallTemperature] | None = None) -> torch.Tensor:
+                   *, x_wall_temperatures: tuple[WallTemperature, WallTemperature] | None = None,
+                   layered_x: bool = False) -> torch.Tensor:
     """``dT/dt`` of the pair operator on a *periodic* 2-D grid (fast path).
 
     ``dT_i/dt = (2/rho) sum_offsets a (T_i - T_{i+offset})`` with the offsets
@@ -170,16 +171,18 @@ def stencil_rhs_2d(temperature: torch.Tensor,
     is supplied, x (the last axis) uses cell-centred Dirichlet walls with
     odd-reflected temperature about each wall value and even-reflected material.
     The first axis remains periodic. Each wall accepts a scalar or a vector
-    of temperatures sampled at the y cell centres.
+    of temperatures sampled at the y cell centres. With layered_x=True, supply
+    a 1-D conductivity profile along x. Each pair then uses the integrated
+    series resistance along its straight segment through the cell-centred layers.
     """
-    rate, _ = _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures)
+    rate, _ = _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures, layered_x)
     return rate
 
 
 def stencil_rhs_with_wall_power_2d(
     temperature: torch.Tensor, offsets: tuple[LatticeOffsets, ...],
     dx: float, x_wall_temperatures: tuple[WallTemperature, WallTemperature],
-    rho: float = 1.0, conductivity: torch.Tensor | None = None,
+    rho: float = 1.0, conductivity: torch.Tensor | None = None, *, layered_x: bool = False,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Temperature rate and integrated inward power at the left and right walls.
 
@@ -191,13 +194,15 @@ def stencil_rhs_with_wall_power_2d(
         raise ValueError("dx must be finite and positive")
     if x_wall_temperatures is None:
         raise ValueError("wall powers require two x wall temperatures")
-    return _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures, dx)
+    return _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures, layered_x, dx)
 
 
-def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures, dx=None):
+def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures, layered_x, dx=None):
     t = torch.as_tensor(temperature, dtype=DTYPE)
     # Material conductivities live at cell centres. The same pair mean
     # multiplies both directed transfers across each periodic interface.
+    if layered_x and (conductivity is None or torch.as_tensor(conductivity).shape != (t.shape[-1],)):
+        raise ValueError("layered_x requires one conductivity per x column")
     if conductivity is not None:
         k = torch.as_tensor(conductivity, device=t.device, dtype=t.dtype).expand_as(t)
         if not torch.all(torch.isfinite(k) & (k > 0)):
@@ -219,7 +224,15 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
     for (m, n), a in offsets:
         if conductivity is not None:
             neighbor = torch.roll(k, shifts=(-m, -n), dims=(0, 1))
-            a = a * (2 * k * neighbor / (k + neighbor))
+            if layered_x and abs(n) > 1:
+                # Half a column at either end and full columns in between.
+                resistance = 0.5 / k + 0.5 / neighbor
+                direction = 1 if n > 0 else -1
+                for j in range(direction, n, direction):
+                    resistance = resistance + 1 / torch.roll(k, shifts=-j, dims=1)
+                a = a * abs(n) / resistance
+            else:
+                a = a * (2 * k * neighbor / (k + neighbor))
         transfer = a * (t - torch.roll(t, shifts=(-m, -n), dims=(0, 1)))
         acc = acc + transfer
         if power is not None and n:
