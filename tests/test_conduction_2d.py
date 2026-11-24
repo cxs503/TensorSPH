@@ -402,3 +402,12 @@ def test_insulated_heterogeneous_slab_conserves_heat_and_respects_reflection():
     torch.testing.assert_close(mirror_rate.flip([1]), rate)
     torch.testing.assert_close(mirror_powers.flip([0]), powers)
     torch.testing.assert_close(.01 * (cp * rate).sum(), powers.sum())
+
+
+def test_insulated_step_temperature_and_internal_flux_approach_neumann_series():
+    from benchmarks.case_conduction_2d.insulated_step import measure
+
+    coarse, fine = measure(16), measure(32)
+    for metric in ("max_temperature_error", "center_flux_error"):
+        assert fine[metric] < coarse[metric]/3.8
+    assert max(coarse["mean_drift"], fine["mean_drift"]) < 1e-13
