@@ -145,6 +145,7 @@ def lattice_offsets(dx: float, h: float, eta_factor: float = 0.01,
 
 
 WallTemperature = float | torch.Tensor
+SlabWalls = tuple[WallTemperature | None, WallTemperature | None]
 
 
 def _wall_column(value: WallTemperature, field: torch.Tensor) -> torch.Tensor:
@@ -159,7 +160,7 @@ def _wall_column(value: WallTemperature, field: torch.Tensor) -> torch.Tensor:
 def stencil_rhs_2d(temperature: torch.Tensor,
                    offsets: tuple[LatticeOffsets, ...],
                    rho: float = 1.0, conductivity: torch.Tensor | None = None,
-                   *, x_wall_temperatures: tuple[WallTemperature, WallTemperature] | None = None,
+                   *, x_wall_temperatures: SlabWalls | None = None,
                    layered_x: bool = False, contact_resistance_x: torch.Tensor | None = None,
                    dx: float | None = None,
                    specific_heat: float | torch.Tensor | None = None) -> torch.Tensor:
@@ -173,7 +174,8 @@ def stencil_rhs_2d(temperature: torch.Tensor,
     is supplied, x (the last axis) uses cell-centred Dirichlet walls with
     odd-reflected temperature about each wall value and even-reflected material.
     The first axis remains periodic. Each wall accepts a scalar or a vector
-    of temperatures sampled at the y cell centres. With layered_x=True, supply
+    of temperatures sampled at the y cell centres. A None entry selects an
+    insulated wall with even temperature reflection. With layered_x=True, supply
     a 1-D conductivity profile along x. Each pair then uses the integrated
     series resistance along its straight segment through the cell-centred layers.
     With layered_x and dx, contact_resistance_x supplies areal resistances
@@ -189,7 +191,7 @@ def stencil_rhs_2d(temperature: torch.Tensor,
 
 def stencil_rhs_with_wall_power_2d(
     temperature: torch.Tensor, offsets: tuple[LatticeOffsets, ...],
-    dx: float, x_wall_temperatures: tuple[WallTemperature, WallTemperature],
+    dx: float, x_wall_temperatures: SlabWalls,
     rho: float = 1.0, conductivity: torch.Tensor | None = None, *, layered_x: bool = False,
     contact_resistance_x: torch.Tensor | None = None, specific_heat: float | torch.Tensor | None = None,
     power_by_row: bool = False,
@@ -293,7 +295,7 @@ def prepare_slab_film_rhs(template, offsets, dx, film_coefficients, *, rho=1.,
 
 def stencil_x_face_power_2d(
     temperature: torch.Tensor, offsets: tuple[LatticeOffsets, ...], dx: float,
-    face: int, x_wall_temperatures: tuple[WallTemperature, WallTemperature],
+    face: int, x_wall_temperatures: SlabWalls,
     conductivity: torch.Tensor | None = None, *, layered_x: bool = False,
     contact_resistance_x: torch.Tensor | None = None,
 ) -> torch.Tensor:
@@ -351,15 +353,20 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
     nx = t.shape[-1]
     faces = None
     if x_wall_temperatures is not None:
-        left, right = (_wall_column(wall, t) for wall in x_wall_temperatures)
+        left, right = x_wall_temperatures
         width = max((abs(n) for (_, n), _ in offsets), default=0)
         if width > nx:
             raise ValueError("x stencil radius exceeds slab width")
     if contact_resistance_x is not None:
         faces = _contact_faces(contact_resistance_x, t, dx, layered_x, x_wall_temperatures is not None, width)
     if width:
-        t = torch.cat((2 * left - t[:, :width].flip((1,)), t,
-                           2 * right - t[:, -width:].flip((1,))), dim=1)
+        left_ghost = t[:, :width].flip((1,))
+        right_ghost = t[:, -width:].flip((1,))
+        if left is not None:
+            left_ghost = 2 * _wall_column(left, t) - left_ghost
+        if right is not None:
+            right_ghost = 2 * _wall_column(right, t) - right_ghost
+        t = torch.cat((left_ghost, t, right_ghost), dim=1)
         if conductivity is not None:
             k = torch.cat((k[:, :width].flip((1,)), k, k[:, -width:].flip((1,))), dim=1)
     acc = torch.zeros_like(t)
@@ -387,7 +394,7 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
             # transfer is positive INTO the left partner; report outward power.
             stop = width + cut
             power = power - transfer[:, stop-n:stop].sum()
-        if collect_power and n:
+        if collect_power and n and x_wall_temperatures[int(n > 0)] is not None:
             # Only physical particles whose neighbour is a ghost cross a wall.
             start = width if n < 0 else width + nx - n
             crossing = transfer[:, start:start + abs(n)]

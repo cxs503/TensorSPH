@@ -371,3 +371,34 @@ def test_varying_local_film_preserves_wall_law_and_refines():
         assert fine[key] < .75 * coarse[key]
     assert fine["local_balance_W_m2"] < 1e-12
     assert fine["storage_balance_J"] < 1e-12
+
+
+def test_mixed_wall_decay_matches_temperature_and_local_flux():
+    from benchmarks.case_conduction_2d.mixed_wall_decay import measure
+
+    coarse, fine = measure(16), measure(32)
+    for metric in ("max_temperature_error", "fixed_flux_error"):
+        assert fine[metric] < coarse[metric] / 3.8
+    assert fine["heat_balance"] < 1e-13
+    assert fine["insulated_flux"] == 0
+
+
+def test_insulated_heterogeneous_slab_conserves_heat_and_respects_reflection():
+    from tensorsph.heat_conduction_2d import stencil_rhs_with_wall_power_2d
+
+    field = torch.arange(35, dtype=torch.float64).reshape(5, 7).sin()
+    k, cp = 2 + field, 3 - field
+    offsets = lattice_offsets(.1, .13)
+
+    def evaluate(t, conductivity, capacity, walls):
+        return stencil_rhs_with_wall_power_2d(t, offsets, .1, walls, conductivity=conductivity,
+                                              specific_heat=capacity, power_by_row=True)
+
+    rate, powers = evaluate(field, k, cp, (None, None))
+    assert powers.abs().max() == 0
+    assert abs(.01 * (cp * rate).sum()) < 1e-12
+    rate, powers = evaluate(field, k, cp, (None, 2.))
+    mirror_rate, mirror_powers = evaluate(field.flip([1]), k.flip([1]), cp.flip([1]), (2., None))
+    torch.testing.assert_close(mirror_rate.flip([1]), rate)
+    torch.testing.assert_close(mirror_powers.flip([0]), powers)
+    torch.testing.assert_close(.01 * (cp * rate).sum(), powers.sum())
