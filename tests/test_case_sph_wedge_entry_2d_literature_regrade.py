@@ -17,6 +17,7 @@ These tests guard three things that were previously wrong or unchecked:
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import math
 import sys
@@ -35,6 +36,21 @@ import literature_regrade as R  # noqa: E402
 from tensorsph.wedge_entry import (  # noqa: E402
     wagner_p_over_q, wagner_peak_over_q, wagner_peak_tau,
 )
+
+
+def _load_case_driver():
+    """The case driver under a unique module name (m25393).
+
+    A bare ``import run`` is not safe under a full-suite run: another case's
+    ``run.py`` (e.g. scripts/xval_projection_laplace/run.py, imported at top
+    level by tests/test_xval_projection_laplace.py) may already occupy
+    ``sys.modules['run']``.  Loading by file location under a unique name is
+    the same pattern tests/test_case_sph_wedge_entry_2d.py uses.
+    """
+    spec = importlib.util.spec_from_file_location("case_wedge_run", BENCH / "run.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 BETA = math.radians(30.0)
 TAU = np.linspace(0.0, 0.97, 3001)
@@ -234,8 +250,8 @@ def test_driver_refs_derived_wires_the_mission_designated_reference():
     and the regrade document).  provenance_tier records the gap so a
     second-hand number can never be mistaken for the original table value.
     """
-    import run as R
-    ref = R.refs_derived()
+    drv = _load_case_driver()
+    ref = drv.refs_derived()
     zf = ref["zhao_faltinsen_1993"]
     zf_src = [r for r in L.load_refs()["references"]
               if r["id"] == "zhao_faltinsen_1993"][0]

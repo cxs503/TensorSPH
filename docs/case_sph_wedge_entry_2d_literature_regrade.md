@@ -3,7 +3,7 @@
 **锚点**: `CASE-SPH-WEDGE-ENTRY-2D`（算例池·二维楔形体入水砰击压力，`feature_ledger` 状态 `open`）
 **本单类型**: 验证欠账（把已合并算例的**分母**对开放文献复核）＋ 前轮审计结论的推翻
 **日期**: 2026-11-15　**工件**: `literature_refs.py` / `literature_regrade.py` /
-`docs/artifacts/case_sph_wedge_entry_2d_regrade/regrade.json` / 3 图 / 17 项测试
+`docs/artifacts/case_sph_wedge_entry_2d_regrade/regrade.json` / 3 图 / 18 项测试
 **本轮无新 SPH 计算**（本机 load15 ≈ 63–71，按容量纪律只做轻量分析）。
 
 ## ① 为什么这是增量而不是重做
@@ -136,7 +136,7 @@ A1 的连带结论「SPH 峰值 +233 % 里含 13.5 % 的参考偏差」因此不
 ```bash
 PYTHONPATH=src python benchmarks/case_sph_wedge_entry_2d/literature_regrade.py   # 写 regrade.json + 3 图
 python benchmarks/case_sph_wedge_entry_2d/make_literature_regrade_doc.py         # 写本文档（数字注入）
-python -m pytest tests/test_case_sph_wedge_entry_2d_literature_regrade.py -q     # 17 passed
+python -m pytest tests/test_case_sph_wedge_entry_2d_literature_regrade.py -q  # 18 passed
 ```
 
 图：`docs/figures/case_sph_wedge_entry_2d_regrade_ladder.png`（阶梯 vs 文献带）、
