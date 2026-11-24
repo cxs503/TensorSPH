@@ -299,9 +299,13 @@ def lattice_diffusion_factor_2d(h_factor: float = 1.3, dx: float = 1.0,
     ``lattice_symbol_ratio(k -> 0)``); ``mode="mean"`` averages the symbol over
     the three longest periodic modes of an ``n = 256`` lattice, mirroring
     ``lattice_diffusion_factor``'s 3-mode mean.  Both are returned by the
-    benchmark so the choice stays visible.
+    benchmark so the choice stays visible. For steady wall fluxes, ``"moment"``
+    gives the exact zero-wavenumber limit from the stencil second moment.
     """
     h = float(h_factor) * float(dx)
+    if mode == "moment":
+        # Along x, 2*(1-cos(k*n*dx))/k² tends to (n*dx)².
+        return -math.fsum(a * (n * dx)**2 for (_, n), a in lattice_offsets(dx, h, eta_factor))
     if mode == "k0":
         k = 1.0e-3 / float(dx)
         return symbol_rate(dx, h, k, k, eta_factor) / (2.0 * k * k)

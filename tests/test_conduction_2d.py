@@ -216,3 +216,16 @@ def test_slab_midpoint_samples_walls_at_stage_times():
     _, steps, dt = evolve_slab(field, 1/8, walls, .004, .16)
     assert steps == 2
     assert times == [0., dt/2, dt, 1.5*dt]
+
+
+def test_second_moment_calibrates_steady_affine_flux():
+    from tensorsph.heat_conduction_2d import lattice_diffusion_factor_2d, stencil_rhs_with_wall_power_2d
+
+    n = 24
+    dx = 1 / n
+    x = (torch.arange(n, dtype=torch.float64) + .5) * dx
+    field = (1 + 2 * x).expand(3, -1)
+    offsets = lattice_offsets(dx, 1.3 * dx)
+    _, power = stencil_rhs_with_wall_power_2d(field, offsets, dx, (1., 3.), conductivity=4.)
+    flux = power / (3 * dx * lattice_diffusion_factor_2d(1.3, dx, mode="moment"))
+    torch.testing.assert_close(flux, x.new_tensor([-8., 8.]), rtol=1e-12, atol=1e-12)
