@@ -144,10 +144,22 @@ def lattice_offsets(dx: float, h: float, eta_factor: float = 0.01,
     return tuple(out)
 
 
+WallTemperature = float | torch.Tensor
+
+
+def _wall_column(value: WallTemperature, field: torch.Tensor) -> torch.Tensor:
+    wall = torch.as_tensor(value, dtype=field.dtype, device=field.device)
+    if wall.ndim == 0:
+        return wall
+    if wall.shape != (field.shape[0],):
+        raise ValueError("wall temperature must be scalar or have one value per y row")
+    return wall[:, None]
+
+
 def stencil_rhs_2d(temperature: torch.Tensor,
                    offsets: tuple[LatticeOffsets, ...],
                    rho: float = 1.0, conductivity: torch.Tensor | None = None,
-                   *, x_wall_temperatures: tuple[float, float] | None = None) -> torch.Tensor:
+                   *, x_wall_temperatures: tuple[WallTemperature, WallTemperature] | None = None) -> torch.Tensor:
     """``dT/dt`` of the pair operator on a *periodic* 2-D grid (fast path).
 
     ``dT_i/dt = (2/rho) sum_offsets a (T_i - T_{i+offset})`` with the offsets
@@ -157,7 +169,8 @@ def stencil_rhs_2d(temperature: torch.Tensor,
     by the harmonic mean of its two material values. When x_wall_temperatures
     is supplied, x (the last axis) uses cell-centred Dirichlet walls with
     odd-reflected temperature about each wall value and even-reflected material.
-    The first axis remains periodic.
+    The first axis remains periodic. Each wall accepts a scalar or a vector
+    of temperatures sampled at the y cell centres.
     """
     t = torch.as_tensor(temperature, dtype=DTYPE)
     # Material conductivities live at cell centres. The same pair mean
@@ -169,7 +182,7 @@ def stencil_rhs_2d(temperature: torch.Tensor,
     width = 0
     nx = t.shape[-1]
     if x_wall_temperatures is not None:
-        left, right = x_wall_temperatures
+        left, right = (_wall_column(wall, t) for wall in x_wall_temperatures)
         width = max((abs(n) for (_, n), _ in offsets), default=0)
         if width > nx:
             raise ValueError("x stencil radius exceeds slab width")

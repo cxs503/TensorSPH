@@ -151,3 +151,21 @@ def test_dirichlet_transient_converges_interior_and_wall_adjacent():
     assert fine["max_error"] < coarse["max_error"] / 3.5
     assert fine["wall_adjacent_max_error"] < coarse["wall_adjacent_max_error"] / 7
     assert fine["mean_temperature_drift"] < 1e-13
+
+
+def test_spatial_wall_profiles_approach_the_harmonic_equilibrium():
+    from benchmarks.case_conduction_2d.wall_profile import measure
+
+    coarse, fine = measure(16), measure(32)
+    assert fine["max_error"] < coarse["max_error"] / 3
+    assert fine["wall_adjacent_max_error"] < 0.007
+
+
+def test_wall_vector_uses_y_axis_on_a_rectangular_grid():
+    # Tangentially independent pairs isolate reflection at each row's own wall.
+    t = torch.zeros((3, 5), dtype=torch.float64)
+    left = torch.tensor([1., 2., 3.], dtype=t.dtype)
+    rhs = stencil_rhs_2d(t, (((0, 1), -1.), ((0, -1), -1.)),
+                         x_wall_temperatures=(left, 0.))
+    torch.testing.assert_close(rhs[:, 0], 4 * left)
+    assert torch.count_nonzero(rhs[:, 1:]) == 0

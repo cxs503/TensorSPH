@@ -133,3 +133,12 @@ At 64 particles per side, halving the time step from 0.0000390625 changes
 the maximum error to 0.000602839. The zero-mean transverse perturbation keeps
 the mean temperature at 2. Reproduce from the repository root with
 `PYTHONPATH=src OMP_NUM_THREADS=1 python -m benchmarks.case_conduction_2d.wall_decay`.
+
+Each x wall also accepts a vector of temperatures sampled at y cell centres.
+For a unit square with left wall cos(2πy) and right wall 0.5 sin(2πy), the
+exact harmonic field interpolates the two profiles with weights
+sinh(2π(1−x))/sinh(2π) and sinh(2πx)/sinh(2π). Initialized from this
+equilibrium and evolved to t=0.02, the maximum absolute errors at 16, 32 and
+64 particles per side were 0.022435, 0.006413 and 0.001701. The maximum
+occurred in the wall-adjacent columns at each resolution. Reproduce with
+`PYTHONPATH=src OMP_NUM_THREADS=1 python -m benchmarks.case_conduction_2d.wall_profile`.
