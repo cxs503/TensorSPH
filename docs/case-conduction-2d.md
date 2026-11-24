@@ -114,3 +114,22 @@ The **banked record** is the 2-D-calibrated RK4 arm at `n = 128`
     PYTHONPATH=src python3 benchmarks/case_conduction_2d/run.py --figure
     PYTHONPATH=src python3 docs/gen_case_conduction_2d.py    # regenerates this file
     PYTHONPATH=src python3 -m pytest tests/test_conduction_2d.py -q
+
+### Fixed-temperature slab with periodic transverse direction
+
+On a unit square with unit diffusivity, set the left and right wall temperatures
+to 3 and 1. The exact transient is
+`3 - 2x + sin(πx) cos(2πy) exp(-5π²t)`. The lattice uses the long-wave
+diffusion calibration, h/dx=1.3, and explicit midpoint time integration.
+At t=0.02 the absolute temperature errors were:
+
+| Particles per side | Maximum over particles | Maximum in wall-adjacent columns |
+|---:|---:|---:|
+| 16 | 0.00945503 | 0.000931239 |
+| 32 | 0.00240267 | 0.000118036 |
+| 64 | 0.000603009 | 0.0000148030 |
+
+At 64 particles per side, halving the time step from 0.0000390625 changes
+the maximum error to 0.000602839. The zero-mean transverse perturbation keeps
+the mean temperature at 2. Reproduce from the repository root with
+`PYTHONPATH=src OMP_NUM_THREADS=1 python -m benchmarks.case_conduction_2d.wall_decay`.

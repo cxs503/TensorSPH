@@ -120,3 +120,34 @@ def test_fd_reference_converges_to_the_closed_form():
     fine = fd_mode_decay(n=64)["max_normalised_error_vs_closed_form"]
     assert fine < coarse
     assert fine < 0.01
+
+
+def test_two_material_periodic_transfer_conserves_heat():
+    temperature = torch.tensor([[0., 1., 0., 1.]], dtype=torch.float64)
+    k = 1 + 2 * temperature
+    offsets = (((0, 1), -1.), ((0, -1), -1.))
+    rhs = stencil_rhs_2d(temperature, offsets, conductivity=k)
+    # Each interface has harmonic conductivity 1.5, and each cell has two faces.
+    torch.testing.assert_close(rhs, 6 * (1 - 2 * temperature))
+    assert rhs.sum().item() == 0
+
+
+def test_dirichlet_walls_preserve_affine_temperature_and_restore_wall_perturbation():
+    offsets = lattice_offsets(1., 1.3)
+    x = (torch.arange(12, dtype=torch.float64) + 0.5) / 12
+    temperature = (10 - 7*x).expand(5, -1).clone()
+    rhs = stencil_rhs_2d(temperature, offsets, x_wall_temperatures=(10., 3.))
+    assert rhs.abs().max() < 1e-12
+    temperature[:, 0] += 1.
+    rhs = stencil_rhs_2d(temperature, offsets, x_wall_temperatures=(10., 3.))
+    assert (rhs[:, 0] < 0.).all()
+    assert rhs[:, -1].abs().max() < 1e-12
+
+
+def test_dirichlet_transient_converges_interior_and_wall_adjacent():
+    from benchmarks.case_conduction_2d.wall_decay import measure
+
+    coarse, fine = measure(16), measure(32)
+    assert fine["max_error"] < coarse["max_error"] / 3.5
+    assert fine["wall_adjacent_max_error"] < coarse["wall_adjacent_max_error"] / 7
+    assert fine["mean_temperature_drift"] < 1e-13
