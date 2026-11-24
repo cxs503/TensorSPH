@@ -306,3 +306,22 @@ def test_heterogeneous_contact_decay_and_stored_heat_refine():
     coarse, fine = (measure(n, heterogeneous=True) for n in (16, 32))
     for key in ("temperature_max_abs_error", "jump_abs_error", "stored_heat_change_abs_error"):
         assert fine[key] < coarse[key] / 3.5
+
+
+def test_every_internal_cut_closes_the_left_slab_heat_balance():
+    from tensorsph.heat_conduction_2d import stencil_rhs_with_wall_power_2d, stencil_x_face_power_2d
+
+    dx, rho = .125, 1.7
+    t = torch.arange(40, dtype=torch.float64).reshape(5, 8).sin()
+    k = 1 + t[0].square()
+    cp = 2 + t
+    faces = .15 * k[:-1]
+    walls = (t[:, 0] + 2, t[:, -1] - 1)
+    offsets = lattice_offsets(dx, 2 * dx)
+    opts = dict(conductivity=k, layered_x=True, contact_resistance_x=faces)
+    rate, wall_power = stencil_rhs_with_wall_power_2d(t, offsets, dx, walls, rho=rho,
+                                                     specific_heat=cp, **opts)
+    for face in range(1, t.shape[1]):
+        cut = stencil_x_face_power_2d(t, offsets, dx, face, walls, **opts)
+        stored = (cp[:, :face] * rate[:, :face]).sum() * rho * dx**2
+        torch.testing.assert_close(cut, wall_power[0] - stored, atol=2e-13, rtol=0)

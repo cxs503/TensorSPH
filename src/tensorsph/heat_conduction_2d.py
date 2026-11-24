@@ -207,6 +207,28 @@ def stencil_rhs_with_wall_power_2d(
                              dx, contact_resistance_x, specific_heat, collect_power=True)
 
 
+def stencil_x_face_power_2d(
+    temperature: torch.Tensor, offsets: tuple[LatticeOffsets, ...], dx: float,
+    face: int, x_wall_temperatures: tuple[WallTemperature, WallTemperature],
+    conductivity: torch.Tensor | None = None, *, layered_x: bool = False,
+    contact_resistance_x: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Power crossing x=face*dx from left to right for a slab of unit thickness.
+
+    face is the number of physical columns left of the interior cut. Count
+    every crossing pair once, including diagonal and longer-range links.
+    Use a symmetric pair stencil; divide by wall area and by the same
+    diffusivity calibration used in the evolution to obtain calibrated flux.
+    """
+    if not isinstance(face, int) or not 0 < face < temperature.shape[-1]:
+        raise ValueError("face must be an interior column boundary")
+    if x_wall_temperatures is None or not math.isfinite(dx) or dx <= 0:
+        raise ValueError("face power requires fixed walls and positive finite dx")
+    _, power = _stencil_exchange(temperature, offsets, 1., conductivity, x_wall_temperatures,
+                                 layered_x, dx, contact_resistance_x, None, cut=face)
+    return power
+
+
 def _contact_faces(values, field, dx, layered_x, fixed_walls, width):
     if not layered_x or dx is None or not math.isfinite(dx) or dx <= 0:
         raise ValueError("contact resistance requires layered_x and positive finite dx")
@@ -227,7 +249,7 @@ def _contact_faces(values, field, dx, layered_x, fixed_walls, width):
 
 
 def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures,
-                      layered_x, dx, contact_resistance_x, specific_heat, collect_power=False):
+                      layered_x, dx, contact_resistance_x, specific_heat, collect_power=False, cut=None):
     t = torch.as_tensor(temperature, dtype=DTYPE)
     if specific_heat is not None:
         specific_heat = torch.as_tensor(specific_heat, dtype=t.dtype, device=t.device).expand_as(t)
@@ -258,6 +280,8 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
             k = torch.cat((k[:, :width].flip((1,)), k, k[:, -width:].flip((1,))), dim=1)
     acc = torch.zeros_like(t)
     power = t.new_zeros(2) if collect_power else None
+    if cut is not None:
+        power = t.new_zeros(())
     for (m, n), a in offsets:
         if conductivity is not None:
             neighbor = torch.roll(k, shifts=(-m, -n), dims=(0, 1))
@@ -275,7 +299,11 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
                 a = a * (2 * k * neighbor / (k + neighbor))
         transfer = a * (t - torch.roll(t, shifts=(-m, -n), dims=(0, 1)))
         acc = acc + transfer
-        if power is not None and n:
+        if cut is not None and n > 0:
+            # transfer is positive INTO the left partner; report outward power.
+            stop = width + cut
+            power = power - transfer[:, stop-n:stop].sum()
+        if collect_power and n:
             # Only physical particles whose neighbour is a ghost cross a wall.
             start = width if n < 0 else width + nx - n
             power[int(n > 0)] += transfer[:, start:start + abs(n)].sum()

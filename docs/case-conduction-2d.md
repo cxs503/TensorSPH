@@ -204,3 +204,13 @@ the left half-wave. At 16, 32 and 64 particles along x, the maximum temperature
 errors were 0.005510, 0.001473 and 0.0003794 K; the interface-jump errors were
 0.03573, 0.008680 and 0.002131 K. Absolute errors in the change of stored heat
 per unit cross section were 4.866e-5, 1.158e-5 and 2.836e-6 J/m².
+
+For a fixed-wall slab, `stencil_x_face_power_2d` sums the power delivered
+from left to right across an interior column boundary, counting each
+crossing pair once. The face index is the number of physical columns to its
+left. Use the same stencil and material/contact data as the temperature
+update. Divide by the represented wall area and apply the same diffusivity
+calibration to compare with a continuum heat flux. The regression
+`test_every_internal_cut_closes_the_left_slab_heat_balance` compares
+every cut with left-wall input minus the rate of stored heat change on its
+left, including cuts within the kernel radius of a wall.
