@@ -214,3 +214,17 @@ calibration to compare with a continuum heat flux. The regression
 `test_every_internal_cut_closes_the_left_slab_heat_balance` compares
 every cut with left-wall input minus the rate of stored heat change on its
 left, including cuts within the kernel radius of a wall.
+
+### Convective films on two isothermal slab walls
+
+`prepare_slab_film_rhs(template, offsets, dx, film_coefficients, ...)`
+prepares the wall responses for a fixed grid, density, material fields and
+stencil. Call the result with the particle temperatures and two ambient
+temperatures at each integrator stage. It returns calibrated particle rates,
+two inward powers, and the two physical surface temperatures. Each wall is
+isothermal across y, has zero thermal storage and satisfies
+P = h A (T_ambient − T_wall), with A = ny dx for unit thickness.
+The x-stencil second moment is included in the returned rates and powers.
+A zero film coefficient gives zero net wall power. With tangentially
+varying particle temperatures, this condition is integrated over the
+isothermal wall and individual ghost pairs can still exchange heat.

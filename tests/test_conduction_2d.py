@@ -325,3 +325,26 @@ def test_every_internal_cut_closes_the_left_slab_heat_balance():
         cut = stencil_x_face_power_2d(t, offsets, dx, face, walls, **opts)
         stored = (cp[:, :face] * rate[:, :face]).sum() * rho * dx**2
         torch.testing.assert_close(cut, wall_power[0] - stored, atol=2e-13, rtol=0)
+
+
+def test_slab_film_particles_match_external_power_with_insulated_wall():
+    from tensorsph.heat_conduction_2d import (
+        lattice_diffusion_factor_2d, prepare_slab_film_rhs, stencil_rhs_with_wall_power_2d,
+    )
+
+    dx, rho = .125, 2.
+    t = 300 + torch.arange(40, dtype=torch.float64).reshape(5, 8).sin()
+    k = 1 + (t[0]-300).square()
+    cp = 1.5 + (t-300).square()
+    offsets = lattice_offsets(dx, 1.3*dx)
+    opts = dict(conductivity=k, specific_heat=cp, rho=rho, layered_x=True)
+    films = (0., 4.)
+    rhs = prepare_slab_film_rhs(t, offsets, dx, films, **opts)
+    rate, power, wall = rhs(t, (295., 306.))
+    direct_rate, direct_power = stencil_rhs_with_wall_power_2d(t, offsets, dx, wall, **opts)
+    factor = lattice_diffusion_factor_2d(1.3, dx, mode="moment")
+    torch.testing.assert_close(rate, direct_rate/factor)
+    torch.testing.assert_close(power, direct_power/factor, atol=2e-12, rtol=1e-12)
+    expected = 5*dx*t.new_tensor(films)*(t.new_tensor([295., 306.])-wall)
+    torch.testing.assert_close(power, expected)
+    torch.testing.assert_close(power.sum(), rho*dx**2*(cp*rate).sum())
