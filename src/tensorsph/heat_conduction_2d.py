@@ -172,6 +172,29 @@ def stencil_rhs_2d(temperature: torch.Tensor,
     The first axis remains periodic. Each wall accepts a scalar or a vector
     of temperatures sampled at the y cell centres.
     """
+    rate, _ = _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures)
+    return rate
+
+
+def stencil_rhs_with_wall_power_2d(
+    temperature: torch.Tensor, offsets: tuple[LatticeOffsets, ...],
+    dx: float, x_wall_temperatures: tuple[WallTemperature, WallTemperature],
+    rho: float = 1.0, conductivity: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Temperature rate and integrated inward power at the left and right walls.
+
+    Assumes square cells, unit thickness and unit specific heat. The two powers
+    sum to rho * dx**2 * sum(rate) for a symmetric pair stencil. Any external
+    diffusivity calibration must multiply the rate and powers equally.
+    """
+    if not math.isfinite(dx) or dx <= 0:
+        raise ValueError("dx must be finite and positive")
+    if x_wall_temperatures is None:
+        raise ValueError("wall powers require two x wall temperatures")
+    return _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures, dx)
+
+
+def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures, dx=None):
     t = torch.as_tensor(temperature, dtype=DTYPE)
     # Material conductivities live at cell centres. The same pair mean
     # multiplies both directed transfers across each periodic interface.
@@ -192,12 +215,20 @@ def stencil_rhs_2d(temperature: torch.Tensor,
             if conductivity is not None:
                 k = torch.cat((k[:, :width].flip((1,)), k, k[:, -width:].flip((1,))), dim=1)
     acc = torch.zeros_like(t)
+    power = t.new_zeros(2) if dx is not None else None
     for (m, n), a in offsets:
         if conductivity is not None:
             neighbor = torch.roll(k, shifts=(-m, -n), dims=(0, 1))
             a = a * (2 * k * neighbor / (k + neighbor))
-        acc = acc + a * (t - torch.roll(t, shifts=(-m, -n), dims=(0, 1)))
-    return (2.0 / float(rho)) * acc[:, width:width + nx]
+        transfer = a * (t - torch.roll(t, shifts=(-m, -n), dims=(0, 1)))
+        acc = acc + transfer
+        if power is not None and n:
+            # Only physical particles whose neighbour is a ghost cross a wall.
+            start = width if n < 0 else width + nx - n
+            power[int(n > 0)] += transfer[:, start:start + abs(n)].sum()
+    if power is not None:
+        power = power * (2 * dx**2)
+    return (2.0 / float(rho)) * acc[:, width:width + nx], power
 
 
 def pair_geometry_2d(pos: torch.Tensor, volume: torch.Tensor, h: float,

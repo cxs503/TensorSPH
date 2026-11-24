@@ -169,3 +169,27 @@ def test_wall_vector_uses_y_axis_on_a_rectangular_grid():
                          x_wall_temperatures=(left, 0.))
     torch.testing.assert_close(rhs[:, 0], 4 * left)
     assert torch.count_nonzero(rhs[:, 1:]) == 0
+
+
+def test_wall_power_accounts_for_material_density_area_and_transverse_pairs():
+    from tensorsph.heat_conduction_2d import stencil_rhs_with_wall_power_2d
+
+    dx, rho = .2, 2.7
+    rows = torch.arange(5, dtype=torch.float64)
+    field = (rows[:, None] + torch.arange(7, dtype=torch.float64)).cos()
+    k = 1 + field.square()
+    offsets = lattice_offsets(dx, 1.3 * dx)
+    walls = (rows / 2, 1 - rows)
+    rate, power = stencil_rhs_with_wall_power_2d(field, offsets, dx, walls, rho, k)
+    direct = stencil_rhs_2d(field, offsets, rho, k, x_wall_temperatures=walls)
+    torch.testing.assert_close(rate, direct, rtol=0, atol=0)
+    torch.testing.assert_close(power.sum(), rho * dx**2 * direct.sum())
+
+
+def test_wall_heat_budget_converges_to_the_two_fourier_flux_integrals():
+    from benchmarks.case_conduction_2d.wall_heat_budget import measure
+
+    coarse, fine = measure(16), measure(32)
+    assert fine["wall_max_abs_error"] < coarse["wall_max_abs_error"] / 3.8
+    assert fine["wall_max_abs_error"] < 5e-5
+    assert max(coarse["heat_balance_residual"], fine["heat_balance_residual"]) < 1e-13

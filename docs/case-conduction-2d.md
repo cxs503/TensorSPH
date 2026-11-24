@@ -142,3 +142,19 @@ equilibrium and evolved to t=0.02, the maximum absolute errors at 16, 32 and
 64 particles per side were 0.022435, 0.006413 and 0.001701. The maximum
 occurred in the wall-adjacent columns at each resolution. Reproduce with
 `PYTHONPATH=src OMP_NUM_THREADS=1 python -m benchmarks.case_conduction_2d.wall_profile`.
+
+### Heat exchanged with each wall
+
+`stencil_rhs_with_wall_power_2d` returns the temperature rate and the two
+powers delivered to the slab, summed over particle pairs crossing the left and
+right walls. For unit thickness and unit specific heat the sum of the powers
+equals the rate of change of total thermal energy. Multiply both outputs by
+the same calibration factor when calibrating the operator.
+
+For the unit slab, T=5−4x+sin(πx) exp(−π²t) gives exact integrated inward
+heats +0.02298074 and −0.13701926 through t=0.02 at unit conductivity.
+On square grids of 16, 32 and 64 particles per side, the larger absolute error
+of the two wall heats was 1.8191e−4, 4.5503e−5 and 1.1383e−5, respectively.
+The discrepancy between total stored heat change and accumulated inward wall
+heat was below 5.3e−16 on all three grids. Reproduce with
+`PYTHONPATH=src OMP_NUM_THREADS=1 python -m benchmarks.case_conduction_2d.wall_heat_budget`.
