@@ -248,3 +248,38 @@ def test_layered_path_reproduces_multilayer_series_resistance():
     factor = lattice_diffusion_factor_2d(h_factor, dx, mode="moment")
     torch.testing.assert_close(power / (5 * dx * factor), torch.stack((flux, -flux)),
                                rtol=1e-13, atol=1e-13)
+
+
+def test_layered_contact_exact_across_multiple_faces_and_near_walls():
+    from tensorsph.heat_conduction_2d import lattice_diffusion_factor_2d, stencil_rhs_with_wall_power_2d
+
+    k = torch.tensor([1., 3., 2., 5., 4., 8., 7., 2.], dtype=torch.float64)
+    faces = k.new_tensor([.3, .15, 0., .24, 0., .08, .15])
+    dx = 1 / len(k)
+    bulk = dx / k
+    flux = 2 / (bulk.sum() + faces.sum())
+    cumulative = bulk.cumsum(0) - .5 * bulk + torch.cat((k.new_zeros(1), faces.cumsum(0)))
+    t = (3 - flux * cumulative).expand(4, -1)
+    offsets = lattice_offsets(dx, 2 * dx)
+    rate, power = stencil_rhs_with_wall_power_2d(t, offsets, dx, (3., 1.), conductivity=k,
+                                                layered_x=True, contact_resistance_x=faces)
+    assert rate.abs().max() < 1e-12
+    factor = lattice_diffusion_factor_2d(2., dx, mode="moment")
+    torch.testing.assert_close(power / (4 * dx * factor), torch.stack((flux, -flux)))
+
+
+def test_layered_periodic_contact_at_seam():
+    dx = .25
+    t = torch.tensor([[1., 0., 0., 0.]], dtype=torch.float64)
+    offsets = (((0, 1), -.5), ((0, -1), -.5))
+    rate = stencil_rhs_2d(t, offsets, conductivity=t.new_ones(4), layered_x=True, dx=dx,
+                          contact_resistance_x=t.new_tensor([0., 0., 0., 3 * dx]))
+    torch.testing.assert_close(rate, t.new_tensor([[-1.25, 1., 0., .25]]))
+
+
+def test_contact_decay_refines_temperature_and_jump():
+    from benchmarks.case_conduction_2d.contact_decay import measure
+
+    coarse, fine = measure(16), measure(32)
+    for key in ("temperature_max_abs_error", "jump_abs_error"):
+        assert fine[key] < coarse[key] / 3.5

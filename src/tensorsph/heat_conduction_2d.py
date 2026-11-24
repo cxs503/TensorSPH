@@ -160,7 +160,8 @@ def stencil_rhs_2d(temperature: torch.Tensor,
                    offsets: tuple[LatticeOffsets, ...],
                    rho: float = 1.0, conductivity: torch.Tensor | None = None,
                    *, x_wall_temperatures: tuple[WallTemperature, WallTemperature] | None = None,
-                   layered_x: bool = False) -> torch.Tensor:
+                   layered_x: bool = False, contact_resistance_x: torch.Tensor | None = None,
+                   dx: float | None = None) -> torch.Tensor:
     """``dT/dt`` of the pair operator on a *periodic* 2-D grid (fast path).
 
     ``dT_i/dt = (2/rho) sum_offsets a (T_i - T_{i+offset})`` with the offsets
@@ -174,8 +175,12 @@ def stencil_rhs_2d(temperature: torch.Tensor,
     of temperatures sampled at the y cell centres. With layered_x=True, supply
     a 1-D conductivity profile along x. Each pair then uses the integrated
     series resistance along its straight segment through the cell-centred layers.
+    With layered_x and dx, contact_resistance_x supplies areal resistances
+    (m² K/W) at faces between x columns, in order of increasing x. Supply
+    nx-1 faces for fixed walls or nx faces (including the seam) for periodic x.
     """
-    rate, _ = _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures, layered_x)
+    rate, _ = _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures, layered_x,
+                                dx, contact_resistance_x)
     return rate
 
 
@@ -183,6 +188,7 @@ def stencil_rhs_with_wall_power_2d(
     temperature: torch.Tensor, offsets: tuple[LatticeOffsets, ...],
     dx: float, x_wall_temperatures: tuple[WallTemperature, WallTemperature],
     rho: float = 1.0, conductivity: torch.Tensor | None = None, *, layered_x: bool = False,
+    contact_resistance_x: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Temperature rate and integrated inward power at the left and right walls.
 
@@ -194,10 +200,31 @@ def stencil_rhs_with_wall_power_2d(
         raise ValueError("dx must be finite and positive")
     if x_wall_temperatures is None:
         raise ValueError("wall powers require two x wall temperatures")
-    return _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures, layered_x, dx)
+    return _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures, layered_x,
+                             dx, contact_resistance_x, collect_power=True)
 
 
-def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures, layered_x, dx=None):
+def _contact_faces(values, field, dx, layered_x, fixed_walls, width):
+    if not layered_x or dx is None or not math.isfinite(dx) or dx <= 0:
+        raise ValueError("contact resistance requires layered_x and positive finite dx")
+    faces = torch.as_tensor(values, device=field.device, dtype=field.dtype)
+    if faces.shape != (field.shape[1] - int(fixed_walls),):
+        raise ValueError("provide one contact resistance for each internal or periodic x face")
+    if not torch.all(torch.isfinite(faces) & (faces >= 0)):
+        raise ValueError("contact resistance must be finite and nonnegative")
+    if fixed_walls:
+        zero = faces.new_zeros(1)
+        if width:
+            # Mirror internal interfaces through both Dirichlet walls.
+            count = width - 1
+            faces = torch.cat((faces[:count].flip((0,)), zero, faces, zero,
+                               faces[len(faces)-count:].flip((0,))))
+        faces = torch.cat((faces, zero))  # unused outer seam
+    return faces / dx
+
+
+def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures,
+                      layered_x, dx, contact_resistance_x, collect_power=False):
     t = torch.as_tensor(temperature, dtype=DTYPE)
     # Material conductivities live at cell centres. The same pair mean
     # multiplies both directed transfers across each periodic interface.
@@ -209,27 +236,33 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
             raise ValueError("conductivity must be finite and positive")
     width = 0
     nx = t.shape[-1]
+    faces = None
     if x_wall_temperatures is not None:
         left, right = (_wall_column(wall, t) for wall in x_wall_temperatures)
         width = max((abs(n) for (_, n), _ in offsets), default=0)
         if width > nx:
             raise ValueError("x stencil radius exceeds slab width")
-        if width:
-            t = torch.cat((2 * left - t[:, :width].flip((1,)), t,
+    if contact_resistance_x is not None:
+        faces = _contact_faces(contact_resistance_x, t, dx, layered_x, x_wall_temperatures is not None, width)
+    if width:
+        t = torch.cat((2 * left - t[:, :width].flip((1,)), t,
                            2 * right - t[:, -width:].flip((1,))), dim=1)
-            if conductivity is not None:
-                k = torch.cat((k[:, :width].flip((1,)), k, k[:, -width:].flip((1,))), dim=1)
+        if conductivity is not None:
+            k = torch.cat((k[:, :width].flip((1,)), k, k[:, -width:].flip((1,))), dim=1)
     acc = torch.zeros_like(t)
-    power = t.new_zeros(2) if dx is not None else None
+    power = t.new_zeros(2) if collect_power else None
     for (m, n), a in offsets:
         if conductivity is not None:
             neighbor = torch.roll(k, shifts=(-m, -n), dims=(0, 1))
-            if layered_x and abs(n) > 1:
+            if layered_x and (abs(n) > 1 or (n and faces is not None)):
                 # Half a column at either end and full columns in between.
                 resistance = 0.5 / k + 0.5 / neighbor
                 direction = 1 if n > 0 else -1
                 for j in range(direction, n, direction):
                     resistance = resistance + 1 / torch.roll(k, shifts=-j, dims=1)
+                if faces is not None:
+                    for j in range(min(n, 0), max(n, 0)):
+                        resistance = resistance + torch.roll(faces, shifts=-j, dims=0)
                 a = a * abs(n) / resistance
             else:
                 a = a * (2 * k * neighbor / (k + neighbor))

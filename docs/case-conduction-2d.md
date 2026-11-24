@@ -172,3 +172,21 @@ absolute temperature errors at 16, 32 and 64 particles along x were
 a wall at each resolution. The transverse field is uniform and periodic.
 Reproduce with
 `PYTHONPATH=src OMP_NUM_THREADS=1 python -m benchmarks.case_conduction_2d.wall_cycle`.
+
+### Finite thermal contact between grid-aligned layers
+
+For `layered_x=True`, pass the areal face resistances using
+`contact_resistance_x` and the grid spacing `dx`. Every pair crossing a
+contact includes its resistance once. With fixed walls the vector has nx−1
+entries. Periodic x adds one entry for the seam. The normal series-resistance
+model applies to transport across the layers.
+
+A two-rod decay mode has zero wall temperatures, unit conductivity and heat
+capacity, and areal resistance R=2/a at x=0.5, where a=3π/2. The initial
+temperature perturbations sin(ax) and −sin(a(1−x)) decay by exp(−a²t);
+the interface flux is continuous and the jump equals R times that flux.
+At t=0.015 the maximum absolute temperature errors on 16, 32 and 64 cells
+were 0.005860, 0.001543 and 0.0003935. Absolute errors in the jump using
+one-sided linear extrapolation were 0.05310, 0.01278 and 0.003120.
+Reproduce with
+`PYTHONPATH=src OMP_NUM_THREADS=1 python -m benchmarks.case_conduction_2d.contact_decay`.
