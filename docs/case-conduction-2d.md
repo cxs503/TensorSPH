@@ -228,3 +228,24 @@ The x-stencil second moment is included in the returned rates and powers.
 A zero film coefficient gives zero net wall power. With tangentially
 varying particle temperatures, this condition is integrated over the
 isothermal wall and individual ghost pairs can still exchange heat.
+
+### Local convective films with varying wall temperature
+
+Pass `local_films=True` to `prepare_slab_film_rhs` for two massless walls
+with independently balanced periodic-y rows. Each wall accepts a scalar or
+a vector of film coefficients and ambient temperatures. Output wall powers
+and temperatures have shape (2, ny); each row represents area dx per unit
+thickness. A diagonal ghost link contributes to the row supplying its
+reflected wall temperature. Raw Dirichlet wall powers can also be obtained
+per row with `power_by_row=True`.
+
+The unit-square harmonic profile benchmark prescribes sinusoidal wall
+temperatures through manufactured ambient fields and positive spatially
+varying films. It evolves the analytic equilibrium to t=0.02 and compares
+the wall flux density with the exact inward normal derivative. On 16, 32
+and 64 particles per side, maximum local flux errors were 0.1540, 0.1061
+and 0.06042 W/m². Wall temperature errors were 0.02534, 0.01757 and
+0.01002 K. The largest discrepancy between local particle power per area
+and h(Tambient−Twall) across the three final states was 3.47e−14 W/m².
+Reproduce with
+`PYTHONPATH=src OMP_NUM_THREADS=1 python -m benchmarks.case_conduction_2d.local_film`.

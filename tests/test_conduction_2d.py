@@ -348,3 +348,26 @@ def test_slab_film_particles_match_external_power_with_insulated_wall():
     expected = 5*dx*t.new_tensor(films)*(t.new_tensor([295., 306.])-wall)
     torch.testing.assert_close(power, expected)
     torch.testing.assert_close(power.sum(), rho*dx**2*(cp*rate).sum())
+
+
+def test_diagonal_wall_transfer_is_assigned_to_ghost_wall_row():
+    from tensorsph.heat_conduction_2d import stencil_rhs_with_wall_power_2d
+
+    field = torch.zeros((5, 3), dtype=torch.float64)
+    left = field.new_tensor([1., 3., 5., 1., 2.])
+    offsets = (((1, -1), -1.), ((-1, 1), -1.))
+    dx = .3
+    rate, power = stencil_rhs_with_wall_power_2d(field, offsets, dx, (left, 0.), power_by_row=True)
+    torch.testing.assert_close(rate[:, 0], 4 * torch.roll(left, -1))
+    torch.testing.assert_close(power[0], 4 * dx**2 * left)
+    assert torch.count_nonzero(power[1]) == 0
+
+
+def test_varying_local_film_preserves_wall_law_and_refines():
+    from benchmarks.case_conduction_2d.local_film import measure
+
+    coarse, fine = (measure(n) for n in (16, 32))
+    for key in ("field_max_error_K", "wall_max_error_K", "flux_max_error_W_m2"):
+        assert fine[key] < .75 * coarse[key]
+    assert fine["local_balance_W_m2"] < 1e-12
+    assert fine["storage_balance_J"] < 1e-12

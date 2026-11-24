@@ -192,24 +192,27 @@ def stencil_rhs_with_wall_power_2d(
     dx: float, x_wall_temperatures: tuple[WallTemperature, WallTemperature],
     rho: float = 1.0, conductivity: torch.Tensor | None = None, *, layered_x: bool = False,
     contact_resistance_x: torch.Tensor | None = None, specific_heat: float | torch.Tensor | None = None,
+    power_by_row: bool = False,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Temperature rate and integrated inward power at the left and right walls.
 
     Assumes square cells and unit thickness. For a symmetric stencil, the two
     powers sum to dx**2 * sum(rho * specific_heat * rate). Any external
     diffusivity calibration must multiply the rate and powers equally.
+    With power_by_row=True the powers have shape (2, ny), assigned to the
+    reflected ghost's wall row. Sum over rows for the two total powers.
     """
     if not math.isfinite(dx) or dx <= 0:
         raise ValueError("dx must be finite and positive")
     if x_wall_temperatures is None:
         raise ValueError("wall powers require two x wall temperatures")
     return _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures, layered_x,
-                             dx, contact_resistance_x, specific_heat, collect_power=True)
+                             dx, contact_resistance_x, specific_heat, collect_power=True, power_by_row=power_by_row)
 
 
 def prepare_slab_film_rhs(template, offsets, dx, film_coefficients, *, rho=1.,
                           conductivity=None, layered_x=False, contact_resistance_x=None,
-                          specific_heat=None):
+                          specific_heat=None, local_films=False):
     """Prepare the calibrated heat operator for two isothermal, massless walls.
 
     For fixed geometry and material data, return a callable (T, ambient_pair)
@@ -217,12 +220,25 @@ def prepare_slab_film_rhs(template, offsets, dx, film_coefficients, *, rho=1.,
     Each wall has one temperature and exchanges total power h*A*(Tamb-Twall)
     with its ambient. A=ny*dx for unit thickness. h=0 insulates. The x second
     moment of the supplied symmetric lattice stencil normalizes conductivity.
+    With local_films=True each wall row balances its own film and ghost-pair
+    powers; h and ambient each accept two scalars or row profiles. Returned
+    powers and wall temperatures then have shape (2, ny).
     """
     zero = torch.zeros_like(torch.as_tensor(template, dtype=DTYPE))
     if zero.ndim != 2 or min(zero.shape) == 0:
         raise ValueError("template must be a nonempty 2-D temperature grid")
-    h = torch.as_tensor(film_coefficients, dtype=zero.dtype, device=zero.device)
-    if h.shape != (2,) or not torch.all(torch.isfinite(h) & (h >= 0)):
+    def wall_pair(values):
+        if local_films:
+            left, right = values
+            return torch.stack([_wall_column(v, zero).reshape(-1).expand(zero.shape[0])
+                                for v in (left, right)])
+        pair = torch.as_tensor(values, dtype=zero.dtype, device=zero.device)
+        if pair.shape != (2,):
+            raise ValueError("supply one scalar per isothermal wall")
+        return pair
+
+    h = wall_pair(film_coefficients)
+    if not torch.all(torch.isfinite(h) & (h >= 0)):
         raise ValueError("supply two nonnegative finite film coefficients")
     # Keep material data consistent with the precomputed wall responses even
     # if the caller later reuses or modifies its input arrays.
@@ -239,13 +255,13 @@ def prepare_slab_film_rhs(template, offsets, dx, film_coefficients, *, rho=1.,
     factor = -math.fsum(a * (n * dx)**2 for (_, n), a in offsets)
     if not math.isfinite(factor) or factor <= 0:
         raise ValueError("the x diffusion moment must be finite and positive")
-    film = h * (zero.shape[0] * dx)
+    film = h * (dx if local_films else zero.shape[0] * dx)
 
     def exchange(field, walls):
         rate, power = stencil_rhs_with_wall_power_2d(
             field, offsets, dx, walls, rho=rho, conductivity=conductivity,
             layered_x=layered_x, contact_resistance_x=contact_resistance_x,
-            specific_heat=specific_heat)
+            specific_heat=specific_heat, power_by_row=local_films)
         return rate / factor, power / factor
 
     left_rate, left_power = exchange(zero, (1., 0.))
@@ -256,13 +272,18 @@ def prepare_slab_film_rhs(template, offsets, dx, film_coefficients, *, rho=1.,
 
     def evaluate(temperature, ambient):
         field = torch.as_tensor(temperature, dtype=zero.dtype, device=zero.device)
-        ambient = torch.as_tensor(ambient, dtype=zero.dtype, device=zero.device)
-        if field.shape != zero.shape or ambient.shape != (2,):
+        ambient = wall_pair(ambient)
+        if field.shape != zero.shape or not torch.isfinite(ambient).all():
             raise ValueError("supply the prepared field shape and two ambient temperatures")
         # Shift the origin to reduce cancellation at large absolute temperatures.
         origin = field.mean()
         base_rate, base_power = exchange(field - origin, (0., 0.))
         wall = (film * (ambient-origin) - base_power) / (film + conductance)
+        if local_films:
+            # Diagonal links couple a wall row to neighbouring particle rows.
+            # Evaluate at the solved profiles to scatter that heat correctly.
+            rate, power = exchange(field-origin, wall)
+            return rate, power, wall + origin
         rate = base_rate + left_rate*wall[0] + right_rate*wall[1]
         power = base_power + conductance*wall
         return rate, power, wall + origin
@@ -312,7 +333,7 @@ def _contact_faces(values, field, dx, layered_x, fixed_walls, width):
 
 
 def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures,
-                      layered_x, dx, contact_resistance_x, specific_heat, collect_power=False, cut=None):
+                      layered_x, dx, contact_resistance_x, specific_heat, collect_power=False, cut=None, power_by_row=False):
     t = torch.as_tensor(temperature, dtype=DTYPE)
     if specific_heat is not None:
         specific_heat = torch.as_tensor(specific_heat, dtype=t.dtype, device=t.device).expand_as(t)
@@ -342,7 +363,7 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
         if conductivity is not None:
             k = torch.cat((k[:, :width].flip((1,)), k, k[:, -width:].flip((1,))), dim=1)
     acc = torch.zeros_like(t)
-    power = t.new_zeros(2) if collect_power else None
+    power = t.new_zeros((2, t.shape[0]) if power_by_row else 2) if collect_power else None
     if cut is not None:
         power = t.new_zeros(())
     for (m, n), a in offsets:
@@ -369,7 +390,11 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
         if collect_power and n:
             # Only physical particles whose neighbour is a ghost cross a wall.
             start = width if n < 0 else width + nx - n
-            power[int(n > 0)] += transfer[:, start:start + abs(n)].sum()
+            crossing = transfer[:, start:start + abs(n)]
+            if power_by_row:
+                power[int(n > 0)] += torch.roll(crossing.sum(dim=1), shifts=m, dims=0)
+            else:
+                power[int(n > 0)] += crossing.sum()
     if power is not None:
         power = power * (2 * dx**2)
     rate = (2.0 / float(rho)) * acc[:, width:width + nx]
