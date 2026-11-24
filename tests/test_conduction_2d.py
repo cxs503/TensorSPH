@@ -283,3 +283,26 @@ def test_contact_decay_refines_temperature_and_jump():
     coarse, fine = measure(16), measure(32)
     for key in ("temperature_max_abs_error", "jump_abs_error"):
         assert fine[key] < coarse[key] / 3.5
+
+
+def test_particle_heat_capacity_balances_wall_power():
+    from tensorsph.heat_conduction_2d import stencil_rhs_with_wall_power_2d
+
+    t = torch.arange(15, dtype=torch.float64).reshape(3, 5) / 4
+    cp = 1 + t.square()
+    dx, rho = .2, 2.
+    offsets = lattice_offsets(dx, 1.3 * dx)
+    rate, power = stencil_rhs_with_wall_power_2d(t, offsets, dx, (1., 3.), rho=rho,
+                                                 specific_heat=cp)
+    base, base_power = stencil_rhs_with_wall_power_2d(t, offsets, dx, (1., 3.), rho=rho)
+    torch.testing.assert_close(rate * cp, base)
+    torch.testing.assert_close(power, base_power)
+    torch.testing.assert_close(power.sum(), dx**2 * rho * (cp * rate).sum())
+
+
+def test_heterogeneous_contact_decay_and_stored_heat_refine():
+    from benchmarks.case_conduction_2d.contact_decay import measure
+
+    coarse, fine = (measure(n, heterogeneous=True) for n in (16, 32))
+    for key in ("temperature_max_abs_error", "jump_abs_error", "stored_heat_change_abs_error"):
+        assert fine[key] < coarse[key] / 3.5

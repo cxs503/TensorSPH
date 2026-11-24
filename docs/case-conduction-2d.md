@@ -190,3 +190,17 @@ were 0.005860, 0.001543 and 0.0003935. Absolute errors in the jump using
 one-sided linear extrapolation were 0.05310, 0.01278 and 0.003120.
 Reproduce with
 `PYTHONPATH=src OMP_NUM_THREADS=1 python -m benchmarks.case_conduction_2d.contact_decay`.
+
+The lattice temperature-rate and wall-power entry points accept a positive
+scalar or broadcastable particle field `specific_heat` in J/(kg K). Storage
+is weighted by density times specific heat. Wall power depends on transfer
+through the particle pairs and can be checked independently against the
+capacity-weighted sum of the temperature rates.
+
+The contact-decay command above also runs unequal materials: left (k,c)=(1,1)
+and right (k,c)=(4,256/81) at unit density. The right half-wave uses b=4π/3,
+amplitude a cos(a/2)/(4b cos(b/2)), so its decay rate and contact flux match
+the left half-wave. At 16, 32 and 64 particles along x, the maximum temperature
+errors were 0.005510, 0.001473 and 0.0003794 K; the interface-jump errors were
+0.03573, 0.008680 and 0.002131 K. Absolute errors in the change of stored heat
+per unit cross section were 4.866e-5, 1.158e-5 and 2.836e-6 J/m².

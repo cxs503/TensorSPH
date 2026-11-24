@@ -161,7 +161,8 @@ def stencil_rhs_2d(temperature: torch.Tensor,
                    rho: float = 1.0, conductivity: torch.Tensor | None = None,
                    *, x_wall_temperatures: tuple[WallTemperature, WallTemperature] | None = None,
                    layered_x: bool = False, contact_resistance_x: torch.Tensor | None = None,
-                   dx: float | None = None) -> torch.Tensor:
+                   dx: float | None = None,
+                   specific_heat: float | torch.Tensor | None = None) -> torch.Tensor:
     """``dT/dt`` of the pair operator on a *periodic* 2-D grid (fast path).
 
     ``dT_i/dt = (2/rho) sum_offsets a (T_i - T_{i+offset})`` with the offsets
@@ -178,9 +179,11 @@ def stencil_rhs_2d(temperature: torch.Tensor,
     With layered_x and dx, contact_resistance_x supplies areal resistances
     (m² K/W) at faces between x columns, in order of increasing x. Supply
     nx-1 faces for fixed walls or nx faces (including the seam) for periodic x.
+    specific_heat may be a positive scalar or broadcastable particle field in
+    J/(kg K). Its default is unity.
     """
     rate, _ = _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures, layered_x,
-                                dx, contact_resistance_x)
+                                dx, contact_resistance_x, specific_heat)
     return rate
 
 
@@ -188,12 +191,12 @@ def stencil_rhs_with_wall_power_2d(
     temperature: torch.Tensor, offsets: tuple[LatticeOffsets, ...],
     dx: float, x_wall_temperatures: tuple[WallTemperature, WallTemperature],
     rho: float = 1.0, conductivity: torch.Tensor | None = None, *, layered_x: bool = False,
-    contact_resistance_x: torch.Tensor | None = None,
+    contact_resistance_x: torch.Tensor | None = None, specific_heat: float | torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Temperature rate and integrated inward power at the left and right walls.
 
-    Assumes square cells, unit thickness and unit specific heat. The two powers
-    sum to rho * dx**2 * sum(rate) for a symmetric pair stencil. Any external
+    Assumes square cells and unit thickness. For a symmetric stencil, the two
+    powers sum to dx**2 * sum(rho * specific_heat * rate). Any external
     diffusivity calibration must multiply the rate and powers equally.
     """
     if not math.isfinite(dx) or dx <= 0:
@@ -201,7 +204,7 @@ def stencil_rhs_with_wall_power_2d(
     if x_wall_temperatures is None:
         raise ValueError("wall powers require two x wall temperatures")
     return _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures, layered_x,
-                             dx, contact_resistance_x, collect_power=True)
+                             dx, contact_resistance_x, specific_heat, collect_power=True)
 
 
 def _contact_faces(values, field, dx, layered_x, fixed_walls, width):
@@ -224,8 +227,12 @@ def _contact_faces(values, field, dx, layered_x, fixed_walls, width):
 
 
 def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures,
-                      layered_x, dx, contact_resistance_x, collect_power=False):
+                      layered_x, dx, contact_resistance_x, specific_heat, collect_power=False):
     t = torch.as_tensor(temperature, dtype=DTYPE)
+    if specific_heat is not None:
+        specific_heat = torch.as_tensor(specific_heat, dtype=t.dtype, device=t.device).expand_as(t)
+        if not torch.all(torch.isfinite(specific_heat) & (specific_heat > 0)):
+            raise ValueError("specific_heat must be finite and positive")
     # Material conductivities live at cell centres. The same pair mean
     # multiplies both directed transfers across each periodic interface.
     if layered_x and (conductivity is None or torch.as_tensor(conductivity).shape != (t.shape[-1],)):
@@ -274,7 +281,10 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
             power[int(n > 0)] += transfer[:, start:start + abs(n)].sum()
     if power is not None:
         power = power * (2 * dx**2)
-    return (2.0 / float(rho)) * acc[:, width:width + nx], power
+    rate = (2.0 / float(rho)) * acc[:, width:width + nx]
+    if specific_heat is not None:
+        rate = rate / specific_heat
+    return rate, power
 
 
 def pair_geometry_2d(pos: torch.Tensor, volume: torch.Tensor, h: float,
