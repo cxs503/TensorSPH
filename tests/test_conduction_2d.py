@@ -193,3 +193,26 @@ def test_wall_heat_budget_converges_to_the_two_fourier_flux_integrals():
     assert fine["wall_max_abs_error"] < coarse["wall_max_abs_error"] / 3.8
     assert fine["wall_max_abs_error"] < 5e-5
     assert max(coarse["heat_balance_residual"], fine["heat_balance_residual"]) < 1e-13
+
+
+def test_oscillating_wall_matches_time_periodic_slab():
+    from benchmarks.case_conduction_2d.wall_cycle import measure
+
+    coarse, fine = measure(16), measure(32)
+    assert fine["max_error"] < coarse["max_error"] / 3.8
+    assert fine["max_error"] < .011
+
+
+def test_slab_midpoint_samples_walls_at_stage_times():
+    from benchmarks.case_conduction_2d.wall_decay import evolve_slab
+
+    times = []
+
+    def walls(t):
+        times.append(t)
+        return t, 0.
+
+    field = torch.zeros(4, 8, dtype=torch.float64)
+    _, steps, dt = evolve_slab(field, 1/8, walls, .004, .16)
+    assert steps == 2
+    assert times == [0., dt/2, dt, 1.5*dt]

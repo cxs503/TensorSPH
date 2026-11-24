@@ -12,18 +12,19 @@ from tensorsph.heat_conduction_2d import (
 
 
 def evolve_slab(temperature, dx, walls, end, courant):
-    """Integrate the calibrated lattice operator with explicit midpoint steps."""
+    """Integrate using fixed walls or a walls(time) function sampled at each stage."""
     offsets = lattice_offsets(dx, 1.3 * dx)
     factor = lattice_diffusion_factor_2d(1.3, dx)
     steps = math.ceil(end / (courant * dx**2))
     dt = end / steps
 
-    def rhs(field):
-        return stencil_rhs_2d(field, offsets, x_wall_temperatures=walls) / factor
+    def rhs(field, time):
+        stage_walls = walls(time) if callable(walls) else walls
+        return stencil_rhs_2d(field, offsets, x_wall_temperatures=stage_walls) / factor
 
-    for _ in range(steps):
-        midpoint = temperature + 0.5 * dt * rhs(temperature)
-        temperature = temperature + dt * rhs(midpoint)
+    for step in range(steps):
+        midpoint = temperature + 0.5 * dt * rhs(temperature, step * dt)
+        temperature = temperature + dt * rhs(midpoint, (step + 0.5) * dt)
     return temperature, steps, dt
 
 

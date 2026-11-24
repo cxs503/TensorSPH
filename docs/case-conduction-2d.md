@@ -158,3 +158,17 @@ of the two wall heats was 1.8191e−4, 4.5503e−5 and 1.1383e−5, respectively
 The discrepancy between total stored heat change and accumulated inward wall
 heat was below 5.3e−16 on all three grids. Reproduce with
 `PYTHONPATH=src OMP_NUM_THREADS=1 python -m benchmarks.case_conduction_2d.wall_heat_budget`.
+
+### Periodically driven wall
+
+The slab benchmark integrator accepts a wall-temperature function of time and
+samples it at the beginning and midpoint of each explicit midpoint step.
+For a unit-diffusivity slab with left wall cos(ωt) and right wall zero, the
+time-periodic solution is the real part of
+`exp(iωt) sinh(q(1−x))/sinh(q)`, where `q=sqrt(iω)`. Starting from
+that field at t=0 and advancing to t=0.03 for a period of 0.08, the maximum
+absolute temperature errors at 16, 32 and 64 particles along x were
+0.040104, 0.010163 and 0.002535. The largest error occurred adjacent to
+a wall at each resolution. The transverse field is uniform and periodic.
+Reproduce with
+`PYTHONPATH=src OMP_NUM_THREADS=1 python -m benchmarks.case_conduction_2d.wall_cycle`.
