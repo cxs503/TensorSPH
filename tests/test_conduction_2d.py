@@ -846,3 +846,26 @@ def test_implicit_layered_slab_satisfies_local_particle_balance(theta):
                               conductivity=k,layered_x=True,contact_resistance_x=contact)[0]/factor
         torch.testing.assert_close(capacity*(fields[i+1]-fields[i]),(stop-start)*(rate+x.square()-loss*stage),
                                    rtol=0.,atol=2e-14)
+
+
+def test_layered_transient_jump_matches_manual_restart():
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab as solve
+    x = torch.linspace(.1,.9,8,dtype=torch.float64)
+    opts = dict(conductivity=1+x,volumetric_heat_capacity=2-x)
+    jumps = [.023,.061]
+    left = lambda t: 1. if t<jumps[0] else -2.
+    heating = lambda t: x if t<jumps[1] else 2-x
+    history = solve(x,[0.,.05,.1],.125,(left,None),heat_source=heating,load_jump_times=jumps,**opts)
+    a = solve(x,[0.,.023],.125,(1.,None),heat_source=x,**opts)
+    b = solve(a[-1],[.023,.05,.061],.125,(-2.,None),heat_source=x,**opts)
+    c = solve(b[-1],[.061,.1],.125,(-2.,None),heat_source=2-x,**opts)
+    torch.testing.assert_close(history,torch.stack([x,b[1],c[-1]]))
+
+
+@pytest.mark.parametrize("jumps",[[0.],[.1],[.03,.03],[float("nan")]])
+def test_layered_transient_rejects_invalid_events(jumps):
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+    x = torch.ones(4)
+    with pytest.raises(ValueError,match="load_jump_times"):
+        solve_transient_layered_slab(x,[0.,.1],.25,(None,None),conductivity=x,
+                                    volumetric_heat_capacity=1.,load_jump_times=jumps)

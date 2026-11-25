@@ -428,13 +428,16 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
 
 def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *, conductivity,
                                  volumetric_heat_capacity, contact_resistance_x=None, heat_source=0.,
-                                 heat_loss_coefficient=0., theta=.5, h_factor=1.3):
-    """Integrate a transversely uniform layered slab with stationary material and wall data.
+                                 heat_loss_coefficient=0., theta=.5, h_factor=1.3, load_jump_times=()):
+    """Integrate a transversely uniform layered slab with stationary material properties.
 
     Return temperatures (nt,nx) including the initial state. Specify one initial
     temperature and conductivity per column, and a scalar or column profile for
     heat capacity, volumetric source and bulk heat loss. Each end is insulated
-    (None) or held at a fixed temperature. Contact resistances follow the
+    (None) or has a prescribed scalar temperature. Wall temperatures and heat_source
+    can be functions of time. Supply their discontinuities in load_jump_times,
+    with each callable returning the new value at the jump. Internal subdivisions
+    preserve the requested output times. Contact resistances follow the
     harmonic layered solver. The dense implicit theta method accepts .5 to 1.
     """
     if torch.is_complex(torch.as_tensor(temperature)):
@@ -448,9 +451,17 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
     if not (.5<=theta<=1 and math.isfinite(dx) and dx>0 and math.isfinite(h_factor) and h_factor>0):
         raise ValueError("require theta in [.5,1] and positive finite dx and h_factor")
     walls = tuple(x_wall_temperatures)
-    if len(walls)!=2 or any(w is not None and (torch.as_tensor(w).ndim or
-            torch.is_complex(torch.as_tensor(w)) or not math.isfinite(w)) for w in walls):
-        raise ValueError("provide two real finite wall temperatures or None")
+    if len(walls)!=2:
+        raise ValueError("provide two wall temperatures or None")
+    jumps = [float(t) for t in load_jump_times]
+    events = set(jumps)
+    if len(events)!=len(jumps) or not all(grid[0]<t<grid[-1] for t in jumps):
+        raise ValueError("load_jump_times must contain distinct interior times")
+
+    def wall_value(value):
+        if value is None or torch.as_tensor(value).ndim or torch.is_complex(torch.as_tensor(value)) or not math.isfinite(value):
+            raise ValueError("wall temperature must be a finite real scalar")
+        return value
 
     def profile(value,name):
         if torch.is_complex(torch.as_tensor(value)):
@@ -464,25 +475,49 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
     loss = profile(heat_loss_coefficient,"heat_loss_coefficient")
     if (capacity<=0).any() or (loss<0).any():
         raise ValueError("capacity must be positive and heat loss nonnegative")
-    source = profile(heat_source,"heat_source")
     if any(v is not None and torch.is_complex(torch.as_tensor(v)) for v in (conductivity,contact_resistance_x)):
         raise ValueError("conductivity and contact resistances must be real")
     homogeneous = tuple(None if wall is None else 0. for wall in walls)
     response, _ = _layered_response(dx,h_factor,conductivity,contact_resistance_x,0.)
-    load = source+response(torch.zeros_like(state)[None,:],walls)[0]
+    zero = torch.zeros_like(state)[None,:]
+    static_walls = tuple(0. if callable(w) else None if w is None else wall_value(w) for w in walls)
+    static_load = response(zero,static_walls)[0]
+    if not callable(heat_source):
+        static_load = static_load+profile(heat_source,"heat_source")
+    wall_modes = []
+    for i,wall in enumerate(walls):
+        if callable(wall):
+            unit = list(homogeneous)
+            unit[i] = 1.
+            wall_modes.append((wall,response(zero,unit)[0]))
+
+    def forcing(time):
+        load = static_load
+        if callable(heat_source):
+            load = load+profile(heat_source(time),"heat_source")
+        for wall,mode in wall_modes:
+            load = load+mode*wall_value(wall(time))
+        return load
     basis = torch.eye(len(state),device=state.device,dtype=state.dtype)
     operator = response(basis,homogeneous).T-torch.diag(loss)
     mass = torch.diag(capacity)
     previous_dt = None
     fields = [state]
-    for start,stop in zip(grid,grid[1:]):
+    segments = sorted(set(grid)|events)
+    load_start = forcing(grid[0])
+    for start,stop in zip(segments,segments[1:]):
+        at_jump = stop in events
+        load_end = forcing(math.nextafter(stop,start) if at_jump else stop)
+        load = (1-theta)*load_start+theta*load_end
+        load_start = forcing(stop) if at_jump else load_end
         dt = stop-start
         if dt!=previous_dt:
             factors = torch.linalg.lu_factor(mass-theta*dt*operator)
             previous_dt = dt
         delta = torch.linalg.lu_solve(*factors,(dt*(operator @ state+load))[:,None])[:,0]
         state = state+delta
-        fields.append(state)
+        if stop==grid[len(fields)]:
+            fields.append(state)
     return torch.stack(fields)
 
 
