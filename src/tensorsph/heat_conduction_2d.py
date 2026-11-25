@@ -429,7 +429,8 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
 def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *, conductivity,
                                  volumetric_heat_capacity, contact_resistance_x=None, heat_source=0.,
                                  heat_loss_coefficient=0., theta=.5, h_factor=1.3, load_jump_times=(),
-                                 return_x_heat=False, x_wall_inward_flux=(0.,0.), rannacher=False):
+                                 return_x_heat=False, x_wall_inward_flux=(0.,0.), rannacher=False,
+                                 x_wall_films=(None,None)):
     """Integrate a transversely uniform layered slab with stationary material properties.
 
     Return temperatures (nt,nx) including the initial state. Specify one initial
@@ -437,7 +438,10 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
     heat capacity, volumetric source and bulk heat loss. Each end has a prescribed scalar temperature or a prescribed inward
     flux (temperature None). x_wall_inward_flux gives west and east fluxes in
     W/m², distributed over the reflected stencil. Zero gives insulation.
-    Wall temperatures, wall fluxes and heat_source
+    For convection on an end with temperature None and zero imposed flux,
+    supply (h, ambient_temperature) in x_wall_films. The positive constant
+    film coefficient in W/(m² K) acts in series with the adjacent half column.
+    Ambient temperatures, wall temperatures, wall fluxes and heat_source
     can be functions of time. Supply their discontinuities in load_jump_times,
     with each callable returning the new value at the jump. Internal subdivisions
     preserve the requested output times. Contact resistances follow the
@@ -463,6 +467,9 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
     fluxes = tuple(x_wall_inward_flux)
     if len(fluxes)!=2:
         raise ValueError("provide two inward wall fluxes")
+    films = tuple(x_wall_films)
+    if len(films)!=2:
+        raise ValueError("provide two film conditions or None")
     jumps = [float(t) for t in load_jump_times]
     events = set(jumps)
     if len(events)!=len(jumps) or not all(grid[0]<t<grid[-1] for t in jumps):
@@ -502,8 +509,13 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
             wall_modes.append((i,wall,response(zero,unit)[0]))
 
     flux_modes = []
+    film_modes = []
     for i,flux in enumerate(fluxes):
-        if not callable(flux) and wall_value(flux,"wall flux")==0.:
+        imposed = callable(flux) or wall_value(flux,"wall flux")!=0.
+        film = films[i]
+        if film is not None and (imposed or walls[i] is not None):
+            raise ValueError("a film requires temperature None and zero prescribed flux")
+        if not imposed and film is None:
             continue
         if walls[i] is not None:
             raise ValueError("prescribe heat flux only on a wall with temperature None")
@@ -520,7 +532,14 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
         fixed = [None,None]
         fixed[i] = 0.
         mode = response(reference,fixed)[0]-response(reference,(None,None))[0]
-        flux_modes.append((i,flux,mode))
+        if film is None:
+            flux_modes.append((i,flux,mode))
+        else:
+            h,ambient = film
+            if wall_value(h,"film coefficient")<=0:
+                raise ValueError("film coefficient must be positive")
+            gain = 1/(1/h+.5*thickness[0])
+            film_modes.append((i,ambient,gain,mode))
 
     def forcing(time):
         load = static_load
@@ -535,9 +554,15 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
             q = wall_value(flux(time) if callable(flux) else flux,"wall flux")
             inward[side] = q
             load = load+q*mode
+        for side,ambient,gain,mode in film_modes:
+            value = ambient(time) if callable(ambient) else ambient
+            inward[side] = gain*wall_value(value,"ambient temperature")
+            load = load+inward[side]*mode
         return load,sampled,inward
     basis = torch.eye(len(state),device=state.device,dtype=state.dtype)
     operator = response(basis,homogeneous).T-torch.diag(loss)
+    for side,_,gain,mode in film_modes:
+        operator[:,0 if side==0 else -1] -= gain*mode
     mass = torch.diag(capacity)
     previous_shift = None
     fields = [state]
@@ -576,11 +601,15 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
                             conductivity=conductivity,layered_x=True,contact_resistance_x=contact_resistance_x)
             west = powers[:1]/(dx*calibration)
             flux = torch.cat((west,west-dx*rate[0].cumsum(dim=0)/calibration))
-            if flux_modes:
+            if flux_modes or film_modes:
                 inward = (1-weight)*flux_start+weight*flux_end
-                flux += inward[0]
+                for side,_,gain,mode in film_modes:
+                    col = 0 if side==0 else -1
+                    inward[side] -= gain*(state[col]+weight*delta[col])
+                    flux[1:] -= dx*inward[side]*mode.cumsum(0)
                 for side,_,mode in flux_modes:
                     flux[1:] -= dx*inward[side]*mode.cumsum(0)
+                flux += inward[0]
             heat[len(fields)-1] += dt*flux
         state = state+delta
         load_start,walls_start,flux_start = forcing(stop) if at_jump else (load_end,walls_end,flux_end)

@@ -956,3 +956,31 @@ def test_layered_rannacher_heat_matches_explicit_half_steps():
     c,qc = solve(b[-1],[.08,.12],.125,(None,None),x_wall_inward_flux=(-.3,0.),**opts)
     torch.testing.assert_close(history,torch.stack([k,b[-1],c[-1]]))
     torch.testing.assert_close(heat,torch.stack([qa.sum(0)+qb.sum(0),qc[0]]))
+
+
+def test_layered_steady_contact_with_two_transient_films():
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+    dx = .125
+    k = torch.tensor([1.,3.,2.,.6,1.,.7,4.,5.],dtype=torch.float64)
+    contacts = .03*k[:-1]
+    h0,h1 = 3.,7.
+    dr = dx/k
+    q = (4.-1.)/(1/h0+dr.sum()+contacts.sum()+1/h1)
+    r = dr.cumsum(0)-dr/2+torch.cat((k.new_zeros(1),contacts.cumsum(0)))
+    initial = 4.-q*(1/h0+r)
+    times = k.new_tensor([0.,.07,.23])
+    fields,heat = solve_transient_layered_slab(initial,times,dx,(None,None),conductivity=k,
+            volumetric_heat_capacity=k+1,contact_resistance_x=contacts,x_wall_films=((h0,4.),(h1,1.)),
+            return_x_heat=True,h_factor=2.1)
+    torch.testing.assert_close(fields,initial.expand_as(fields),rtol=0.,atol=1e-13)
+    torch.testing.assert_close(heat,(q*times.diff()[:,None]).expand_as(heat),rtol=0.,atol=1e-13)
+
+
+@pytest.mark.parametrize("wall,flux,film",[(1.,0.,(1.,2.)),(None,.3,(1.,2.)),(None,0.,(-1.,2.)),
+                                        (None,0.,(2.,float("nan")))])
+def test_invalid_layered_film(wall,flux,film):
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+    k = torch.ones(5)
+    with pytest.raises(ValueError):
+        solve_transient_layered_slab(k,[0.,.1],.2,(wall,None),conductivity=k,volumetric_heat_capacity=1.,
+                                    x_wall_inward_flux=(flux,0.),x_wall_films=(film,None))
