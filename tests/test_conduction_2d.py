@@ -1837,3 +1837,42 @@ def test_fixed_wall_pulse_time_order_on_one_lattice(method, record_property):
         errors.append((field_error, wall_error))
     for coarse, fine in zip(errors, errors[1:]):
         assert all(7.5 < a/b < 11 for a,b in zip(coarse, fine))
+
+
+@pytest.mark.parametrize("method", ["theta", "sdirk2"])
+def test_unequal_wall_temperature_ramps_against_cubic_slab(method, record_property):
+    """Two prescribed temperature ramps drive storage and interior heat transport."""
+    from tensorsph.heat_conduction_2d import solve_transient_slab_2d
+
+    # Unit k, C and length. T=(1+x)t+p(x) solves T_t=T_xx with p''=1+x.
+    def profile(x):
+        return x**3 / 6 + x**2 / 2 - x / 2
+
+    end = 0.125
+    errors = []
+    for n in (12, 24, 48):
+        dx = 1 / n
+        faces = torch.arange(n + 1, dtype=torch.float64) * dx
+        centers = faces[:-1] + dx / 2
+        initial = profile(centers)[None, :]
+        steps = round(end / (0.5 * dx**2))
+        times = torch.linspace(0, end, steps + 1, dtype=torch.float64)
+        history, heat = solve_transient_slab_2d(
+            initial, times, dx, (lambda t: t, lambda t: 1 / 6 + 2*t),
+            method=method, return_x_heat=True)
+        time = times[1:, None]
+        exact_field = profile(centers) + (1 + centers) * time
+        exact_heat = -(faces**2 / 2 + faces - 0.5) * time - time**2 / 2
+        cumulative = heat.cumsum(dim=0)
+        field_error = (history[1:, 0] - exact_field).abs().max().item()
+        heat_error = (cumulative - exact_heat).abs().max().item()
+        # Check energy at each cell, including the two boundary cells.
+        residual = (history[1:, 0] - initial)*dx + cumulative.diff(dim=-1)
+        balance_error = residual.abs().max().item()
+        record_property(f"max_field_error_{n}_K", field_error)
+        record_property(f"max_section_heat_error_{n}_J_per_m2", heat_error)
+        record_property(f"max_cell_balance_error_{n}_J_per_m2", balance_error)
+        assert balance_error < 5e-13
+        errors.append((field_error, heat_error))
+    for coarse, fine in zip(errors, errors[1:]):
+        assert all(a/b > 3.5 for a, b in zip(coarse, fine))
