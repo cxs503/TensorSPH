@@ -68,13 +68,17 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--uniform-grid",action="store_true",help="let the jump move within its containing time step under refinement")
     parser.add_argument("--harmonic",action="store_true",help="use a smooth cosine film drive on uniform time steps")
+    parser.add_argument("--refinements",type=int,default=4,help="number of successive step doublings starting from 12 steps")
     args = parser.parse_args()
+    if args.refinements<2:
+        parser.error("--refinements requires at least two grids")
     harmonic = args.harmonic
     uniform = args.uniform_grid or harmonic
     rows = []
     for method in ("theta","rannacher","sdirk2","exponential","exponential_quadratic"):
         previous = None
-        for steps in (12,24,48,96):
+        for level in range(args.refinements):
+            steps = 12*2**level
             metrics = measure(steps,method,uniform,harmonic)
             errors = {k:v for k,v in metrics.items() if "_error_" in k}
             exact_load = method.startswith("exponential") and not harmonic
