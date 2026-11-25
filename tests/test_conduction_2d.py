@@ -2199,3 +2199,17 @@ def test_transient_slab_weak_pulse_is_independent_of_temperature_datum(method):
                                       temperature_reference=305., **options)
     for actual, expected in zip(shifted, control):
         torch.testing.assert_close(actual, expected, rtol=0., atol=0.)
+
+
+@pytest.mark.parametrize("options", [dict(theta=.75), dict(rannacher=True), dict(method="sdirk2")])
+def test_interval_mean_temperature_closes_bulk_cooling_balance(options):
+    from tensorsph.heat_conduction_2d import solve_transient_slab_2d
+
+    initial = torch.full((3, 8), 307., dtype=torch.float64)
+    times = [0., .15, .31]
+    fields, means = solve_transient_slab_2d(
+        initial, times, 1/8, (None, None), heat_loss_coefficient=2.,
+        heat_source=2.*305., temperature_reference=305., wall_jump_times=[.1],
+        return_interval_temperatures=True, **options)
+    dt = initial.new_tensor([b-a for a,b in zip(times, times[1:])])
+    torch.testing.assert_close(fields.diff(dim=0), -2*dt[:, None, None]*means, atol=1e-12, rtol=0.)

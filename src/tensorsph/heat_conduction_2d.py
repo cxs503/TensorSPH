@@ -1150,7 +1150,8 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                             wall_jump_times=(), rannacher=False, heat_source=0.,
                             conductivity=1., volumetric_heat_capacity=1., theta=.5,
                             h_factor=1.3, x_wall_inward_flux=(0.,0.), return_x_heat=False, heat_loss_coefficient=0.,
-                            method="theta", return_wall_heat_by_row=False, wall_gradient_fit="wall", temperature_reference=0.):
+                            method="theta", return_wall_heat_by_row=False, wall_gradient_fit="wall", temperature_reference=0.,
+                            return_interval_temperatures=False):
     """Advance a reflected slab over requested times with prescribed wall histories.
 
     Each wall may be a fixed scalar, row profile, callable of time returning
@@ -1173,7 +1174,9 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     least five columns and match the conservative section mean. The default
     wall_gradient_fit="wall" uses the prescribed temperature and centers 2–4.
     Select "interior" to extrapolate from centers 2–5 for curved profiles
-    driven by spatially varying wall temperatures.
+    driven by spatially varying wall temperatures. With return_interval_temperatures,
+    append stage-weighted mean particle temperatures (nt-1,ny,nx) relative to
+    temperature_reference, integrating every internal substep in each output interval.
     """
     grid = [float(t) for t in times]
     jumps = [float(t) for t in wall_jump_times]
@@ -1256,6 +1259,7 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     history = [field]
     heat = field.new_zeros((len(grid)-1,field.shape[1]+1)) if return_x_heat else None
     wall_heat = field.new_zeros((len(grid)-1, 2, field.shape[0])) if return_wall_heat_by_row else None
+    averages = field.new_zeros((len(grid)-1, *field.shape)) if return_interval_temperatures else None
     events = set(jumps)
     segments = sorted(set(grid)|events)
     interval = 0
@@ -1278,12 +1282,19 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                 # second implicit solve, using the same diagonal RK weight.
                 base = field+((1-gamma)/gamma)*(first-field)
                 field,flux,wall_flux = advance(base,gamma*dt,stage_time,load_end,1.)
+                if return_interval_temperatures:
+                    stage_mean = (1-gamma)*first + gamma*field
                 if return_x_heat:
                     flux = (1-gamma)*flux1+gamma*flux
                 if return_wall_heat_by_row:
                     wall_flux = (1-gamma)*wall_flux1 + gamma*wall_flux
             else:
-                field,flux,wall_flux = advance(field,dt,start,load_end,weight)
+                previous = field
+                field,flux,wall_flux = advance(previous,dt,start,load_end,weight)
+                if return_interval_temperatures:
+                    stage_mean = field if weight == 1. else previous + weight*(field-previous)
+            if return_interval_temperatures:
+                averages[interval] += dt*stage_mean
             if return_x_heat:
                 heat[interval] += dt*flux
             if return_wall_heat_by_row:
@@ -1293,9 +1304,15 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
             history.append(field)
             interval += 1
     fields = torch.stack(history) + (datum-temperature_reference)
+    outputs = [fields]
+    if return_x_heat:
+        outputs.append(heat)
     if return_wall_heat_by_row:
-        return (fields, heat, wall_heat) if return_x_heat else (fields, wall_heat)
-    return (fields,heat) if return_x_heat else fields
+        outputs.append(wall_heat)
+    if return_interval_temperatures:
+        durations = field.new_tensor([b-a for a,b in zip(grid,grid[1:])])
+        outputs.append(averages/durations[:, None, None] + (datum-temperature_reference))
+    return tuple(outputs) if len(outputs)>1 else fields
 
 
 def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
