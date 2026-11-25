@@ -467,6 +467,11 @@ def solve_low_frequency_layered_slab(heat_source, dx, x_wall_temperatures, *, co
     return tuple(coefficients)
 
 
+def _unanchored_flux_mode(films, bulk_loss, transverse_wavenumber, dx):
+    return (not torch.any(torch.as_tensor(films) != 0) and not torch.any(torch.as_tensor(bulk_loss) != 0)
+            and abs(math.remainder(transverse_wavenumber*dx, math.tau)) <= math.ulp(math.tau))
+
+
 def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_frequency,
                                  *, film_coefficients, conductivity, volumetric_heat_capacity,
                                  contact_resistance_x=None, h_factor=1.3, backend="torch",
@@ -524,8 +529,7 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
     cut_response = torch.stack(cuts, dim=1)
     admittance = torch.stack((cut_response[0], -cut_response[-1]))
     base_flux = torch.stack((base_cuts[0], -base_cuts[-1]))
-    if (angular_frequency == 0 and not films.any() and not torch.any(torch.as_tensor(heat_loss_coefficient) != 0)
-            and abs(math.remainder(transverse_wavenumber*dx, math.tau)) <= math.ulp(math.tau)):
+    if angular_frequency == 0 and _unanchored_flux_mode(films, heat_loss_coefficient, transverse_wavenumber, dx):
         if mean_temperature is None:
             raise ValueError("steady flux-only walls require a mean_temperature reference")
         target = torch.as_tensor(mean_temperature, dtype=source.dtype, device=source.device)
@@ -569,6 +573,9 @@ def solve_low_frequency_layered_films(heat_source, dx, ambient_temperatures, *,
     order=2 appends the coefficient of (iω)², including both wall storage
     terms. Each power adds one factor of seconds to the coefficient units.
     The volumetric source, applied wall fluxes and ambient temperatures are frequency independent.
+    A lossless constant mode with flux-only walls admits this Taylor series
+    when total input is zero. Its finite-frequency energy balance selects zero
+    capacity-weighted mean (including both wall stores) at every order.
     """
     if isinstance(order, bool) or not isinstance(order, int) or order not in (1, 2):
         raise ValueError("order must be 1 or 2")
@@ -576,6 +583,8 @@ def solve_low_frequency_layered_films(heat_source, dx, ambient_temperatures, *,
                    volumetric_heat_capacity=volumetric_heat_capacity,contact_resistance_x=contact_resistance_x,
                    h_factor=h_factor,backend=backend,wall_areal_heat_capacity=wall_areal_heat_capacity,
                    heat_loss_coefficient=heat_loss_coefficient,transverse_wavenumber=transverse_wavenumber)
+    if _unanchored_flux_mode(film_coefficients, heat_loss_coefficient, transverse_wavenumber, dx):
+        options["mean_temperature"] = 0.
     steady = solve_harmonic_layered_films(heat_source,dx,ambient_temperatures,0.,wall_applied_flux=wall_applied_flux,**options)
     field,walls,_ = steady
     capacity = torch.as_tensor(volumetric_heat_capacity,dtype=DTYPE,device=field.device)

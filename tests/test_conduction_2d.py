@@ -2015,3 +2015,31 @@ def test_steady_flux_wall_mean_shifts_only_temperatures(backend):
         solve_harmonic_layered_films(*args, mean_temperature=0., **dict(opts, wall_applied_flux=(0., 0.)))
     with pytest.raises(ValueError, match="only to an unanchored"):
         solve_harmonic_layered_films(*args, mean_temperature=0., **dict(opts, film_coefficients=(1., 0.)))
+
+
+@pytest.mark.parametrize("backend", ["torch", "banded"])
+def test_balanced_flux_only_low_frequency_coefficients(backend):
+    from tensorsph.heat_conduction_2d import solve_low_frequency_layered_films, solve_harmonic_layered_films
+
+    source = torch.linspace(-1., .5, 12, dtype=torch.float64)
+    dx = 1/12
+    applied = (.8, -.8-dx*source.sum().item())
+    contacts = torch.zeros_like(source[:-1])
+    contacts[5] = .35
+    cap = source+2.
+    surface = source.new_tensor([.3, .7])
+    opts = dict(film_coefficients=(0., 0.), wall_applied_flux=applied, conductivity=2.+source,
+                volumetric_heat_capacity=cap, contact_resistance_x=contacts,
+                wall_areal_heat_capacity=surface, backend=backend)
+    args = (source, dx, (0., 0.))
+    terms = solve_low_frequency_layered_films(*args, order=2, **opts)
+    for field, walls, _ in terms:
+        assert abs(dx*(cap*field).sum()+(surface*walls).sum()) < 1e-13
+    errors = []
+    for omega in (.1, .05, .025):
+        direct = solve_harmonic_layered_films(*args, omega, **opts)
+        errors.append(max((value-a-1j*omega*b+omega**2*c).abs().max().item()
+                          for value, a, b, c in zip(direct, *terms)))
+    assert min(errors[0]/errors[1], errors[1]/errors[2]) > 7.8
+    with pytest.raises(ValueError, match="balanced wall inputs"):
+        solve_low_frequency_layered_films(*args, **dict(opts, wall_applied_flux=(0., 0.)))
