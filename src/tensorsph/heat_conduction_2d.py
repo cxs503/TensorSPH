@@ -1769,6 +1769,53 @@ def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux
     return means[:,None] + (flux-flux.mean(dim=1,keepdim=True))
 
 
+def recover_layered_interior_flux(temperature, dx, conductivity, *, axial_flux_gradient=0.,
+                                  contact_resistance_x=None):
+    """Reconstruct rightward Fourier flux at internal faces from centre temperatures.
+
+    For uniform columns with piecewise constant k and optional contact resistance
+    R (m² K/W), integrate the two half-cell temperature drops and the jump R*q.
+    Provide dq_x/dx in W/m³ at each centre to include the local curvature.
+    In a harmonic transverse mode this is generation minus storage, lateral
+    diffusion loss and any bulk heat loss. A constant gradient on each half
+    cell gives exact reconstruction from point samples there. The result is
+    a local Fourier estimate, distinct from the particle-pair energy tally.
+    Accepts a modal vector or a (rows, columns) field. The gradient may be
+    scalar, a column profile or the full field.
+    """
+    field = torch.as_tensor(temperature)
+    if field.ndim not in (1, 2) or field.numel() == 0 or field.shape[-1] < 2:
+        raise ValueError("provide at least two temperature columns")
+    if not (field.is_floating_point() or field.is_complex()) or not torch.isfinite(field).all():
+        raise ValueError("temperature must be finite and real or complex")
+    if not math.isfinite(dx) or dx <= 0:
+        raise ValueError("spacing must be positive and finite")
+    columns = field.shape[-1]
+    raw_k = torch.as_tensor(conductivity, device=field.device)
+    if raw_k.is_complex() or raw_k.shape not in ((), (columns,)):
+        raise ValueError("conductivity must be real and scalar or one value per column")
+    k = torch.as_tensor(conductivity, dtype=field.real.dtype, device=field.device).expand(columns)
+    if not torch.all(torch.isfinite(k) & (k > 0)):
+        raise ValueError("conductivity must be positive and finite")
+    resistance = (dx/2) * (1/k[:-1] + 1/k[1:])
+    if contact_resistance_x is not None:
+        raw = torch.as_tensor(contact_resistance_x)
+        if raw.is_complex() or raw.shape != (columns-1,):
+            raise ValueError("provide one real contact resistance per internal face")
+        contact = torch.as_tensor(contact_resistance_x, dtype=k.dtype, device=k.device)
+        if not torch.all(torch.isfinite(contact) & (contact >= 0)):
+            raise ValueError("contact resistance must be finite and nonnegative")
+        resistance = resistance + contact
+    gradient = torch.as_tensor(axial_flux_gradient, device=field.device)
+    dtype = torch.promote_types(field.dtype, gradient.dtype)
+    gradient = torch.as_tensor(axial_flux_gradient, dtype=dtype, device=field.device)
+    if gradient.shape not in ((), (columns,), field.shape) or not torch.isfinite(gradient).all():
+        raise ValueError("axial flux gradient must be finite and match the columns or field")
+    # q varies linearly from each centre to the common face. Integrating
+    # in opposite directions gives opposite signs for the two corrections.
+    return (-field.diff(dim=-1) - (dx**2/8)*(gradient/k).diff(dim=-1)) / resistance
+
+
 def layered_slab_modal_cut_flux(temperature, dx, face, x_wall_temperatures, *, conductivity,
                                 transverse_wavenumber=0., contact_resistance_x=None, h_factor=1.3,
                                 split_interface_links=False):

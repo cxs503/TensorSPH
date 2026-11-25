@@ -2525,3 +2525,19 @@ def test_split_interface_links_resolve_transverse_conduction_at_a_material_jump(
                                                 h_factor=h_factor, transverse_wavenumber=beta,
                                                 split_interface_links=True)
         torch.testing.assert_close(recovered, cuts[face], rtol=0., atol=1e-13)
+
+
+@pytest.mark.parametrize("contact", [0., 0.25])
+def test_curved_half_cells_share_one_complex_fourier_flux(contact):
+    from tensorsph.heat_conduction_2d import recover_layered_interior_flux
+
+    dx = 0.2
+    q = 1.1 - 0.4j
+    gradient = torch.tensor([2+3j, -0.5j], dtype=torch.complex128)
+    k = torch.tensor([1.5, 3.], dtype=torch.float64)
+    t = torch.stack(((q*dx/2-gradient[0]*dx**2/8)/k[0],
+                     -contact*q-(q*dx/2+gradient[1]*dx**2/8)/k[1]))
+    rows = torch.stack((t, -t))
+    flux = recover_layered_interior_flux(rows, dx, k, contact_resistance_x=[contact],
+                                         axial_flux_gradient=torch.stack((gradient, -gradient)))
+    torch.testing.assert_close(flux[:, 0], t.new_tensor([q, -q]), atol=1e-14, rtol=1e-14)
