@@ -1423,3 +1423,47 @@ def test_low_frequency_cut_flux_predicts_small_frequency_for_traveling_walls(bac
                                    for actual,base,first in zip(direct,dc,lag)]))
     # Halving omega leaves one quarter of the leading truncation error.
     torch.testing.assert_close(errors[0]/errors[1],torch.full_like(errors[0],4.),rtol=.001,atol=0.)
+
+
+@pytest.mark.parametrize("backend", ["torch", "banded"])
+def test_traveling_film_mode_against_exponential_slab(backend, record_property):
+    import cmath
+    from tensorsph.heat_conduction_2d import solve_harmonic_layered_films
+
+    beta, omega, k, capacity = 1.4, .8, 2., 3.
+    exponent = cmath.sqrt(beta**2 + 1j*omega*capacity/k)
+    walls = torch.tensor([1., cmath.exp(-exponent)], dtype=torch.complex128)
+    inward = k*exponent*walls*walls.new_tensor([1., -1.])
+    films = torch.tensor([3., 5.], dtype=torch.float64)
+    storage = torch.tensor([.2, .4], dtype=torch.float64)
+    ambient = walls + (inward+1j*omega*storage*walls)/films
+    errors = []
+    for n in (16, 32, 64):
+        x = (torch.arange(n, dtype=torch.float64)+.5)/n
+        field, surface, flux = solve_harmonic_layered_films(torch.zeros(n), 1/n, ambient, omega,
+            conductivity=torch.full((n,), k), volumetric_heat_capacity=capacity, film_coefficients=films,
+            wall_areal_heat_capacity=storage, transverse_wavenumber=beta, backend=backend)
+        errors.append(torch.stack(((field-torch.exp(-exponent*x)).abs().max(),
+                                   (surface-walls).abs().max(), (flux-inward).abs().max())))
+        for name, error in zip(("field_K", "surface_K", "inward_flux_W_m2"), errors[-1]):
+            record_property(f"n{n}_{name}", error.item())
+    for coarse, fine in zip(errors, errors[1:]):
+        assert torch.all(coarse/fine > 1.8)
+    assert torch.all(errors[-1] < errors[-1].new_tensor([.003, .003, .008]))
+
+
+def test_traveling_film_low_frequency_response():
+    from tensorsph.heat_conduction_2d import solve_harmonic_layered_films, solve_low_frequency_layered_films
+
+    source = torch.zeros(16)
+    ambient = (.8+.3j, -.4j)
+    options = dict(conductivity=torch.full((16,), 2.), volumetric_heat_capacity=3.,
+                   film_coefficients=(3., 5.), wall_areal_heat_capacity=(.2, .4),
+                   transverse_wavenumber=1.4)
+    steady, lag = solve_low_frequency_layered_films(source, 1/16, ambient, **options)
+    errors = []
+    for omega in (.004, .002):
+        direct = solve_harmonic_layered_films(source, 1/16, ambient, omega, **options)
+        errors.append(torch.stack([(actual-base-1j*omega*first).abs().max()
+                                   for actual, base, first in zip(direct, steady, lag)]))
+    torch.testing.assert_close(errors[0]/errors[1], torch.full_like(errors[0], 4.), rtol=.001, atol=0.)

@@ -454,8 +454,9 @@ def solve_low_frequency_layered_slab(heat_source, dx, x_wall_temperatures, *, co
 def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_frequency,
                                  *, film_coefficients, conductivity, volumetric_heat_capacity,
                                  contact_resistance_x=None, h_factor=1.3, backend="torch",
-                                 wall_areal_heat_capacity=(0.,0.), heat_loss_coefficient=0.):
-    """Solve a transversely uniform layered slab with two convective walls.
+                                 wall_areal_heat_capacity=(0.,0.), heat_loss_coefficient=0.,
+                                 transverse_wavenumber=0.):
+    """Solve a transverse Fourier mode of a layered slab with two convective walls.
 
     Return (particle temperatures in K, two wall temperatures in K, two inward
     heat fluxes in W/m²), all phasors under exp(+iωt). Film coefficients are
@@ -463,6 +464,7 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
     west, east. Source, material properties and contacts follow
     solve_harmonic_layered_slab's column-vector convention. Each wall can store
     heat with areal capacity in J/(m² K). Returned heat flux enters the slab.
+    Ambient, particle and wall phasors multiply exp(i*transverse_wavenumber*y).
     """
     source = torch.as_tensor(heat_source, dtype=torch.complex128)
     if source.ndim != 1:
@@ -479,35 +481,30 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
         raise ValueError("provide two finite nonnegative wall areal heat capacities")
     opts = dict(conductivity=conductivity, contact_resistance_x=contact_resistance_x)
     def response(load, walls):
-        return solve_harmonic_layered_slab(load, dx, walls, angular_frequency,
+        field, cuts = solve_harmonic_layered_slab(load, dx, walls, angular_frequency,
                       volumetric_heat_capacity=volumetric_heat_capacity, h_factor=h_factor,
-                      backend=backend, heat_loss_coefficient=heat_loss_coefficient, **opts)
+                      backend=backend, heat_loss_coefficient=heat_loss_coefficient,
+                      transverse_wavenumber=transverse_wavenumber, return_x_flux=True, **opts)
+        return field, torch.stack((cuts[0], -cuts[-1]))
 
-    base = response(source, (0., 0.))
-    offsets = lattice_offsets(dx, h_factor*dx)
-    factor = lattice_diffusion_factor_2d(h_factor, dx, mode="moment")
-
-    def inward(field, walls):
-        _, powers = stencil_rhs_with_wall_power_2d(field[None,:], offsets, dx, walls,
-                                                   layered_x=True, **opts)
-        return powers/(dx*factor)
-
+    base, base_flux = response(source, (0., 0.))
     # Two unit-temperature solutions give the complete wall admittance,
     # including heat transmitted from one wall to the opposite wall.
     zero = torch.zeros_like(source)
     units = ((1.,0.), (0.,1.))
-    fields = [response(zero, walls) for walls in units]
-    admittance = torch.stack([inward(u, w) for u,w in zip(fields, units)], dim=1)
+    fields, fluxes = zip(*(response(zero, walls) for walls in units))
+    admittance = torch.stack(fluxes, dim=1)
     walls = torch.linalg.solve(admittance + torch.diag(films+1j*angular_frequency*wall_capacity),
-                               films*ambient-inward(base,(0.,0.)))
+                               films*ambient-base_flux)
     field = base + walls @ torch.stack(fields)
-    return field, walls, inward(field, walls)
+    return field, walls, base_flux + admittance @ walls
 
 
 def solve_low_frequency_layered_films(heat_source, dx, ambient_temperatures, *,
                                       film_coefficients, conductivity, volumetric_heat_capacity,
                                       contact_resistance_x=None, h_factor=1.3, backend="torch",
-                                      wall_areal_heat_capacity=(0.,0.), heat_loss_coefficient=0.):
+                                      wall_areal_heat_capacity=(0.,0.), heat_loss_coefficient=0.,
+                                      transverse_wavenumber=0.):
     """Return steady and first-order coefficients of the exp(+iωt) film response.
 
     Both tuples contain particle temperatures, wall temperatures and inward
@@ -517,7 +514,7 @@ def solve_low_frequency_layered_films(heat_source, dx, ambient_temperatures, *,
     options = dict(film_coefficients=film_coefficients,conductivity=conductivity,
                    volumetric_heat_capacity=volumetric_heat_capacity,contact_resistance_x=contact_resistance_x,
                    h_factor=h_factor,backend=backend,wall_areal_heat_capacity=wall_areal_heat_capacity,
-                   heat_loss_coefficient=heat_loss_coefficient)
+                   heat_loss_coefficient=heat_loss_coefficient,transverse_wavenumber=transverse_wavenumber)
     steady = solve_harmonic_layered_films(heat_source,dx,ambient_temperatures,0.,**options)
     field,walls,_ = steady
     capacity = torch.as_tensor(volumetric_heat_capacity,dtype=DTYPE,device=field.device)
