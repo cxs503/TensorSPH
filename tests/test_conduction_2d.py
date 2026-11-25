@@ -978,7 +978,7 @@ def test_layered_steady_contact_with_two_transient_films():
     torch.testing.assert_close(heat,(q*times.diff()[:,None]).expand_as(heat),rtol=0.,atol=1e-13)
 
 
-@pytest.mark.parametrize("wall,flux,film",[(1.,0.,(1.,2.)),(None,.3,(1.,2.)),(None,0.,(-1.,2.)),
+@pytest.mark.parametrize("wall,flux,film",[(1.,0.,(1.,2.)),(None,float("nan"),(1.,2.)),(None,0.,(-1.,2.)),
                                         (None,0.,(2.,float("nan")))])
 def test_invalid_layered_film(wall,flux,film):
     from tensorsph.heat_conduction_2d import solve_transient_layered_slab
@@ -2360,3 +2360,25 @@ def test_layered_wall_heat_components_across_flux_jump(method):
     torch.testing.assert_close(parts["film"]+parts["applied"], external, atol=1e-13, rtol=0)
     _, alone = solve_transient_layered_slab(field, times, 1/6, (None,None), **options)
     torch.testing.assert_close(parts["film"], alone["film"])
+
+
+@pytest.mark.parametrize("method", ["theta", "sdirk2", "exponential", "exponential_quadratic"])
+def test_massless_film_with_heater_reconstructs_wall_after_jump(method):
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+
+    k = torch.ones(8, dtype=torch.float64)
+    switch, h = .03, 4.
+    def heater(t):
+        return .8 if t < switch else -.3
+    field, cuts, surface, mean, parts = solve_transient_layered_slab(
+        k*0., [0., switch, .1], .125, (None, 0.), conductivity=k, volumetric_heat_capacity=1.,
+        x_wall_inward_flux=(heater, 0.), x_wall_films=((h, .5), None), method=method,
+        load_jump_times=[switch], return_x_heat=True, return_wall_temperatures=True,
+        return_interval_wall_temperatures=True, return_wall_heat_components=True)
+    half_r = .125/2
+    load = k.new_tensor([.8,-.3,-.3])
+    torch.testing.assert_close(surface[:,0], (field[:,0]+half_r*(load+h*.5))/(1+half_r*h))
+    dt = k.new_tensor([switch, .1-switch])
+    torch.testing.assert_close(parts["applied"][:,0], load[:2]*dt)
+    torch.testing.assert_close(parts["film"][:,0], dt*h*(.5-mean[:,0]))
+    torch.testing.assert_close(cuts[:,0], (parts["applied"]+parts["film"])[:,0])
