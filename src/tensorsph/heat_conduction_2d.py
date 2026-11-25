@@ -259,7 +259,8 @@ def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatur
 def solve_harmonic_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatures: SlabWalls,
                            angular_frequency: float, *, conductivity: float = 1.,
                            volumetric_heat_capacity: float = 1., h_factor: float = 1.3,
-                           heat_loss_coefficient: float = 0., x_wall_inward_flux=(0., 0.), return_x_flux: bool = False
+                           heat_loss_coefficient: float = 0., x_wall_inward_flux=(0., 0.), return_x_flux: bool = False,
+                           ambient_temperature=None
                          ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
     """Temperature phasors under exp(+iωt), for constant isotropic k and capacity.
 
@@ -268,13 +269,15 @@ def solve_harmonic_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperat
     scalar or per-row inward flux phasor (W/m²), default zero. Supply ω in
     rad/s and capacity in J/(m³ K). With return_x_flux, also return nx+1
     section-averaged complex heat fluxes (W/m²), positive towards increasing x.
-    heat_loss_coefficient H adds a bulk sink H*T (W/m³).
+    heat_loss_coefficient H adds H*(Ta-T) in W/m³. The ambient_temperature Ta
+    is a scalar or per-particle temperature phasor (K), default zero.
     """
     storage = angular_frequency*volumetric_heat_capacity
     if not all(math.isfinite(v) and v > 0 for v in (angular_frequency, volumetric_heat_capacity, storage)):
         raise ValueError("frequency and volumetric heat capacity must be positive and finite")
     return _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
-                             None, _heat_loss(heat_loss_coefficient)+1j*storage, x_wall_inward_flux, return_x_flux)
+                             None, _heat_loss(heat_loss_coefficient)+1j*storage, x_wall_inward_flux, return_x_flux,
+                             ambient_temperature=ambient_temperature)
 
 
 def _layered_response(dx, h_factor, conductivity, contact_resistance_x, transverse_wavenumber):
@@ -1443,19 +1446,24 @@ def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_fact
     reference = (mean_temperature or 0.) if closed else _wall_column(left if left is not None else right, source).mean()
     ambient = None
     if ambient_temperature is not None:
-        if torch.is_complex(torch.as_tensor(ambient_temperature)):
+        if not source.is_complex() and torch.is_complex(torch.as_tensor(ambient_temperature)):
             raise ValueError("steady ambient temperature must be real")
         ambient = torch.as_tensor(ambient_temperature, dtype=source.dtype, device=source.device)
         if ambient.shape not in ((), source.shape) or not torch.isfinite(ambient).all():
             raise ValueError("ambient temperature must be finite and scalar or match the field shape")
-        if closed and shift:
+        if closed and shift and not source.is_complex():
             reference = ambient.reshape(-1)[0]
     shifted = tuple(None if wall is None else torch.as_tensor(wall, dtype=source.dtype,
                     device=source.device)-reference for wall in (left, right))
     wall_rate = stencil_rhs_2d(torch.zeros_like(source), offsets, x_wall_temperatures=shifted)
     rhs = source + (conductivity/factor)*wall_rate
     if shift:
-        rhs = rhs - shift*reference if ambient is None else rhs + shift*(ambient-reference)
+        if ambient is None:
+            rhs = rhs - shift*reference
+        else:
+            rhs = rhs + shift.real*(ambient-reference)
+            if source.is_complex():
+                rhs = rhs - 1j*shift.imag*reference
     right_image = rhs.flip((1,))
     rhs = torch.cat((rhs, right_image if right is None else -right_image), dim=1)
     if (left is None) != (right is None):

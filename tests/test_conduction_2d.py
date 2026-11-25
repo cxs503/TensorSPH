@@ -2307,3 +2307,19 @@ def test_steady_spatially_varying_ambient_balances_local_heat_source():
     field, flux = solve_steady_slab_2d(source, .125, (305., 305.), ambient_temperature=ambient,
                                        heat_loss_coefficient=3., temperature_reference=305., return_x_flux=True)
     assert torch.count_nonzero(field) == torch.count_nonzero(flux) == 0
+
+
+@pytest.mark.parametrize("loss", [0., 1.75])
+def test_harmonic_ambient_drives_exchange_but_not_storage(loss):
+    from tensorsph.heat_conduction_2d import solve_harmonic_slab_2d
+
+    source = torch.full((3, 10), .7-.2j, dtype=torch.complex128)
+    ambient = .3+.8j
+    omega, capacity = 5., 1.2
+    exact = (source + loss*ambient)/(loss + 1j*omega*capacity)
+    for walls in ((None, None), (exact[0, 0], None), (exact[0, 0], exact[0, 0])):
+        field, flux = solve_harmonic_slab_2d(source, .1, walls, omega,
+                                              volumetric_heat_capacity=capacity, heat_loss_coefficient=loss,
+                                              ambient_temperature=ambient, return_x_flux=True)
+        torch.testing.assert_close(field, exact, rtol=1e-13, atol=1e-14)
+        assert flux.abs().max() < 1e-13
