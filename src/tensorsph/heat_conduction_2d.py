@@ -228,7 +228,8 @@ def _heat_loss(value):
 def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatures: SlabWalls,
                          *, conductivity: float = 1., h_factor: float = 1.3,
                          mean_temperature: float | None = None, heat_loss_coefficient: float = 0.,
-                         x_wall_inward_flux=(0., 0.), return_x_flux: bool = False
+                         x_wall_inward_flux=(0., 0.), return_x_flux: bool = False,
+                         temperature_reference: float = 0.
                          ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
     """Steady temperature on a uniform lattice, periodic y and reflected x walls.
 
@@ -240,11 +241,16 @@ def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatur
     x_wall_inward_flux gives scalar or per-row heat fluxes into the domain in W/m² on
     sides with temperature None. The solution uses an analytical polynomial
     lift for prescribed flux and the calibrated SPH operator for the remainder.
+    The returned field is T - temperature_reference in K. Set this reference
+    near the operating temperature to retain small variations for gradient
+    recovery. Wall inputs and mean_temperature remain absolute temperatures.
     With return_x_flux, also return the cross-section mean heat flux (W/m²)
     on all nx+1 faces, positive towards increasing x, including the walls.
     """
+    if not math.isfinite(temperature_reference):
+        raise ValueError("temperature_reference must be finite")
     return _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
-                             mean_temperature, _heat_loss(heat_loss_coefficient), x_wall_inward_flux, return_x_flux)
+                             mean_temperature, _heat_loss(heat_loss_coefficient), x_wall_inward_flux, return_x_flux, temperature_reference)
 
 
 def solve_harmonic_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatures: SlabWalls,
@@ -1281,7 +1287,7 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
 
 
 def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
-                      mean_temperature, shift, x_wall_inward_flux, return_x_flux):
+                      mean_temperature, shift, x_wall_inward_flux, return_x_flux, temperature_reference=0.):
     source = torch.as_tensor(heat_source, dtype=torch.complex128 if isinstance(shift, complex) else DTYPE)
     if source.ndim != 2 or min(source.shape) == 0 or not torch.isfinite(source).all():
         raise ValueError("heat_source must be a finite nonempty (ny, nx) field")
@@ -1367,7 +1373,7 @@ def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_fact
         if not shift:
             modes[0, 0] = 0.
         correction = torch.fft.irfft2(modes, s=rhs.shape)[:, :source.shape[1]]
-    temperature = (lift + correction) + reference
+    temperature = (lift + correction) + (reference - temperature_reference)
     if not return_x_flux:
         return temperature
 

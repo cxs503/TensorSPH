@@ -2169,3 +2169,17 @@ def test_layered_sampled_dc_flux_resolves_small_wall_differences(backend):
         contact_resistance_x=resistance, backend=backend, return_x_flux="by_row",
     )
     torch.testing.assert_close(cuts, torch.full_like(cuts, -drop/0.875), atol=0., rtol=1e-8)
+
+
+def test_steady_slab_reference_preserves_weak_heating_temperature_field():
+    from tensorsph.heat_conduction_2d import solve_steady_slab_2d
+
+    source = torch.full((4, 16), 2**-44, dtype=torch.float64)
+    opts = dict(conductivity=1.7, return_x_flux=True)
+    field, cuts = solve_steady_slab_2d(source, 1/16, (305., 305.), temperature_reference=305., **opts)
+    control, control_cuts = solve_steady_slab_2d(source, 1/16, (0., 0.), **opts)
+    torch.testing.assert_close(field, control, rtol=0., atol=0.)
+    torch.testing.assert_close(cuts, control_cuts, rtol=0., atol=0.)
+    assert field.max() > 0
+    with pytest.raises(ValueError, match="temperature_reference"):
+        solve_steady_slab_2d(source, 1/16, (305., 305.), temperature_reference=float("nan"))
