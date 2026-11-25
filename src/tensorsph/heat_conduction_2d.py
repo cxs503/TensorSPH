@@ -1028,7 +1028,7 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                             wall_jump_times=(), rannacher=False, heat_source=0.,
                             conductivity=1., volumetric_heat_capacity=1., theta=.5,
                             h_factor=1.3, x_wall_inward_flux=(0.,0.), return_x_heat=False, heat_loss_coefficient=0.,
-                            method="theta"):
+                            method="theta", return_wall_heat_by_row=False):
     """Advance a reflected slab over requested times with prescribed wall histories.
 
     Each wall may be a fixed scalar, row profile, callable of time returning
@@ -1044,6 +1044,10 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     the section heats with the same second-order L-stable formula.
     Return particle temperatures (nt,ny,nx). With return_x_heat also return
     the interval-integrated rightward heat on each section (nt-1,nx+1), J/m².
+    With return_wall_heat_by_row, append inward heat at each west and east
+    wall row (nt-1,2,ny), J/m². This uses the fixed-wall gradient recovery
+    for smooth fields with at least five columns. Each row profile averages
+    to the corresponding conservative inward section heat.
     """
     grid = [float(t) for t in times]
     jumps = [float(t) for t in wall_jump_times]
@@ -1078,17 +1082,28 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     if field.ndim!=2 or min(field.shape)==0 or field.is_complex():
         raise ValueError("provide a real nonempty (ny,nx) temperature field")
     field = field.to(DTYPE)
+    if return_wall_heat_by_row and (field.shape[1] < 5 or any(w is None for w in walls)):
+        raise ValueError("rowwise wall heat requires two fixed-temperature walls and at least five columns")
+    need_flux = return_x_heat or return_wall_heat_by_row
     def advance(initial,dt,start,load_end,weight):
         stage = tuple(stage_load(wall,start,load_end,weight) for wall in walls)
         stage_flux = tuple(stage_load(q,start,load_end,weight) for q in fluxes)
         result = step_transient_slab_2d(initial,dt,dx,stage,heat_source=stage_load(heat_source,start,load_end,weight),
                      conductivity=conductivity,volumetric_heat_capacity=volumetric_heat_capacity,
-                     theta=weight,h_factor=h_factor,x_wall_inward_flux=stage_flux,return_x_flux=return_x_heat,
+                     theta=weight,h_factor=h_factor,x_wall_inward_flux=stage_flux,return_x_flux=need_flux,
                      heat_loss_coefficient=heat_loss_coefficient)
-        return result if return_x_heat else (result,None)
+        updated, flux = result if need_flux else (result, None)
+        wall_flux = None
+        if return_wall_heat_by_row:
+            stage_field = updated if weight == 1. else initial + weight*(updated-initial)
+            inward = torch.stack((flux[0], -flux[-1]))
+            wall_flux = recover_dirichlet_wall_flux_2d(
+                stage_field, dx, conductivity, inward, x_wall_temperatures=stage)
+        return updated, flux, wall_flux
 
     history = [field]
     heat = field.new_zeros((len(grid)-1,field.shape[1]+1)) if return_x_heat else None
+    wall_heat = field.new_zeros((len(grid)-1, 2, field.shape[0])) if return_wall_heat_by_row else None
     events = set(jumps)
     segments = sorted(set(grid)|events)
     interval = 0
@@ -1106,22 +1121,28 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                 stage_time = start+gamma*dt
                 if not start<stage_time<end:
                     raise ValueError("SDIRK interval has no representable stage time")
-                first,flux1 = advance(field,gamma*dt,start,stage_time,1.)
+                first,flux1,wall_flux1 = advance(field,gamma*dt,start,stage_time,1.)
                 # Advance the explicit first-stage contribution before the
                 # second implicit solve, using the same diagonal RK weight.
                 base = field+((1-gamma)/gamma)*(first-field)
-                field,flux = advance(base,gamma*dt,stage_time,load_end,1.)
+                field,flux,wall_flux = advance(base,gamma*dt,stage_time,load_end,1.)
                 if return_x_heat:
                     flux = (1-gamma)*flux1+gamma*flux
+                if return_wall_heat_by_row:
+                    wall_flux = (1-gamma)*wall_flux1 + gamma*wall_flux
             else:
-                field,flux = advance(field,dt,start,load_end,weight)
+                field,flux,wall_flux = advance(field,dt,start,load_end,weight)
             if return_x_heat:
                 heat[interval] += dt*flux
+            if return_wall_heat_by_row:
+                wall_heat[interval] += dt*wall_flux
             start = end
         if stop==grid[interval+1]:
             history.append(field)
             interval += 1
     fields = torch.stack(history)
+    if return_wall_heat_by_row:
+        return (fields, heat, wall_heat) if return_x_heat else (fields, wall_heat)
     return (fields,heat) if return_x_heat else fields
 
 

@@ -1876,3 +1876,34 @@ def test_unequal_wall_temperature_ramps_against_cubic_slab(method, record_proper
         errors.append((field_error, heat_error))
     for coarse, fine in zip(errors, errors[1:]):
         assert all(a/b > 3.5 for a, b in zip(coarse, fine))
+
+
+@pytest.mark.parametrize("method", ["theta", "sdirk2"])
+def test_transient_rowwise_wall_heat_against_slab_mode(method, record_property):
+    from tensorsph.heat_conduction_2d import solve_transient_slab_2d
+
+    # Unit material and periodic unit width. A decaying sine mode creates
+    # opposite local heat flows on parts of the same fixed-temperature wall.
+    end = 0.025
+    rate = 5 * math.pi**2
+    errors = []
+    for n in (12, 24, 48):
+        dx = 1/n
+        x = (torch.arange(n, dtype=torch.float64) + 0.5) * dx
+        lateral = torch.cos(2 * math.pi * x)
+        initial = 1 - x + lateral[:, None] * torch.sin(math.pi*x)
+        times = torch.linspace(0, end, n+1, dtype=x.dtype)
+        _, sections, rows = solve_transient_slab_2d(
+            initial, times, dx, (1., 0.), method=method,
+            return_x_heat=True, return_wall_heat_by_row=True)
+        t = times[1:, None]
+        mode_heat = math.pi * torch.expm1(-rate*t) * lateral / rate
+        exact = torch.stack((t+mode_heat, -t+mode_heat), dim=1)
+        error = (rows.cumsum(0) - exact).abs().max().item()
+        means = torch.stack((sections[:, 0], -sections[:, -1]), dim=1)
+        mean_error = (rows.mean(dim=-1) - means).abs().max().item()
+        record_property(f"max_row_heat_error_{n}_J_per_m2", error)
+        record_property(f"max_interval_mean_error_{n}_J_per_m2", mean_error)
+        assert mean_error < 2e-14
+        errors.append(error)
+    assert all(a / b > 3.5 for a, b in zip(errors, errors[1:]))
