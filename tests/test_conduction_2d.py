@@ -1609,3 +1609,56 @@ def test_harmonic_grid_row_flux_matches_pair_tallies(backend, record_property):
     record_property("maximum_pair_tally_discrepancy", error)
     assert error < 1e-12
     torch.testing.assert_close(cuts.mean(0), means, rtol=0, atol=1e-12)
+
+
+@pytest.mark.parametrize("backend", ["torch", "banded"])
+def test_quadratic_low_frequency_grid_flux_against_sine_mode(backend, record_property):
+    from tensorsph.heat_conduction_2d import solve_low_frequency_layered_slab
+
+    k, capacity = 1.5, 3.
+    eigenvalue = k * 5 * math.pi**2
+    for n in (8, 16, 32):
+        dx = 1/n
+        x = (torch.arange(n, dtype=torch.float64)+.5)*dx
+        faces = torch.arange(n+1, dtype=x.dtype)*dx
+        phase = torch.exp(2j*math.pi*x)[:,None]
+        source = phase * torch.sin(math.pi*x)
+        coeffs = solve_low_frequency_layered_slab(source, dx, (0.,0.),
+            conductivity=torch.full_like(x,k), volumetric_heat_capacity=capacity,
+            backend=backend, return_x_flux="by_row", order=2)
+        scale = capacity**2/eigenvalue**3
+        field, flux = coeffs[2]
+        field_error = float((field/scale-source).abs().max())
+        flux_error = float((flux/(scale*k*math.pi)+phase*torch.cos(math.pi*faces)).abs().max())
+        record_property(f"normalized_field_error_{n}", field_error)
+        record_property(f"normalized_flux_error_{n}", flux_error)
+        if n > 8:
+            assert field_error < previous_field / 3
+            assert flux_error < previous_flux / 3
+        previous_field, previous_flux = field_error, flux_error
+
+
+def test_quadratic_grid_predicts_contact_slab_frequency_response(record_property):
+    from tensorsph.heat_conduction_2d import solve_harmonic_layered_slab, solve_low_frequency_layered_slab
+
+    n, dx = 12, 1/12
+    x = (torch.arange(n, dtype=torch.float64)+.5)*dx
+    phase = torch.exp(2j*math.pi*x)[:,None]
+    source = .75 + phase*x
+    walls = (1.+.5j*phase[:,0], .3j)
+    contacts = torch.zeros_like(x[:-1])
+    contacts[5] = .25
+    options = dict(conductivity=1.+x, volumetric_heat_capacity=2.+x,
+                   contact_resistance_x=contacts, return_x_flux="by_row")
+    coefficients = solve_low_frequency_layered_slab(source, dx, walls, order=2, **options)
+    errors = []
+    for omega in (.1, .05):
+        direct = solve_harmonic_layered_slab(source, dx, walls, omega, **options)
+        discrepancy = []
+        for exact, dc, linear, quadratic in zip(direct, *coefficients):
+            discrepancy.append(float((exact-(dc+1j*omega*linear-omega**2*quadratic)).abs().max()))
+        errors.append(discrepancy)
+        record_property(f"temperature_remainder_{omega}", discrepancy[0])
+        record_property(f"flux_remainder_{omega}", discrepancy[1])
+    for coarse, fine in zip(*errors):
+        assert 7.8 < coarse/fine < 8.2

@@ -437,16 +437,20 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
 def solve_low_frequency_layered_slab(heat_source, dx, x_wall_temperatures, *, conductivity,
                                      volumetric_heat_capacity, contact_resistance_x=None, h_factor=1.3,
                                      transverse_wavenumber=0., backend="torch", heat_loss_coefficient=0.,
-                                     return_x_flux=False):
-    """Return steady temperature and its coefficient of iω for fixed slab loads.
+                                     return_x_flux=False, order=1):
+    """Return coefficients of the low-frequency expansion in iω for fixed slab loads.
 
     Source, wall data and transverse representation follow solve_harmonic_layered_slab.
     The first-order field is in K s. A prescribed wall temperature has zero
     first-order coefficient, and insulated walls retain zero flux.
     With return_x_flux=True each coefficient is a (field, flux) pair. Fluxes
     have the same orientation and spatial sampling as the harmonic solve,
-    in W/m² at steady state and W s/m² at first order.
+    in W/m² at steady state and W s/m² at first order. Use "by_row" for
+    row-resolved grid fluxes. order=2 appends the coefficient of (iω)²,
+    with units K s² and W s²/m². The default returns two coefficients.
     """
+    if isinstance(order, bool) or not isinstance(order, int) or order not in (1, 2):
+        raise ValueError("order must be 1 or 2")
     options = dict(conductivity=conductivity,volumetric_heat_capacity=volumetric_heat_capacity,
                    contact_resistance_x=contact_resistance_x,h_factor=h_factor,
                    transverse_wavenumber=transverse_wavenumber,backend=backend,
@@ -455,8 +459,12 @@ def solve_low_frequency_layered_slab(heat_source, dx, x_wall_temperatures, *, co
     field = steady[0] if return_x_flux else steady
     capacity = torch.as_tensor(volumetric_heat_capacity,dtype=DTYPE,device=field.device)
     lag_walls = tuple(None if wall is None else 0. for wall in x_wall_temperatures)
-    lag = solve_harmonic_layered_slab(-capacity*field,dx,lag_walls,0.,**options)
-    return steady,lag
+    coefficients = [steady]
+    for _ in range(order):
+        coefficient = solve_harmonic_layered_slab(-capacity*field,dx,lag_walls,0.,**options)
+        coefficients.append(coefficient)
+        field = coefficient[0] if return_x_flux else coefficient
+    return tuple(coefficients)
 
 
 def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_frequency,

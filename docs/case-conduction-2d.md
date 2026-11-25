@@ -273,3 +273,13 @@ solved field has maximum error 0.0213 for unit flux amplitude. Using the same
 tally on the analytic field gives 0.0697, so the smaller solved-field error
 includes cancellation. The prescribed-wall reconstruction gives errors of
 0.0484 on the solved field and less than 4e-14 on the analytic field.
+
+For frequency-independent sources and prescribed wall temperatures, request
+`order=2` from `solve_low_frequency_layered_slab` to obtain the steady,
+linear and quadratic coefficients. With `return_x_flux="by_row"` each is a
+temperature grid paired with rightward flux on every row and cut. For angular
+frequency ω, combine each quantity as `steady + 1j*omega*linear - omega**2*quadratic`.
+The quadratic coefficient is half the second derivative with respect to iω.
+The sine-mode test compares it with the continuum heat-equation eigenmode on
+8, 16 and 32 columns, and the contact-slab test checks the remainder against
+direct harmonic solves.
