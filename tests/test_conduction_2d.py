@@ -1749,3 +1749,44 @@ def test_fixed_wall_temperature_step_heat_at_every_section(record_property):
         errors.append((heat_error, temp_error))
     for coarse, fine in zip(errors, errors[1:]):
         assert all(a/b > 3.5 for a,b in zip(coarse, fine))
+
+
+@pytest.mark.parametrize("method", ["theta", "sdirk2"])
+def test_fixed_temperature_pulse_cooling_against_fourier_series(method, record_property):
+    """Post-pulse stored heat and wall exchange for a homogeneous unit slab."""
+    from tensorsph.heat_conduction_2d import solve_transient_slab_2d
+
+    # The left wall is raised by 1 K, then reset between requested outputs.
+    # With k=C=L=1, subtract two delayed step responses. After shutoff the
+    # steady terms cancel, leaving sine modes with exponential decay.
+    shutoff, start, end = .023, .04, .08
+    modes = math.pi * torch.arange(1, 41, dtype=torch.float64)
+    rate = modes.square()
+
+    def amplitudes(time):
+        return torch.exp(-rate*(time-shutoff)) * (-torch.expm1(-rate*shutoff))
+
+    integrated = amplitudes(start) * (-torch.expm1(-rate*(end-start))) / rate
+    wall_heat = -2 * torch.stack((integrated.sum(), integrated @ modes.cos()))
+    stored_heat = 2 * (amplitudes(end) * (1-modes.cos()) / rate).sum()
+    errors = []
+    # Hold the event position within the time step fixed across spatial grids.
+    steps = 192
+    times = torch.linspace(0., end, steps+1, dtype=torch.float64)
+    for n in (12, 24, 48):
+        field, heat = solve_transient_slab_2d(
+            torch.zeros((1, n), dtype=torch.float64), times, 1/n,
+            (lambda t: float(t < shutoff), 0.), wall_jump_times=(shutoff,),
+            return_x_heat=True, method=method, rannacher=(method=="theta"))
+        post = heat[steps//2:].sum(0)
+        assert post[0] < 0 < post[-1]
+        stored = field[-1].mean()
+        balance = abs(float(stored - field[steps//2].mean() - post[0] + post[-1]))
+        assert balance < 5e-13
+        row = [(post[[0,-1]]-wall_heat).abs().max().item(), abs(float(stored-stored_heat))]
+        record_property(f"max_cooling_wall_heat_error_{n}_J_per_m2", row[0])
+        record_property(f"residual_stored_heat_error_{n}_J_per_m2", row[1])
+        record_property(f"cooling_balance_error_{n}_J_per_m2", balance)
+        errors.append(row)
+    for coarse, fine in zip(errors, errors[1:]):
+        assert all(a/b > 3.4 for a,b in zip(coarse, fine))
