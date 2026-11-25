@@ -1,7 +1,10 @@
 """Three internally heated layers with insulated ends and two massless thermal contacts."""
+import argparse
 import cmath
 import json
 import math
+from pathlib import Path
+import subprocess
 
 import torch
 
@@ -11,7 +14,7 @@ from tensorsph.heat_conduction_2d import (
 )
 
 
-def measure(n):
+def measure(n, losses=(0.,0.,0.)):
     dx, omega = 1/n, 5.
     counts = (n//4, n//2, n//4)
     conductivities = (1., 4., 2.)
@@ -21,8 +24,9 @@ def measure(n):
 
     def propagate(t, q, distance, j):
         k, c = conductivities[j], capacities[j]
-        wave = cmath.sqrt(1j*omega*c/k)
-        particular = sources[j]/(1j*omega*c)
+        shift = losses[j]+1j*omega*c
+        wave = cmath.sqrt(shift/k)
+        particular = sources[j]/shift
         ch, sh = cmath.cosh(wave*distance), cmath.sinh(wave*distance)
         return (particular+ch*(t-particular)-sh*q/(k*wave),
                 ch*q-k*wave*sh*(t-particular))
@@ -51,12 +55,13 @@ def measure(n):
 
     k, c = (profile(values, torch.float64) for values in (conductivities, capacities))
     source = profile(sources, torch.complex128)
+    loss = profile(losses, torch.float64)
     resistance = torch.zeros(n-1, dtype=torch.float64)
     cuts = [counts[0], n-counts[-1]]
     for face, value in zip(cuts, resistances):
         resistance[face-1] = value
     u = solve_harmonic_layered_slab(source, dx, (None,None), omega, conductivity=k,
-                                    volumetric_heat_capacity=c, contact_resistance_x=resistance)
+                                    volumetric_heat_capacity=c, contact_resistance_x=resistance,heat_loss_coefficient=loss)
     offsets = lattice_offsets(dx, 1.3*dx)
     factor = lattice_diffusion_factor_2d(1.3, dx, mode="moment")
     flux = [complex(stencil_x_face_power_2d(u[None,:], offsets, dx, face, (None,None),
@@ -65,7 +70,7 @@ def measure(n):
     faces, powers = [0, *cuts, n], [0., *flux, 0.]
     imbalance = []
     for j, (a,b) in enumerate(zip(faces, faces[1:])):
-        storage = dx*(1j*omega*c[a:b]*u[a:b]-source[a:b]).sum()
+        storage = dx*((loss[a:b]+1j*omega*c[a:b])*u[a:b]-source[a:b]).sum()
         imbalance.append(float(abs(storage-powers[j]+powers[j+1])))
     return dict(n=n, temperature_error_K=float(abs(u-exact).max()),
                 interface_flux_errors_W_m2=[abs(q-r) for q,r in zip(flux, reference_flux)],
@@ -73,9 +78,12 @@ def measure(n):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--bulk-loss",action="store_true",help="apply distinct bulk sinks in the three layers")
+    args = parser.parse_args()
     rows, previous = [], None
     for n in (16,32,64,128):
-        row = measure(n)
+        row = measure(n,(2.,0.,7.)) if args.bulk_loss else measure(n)
         errors = [row["temperature_error_K"], *row["interface_flux_errors_W_m2"]]
         orders = [] if previous is None else [math.log2(a/b) for a,b in zip(previous, errors)]
         row["orders"] = orders
@@ -84,5 +92,9 @@ if __name__ == "__main__":
                          and all(order > 1.8 for order in orders))
         rows.append(row)
         previous = errors
-    print(json.dumps(rows, indent=2, allow_nan=False))
+    report = rows
+    if args.bulk_loss:
+        rev = subprocess.check_output(["git","rev-parse","HEAD"],cwd=Path(__file__).parent,text=True).strip()
+        report = dict(commit=rev,heat_loss_coefficients=[2.,0.,7.],runs=rows)
+    print(json.dumps(report, indent=2, allow_nan=False))
     raise SystemExit(0 if all(row["passed"] for row in rows) else 1)

@@ -266,12 +266,13 @@ def solve_harmonic_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperat
 def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_frequency,
                                 *, conductivity, volumetric_heat_capacity,
                                 contact_resistance_x=None, h_factor=1.3, transverse_wavenumber=0.,
-                                backend="torch"):
+                                backend="torch", heat_loss_coefficient=0.):
     """Return particle temperature phasors for one transverse Fourier mode of a layered slab.
 
     Use one source (W/m³) and conductivity (W/(m K)) per x column, a scalar
     or per-column heat capacity (J/(m³ K)), and optional interface resistances
-    (m² K/W). Each end has a scalar temperature phasor or None for insulation.
+    (m² K/W). heat_loss_coefficient is a scalar or per-column nonnegative
+    bulk exchange coefficient H (W/(m³ K)), contributing a sink H*T. Each end has a scalar temperature phasor or None for insulation.
     The dense complex solve uses the calibrated 2-D particle-pair stencil with
     row dependence exp(i β y), with β=transverse_wavenumber in rad/m.
     The inputs and output are modal amplitudes. Supply a periodic wavenumber
@@ -305,7 +306,7 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
         rows = [solve_harmonic_layered_slab(load, dx, (west, east), angular_frequency,
                         conductivity=conductivity, volumetric_heat_capacity=volumetric_heat_capacity,
                         contact_resistance_x=contact_resistance_x, h_factor=h_factor,
-                        transverse_wavenumber=float(wave), backend=backend)
+                        transverse_wavenumber=float(wave), backend=backend, heat_loss_coefficient=heat_loss_coefficient)
                 for load, west, east, wave in zip(modes, wall_modes(left), wall_modes(right), waves)]
         return torch.fft.ifft(torch.stack(rows), dim=0)
     if source.ndim != 1 or source.numel() == 0 or not torch.isfinite(source).all():
@@ -333,7 +334,12 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
         return rate/factor
 
     load = response(torch.zeros_like(source)[None, :], (left, right))[0]
-    storage = 1j*angular_frequency*capacity.expand_as(source)
+    if torch.is_complex(torch.as_tensor(heat_loss_coefficient)):
+        raise ValueError("heat_loss_coefficient must be real")
+    loss = torch.as_tensor(heat_loss_coefficient, dtype=DTYPE, device=source.device)
+    if loss.shape not in ((),source.shape) or not torch.all(torch.isfinite(loss) & (loss>=0)):
+        raise ValueError("heat_loss_coefficient must be finite, nonnegative and scalar or per column")
+    bulk_shift = loss+1j*angular_frequency*capacity.expand_as(source)
     size = source.numel()
     if backend == "banded":
         from scipy.linalg import solve_banded
@@ -349,7 +355,7 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
         for offset in range(-radius, radius+1):
             j = columns[max(0,-offset):min(size,size-offset)]
             bands[radius+offset,j] = -rates[classes[j],j+offset].to(source.dtype)
-        bands[radius] += storage
+        bands[radius] += bulk_shift
         if radius == 0:
             return (source+load)/bands[0]
         result = solve_banded((radius,radius), bands.numpy(), (source+load).numpy())
@@ -357,14 +363,14 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
 
     basis = torch.eye(size, dtype=DTYPE, device=source.device)
     operator = response(basis, homogeneous).T
-    matrix = torch.diag(storage)-operator
+    matrix = torch.diag(bulk_shift)-operator
     return torch.linalg.solve(matrix, source+load)
 
 
 def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_frequency,
                                  *, film_coefficients, conductivity, volumetric_heat_capacity,
                                  contact_resistance_x=None, h_factor=1.3, backend="torch",
-                                 wall_areal_heat_capacity=(0.,0.)):
+                                 wall_areal_heat_capacity=(0.,0.), heat_loss_coefficient=0.):
     """Solve a transversely uniform layered slab with two convective walls.
 
     Return (particle temperatures in K, two wall temperatures in K, two inward
@@ -391,7 +397,7 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
     def response(load, walls):
         return solve_harmonic_layered_slab(load, dx, walls, angular_frequency,
                       volumetric_heat_capacity=volumetric_heat_capacity, h_factor=h_factor,
-                      backend=backend, **opts)
+                      backend=backend, heat_loss_coefficient=heat_loss_coefficient, **opts)
 
     base = response(source, (0., 0.))
     offsets = lattice_offsets(dx, h_factor*dx)

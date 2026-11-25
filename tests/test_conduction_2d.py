@@ -805,3 +805,20 @@ def test_invalid_bulk_heat_loss(loss):
     from tensorsph.heat_conduction_2d import solve_steady_slab_2d
     with pytest.raises(ValueError,match="heat_loss_coefficient"):
         solve_steady_slab_2d(torch.ones(4,8),.125,(1.,None),heat_loss_coefficient=loss)
+
+
+@pytest.mark.parametrize("backend",["banded","torch"])
+def test_layered_heat_loss_in_grid_and_film_solvers(backend):
+    from tensorsph.heat_conduction_2d import solve_harmonic_layered_films, solve_harmonic_layered_slab
+    n = 12
+    loss = torch.linspace(0.,7.,n,dtype=torch.float64)
+    target = .6+.8j
+    source = target*(loss+3j)
+    opts = dict(conductivity=torch.ones_like(loss),volumetric_heat_capacity=1.,heat_loss_coefficient=loss,backend=backend)
+    grid = solve_harmonic_layered_slab(source.expand(5,n),1/n,(target,None),3.,**opts)
+    torch.testing.assert_close(grid,torch.full_like(grid,target))
+    slab,walls,flux = solve_harmonic_layered_films(source,1/n,(target,target),3.,
+                                                   film_coefficients=(2.,3.),**opts)
+    torch.testing.assert_close(slab,torch.full_like(slab,target))
+    torch.testing.assert_close(walls,torch.full_like(walls,target))
+    torch.testing.assert_close(flux,torch.zeros_like(flux),atol=1e-12,rtol=0.)
