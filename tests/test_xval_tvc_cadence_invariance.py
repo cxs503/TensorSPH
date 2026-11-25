@@ -145,7 +145,7 @@ def test_rate_matched_dam_break_runs_are_reproducible_and_distinct():
     import json
 
     from cadence_invariance import curve_distance
-    from run import run_variant
+    from xval_sphinx_tvc.run import run_variant
 
     payload_path = ROOT / "docs/xval_sphinx_tvc/data/cadence_invariance.json"
     dx = 0.03

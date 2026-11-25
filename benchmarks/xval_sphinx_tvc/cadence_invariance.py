@@ -72,7 +72,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(ROOT / "benchmarks"))
 
 import torch  # noqa: E402
 
@@ -84,7 +84,7 @@ from tensorsph.transport_velocity_correction import (  # noqa: E402
     no_limiter,
     truncated_linear,
 )
-from run import interp, load_experiment, nondim_front, run_variant, score  # noqa: E402
+from xval_sphinx_tvc.run import interp, load_experiment, nondim_front, run_variant, score  # noqa: E402
 
 #: Single-step coefficient implied by the upstream header (0.2 / 4).
 ALPHA_SINGLE = 0.05

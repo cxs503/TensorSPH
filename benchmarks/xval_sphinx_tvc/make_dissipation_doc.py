@@ -19,9 +19,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(ROOT / "benchmarks" / "xval_sphinx_tvc"))
+sys.path.insert(0, str(ROOT / "benchmarks"))
 
-from run import load_experiment, score  # noqa: E402
+from xval_sphinx_tvc.run import load_experiment, score  # noqa: E402
 
 PAYLOAD = ROOT / "docs" / "xval_sphinx_tvc" / "data" / "dissipation_attribution.json"
 DOC = ROOT / "docs" / "xval_sphinx_tvc" / "DISSIPATION_ATTRIBUTION.md"
