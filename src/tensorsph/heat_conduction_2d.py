@@ -91,6 +91,8 @@ __all__ = [
     "lattice_offsets",
     "stencil_rhs_2d",
     "solve_transient_layered_slab",
+    "solve_low_frequency_layered_slab",
+    "solve_low_frequency_layered_films",
     "pair_geometry_2d",
     "conduction_rhs_2d",
     "symbol_rate",
@@ -348,7 +350,10 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
     if loss.shape not in ((),source.shape) or not torch.all(torch.isfinite(loss) & (loss>=0)):
         raise ValueError("heat_loss_coefficient must be finite, nonnegative and scalar or per column")
     if angular_frequency==0 and left is None and right is None and not torch.any(loss>0):
-        raise ValueError("steady insulated solves require positive bulk heat loss")
+        # A sampled nonconstant transverse mode supplies its own restoring term.
+        phase = math.remainder(transverse_wavenumber*dx,math.tau)
+        if abs(phase)<=math.ulp(math.tau):
+            raise ValueError("the steady insulated constant transverse mode requires positive bulk heat loss")
     bulk_shift = loss+1j*angular_frequency*capacity.expand_as(source)
     size = source.numel()
     if backend == "banded":

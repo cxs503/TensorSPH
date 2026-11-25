@@ -1048,3 +1048,23 @@ def test_low_frequency_slab_fixed_drive_insulated_end():
         exact = 1.5*drive*(x*x/2-x)
         assert (steady-drive).abs().max()<1e-12
         assert (lag-exact).abs().max()<2/n**2
+
+
+def test_steady_insulated_transverse_mode_and_aliased_constant():
+    import math
+    from tensorsph.heat_conduction_2d import lattice_diffusion_factor_2d, solve_low_frequency_layered_slab
+
+    n = 24
+    dx = 1/n
+    wave = -2*math.pi
+    x = (torch.arange(n,dtype=torch.float64)+.5)*dx
+    source = (.6+.2j)*torch.cos(math.pi*x)
+    rate = 2*symbol_rate(dx,1.3*dx,math.pi,wave)/lattice_diffusion_factor_2d(1.3,dx,mode="moment")
+    for backend in ("torch","banded"):
+        options = dict(conductivity=torch.full((n,),2.),volumetric_heat_capacity=3.,backend=backend)
+        steady,lag = solve_low_frequency_layered_slab(source,dx,(None,None),transverse_wavenumber=wave,**options)
+        torch.testing.assert_close(steady,source/rate,atol=1e-12,rtol=1e-10)
+        torch.testing.assert_close(lag,-3*source/rate**2,atol=1e-12,rtol=1e-10)
+        for alias in (0.,math.tau/dx):
+            with pytest.raises(ValueError,match="constant transverse mode"):
+                solve_low_frequency_layered_slab(source,dx,(None,None),transverse_wavenumber=alias,**options)
