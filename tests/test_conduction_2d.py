@@ -1714,3 +1714,38 @@ def test_quadratic_film_response_predicts_contact_slab_at_small_frequency(record
         for name, error in zip(("field", "walls", "flux"), row):
             record_property(f"{name}_remainder_{omega}", error)
     assert all(7.8 < a/b < 8.2 for a,b in zip(*errors))
+
+
+def test_fixed_wall_temperature_step_heat_at_every_section(record_property):
+    """A unit slab starts cold, then its left wall jumps to 1 K above the right."""
+    from tensorsph.heat_conduction_2d import solve_transient_slab_2d
+
+    # k = C = L = 1. Integrating the continuum Fourier flux in time gives
+    # a static cosine series plus an exponentially converging transient.
+    # Sum the static series analytically, including at the heated wall.
+    final_time = .04
+    modes = torch.arange(1, 25, dtype=torch.float64) * math.pi
+    decay = torch.exp(-modes.square() * final_time)
+    errors = []
+    for n in (12, 24, 48):
+        dx = 1 / n
+        faces = torch.arange(n + 1, dtype=torch.float64) * dx
+        centers = faces[:-1] + dx / 2
+        exact_heat = (final_time + 1/3 - faces + faces.square()/2
+                      - 2 * (torch.cos(faces[:, None]*modes) @ (decay/modes.square())))
+        exact_temp = 1 - centers - 2 * (torch.sin(centers[:, None]*modes) @ (decay/modes))
+        times = torch.linspace(0, final_time, n + 1, dtype=torch.float64)
+        history, heat = solve_transient_slab_2d(
+            torch.zeros((1, n), dtype=torch.float64), times, dx, (1., 0.),
+            rannacher=True, return_x_heat=True)
+        total = heat.sum(0)
+        heat_error = (total - exact_heat).abs().max().item()
+        temp_error = (history[-1, 0] - exact_temp).abs().max().item()
+        balance = (history[-1].sum()*dx - (total[0]-total[-1])).abs().item()
+        record_property(f"max_section_heat_error_{n}_J_per_m2", heat_error)
+        record_property(f"max_temperature_error_{n}_K", temp_error)
+        record_property(f"energy_balance_error_{n}_J_per_m2", balance)
+        assert balance < 5e-13
+        errors.append((heat_error, temp_error))
+    for coarse, fine in zip(errors, errors[1:]):
+        assert all(a/b > 3.5 for a,b in zip(coarse, fine))
