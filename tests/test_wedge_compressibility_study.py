@@ -184,7 +184,7 @@ def _fake_artefact(case_id: str, c0_over_V: float, cp_profile: list[float],
 
 def test_synthetic_ladder_reaches_a_verdict_through_the_frozen_grader():
     """The analysis path (run.grade + ensemble profile) is exercised end to end."""
-    import run as base  # the frozen case driver
+    from case_sph_wedge_entry_2d import run as base  # the frozen case driver
 
     n = 120
     taus = [1.2 * k / (n - 1) for k in range(n)]

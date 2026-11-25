@@ -72,11 +72,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(ROOT / "benchmarks" / "xval_sphinx_tvc"))
+sys.path.insert(0, str(ROOT / "benchmarks"))
 
 import torch  # noqa: E402
 
-from run import (OWNER_GATE_REL, LEDGER_GATE_ABS,  # noqa: E402
+from xval_sphinx_tvc.run import (OWNER_GATE_REL, LEDGER_GATE_ABS,  # noqa: E402
                  clumping_metrics, load_experiment, nondim_front, score)
 
 from tensorsph.dam_break import DamBreakConfig, run_case  # noqa: E402

@@ -65,9 +65,9 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(HERE.parent))
 
-import run as base  # noqa: E402  (the frozen case driver, reused not copied)
+from case_sph_wedge_entry_2d import run as base  # noqa: E402  (the frozen case driver, reused not copied)
 
 OUT = base.ART / "compressibility"
 
