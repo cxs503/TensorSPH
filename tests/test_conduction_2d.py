@@ -1406,3 +1406,20 @@ def test_wall_flux_recovery_differentiates_cubic_and_preserves_each_mean():
     offset = torch.tensor([.7j,-.2],dtype=field.dtype)
     flux = recover_dirichlet_wall_flux_2d(field,dx,k,exact.mean(1)+offset)
     torch.testing.assert_close(flux,exact+offset[:,None],rtol=1e-13,atol=1e-13)
+
+
+@pytest.mark.parametrize("backend",["torch","banded"])
+def test_low_frequency_cut_flux_predicts_small_frequency_for_traveling_walls(backend):
+    from tensorsph.heat_conduction_2d import solve_harmonic_layered_slab, solve_low_frequency_layered_slab
+
+    source = torch.zeros(12,dtype=torch.complex128)
+    options = dict(conductivity=torch.full((12,),2.),volumetric_heat_capacity=3.,transverse_wavenumber=2.5,
+                   backend=backend,return_x_flux=True)
+    dc,lag = solve_low_frequency_layered_slab(source,1/12,(1+.4j,.1j),**options)
+    errors = []
+    for omega in (.002,.001):
+        direct = solve_harmonic_layered_slab(source,1/12,(1+.4j,.1j),omega,**options)
+        errors.append(torch.stack([abs(actual-base-1j*omega*first).max()
+                                   for actual,base,first in zip(direct,dc,lag)]))
+    # Halving omega leaves one quarter of the leading truncation error.
+    torch.testing.assert_close(errors[0]/errors[1],torch.full_like(errors[0],4.),rtol=.001,atol=0.)
