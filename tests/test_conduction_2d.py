@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 import torch
 
 from tensorsph.heat_conduction_2d import (
@@ -699,3 +700,18 @@ def test_dynamic_films_close_wall_and_layer_energy():
                      volumetric_heat_capacity=2.,film_coefficients=h,wall_areal_heat_capacity=cw)
     torch.testing.assert_close(q+3j*cw*wall, h*(a-wall), atol=1e-12,rtol=0)
     torch.testing.assert_close(q.sum(),(6j*u-1j*x).mean(),atol=1e-12,rtol=0)
+
+
+@pytest.mark.parametrize("walls",[(.6,-.3),(.6,None),(None,-.3),(None,None)])
+@pytest.mark.parametrize("theta",[.5,1.])
+def test_implicit_step_closes_heat_balance_on_every_section(walls,theta):
+    from tensorsph.heat_conduction_2d import step_transient_slab_2d
+    dx,dt,capacity = .12,.1,2.
+    field = torch.arange(54,dtype=torch.float64).reshape(6,9).sin()
+    source = field.cos()
+    west,east = (.8 if walls[0] is None else 0.),(-.3 if walls[1] is None else 0.)
+    updated,flux = step_transient_slab_2d(field,dt,dx,walls,theta=theta,heat_source=source,
+                     conductivity=1.5,volumetric_heat_capacity=capacity,
+                     x_wall_inward_flux=(west,east),return_x_flux=True)
+    stored = capacity*dx*(updated-field).mean(dim=0)
+    torch.testing.assert_close(stored,dt*(dx*source.mean(dim=0)-flux.diff()),atol=3e-13,rtol=0.)
