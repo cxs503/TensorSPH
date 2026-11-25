@@ -984,3 +984,33 @@ def test_invalid_layered_film(wall,flux,film):
     with pytest.raises(ValueError):
         solve_transient_layered_slab(k,[0.,.1],.2,(wall,None),conductivity=k,volumetric_heat_capacity=1.,
                                     x_wall_inward_flux=(flux,0.),x_wall_films=(film,None))
+
+
+@pytest.mark.parametrize("with_heat",[True,False])
+def test_layer_wall_trace_after_ambient_and_flux_jump(with_heat):
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+    dx,jump = .125,.04
+    k = torch.arange(1,9,dtype=torch.float64)
+    t = k.new_tensor([0.,jump,.09])
+    west = lambda s: 1. if s<jump else -2.
+    ambient = lambda s: .5 if s<jump else 3.
+    result = solve_transient_layered_slab(k,t,dx,(None,None),conductivity=k,volumetric_heat_capacity=k+1,
+                    x_wall_films=(None,(4.,ambient)),x_wall_inward_flux=(west,0.),
+                    load_jump_times=[jump],return_x_heat=with_heat,return_wall_temperatures=True)
+    u,walls = result[0],result[-1]
+    assert len(result)==2+int(with_heat)
+    torch.testing.assert_close(walls[:,0],u[:,0]+dx/(2*k[0])*k.new_tensor([1.,-2.,-2.]))
+    inward = 4.*(k.new_tensor([.5,3.,3.])-walls[:,1])
+    torch.testing.assert_close(walls[:,1]-u[:,-1],inward*dx/(2*k[-1]))
+    if with_heat:
+        torch.testing.assert_close(result[1][:,0],t.diff()*k.new_tensor([1.,-2.]))
+
+
+def test_temperature_and_insulated_layer_wall_traces():
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+    k = torch.ones(6,dtype=torch.float64)
+    t = k.new_tensor([0.,.03,.1])
+    u,walls = solve_transient_layered_slab(k,t,1/6,(lambda s:.3+s,None),conductivity=k,
+                    volumetric_heat_capacity=1.,return_wall_temperatures=True)
+    torch.testing.assert_close(walls[:,0],.3+t)
+    torch.testing.assert_close(walls[:,1],u[:,-1])

@@ -1,4 +1,5 @@
 """Uniformly hot composite slab quenched by an east film, with an insulated west wall."""
+import argparse
 import json
 import math
 from pathlib import Path
@@ -57,23 +58,35 @@ def reference(x, faces, time, h, resistance, count=32):
     return field,wall,initial-stored
 
 
-def measure(n,h,resistance):
+def measure(n,h,resistance,switched=False):
     dx = 1/n
     faces = np.linspace(0.,1.,n+1)
     x = faces[:-1]+dx/2
     k,c = np.where(x<.5,1.,3.),np.where(x<.5,2.,.8)
     contacts = np.zeros(n-1)
     contacts[n//2-1] = resistance
-    times = np.linspace(0.,.4,4*n+1)
-    states,heat = solve_transient_layered_slab(np.ones(n),times,dx,(None,None),conductivity=k,
-            volumetric_heat_capacity=c,contact_resistance_x=contacts,x_wall_films=(None,(h,0.)),
-            rannacher=True,return_x_heat=True)
+    # Hold the time grid fixed for switched loads to isolate spatial errors
+    # from startup transients after each change in the film reservoir.
+    steps = 2048 if switched else 4*n
+    times = np.linspace(0.,.4,steps+1)
+    changes = ((.071,1.6),(.233,-1.4)) if switched else ()
+    def ambient(t):
+        return sum(delta for start,delta in changes if t>=start)
+    states,heat,walls = solve_transient_layered_slab(np.ones(n),times,dx,(None,None),conductivity=k,
+            volumetric_heat_capacity=c,contact_resistance_x=contacts,x_wall_films=(None,(h,ambient)),
+            load_jump_times=[start for start,_ in changes],
+            rannacher=True,return_x_heat=True,return_wall_temperatures=True)
     cumulative = heat.cumsum(0).numpy()
-    # The same half-cell plus film resistance gives the instantaneous wall trace.
-    wall = states[:,-1].numpy()/(1+h*dx/(2*k[-1]))
+    wall = walls[:,1].numpy()
     errors = dict(temperature=0.,wall=0.,section_heat=0.)
-    for i in (n//2,n,2*n,4*n):
+    for i in (steps//8,steps//4,steps//2,steps):
         exact,tw,q = reference(x,faces,times[i],h,resistance)
+        for start,delta in changes:
+            if times[i]>start:
+                f,w,removed = reference(x,faces,times[i]-start,h,resistance)
+                exact += delta*(1-f)
+                tw += delta*(1-w)
+                q -= delta*removed
         errors["temperature"] = max(errors["temperature"],float(abs(states[i].numpy()-exact).max()))
         errors["wall"] = max(errors["wall"],float(abs(wall[i]-tw)))
         errors["section_heat"] = max(errors["section_heat"],float(abs(cumulative[i-1]-q).max()))
@@ -82,15 +95,18 @@ def measure(n,h,resistance):
 
 
 if __name__=="__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--switched",action="store_true",help="apply two later ambient-temperature changes")
+    args = parser.parse_args()
     rows = []
     for h,resistance in ((1.,0.),(8.,.24)):
         previous = {}
         for n in (16,32,64,128):
-            errors = measure(n,h,resistance)
+            errors = measure(n,h,resistance,args.switched)
             orders = {k:math.log2(previous[k]/v) for k,v in errors.items() if previous and k!="balance"}
             passed = errors["balance"]<1e-11 and (n<128 or min(orders.values())>1.8)
-            rows.append(dict(columns=n,film=h,contact=resistance,errors=errors,orders=orders,passed=passed))
+            rows.append(dict(columns=n,time_steps=2048 if args.switched else 4*n,film=h,contact=resistance,errors=errors,orders=orders,passed=passed))
             previous = errors
     version = subprocess.check_output(["git","rev-parse","HEAD"],cwd=Path(__file__).parent,text=True).strip()
-    print(json.dumps(dict(commit=version,runs=rows),indent=2,allow_nan=False))
+    print(json.dumps(dict(commit=version,switched=args.switched,runs=rows),indent=2,allow_nan=False))
     raise SystemExit(0 if all(row["passed"] for row in rows) else 1)

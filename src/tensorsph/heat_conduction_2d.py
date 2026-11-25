@@ -430,7 +430,7 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
                                  volumetric_heat_capacity, contact_resistance_x=None, heat_source=0.,
                                  heat_loss_coefficient=0., theta=.5, h_factor=1.3, load_jump_times=(),
                                  return_x_heat=False, x_wall_inward_flux=(0.,0.), rannacher=False,
-                                 x_wall_films=(None,None)):
+                                 x_wall_films=(None,None), return_wall_temperatures=False):
     """Integrate a transversely uniform layered slab with stationary material properties.
 
     Return temperatures (nt,nx) including the initial state. Specify one initial
@@ -450,6 +450,10 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
     each load jump use two backward Euler half steps.
     return_x_heat appends interval-integrated rightward section heat in J/m²,
     shaped (nt-1,nx+1), including any internal steps at load jumps.
+    return_wall_temperatures appends instantaneous west and east surface
+    temperatures (nt,2), after optional section heat. Flux and film walls use
+    the half-column thermal resistance. At a listed jump the trace uses the
+    new boundary data while the particle temperatures remain continuous.
     """
     if torch.is_complex(torch.as_tensor(temperature)):
         raise ValueError("initial column temperatures must be real")
@@ -582,6 +586,21 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
         heat = state.new_zeros((len(grid)-1,len(state)+1))
         calibration = lattice_diffusion_factor_2d(h_factor,dx,mode="moment")
     load_start,walls_start,flux_start = forcing(grid[0])
+    if return_wall_temperatures:
+        end_indices = [0,-1]
+        end_resistance = .5*dx/torch.as_tensor(conductivity,device=state.device,dtype=state.dtype)[end_indices]
+
+        def wall_trace(particles,temperatures,inward):
+            end_values = particles[end_indices]
+            surface = end_values+inward*end_resistance
+            for side,_,gain,_ in film_modes:
+                surface[side] -= end_resistance[side]*gain*end_values[side]
+            for side,value in enumerate(temperatures):
+                if value is not None:
+                    surface[side] = value
+            return surface
+
+        wall_history = [wall_trace(state,walls_start,flux_start)]
     for start,stop in zip(segments,segments[1:]):
         weight = 1. if start in damped else theta
         at_jump = stop in events
@@ -615,7 +634,12 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
         load_start,walls_start,flux_start = forcing(stop) if at_jump else (load_end,walls_end,flux_end)
         if stop==grid[len(fields)]:
             fields.append(state)
+            if return_wall_temperatures:
+                wall_history.append(wall_trace(state,walls_start,flux_start))
     history = torch.stack(fields)
+    if return_wall_temperatures:
+        traces = torch.stack(wall_history)
+        return (history,heat,traces) if return_x_heat else (history,traces)
     return (history,heat) if return_x_heat else history
 
 
