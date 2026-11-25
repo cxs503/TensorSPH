@@ -426,3 +426,25 @@ def test_steady_slab_solves_pair_equations_with_spatial_wall_data():
         t = solve_steady_slab_2d(source, dx, walls, conductivity=k)
         rate = stencil_rhs_2d(t, offsets, x_wall_temperatures=walls)
         torch.testing.assert_close(k*rate/factor, -source, atol=1e-10, rtol=0)
+
+
+def test_closed_steady_slab_uses_mean_and_rejects_incompatible_heating():
+    import pytest
+    from tensorsph.heat_conduction_2d import solve_steady_slab_2d
+
+    previous = None
+    for n in (16, 32, 64, 128, 256):
+        x = (torch.arange(n, dtype=torch.float64)+.5)/n
+        mode = torch.cos(2*torch.pi*x[:, None])*torch.cos(torch.pi*x)
+        # Unit conductivity, two insulated x walls and periodic y.
+        t = solve_steady_slab_2d(5*torch.pi**2*mode, 1/n, (None, None), mean_temperature=7.)
+        error = float((t-7.-mode).abs().max())
+        assert abs(float(t.mean())-7.) < 1e-13
+        if previous is not None:
+            assert error < previous/3.8
+        previous = error
+    assert error < .0004
+    with pytest.raises(ValueError, match="zero net heat"):
+        solve_steady_slab_2d(torch.ones_like(mode), 1/n, (None, None), mean_temperature=7.)
+    with pytest.raises(ValueError, match="mean_temperature"):
+        solve_steady_slab_2d(mode, 1/n, (None, None))

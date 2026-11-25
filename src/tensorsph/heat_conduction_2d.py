@@ -213,12 +213,13 @@ def stencil_rhs_with_wall_power_2d(
 
 
 def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatures: SlabWalls,
-                         *, conductivity: float = 1., h_factor: float = 1.3) -> torch.Tensor:
+                         *, conductivity: float = 1., h_factor: float = 1.3,
+                         mean_temperature: float | None = None) -> torch.Tensor:
     """Steady temperature on a uniform lattice, periodic y and reflected x walls.
 
     Supply a (ny, nx) volumetric heat source in W/m³, a constant conductivity
-    in W/(m K), and at least one prescribed temperature wall. None insulates
-    the other wall. Uses the lattice second-moment calibration for physical k.
+    in W/(m K), and two wall conditions. None denotes insulation. Two insulated
+    walls require a zero-mean heat source and a prescribed mean_temperature. Uses the lattice second-moment calibration for physical k.
     """
     source = torch.as_tensor(heat_source, dtype=DTYPE)
     if source.ndim != 2 or min(source.shape) == 0 or not torch.isfinite(source).all():
@@ -226,8 +227,14 @@ def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatur
     if not all(math.isfinite(v) and v > 0 for v in (dx, conductivity, h_factor)):
         raise ValueError("dx, conductivity and h_factor must be positive and finite")
     left, right = x_wall_temperatures
-    if left is None and right is None:
-        raise ValueError("steady slab requires at least one prescribed wall")
+    closed = left is None and right is None
+    if closed:
+        if mean_temperature is None or not math.isfinite(mean_temperature):
+            raise ValueError("two insulated walls require a finite mean_temperature")
+        if source.mean().abs() > 64*torch.finfo(source.dtype).eps*source.abs().mean():
+            raise ValueError("two insulated walls require zero net heat input")
+    elif mean_temperature is not None:
+        raise ValueError("mean_temperature applies only to two insulated walls")
     for wall in (left, right):
         if wall is not None and not torch.isfinite(_wall_column(wall, source)).all():
             raise ValueError("wall temperatures must be finite")
@@ -236,14 +243,14 @@ def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatur
     if factor <= 0:
         raise ValueError("kernel support must include a conducting neighbour")
     # Lift the inhomogeneous wall forcing, leaving a homogeneous reflected operator.
-    reference = _wall_column(left if left is not None else right, source).mean()
+    reference = mean_temperature if closed else _wall_column(left if left is not None else right, source).mean()
     shifted = tuple(None if wall is None else torch.as_tensor(wall, dtype=source.dtype,
                     device=source.device)-reference for wall in (left, right))
     wall_rate = stencil_rhs_2d(torch.zeros_like(source), offsets, x_wall_temperatures=shifted)
     rhs = source + (conductivity/factor)*wall_rate
     right_image = rhs.flip((1,))
     rhs = torch.cat((rhs, right_image if right is None else -right_image), dim=1)
-    if left is None or right is None:
+    if (left is None) != (right is None):
         # Odd at one wall and even at the other gives an antiperiod over 2*nx.
         rhs = torch.cat((rhs, -rhs), dim=1)
     ny, nx_ext = rhs.shape
@@ -252,7 +259,7 @@ def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatur
     decay = torch.zeros((ny, len(kx)), dtype=source.dtype, device=source.device)
     for (m, n), a in offsets:
         decay += (-4*a*conductivity/factor)*torch.sin(math.pi*(m*ky+n*kx)).square()
-    # Odd reflection eliminates the constant mode of the extended problem.
+    # The homogeneous correction has zero mean by odd symmetry or by prescription.
     decay[0, 0] = 1.
     modes = torch.fft.rfft2(rhs)/decay
     modes[0, 0] = 0.
