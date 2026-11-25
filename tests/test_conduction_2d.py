@@ -1907,3 +1907,47 @@ def test_transient_rowwise_wall_heat_against_slab_mode(method, record_property):
         assert mean_error < 2e-14
         errors.append(error)
     assert all(a / b > 3.5 for a, b in zip(errors, errors[1:]))
+
+
+@pytest.mark.parametrize("flux_side", [0, 1])
+@pytest.mark.parametrize("method", ["theta", "sdirk2"])
+def test_mixed_wall_row_heat_with_decaying_fourier_load(flux_side, method, record_property):
+    from tensorsph.heat_conduction_2d import solve_transient_slab_2d
+
+    # T=(1+x) cos(2*pi*y) exp(-4*pi²*t) on the unit square.
+    rate = 4 * math.pi**2
+    errors = []
+    for n in (12, 24, 48):
+        x = (torch.arange(n, dtype=torch.float64) + 0.5) / n
+        lateral = torch.cos(2*math.pi*x)
+        initial = lateral[:, None] * (1+x)
+        fixed_side = 1 - flux_side
+        walls = [None, None]
+        walls[fixed_side] = lambda t: (1+fixed_side)*math.exp(-rate*t)*lateral
+        loads = [0., 0.]
+        loads[flux_side] = lambda t: (2*flux_side-1)*math.exp(-rate*t)*lateral
+        times = torch.linspace(0., 0.025, n+1, dtype=x.dtype)
+        _, rows = solve_transient_slab_2d(
+            initial, times, 1/n, walls, x_wall_inward_flux=loads,
+            return_wall_heat_by_row=True, method=method)
+        west = torch.expm1(-rate*times[1:, None])*lateral/rate
+        exact = torch.stack((west, -west), dim=1)
+        error = (rows.cumsum(0)-exact).abs().amax(dim=(0, 2))
+        record_property(f"fixed_wall_heat_error_{n}_J_per_m2", error[fixed_side].item())
+        record_property(f"flux_wall_heat_error_{n}_J_per_m2", error[flux_side].item())
+        errors.append(error)
+    assert all((a/b > 3.5).all() for a, b in zip(errors, errors[1:]))
+
+
+def test_prescribed_row_heat_integrates_split_flux_pulse():
+    from tensorsph.heat_conduction_2d import solve_transient_slab_2d
+
+    field = torch.zeros(3, 4, dtype=torch.float64)
+    profile = field.new_tensor([1.5, -0.5, 0.25])
+    switch = 0.025
+    _, rows = solve_transient_slab_2d(
+        field, [0., 0.1], 0.25, (None, None),
+        x_wall_inward_flux=(lambda t: profile if t < switch else -profile, 0.5),
+        wall_jump_times=(switch,), rannacher=True, return_wall_heat_by_row=True)
+    torch.testing.assert_close(rows[0, 0], (2*switch-0.1)*profile)
+    torch.testing.assert_close(rows[0, 1], torch.full_like(profile, 0.05))

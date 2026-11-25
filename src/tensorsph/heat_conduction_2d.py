@@ -1045,9 +1045,9 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     Return particle temperatures (nt,ny,nx). With return_x_heat also return
     the interval-integrated rightward heat on each section (nt-1,nx+1), J/m².
     With return_wall_heat_by_row, append inward heat at each west and east
-    wall row (nt-1,2,ny), J/m². This uses the fixed-wall gradient recovery
-    for smooth fields with at least five columns. Each row profile averages
-    to the corresponding conservative inward section heat.
+    wall row (nt-1,2,ny), J/m². At flux walls integrate the prescribed load.
+    At temperature walls recover the gradient of a smooth field using at
+    least five columns and match the conservative section mean.
     """
     grid = [float(t) for t in times]
     jumps = [float(t) for t in wall_jump_times]
@@ -1082,9 +1082,10 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     if field.ndim!=2 or min(field.shape)==0 or field.is_complex():
         raise ValueError("provide a real nonempty (ny,nx) temperature field")
     field = field.to(DTYPE)
-    if return_wall_heat_by_row and (field.shape[1] < 5 or any(w is None for w in walls)):
-        raise ValueError("rowwise wall heat requires two fixed-temperature walls and at least five columns")
-    need_flux = return_x_heat or return_wall_heat_by_row
+    recover_gradient = return_wall_heat_by_row and any(w is not None for w in walls)
+    if recover_gradient and field.shape[1] < 5:
+        raise ValueError("rowwise heat at a temperature wall requires at least five columns")
+    need_flux = return_x_heat or recover_gradient
     def advance(initial,dt,start,load_end,weight):
         stage = tuple(stage_load(wall,start,load_end,weight) for wall in walls)
         stage_flux = tuple(stage_load(q,start,load_end,weight) for q in fluxes)
@@ -1096,9 +1097,18 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
         wall_flux = None
         if return_wall_heat_by_row:
             stage_field = updated if weight == 1. else initial + weight*(updated-initial)
-            inward = torch.stack((flux[0], -flux[-1]))
-            wall_flux = recover_dirichlet_wall_flux_2d(
-                stage_field, dx, conductivity, inward, x_wall_temperatures=stage)
+            recovered = []
+            for side, (wall, load) in enumerate(zip(stage, stage_flux)):
+                if wall is None:
+                    profile = _wall_column(load, stage_field).reshape(-1).expand(field.shape[0])
+                else:
+                    inward_field = stage_field if side == 0 else stage_field.flip((1,))
+                    samples = inward_field[:, 1:4] - _wall_column(wall, stage_field)
+                    gradient_flux = _uniform_fixed_wall_flux(samples, conductivity, dx)
+                    mean = flux[0] if side == 0 else -flux[-1]
+                    profile = mean + (gradient_flux - gradient_flux.mean())
+                recovered.append(profile)
+            wall_flux = torch.stack(recovered)
         return updated, flux, wall_flux
 
     history = [field]
@@ -1345,6 +1355,12 @@ def prepare_slab_film_rhs(template, offsets, dx, film_coefficients, *, rho=1.,
     return evaluate
 
 
+def _uniform_fixed_wall_flux(differences, conductivity, dx):
+    # Derivative of the cubic through the wall and centers at 1.5, 2.5, 3.5 dx.
+    weights = differences.new_tensor([35/12, -21/10, 15/28])
+    return -(conductivity/dx) * (differences @ weights)
+
+
 def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux, *,
                                    contact_resistance_x=None, x_wall_temperatures=None):
     """Recover rowwise inward flux (W/m²) at two fixed-temperature slab walls.
@@ -1388,9 +1404,12 @@ def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux
         differences = samples[:,:,:3] - torch.stack(walls)
     else:
         differences = samples[:,:,1:] - samples[:,:,:1]
-    if k.ndim == 0 and contact_resistance_x is None and x_wall_temperatures is None:
-        weights = field.new_tensor([333,-261,71]) / 24
-        flux = -(k/dx) * (differences @ weights)
+    if k.ndim == 0 and contact_resistance_x is None:
+        if x_wall_temperatures is None:
+            weights = field.new_tensor([333,-261,71]) / 24
+            flux = -(k/dx) * (differences @ weights)
+        else:
+            flux = _uniform_fixed_wall_flux(differences, k, dx)
     else:
         k = k.expand(field.shape[1]).to(torch.float64)
         resistance = dx / torch.stack((k[:5], k[-5:].flip((0,))))
