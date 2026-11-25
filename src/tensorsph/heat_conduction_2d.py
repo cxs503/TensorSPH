@@ -231,8 +231,8 @@ def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatur
                          *, conductivity: float = 1., h_factor: float = 1.3,
                          mean_temperature: float | None = None, heat_loss_coefficient: float = 0.,
                          x_wall_inward_flux=(0., 0.), return_x_flux: bool = False,
-                         temperature_reference: float = 0., ambient_temperature=None
-                         ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
+                         temperature_reference: float = 0., ambient_temperature=None, separate_mean: bool = False
+                         ) -> torch.Tensor | tuple[torch.Tensor, ...]:
     """Steady temperature on a uniform lattice, periodic y and reflected x walls.
 
     Supply a (ny, nx) volumetric heat source in W/m³, a constant conductivity
@@ -249,11 +249,15 @@ def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatur
     recovery. Wall inputs and mean_temperature remain absolute temperatures.
     With return_x_flux, also return the cross-section mean heat flux (W/m²)
     on all nx+1 faces, positive towards increasing x, including the walls.
+    For two flux walls, separate_mean=True returns (T - mean(T),
+    mean(T) - temperature_reference), inserting the flux before the mean
+    when requested. This retains variations smaller than the absolute
+    temperature's floating-point spacing.
     """
     if not math.isfinite(temperature_reference):
         raise ValueError("temperature_reference must be finite")
     return _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
-                             mean_temperature, _heat_loss(heat_loss_coefficient), x_wall_inward_flux, return_x_flux, temperature_reference, ambient_temperature)
+                             mean_temperature, _heat_loss(heat_loss_coefficient), x_wall_inward_flux, return_x_flux, temperature_reference, ambient_temperature, separate_mean)
 
 
 def solve_harmonic_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatures: SlabWalls,
@@ -1427,7 +1431,7 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
 
 
 def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
-                      mean_temperature, shift, x_wall_inward_flux, return_x_flux, temperature_reference=0., ambient_temperature=None):
+                      mean_temperature, shift, x_wall_inward_flux, return_x_flux, temperature_reference=0., ambient_temperature=None, separate_mean=False):
     source = torch.as_tensor(heat_source, dtype=torch.complex128 if isinstance(shift, complex) else DTYPE)
     if source.ndim != 2 or min(source.shape) == 0 or not torch.isfinite(source).all():
         raise ValueError("heat_source must be a finite nonempty (ny, nx) field")
@@ -1435,6 +1439,8 @@ def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_fact
         raise ValueError("dx, conductivity and h_factor must be positive and finite")
     left, right = x_wall_temperatures
     closed = left is None and right is None
+    if separate_mean and not closed:
+        raise ValueError("separate_mean requires two flux walls")
     if not source.is_complex() and any(torch.is_complex(torch.as_tensor(q)) for q in x_wall_inward_flux):
         raise ValueError("real slab solves require real wall fluxes")
     west, east = (_wall_column(q, source) for q in x_wall_inward_flux)
@@ -1532,9 +1538,14 @@ def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_fact
         correction = torch.fft.ifft2(modes)[:, :source.shape[1]]
     else:
         correction = torch.fft.irfft2(modes, s=rhs.shape)[:, :source.shape[1]]
-    temperature = (lift + correction) + (uniform_correction + (reference - temperature_reference))
+    temperature = lift + correction
+    offset = uniform_correction + (reference - temperature_reference)
+    if separate_mean:
+        offset = torch.as_tensor(offset, dtype=source.dtype, device=source.device)
+    else:
+        temperature = temperature + offset
     if not return_x_flux:
-        return temperature
+        return (temperature, offset) if separate_mean else temperature
 
     # For constant k and periodic y, summing all crossing links over rows
     # commutes with the tangential shift in every diagonal pair.
@@ -1562,7 +1573,7 @@ def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_fact
             flux += west.mean()-curvature_k.mean()*position
         else:
             flux += west.mean() if right is not None else -east.mean()
-    return temperature, flux
+    return (temperature, flux, offset) if separate_mean else (temperature, flux)
 
 
 def prepare_slab_film_rhs(template, offsets, dx, film_coefficients, *, rho=1.,

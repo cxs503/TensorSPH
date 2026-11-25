@@ -2435,3 +2435,24 @@ def test_closed_steady_flux_with_weak_volumetric_cooling():
     cooling = loss * excess.mean(0)
     torch.testing.assert_close(cooling.mean(), cooling.new_tensor(4.))
     assert (flux.diff() + (cooling - source[0])/columns).abs().max() < 1e-12
+
+
+@pytest.mark.parametrize("loss", [0., 1e-18])
+def test_steady_separated_mean_resolves_two_flux_wall_profile(loss):
+    from tensorsph.heat_conduction_2d import solve_steady_slab_2d
+
+    n = 16
+    x = (torch.arange(n, dtype=torch.float64) + 0.5) / n
+    # The uniform source balances the weak loss at a 1e18 K mean.
+    # A linear temperature profile carries a unit through-flux.
+    source = torch.full((4, n), loss * 1e18, dtype=x.dtype)
+    options = dict(x_wall_inward_flux=(1., -1.), heat_loss_coefficient=loss,
+                   mean_temperature=None if loss else 1e18, separate_mean=True)
+    profile, cuts, mean = solve_steady_slab_2d(source, 1/n, (None, None), return_x_flux=True, **options)
+    torch.testing.assert_close(profile, (0.5-x).expand_as(source))
+    torch.testing.assert_close(cuts, torch.ones_like(cuts))
+    torch.testing.assert_close(mean, x.new_tensor(1e18))
+    profile_only, relative_mean = solve_steady_slab_2d(
+        source, 1/n, (None, None), temperature_reference=1e18, **options)
+    torch.testing.assert_close(profile_only, profile)
+    assert relative_mean.abs() < 256
