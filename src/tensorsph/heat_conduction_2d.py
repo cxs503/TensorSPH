@@ -471,7 +471,7 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
                                  *, film_coefficients, conductivity, volumetric_heat_capacity,
                                  contact_resistance_x=None, h_factor=1.3, backend="torch",
                                  wall_areal_heat_capacity=(0.,0.), heat_loss_coefficient=0.,
-                                 wall_applied_flux=(0.,0.),
+                                 wall_applied_flux=(0.,0.), mean_temperature=None,
                                  transverse_wavenumber=0., return_x_flux=False):
     """Solve a transverse Fourier mode of a layered slab with two convective walls.
 
@@ -483,8 +483,10 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
     solve_harmonic_layered_slab's column-vector convention. Each wall can store
     heat with areal capacity in J/(m² K). Returned heat flux enters the slab.
     Ambient, particle and wall phasors multiply exp(i*transverse_wavenumber*y).
-    A steady, lossless, spatially constant transverse mode needs a positive
-    film coefficient on at least one wall to anchor its temperature.
+    For the steady constant transverse mode with two flux-only walls and no
+    bulk loss, the wall inputs and integrated source must sum to zero. Supply
+    mean_temperature (K) as the heat-capacity-weighted mean of the particle
+    columns and both wall stores. Other boundary conditions set their own level.
     Set return_x_flux=True to append rightward heat fluxes on all nx+1 cuts.
     """
     source = torch.as_tensor(heat_source, dtype=torch.complex128)
@@ -524,7 +526,27 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
     base_flux = torch.stack((base_cuts[0], -base_cuts[-1]))
     if (angular_frequency == 0 and not films.any() and not torch.any(torch.as_tensor(heat_loss_coefficient) != 0)
             and abs(math.remainder(transverse_wavenumber*dx, math.tau)) <= math.ulp(math.tau)):
-        raise ValueError("steady flux-only walls require a temperature reference for the constant mode")
+        if mean_temperature is None:
+            raise ValueError("steady flux-only walls require a mean_temperature reference")
+        target = torch.as_tensor(mean_temperature, dtype=source.dtype, device=source.device)
+        if target.ndim or not torch.isfinite(target):
+            raise ValueError("mean_temperature must be a finite scalar")
+        net = applied.sum()+dx*source.sum()
+        scale = applied.abs().sum()+dx*source.abs().sum()
+        if net.abs() > 64*torch.finfo(DTYPE).eps*scale:
+            raise ValueError("steady flux-only walls require balanced wall inputs and volumetric heating")
+        # Fix the west temperature temporarily. The west flux determines the
+        # relative east temperature. A uniform shift affects only temperatures.
+        east = (applied[0]-base_flux[0])/admittance[0, 1]
+        walls = torch.stack((torch.zeros_like(east), east))
+        field = base+east*fields[1]
+        weights = dx*torch.as_tensor(volumetric_heat_capacity, dtype=DTYPE, device=source.device).expand_as(source)
+        mean = ((weights*field).sum()+(wall_capacity*walls).sum())/(weights.sum()+wall_capacity.sum())
+        shift = target-mean
+        result = (field+shift, walls+shift, base_flux+east*admittance[:, 1])
+        return (*result, base_cuts+east*cuts[1]) if return_x_flux else result
+    if mean_temperature is not None:
+        raise ValueError("mean_temperature applies only to an unanchored steady flux-only mode")
     walls = torch.linalg.solve(admittance + torch.diag(films+1j*angular_frequency*wall_capacity),
                                films*ambient+applied-base_flux)
     field = base + walls @ torch.stack(fields)

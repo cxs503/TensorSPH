@@ -1987,3 +1987,31 @@ def test_harmonic_wall_flux_and_low_frequency_with_one_uncoated_end():
         solve_harmonic_layered_films(source, 1/12, (0.,0.), 0., **opts)
     _, wall, inward = solve_harmonic_layered_films(source, 1/12, (0.,0.), 3., **opts)
     torch.testing.assert_close(inward+3j*wall*wall.real.new_tensor([.3,.8]), applied)
+
+
+@pytest.mark.parametrize("backend", ["torch", "banded"])
+def test_steady_flux_wall_mean_shifts_only_temperatures(backend):
+    from tensorsph.heat_conduction_2d import solve_harmonic_layered_films
+
+    source = torch.linspace(-.7, .3, 12, dtype=torch.float64)
+    dx = 1/12
+    capacity = 1.5+source
+    surface = source.new_tensor([.3, .7])
+    applied = torch.stack((source.new_tensor(.8), -.8-dx*source.sum()))
+    opts = dict(film_coefficients=(0., 0.), wall_applied_flux=applied, backend=backend,
+                conductivity=2.+source, volumetric_heat_capacity=capacity,
+                wall_areal_heat_capacity=surface, return_x_flux=True)
+    args = (source, dx, (0., 0.), 0.)
+    a = solve_harmonic_layered_films(*args, mean_temperature=.2j, **opts)
+    b = solve_harmonic_layered_films(*args, mean_temperature=3.+.2j, **opts)
+    field, walls, inward, cuts = a
+    stored = dx*(capacity*field).sum()+(surface*walls).sum()
+    torch.testing.assert_close(stored, .2j*(dx*capacity.sum()+surface.sum()))
+    torch.testing.assert_close(inward, applied.to(inward.dtype))
+    torch.testing.assert_close(cuts.diff(), (dx*source).to(cuts.dtype))
+    for i, (first, second) in enumerate(zip(a, b)):
+        torch.testing.assert_close(second, first+3 if i < 2 else first)
+    with pytest.raises(ValueError, match="balanced wall inputs"):
+        solve_harmonic_layered_films(*args, mean_temperature=0., **dict(opts, wall_applied_flux=(0., 0.)))
+    with pytest.raises(ValueError, match="only to an unanchored"):
+        solve_harmonic_layered_films(*args, mean_temperature=0., **dict(opts, film_coefficients=(1., 0.)))
