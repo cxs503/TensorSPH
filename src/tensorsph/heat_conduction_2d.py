@@ -471,7 +471,7 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
                                  *, film_coefficients, conductivity, volumetric_heat_capacity,
                                  contact_resistance_x=None, h_factor=1.3, backend="torch",
                                  wall_areal_heat_capacity=(0.,0.), heat_loss_coefficient=0.,
-                                 transverse_wavenumber=0.):
+                                 transverse_wavenumber=0., return_x_flux=False):
     """Solve a transverse Fourier mode of a layered slab with two convective walls.
 
     Return (particle temperatures in K, two wall temperatures in K, two inward
@@ -481,6 +481,7 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
     solve_harmonic_layered_slab's column-vector convention. Each wall can store
     heat with areal capacity in J/(m² K). Returned heat flux enters the slab.
     Ambient, particle and wall phasors multiply exp(i*transverse_wavenumber*y).
+    Set return_x_flux=True to append rightward heat fluxes on all nx+1 cuts.
     """
     source = torch.as_tensor(heat_source, dtype=torch.complex128)
     if source.ndim != 1:
@@ -501,19 +502,24 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
                       volumetric_heat_capacity=volumetric_heat_capacity, h_factor=h_factor,
                       backend=backend, heat_loss_coefficient=heat_loss_coefficient,
                       transverse_wavenumber=transverse_wavenumber, return_x_flux=True, **opts)
-        return field, torch.stack((cuts[0], -cuts[-1]))
+        return field, cuts
 
-    base, base_flux = response(source, (0., 0.))
+    base, base_cuts = response(source, (0., 0.))
     # Two unit-temperature solutions give the complete wall admittance,
     # including heat transmitted from one wall to the opposite wall.
     zero = torch.zeros_like(source)
     units = ((1.,0.), (0.,1.))
-    fields, fluxes = zip(*(response(zero, walls) for walls in units))
-    admittance = torch.stack(fluxes, dim=1)
+    fields, cuts = zip(*(response(zero, walls) for walls in units))
+    cut_response = torch.stack(cuts, dim=1)
+    admittance = torch.stack((cut_response[0], -cut_response[-1]))
+    base_flux = torch.stack((base_cuts[0], -base_cuts[-1]))
     walls = torch.linalg.solve(admittance + torch.diag(films+1j*angular_frequency*wall_capacity),
                                films*ambient-base_flux)
     field = base + walls @ torch.stack(fields)
-    return field, walls, base_flux + admittance @ walls
+    result = (field, walls, base_flux + admittance @ walls)
+    if return_x_flux:
+        return (*result, base_cuts + cut_response @ walls)
+    return result
 
 
 def solve_low_frequency_layered_films(heat_source, dx, ambient_temperatures, *,

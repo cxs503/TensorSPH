@@ -1951,3 +1951,21 @@ def test_prescribed_row_heat_integrates_split_flux_pulse():
         wall_jump_times=(switch,), rannacher=True, return_wall_heat_by_row=True)
     torch.testing.assert_close(rows[0, 0], (2*switch-0.1)*profile)
     torch.testing.assert_close(rows[0, 1], torch.full_like(profile, 0.05))
+
+
+@pytest.mark.parametrize("backend", ["torch", "banded"])
+def test_harmonic_film_section_fluxes_match_prescribed_wall_solution(backend):
+    from tensorsph.heat_conduction_2d import solve_harmonic_layered_films, solve_harmonic_layered_slab
+
+    dx = 0.125
+    x = (torch.arange(8, dtype=torch.float64)+0.5)*dx
+    source = (1.+0.5j)*x
+    options = dict(conductivity=1.+x, volumetric_heat_capacity=2.-x, backend=backend,
+                   transverse_wavenumber=1.3, contact_resistance_x=[0., 0., 0., .25, 0., 0., 0.])
+    field, walls, inward, cuts = solve_harmonic_layered_films(
+        source, dx, (1.+0.3j, -0.4j), 2.5, film_coefficients=(1.2, 2.3),
+        wall_areal_heat_capacity=(.4, .7), return_x_flux=True, **options)
+    direct, expected = solve_harmonic_layered_slab(source, dx, walls, 2.5, return_x_flux=True, **options)
+    torch.testing.assert_close(field, direct, rtol=1e-12, atol=1e-13)
+    torch.testing.assert_close(cuts, expected, rtol=1e-12, atol=1e-13)
+    torch.testing.assert_close(inward, torch.stack((cuts[0], -cuts[-1])), rtol=0., atol=1e-13)
