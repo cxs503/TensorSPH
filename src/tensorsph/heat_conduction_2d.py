@@ -212,6 +212,53 @@ def stencil_rhs_with_wall_power_2d(
                              dx, contact_resistance_x, specific_heat, collect_power=True, power_by_row=power_by_row)
 
 
+def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatures: SlabWalls,
+                         *, conductivity: float = 1., h_factor: float = 1.3) -> torch.Tensor:
+    """Steady temperature on a uniform lattice, periodic y and reflected x walls.
+
+    Supply a (ny, nx) volumetric heat source in W/m³, a constant conductivity
+    in W/(m K), and at least one prescribed temperature wall. None insulates
+    the other wall. Uses the lattice second-moment calibration for physical k.
+    """
+    source = torch.as_tensor(heat_source, dtype=DTYPE)
+    if source.ndim != 2 or min(source.shape) == 0 or not torch.isfinite(source).all():
+        raise ValueError("heat_source must be a finite nonempty (ny, nx) field")
+    if not all(math.isfinite(v) and v > 0 for v in (dx, conductivity, h_factor)):
+        raise ValueError("dx, conductivity and h_factor must be positive and finite")
+    left, right = x_wall_temperatures
+    if left is None and right is None:
+        raise ValueError("steady slab requires at least one prescribed wall")
+    for wall in (left, right):
+        if wall is not None and not torch.isfinite(_wall_column(wall, source)).all():
+            raise ValueError("wall temperatures must be finite")
+    offsets = lattice_offsets(dx, h_factor*dx)
+    factor = -math.fsum(a*(n*dx)**2 for (_, n), a in offsets)
+    if factor <= 0:
+        raise ValueError("kernel support must include a conducting neighbour")
+    # Lift the inhomogeneous wall forcing, leaving a homogeneous reflected operator.
+    reference = _wall_column(left if left is not None else right, source).mean()
+    shifted = tuple(None if wall is None else torch.as_tensor(wall, dtype=source.dtype,
+                    device=source.device)-reference for wall in (left, right))
+    wall_rate = stencil_rhs_2d(torch.zeros_like(source), offsets, x_wall_temperatures=shifted)
+    rhs = source + (conductivity/factor)*wall_rate
+    right_image = rhs.flip((1,))
+    rhs = torch.cat((rhs, right_image if right is None else -right_image), dim=1)
+    if left is None or right is None:
+        # Odd at one wall and even at the other gives an antiperiod over 2*nx.
+        rhs = torch.cat((rhs, -rhs), dim=1)
+    ny, nx_ext = rhs.shape
+    ky = torch.fft.fftfreq(ny, device=source.device, dtype=source.dtype)[:, None]
+    kx = torch.fft.rfftfreq(nx_ext, device=source.device, dtype=source.dtype)
+    decay = torch.zeros((ny, len(kx)), dtype=source.dtype, device=source.device)
+    for (m, n), a in offsets:
+        decay += (-4*a*conductivity/factor)*torch.sin(math.pi*(m*ky+n*kx)).square()
+    # Odd reflection eliminates the constant mode of the extended problem.
+    decay[0, 0] = 1.
+    modes = torch.fft.rfft2(rhs)/decay
+    modes[0, 0] = 0.
+    return reference + torch.fft.irfft2(modes, s=rhs.shape)[:, :source.shape[1]]
+
+
 def prepare_slab_film_rhs(template, offsets, dx, film_coefficients, *, rho=1.,
                           conductivity=None, layered_x=False, contact_resistance_x=None,
                           specific_heat=None, local_films=False):

@@ -411,3 +411,18 @@ def test_insulated_step_temperature_and_internal_flux_approach_neumann_series():
     for metric in ("max_temperature_error", "center_flux_error"):
         assert fine[metric] < coarse[metric]/3.8
     assert max(coarse["mean_drift"], fine["mean_drift"]) < 1e-13
+
+
+def test_steady_slab_solves_pair_equations_with_spatial_wall_data():
+    from tensorsph.heat_conduction_2d import lattice_diffusion_factor_2d, solve_steady_slab_2d
+
+    ny, nx, dx, k = 7, 11, .07, 1.7
+    phase = torch.arange(ny, dtype=torch.float64)
+    wall = phase.cos()+275.
+    source = (torch.arange(nx, dtype=torch.float64)[None, :] + phase[:, None]).sin()
+    offsets = lattice_offsets(dx, 1.3*dx)
+    factor = lattice_diffusion_factor_2d(1.3, dx, mode="moment")
+    for walls in ((None, wall), (wall, None), (wall, wall.flip((0,)))):
+        t = solve_steady_slab_2d(source, dx, walls, conductivity=k)
+        rate = stencil_rhs_2d(t, offsets, x_wall_temperatures=walls)
+        torch.testing.assert_close(k*rate/factor, -source, atol=1e-10, rtol=0)
