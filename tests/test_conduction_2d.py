@@ -739,3 +739,31 @@ def test_two_row_flux_walls_recover_transverse_polynomial_solution(harmonic):
     torch.testing.assert_close(field,exact,atol=2e-12,rtol=0.)
     faces = torch.arange(n+1,dtype=torch.float64)/n
     torch.testing.assert_close(flux,(-k*(.4-.4*faces)).to(flux.dtype),atol=2e-12,rtol=0.)
+
+
+@pytest.mark.parametrize("damping",[False,True])
+def test_wall_jumps_return_requested_fields_and_heat(damping):
+    from tensorsph.heat_conduction_2d import solve_transient_slab_2d,step_transient_slab_2d
+    initial = torch.arange(24,dtype=torch.float64).reshape(4,6)/24
+    profile = torch.linspace(.2,1.,4,dtype=initial.dtype)
+    jumps = (.015,.03,.08)
+    levels = (1.,-.4,.2,1.3)
+    def west(t):
+        return levels[sum(t>=j for j in jumps)]*profile+t
+    opts = dict(volumetric_heat_capacity=2.,x_wall_inward_flux=(0.,.2))
+    fields,heat = solve_transient_slab_2d(initial,[0.,.08,.1],.2,(west,None),wall_jump_times=jumps,
+                                          rannacher=damping,return_x_heat=True,**opts)
+    current = initial
+    total = torch.zeros_like(heat)
+    for a,b,lvl in zip((0.,*jumps),(*jumps,.1),levels):
+        subgrid = (a,(a+b)/2,b) if damping else (a,b)
+        for lo,hi in zip(subgrid,subgrid[1:]):
+            value = lvl*profile+(hi if damping else (lo+hi)/2)
+            current,flux = step_transient_slab_2d(current,hi-lo,.2,(value,None),
+                                      theta=1. if damping else .5,return_x_flux=True,**opts)
+            total[int(a>=.08)] += (hi-lo)*flux
+        if b==.08:
+            torch.testing.assert_close(current,fields[1])
+    torch.testing.assert_close(current,fields[-1])
+    torch.testing.assert_close(heat,total)
+    torch.testing.assert_close(.4*fields.diff(dim=0).mean(dim=1),-heat.diff(dim=1),atol=1e-12,rtol=0.)

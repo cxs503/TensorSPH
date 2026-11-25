@@ -440,6 +440,76 @@ def step_transient_slab_2d(temperature, dt, dx, x_wall_temperatures, *, heat_sou
     return (updated,flux) if return_x_flux else updated
 
 
+def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
+                            wall_jump_times=(), rannacher=False, heat_source=0.,
+                            conductivity=1., volumetric_heat_capacity=1., theta=.5,
+                            h_factor=1.3, x_wall_inward_flux=(0.,0.), return_x_heat=False):
+    """Advance a reflected slab over requested times with prescribed wall histories.
+
+    Each wall may be a fixed scalar, row profile, callable of time returning
+    either, or None for prescribed flux. Source and prescribed flux are static.
+    At declared interior jumps, give the new wall value at the event time.
+    Rannacher damping applies two backward Euler half steps at startup and
+    immediately after each jump. The default integrator is Crank–Nicolson.
+    Return particle temperatures (nt,ny,nx). With return_x_heat also return
+    the interval-integrated rightward heat on each section (nt-1,nx+1), J/m².
+    """
+    grid = [float(t) for t in times]
+    jumps = [float(t) for t in wall_jump_times]
+    if len(grid)<2 or not all(math.isfinite(t) for t in grid) or any(a>=b for a,b in zip(grid,grid[1:])):
+        raise ValueError("times must be finite and strictly increasing")
+    if len(set(jumps))!=len(jumps) or not all(grid[0]<t<grid[-1] for t in jumps):
+        raise ValueError("wall_jump_times must be distinct interior times")
+    if rannacher and theta!=.5:
+        raise ValueError("Rannacher damping requires theta=.5")
+    walls = tuple(x_wall_temperatures)
+    if len(walls)!=2:
+        raise ValueError("provide west and east wall temperatures")
+    def stage_wall(wall,start,end,weight):
+        if not callable(wall):
+            return wall
+        stop_value = wall(end)
+        if weight==1.:
+            return stop_value
+        start_value = wall(start)
+        if any(torch.is_complex(torch.as_tensor(v)) for v in (start_value,stop_value)):
+            raise ValueError("transient wall temperatures must be real")
+        return ((1-weight)*torch.as_tensor(start_value,device=field.device,dtype=field.dtype)
+                +weight*torch.as_tensor(stop_value,device=field.device,dtype=field.dtype))
+    field = torch.as_tensor(temperature)
+    if field.ndim!=2 or min(field.shape)==0 or field.is_complex():
+        raise ValueError("provide a real nonempty (ny,nx) temperature field")
+    field = field.to(DTYPE)
+    history = [field]
+    heat = field.new_zeros((len(grid)-1,field.shape[1]+1)) if return_x_heat else None
+    events = set(jumps)
+    segments = sorted(set(grid)|events)
+    interval = 0
+    for start,stop in zip(segments,segments[1:]):
+        damp = rannacher and (start==grid[0] or start in events)
+        ends = (start+(stop-start)/2,stop) if damp else (stop,)
+        if damp and not start<ends[0]<stop:
+            raise ValueError("damped interval has no representable midpoint")
+        weight = 1. if damp else theta
+        for end in ends:
+            wall_end = math.nextafter(end,start) if end in events else end
+            stage = tuple(stage_wall(wall,start,wall_end,weight) for wall in walls)
+            result = step_transient_slab_2d(field,end-start,dx,stage,heat_source=heat_source,
+                         conductivity=conductivity,volumetric_heat_capacity=volumetric_heat_capacity,
+                         theta=weight,h_factor=h_factor,x_wall_inward_flux=x_wall_inward_flux,return_x_flux=return_x_heat)
+            if return_x_heat:
+                field,flux = result
+                heat[interval] += (end-start)*flux
+            else:
+                field = result
+            start = end
+        if stop==grid[interval+1]:
+            history.append(field)
+            interval += 1
+    fields = torch.stack(history)
+    return (fields,heat) if return_x_heat else fields
+
+
 def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
                       mean_temperature, shift, x_wall_inward_flux, return_x_flux):
     source = torch.as_tensor(heat_source, dtype=torch.complex128 if isinstance(shift, complex) else DTYPE)
