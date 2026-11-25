@@ -1662,3 +1662,55 @@ def test_quadratic_grid_predicts_contact_slab_frequency_response(record_property
         record_property(f"flux_remainder_{omega}", discrepancy[1])
     for coarse, fine in zip(*errors):
         assert 7.8 < coarse/fine < 8.2
+
+
+@pytest.mark.parametrize("backend", ["torch", "banded"])
+def test_storing_film_quadratic_response_against_symmetric_slab(backend, record_property):
+    from tensorsph.heat_conduction_2d import solve_low_frequency_layered_films
+
+    # A unit ambient on both sides gives steady T=1. For s=iω, integrate
+    # k*T_j''=C*T_{j-1} from the symmetry plane, then apply the film law.
+    k, capacity, film, surface, half = 1.7, 2.3, 3.2, .6, .5
+    wall1 = -(capacity*half + surface)/film
+    center1 = wall1 - capacity*half**2/(2*k)
+    q2 = capacity*(center1*half + capacity*half**3/(6*k))
+    wall2 = (-q2 - surface*wall1)/film
+    def primitive(u):
+        return capacity/k * (center1*u**2/2 + capacity*u**4/(24*k))
+
+    errors = []
+    for n in (16, 32, 64):
+        x = (torch.arange(n, dtype=torch.float64)+.5)/n
+        exact = wall2 + primitive(x-half) - primitive(half)
+        _, _, (field, walls, flux) = solve_low_frequency_layered_films(
+            torch.zeros_like(x), 1/n, (1.,1.), film_coefficients=(film,film),
+            conductivity=torch.full_like(x,k), volumetric_heat_capacity=capacity,
+            wall_areal_heat_capacity=(surface,surface), backend=backend, order=2)
+        row = [float((field-exact).abs().max()), float((walls-wall2).abs().max()),
+               float((flux-q2).abs().max())]
+        errors.append(row)
+        for name, error in zip(("field", "walls", "flux"), row):
+            record_property(f"{name}_coefficient_error_{n}", error)
+    for coarse, fine in zip(errors, errors[1:]):
+        assert all(3.8 < a/b < 4.2 for a,b in zip(coarse, fine))
+
+
+def test_quadratic_film_response_predicts_contact_slab_at_small_frequency(record_property):
+    from tensorsph.heat_conduction_2d import solve_harmonic_layered_films, solve_low_frequency_layered_films
+
+    x = (torch.arange(12,dtype=torch.float64)+.5)/12
+    contacts = torch.zeros_like(x[:-1])
+    contacts[5] = .25
+    options = dict(conductivity=1.+x, volumetric_heat_capacity=2.+x, contact_resistance_x=contacts,
+                   film_coefficients=(2.,3.), wall_areal_heat_capacity=(.3,.8), transverse_wavenumber=1.)
+    args = (x*.2j, 1/12, (1.+.25j, .3j))
+    coefficients = solve_low_frequency_layered_films(*args, order=2, **options)
+    errors = []
+    for omega in (.05, .025):
+        direct = solve_harmonic_layered_films(*args, omega, **options)
+        row = [float((actual-(dc+1j*omega*first-omega**2*second)).abs().max())
+               for actual, dc, first, second in zip(direct, *coefficients)]
+        errors.append(row)
+        for name, error in zip(("field", "walls", "flux"), row):
+            record_property(f"{name}_remainder_{omega}", error)
+    assert all(7.8 < a/b < 8.2 for a,b in zip(*errors))

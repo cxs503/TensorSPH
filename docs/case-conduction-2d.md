@@ -283,3 +283,12 @@ The quadratic coefficient is half the second derivative with respect to iω.
 The sine-mode test compares it with the continuum heat-equation eigenmode on
 8, 16 and 32 columns, and the contact-slab test checks the remainder against
 direct harmonic solves.
+
+For two convective walls with surface heat capacity, use
+`solve_low_frequency_layered_films(..., order=2)` to obtain the same expansion
+for particle temperature, both wall temperatures and the heat flux entering
+the slab at each end. For fixed ambient temperatures, the quadratic wall
+balance is `q2 = -h*Twall2 - Cwall*Twall1`. The symmetric-slab regression
+integrates the continuum equations for a uniform unit ambient. A separate
+layered case checks the complex response with unequal film and wall storage
+coefficients and an internal contact resistance.

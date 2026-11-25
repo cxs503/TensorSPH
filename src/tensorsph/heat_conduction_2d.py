@@ -520,13 +520,17 @@ def solve_low_frequency_layered_films(heat_source, dx, ambient_temperatures, *,
                                       film_coefficients, conductivity, volumetric_heat_capacity,
                                       contact_resistance_x=None, h_factor=1.3, backend="torch",
                                       wall_areal_heat_capacity=(0.,0.), heat_loss_coefficient=0.,
-                                      transverse_wavenumber=0.):
-    """Return steady and first-order coefficients of the exp(+iωt) film response.
+                                      transverse_wavenumber=0., order=1):
+    """Return low-frequency coefficients of the exp(+iωt) film response.
 
-    Both tuples contain particle temperatures, wall temperatures and inward
-    fluxes. The first-order coefficients have an extra factor of seconds.
+    Each tuple contains particle temperatures, wall temperatures and inward
+    fluxes. The default returns steady and linear coefficients of iω.
+    order=2 appends the coefficient of (iω)², including both wall storage
+    terms. Each power adds one factor of seconds to the coefficient units.
     The volumetric source and ambient temperatures are frequency independent.
     """
+    if isinstance(order, bool) or not isinstance(order, int) or order not in (1, 2):
+        raise ValueError("order must be 1 or 2")
     options = dict(film_coefficients=film_coefficients,conductivity=conductivity,
                    volumetric_heat_capacity=volumetric_heat_capacity,contact_resistance_x=contact_resistance_x,
                    h_factor=h_factor,backend=backend,wall_areal_heat_capacity=wall_areal_heat_capacity,
@@ -536,9 +540,13 @@ def solve_low_frequency_layered_films(heat_source, dx, ambient_temperatures, *,
     capacity = torch.as_tensor(volumetric_heat_capacity,dtype=DTYPE,device=field.device)
     surface = torch.as_tensor(wall_areal_heat_capacity,dtype=DTYPE,device=field.device)
     films = torch.as_tensor(film_coefficients,dtype=DTYPE,device=field.device)
-    # At first order the particle and surface storage act as specified sinks.
-    first = solve_harmonic_layered_films(-capacity*field,dx,-surface*walls/films,0.,**options)
-    return steady,first
+    coefficients = [steady]
+    for _ in range(order):
+        # Storage at the preceding order supplies both the bulk and film loads.
+        coefficient = solve_harmonic_layered_films(-capacity*field,dx,-surface*walls/films,0.,**options)
+        coefficients.append(coefficient)
+        field,walls,_ = coefficient
+    return tuple(coefficients)
 
 
 @dataclass
