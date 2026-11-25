@@ -77,6 +77,7 @@ What is *not* claimed
 """
 from __future__ import annotations
 
+import cmath
 import math
 from dataclasses import dataclass, field
 
@@ -226,56 +227,30 @@ def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatur
     sides with temperature None. The solution uses an analytical polynomial
     lift for prescribed flux and the calibrated SPH operator for the remainder.
     """
-    west, east = x_wall_inward_flux
-    if not all(math.isfinite(q) for q in (west, east)):
-        raise ValueError("wall fluxes must be finite")
-    if west or east:
-        left, right = x_wall_temperatures
-        if (left is not None and west) or (right is not None and east):
-            raise ValueError("prescribe heat flux only on a wall with temperature None")
-        source = torch.as_tensor(heat_source, dtype=DTYPE)
-        if source.ndim != 2 or min(source.shape) == 0 or not torch.isfinite(source).all():
-            raise ValueError("heat_source must be a finite nonempty (ny, nx) field")
-        if not all(math.isfinite(v) and v > 0 for v in (dx, conductivity)):
-            raise ValueError("dx and conductivity must be positive and finite")
-        length = source.shape[1]*dx
-        x = (torch.arange(source.shape[1], dtype=DTYPE, device=source.device)+0.5)*dx
-        if left is None and right is None:
-            # -k T'(0)=west, +k T'(L)=east. Center the lift to preserve the gauge.
-            sink = (west+east)/length
-            adjusted = source + sink
-            scale = source.abs().mean() + (abs(west)+abs(east))/length
-            if adjusted.mean().abs() > 64*torch.finfo(source.dtype).eps*scale:
-                raise ValueError("net source plus inward wall heat must vanish")
-            source = adjusted - adjusted.mean()
-            lift = (0.5*sink*x.square()-west*x)/conductivity
-            lift = lift-lift.mean()
-        else:
-            # The affine lift vanishes at the opposite, fixed-temperature wall.
-            lift = (west*(length-x) if right is not None else east*x)/conductivity
-        return lift + _solve_slab_modes(source, dx, x_wall_temperatures, conductivity,
-                                        h_factor, mean_temperature, 0.)
     return _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
-                             mean_temperature, 0.)
+                             mean_temperature, 0., x_wall_inward_flux)
 
 
 def solve_harmonic_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatures: SlabWalls,
                            angular_frequency: float, *, conductivity: float = 1.,
-                           volumetric_heat_capacity: float = 1., h_factor: float = 1.3) -> torch.Tensor:
+                           volumetric_heat_capacity: float = 1., h_factor: float = 1.3,
+                           x_wall_inward_flux=(0., 0.)) -> torch.Tensor:
     """Temperature phasors under exp(+iωt), for constant isotropic k and capacity.
 
     Use complex volumetric heating (W/m³) and scalar or row-wise wall phasors
-    (K). None insulates either wall. Supply ω in rad/s and capacity in J/(m³ K).
+    (K). On each wall with temperature None, x_wall_inward_flux specifies a
+    spatially uniform inward flux phasor (W/m²), default zero. Supply ω in
+    rad/s and capacity in J/(m³ K).
     """
     storage = angular_frequency*volumetric_heat_capacity
     if not all(math.isfinite(v) and v > 0 for v in (angular_frequency, volumetric_heat_capacity, storage)):
         raise ValueError("frequency and volumetric heat capacity must be positive and finite")
     return _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
-                             None, storage)
+                             None, storage, x_wall_inward_flux)
 
 
 def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
-                      mean_temperature, storage):
+                      mean_temperature, storage, x_wall_inward_flux):
     source = torch.as_tensor(heat_source, dtype=torch.complex128 if storage else DTYPE)
     if source.ndim != 2 or min(source.shape) == 0 or not torch.isfinite(source).all():
         raise ValueError("heat_source must be a finite nonempty (ny, nx) field")
@@ -283,6 +258,32 @@ def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_fact
         raise ValueError("dx, conductivity and h_factor must be positive and finite")
     left, right = x_wall_temperatures
     closed = left is None and right is None
+    west, east = x_wall_inward_flux
+    isfinite = cmath.isfinite if storage else math.isfinite
+    if not all(isfinite(q) for q in (west, east)):
+        raise ValueError("wall fluxes must be finite")
+    if (left is not None and west) or (right is not None and east):
+        raise ValueError("prescribe heat flux only on a wall with temperature None")
+    lift = 0.
+    if west or east:
+        length = source.shape[1]*dx
+        x = (torch.arange(source.shape[1], device=source.device, dtype=DTYPE)+0.5)*dx
+        if closed:
+            # -k T'(0)=west, +k T'(L)=east. Center the lift for the steady gauge.
+            curvature_k = (west+east)/length
+            lift = (0.5*curvature_k*x.square()-west*x)/conductivity
+            lift = lift-lift.mean()
+            scale = source.abs().mean() + (abs(west)+abs(east))/length
+            source = source + curvature_k
+            if not storage:
+                if source.mean().abs() > 64*torch.finfo(source.dtype).eps*scale:
+                    raise ValueError("net source plus inward wall heat must vanish")
+                source = source-source.mean()
+        else:
+            # The affine lift vanishes at the fixed-temperature wall.
+            lift = (west*(length-x) if right is not None else east*x)/conductivity
+        if storage:
+            source = source - 1j*storage*lift
     if closed and not storage:
         if mean_temperature is None or not math.isfinite(mean_temperature):
             raise ValueError("two insulated walls require a finite mean_temperature")
@@ -319,12 +320,12 @@ def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_fact
         decay += (-4*a*conductivity/factor)*torch.sin(math.pi*(m*ky+n*kx)).square()
     if storage:
         modes = torch.fft.fft2(rhs)/(decay + 1j*storage)
-        return reference + torch.fft.ifft2(modes)[:, :source.shape[1]]
+        return lift + reference + torch.fft.ifft2(modes)[:, :source.shape[1]]
     # The homogeneous correction has zero mean by odd symmetry or by prescription.
     decay[0, 0] = 1.
     modes = torch.fft.rfft2(rhs)/decay
     modes[0, 0] = 0.
-    return reference + torch.fft.irfft2(modes, s=rhs.shape)[:, :source.shape[1]]
+    return lift + reference + torch.fft.irfft2(modes, s=rhs.shape)[:, :source.shape[1]]
 
 
 def prepare_slab_film_rhs(template, offsets, dx, film_coefficients, *, rho=1.,

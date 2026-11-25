@@ -529,3 +529,18 @@ def test_uniform_flux_with_spatial_source_converges():
                                 mean_temperature=2.)
         errors.append(float((u-exact).abs().max()))
     assert all(a/b > 3.7 for a,b in zip(errors, errors[1:])), errors
+
+
+def test_harmonic_flux_storage_and_reflected_mixed_wall():
+    from tensorsph.heat_conduction_2d import solve_harmonic_slab_2d
+    source = torch.full((5, 17), .25-.4j, dtype=torch.complex128)
+    options = dict(dx=.1, angular_frequency=2., conductivity=3., volumetric_heat_capacity=4.)
+    west, east = .2+.7j, -1.+.5j
+    u = solve_harmonic_slab_2d(source, x_wall_temperatures=(None,None),
+                              x_wall_inward_flux=(west,east), **options)
+    torch.testing.assert_close(8j*u.mean(), source.mean()+(west+east)/1.7)
+    left = solve_harmonic_slab_2d(source, x_wall_temperatures=(None,2.+1j),
+                                  x_wall_inward_flux=(west,0.), **options)
+    right = solve_harmonic_slab_2d(source, x_wall_temperatures=(2.+1j,None),
+                                   x_wall_inward_flux=(0.,west), **options)
+    torch.testing.assert_close(left, right.flip((1,)), atol=1e-12, rtol=0)
