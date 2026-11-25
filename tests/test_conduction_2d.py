@@ -2152,3 +2152,20 @@ def test_fixed_wall_flux_resolves_one_ulp_temperature_difference():
     _, flux = solve_steady_slab_2d(source, 1/32, (305., 305.+drop),
                                   conductivity=1.7, return_x_flux=True)
     torch.testing.assert_close(flux, torch.full_like(flux, -1.7*drop), atol=0., rtol=1e-9)
+
+
+@pytest.mark.parametrize("backend", ["torch", "banded"])
+def test_layered_sampled_dc_flux_resolves_small_wall_differences(backend):
+    from tensorsph.heat_conduction_2d import solve_harmonic_layered_slab
+
+    source = torch.zeros((5, 16), dtype=torch.float64)
+    drop = 2**-44
+    k = torch.ones(16, dtype=source.dtype)
+    k[8:] = 4
+    resistance = torch.zeros(15, dtype=source.dtype)
+    resistance[7] = 0.25
+    _, cuts = solve_harmonic_layered_slab(
+        source, 1/16, (305., 305.+drop), 0., conductivity=k, volumetric_heat_capacity=1.,
+        contact_resistance_x=resistance, backend=backend, return_x_flux="by_row",
+    )
+    torch.testing.assert_close(cuts, torch.full_like(cuts, -drop/0.875), atol=0., rtol=1e-8)

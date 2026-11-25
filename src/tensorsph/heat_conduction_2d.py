@@ -319,18 +319,30 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
         raise ValueError("banded solves require CPU inputs")
     if isinstance(return_x_flux, str) and return_x_flux != "by_row":
         raise ValueError("return_x_flux must be a boolean or 'by_row'")
+    # A uniform offset is a null mode of lossless DC conduction. Remove it
+    # before the transverse FFT, wall forcing and cut-current calculations.
+    datum = 0.
+    if angular_frequency == 0 and transverse_wavenumber == 0 and not torch.any(torch.as_tensor(heat_loss_coefficient) != 0):
+        wall = next((w for w in x_wall_temperatures if w is not None), None)
+        if wall is not None:
+            values = torch.as_tensor(wall, dtype=source.dtype, device=source.device)
+            if values.numel():
+                datum = values.reshape(-1)[0]
+                x_wall_temperatures = tuple(
+                    None if w is None else torch.as_tensor(w, dtype=source.dtype, device=source.device)-datum
+                    for w in x_wall_temperatures)
     def solution_with_flux(field,offsets):
         grid = field.reshape(-1,field.shape[-1])
         if transverse_wavenumber!=0:
             _,power = _stencil_exchange(grid,offsets,1.,conductivity,x_wall_temperatures,True,dx,
                 contact_resistance_x,None,modal_flux=True,transverse_phase=transverse_wavenumber*dx)
-            return field,power/(dx*lattice_diffusion_factor_2d(h_factor,dx,mode="moment"))
+            return field+datum,power/(dx*lattice_diffusion_factor_2d(h_factor,dx,mode="moment"))
         rate,powers = stencil_rhs_with_wall_power_2d(grid,offsets,dx,x_wall_temperatures,
             conductivity=conductivity,layered_x=True,contact_resistance_x=contact_resistance_x)
         factor = lattice_diffusion_factor_2d(h_factor,dx,mode="moment")
         west = powers[:1]/(grid.shape[0]*dx*factor)
         flux = torch.cat((west,west-dx*rate.mean(0).cumsum(0)/factor))
-        return field,flux
+        return field+datum,flux
 
     if source.ndim == 2:
         if transverse_wavenumber != 0:
@@ -361,9 +373,9 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
                 for load, west, east, wave in zip(modes, wall_modes(left), wall_modes(right), waves)]
         if return_x_flux == "by_row":
             fields, cuts = zip(*rows)
-            return torch.fft.ifft(torch.stack(fields), dim=0), torch.fft.ifft(torch.stack(cuts), dim=0)
+            return torch.fft.ifft(torch.stack(fields), dim=0)+datum, torch.fft.ifft(torch.stack(cuts), dim=0)
         field = torch.fft.ifft(torch.stack(rows), dim=0)
-        return solution_with_flux(field,lattice_offsets(dx,h_factor*dx)) if return_x_flux else field
+        return solution_with_flux(field,lattice_offsets(dx,h_factor*dx)) if return_x_flux else field+datum
     if source.ndim != 1 or source.numel() == 0 or not torch.isfinite(source).all():
         raise ValueError("provide a finite nonempty vector of column heat sources")
     if not all(math.isfinite(v) and v > 0 for v in (dx,h_factor)):
@@ -431,7 +443,7 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
         field = torch.linalg.solve(matrix,rhs)
     if closed_mode:
         field = field-(capacity*field).mean()/capacity.mean()
-    return solution_with_flux(field,offsets) if return_x_flux else field
+    return solution_with_flux(field,offsets) if return_x_flux else field+datum
 
 
 def solve_low_frequency_layered_slab(heat_source, dx, x_wall_temperatures, *, conductivity,
