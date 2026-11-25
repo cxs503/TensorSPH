@@ -224,7 +224,7 @@ def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatur
     Supply a (ny, nx) volumetric heat source in W/m³, a constant conductivity
     in W/(m K), and two wall conditions. None selects a flux wall. Two
     flux walls require a balanced heat input and a prescribed mean_temperature.
-    x_wall_inward_flux gives uniform heat fluxes into the domain in W/m² on
+    x_wall_inward_flux gives scalar or per-row heat fluxes into the domain in W/m² on
     sides with temperature None. The solution uses an analytical polynomial
     lift for prescribed flux and the calibrated SPH operator for the remainder.
     With return_x_flux, also return the cross-section mean heat flux (W/m²)
@@ -243,7 +243,7 @@ def solve_harmonic_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperat
 
     Use complex volumetric heating (W/m³) and scalar or row-wise wall phasors
     (K). On each wall with temperature None, x_wall_inward_flux specifies a
-    spatially uniform inward flux phasor (W/m²), default zero. Supply ω in
+    scalar or per-row inward flux phasor (W/m²), default zero. Supply ω in
     rad/s and capacity in J/(m³ K). With return_x_flux, also return nx+1
     section-averaged complex heat fluxes (W/m²), positive towards increasing x.
     """
@@ -412,7 +412,7 @@ def step_transient_slab_2d(temperature, dt, dx, x_wall_temperatures, *, heat_sou
 
     Supply real particle temperatures (ny,nx), periodic in y. Supply the
     theta-weighted start and end values of volumetric heating (W/m³), wall
-    temperatures (K, scalar or per row), and uniform inward wall fluxes (W/m²)
+    temperatures (K, scalar or per row), and scalar or per-row inward wall fluxes (W/m²)
     on sides whose wall temperature is None. theta=.5 is Crank–Nicolson and
     theta=1 is backward Euler. Optional section fluxes point right and are
     time-step averages, so dt times the flux difference gives heat per area.
@@ -449,39 +449,45 @@ def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_fact
         raise ValueError("dx, conductivity and h_factor must be positive and finite")
     left, right = x_wall_temperatures
     closed = left is None and right is None
-    west, east = x_wall_inward_flux
-    isfinite = cmath.isfinite if source.is_complex() else math.isfinite
-    if not all(isfinite(q) for q in (west, east)):
+    if not source.is_complex() and any(torch.is_complex(torch.as_tensor(q)) for q in x_wall_inward_flux):
+        raise ValueError("real slab solves require real wall fluxes")
+    west, east = (_wall_column(q, source) for q in x_wall_inward_flux)
+    if not all(torch.isfinite(q).all() for q in (west, east)):
         raise ValueError("wall fluxes must be finite")
-    if (left is not None and west) or (right is not None and east):
+    west_loaded, east_loaded = bool(west.any()), bool(east.any())
+    if (left is not None and west_loaded) or (right is not None and east_loaded):
         raise ValueError("prescribe heat flux only on a wall with temperature None")
+    length = source.shape[1]*dx
+    if closed and not shift:
+        if mean_temperature is None or not math.isfinite(mean_temperature):
+            raise ValueError("two flux walls require a finite mean_temperature")
+        # Check physical input before the analytical lift cancels its forcing.
+        net = source.mean()+(west.mean()+east.mean())/length
+        scale = source.abs().mean()+(west.abs().mean()+east.abs().mean())/length
+        if net.abs() > 64*torch.finfo(source.dtype).eps*scale:
+            raise ValueError("net source plus inward wall heat must vanish (zero net heat input)")
+    elif mean_temperature is not None:
+        raise ValueError("mean_temperature applies only to two flux walls in a steady solve")
     lift = 0.
-    if west or east:
-        length = source.shape[1]*dx
+    if west_loaded or east_loaded:
         x = (torch.arange(source.shape[1], device=source.device, dtype=DTYPE)+0.5)*dx
         if closed:
             # -k T'(0)=west, +k T'(L)=east. Center the lift for the steady gauge.
             curvature_k = (west+east)/length
             lift = (0.5*curvature_k*x.square()-west*x)/conductivity
             lift = lift-lift.mean()
-            scale = source.abs().mean() + (abs(west)+abs(east))/length
             source = source + curvature_k
-            if not shift:
-                if source.mean().abs() > 64*torch.finfo(source.dtype).eps*scale:
-                    raise ValueError("net source plus inward wall heat must vanish")
-                source = source-source.mean()
         else:
             # The affine lift vanishes at the fixed-temperature wall.
             lift = (west*(length-x) if right is not None else east*x)/conductivity
+        if lift.ndim == 2 and lift.shape[0] > 1:
+            # The polynomial in x has periodic row-dependent coefficients.
+            # Differentiate their trigonometric interpolant to supply k*T_yy.
+            waves = 2*math.pi*torch.fft.fftfreq(lift.shape[0],d=dx,device=source.device,dtype=DTYPE)
+            lateral = torch.fft.ifft(-waves[:,None].square()*torch.fft.fft(lift,dim=0),dim=0)
+            source = source + conductivity*(lateral if source.is_complex() else lateral.real)
         if shift:
             source = source - shift*lift
-    if closed and not shift:
-        if mean_temperature is None or not math.isfinite(mean_temperature):
-            raise ValueError("two insulated walls require a finite mean_temperature")
-        if source.mean().abs() > 64*torch.finfo(source.dtype).eps*source.abs().mean():
-            raise ValueError("two insulated walls require zero net heat input")
-    elif mean_temperature is not None:
-        raise ValueError("mean_temperature applies only to two insulated walls")
     for wall in (left, right):
         if wall is not None and not torch.isfinite(_wall_column(wall, source)).all():
             raise ValueError("wall temperatures must be finite")
@@ -543,12 +549,12 @@ def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_fact
             crossings = jumps.unfold(0, n, 1)[radius-n:radius-n+face_count]
             flux += a*crossings.sum(dim=1)
     flux *= 2*conductivity*dx/factor
-    if west or east:
+    if west_loaded or east_loaded:
         if closed:
             position = torch.arange(face_count, device=source.device, dtype=DTYPE)*dx
-            flux += west-curvature_k*position
+            flux += west.mean()-curvature_k.mean()*position
         else:
-            flux += west if right is not None else -east
+            flux += west.mean() if right is not None else -east.mean()
     return temperature, flux
 
 

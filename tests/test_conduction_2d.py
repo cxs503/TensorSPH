@@ -715,3 +715,27 @@ def test_implicit_step_closes_heat_balance_on_every_section(walls,theta):
                      x_wall_inward_flux=(west,east),return_x_flux=True)
     stored = capacity*dx*(updated-field).mean(dim=0)
     torch.testing.assert_close(stored,dt*(dx*source.mean(dim=0)-flux.diff()),atol=3e-13,rtol=0.)
+
+
+@pytest.mark.parametrize("harmonic",[False, True])
+def test_two_row_flux_walls_recover_transverse_polynomial_solution(harmonic):
+    from tensorsph.heat_conduction_2d import solve_harmonic_slab_2d, solve_steady_slab_2d
+    n,k,c,omega = 16,1.7,2.3,5.
+    x = (torch.arange(n,dtype=torch.float64)+.5)/n
+    beta = 2*torch.pi
+    mode = torch.exp(1j*beta*x) if harmonic else torch.cos(beta*x)
+    linear = .4+mode[:,None]
+    quadratic = -.2+.3*mode[:,None]
+    exact = 2.+linear*x+quadratic*x.square()
+    west = -k*linear[:,0]
+    east = k*(linear+2*quadratic)[:,0]
+    source = -2*k*quadratic+k*beta**2*mode[:,None]*(x+.3*x.square())
+    opts = dict(conductivity=k,x_wall_inward_flux=(west,east),return_x_flux=True)
+    if harmonic:
+        field,flux = solve_harmonic_slab_2d(source+1j*omega*c*exact,1/n,(None,None),omega,
+                                            volumetric_heat_capacity=c,**opts)
+    else:
+        field,flux = solve_steady_slab_2d(source,1/n,(None,None),mean_temperature=float(exact.mean()),**opts)
+    torch.testing.assert_close(field,exact,atol=2e-12,rtol=0.)
+    faces = torch.arange(n+1,dtype=torch.float64)/n
+    torch.testing.assert_close(flux,(-k*(.4-.4*faces)).to(flux.dtype),atol=2e-12,rtol=0.)
