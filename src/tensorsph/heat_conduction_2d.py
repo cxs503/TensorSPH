@@ -214,16 +214,24 @@ def stencil_rhs_with_wall_power_2d(
                              dx, contact_resistance_x, specific_heat, collect_power=True, power_by_row=power_by_row)
 
 
+def _heat_loss(value):
+    if not math.isfinite(value) or value < 0:
+        raise ValueError("heat_loss_coefficient must be finite and nonnegative")
+    return float(value)
+
+
 def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatures: SlabWalls,
                          *, conductivity: float = 1., h_factor: float = 1.3,
-                         mean_temperature: float | None = None,
+                         mean_temperature: float | None = None, heat_loss_coefficient: float = 0.,
                          x_wall_inward_flux=(0., 0.), return_x_flux: bool = False
                          ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
     """Steady temperature on a uniform lattice, periodic y and reflected x walls.
 
     Supply a (ny, nx) volumetric heat source in W/m³, a constant conductivity
     in W/(m K), and two wall conditions. None selects a flux wall. Two
-    flux walls require a balanced heat input and a prescribed mean_temperature.
+    flux walls with zero heat loss require balanced input and a mean_temperature.
+    A positive heat_loss_coefficient H (W/(m³ K)) adds a bulk sink H*T
+    and fixes the absolute temperature. For ambient Ta include H*Ta in heat_source.
     x_wall_inward_flux gives scalar or per-row heat fluxes into the domain in W/m² on
     sides with temperature None. The solution uses an analytical polynomial
     lift for prescribed flux and the calibrated SPH operator for the remainder.
@@ -231,13 +239,13 @@ def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatur
     on all nx+1 faces, positive towards increasing x, including the walls.
     """
     return _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
-                             mean_temperature, 0., x_wall_inward_flux, return_x_flux)
+                             mean_temperature, _heat_loss(heat_loss_coefficient), x_wall_inward_flux, return_x_flux)
 
 
 def solve_harmonic_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatures: SlabWalls,
                            angular_frequency: float, *, conductivity: float = 1.,
                            volumetric_heat_capacity: float = 1., h_factor: float = 1.3,
-                           x_wall_inward_flux=(0., 0.), return_x_flux: bool = False
+                           heat_loss_coefficient: float = 0., x_wall_inward_flux=(0., 0.), return_x_flux: bool = False
                          ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
     """Temperature phasors under exp(+iωt), for constant isotropic k and capacity.
 
@@ -246,12 +254,13 @@ def solve_harmonic_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperat
     scalar or per-row inward flux phasor (W/m²), default zero. Supply ω in
     rad/s and capacity in J/(m³ K). With return_x_flux, also return nx+1
     section-averaged complex heat fluxes (W/m²), positive towards increasing x.
+    heat_loss_coefficient H adds a bulk sink H*T (W/m³).
     """
     storage = angular_frequency*volumetric_heat_capacity
     if not all(math.isfinite(v) and v > 0 for v in (angular_frequency, volumetric_heat_capacity, storage)):
         raise ValueError("frequency and volumetric heat capacity must be positive and finite")
     return _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
-                             None, 1j*storage, x_wall_inward_flux, return_x_flux)
+                             None, _heat_loss(heat_loss_coefficient)+1j*storage, x_wall_inward_flux, return_x_flux)
 
 
 def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_frequency,
@@ -407,7 +416,7 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
 
 def step_transient_slab_2d(temperature, dt, dx, x_wall_temperatures, *, heat_source=0.,
                            conductivity=1., volumetric_heat_capacity=1., theta=.5,
-                           h_factor=1.3, x_wall_inward_flux=(0.,0.), return_x_flux=False):
+                           h_factor=1.3, x_wall_inward_flux=(0.,0.), return_x_flux=False, heat_loss_coefficient=0.):
     """Advance a homogeneous reflected slab one implicit theta step of duration dt (s).
 
     Supply real particle temperatures (ny,nx), periodic in y. Supply the
@@ -416,6 +425,7 @@ def step_transient_slab_2d(temperature, dt, dx, x_wall_temperatures, *, heat_sou
     on sides whose wall temperature is None. theta=.5 is Crank–Nicolson and
     theta=1 is backward Euler. Optional section fluxes point right and are
     time-step averages, so dt times the flux difference gives heat per area.
+    The bulk sink H*T uses the same theta stage as conduction; H is in W/(m³ K).
     """
     if not (.5 <= theta <= 1 and math.isfinite(dt) and dt > 0
             and math.isfinite(volumetric_heat_capacity) and volumetric_heat_capacity > 0):
@@ -431,10 +441,11 @@ def step_transient_slab_2d(temperature, dt, dx, x_wall_temperatures, *, heat_sou
     if source.shape not in ((),field.shape):
         raise ValueError("heat_source must be scalar or have the temperature field shape")
     shift = volumetric_heat_capacity/(theta*dt)
-    if not math.isfinite(shift) or shift <= 0:
+    total_shift = shift+_heat_loss(heat_loss_coefficient)
+    if not math.isfinite(total_shift) or shift <= 0:
         raise ValueError("capacity divided by theta*dt must be finite and positive")
     result = _solve_slab_modes(shift*field+source, dx, x_wall_temperatures,
-                               conductivity, h_factor, None, shift, x_wall_inward_flux, return_x_flux)
+                               conductivity, h_factor, None, total_shift, x_wall_inward_flux, return_x_flux)
     stage, flux = result if return_x_flux else (result, None)
     updated = field+(stage-field)/theta
     return (updated,flux) if return_x_flux else updated
@@ -443,12 +454,14 @@ def step_transient_slab_2d(temperature, dt, dx, x_wall_temperatures, *, heat_sou
 def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                             wall_jump_times=(), rannacher=False, heat_source=0.,
                             conductivity=1., volumetric_heat_capacity=1., theta=.5,
-                            h_factor=1.3, x_wall_inward_flux=(0.,0.), return_x_heat=False):
+                            h_factor=1.3, x_wall_inward_flux=(0.,0.), return_x_heat=False, heat_loss_coefficient=0.):
     """Advance a reflected slab over requested times with prescribed wall histories.
 
     Each wall may be a fixed scalar, row profile, callable of time returning
     either, or None for prescribed flux. Volumetric heating (scalar or field)
     and each inward wall flux (scalar or row profile) may also depend on time.
+    heat_loss_coefficient H adds a bulk sink H*T. Include H*Ta in heat_source
+    for exchange with a prescribed ambient temperature Ta.
     List discontinuities of any load in wall_jump_times and return the new
     value at the event time.
     Rannacher damping applies two backward Euler half steps at startup and
@@ -503,7 +516,8 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
             stage_source = stage_load(heat_source,start,load_end,weight)
             result = step_transient_slab_2d(field,end-start,dx,stage,heat_source=stage_source,
                          conductivity=conductivity,volumetric_heat_capacity=volumetric_heat_capacity,
-                         theta=weight,h_factor=h_factor,x_wall_inward_flux=stage_flux,return_x_flux=return_x_heat)
+                         theta=weight,h_factor=h_factor,x_wall_inward_flux=stage_flux,return_x_flux=return_x_heat,
+                         heat_loss_coefficient=heat_loss_coefficient)
             if return_x_heat:
                 field,flux = result
                 heat[interval] += (end-start)*flux
@@ -544,7 +558,7 @@ def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_fact
         if net.abs() > 64*torch.finfo(source.dtype).eps*scale:
             raise ValueError("net source plus inward wall heat must vanish (zero net heat input)")
     elif mean_temperature is not None:
-        raise ValueError("mean_temperature applies only to two flux walls in a steady solve")
+        raise ValueError("mean_temperature applies only to two flux walls in a steady solve without bulk heat loss")
     lift = 0.
     if west_loaded or east_loaded:
         x = (torch.arange(source.shape[1], device=source.device, dtype=DTYPE)+0.5)*dx

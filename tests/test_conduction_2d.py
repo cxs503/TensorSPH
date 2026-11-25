@@ -783,3 +783,25 @@ def test_transient_load_jump_preserves_net_heat(damping):
     torch.testing.assert_close(heat[:,0],durations,atol=1e-12,rtol=0.)
     torch.testing.assert_close(heat[:,-1],-2*durations,atol=1e-12,rtol=0.)
     torch.testing.assert_close(field.diff(dim=0).mean(dim=(1,2)),6*durations,atol=1e-12,rtol=0.)
+
+
+def test_volume_loss_equilibrates_two_insulated_walls():
+    from tensorsph.heat_conduction_2d import solve_steady_slab_2d, solve_transient_slab_2d
+    source = torch.full((5,8),6.,dtype=torch.float64)
+    opts = dict(dx=.125,x_wall_temperatures=(None,None),heat_loss_coefficient=3.)
+    steady,flux = solve_steady_slab_2d(source,return_x_flux=True,**opts)
+    torch.testing.assert_close(steady,torch.full_like(steady,2.))
+    torch.testing.assert_close(flux,torch.zeros_like(flux))
+    times = [0.,.1,.35]
+    states = solve_transient_slab_2d(source*0,times,heat_source=source,volumetric_heat_capacity=2.,**opts)
+    predicted = 0.
+    for i,dt in enumerate((.1,.25),1):
+        predicted = ((2-.5*3*dt)*predicted+6*dt)/(2+.5*3*dt)
+        torch.testing.assert_close(states[i],torch.full_like(steady,predicted))
+
+
+@pytest.mark.parametrize("loss",[-1.,float("nan"),float("inf")])
+def test_invalid_bulk_heat_loss(loss):
+    from tensorsph.heat_conduction_2d import solve_steady_slab_2d
+    with pytest.raises(ValueError,match="heat_loss_coefficient"):
+        solve_steady_slab_2d(torch.ones(4,8),.125,(1.,None),heat_loss_coefficient=loss)
