@@ -299,6 +299,8 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
     source and scalar or (ny,) end temperatures sampled on periodic rows.
     Then the output has the same grid shape and all Fourier modes are solved.
     Frequency is in rad/s under exp(+iωt). The default backend is dense torch.
+    At zero frequency an insulated, lossless slab requires zero net source.
+    Its capacity-weighted mean temperature is set to zero, the harmonic limit.
     backend="banded" uses SciPy on CPU and stores only the stencil diagonals.
     """
     source = torch.as_tensor(heat_source, dtype=torch.complex128)
@@ -321,6 +323,11 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
             return torch.fft.fft(samples.contiguous())
 
         modes = torch.fft.fft(source.contiguous(), dim=0)
+        if angular_frequency==0 and left is None and right is None and not torch.any(torch.as_tensor(heat_loss_coefficient)!=0):
+            # Check compatibility before Fourier cancellation obscures the load scale.
+            if abs(source.sum())>64*torch.finfo(DTYPE).eps*source.abs().sum():
+                raise ValueError("steady insulated slab requires zero net source")
+            modes[0] -= modes[0].mean()
         waves = (2*math.pi)*torch.fft.fftfreq(ny, d=dx, dtype=DTYPE)
         rows = [solve_harmonic_layered_slab(load, dx, (west, east), angular_frequency,
                         conductivity=conductivity, volumetric_heat_capacity=volumetric_heat_capacity,
@@ -349,13 +356,19 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
     loss = torch.as_tensor(heat_loss_coefficient, dtype=DTYPE, device=source.device)
     if loss.shape not in ((),source.shape) or not torch.all(torch.isfinite(loss) & (loss>=0)):
         raise ValueError("heat_loss_coefficient must be finite, nonnegative and scalar or per column")
+    closed_mode = False
     if angular_frequency==0 and left is None and right is None and not torch.any(loss>0):
         # A sampled nonconstant transverse mode supplies its own restoring term.
         phase = math.remainder(transverse_wavenumber*dx,math.tau)
-        if abs(phase)<=math.ulp(math.tau):
-            raise ValueError("the steady insulated constant transverse mode requires positive bulk heat loss")
+        closed_mode = abs(phase)<=math.ulp(math.tau)
+        if closed_mode and abs(source.sum())>64*torch.finfo(DTYPE).eps*source.abs().sum():
+            raise ValueError("steady insulated slab requires zero net source")
     bulk_shift = loss+1j*angular_frequency*capacity.expand_as(source)
     size = source.numel()
+    rhs = source+load
+    if closed_mode:
+        # Pin one row during the solve, then recover the energy-conserving mean.
+        rhs[0] = 0.
     if backend == "banded":
         from scipy.linalg import solve_banded
 
@@ -371,15 +384,25 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
             j = columns[max(0,-offset):min(size,size-offset)]
             bands[radius+offset,j] = -rates[classes[j],j+offset].to(source.dtype)
         bands[radius] += bulk_shift
+        if closed_mode:
+            j = columns[:radius+1]
+            bands[radius-j,j] = 0.
+            bands[radius,0] = 1.
         if radius == 0:
-            return (source+load)/bands[0]
-        result = solve_banded((radius,radius), bands.numpy(), (source+load).numpy())
-        return torch.from_numpy(result)
-
-    basis = torch.eye(size, dtype=DTYPE, device=source.device)
-    operator = response(basis, homogeneous).T
-    matrix = torch.diag(bulk_shift)-operator
-    return torch.linalg.solve(matrix, source+load)
+            field = rhs/bands[0]
+        else:
+            field = torch.from_numpy(solve_banded((radius,radius),bands.numpy(),rhs.numpy()))
+    else:
+        basis = torch.eye(size, dtype=DTYPE, device=source.device)
+        operator = response(basis, homogeneous).T
+        matrix = torch.diag(bulk_shift)-operator
+        if closed_mode:
+            matrix[0] = 0.
+            matrix[0,0] = 1.
+        field = torch.linalg.solve(matrix,rhs)
+    if closed_mode:
+        field = field-(capacity*field).mean()/capacity.mean()
+    return field
 
 
 def solve_low_frequency_layered_slab(heat_source, dx, x_wall_temperatures, *, conductivity,

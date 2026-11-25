@@ -1066,5 +1066,25 @@ def test_steady_insulated_transverse_mode_and_aliased_constant():
         torch.testing.assert_close(steady,source/rate,atol=1e-12,rtol=1e-10)
         torch.testing.assert_close(lag,-3*source/rate**2,atol=1e-12,rtol=1e-10)
         for alias in (0.,math.tau/dx):
-            with pytest.raises(ValueError,match="constant transverse mode"):
-                solve_low_frequency_layered_slab(source,dx,(None,None),transverse_wavenumber=alias,**options)
+            rate_dc = 2*symbol_rate(dx,1.3*dx,math.pi,0.)/lattice_diffusion_factor_2d(1.3,dx,mode="moment")
+            dc,dc_lag = solve_low_frequency_layered_slab(source,dx,(None,None),transverse_wavenumber=alias,**options)
+            torch.testing.assert_close(dc,source/rate_dc,atol=1e-12,rtol=1e-10)
+            torch.testing.assert_close(dc_lag,-3*source/rate_dc**2,atol=1e-12,rtol=1e-10)
+            with pytest.raises(ValueError,match="zero net source"):
+                solve_low_frequency_layered_slab(source+1,dx,(None,None),transverse_wavenumber=alias,**options)
+
+
+def test_closed_slab_nonuniform_capacity_sets_energy_mean():
+    from tensorsph.heat_conduction_2d import solve_harmonic_layered_slab, solve_low_frequency_layered_slab
+
+    n = 16
+    x = (torch.arange(n,dtype=torch.float64)+.5)/n
+    capacity = 1+x
+    source = (.5+.3j)*(x-.5)
+    opts = dict(conductivity=2.+x,volumetric_heat_capacity=capacity,backend="banded")
+    steady,lag = solve_low_frequency_layered_slab(source,1/n,(None,None),**opts)
+    assert abs((capacity*steady).sum())<1e-13
+    assert abs((capacity*lag).sum())<1e-13
+    omega = .02
+    finite = solve_harmonic_layered_slab(source,1/n,(None,None),omega,**opts)
+    torch.testing.assert_close(finite,steady+1j*omega*lag,rtol=0.,atol=3e-8)
