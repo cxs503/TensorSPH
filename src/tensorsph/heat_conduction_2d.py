@@ -1209,14 +1209,15 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                             conductivity=1., volumetric_heat_capacity=1., theta=.5,
                             h_factor=1.3, x_wall_inward_flux=(0.,0.), return_x_heat=False, heat_loss_coefficient=0.,
                             method="theta", return_wall_heat_by_row=False, wall_gradient_fit="wall", temperature_reference=0.,
-                            return_interval_temperatures=False):
+                            return_interval_temperatures=False, ambient_temperature=None):
     """Advance a reflected slab over requested times with prescribed wall histories.
 
     Each wall may be a fixed scalar, row profile, callable of time returning
     either, or None for prescribed flux. Volumetric heating (scalar or field)
     and each inward wall flux (scalar or row profile) may also depend on time.
-    heat_loss_coefficient H adds a bulk sink H*T. Include H*Ta in heat_source
-    for exchange with a prescribed ambient temperature Ta.
+    heat_loss_coefficient H adds volumetric exchange H*(Ta-T). The ambient_temperature
+    Ta defaults to zero and may be a scalar, a particle field or a callable of time
+    returning either. Supply other heating separately to retain weak sources.
     List discontinuities of any load in wall_jump_times and return the new
     value at the event time.
     Rannacher damping applies two backward Euler half steps at startup and
@@ -1279,7 +1280,8 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
         raise ValueError("temperature_reference must be finite")
     datum = field[0, 0]
     field = field - datum
-    bulk_offset = _heat_loss(heat_loss_coefficient) * datum
+    loss = _heat_loss(heat_loss_coefficient)
+    bulk_offset = loss * datum
     if wall_gradient_fit not in ("wall", "interior"):
         raise ValueError("wall_gradient_fit must be wall or interior")
     recover_gradient = return_wall_heat_by_row and any(w is not None for w in walls)
@@ -1289,7 +1291,15 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     def advance(initial,dt,start,load_end,weight):
         stage = tuple(stage_load(wall,start,load_end,weight,datum) for wall in walls)
         stage_flux = tuple(stage_load(q,start,load_end,weight) for q in fluxes)
-        result = step_transient_slab_2d(initial,dt,dx,stage,heat_source=stage_load(heat_source,start,load_end,weight,bulk_offset),
+        if ambient_temperature is None or loss == 0:
+            source = stage_load(heat_source,start,load_end,weight,bulk_offset)
+        else:
+            ambient = stage_load(ambient_temperature,start,load_end,weight,datum)
+            source = stage_load(heat_source,start,load_end,weight,0.)
+            if any(value.shape not in ((),field.shape) for value in (ambient,source)):
+                raise ValueError("ambient temperature and heat source must be scalar or match the field shape")
+            source = source + loss*ambient
+        result = step_transient_slab_2d(initial,dt,dx,stage,heat_source=source,
                      conductivity=conductivity,volumetric_heat_capacity=volumetric_heat_capacity,
                      theta=weight,h_factor=h_factor,x_wall_inward_flux=stage_flux,return_x_flux=need_flux,
                      heat_loss_coefficient=heat_loss_coefficient)

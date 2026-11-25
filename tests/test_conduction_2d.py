@@ -2252,3 +2252,29 @@ def test_python_wall_flux_means_keep_double_precision(field_dtype, mean):
     flux = recover_dirichlet_wall_flux_2d(field, 1., 1., [mean, -mean], x_wall_temperatures=(-.5, 3.5))
     expected = torch.tensor([mean, -mean], dtype=torch.complex128 if isinstance(mean, complex) else torch.float64)
     torch.testing.assert_close(flux, expected[:, None].expand_as(flux), atol=0., rtol=0.)
+
+
+@pytest.mark.parametrize("method", ["theta", "sdirk2"])
+def test_transient_relative_bulk_exchange_with_moving_ambient(method):
+    from tensorsph.heat_conduction_2d import solve_transient_slab_2d
+
+    # Uniform insulated slab: T = 305 + t, Ta = 305 + 2*t,
+    # H = 3 and source = 1 - 3*t give dT/dt = 1 exactly.
+    initial = torch.full((2, 8), 305., dtype=torch.float64)
+    times = [0., .125, .25, .5]
+    fields = solve_transient_slab_2d(
+        initial, times, .125, (None, None), method=method, heat_loss_coefficient=3.,
+        ambient_temperature=lambda t: initial + 2*t, heat_source=lambda t: 1 - 3*t,
+        temperature_reference=305.)
+    expected = initial.new_tensor(times)[:, None, None].expand_as(fields)
+    torch.testing.assert_close(fields, expected, atol=1e-13, rtol=0)
+
+    # Adding this source directly to H*305 would round it away.
+    def excess(base):
+        return solve_transient_slab_2d(
+            torch.full_like(initial, base), times, .125, (base, base), method=method,
+            heat_loss_coefficient=3., ambient_temperature=base, heat_source=2**-46,
+            temperature_reference=base)
+    reference = excess(0.)
+    assert reference[-1].min() > 0
+    torch.testing.assert_close(excess(305.), reference, atol=0, rtol=0)
