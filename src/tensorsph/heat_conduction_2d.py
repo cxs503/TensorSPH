@@ -254,6 +254,47 @@ def solve_harmonic_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperat
                              None, storage, x_wall_inward_flux, return_x_flux)
 
 
+def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_frequency,
+                                *, conductivity, volumetric_heat_capacity,
+                                contact_resistance_x=None, h_factor=1.3):
+    """Return particle temperature phasors for a transversely uniform layered slab.
+
+    Use one source (W/m³) and conductivity (W/(m K)) per x column, a scalar
+    or per-column heat capacity (J/(m³ K)), and optional interface resistances
+    (m² K/W). Each end has a scalar temperature phasor or None for insulation.
+    The dense complex solve uses the calibrated 2-D particle-pair stencil with
+    all transverse rows identical. Frequency is in rad/s under exp(+iωt).
+    """
+    source = torch.as_tensor(heat_source, dtype=torch.complex128)
+    if source.ndim != 1 or source.numel() == 0 or not torch.isfinite(source).all():
+        raise ValueError("provide a finite nonempty vector of column heat sources")
+    if not all(math.isfinite(v) and v > 0 for v in (angular_frequency, dx, h_factor)):
+        raise ValueError("frequency, dx and h_factor must be positive and finite")
+    capacity = torch.as_tensor(volumetric_heat_capacity, dtype=DTYPE, device=source.device)
+    if capacity.shape not in ((), source.shape) or not torch.all(torch.isfinite(capacity) & (capacity > 0)):
+        raise ValueError("provide a positive finite scalar or column heat capacities")
+    left, right = x_wall_temperatures
+    for wall in (left, right):
+        if wall is not None and (torch.as_tensor(wall).ndim or not cmath.isfinite(wall)):
+            raise ValueError("wall phasors must be finite scalars")
+    offsets = lattice_offsets(dx, h_factor*dx)
+    factor = lattice_diffusion_factor_2d(h_factor, dx, mode="moment")
+    if factor <= 0:
+        raise ValueError("kernel support must include a conducting neighbour")
+    # For a uniform transverse field each diagonal link sees the same x
+    # neighbour. Suppress its row shift so separate rows can carry basis probes.
+    axial = tuple(((0, n), a) for (_, n), a in offsets if n)
+    options = dict(dx=dx, conductivity=conductivity, layered_x=True,
+                   contact_resistance_x=contact_resistance_x)
+    homogeneous = tuple(None if wall is None else 0. for wall in (left, right))
+    basis = torch.eye(source.numel(), dtype=DTYPE, device=source.device)
+    operator = stencil_rhs_2d(basis, axial, x_wall_temperatures=homogeneous, **options).T/factor
+    load = stencil_rhs_2d(torch.zeros_like(source)[None, :], axial,
+                          x_wall_temperatures=(left, right), **options)[0]/factor
+    matrix = torch.diag(1j*angular_frequency*capacity.expand_as(source))-operator
+    return torch.linalg.solve(matrix, source+load)
+
+
 def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
                       mean_temperature, storage, x_wall_inward_flux, return_x_flux):
     source = torch.as_tensor(heat_source, dtype=torch.complex128 if storage else DTYPE)

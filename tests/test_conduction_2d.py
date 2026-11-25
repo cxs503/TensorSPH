@@ -567,3 +567,28 @@ def test_slab_section_flux_resolves_storage_in_each_column():
     _, q = solve_steady_slab_2d(torch.ones_like(source.real), dx, (None,None),
              mean_temperature=7., x_wall_inward_flux=(2., -2.-nx*dx), return_x_flux=True)
     torch.testing.assert_close(q, 2.+dx*torch.arange(nx+1, dtype=x.dtype), atol=1e-13, rtol=0)
+
+
+def test_harmonic_layered_slab_solves_full_pair_equations():
+    from tensorsph.heat_conduction_2d import (
+        lattice_diffusion_factor_2d, solve_harmonic_layered_slab,
+        stencil_rhs_with_wall_power_2d,
+    )
+    nx, dx, omega = 15, .08, 3.
+    x = torch.arange(nx, dtype=torch.float64)
+    k = torch.where(x<6, 2., 5.).double()
+    c = 1.+x/10
+    r = torch.zeros_like(x[:-1])
+    r[[5,10]] = torch.tensor([.2,.4], dtype=r.dtype)
+    source = torch.exp(.1j*x)
+    offsets = lattice_offsets(dx, 1.3*dx)
+    factor = lattice_diffusion_factor_2d(1.3, dx, mode="moment")
+    for walls in ((.3+.8j,-.4j), (None, .8j), (None,None)):
+        u = solve_harmonic_layered_slab(source, dx, walls, omega, conductivity=k,
+                          volumetric_heat_capacity=c, contact_resistance_x=r)
+        rate, powers = stencil_rhs_with_wall_power_2d(u.expand(4,-1), offsets, dx, walls,
+                          conductivity=k, layered_x=True, contact_resistance_x=r)
+        torch.testing.assert_close(rate/factor+source, (1j*omega*c*u).expand_as(rate),
+                                   rtol=1e-11, atol=1e-11)
+        balance = dx*(1j*omega*c*u-source).sum()-powers.sum()/(4*dx*factor)
+        assert abs(balance) < 1e-11
