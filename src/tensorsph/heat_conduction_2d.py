@@ -287,7 +287,7 @@ def solve_harmonic_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperat
                              ambient_temperature=ambient_temperature, separate_mean=separate_mean)
 
 
-def _layered_response(dx, h_factor, conductivity, contact_resistance_x, transverse_wavenumber):
+def _layered_response(dx, h_factor, conductivity, contact_resistance_x, transverse_wavenumber, split_interface_links=False):
     offsets = lattice_offsets(dx, h_factor*dx)
     factor = lattice_diffusion_factor_2d(h_factor, dx, mode="moment")
     if factor <= 0:
@@ -297,7 +297,7 @@ def _layered_response(dx, h_factor, conductivity, contact_resistance_x, transver
     phase_step = transverse_wavenumber*dx
     def response(probes, walls):
         rate, _ = _stencil_exchange(probes, offsets, 1., conductivity, walls, True,
-                                    dx, contact_resistance_x, None, transverse_phase=phase_step)
+                                    dx, contact_resistance_x, None, transverse_phase=phase_step, split_interface_links=split_interface_links)
         return rate/factor
 
     return response, offsets
@@ -306,7 +306,8 @@ def _layered_response(dx, h_factor, conductivity, contact_resistance_x, transver
 def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_frequency,
                                 *, conductivity, volumetric_heat_capacity,
                                 contact_resistance_x=None, h_factor=1.3, transverse_wavenumber=0.,
-                                backend="torch", heat_loss_coefficient=0., return_x_flux=False, ambient_temperature=None):
+                                backend="torch", heat_loss_coefficient=0., return_x_flux=False, ambient_temperature=None,
+                                split_interface_links=False):
     """Return particle temperature phasors for one transverse Fourier mode of a layered slab.
 
     Use one source (W/m³) and conductivity (W/(m K)) per x column, a scalar
@@ -318,6 +319,9 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
     Each end has a scalar temperature phasor or None for insulation.
     The dense complex solve uses the calibrated 2-D particle-pair stencil with
     row dependence exp(i β y), with β=transverse_wavenumber in rad/m.
+    With split_interface_links=True, resolve diagonal links crossing a
+    conductivity change or contact resistance into normal exchange through
+    the link and tangential diffusion within the particle's own material.
     The inputs and output are modal amplitudes. Supply a periodic wavenumber
     compatible with the transverse period. Alternatively supply a (ny,nx)
     source and scalar or (ny,) end temperatures sampled on periodic rows.
@@ -373,7 +377,8 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
             walls = tuple(None if w is None else _wall_column(w, grid).mean() for w in walls)
             grid = grid.mean(dim=0, keepdim=True)
         _, power = _stencil_exchange(grid, offsets, 1., conductivity, walls,
-            True, dx, contact_resistance_x, None, modal_flux=True, transverse_phase=transverse_wavenumber*dx)
+            True, dx, contact_resistance_x, None, modal_flux=True, transverse_phase=transverse_wavenumber*dx,
+            split_interface_links=split_interface_links)
         return field+datum, power/(dx*lattice_diffusion_factor_2d(h_factor,dx,mode="moment"))
 
     if source.ndim == 2:
@@ -401,7 +406,7 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
                         conductivity=conductivity, volumetric_heat_capacity=volumetric_heat_capacity,
                         contact_resistance_x=contact_resistance_x, h_factor=h_factor,
                         transverse_wavenumber=float(wave), backend=backend, heat_loss_coefficient=heat_loss_coefficient,
-                        return_x_flux=(return_x_flux == "by_row"))
+                        return_x_flux=(return_x_flux == "by_row"), split_interface_links=split_interface_links)
                 for load, west, east, wave in zip(modes, wall_modes(left), wall_modes(right), waves)]
         if return_x_flux == "by_row":
             fields, cuts = zip(*rows)
@@ -422,7 +427,7 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
         if wall is not None and (torch.as_tensor(wall).ndim or not cmath.isfinite(wall)):
             raise ValueError("wall phasors must be finite scalars")
     homogeneous = tuple(None if wall is None else 0. for wall in (left, right))
-    response, offsets = _layered_response(dx,h_factor,conductivity,contact_resistance_x,transverse_wavenumber)
+    response, offsets = _layered_response(dx,h_factor,conductivity,contact_resistance_x,transverse_wavenumber,split_interface_links)
     load = response(torch.zeros_like(source)[None, :], (left, right))[0]
     closed_mode = False
     if angular_frequency==0 and left is None and right is None and not torch.any(loss>0):
@@ -1835,7 +1840,7 @@ def _contact_faces(values, field, dx, layered_x, fixed_walls, width):
 
 
 def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures,
-                      layered_x, dx, contact_resistance_x, specific_heat, collect_power=False, cut=None, power_by_row=False, transverse_phase=None, modal_flux=False):
+                      layered_x, dx, contact_resistance_x, specific_heat, collect_power=False, cut=None, power_by_row=False, transverse_phase=None, modal_flux=False, split_interface_links=False):
     complex_field = torch.as_tensor(temperature).is_complex()
     if not complex_field and x_wall_temperatures is not None:
         complex_field = any(torch.as_tensor(wall).is_complex()
@@ -1880,6 +1885,8 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
     if modal_flux:
         power = t.new_zeros(nx+1)
     for (m, n), a in offsets:
+        split = None
+        kernel_weight = a
         if conductivity is not None:
             neighbor = torch.roll(k, shifts=(-m, -n), dims=(0, 1))
             if layered_x and (abs(n) > 1 or (n and faces is not None)):
@@ -1894,6 +1901,14 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
                 a = a * abs(n) / resistance
             else:
                 a = a * (2 * k * neighbor / (k + neighbor))
+            if split_interface_links and m and n and transverse_phase:
+                # Identify jumps along the whole link, even when its two
+                # endpoints belong to the same material around a thin layer.
+                split = torch.zeros_like(k[0], dtype=torch.bool)
+                for j in range(min(n, 0), max(n, 0)):
+                    split |= torch.roll(k[0], -j) != torch.roll(k[0], -(j+1))
+                    if faces is not None:
+                        split |= torch.roll(faces, -j) != 0
         if transverse_phase is None:
             neighbour_t = torch.roll(t, shifts=(-m, -n), dims=(0, 1))
         elif modal_flux:
@@ -1904,6 +1919,11 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
             # endpoints, so their complex phase factors average to cos(m β dx).
             neighbour_t = torch.roll(t, shifts=-n, dims=1)*math.cos(m*transverse_phase)
         transfer = a * (t - neighbour_t)
+        if split is not None:
+            normal = a * (t - torch.roll(t, -n, dims=1))
+            transfer = torch.where(split, normal, transfer)
+            lateral = 2 * math.sin(m*transverse_phase/2)**2
+            acc += (kernel_weight * lateral) * k * t * split
         acc = acc + transfer
         if cut is not None and n > 0:
             # transfer is positive INTO the left partner; report outward power.
@@ -1928,6 +1948,8 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
                 shift = ((1-frac)*cmath.exp(-1j*lower*transverse_phase)
                          +frac*cmath.exp(-1j*(lower+1)*transverse_phase))
                 start = width+1-n+j
+                if split is not None:
+                    shift = torch.where(split[start:start+nx-1], 1., t.new_tensor(shift))
                 power[1:-1] -= transfer[0,start:start+nx-1]*shift
         if (collect_power or modal_flux) and n and x_wall_temperatures[int(n > 0)] is not None:
             # Only physical particles whose neighbour is a ghost cross a wall.
@@ -1936,7 +1958,10 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
             if modal_flux:
                 # Wall power is assigned to the ghost row. Change inward to
                 # positive-x orientation at the east wall.
-                value = crossing.sum()*cmath.exp(-1j*m*transverse_phase)
+                wall_phase = cmath.exp(-1j*m*transverse_phase)
+                if split is not None:
+                    wall_phase = torch.where(split[start:start+abs(n)], 1., t.new_tensor(wall_phase))
+                value = (crossing * wall_phase).sum()
                 if n<0:
                     power[0] += value
                 else:

@@ -2498,3 +2498,25 @@ def test_layered_harmonic_weak_wall_flux_reflects_with_the_heater():
     cuts = solve(source, k, capacity)
     reflected = solve(source.flip(0), k.flip(0), capacity.flip(0))
     torch.testing.assert_close(cuts, -reflected.flip(0), atol=0., rtol=1e-10)
+
+
+@pytest.mark.parametrize("h_factor", [0.9, 1.6])
+def test_split_interface_links_resolve_transverse_conduction_at_a_material_jump(h_factor):
+    from tensorsph.heat_conduction_2d import solve_harmonic_layered_slab
+
+    # Across a perfectly bonded interface the exact field exp(i beta y)
+    # has no normal heat flow, even though k and the required heating jump.
+    n = 48
+    dx, beta, omega = 1/n, 2*math.pi, 3.
+    k = torch.ones(n, dtype=torch.float64)
+    k[n//2:] = 4.
+    # The uniform lattice's exact discrete transverse eigenvalue isolates
+    # the interface error from the ordinary bulk dispersion error.
+    offsets = lattice_offsets(dx, h_factor*dx)
+    factor = -sum(a*(j*dx)**2 for (_, j), a in offsets)
+    decay = -4*sum(a*math.sin(m*beta*dx/2)**2 for (m, _), a in offsets)/factor
+    field, cuts = solve_harmonic_layered_slab(
+        k*decay + 1j*omega, dx, (1., 1.), omega, conductivity=k, volumetric_heat_capacity=1.,
+        h_factor=h_factor, transverse_wavenumber=beta, split_interface_links=True, return_x_flux=True)
+    torch.testing.assert_close(field, torch.ones_like(field), rtol=0., atol=2e-12)
+    assert cuts[n//2].abs() < 1e-11
