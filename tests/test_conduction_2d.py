@@ -1340,6 +1340,7 @@ def test_harmonic_layered_section_flux_matches_pair_tallies(backend):
 def test_modal_cut_flux_matches_explicit_periodic_rows(mode):
     from tensorsph.heat_conduction_2d import (
         lattice_offsets,lattice_diffusion_factor_2d,layered_slab_modal_cut_flux,stencil_x_face_power_2d,
+        stencil_rhs_with_wall_power_2d,
     )
 
     n,dx = 8,.125
@@ -1352,6 +1353,12 @@ def test_modal_cut_flux_matches_explicit_periodic_rows(mode):
     resistance = torch.zeros(n-1,dtype=x.dtype)
     resistance[3] = .27
     options = dict(conductivity=k,contact_resistance_x=resistance)
+    _, ends = stencil_rhs_with_wall_power_2d(phase[:,None]*field,lattice_offsets(dx,1.3*dx),
+            dx,(phase*walls[0],None),layered_x=True,power_by_row=True,**options)
+    for face, power in ((0,ends[0]),(n,-ends[1])):
+        flux = layered_slab_modal_cut_flux(field,dx,face,walls,transverse_wavenumber=beta,**options)
+        expected = power/(dx*lattice_diffusion_factor_2d(1.3,dx,mode="moment"))
+        torch.testing.assert_close(phase*flux,expected,rtol=1e-13,atol=1e-13)
     # Include cuts near ghost particles as well as the resistive material boundary.
     for cut in (1,4,7):
         modal = layered_slab_modal_cut_flux(field,dx,cut,walls,transverse_wavenumber=beta,**options)

@@ -1300,7 +1300,7 @@ def prepare_slab_film_rhs(template, offsets, dx, film_coefficients, *, rho=1.,
 
 def layered_slab_modal_cut_flux(temperature, dx, face, x_wall_temperatures, *, conductivity,
                                 transverse_wavenumber=0., contact_resistance_x=None, h_factor=1.3):
-    """Rightward flux phasor (W/m²) at an interior cut of a layered slab mode.
+    """Rightward flux phasor (W/m²) at a layered slab cut, including either wall.
 
     The vector contains particle amplitudes multiplying exp(i*beta*y).
     Wall temperatures are scalar amplitudes or None for insulation. The
@@ -1311,8 +1311,8 @@ def layered_slab_modal_cut_flux(temperature, dx, face, x_wall_temperatures, *, c
     field = torch.as_tensor(temperature,dtype=torch.complex128)
     if field.ndim!=1 or not torch.isfinite(field).all():
         raise ValueError("provide a finite vector of particle phasors")
-    if not isinstance(face,int) or not 0<face<field.numel():
-        raise ValueError("face must be an interior column boundary")
+    if not field.numel() or not isinstance(face,int) or not 0<=face<=field.numel():
+        raise ValueError("face must index a column boundary from 0 through the field length")
     if not (math.isfinite(dx) and dx>0 and math.isfinite(h_factor) and h_factor>0
             and math.isfinite(transverse_wavenumber)):
         raise ValueError("require positive finite spacing and h_factor and a finite wavenumber")
