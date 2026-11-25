@@ -8,10 +8,10 @@ import subprocess
 import numpy as np
 from scipy.optimize import brentq
 
-from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+from tensorsph.heat_conduction_2d import layered_slab_contact_temperatures, solve_transient_layered_slab
 
 
-def reference(x, faces, time, h, resistance, count=32):
+def reference(x, faces, time, h, resistance, count=32, *, interval_start=None):
     # Write the decay rate as p². Each layer satisfies k*f'' + p²*C*f = 0.
     k1,k2,c1,c2 = 1.,3.,2.,.8
     length = .5
@@ -26,6 +26,7 @@ def reference(x, faces, time, h, resistance, count=32):
     field = np.zeros_like(x)
     stored = np.zeros_like(faces)
     wall = 0.
+    mean_traces = np.zeros(2)
     roots = []
     lo = 1e-9
     # Subdivide more finely than the oscillations in the two layer traces.
@@ -47,7 +48,12 @@ def reference(x, faces, time, h, resistance, count=32):
         norm = c1*(length/2+math.sin(2*a*length)/(4*a))
         norm += c2*((A*A+B*B)*length/2+(A*A-B*B)*math.sin(2*b*length)/(4*b)
                     +A*B*math.sin(b*length)**2/b)
-        amplitude = integral(1.)*math.exp(-p*p*time)/norm
+        coefficient = integral(1.)/norm
+        amplitude = coefficient*math.exp(-p*p*time)
+        if interval_start is not None:
+            duration = time-interval_start
+            mean_signal = math.exp(-p*p*interval_start)*(-math.expm1(-p*p*duration))/(p*p*duration)
+            mean_traces += coefficient*mean_signal*np.array([math.cos(a*length),A])
         def profile(z):
             y = z-length
             return np.where(z<length,np.cos(a*z),A*np.cos(b*y)+B*np.sin(b*y))
@@ -55,7 +61,8 @@ def reference(x, faces, time, h, resistance, count=32):
         stored += amplitude*integral(faces)
         wall += amplitude*profile(1.)
     initial = c1*np.minimum(faces,length)+c2*np.maximum(faces-length,0.)
-    return field,wall,initial-stored
+    result = (field,wall,initial-stored)
+    return result if interval_start is None else (*result,mean_traces)
 
 
 def measure(n,h,resistance,switched=False):
@@ -72,21 +79,32 @@ def measure(n,h,resistance,switched=False):
     changes = ((.071,1.6),(.233,-1.4)) if switched else ()
     def ambient(t):
         return sum(delta for start,delta in changes if t>=start)
-    states,heat,walls = solve_transient_layered_slab(np.ones(n),times,dx,(None,None),conductivity=k,
+    states,heat,walls,mean = solve_transient_layered_slab(np.ones(n),times,dx,(None,None),conductivity=k,
             volumetric_heat_capacity=c,contact_resistance_x=contacts,x_wall_films=(None,(h,ambient)),
             load_jump_times=[start for start,_ in changes],
-            rannacher=True,return_x_heat=True,return_wall_temperatures=True)
+            rannacher=True,return_x_heat=True,return_wall_temperatures=True,return_interval_temperature=True)
+    interval_flux = heat/heat.new_tensor(np.diff(times))[:,None]
+    left,right = layered_slab_contact_temperatures(mean,interval_flux,dx,k)
+    traces = np.column_stack((left[:,n//2-1],right[:,n//2-1]))
     cumulative = heat.cumsum(0).numpy()
     wall = walls[:,1].numpy()
-    errors = dict(temperature=0.,wall=0.,section_heat=0.)
+    errors = dict(temperature=0.,wall=0.,section_heat=0.,left_trace_K=0.,right_trace_K=0.,contact_law_K=0.)
     for i in (steps//8,steps//4,steps//2,steps):
-        exact,tw,q = reference(x,faces,times[i],h,resistance)
+        exact,tw,q,target = reference(x,faces,times[i],h,resistance,interval_start=times[i-1])
         for start,delta in changes:
             if times[i]>start:
-                f,w,removed = reference(x,faces,times[i]-start,h,resistance)
+                elapsed = times[i]-start
+                begin = max(0.,times[i-1]-start)
+                f,w,removed,ts = reference(x,faces,elapsed,h,resistance,interval_start=begin)
+                target += delta*(1-ts)*(elapsed-begin)/(times[i]-times[i-1])
                 exact += delta*(1-f)
                 tw += delta*(1-w)
                 q -= delta*removed
+        jump = traces[i-1,0]-traces[i-1,1]
+        errors["contact_law_K"] = max(errors["contact_law_K"],abs(jump-resistance*float(interval_flux[i-1,n//2])))
+        trace_error = abs(traces[i-1]-target)
+        errors["left_trace_K"] = max(errors["left_trace_K"],float(trace_error[0]))
+        errors["right_trace_K"] = max(errors["right_trace_K"],float(trace_error[1]))
         errors["temperature"] = max(errors["temperature"],float(abs(states[i].numpy()-exact).max()))
         errors["wall"] = max(errors["wall"],float(abs(wall[i]-tw)))
         errors["section_heat"] = max(errors["section_heat"],float(abs(cumulative[i-1]-q).max()))

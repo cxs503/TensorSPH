@@ -1289,3 +1289,22 @@ def test_interval_wall_temperature_uses_one_sided_quadratic_loads():
     exact = np.diff(primitive(times))/np.diff(times)
     np.testing.assert_allclose(mean[:,0], exact, rtol=0., atol=1e-13)
     np.testing.assert_allclose(mean[:,1], 1., rtol=0., atol=1e-13)
+
+
+def test_layered_slab_temperature_traces_exact_for_piecewise_quadratics():
+    from tensorsph.heat_conduction_2d import layered_slab_contact_temperatures
+
+    dx = .2
+    k = torch.tensor([1.1,2.6,.9,1.4],dtype=torch.float64)
+    west = k.new_tensor([.5,.2,1.2,-.4])
+    flux = k.new_tensor([.7,-.1,.5,.9,-.3])
+    # Integrate the prescribed linear flux from each west face to the center
+    # and east face. The column offsets intentionally permit independent jumps.
+    center = west-dx*(flux[:-1]+.25*flux.diff())/(2*k)
+    east = west-dx*(flux[:-1]+flux[1:])/(2*k)
+    phase = k.new_tensor([1.,-.5])[:,None]*(1+.4j)
+    left,right = layered_slab_contact_temperatures(phase*center,phase*flux,dx,k)
+    torch.testing.assert_close(left,phase*east[:-1],rtol=0.,atol=2e-15)
+    torch.testing.assert_close(right,phase*west[1:],rtol=0.,atol=2e-15)
+    with pytest.raises(ValueError,match="flux"):
+        layered_slab_contact_temperatures(center,flux[:-1],dx,k)

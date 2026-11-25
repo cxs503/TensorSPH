@@ -91,6 +91,7 @@ __all__ = [
     "lattice_offsets",
     "stencil_rhs_2d",
     "solve_transient_layered_slab",
+    "layered_slab_contact_temperatures",
     "solve_low_frequency_layered_slab",
     "solve_low_frequency_layered_films",
     "pair_geometry_2d",
@@ -532,6 +533,42 @@ def _polynomial_exponential_step(state, generator, capacity, load_start, load_en
         block[i,i+1] = 1.
     propagator = torch.linalg.matrix_exp(block)
     return state+propagator[:n,-2],state+propagator[:n,-1]
+
+
+def layered_slab_contact_temperatures(temperature, x_flux, dx, conductivity):
+    """Reconstruct temperatures on both material sides of all interior cuts.
+
+    temperature holds particle-center temperatures (K) shaped (..., nx).
+    x_flux contains rightward section heat fluxes (W/m²) shaped (..., nx+1).
+    For interval means, supply the mean particle field and divide integrated
+    section heat by the duration of each interval. Complex phasors are also
+    supported. dx is the particle spacing; conductivity is positive and
+    constant within each column (W/m/K).
+
+    Return two arrays shaped (..., nx-1), ordered by interior cut. Each
+    particle is extrapolated to its own side by integrating Fourier's law
+    over half a column with linearly interpolated flux. The temperature jump
+    can thus be checked independently against resistance times section flux.
+    """
+    center = torch.as_tensor(temperature)
+    if center.ndim<1 or center.shape[-1]==0 or not torch.isfinite(center).all():
+        raise ValueError("provide a finite nonempty particle field")
+    flux = torch.as_tensor(x_flux,device=center.device)
+    if flux.shape!=center.shape[:-1]+(center.shape[-1]+1,) or not torch.isfinite(flux).all():
+        raise ValueError("provide one finite rightward flux per section")
+    if not math.isfinite(dx) or dx<=0:
+        raise ValueError("dx must be finite and positive")
+    if torch.is_complex(torch.as_tensor(conductivity)):
+        raise ValueError("conductivity must be real")
+    k = torch.as_tensor(conductivity,dtype=DTYPE,device=center.device)
+    if k.shape not in ((),center.shape[-1:]) or not torch.isfinite(k).all() or (k<=0).any():
+        raise ValueError("conductivity must be a positive scalar or column profile")
+    # Half-cell integration weights are 1/8 and 3/8 of the column width.
+    west,east = flux[..., :-1],flux[..., 1:]
+    scale = dx/(8*k)
+    left_trace = center-(west+3*east)*scale
+    right_trace = center+(3*west+east)*scale
+    return left_trace[..., :-1],right_trace[..., 1:]
 
 
 def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *, conductivity,
