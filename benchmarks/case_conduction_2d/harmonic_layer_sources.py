@@ -9,8 +9,7 @@ import subprocess
 import torch
 
 from tensorsph.heat_conduction_2d import (
-    lattice_diffusion_factor_2d, lattice_offsets, solve_harmonic_layered_slab,
-    stencil_x_face_power_2d,
+    layered_slab_contact_temperatures, solve_harmonic_layered_slab,
 )
 
 
@@ -60,13 +59,16 @@ def measure(n, losses=(0.,0.,0.)):
     cuts = [counts[0], n-counts[-1]]
     for face, value in zip(cuts, resistances):
         resistance[face-1] = value
-    u = solve_harmonic_layered_slab(source, dx, (None,None), omega, conductivity=k,
-                                    volumetric_heat_capacity=c, contact_resistance_x=resistance,heat_loss_coefficient=loss)
-    offsets = lattice_offsets(dx, 1.3*dx)
-    factor = lattice_diffusion_factor_2d(1.3, dx, mode="moment")
-    flux = [complex(stencil_x_face_power_2d(u[None,:], offsets, dx, face, (None,None),
-                    conductivity=k, layered_x=True, contact_resistance_x=resistance))/(dx*factor)
-            for face in cuts]
+    u,sections = solve_harmonic_layered_slab(source,dx,(None,None),omega,conductivity=k,
+        volumetric_heat_capacity=c,contact_resistance_x=resistance,heat_loss_coefficient=loss,return_x_flux=True)
+    flux = [complex(sections[i]) for i in cuts]
+    left,right = layered_slab_contact_temperatures(u,sections,dx,k)
+    trace_indices = torch.tensor(cuts)-1
+    observed = torch.stack((left[trace_indices],right[trace_indices]),dim=1)
+    expected = torch.tensor([[propagate(*starts[j],counts[j]*dx,j)[0],starts[j+1][0]]
+                             for j in range(2)],dtype=u.dtype)
+    jump = observed[:,0]-observed[:,1]
+    jump_reference = expected[:,0]-expected[:,1]
     faces, powers = [0, *cuts, n], [0., *flux, 0.]
     imbalance = []
     for j, (a,b) in enumerate(zip(faces, faces[1:])):
@@ -74,7 +76,10 @@ def measure(n, losses=(0.,0.,0.)):
         imbalance.append(float(abs(storage-powers[j]+powers[j+1])))
     return dict(n=n, temperature_error_K=float(abs(u-exact).max()),
                 interface_flux_errors_W_m2=[abs(q-r) for q,r in zip(flux, reference_flux)],
-                layer_residuals_W_m2=imbalance)
+                trace_error_K=float(abs(observed-expected).max()),
+                trace_amplitude_error_K=float(abs(abs(observed)-abs(expected)).max()),
+                trace_phase_error_rad=float(abs(torch.angle(observed*expected.conj())).max()),
+                jump_error_K=float(abs(jump-jump_reference).max()),layer_residuals_W_m2=imbalance)
 
 
 if __name__ == "__main__":
@@ -84,7 +89,8 @@ if __name__ == "__main__":
     rows, previous = [], None
     for n in (16,32,64,128):
         row = measure(n,(2.,0.,7.)) if args.bulk_loss else measure(n)
-        errors = [row["temperature_error_K"], *row["interface_flux_errors_W_m2"]]
+        errors = [row["temperature_error_K"], *row["interface_flux_errors_W_m2"],
+                  *(row[k] for k in ("trace_error_K","trace_amplitude_error_K","trace_phase_error_rad","jump_error_K"))]
         orders = [] if previous is None else [math.log2(a/b) for a,b in zip(previous, errors)]
         row["orders"] = orders
         row["passed"] = (all(math.isfinite(v) for v in errors)

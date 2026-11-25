@@ -1308,3 +1308,29 @@ def test_layered_slab_temperature_traces_exact_for_piecewise_quadratics():
     torch.testing.assert_close(right,phase*west[1:],rtol=0.,atol=2e-15)
     with pytest.raises(ValueError,match="flux"):
         layered_slab_contact_temperatures(center,flux[:-1],dx,k)
+
+
+@pytest.mark.parametrize("backend", ["torch","banded"])
+def test_harmonic_layered_section_flux_matches_pair_tallies(backend):
+    from tensorsph.heat_conduction_2d import (
+        lattice_offsets, lattice_diffusion_factor_2d, solve_harmonic_layered_slab,
+        stencil_x_face_power_2d, stencil_rhs_with_wall_power_2d,
+    )
+
+    nx,ny,dx = 8,4,.125
+    x = torch.arange(nx,dtype=torch.float64)
+    y = torch.arange(ny,dtype=torch.float64)
+    source = (.3+.2j)*(x+.4*y[:,None])
+    walls = ((.8-.4j)*(1+.2*y),None)
+    k = torch.where(x<3,1.2,2.7).double()
+    r = torch.zeros(nx-1,dtype=k.dtype)
+    r[2] = .19
+    opts = dict(conductivity=k,contact_resistance_x=r)
+    u,q = solve_harmonic_layered_slab(source,dx,walls,3.,volumetric_heat_capacity=1.7,
+                                      backend=backend,return_x_flux=True,**opts)
+    offsets = lattice_offsets(dx,1.3*dx)
+    scale = ny*dx*lattice_diffusion_factor_2d(1.3,dx,mode="moment")
+    _,ends = stencil_rhs_with_wall_power_2d(u,offsets,dx,walls,layered_x=True,**opts)
+    cuts = [stencil_x_face_power_2d(u,offsets,dx,i,walls,layered_x=True,**opts) for i in range(1,nx)]
+    expected = torch.stack([ends[0],*cuts,-ends[1]])/scale
+    torch.testing.assert_close(q,expected,atol=1e-13,rtol=0.)
