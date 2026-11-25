@@ -899,3 +899,47 @@ def test_layered_interval_heat_matches_interior_pair_tallies_across_jump():
         cuts = [stencil_x_face_power_2d(stage,offsets,dx,j,(wall,None),**kw) for j in range(1,len(x))]
         expected += (b-a)*torch.stack([powers[0],*cuts,-powers[1]])/(dx*factor)
     torch.testing.assert_close(heat[0],expected,rtol=0.,atol=5e-15)
+
+
+@pytest.mark.parametrize("theta",[.5,1.])
+def test_layered_flux_jump_reverses_sign_and_balances_each_column(theta):
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+    x = torch.arange(8,dtype=torch.float64)/8
+    dx,jump = .125,.031
+    times = torch.tensor([0.,.05,.12],dtype=x.dtype)
+    west = lambda t: 1.4 if t<jump else -.6
+    east = lambda t: .2 if t<jump else .7
+    states,heat = solve_transient_layered_slab(x,times,dx,(None,None),volumetric_heat_capacity=1+x,
+            conductivity=2+x,heat_source=.1,theta=theta,load_jump_times=[jump],
+            x_wall_inward_flux=(west,east),return_x_heat=True)
+    before = times.clamp(max=jump).diff()
+    after = (times-jump).clamp(min=0.).diff()
+    torch.testing.assert_close(heat[:,0],1.4*before-.6*after)
+    torch.testing.assert_close(heat[:,-1],-.2*before-.7*after)
+    torch.testing.assert_close(dx*(1+x)*states.diff(dim=0)+heat.diff(dim=1),
+                              (.1*dx*times.diff()[:,None]).expand_as(states[:-1]),rtol=0.,atol=2e-14)
+
+
+@pytest.mark.parametrize("flux",[(0.,),(1.,0.),(0.,complex(0,1)),(0.,lambda t:float("nan"))])
+def test_layered_invalid_wall_flux(flux):
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+    x = torch.ones(4)
+    with pytest.raises(ValueError,match="flux"):
+        solve_transient_layered_slab(x,[0.,.1],.25,(1.,None),conductivity=x,volumetric_heat_capacity=1.,
+                                    x_wall_inward_flux=flux)
+
+
+def test_layered_flux_wall_with_contacts_inside_kernel_support():
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+    dx = .1
+    k = torch.tensor([1.,4.,2.,.7,8.,1.,2.,6.,.9,3.],dtype=torch.float64)
+    contacts = k[:-1]/10
+    dr = dx/k
+    r = dr.cumsum(0)-dr/2+torch.cat((k.new_zeros(1),contacts.cumsum(0)))
+    initial = 2.-1.7*r
+    times = k.new_tensor([0.,.02,.19])
+    fields,heat = solve_transient_layered_slab(initial,times,dx,(None,None),conductivity=k,
+                volumetric_heat_capacity=1.+k,contact_resistance_x=contacts,h_factor=2.1,
+                x_wall_inward_flux=(1.7,-1.7),return_x_heat=True)
+    torch.testing.assert_close(fields,initial.expand_as(fields),atol=1e-13,rtol=0.)
+    torch.testing.assert_close(heat,(1.7*times.diff()[:,None]).expand_as(heat),atol=1e-13,rtol=0.)
