@@ -687,3 +687,15 @@ def test_layered_harmonic_films_close_storage_and_reciprocity():
     _, _, a = solve_harmonic_layered_films(zero,.05,(1.,0.),4.,**opts)
     _, _, b = solve_harmonic_layered_films(zero,.05,(0.,1.),4.,**opts)
     torch.testing.assert_close(a[1], b[0], atol=2e-12, rtol=0)
+
+
+def test_dynamic_films_close_wall_and_layer_energy():
+    from tensorsph.heat_conduction_2d import solve_harmonic_layered_films
+    n = 24
+    x = torch.arange(n, dtype=torch.float64)/n
+    h, cw = torch.tensor([2.,5.], dtype=x.dtype), torch.tensor([.4,1.],dtype=x.dtype)
+    a = torch.tensor([1.+.2j, .5j],dtype=torch.complex128)
+    u, wall, q = solve_harmonic_layered_films(1j*x,1/n,a,3.,conductivity=1.+x,
+                     volumetric_heat_capacity=2.,film_coefficients=h,wall_areal_heat_capacity=cw)
+    torch.testing.assert_close(q+3j*cw*wall, h*(a-wall), atol=1e-12,rtol=0)
+    torch.testing.assert_close(q.sum(),(6j*u-1j*x).mean(),atol=1e-12,rtol=0)

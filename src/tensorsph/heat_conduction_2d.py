@@ -354,14 +354,16 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
 
 def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_frequency,
                                  *, film_coefficients, conductivity, volumetric_heat_capacity,
-                                 contact_resistance_x=None, h_factor=1.3, backend="torch"):
-    """Solve a transversely uniform layered slab with two massless convective walls.
+                                 contact_resistance_x=None, h_factor=1.3, backend="torch",
+                                 wall_areal_heat_capacity=(0.,0.)):
+    """Solve a transversely uniform layered slab with two convective walls.
 
     Return (particle temperatures in K, two wall temperatures in K, two inward
     heat fluxes in W/m²), all phasors under exp(+iωt). Film coefficients are
     real and positive in W/(m² K). Ambient phasors and coefficients are ordered
     west, east. Source, material properties and contacts follow
-    solve_harmonic_layered_slab's column-vector convention.
+    solve_harmonic_layered_slab's column-vector convention. Each wall can store
+    heat with areal capacity in J/(m² K). Returned heat flux enters the slab.
     """
     source = torch.as_tensor(heat_source, dtype=torch.complex128)
     if source.ndim != 1:
@@ -373,6 +375,9 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
     if films.shape != (2,) or not torch.all(torch.isfinite(films) & (films > 0)):
         raise ValueError("provide two positive finite film coefficients")
 
+    wall_capacity = torch.as_tensor(wall_areal_heat_capacity, device=source.device, dtype=DTYPE)
+    if wall_capacity.shape != (2,) or not torch.all(torch.isfinite(wall_capacity) & (wall_capacity >= 0)):
+        raise ValueError("provide two finite nonnegative wall areal heat capacities")
     opts = dict(conductivity=conductivity, contact_resistance_x=contact_resistance_x)
     def response(load, walls):
         return solve_harmonic_layered_slab(load, dx, walls, angular_frequency,
@@ -394,7 +399,8 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
     units = ((1.,0.), (0.,1.))
     fields = [response(zero, walls) for walls in units]
     admittance = torch.stack([inward(u, w) for u,w in zip(fields, units)], dim=1)
-    walls = torch.linalg.solve(admittance + torch.diag(films), films*ambient-inward(base,(0.,0.)))
+    walls = torch.linalg.solve(admittance + torch.diag(films+1j*angular_frequency*wall_capacity),
+                               films*ambient-inward(base,(0.,0.)))
     field = base + walls @ torch.stack(fields)
     return field, walls, inward(field, walls)
 
