@@ -1204,3 +1204,28 @@ def test_one_storing_film_preserves_layered_steady_contact_flux(cw):
     torch.testing.assert_close(w,k.new_tensor(surface).expand_as(w),atol=1e-12,rtol=0.)
     torch.testing.assert_close(q,(dt[:,None]*j).expand_as(q),atol=1e-12,rtol=0.)
     torch.testing.assert_close(external,dt[:,None]*k.new_tensor([j,-j]),atol=1e-12,rtol=0.)
+
+
+def test_exponential_affine_reservoir_heat_and_zero_loss_limit():
+    import numpy as np
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+
+    c,h,dx = 1.7,4.1,.125
+    times = np.array([0.,.031,.19,.42])
+    initial,base,slope = -.2,.7,1.3
+    for loss in (0.,h):
+        u,section,bulk = solve_transient_layered_slab(np.full(8,initial),times,dx,(None,None),
+            conductivity=np.ones(8),volumetric_heat_capacity=c,method="exponential",
+            heat_source=lambda t: c*(.3+.2*t),heat_loss_coefficient=loss,
+            bulk_ambient_temperature=lambda t: base+slope*t,return_x_heat=True,return_bulk_exchange=True)
+        if loss:
+            rate = loss/c
+            constant,linear = rate*base+.3,rate*slope+.2
+            exact = initial+(constant/rate-initial)*(-np.expm1(-rate*times))+linear/rate*(times+np.expm1(-rate*times)/rate)
+        else:
+            exact = initial+.3*times+.1*times**2
+        supplied = c*dx*np.diff(.3*times+.1*times**2)
+        np.testing.assert_allclose(u.numpy(),np.broadcast_to(exact[:,None],u.shape),atol=2e-13,rtol=0.)
+        target = dx*c*np.diff(exact)-supplied
+        np.testing.assert_allclose(bulk.numpy(),np.broadcast_to(target[:,None],bulk.shape),atol=2e-13,rtol=0.)
+        assert section.abs().max()<1e-13

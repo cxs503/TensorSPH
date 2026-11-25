@@ -514,6 +514,20 @@ class _StoringSlabWall:
     mode: torch.Tensor
 
 
+def _affine_exponential_step(state, generator, capacity, load_start, load_end, dt):
+    """Exact endpoint and interval-mean states for an affine volumetric load."""
+    n = state.numel()
+    block = state.new_zeros((n+3,n+3))
+    block[:n,:n] = dt*generator
+    block[:n,n] = dt*((load_end-load_start)/capacity)
+    block[:n,n+1] = dt*(generator@state+load_start/capacity)
+    # The polynomial chain supplies 1, s, s²/2 on the scaled interval
+    # 0 <= s <= 1. Adjacent columns integrate the increment and its mean.
+    block[n,n+1] = block[n+1,n+2] = 1.
+    propagator = torch.linalg.matrix_exp(block)
+    return state+propagator[:n,n+1],state+propagator[:n,n+2]
+
+
 def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *, conductivity,
                                  volumetric_heat_capacity, contact_resistance_x=None, heat_source=0.,
                                  heat_loss_coefficient=0., theta=.5, h_factor=1.3, load_jump_times=(),
@@ -539,6 +553,9 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
     harmonic layered solver. The dense implicit theta method accepts .5 to 1.
     method="sdirk2" selects a two-stage, second-order L-stable method. Loads
     and section heats use both internal stages. The same LU serves both solves.
+    method="exponential" uses a dense matrix exponential for the endpoint
+    and interval-mean temperatures. It is exact in time for affine loads on
+    each segment and interpolates other histories linearly between endpoints.
     With rannacher=True the first Crank–Nicolson step and the first after
     each load jump use two backward Euler half steps.
     return_x_heat appends interval-integrated rightward section heat in J/m²,
@@ -567,11 +584,12 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
         raise ValueError("times must be finite and strictly increasing")
     if not (.5<=theta<=1 and math.isfinite(dx) and dx>0 and math.isfinite(h_factor) and h_factor>0):
         raise ValueError("require theta in [.5,1] and positive finite dx and h_factor")
-    if method not in ("theta","sdirk2"):
-        raise ValueError("method must be theta or sdirk2")
+    if method not in ("theta","sdirk2","exponential"):
+        raise ValueError("method must be theta, sdirk2 or exponential")
     sdirk = method=="sdirk2"
-    if sdirk and (rannacher or theta!=.5):
-        raise ValueError("sdirk2 cannot be combined with Rannacher or a theta override")
+    exponential = method=="exponential"
+    if method!="theta" and (rannacher or theta!=.5):
+        raise ValueError(f"{method} cannot be combined with Rannacher or a theta override")
     walls = tuple(x_wall_temperatures)
     if len(walls)!=2:
         raise ValueError("provide two wall temperatures or None")
@@ -722,6 +740,7 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
         capacity = torch.cat((capacity,state.new_tensor([wall_areal_heat_capacity[w.side] for w in storing])))
         state = torch.cat((state,torch.stack([torch.as_tensor(v,device=state.device,dtype=state.dtype) for v in wall_initial])))
     mass = torch.diag(capacity)
+    generator = operator/capacity[:,None] if exponential else None
     previous_shift = None
     fields = [state]
     segments = sorted(set(grid)|events)
@@ -775,20 +794,23 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
         load_end,walls_end,flux_end,reservoir_end = forcing(math.nextafter(stop,start) if at_jump else stop)
         load = (1-weight)*load_start+weight*load_end
         shift = weight*dt
-        if shift!=previous_shift:
-            factors = torch.linalg.lu_factor(mass-shift*operator)
-            previous_shift = shift
-        if sdirk:
-            stored = capacity*state
-            first = torch.linalg.lu_solve(*factors,(stored+shift*load_start)[:,None])[:,0]
-            rhs = stored+dt*(load+(1-weight)*(operator@first))
-            end = torch.linalg.lu_solve(*factors,rhs[:,None])[:,0]
+        if exponential:
+            end,stage = _affine_exponential_step(state,generator,capacity,load_start,load_end,dt)
         else:
-            first = state
-            delta = torch.linalg.lu_solve(*factors,(dt*(operator @ state+load))[:,None])[:,0]
-            end = state+delta
-        if return_x_heat or return_bulk_exchange or return_external_heat:
-            stage = (1-weight)*first+weight*end
+            if shift!=previous_shift:
+                factors = torch.linalg.lu_factor(mass-shift*operator)
+                previous_shift = shift
+            if sdirk:
+                stored = capacity*state
+                first = torch.linalg.lu_solve(*factors,(stored+shift*load_start)[:,None])[:,0]
+                rhs = stored+dt*(load+(1-weight)*(operator@first))
+                end = torch.linalg.lu_solve(*factors,rhs[:,None])[:,0]
+            else:
+                first = state
+                delta = torch.linalg.lu_solve(*factors,(dt*(operator @ state+load))[:,None])[:,0]
+                end = state+delta
+            if return_x_heat or return_bulk_exchange or return_external_heat:
+                stage = (1-weight)*first+weight*end
         if return_bulk_exchange:
             exchange[len(fields)-1] += dt*dx*loss*((1-weight)*reservoir_start+weight*reservoir_end-stage[:nx])
         if return_x_heat or return_external_heat:
