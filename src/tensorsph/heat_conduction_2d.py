@@ -447,8 +447,10 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     """Advance a reflected slab over requested times with prescribed wall histories.
 
     Each wall may be a fixed scalar, row profile, callable of time returning
-    either, or None for prescribed flux. Source and prescribed flux are static.
-    At declared interior jumps, give the new wall value at the event time.
+    either, or None for prescribed flux. Volumetric heating (scalar or field)
+    and each inward wall flux (scalar or row profile) may also depend on time.
+    List discontinuities of any load in wall_jump_times and return the new
+    value at the event time.
     Rannacher damping applies two backward Euler half steps at startup and
     immediately after each jump. The default integrator is Crank–Nicolson.
     Return particle temperatures (nt,ny,nx). With return_x_heat also return
@@ -465,15 +467,18 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     walls = tuple(x_wall_temperatures)
     if len(walls)!=2:
         raise ValueError("provide west and east wall temperatures")
-    def stage_wall(wall,start,end,weight):
-        if not callable(wall):
-            return wall
-        stop_value = wall(end)
+    fluxes = tuple(x_wall_inward_flux)
+    if len(fluxes)!=2:
+        raise ValueError("provide west and east inward fluxes")
+    def stage_load(load,start,end,weight):
+        if not callable(load):
+            return load
+        stop_value = load(end)
         if weight==1.:
             return stop_value
-        start_value = wall(start)
+        start_value = load(start)
         if any(torch.is_complex(torch.as_tensor(v)) for v in (start_value,stop_value)):
-            raise ValueError("transient wall temperatures must be real")
+            raise ValueError("transient loads must be real")
         return ((1-weight)*torch.as_tensor(start_value,device=field.device,dtype=field.dtype)
                 +weight*torch.as_tensor(stop_value,device=field.device,dtype=field.dtype))
     field = torch.as_tensor(temperature)
@@ -492,11 +497,13 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
             raise ValueError("damped interval has no representable midpoint")
         weight = 1. if damp else theta
         for end in ends:
-            wall_end = math.nextafter(end,start) if end in events else end
-            stage = tuple(stage_wall(wall,start,wall_end,weight) for wall in walls)
-            result = step_transient_slab_2d(field,end-start,dx,stage,heat_source=heat_source,
+            load_end = math.nextafter(end,start) if end in events else end
+            stage = tuple(stage_load(wall,start,load_end,weight) for wall in walls)
+            stage_flux = tuple(stage_load(q,start,load_end,weight) for q in fluxes)
+            stage_source = stage_load(heat_source,start,load_end,weight)
+            result = step_transient_slab_2d(field,end-start,dx,stage,heat_source=stage_source,
                          conductivity=conductivity,volumetric_heat_capacity=volumetric_heat_capacity,
-                         theta=weight,h_factor=h_factor,x_wall_inward_flux=x_wall_inward_flux,return_x_flux=return_x_heat)
+                         theta=weight,h_factor=h_factor,x_wall_inward_flux=stage_flux,return_x_flux=return_x_heat)
             if return_x_heat:
                 field,flux = result
                 heat[interval] += (end-start)*flux

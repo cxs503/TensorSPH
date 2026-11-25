@@ -767,3 +767,19 @@ def test_wall_jumps_return_requested_fields_and_heat(damping):
     torch.testing.assert_close(current,fields[-1])
     torch.testing.assert_close(heat,total)
     torch.testing.assert_close(.4*fields.diff(dim=0).mean(dim=1),-heat.diff(dim=1),atol=1e-12,rtol=0.)
+
+
+@pytest.mark.parametrize("damping",[False,True])
+def test_transient_load_jump_preserves_net_heat(damping):
+    from tensorsph.heat_conduction_2d import solve_transient_slab_2d
+    initial = torch.zeros((4,8),dtype=torch.float64)
+    start, stop = .013, .046
+    def pulse(t):
+        return float(start<=t<stop)
+    field,heat = solve_transient_slab_2d(initial,[0.,.03,.08],.125,(None,None),
+                    heat_source=lambda t: 3*pulse(t), x_wall_inward_flux=(pulse,lambda t: 2*pulse(t)),
+                    wall_jump_times=(start,stop),rannacher=damping,return_x_heat=True)
+    durations = initial.new_tensor([.03-start,stop-.03])
+    torch.testing.assert_close(heat[:,0],durations,atol=1e-12,rtol=0.)
+    torch.testing.assert_close(heat[:,-1],-2*durations,atol=1e-12,rtol=0.)
+    torch.testing.assert_close(field.diff(dim=0).mean(dim=(1,2)),6*durations,atol=1e-12,rtol=0.)
