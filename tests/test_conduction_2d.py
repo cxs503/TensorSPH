@@ -2278,3 +2278,32 @@ def test_transient_relative_bulk_exchange_with_moving_ambient(method):
     reference = excess(0.)
     assert reference[-1].min() > 0
     torch.testing.assert_close(excess(305.), reference, atol=0, rtol=0)
+
+
+@pytest.mark.parametrize("walls", [(None, None), (305., None), (305., 305.)])
+def test_steady_weak_source_at_prescribed_bulk_ambient(walls):
+    from tensorsph.heat_conduction_2d import solve_steady_slab_2d
+
+    source = torch.full((3, 12), 2**-48, dtype=torch.float64)
+    relative_walls = tuple(None if w is None else 0. for w in walls)
+    def solve(boundary, ambient, reference):
+        return solve_steady_slab_2d(source, 1/12, boundary, heat_loss_coefficient=2.,
+                                    ambient_temperature=ambient, temperature_reference=reference,
+                                    return_x_flux=True)
+    reference = solve(relative_walls, 0., 0.)
+    field, cuts = solve(walls, torch.full_like(source, 305.), 305.)
+    torch.testing.assert_close(field, reference[0], rtol=0, atol=0)
+    torch.testing.assert_close(cuts, reference[1], rtol=0, atol=0)
+    assert field.min() > 0
+    if walls == (None, None):
+        torch.testing.assert_close(field, source/2, rtol=1e-14, atol=0)
+
+
+def test_steady_spatially_varying_ambient_balances_local_heat_source():
+    from tensorsph.heat_conduction_2d import solve_steady_slab_2d
+
+    ambient = 305. + torch.arange(24, dtype=torch.float64).reshape(3, 8)/32
+    source = 3*(305.-ambient)
+    field, flux = solve_steady_slab_2d(source, .125, (305., 305.), ambient_temperature=ambient,
+                                       heat_loss_coefficient=3., temperature_reference=305., return_x_flux=True)
+    assert torch.count_nonzero(field) == torch.count_nonzero(flux) == 0

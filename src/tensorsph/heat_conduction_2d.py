@@ -231,15 +231,16 @@ def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatur
                          *, conductivity: float = 1., h_factor: float = 1.3,
                          mean_temperature: float | None = None, heat_loss_coefficient: float = 0.,
                          x_wall_inward_flux=(0., 0.), return_x_flux: bool = False,
-                         temperature_reference: float = 0.
+                         temperature_reference: float = 0., ambient_temperature=None
                          ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
     """Steady temperature on a uniform lattice, periodic y and reflected x walls.
 
     Supply a (ny, nx) volumetric heat source in W/m³, a constant conductivity
     in W/(m K), and two wall conditions. None selects a flux wall. Two
     flux walls with zero heat loss require balanced input and a mean_temperature.
-    A positive heat_loss_coefficient H (W/(m³ K)) adds a bulk sink H*T
-    and fixes the absolute temperature. For ambient Ta include H*Ta in heat_source.
+    A positive heat_loss_coefficient H (W/(m³ K)) exchanges H*(Ta-T) with
+    a scalar or per-particle ambient_temperature Ta (default zero, K). Supply
+    independent heat sources separately to retain small temperature differences.
     x_wall_inward_flux gives scalar or per-row heat fluxes into the domain in W/m² on
     sides with temperature None. The solution uses an analytical polynomial
     lift for prescribed flux and the calibrated SPH operator for the remainder.
@@ -252,7 +253,7 @@ def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatur
     if not math.isfinite(temperature_reference):
         raise ValueError("temperature_reference must be finite")
     return _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
-                             mean_temperature, _heat_loss(heat_loss_coefficient), x_wall_inward_flux, return_x_flux, temperature_reference)
+                             mean_temperature, _heat_loss(heat_loss_coefficient), x_wall_inward_flux, return_x_flux, temperature_reference, ambient_temperature)
 
 
 def solve_harmonic_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatures: SlabWalls,
@@ -1384,7 +1385,7 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
 
 
 def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
-                      mean_temperature, shift, x_wall_inward_flux, return_x_flux, temperature_reference=0.):
+                      mean_temperature, shift, x_wall_inward_flux, return_x_flux, temperature_reference=0., ambient_temperature=None):
     source = torch.as_tensor(heat_source, dtype=torch.complex128 if isinstance(shift, complex) else DTYPE)
     if source.ndim != 2 or min(source.shape) == 0 or not torch.isfinite(source).all():
         raise ValueError("heat_source must be a finite nonempty (ny, nx) field")
@@ -1440,12 +1441,21 @@ def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_fact
         raise ValueError("kernel support must include a conducting neighbour")
     # Lift the inhomogeneous wall forcing, leaving a homogeneous reflected operator.
     reference = (mean_temperature or 0.) if closed else _wall_column(left if left is not None else right, source).mean()
+    ambient = None
+    if ambient_temperature is not None:
+        if torch.is_complex(torch.as_tensor(ambient_temperature)):
+            raise ValueError("steady ambient temperature must be real")
+        ambient = torch.as_tensor(ambient_temperature, dtype=source.dtype, device=source.device)
+        if ambient.shape not in ((), source.shape) or not torch.isfinite(ambient).all():
+            raise ValueError("ambient temperature must be finite and scalar or match the field shape")
+        if closed and shift:
+            reference = ambient.reshape(-1)[0]
     shifted = tuple(None if wall is None else torch.as_tensor(wall, dtype=source.dtype,
                     device=source.device)-reference for wall in (left, right))
     wall_rate = stencil_rhs_2d(torch.zeros_like(source), offsets, x_wall_temperatures=shifted)
     rhs = source + (conductivity/factor)*wall_rate
     if shift:
-        rhs = rhs - shift*reference
+        rhs = rhs - shift*reference if ambient is None else rhs + shift*(ambient-reference)
     right_image = rhs.flip((1,))
     rhs = torch.cat((rhs, right_image if right is None else -right_image), dim=1)
     if (left is None) != (right is None):
