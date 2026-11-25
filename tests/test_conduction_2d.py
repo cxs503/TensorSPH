@@ -1142,3 +1142,20 @@ def test_sdirk2_periodic_rows_resolve_transverse_mode_and_storing_columns():
         return (1-(1-2*gamma)*z)/(1+gamma*z)**2
     torch.testing.assert_close(u[-1],base*(gain(0.)+row*gain(2*math.pi)),rtol=0.,atol=1e-12)
     assert (dx*u.diff(dim=0).mean(1)+heat.diff(dim=1)).abs().max()<1e-12
+
+
+@pytest.mark.parametrize("method,rannacher", [("theta",False),("theta",True),("sdirk2",False)])
+def test_layered_bulk_reservoir_jumps_preserve_separate_exchange(method,rannacher):
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+
+    n,dx,jump = 8,.125,.083
+    times = torch.linspace(0.,.2,21,dtype=torch.float64)
+    c = torch.linspace(.7,2.,n,dtype=torch.float64)
+    u,section,exchange = solve_transient_layered_slab(torch.zeros_like(c),times,dx,(None,None),
+        conductivity=torch.ones_like(c),volumetric_heat_capacity=c,method=method,rannacher=rannacher,
+        heat_loss_coefficient=4*c,bulk_ambient_temperature=lambda t: 2. if t<jump else -.5,
+        load_jump_times=[jump],return_x_heat=True,return_bulk_exchange=True)
+    first = -2*torch.expm1(-4*times.clamp(max=jump))
+    exact = torch.where(times<=jump,first,-.5+(first+.5)*torch.exp(-4*(times-jump)))
+    torch.testing.assert_close(u,exact[:,None].expand_as(u),atol=2e-3,rtol=0.)
+    assert (c*dx*u.diff(dim=0)+section.diff(dim=1)-exchange).abs().max()<1e-12

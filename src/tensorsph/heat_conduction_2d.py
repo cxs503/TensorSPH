@@ -506,7 +506,8 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
                                  volumetric_heat_capacity, contact_resistance_x=None, heat_source=0.,
                                  heat_loss_coefficient=0., theta=.5, h_factor=1.3, load_jump_times=(),
                                  return_x_heat=False, x_wall_inward_flux=(0.,0.), rannacher=False,
-                                 x_wall_films=(None,None), return_wall_temperatures=False, method="theta"):
+                                 x_wall_films=(None,None), return_wall_temperatures=False, method="theta",
+                                 bulk_ambient_temperature=0., return_bulk_exchange=False):
     """Integrate a transversely uniform layered slab with stationary material properties.
 
     Return temperatures (nt,nx) including the initial state. Specify one initial
@@ -528,6 +529,10 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
     each load jump use two backward Euler half steps.
     return_x_heat appends interval-integrated rightward section heat in J/m²,
     shaped (nt-1,nx+1), including any internal steps at load jumps.
+    Bulk exchange H*(Tb-T) uses heat_loss_coefficient and the scalar or column
+    profile bulk_ambient_temperature in K, optionally callable in time.
+    return_bulk_exchange appends one signed heat per output interval and column
+    in J/m², after all other requested results.
     return_wall_temperatures appends instantaneous west and east surface
     temperatures (nt,2), after optional section heat. Flux and film walls use
     the half-column thermal resistance. At a listed jump the trace uses the
@@ -588,6 +593,7 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
     static_load = response(zero,static_walls)[0]
     if not callable(heat_source):
         static_load = static_load+profile(heat_source,"heat_source")
+    fixed_reservoir = None if callable(bulk_ambient_temperature) else profile(bulk_ambient_temperature,"bulk ambient temperature")
     wall_modes = []
     for i,wall in enumerate(walls):
         if callable(wall):
@@ -629,7 +635,9 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
             film_modes.append((i,ambient,gain,mode))
 
     def forcing(time):
-        load = static_load
+        reservoir = (profile(bulk_ambient_temperature(time),"bulk ambient temperature")
+                     if fixed_reservoir is None else fixed_reservoir)
+        load = static_load+loss*reservoir
         if callable(heat_source):
             load = load+profile(heat_source(time),"heat_source")
         sampled = list(static_walls)
@@ -645,7 +653,7 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
             value = ambient(time) if callable(ambient) else ambient
             inward[side] = gain*wall_value(value,"ambient temperature")
             load = load+inward[side]*mode
-        return load,sampled,inward
+        return load,sampled,inward,reservoir
     basis = torch.eye(len(state),device=state.device,dtype=state.dtype)
     operator = response(basis,homogeneous).T-torch.diag(loss)
     for side,_,gain,mode in film_modes:
@@ -668,7 +676,9 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
     if return_x_heat:
         heat = state.new_zeros((len(grid)-1,len(state)+1))
         calibration = lattice_diffusion_factor_2d(h_factor,dx,mode="moment")
-    load_start,walls_start,flux_start = forcing(grid[0])
+    if return_bulk_exchange:
+        exchange = state.new_zeros((len(grid)-1,len(state)))
+    load_start,walls_start,flux_start,reservoir_start = forcing(grid[0])
     if return_wall_temperatures:
         end_indices = [0,-1]
         end_resistance = .5*dx/torch.as_tensor(conductivity,device=state.device,dtype=state.dtype)[end_indices]
@@ -692,9 +702,9 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
             stage_time = start+weight*dt
             if not start<stage_time<stop:
                 raise ValueError("SDIRK interval has no representable stage time")
-            load_start,walls_start,flux_start = forcing(stage_time)
+            load_start,walls_start,flux_start,reservoir_start = forcing(stage_time)
         at_jump = stop in events
-        load_end,walls_end,flux_end = forcing(math.nextafter(stop,start) if at_jump else stop)
+        load_end,walls_end,flux_end,reservoir_end = forcing(math.nextafter(stop,start) if at_jump else stop)
         load = (1-weight)*load_start+weight*load_end
         shift = weight*dt
         if shift!=previous_shift:
@@ -709,11 +719,14 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
             first = state
             delta = torch.linalg.lu_solve(*factors,(dt*(operator @ state+load))[:,None])[:,0]
             end = state+delta
+        if return_x_heat or return_bulk_exchange:
+            stage = (1-weight)*first+weight*end
+        if return_bulk_exchange:
+            exchange[len(fields)-1] += dt*dx*loss*((1-weight)*reservoir_start+weight*reservoir_end-stage)
         if return_x_heat:
             stage_walls = tuple(None if a is None else (1-weight)*a+weight*b for a,b in zip(walls_start,walls_end))
             # Start at the directly tallied west wall power. Net pair heat
             # into each column is west minus east; integrate across all cuts.
-            stage = (1-weight)*first+weight*end
             rate,powers = stencil_rhs_with_wall_power_2d(stage[None,:],offsets,dx,stage_walls,
                             conductivity=conductivity,layered_x=True,contact_resistance_x=contact_resistance_x)
             west = powers[:1]/(dx*calibration)
@@ -729,16 +742,20 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
                 flux += inward[0]
             heat[len(fields)-1] += dt*flux
         state = end
-        load_start,walls_start,flux_start = forcing(stop) if at_jump else (load_end,walls_end,flux_end)
+        load_start,walls_start,flux_start,reservoir_start = forcing(stop) if at_jump else (load_end,walls_end,flux_end,reservoir_end)
         if stop==grid[len(fields)]:
             fields.append(state)
             if return_wall_temperatures:
                 wall_history.append(wall_trace(state,walls_start,flux_start))
     history = torch.stack(fields)
+    outputs = [history]
+    if return_x_heat:
+        outputs.append(heat)
     if return_wall_temperatures:
-        traces = torch.stack(wall_history)
-        return (history,heat,traces) if return_x_heat else (history,traces)
-    return (history,heat) if return_x_heat else history
+        outputs.append(torch.stack(wall_history))
+    if return_bulk_exchange:
+        outputs.append(exchange)
+    return tuple(outputs) if len(outputs)>1 else history
 
 
 def step_transient_slab_2d(temperature, dt, dx, x_wall_temperatures, *, heat_source=0.,
