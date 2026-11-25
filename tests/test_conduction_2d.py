@@ -2382,3 +2382,23 @@ def test_massless_film_with_heater_reconstructs_wall_after_jump(method):
     torch.testing.assert_close(parts["applied"][:,0], load[:2]*dt)
     torch.testing.assert_close(parts["film"][:,0], dt*h*(.5-mean[:,0]))
     torch.testing.assert_close(cuts[:,0], (parts["applied"]+parts["film"])[:,0])
+
+
+@pytest.mark.parametrize("side", [0, 1])
+def test_quadrature_wall_flux_rotates_harmonic_solution(side):
+    from tensorsph.heat_conduction_2d import solve_harmonic_slab_2d
+
+    source = torch.zeros((6, 12), dtype=torch.float64)
+    walls = (None, 0.) if side == 0 else (0., None)
+
+    def response(load, conditions):
+        fluxes = (load, 0.) if side == 0 else (0., load)
+        return solve_harmonic_slab_2d(source, 1/12, conditions, 3.,
+                                      x_wall_inward_flux=fluxes, return_x_flux=True)
+
+    real_field, real_flux = response(1., walls)
+    field, flux = response(1j, walls)
+    torch.testing.assert_close(field, 1j * real_field)
+    torch.testing.assert_close(flux, 1j * real_flux)
+    with pytest.raises(ValueError, match="prescribe heat flux"):
+        response(1j, (0., 0.))

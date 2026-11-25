@@ -1440,7 +1440,7 @@ def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_fact
     west, east = (_wall_column(q, source) for q in x_wall_inward_flux)
     if not all(torch.isfinite(q).all() for q in (west, east)):
         raise ValueError("wall fluxes must be finite")
-    west_loaded, east_loaded = bool(west.any()), bool(east.any())
+    west_loaded, east_loaded = bool((west != 0).any()), bool((east != 0).any())
     if (left is not None and west_loaded) or (right is not None and east_loaded):
         raise ValueError("prescribe heat flux only on a wall with temperature None")
     length = source.shape[1]*dx
