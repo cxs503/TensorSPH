@@ -1790,3 +1790,50 @@ def test_fixed_temperature_pulse_cooling_against_fourier_series(method, record_p
         errors.append(row)
     for coarse, fine in zip(errors, errors[1:]):
         assert all(a/b > 3.4 for a,b in zip(coarse, fine))
+
+
+@pytest.mark.parametrize("method", ["theta", "sdirk2"])
+def test_fixed_wall_pulse_time_order_on_one_lattice(method, record_property):
+    from tensorsph.heat_conduction_2d import (
+        lattice_diffusion_factor_2d, solve_transient_slab_2d, stencil_rhs_with_wall_power_2d,
+    )
+
+    n = 16
+    dx = 1/n
+    offsets = lattice_offsets(dx, 1.3*dx)
+    factor = lattice_diffusion_factor_2d(dx=dx, mode="moment")
+    zero = torch.zeros((1, n), dtype=torch.float64)
+    # Augment T with cumulative inward heat at each wall and a constant
+    # coordinate for the inhomogeneous wall drive. One unit-thickness row
+    # has wall area dx. Construct columns directly from the particle stencil.
+    def rates(field, left):
+        rate, power = stencil_rhs_with_wall_power_2d(field, offsets, dx, (left, 0.))
+        return torch.cat((rate.flatten(), power/dx))/factor
+
+    generator = zero.new_zeros((n+3, n+3))
+    for i, basis in enumerate(torch.eye(n, dtype=zero.dtype)):
+        generator[:-1, i] = rates(basis[None], 0.)
+    reference = zero.new_zeros(n+3)
+    reference[-1] = 1.
+    shutoff, end = .02, .08
+    for duration, left in ((shutoff, 1.), (end-shutoff, 0.)):
+        generator[:-1, -1] = rates(zero, left)
+        reference = torch.matrix_exp(duration*generator) @ reference
+
+    errors = []
+    # The shutoff lies halfway through a step on each grid.
+    for steps in (14, 42, 126):
+        times = torch.linspace(0., end, steps+1, dtype=zero.dtype)
+        history, heat = solve_transient_slab_2d(
+            zero, times, dx, (lambda t: float(t < shutoff), 0.),
+            wall_jump_times=(shutoff,), return_x_heat=True, method=method,
+            rannacher=(method=="theta"))
+        inward = heat.sum(0)[[0,-1]] * zero.new_tensor([1.,-1.])
+        field_error = (history[-1,0]-reference[:n]).abs().max().item()
+        wall_error = (inward-reference[n:n+2]).abs().max().item()
+        record_property(f"max_field_error_{steps}_K", field_error)
+        record_property(f"max_wall_heat_error_{steps}_J_per_m2", wall_error)
+        assert abs(float(history[-1].mean() - inward.sum())) < 5e-13
+        errors.append((field_error, wall_error))
+    for coarse, fine in zip(errors, errors[1:]):
+        assert all(7.5 < a/b < 11 for a,b in zip(coarse, fine))
