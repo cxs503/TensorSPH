@@ -448,3 +448,25 @@ def test_closed_steady_slab_uses_mean_and_rejects_incompatible_heating():
         solve_steady_slab_2d(torch.ones_like(mode), 1/n, (None, None), mean_temperature=7.)
     with pytest.raises(ValueError, match="mean_temperature"):
         solve_steady_slab_2d(mode, 1/n, (None, None))
+
+
+def test_harmonic_slab_matches_real_space_exchange_and_storage():
+    from tensorsph.heat_conduction_2d import lattice_diffusion_factor_2d, solve_harmonic_slab_2d
+
+    dx, k, omega, capacity = .1, 1.4, 2.7, 3.
+    x = torch.arange(11, dtype=torch.float64)
+    y = torch.arange(7, dtype=torch.float64)
+    source = torch.exp(1j*(x+y[:, None]))+.4j
+    wall = torch.exp(.31j*y)
+    factor = lattice_diffusion_factor_2d(1.3, dx, mode="moment")
+    offsets = lattice_offsets(dx, 1.3*dx)
+    for walls in ((wall, wall.conj()), (None, wall), (wall, None), (None, None)):
+        field = solve_harmonic_slab_2d(source, dx, walls, omega, conductivity=k,
+                                       volumetric_heat_capacity=capacity)
+        for component in ("real", "imag"):
+            traces = tuple(None if w is None else getattr(w, component) for w in walls)
+            rate = stencil_rhs_2d(getattr(field, component), offsets, x_wall_temperatures=traces)
+            expected = getattr(1j*omega*capacity*field-source, component)
+            torch.testing.assert_close(k*rate/factor, expected, atol=5e-12, rtol=0)
+        if all(w is None for w in walls):
+            torch.testing.assert_close(field.mean(), source.mean()/(1j*omega*capacity))

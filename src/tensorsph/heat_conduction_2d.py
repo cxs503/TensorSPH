@@ -221,14 +221,35 @@ def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatur
     in W/(m K), and two wall conditions. None denotes insulation. Two insulated
     walls require a zero-mean heat source and a prescribed mean_temperature. Uses the lattice second-moment calibration for physical k.
     """
-    source = torch.as_tensor(heat_source, dtype=DTYPE)
+    return _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
+                             mean_temperature, 0.)
+
+
+def solve_harmonic_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatures: SlabWalls,
+                           angular_frequency: float, *, conductivity: float = 1.,
+                           volumetric_heat_capacity: float = 1., h_factor: float = 1.3) -> torch.Tensor:
+    """Temperature phasors under exp(+iωt), for constant isotropic k and capacity.
+
+    Use complex volumetric heating (W/m³) and scalar or row-wise wall phasors
+    (K). None insulates either wall. Supply ω in rad/s and capacity in J/(m³ K).
+    """
+    storage = angular_frequency*volumetric_heat_capacity
+    if not all(math.isfinite(v) and v > 0 for v in (angular_frequency, volumetric_heat_capacity, storage)):
+        raise ValueError("frequency and volumetric heat capacity must be positive and finite")
+    return _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
+                             None, storage)
+
+
+def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
+                      mean_temperature, storage):
+    source = torch.as_tensor(heat_source, dtype=torch.complex128 if storage else DTYPE)
     if source.ndim != 2 or min(source.shape) == 0 or not torch.isfinite(source).all():
         raise ValueError("heat_source must be a finite nonempty (ny, nx) field")
     if not all(math.isfinite(v) and v > 0 for v in (dx, conductivity, h_factor)):
         raise ValueError("dx, conductivity and h_factor must be positive and finite")
     left, right = x_wall_temperatures
     closed = left is None and right is None
-    if closed:
+    if closed and not storage:
         if mean_temperature is None or not math.isfinite(mean_temperature):
             raise ValueError("two insulated walls require a finite mean_temperature")
         if source.mean().abs() > 64*torch.finfo(source.dtype).eps*source.abs().mean():
@@ -243,22 +264,35 @@ def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatur
     if factor <= 0:
         raise ValueError("kernel support must include a conducting neighbour")
     # Lift the inhomogeneous wall forcing, leaving a homogeneous reflected operator.
-    reference = mean_temperature if closed else _wall_column(left if left is not None else right, source).mean()
+    reference = (mean_temperature or 0.) if closed else _wall_column(left if left is not None else right, source).mean()
     shifted = tuple(None if wall is None else torch.as_tensor(wall, dtype=source.dtype,
                     device=source.device)-reference for wall in (left, right))
-    wall_rate = stencil_rhs_2d(torch.zeros_like(source), offsets, x_wall_temperatures=shifted)
-    rhs = source + (conductivity/factor)*wall_rate
+    zero = torch.zeros_like(source.real)
+    if storage:
+        # The underlying particle exchange is real-linear. Lift both wall quadratures.
+        real_walls = tuple(None if w is None else w.real for w in shifted)
+        imag_walls = tuple(None if w is None else w.imag for w in shifted)
+        wall_rate = torch.complex(stencil_rhs_2d(zero, offsets, x_wall_temperatures=real_walls),
+                                  stencil_rhs_2d(zero, offsets, x_wall_temperatures=imag_walls))
+        rhs = source - 1j*storage*reference + (conductivity/factor)*wall_rate
+    else:
+        wall_rate = stencil_rhs_2d(zero, offsets, x_wall_temperatures=shifted)
+        rhs = source + (conductivity/factor)*wall_rate
     right_image = rhs.flip((1,))
     rhs = torch.cat((rhs, right_image if right is None else -right_image), dim=1)
     if (left is None) != (right is None):
         # Odd at one wall and even at the other gives an antiperiod over 2*nx.
         rhs = torch.cat((rhs, -rhs), dim=1)
     ny, nx_ext = rhs.shape
-    ky = torch.fft.fftfreq(ny, device=source.device, dtype=source.dtype)[:, None]
-    kx = torch.fft.rfftfreq(nx_ext, device=source.device, dtype=source.dtype)
-    decay = torch.zeros((ny, len(kx)), dtype=source.dtype, device=source.device)
+    ky = torch.fft.fftfreq(ny, device=source.device, dtype=DTYPE)[:, None]
+    xfreq = torch.fft.fftfreq if storage else torch.fft.rfftfreq
+    kx = xfreq(nx_ext, device=source.device, dtype=DTYPE)
+    decay = torch.zeros((ny, len(kx)), dtype=DTYPE, device=source.device)
     for (m, n), a in offsets:
         decay += (-4*a*conductivity/factor)*torch.sin(math.pi*(m*ky+n*kx)).square()
+    if storage:
+        modes = torch.fft.fft2(rhs)/(decay + 1j*storage)
+        return reference + torch.fft.ifft2(modes)[:, :source.shape[1]]
     # The homogeneous correction has zero mean by odd symmetry or by prescription.
     decay[0, 0] = 1.
     modes = torch.fft.rfft2(rhs)/decay
