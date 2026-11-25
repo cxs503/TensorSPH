@@ -14,11 +14,16 @@ JUMP,STOP = .073,.19
 INITIAL = np.array([.1,.8])  # particle and wall temperatures
 
 
-def exact(time):
+def exact(time,harmonic=False):
     # By reflection symmetry midplane power vanishes. Each half contains
     # one particle-column and one wall; their mutual conductance is 2*k/dx.
     g = 2*K/DX
     matrix = np.array([[-g,g],[g,-g-H]])/np.array([C*DX,CW])[:,None]
+    if harmonic:
+        # For u'=A u + b cos(omega*t), the particular solution is
+        # Re[(i*omega*I-A)^(-1) b exp(i*omega*t)].
+        amplitude = np.linalg.solve(1j*OMEGA*np.eye(2)-matrix,[0.,H/CW])
+        return (amplitude*np.exp(1j*OMEGA*time)).real+expm(matrix*time)@(INITIAL-amplitude.real)
     state = INITIAL
     for dt,air in ((min(time,JUMP),1.6),(max(time-JUMP,0.),-.5)):
         if dt:
@@ -26,9 +31,12 @@ def exact(time):
     return state
 
 
-def measure(steps,method,uniform):
+OMEGA = 23.
+
+
+def measure(steps,method,uniform,harmonic=False):
     # Locate the off-grid jump internally for all integrators.
-    if uniform:
+    if uniform or harmonic:
         times = np.linspace(0.,STOP,steps+1)
     else:
         # Keep the first post-jump damping substep at the same fraction of
@@ -36,12 +44,13 @@ def measure(steps,method,uniform):
         half = steps//2
         times = np.r_[np.arange(half)*JUMP/half,
                       JUMP+(np.arange(half)+.5)*(STOP-JUMP)/half,STOP]
+    drive = (lambda t: np.cos(OMEGA*t)) if harmonic else ambient
     u,q,w,external = solve_transient_layered_slab(np.full(2,INITIAL[0]),times,DX,(None,None),
         conductivity=np.full(2,K),volumetric_heat_capacity=C,method="theta" if method=="rannacher" else method,
-        rannacher=method=="rannacher",x_wall_films=((H,ambient),(H,ambient)),load_jump_times=[JUMP],
+        rannacher=method=="rannacher",x_wall_films=((H,drive),(H,drive)),load_jump_times=[] if harmonic else [JUMP],
         wall_areal_heat_capacity=(CW,CW),initial_wall_temperatures=(INITIAL[1],INITIAL[1]),
         return_x_heat=True,return_wall_temperatures=True,return_external_heat=True)
-    reference = np.stack([exact(t) for t in times])
+    reference = np.stack([exact(t,harmonic) for t in times])
     qmat = C*DX*(reference[1:,0]-INITIAL[0])
     qext = qmat+CW*(reference[1:,1]-INITIAL[1])
     return dict(particle_error_K=float(abs(u.numpy()-reference[:,:1]).max()),
@@ -58,18 +67,22 @@ def ambient(t):
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--uniform-grid",action="store_true",help="let the jump move within its containing time step under refinement")
-    uniform = parser.parse_args().uniform_grid
+    parser.add_argument("--harmonic",action="store_true",help="use a smooth cosine film drive on uniform time steps")
+    args = parser.parse_args()
+    harmonic = args.harmonic
+    uniform = args.uniform_grid or harmonic
     rows = []
-    for method in ("theta","rannacher","sdirk2","exponential"):
+    for method in ("theta","rannacher","sdirk2","exponential","exponential_quadratic"):
         previous = None
         for steps in (12,24,48,96):
-            metrics = measure(steps,method,uniform)
+            metrics = measure(steps,method,uniform,harmonic)
             errors = {k:v for k,v in metrics.items() if "_error_" in k}
-            orders = {} if previous is None or method=="exponential" else {k:float(np.log2(previous[k]/v)) for k,v in errors.items()}
-            passed = max(errors.values())<1e-12 if method=="exponential" else all(v>1.7 for v in orders.values())
+            exact_load = method.startswith("exponential") and not harmonic
+            orders = {} if previous is None or exact_load else {k:float(np.log2(previous[k]/v)) for k,v in errors.items()}
+            passed = max(errors.values())<1e-12 if exact_load else all(v>(3.7 if method=="exponential_quadratic" else 1.7) for v in orders.values())
             rows.append(dict(method=method,steps=steps,**metrics,orders=orders,
                              passed=metrics["midplane_heat_J_m2"]<1e-12 and passed))
             previous = errors
     commit = subprocess.check_output(["git","rev-parse","HEAD"],cwd=Path(__file__).parent,text=True).strip()
-    print(json.dumps(dict(commit=commit,uniform_grid=uniform,runs=rows),indent=2,allow_nan=False))
+    print(json.dumps(dict(commit=commit,uniform_grid=uniform,harmonic=harmonic,runs=rows),indent=2,allow_nan=False))
     raise SystemExit(0 if all(r["passed"] for r in rows) else 1)

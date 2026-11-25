@@ -514,18 +514,24 @@ class _StoringSlabWall:
     mode: torch.Tensor
 
 
-def _affine_exponential_step(state, generator, capacity, load_start, load_end, dt):
-    """Exact endpoint and interval-mean states for an affine volumetric load."""
+def _polynomial_exponential_step(state, generator, capacity, load_start, load_end, dt, midpoint):
+    """Integrate a degree-one or degree-two load and the interval mean state."""
     n = state.numel()
-    block = state.new_zeros((n+3,n+3))
+    extra = 3 if midpoint is None else 4
+    block = state.new_zeros((n+extra,n+extra))
     block[:n,:n] = dt*generator
-    block[:n,n] = dt*((load_end-load_start)/capacity)
-    block[:n,n+1] = dt*(generator@state+load_start/capacity)
-    # The polynomial chain supplies 1, s, s²/2 on the scaled interval
-    # 0 <= s <= 1. Adjacent columns integrate the increment and its mean.
-    block[n,n+1] = block[n+1,n+2] = 1.
+    slope = load_end-load_start
+    if midpoint is not None:
+        curvature = 2*(load_end+load_start-2*midpoint)
+        block[:n,n] = 2*dt*(curvature/capacity)
+        slope = slope-curvature
+    block[:n,-3] = dt*(slope/capacity)
+    block[:n,-2] = dt*(generator@state+load_start/capacity)
+    # The polynomial chain integrates each coefficient on the unit interval.
+    for i in range(n,n+extra-1):
+        block[i,i+1] = 1.
     propagator = torch.linalg.matrix_exp(block)
-    return state+propagator[:n,n+1],state+propagator[:n,n+2]
+    return state+propagator[:n,-2],state+propagator[:n,-1]
 
 
 def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *, conductivity,
@@ -556,6 +562,8 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
     method="exponential" uses a dense matrix exponential for the endpoint
     and interval-mean temperatures. It is exact in time for affine loads on
     each segment and interpolates other histories linearly between endpoints.
+    method="exponential_quadratic" also samples each segment midpoint and
+    integrates the resulting quadratic load and its boundary exchanges.
     With rannacher=True the first Crank–Nicolson step and the first after
     each load jump use two backward Euler half steps.
     return_x_heat appends interval-integrated rightward section heat in J/m²,
@@ -584,10 +592,11 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
         raise ValueError("times must be finite and strictly increasing")
     if not (.5<=theta<=1 and math.isfinite(dx) and dx>0 and math.isfinite(h_factor) and h_factor>0):
         raise ValueError("require theta in [.5,1] and positive finite dx and h_factor")
-    if method not in ("theta","sdirk2","exponential"):
-        raise ValueError("method must be theta, sdirk2 or exponential")
+    if method not in ("theta","sdirk2","exponential","exponential_quadratic"):
+        raise ValueError("method must be theta, sdirk2, exponential or exponential_quadratic")
     sdirk = method=="sdirk2"
-    exponential = method=="exponential"
+    quadratic = method=="exponential_quadratic"
+    exponential = method=="exponential" or quadratic
     if method!="theta" and (rannacher or theta!=.5):
         raise ValueError(f"{method} cannot be combined with Rannacher or a theta override")
     walls = tuple(x_wall_temperatures)
@@ -795,7 +804,13 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
         load = (1-weight)*load_start+weight*load_end
         shift = weight*dt
         if exponential:
-            end,stage = _affine_exponential_step(state,generator,capacity,load_start,load_end,dt)
+            midpoint_load = None
+            if quadratic:
+                middle = start+.5*dt
+                if not start<middle<stop:
+                    raise ValueError("quadratic load interval has no representable midpoint")
+                midpoint_load,middle_walls,middle_flux,middle_reservoir = forcing(middle)
+            end,stage = _polynomial_exponential_step(state,generator,capacity,load_start,load_end,dt,midpoint_load)
         else:
             if shift!=previous_shift:
                 factors = torch.linalg.lu_factor(mass-shift*operator)
@@ -812,9 +827,14 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
             if return_x_heat or return_bulk_exchange or return_external_heat:
                 stage = (1-weight)*first+weight*end
         if return_bulk_exchange:
-            exchange[len(fields)-1] += dt*dx*loss*((1-weight)*reservoir_start+weight*reservoir_end-stage[:nx])
+            reservoir = (1-weight)*reservoir_start+weight*reservoir_end
+            if quadratic:
+                reservoir = (reservoir+2*middle_reservoir)/3
+            exchange[len(fields)-1] += dt*dx*loss*(reservoir-stage[:nx])
         if return_x_heat or return_external_heat:
             stage_walls = tuple(None if a is None else (1-weight)*a+weight*b for a,b in zip(walls_start,walls_end))
+            if quadratic:
+                stage_walls = tuple(None if a is None else (a+2*m)/3 for a,m in zip(stage_walls,middle_walls))
             # Start at the directly tallied west wall power. Net pair heat
             # into each column is west minus east; integrate across all cuts.
             rate,powers = stencil_rhs_with_wall_power_2d(stage[None,:nx],offsets,dx,stage_walls,
@@ -823,6 +843,8 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
             flux = torch.cat((west,west-dx*rate[0].cumsum(dim=0)/calibration))
             if flux_modes or film_modes or storing:
                 inward = (1-weight)*flux_start+weight*flux_end
+                if quadratic:
+                    inward = (inward+2*middle_flux)/3
                 for side,_,gain,mode in film_modes:
                     col = 0 if side==0 else nx-1
                     inward[side] -= gain*stage[col]

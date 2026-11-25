@@ -1229,3 +1229,27 @@ def test_exponential_affine_reservoir_heat_and_zero_loss_limit():
         target = dx*c*np.diff(exact)-supplied
         np.testing.assert_allclose(bulk.numpy(),np.broadcast_to(target[:,None],bulk.shape),atol=2e-13,rtol=0.)
         assert section.abs().max()<1e-13
+
+
+def test_exponential_quadratic_tracks_manufactured_bulk_and_storing_wall_heat():
+    import numpy as np
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+
+    # Uniform T=t(1-t) makes conduction vanish at every cut. Bulk exchange
+    # supplies material storage and the external film supplies wall storage.
+    c,h,dx,cw,film = 1.7,2.3,.25,.43,3.1
+    temperature = lambda t: t*(1-t)
+    rate = lambda t: 1-2*t
+    air = lambda t: temperature(t)+cw*rate(t)/film
+    for times in (np.array([0.,1.]),np.array([0.,.09,.5,.83,1.])):
+        u,q,w,bulk,external = solve_transient_layered_slab(np.zeros(4),times,dx,(temperature,None),
+            conductivity=np.ones(4),volumetric_heat_capacity=c,method="exponential_quadratic",
+            heat_loss_coefficient=h,bulk_ambient_temperature=lambda t: temperature(t)+c*rate(t)/h,
+            x_wall_films=(None,(film,air)),wall_areal_heat_capacity=(0.,cw),initial_wall_temperatures=(None,0.),
+            return_x_heat=True,return_wall_temperatures=True,return_bulk_exchange=True,return_external_heat=True)
+        target = temperature(times)
+        for field in (u,w):
+            np.testing.assert_allclose(field,np.broadcast_to(target[:,None],field.shape),atol=3e-13,rtol=0.)
+        np.testing.assert_allclose(q,0.,atol=3e-13)
+        np.testing.assert_allclose(bulk,np.broadcast_to(c*dx*np.diff(target)[:,None],bulk.shape),atol=3e-13)
+        np.testing.assert_allclose(external,np.column_stack((np.zeros(len(times)-1),cw*np.diff(target))),atol=3e-13)
