@@ -565,7 +565,7 @@ def solve_low_frequency_layered_films(heat_source, dx, ambient_temperatures, *,
                                       contact_resistance_x=None, h_factor=1.3, backend="torch",
                                       wall_areal_heat_capacity=(0.,0.), heat_loss_coefficient=0.,
                                       wall_applied_flux=(0.,0.),
-                                      transverse_wavenumber=0., order=1):
+                                      transverse_wavenumber=0., order=1, return_pole=False):
     """Return low-frequency coefficients of the exp(+iωt) film response.
 
     Each tuple contains particle temperatures, wall temperatures and inward
@@ -576,6 +576,12 @@ def solve_low_frequency_layered_films(heat_source, dx, ambient_temperatures, *,
     A lossless constant mode with flux-only walls admits this Taylor series
     when total input is zero. Its finite-frequency energy balance selects zero
     capacity-weighted mean (including both wall stores) at every order.
+    With return_pole=True return (residue, coefficients). The scalar residue
+    (K/s) is net applied heat per area divided by total heat capacity per
+    area for an unanchored mode, and zero for an anchored mode. Add
+    residue/(iω) to all particle and wall temperatures. Heat flux has no
+    pole. The returned regular coefficients include the wall storage rate
+    associated with uniform heating.
     """
     if isinstance(order, bool) or not isinstance(order, int) or order not in (1, 2):
         raise ValueError("order must be 1 or 2")
@@ -583,8 +589,27 @@ def solve_low_frequency_layered_films(heat_source, dx, ambient_temperatures, *,
                    volumetric_heat_capacity=volumetric_heat_capacity,contact_resistance_x=contact_resistance_x,
                    h_factor=h_factor,backend=backend,wall_areal_heat_capacity=wall_areal_heat_capacity,
                    heat_loss_coefficient=heat_loss_coefficient,transverse_wavenumber=transverse_wavenumber)
+    source = torch.as_tensor(heat_source, dtype=torch.complex128)
+    residue = source.new_zeros(())
     if _unanchored_flux_mode(film_coefficients, heat_loss_coefficient, transverse_wavenumber, dx):
         options["mean_temperature"] = 0.
+        if return_pole:
+            applied = torch.as_tensor(wall_applied_flux, dtype=source.dtype, device=source.device)
+            surface = torch.as_tensor(wall_areal_heat_capacity, dtype=DTYPE, device=source.device)
+            capacity = torch.as_tensor(volumetric_heat_capacity, dtype=DTYPE, device=source.device)
+            if source.ndim != 1 or not source.numel() or capacity.shape not in ((), source.shape):
+                raise ValueError("provide a nonempty source vector and scalar or matching column capacities")
+            if applied.shape != (2,) or surface.shape != (2,) or not torch.isfinite(applied).all():
+                raise ValueError("provide two finite applied fluxes and two wall capacities")
+            if (not math.isfinite(dx) or dx <= 0 or not torch.all(torch.isfinite(capacity) & (capacity > 0))
+                    or not torch.all(torch.isfinite(surface) & (surface >= 0))):
+                raise ValueError("require positive spacing and column capacities and nonnegative finite wall capacities")
+            residue = (dx*source.sum()+applied.sum())/(dx*capacity.expand_as(source).sum()+surface.sum())
+            heat_source = source-capacity*residue
+            west = applied[0]-surface[0]*residue
+            # Use global balance for the east load to avoid cancellation when
+            # the uniform mode accounts for almost the entire forcing.
+            wall_applied_flux = torch.stack((west, -west-dx*heat_source.sum()))
     steady = solve_harmonic_layered_films(heat_source,dx,ambient_temperatures,0.,wall_applied_flux=wall_applied_flux,**options)
     field,walls,_ = steady
     capacity = torch.as_tensor(volumetric_heat_capacity,dtype=DTYPE,device=field.device)
@@ -595,7 +620,7 @@ def solve_low_frequency_layered_films(heat_source, dx, ambient_temperatures, *,
         coefficient = solve_harmonic_layered_films(-capacity*field,dx,(0.,0.),0.,wall_applied_flux=-surface*walls,**options)
         coefficients.append(coefficient)
         field,walls,_ = coefficient
-    return tuple(coefficients)
+    return (residue, tuple(coefficients)) if return_pole else tuple(coefficients)
 
 
 @dataclass

@@ -2043,3 +2043,31 @@ def test_balanced_flux_only_low_frequency_coefficients(backend):
     assert min(errors[0]/errors[1], errors[1]/errors[2]) > 7.8
     with pytest.raises(ValueError, match="balanced wall inputs"):
         solve_low_frequency_layered_films(*args, **dict(opts, wall_applied_flux=(0., 0.)))
+
+
+@pytest.mark.parametrize("backend", ["torch", "banded"])
+def test_unbalanced_closed_slab_laurent_response(backend):
+    from tensorsph.heat_conduction_2d import solve_low_frequency_layered_films, solve_harmonic_layered_films
+
+    x = torch.arange(12, dtype=torch.float64)/12
+    capacity = 1.2+x
+    surface = x.new_tensor([.4, .7])
+    applied = torch.tensor([.4+.1j, -.12j], dtype=torch.complex128)
+    args = (x-.1j, 1/12, (0., 0.))
+    opts = dict(film_coefficients=(0., 0.), conductivity=1.+x, volumetric_heat_capacity=capacity,
+                wall_areal_heat_capacity=surface, wall_applied_flux=applied, backend=backend)
+    residue, terms = solve_low_frequency_layered_films(*args, order=2, return_pole=True, **opts)
+    torch.testing.assert_close(residue, (args[0].mean()+applied.sum())/(capacity.mean()+surface.sum()))
+    errors = []
+    for omega in (.2, .1, .05):
+        direct = solve_harmonic_layered_films(*args, omega, **opts)
+        errors.append(max((value-(residue/(1j*omega) if i < 2 else 0)-a-1j*omega*b+omega**2*c).abs().max().item()
+                          for i, (value, a, b, c) in enumerate(zip(direct, *terms))))
+    assert min(errors[0]/errors[1], errors[1]/errors[2]) > 7.7
+
+    # Independently drive every store in proportion to its capacity.
+    rate = .27+.34j
+    residue, terms = solve_low_frequency_layered_films(capacity*rate, 1/12, (0., 0.), return_pole=True,
+        **dict(opts, wall_applied_flux=surface*rate))
+    torch.testing.assert_close(residue, residue.new_tensor(rate))
+    assert max(v.abs().max().item() for term in terms for v in term) < 1e-13
