@@ -2541,3 +2541,21 @@ def test_curved_half_cells_share_one_complex_fourier_flux(contact):
     flux = recover_layered_interior_flux(rows, dx, k, contact_resistance_x=[contact],
                                          axial_flux_gradient=torch.stack((gradient, -gradient)))
     torch.testing.assert_close(flux[:, 0], t.new_tensor([q, -q]), atol=1e-14, rtol=1e-14)
+
+
+def test_contact_flux_from_independent_interior_anchors():
+    from tensorsph.heat_conduction_2d import extrapolate_layered_face_flux
+
+    # q(x) = x² on the left and 2x²-1 on the right, continuous at x=1.
+    dx = 0.25
+    x = dx*torch.arange(1, 8, dtype=torch.float64)
+    centers = dx*(torch.arange(8, dtype=x.dtype)+0.5)
+    q = torch.where(x <= 1, x**2, 2*x**2-1)
+    q[3] = 99  # the direct estimate at the requested cut is deliberately wrong
+    gradient = torch.where(centers < 1, 2*centers, 4*centers)
+    phases = torch.tensor([1+0j, 1-2j], dtype=torch.complex128)
+    rows = phases[:, None]
+    for value in extrapolate_layered_face_flux(rows*q, dx, 4, 2, axial_flux_gradient=rows*gradient):
+        torch.testing.assert_close(value, phases, rtol=0., atol=1e-14)
+    with pytest.raises(ValueError, match="anchors"):
+        extrapolate_layered_face_flux(q, dx, 4, 4, axial_flux_gradient=gradient)

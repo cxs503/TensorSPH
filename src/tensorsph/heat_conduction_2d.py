@@ -95,6 +95,7 @@ __all__ = [
     "two_column_sheet_materials",
     "layered_slab_contact_temperatures",
     "layered_slab_modal_cut_flux",
+    "extrapolate_layered_face_flux",
     "solve_low_frequency_layered_slab",
     "solve_low_frequency_layered_films",
     "pair_geometry_2d",
@@ -1814,6 +1815,39 @@ def recover_layered_interior_flux(temperature, dx, conductivity, *, axial_flux_g
     # q varies linearly from each centre to the common face. Integrating
     # in opposite directions gives opposite signs for the two corrections.
     return (-field.diff(dim=-1) - (dx**2/8)*(gradient/k).diff(dim=-1)) / resistance
+
+
+def extrapolate_layered_face_flux(interior_flux, dx, face, inset_cells, *, axial_flux_gradient):
+    """Estimate rightward flux at a cut independently from its left and right.
+
+    Faces are numbered 0 through N. Supply the N-1 interior Fourier fluxes
+    (W/m²) on a uniform grid and the net axial gradient dq/dx (W/m³) in
+    each cell. The midpoint balance is exact for linear cellwise gradients.
+    Choose the inset so each anchor lies inside its adjacent material. The
+    interval must contain no sheet source or other prescribed flux jump.
+    Returns (from_left, from_right), one pair per row for a batched field.
+    """
+    flux = torch.as_tensor(interior_flux)
+    if flux.ndim not in (1, 2) or flux.numel() == 0 or not (
+        flux.is_floating_point() or flux.is_complex()
+    ) or not torch.isfinite(flux).all():
+        raise ValueError("provide a finite real or complex interior face flux field")
+    if not math.isfinite(dx) or dx <= 0:
+        raise ValueError("spacing must be positive and finite")
+    face, inset = operator.index(face), operator.index(inset_cells)
+    lo, hi = face - inset, face + inset
+    if inset < 1 or lo < 1 or hi > flux.shape[-1]:
+        raise ValueError("both anchors must be internal faces with positive inset")
+    shape = (*flux.shape[:-1], flux.shape[-1]+1)
+    raw = torch.as_tensor(axial_flux_gradient, device=flux.device)
+    dtype = torch.promote_types(flux.dtype, raw.dtype)
+    gradient = torch.as_tensor(axial_flux_gradient, dtype=dtype, device=flux.device)
+    if gradient.shape not in ((), (shape[-1],), shape) or not torch.isfinite(gradient).all():
+        raise ValueError("axial flux gradient must be finite and match the columns or field")
+    gradient = gradient.expand(shape)
+    left = flux[..., lo-1] + dx*gradient[..., lo:face].sum(dim=-1)
+    right = flux[..., hi-1] - dx*gradient[..., face:hi].sum(dim=-1)
+    return left, right
 
 
 def layered_slab_modal_cut_flux(temperature, dx, face, x_wall_temperatures, *, conductivity,
