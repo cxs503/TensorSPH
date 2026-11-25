@@ -1122,3 +1122,23 @@ def test_sdirk2_step_straddles_flux_pulse_and_closes_film_balance():
     assert abs(heat[0,0]-.01*(3+.035))<1e-13
     assert abs(heat[1,0])<1e-13
     assert (2*dx*u.diff(dim=0)+heat.diff(dim=1)).abs().max()<1e-12
+
+
+def test_sdirk2_periodic_rows_resolve_transverse_mode_and_storing_columns():
+    import math
+    from tensorsph.heat_conduction_2d import solve_transient_slab_2d, lattice_diffusion_factor_2d
+
+    n = 12
+    dx = 1/n
+    x = (torch.arange(n,dtype=torch.float64)+.5)*dx
+    # The row-constant component makes section heat appreciable. Each
+    # transverse component has its own discrete Fourier decay rate.
+    base = torch.sin(math.pi*x)
+    row = .3*torch.cos(2*math.pi*x)[:,None]
+    u,heat = solve_transient_slab_2d(base*(1+row),[0.,.02],dx,(0.,0.),method="sdirk2",return_x_heat=True)
+    gamma = 1-1/math.sqrt(2)
+    def gain(w):
+        z = .02*symbol_rate(dx,1.3*dx,math.pi,w)/lattice_diffusion_factor_2d(1.3,dx,mode="moment")
+        return (1-(1-2*gamma)*z)/(1+gamma*z)**2
+    torch.testing.assert_close(u[-1],base*(gain(0.)+row*gain(2*math.pi)),rtol=0.,atol=1e-12)
+    assert (dx*u.diff(dim=0).mean(1)+heat.diff(dim=1)).abs().max()<1e-12

@@ -774,14 +774,15 @@ def step_transient_slab_2d(temperature, dt, dx, x_wall_temperatures, *, heat_sou
     result = _solve_slab_modes(shift*field+source, dx, x_wall_temperatures,
                                conductivity, h_factor, None, total_shift, x_wall_inward_flux, return_x_flux)
     stage, flux = result if return_x_flux else (result, None)
-    updated = field+(stage-field)/theta
+    updated = stage if theta==1. else field+(stage-field)/theta
     return (updated,flux) if return_x_flux else updated
 
 
 def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                             wall_jump_times=(), rannacher=False, heat_source=0.,
                             conductivity=1., volumetric_heat_capacity=1., theta=.5,
-                            h_factor=1.3, x_wall_inward_flux=(0.,0.), return_x_heat=False, heat_loss_coefficient=0.):
+                            h_factor=1.3, x_wall_inward_flux=(0.,0.), return_x_heat=False, heat_loss_coefficient=0.,
+                            method="theta"):
     """Advance a reflected slab over requested times with prescribed wall histories.
 
     Each wall may be a fixed scalar, row profile, callable of time returning
@@ -793,6 +794,8 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     value at the event time.
     Rannacher damping applies two backward Euler half steps at startup and
     immediately after each jump. The default integrator is Crank–Nicolson.
+    method="sdirk2" samples all prescribed data at its two stages and integrates
+    the section heats with the same second-order L-stable formula.
     Return particle temperatures (nt,ny,nx). With return_x_heat also return
     the interval-integrated rightward heat on each section (nt-1,nx+1), J/m².
     """
@@ -804,6 +807,10 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
         raise ValueError("wall_jump_times must be distinct interior times")
     if rannacher and theta!=.5:
         raise ValueError("Rannacher damping requires theta=.5")
+    if method not in ("theta","sdirk2"):
+        raise ValueError("method must be theta or sdirk2")
+    if method=="sdirk2" and (rannacher or theta!=.5):
+        raise ValueError("sdirk2 cannot be combined with Rannacher or a theta override")
     walls = tuple(x_wall_temperatures)
     if len(walls)!=2:
         raise ValueError("provide west and east wall temperatures")
@@ -825,6 +832,15 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     if field.ndim!=2 or min(field.shape)==0 or field.is_complex():
         raise ValueError("provide a real nonempty (ny,nx) temperature field")
     field = field.to(DTYPE)
+    def advance(initial,dt,start,load_end,weight):
+        stage = tuple(stage_load(wall,start,load_end,weight) for wall in walls)
+        stage_flux = tuple(stage_load(q,start,load_end,weight) for q in fluxes)
+        result = step_transient_slab_2d(initial,dt,dx,stage,heat_source=stage_load(heat_source,start,load_end,weight),
+                     conductivity=conductivity,volumetric_heat_capacity=volumetric_heat_capacity,
+                     theta=weight,h_factor=h_factor,x_wall_inward_flux=stage_flux,return_x_flux=return_x_heat,
+                     heat_loss_coefficient=heat_loss_coefficient)
+        return result if return_x_heat else (result,None)
+
     history = [field]
     heat = field.new_zeros((len(grid)-1,field.shape[1]+1)) if return_x_heat else None
     events = set(jumps)
@@ -838,18 +854,23 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
         weight = 1. if damp else theta
         for end in ends:
             load_end = math.nextafter(end,start) if end in events else end
-            stage = tuple(stage_load(wall,start,load_end,weight) for wall in walls)
-            stage_flux = tuple(stage_load(q,start,load_end,weight) for q in fluxes)
-            stage_source = stage_load(heat_source,start,load_end,weight)
-            result = step_transient_slab_2d(field,end-start,dx,stage,heat_source=stage_source,
-                         conductivity=conductivity,volumetric_heat_capacity=volumetric_heat_capacity,
-                         theta=weight,h_factor=h_factor,x_wall_inward_flux=stage_flux,return_x_flux=return_x_heat,
-                         heat_loss_coefficient=heat_loss_coefficient)
-            if return_x_heat:
-                field,flux = result
-                heat[interval] += (end-start)*flux
+            dt = end-start
+            if method=="sdirk2":
+                gamma = 1-1/math.sqrt(2)
+                stage_time = start+gamma*dt
+                if not start<stage_time<end:
+                    raise ValueError("SDIRK interval has no representable stage time")
+                first,flux1 = advance(field,gamma*dt,start,stage_time,1.)
+                # Advance the explicit first-stage contribution before the
+                # second implicit solve, using the same diagonal RK weight.
+                base = field+((1-gamma)/gamma)*(first-field)
+                field,flux = advance(base,gamma*dt,stage_time,load_end,1.)
+                if return_x_heat:
+                    flux = (1-gamma)*flux1+gamma*flux
             else:
-                field = result
+                field,flux = advance(field,dt,start,load_end,weight)
+            if return_x_heat:
+                heat[interval] += dt*flux
             start = end
         if stop==grid[interval+1]:
             history.append(field)
