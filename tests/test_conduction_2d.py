@@ -2418,3 +2418,20 @@ def test_closed_harmonic_section_flux_resolves_small_gradients_on_uniform_pole()
     storage = 1j * omega * field.mean(dim=0)
     torch.testing.assert_close(storage.mean(), storage.new_tensor(1+3j))
     assert (flux.diff() + (storage-source[0])/columns).abs().max() < 1e-12
+
+
+def test_closed_steady_flux_with_weak_volumetric_cooling():
+    from tensorsph.heat_conduction_2d import solve_steady_slab_2d
+
+    columns = 32
+    x = (torch.arange(columns, dtype=torch.float64) + 0.5) / columns
+    source = (1 + torch.cos(torch.pi * x)).repeat(8, 1)
+    loss = 1e-14
+    excess, flux = solve_steady_slab_2d(
+        source, 1 / columns, (None, None), heat_loss_coefficient=loss,
+        x_wall_inward_flux=(1., 2.), ambient_temperature=300.,
+        temperature_reference=300., return_x_flux=True,
+    )
+    cooling = loss * excess.mean(0)
+    torch.testing.assert_close(cooling.mean(), cooling.new_tensor(4.))
+    assert (flux.diff() + (cooling - source[0])/columns).abs().max() < 1e-12
