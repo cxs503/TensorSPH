@@ -352,6 +352,53 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
     return torch.linalg.solve(matrix, source+load)
 
 
+def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_frequency,
+                                 *, film_coefficients, conductivity, volumetric_heat_capacity,
+                                 contact_resistance_x=None, h_factor=1.3, backend="torch"):
+    """Solve a transversely uniform layered slab with two massless convective walls.
+
+    Return (particle temperatures in K, two wall temperatures in K, two inward
+    heat fluxes in W/m²), all phasors under exp(+iωt). Film coefficients are
+    real and positive in W/(m² K). Ambient phasors and coefficients are ordered
+    west, east. Source, material properties and contacts follow
+    solve_harmonic_layered_slab's column-vector convention.
+    """
+    source = torch.as_tensor(heat_source, dtype=torch.complex128)
+    if source.ndim != 1:
+        raise ValueError("film solve requires one heat source per x column")
+    ambient = torch.as_tensor(ambient_temperatures, dtype=source.dtype, device=source.device)
+    films = torch.as_tensor(film_coefficients, device=source.device, dtype=DTYPE)
+    if ambient.shape != (2,) or not torch.isfinite(ambient).all():
+        raise ValueError("provide two finite ambient temperature phasors")
+    if films.shape != (2,) or not torch.all(torch.isfinite(films) & (films > 0)):
+        raise ValueError("provide two positive finite film coefficients")
+
+    opts = dict(conductivity=conductivity, contact_resistance_x=contact_resistance_x)
+    def response(load, walls):
+        return solve_harmonic_layered_slab(load, dx, walls, angular_frequency,
+                      volumetric_heat_capacity=volumetric_heat_capacity, h_factor=h_factor,
+                      backend=backend, **opts)
+
+    base = response(source, (0., 0.))
+    offsets = lattice_offsets(dx, h_factor*dx)
+    factor = lattice_diffusion_factor_2d(h_factor, dx, mode="moment")
+
+    def inward(field, walls):
+        _, powers = stencil_rhs_with_wall_power_2d(field[None,:], offsets, dx, walls,
+                                                   layered_x=True, **opts)
+        return powers/(dx*factor)
+
+    # Two unit-temperature solutions give the complete wall admittance,
+    # including heat transmitted from one wall to the opposite wall.
+    zero = torch.zeros_like(source)
+    units = ((1.,0.), (0.,1.))
+    fields = [response(zero, walls) for walls in units]
+    admittance = torch.stack([inward(u, w) for u,w in zip(fields, units)], dim=1)
+    walls = torch.linalg.solve(admittance + torch.diag(films), films*ambient-inward(base,(0.,0.)))
+    field = base + walls @ torch.stack(fields)
+    return field, walls, inward(field, walls)
+
+
 def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
                       mean_temperature, storage, x_wall_inward_flux, return_x_flux):
     source = torch.as_tensor(heat_source, dtype=torch.complex128 if storage else DTYPE)

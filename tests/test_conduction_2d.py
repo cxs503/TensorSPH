@@ -667,3 +667,23 @@ def test_banded_harmonic_slab_agrees_with_dense_on_wide_stencils():
             u = solve_harmonic_layered_slab(source, 1/nx, walls, 4., **opts)
             compact = solve_harmonic_layered_slab(source, 1/nx, walls, 4., backend="banded", **opts)
             torch.testing.assert_close(compact, u, atol=2e-12, rtol=1e-11)
+
+
+def test_layered_harmonic_films_close_storage_and_reciprocity():
+    from tensorsph.heat_conduction_2d import solve_harmonic_layered_films
+    x = (torch.arange(20, dtype=torch.float64)+.5)/20
+    k, c = 1.+x, 2.+x*x
+    faces = torch.zeros_like(x[:-1])
+    faces[9] = .35
+    films = torch.tensor([2., 7.], dtype=x.dtype)
+    ambient = torch.tensor([1.+.5j, -.2j], dtype=torch.complex128)
+    opts = dict(film_coefficients=films, conductivity=k, volumetric_heat_capacity=c,
+                contact_resistance_x=faces)
+    source = torch.exp(1j*x)
+    u, walls, q = solve_harmonic_layered_films(source, .05, ambient, 4., **opts)
+    torch.testing.assert_close(q, films*(ambient-walls), atol=2e-12, rtol=0)
+    torch.testing.assert_close(q.sum(), (4j*c*u-source).mean(), atol=2e-12, rtol=0)
+    zero = torch.zeros_like(source)
+    _, _, a = solve_harmonic_layered_films(zero,.05,(1.,0.),4.,**opts)
+    _, _, b = solve_harmonic_layered_films(zero,.05,(0.,1.),4.,**opts)
+    torch.testing.assert_close(a[1], b[0], atol=2e-12, rtol=0)
