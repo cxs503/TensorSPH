@@ -1969,3 +1969,21 @@ def test_harmonic_film_section_fluxes_match_prescribed_wall_solution(backend):
     torch.testing.assert_close(field, direct, rtol=1e-12, atol=1e-13)
     torch.testing.assert_close(cuts, expected, rtol=1e-12, atol=1e-13)
     torch.testing.assert_close(inward, torch.stack((cuts[0], -cuts[-1])), rtol=0., atol=1e-13)
+
+
+def test_harmonic_wall_flux_and_low_frequency_with_one_uncoated_end():
+    from tensorsph.heat_conduction_2d import solve_harmonic_layered_films, solve_low_frequency_layered_films
+    source = torch.zeros(12, dtype=torch.float64)
+    applied = torch.tensor([.7-.2j, -.4j], dtype=torch.complex128)
+    opts = dict(conductivity=torch.full_like(source, 1.7), volumetric_heat_capacity=2.1, wall_areal_heat_capacity=(.3,.8),
+                wall_applied_flux=applied, film_coefficients=(0.,2.))
+    omega = 1e-4
+    terms = solve_low_frequency_layered_films(source, 1/12, (0.,.5), order=2, **opts)
+    actual = solve_harmonic_layered_films(source, 1/12, (0.,.5), omega, **opts)
+    for field, steady, lag, second in zip(actual, *terms):
+        torch.testing.assert_close(field, steady+1j*omega*lag-omega**2*second, rtol=0., atol=1e-10)
+    opts["film_coefficients"] = (0.,0.)
+    with pytest.raises(ValueError, match="temperature reference"):
+        solve_harmonic_layered_films(source, 1/12, (0.,0.), 0., **opts)
+    _, wall, inward = solve_harmonic_layered_films(source, 1/12, (0.,0.), 3., **opts)
+    torch.testing.assert_close(inward+3j*wall*wall.real.new_tensor([.3,.8]), applied)

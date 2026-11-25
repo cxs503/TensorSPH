@@ -471,28 +471,37 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
                                  *, film_coefficients, conductivity, volumetric_heat_capacity,
                                  contact_resistance_x=None, h_factor=1.3, backend="torch",
                                  wall_areal_heat_capacity=(0.,0.), heat_loss_coefficient=0.,
+                                 wall_applied_flux=(0.,0.),
                                  transverse_wavenumber=0., return_x_flux=False):
     """Solve a transverse Fourier mode of a layered slab with two convective walls.
 
     Return (particle temperatures in K, two wall temperatures in K, two inward
     heat fluxes in W/m²), all phasors under exp(+iωt). Film coefficients are
-    real and positive in W/(m² K). Ambient phasors and coefficients are ordered
-    west, east. Source, material properties and contacts follow
+    real and nonnegative in W/(m² K). wall_applied_flux adds two inward
+    applied heat flux phasors in W/m² independently of the films. Ambient
+    phasors, applied fluxes and coefficients are ordered west, east. Source, material properties and contacts follow
     solve_harmonic_layered_slab's column-vector convention. Each wall can store
     heat with areal capacity in J/(m² K). Returned heat flux enters the slab.
     Ambient, particle and wall phasors multiply exp(i*transverse_wavenumber*y).
+    A steady, lossless, spatially constant transverse mode needs a positive
+    film coefficient on at least one wall to anchor its temperature.
     Set return_x_flux=True to append rightward heat fluxes on all nx+1 cuts.
     """
     source = torch.as_tensor(heat_source, dtype=torch.complex128)
     if source.ndim != 1:
         raise ValueError("film solve requires one heat source per x column")
     ambient = torch.as_tensor(ambient_temperatures, dtype=source.dtype, device=source.device)
+    if torch.is_complex(torch.as_tensor(film_coefficients)):
+        raise ValueError("film coefficients must be real")
     films = torch.as_tensor(film_coefficients, device=source.device, dtype=DTYPE)
     if ambient.shape != (2,) or not torch.isfinite(ambient).all():
         raise ValueError("provide two finite ambient temperature phasors")
-    if films.shape != (2,) or not torch.all(torch.isfinite(films) & (films > 0)):
-        raise ValueError("provide two positive finite film coefficients")
+    if films.shape != (2,) or not torch.all(torch.isfinite(films) & (films >= 0)):
+        raise ValueError("provide two nonnegative finite film coefficients")
 
+    applied = torch.as_tensor(wall_applied_flux, dtype=source.dtype, device=source.device)
+    if applied.shape != (2,) or not torch.isfinite(applied).all():
+        raise ValueError("provide two finite inward applied wall fluxes")
     wall_capacity = torch.as_tensor(wall_areal_heat_capacity, device=source.device, dtype=DTYPE)
     if wall_capacity.shape != (2,) or not torch.all(torch.isfinite(wall_capacity) & (wall_capacity >= 0)):
         raise ValueError("provide two finite nonnegative wall areal heat capacities")
@@ -513,8 +522,11 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
     cut_response = torch.stack(cuts, dim=1)
     admittance = torch.stack((cut_response[0], -cut_response[-1]))
     base_flux = torch.stack((base_cuts[0], -base_cuts[-1]))
+    if (angular_frequency == 0 and not films.any() and not torch.any(torch.as_tensor(heat_loss_coefficient) != 0)
+            and abs(math.remainder(transverse_wavenumber*dx, math.tau)) <= math.ulp(math.tau)):
+        raise ValueError("steady flux-only walls require a temperature reference for the constant mode")
     walls = torch.linalg.solve(admittance + torch.diag(films+1j*angular_frequency*wall_capacity),
-                               films*ambient-base_flux)
+                               films*ambient+applied-base_flux)
     field = base + walls @ torch.stack(fields)
     result = (field, walls, base_flux + admittance @ walls)
     if return_x_flux:
@@ -526,6 +538,7 @@ def solve_low_frequency_layered_films(heat_source, dx, ambient_temperatures, *,
                                       film_coefficients, conductivity, volumetric_heat_capacity,
                                       contact_resistance_x=None, h_factor=1.3, backend="torch",
                                       wall_areal_heat_capacity=(0.,0.), heat_loss_coefficient=0.,
+                                      wall_applied_flux=(0.,0.),
                                       transverse_wavenumber=0., order=1):
     """Return low-frequency coefficients of the exp(+iωt) film response.
 
@@ -533,7 +546,7 @@ def solve_low_frequency_layered_films(heat_source, dx, ambient_temperatures, *,
     fluxes. The default returns steady and linear coefficients of iω.
     order=2 appends the coefficient of (iω)², including both wall storage
     terms. Each power adds one factor of seconds to the coefficient units.
-    The volumetric source and ambient temperatures are frequency independent.
+    The volumetric source, applied wall fluxes and ambient temperatures are frequency independent.
     """
     if isinstance(order, bool) or not isinstance(order, int) or order not in (1, 2):
         raise ValueError("order must be 1 or 2")
@@ -541,15 +554,14 @@ def solve_low_frequency_layered_films(heat_source, dx, ambient_temperatures, *,
                    volumetric_heat_capacity=volumetric_heat_capacity,contact_resistance_x=contact_resistance_x,
                    h_factor=h_factor,backend=backend,wall_areal_heat_capacity=wall_areal_heat_capacity,
                    heat_loss_coefficient=heat_loss_coefficient,transverse_wavenumber=transverse_wavenumber)
-    steady = solve_harmonic_layered_films(heat_source,dx,ambient_temperatures,0.,**options)
+    steady = solve_harmonic_layered_films(heat_source,dx,ambient_temperatures,0.,wall_applied_flux=wall_applied_flux,**options)
     field,walls,_ = steady
     capacity = torch.as_tensor(volumetric_heat_capacity,dtype=DTYPE,device=field.device)
     surface = torch.as_tensor(wall_areal_heat_capacity,dtype=DTYPE,device=field.device)
-    films = torch.as_tensor(film_coefficients,dtype=DTYPE,device=field.device)
     coefficients = [steady]
     for _ in range(order):
         # Storage at the preceding order supplies both the bulk and film loads.
-        coefficient = solve_harmonic_layered_films(-capacity*field,dx,-surface*walls/films,0.,**options)
+        coefficient = solve_harmonic_layered_films(-capacity*field,dx,(0.,0.),0.,wall_applied_flux=-surface*walls,**options)
         coefficients.append(coefficient)
         field,walls,_ = coefficient
     return tuple(coefficients)
