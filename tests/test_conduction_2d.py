@@ -1524,11 +1524,14 @@ def test_wall_flux_with_resistive_contacts_and_internal_heat(layered, record_pro
 
 
 def test_fixed_wall_flux_from_solved_contact_slab(record_property):
-    from tensorsph.heat_conduction_2d import recover_dirichlet_wall_flux_2d, solve_harmonic_layered_slab
+    from tensorsph.heat_conduction_2d import (
+        layered_slab_modal_cut_flux, recover_dirichlet_wall_flux_2d, solve_harmonic_layered_slab,
+    )
 
     beta, omega = 2*math.pi, .5
     errors = []
     wall_errors = []
+    direct_errors = []
     for n in (16, 32, 64, 128):
         dx = 1/n
         k = torch.ones(n, dtype=torch.float64)
@@ -1541,20 +1544,68 @@ def test_fixed_wall_flux_from_solved_contact_slab(record_property):
         # T = r(x)*exp(i*beta*y+i*omega*t) has unit conductive slope,
         # with jumps equal to each face resistance. The source balances
         # transverse diffusion and storage in each layer.
-        solution = solve_harmonic_layered_slab(
+        solution, cuts = solve_harmonic_layered_slab(
             (k*beta**2 + 1j*omega)*r, dx, (0., right), omega, conductivity=k,
-            volumetric_heat_capacity=1., transverse_wavenumber=beta, contact_resistance_x=contacts)
+            volumetric_heat_capacity=1., transverse_wavenumber=beta, contact_resistance_x=contacts,
+            return_x_flux=True)
         phase = torch.exp(1j * beta * (torch.arange(n, dtype=k.dtype)+.5)*dx)
+        # Both wall cuts use positive-x orientation. The analytic flux is -1.
+        exact_cuts = torch.stack([layered_slab_modal_cut_flux(
+            r, dx, face, (0., right), conductivity=k, transverse_wavenumber=beta,
+            contact_resistance_x=contacts) for face in (0, n)])
+        record_property(f"direct_exact_field_error_{n}", float((exact_cuts+1).abs().max()))
+        direct_errors.append(float((cuts[[0,n]]+1).abs().max()))
+        record_property(f"direct_solved_field_error_{n}", direct_errors[-1])
+        record_property(f"particle_temperature_error_{n}", float((solution-r).abs().max()))
+        reference = torch.stack((-phase, phase))
+        exact_recovery = recover_dirichlet_wall_flux_2d(
+            phase[:,None]*r, dx, k, [0.,0.], contact_resistance_x=contacts,
+            x_wall_temperatures=(0., right*phase))
+        exact_error = float((exact_recovery-reference).abs().max())
+        record_property(f"recovered_exact_field_error_{n}", exact_error)
+        assert exact_error < 2e-12
         field = phase[:,None]*solution
         flux = recover_dirichlet_wall_flux_2d(field, dx, k, [0.,0.], contact_resistance_x=contacts)
-        errors.append(float((flux - torch.stack((-phase, phase))).abs().max()))
+        errors.append(float((flux - reference).abs().max()))
         record_property(f"wall_flux_error_{n}", errors[-1])
         anchored = recover_dirichlet_wall_flux_2d(field, dx, k, [0.,0.],
             contact_resistance_x=contacts, x_wall_temperatures=(0., right*phase))
-        wall_errors.append(float((anchored - torch.stack((-phase, phase))).abs().max()))
+        wall_errors.append(float((anchored - reference).abs().max()))
         record_property(f"prescribed_wall_flux_error_{n}", wall_errors[-1])
     assert all(fine < coarse for coarse, fine in zip(errors, errors[1:]))
     assert errors[-1] < 0.05
     assert wall_errors[0] < errors[0] / 30
     assert wall_errors[1] < errors[1] / 2
     assert wall_errors[-1] < 0.05
+    assert all(fine < coarse for coarse, fine in zip(direct_errors, direct_errors[1:]))
+    assert direct_errors[-1] < 0.022
+
+
+@pytest.mark.parametrize("backend", ["torch", "banded"])
+def test_harmonic_grid_row_flux_matches_pair_tallies(backend, record_property):
+    from tensorsph.heat_conduction_2d import (
+        lattice_diffusion_factor_2d, solve_harmonic_layered_slab,
+        stencil_rhs_with_wall_power_2d, stencil_x_face_power_2d,
+    )
+
+    nx, ny, dx = 10, 8, .1
+    x = (torch.arange(nx, dtype=torch.float64)+.5)*dx
+    phase = torch.exp(2j*math.pi*torch.arange(ny, dtype=x.dtype)/ny)
+    source = .5 + phase[:,None]*x + .3j*phase[:,None]**2*x**2
+    walls = (1+.2*phase, .25j*phase**3)
+    contacts = torch.zeros_like(x[:-1])
+    contacts[3] = .2
+    material = dict(conductivity=1+x, contact_resistance_x=contacts)
+    options = dict(volumetric_heat_capacity=2., backend=backend, **material)
+    field, cuts = solve_harmonic_layered_slab(source, dx, walls, .5, return_x_flux="by_row", **options)
+    _, means = solve_harmonic_layered_slab(source, dx, walls, .5, return_x_flux=True, **options)
+    offsets = lattice_offsets(dx, 1.3*dx)
+    tally = dict(layered_x=True, power_by_row=True, **material)
+    _, ends = stencil_rhs_with_wall_power_2d(field, offsets, dx, walls, **tally)
+    interior = [stencil_x_face_power_2d(field, offsets, dx, i, walls, **tally) for i in range(1, nx)]
+    expected = torch.stack([ends[0], *interior, -ends[1]], dim=1)
+    expected /= dx*lattice_diffusion_factor_2d(1.3, dx, mode="moment")
+    error = float((cuts-expected).abs().max())
+    record_property("maximum_pair_tally_discrepancy", error)
+    assert error < 1e-12
+    torch.testing.assert_close(cuts.mean(0), means, rtol=0, atol=1e-12)

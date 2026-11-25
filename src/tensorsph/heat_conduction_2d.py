@@ -309,12 +309,16 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
     For a sampled grid the mean integrates the full periodic section. For a
     vector with nonzero transverse_wavenumber it returns the local Fourier
     amplitudes on all cuts, including both walls, in the field's phase frame.
+    For a sampled grid, return_x_flux="by_row" reconstructs those modal
+    amplitudes at each periodic row, giving shape (ny, nx+1).
     """
     source = torch.as_tensor(heat_source, dtype=torch.complex128)
     if backend not in ("torch", "banded"):
         raise ValueError("backend must be torch or banded")
     if backend == "banded" and source.device.type != "cpu":
         raise ValueError("banded solves require CPU inputs")
+    if isinstance(return_x_flux, str) and return_x_flux != "by_row":
+        raise ValueError("return_x_flux must be a boolean or 'by_row'")
     def solution_with_flux(field,offsets):
         grid = field.reshape(-1,field.shape[-1])
         if transverse_wavenumber!=0:
@@ -352,8 +356,12 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
         rows = [solve_harmonic_layered_slab(load, dx, (west, east), angular_frequency,
                         conductivity=conductivity, volumetric_heat_capacity=volumetric_heat_capacity,
                         contact_resistance_x=contact_resistance_x, h_factor=h_factor,
-                        transverse_wavenumber=float(wave), backend=backend, heat_loss_coefficient=heat_loss_coefficient)
+                        transverse_wavenumber=float(wave), backend=backend, heat_loss_coefficient=heat_loss_coefficient,
+                        return_x_flux=(return_x_flux == "by_row"))
                 for load, west, east, wave in zip(modes, wall_modes(left), wall_modes(right), waves)]
+        if return_x_flux == "by_row":
+            fields, cuts = zip(*rows)
+            return torch.fft.ifft(torch.stack(fields), dim=0), torch.fft.ifft(torch.stack(cuts), dim=0)
         field = torch.fft.ifft(torch.stack(rows), dim=0)
         return solution_with_flux(field,lattice_offsets(dx,h_factor*dx)) if return_x_flux else field
     if source.ndim != 1 or source.numel() == 0 or not torch.isfinite(source).all():

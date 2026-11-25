@@ -260,3 +260,16 @@ second through fourth particle centers. Each value can be a scalar or a row
 profile. In the harmonic slab with contacts at 1/8 and 7/8 of the thickness,
 anchoring reduces the maximum flux error on 16 and 32 columns. Both fits have
 approximately 0.0484 maximum error at 128 columns for unit flux amplitude.
+
+For a harmonic periodic grid, `solve_harmonic_layered_slab(..., return_x_flux="by_row")`
+returns the temperature field and a grid of rightward heat fluxes on every x cut.
+The flux grid has one more column than the temperature field. Its first column is
+inward flux at the left wall and its last column is outward flux at the right wall.
+The row average reproduces the existing section-mean result. A regression compares
+all entries with real-space particle-pair tallies for multiple transverse modes.
+
+In the three-layer contact case at 128 columns, the direct wall tally on the
+solved field has maximum error 0.0213 for unit flux amplitude. Using the same
+tally on the analytic field gives 0.0697, so the smaller solved-field error
+includes cancellation. The prescribed-wall reconstruction gives errors of
+0.0484 on the solved field and less than 4e-14 on the analytic field.
