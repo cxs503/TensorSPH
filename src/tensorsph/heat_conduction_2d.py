@@ -92,6 +92,7 @@ __all__ = [
     "stencil_rhs_2d",
     "solve_transient_layered_slab",
     "layered_slab_contact_temperatures",
+    "layered_slab_modal_cut_flux",
     "solve_low_frequency_layered_slab",
     "solve_low_frequency_layered_films",
     "pair_geometry_2d",
@@ -1293,6 +1294,34 @@ def prepare_slab_film_rhs(template, offsets, dx, film_coefficients, *, rho=1.,
     return evaluate
 
 
+def layered_slab_modal_cut_flux(temperature, dx, face, x_wall_temperatures, *, conductivity,
+                                transverse_wavenumber=0., contact_resistance_x=None, h_factor=1.3):
+    """Rightward flux phasor (W/m²) at an interior cut of a layered slab mode.
+
+    The vector contains particle amplitudes multiplying exp(i*beta*y).
+    Wall temperatures are scalar amplitudes or None for insulation. The
+    returned complex scalar uses the same transverse phase origin. Oblique
+    links are assigned to the row centers bracketing their cut intersection,
+    as in stencil_x_face_power_2d with power_by_row=True.
+    """
+    field = torch.as_tensor(temperature,dtype=torch.complex128)
+    if field.ndim!=1 or not torch.isfinite(field).all():
+        raise ValueError("provide a finite vector of particle phasors")
+    if not isinstance(face,int) or not 0<face<field.numel():
+        raise ValueError("face must be an interior column boundary")
+    if not (math.isfinite(dx) and dx>0 and math.isfinite(h_factor) and h_factor>0
+            and math.isfinite(transverse_wavenumber)):
+        raise ValueError("require positive finite spacing and h_factor and a finite wavenumber")
+    if len(x_wall_temperatures)!=2 or any(v is not None and
+            (torch.as_tensor(v).ndim or not cmath.isfinite(v)) for v in x_wall_temperatures):
+        raise ValueError("wall phasors must be finite scalars or None")
+    offsets = lattice_offsets(dx,h_factor*dx)
+    _,power = _stencil_exchange(field[None,:],offsets,1.,conductivity,x_wall_temperatures,True,dx,
+                                contact_resistance_x,None,cut=face,power_by_row=True,
+                                transverse_phase=transverse_wavenumber*dx)
+    return power[0]/(dx*lattice_diffusion_factor_2d(h_factor,dx,mode="moment"))
+
+
 def stencil_x_face_power_2d(
     temperature: torch.Tensor, offsets: tuple[LatticeOffsets, ...], dx: float,
     face: int, x_wall_temperatures: SlabWalls,
@@ -1396,6 +1425,9 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
                 a = a * (2 * k * neighbor / (k + neighbor))
         if transverse_phase is None:
             neighbour_t = torch.roll(t, shifts=(-m, -n), dims=(0, 1))
+        elif cut is not None:
+            # Cut attribution depends on the direction of the oblique link.
+            neighbour_t = torch.roll(t,shifts=-n,dims=1)*cmath.exp(1j*m*transverse_phase)
         else:
             # Rows are independent probes. +/-m links share material and x
             # endpoints, so their complex phase factors average to cos(m β dx).
@@ -1411,8 +1443,13 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
                     along = m*(n-j-.5)/n
                     lower = math.floor(along)
                     frac = along-lower
-                    power += (1-frac)*torch.roll(crossing[:,j], lower)
-                    power += frac*torch.roll(crossing[:,j], lower+1)
+                    if transverse_phase is None:
+                        power += (1-frac)*torch.roll(crossing[:,j], lower)
+                        power += frac*torch.roll(crossing[:,j], lower+1)
+                    else:
+                        shift = ((1-frac)*cmath.exp(-1j*lower*transverse_phase)
+                                 +frac*cmath.exp(-1j*(lower+1)*transverse_phase))
+                        power += crossing[:,j]*shift
             else:
                 power = power + crossing.sum()
         if collect_power and n and x_wall_temperatures[int(n > 0)] is not None:

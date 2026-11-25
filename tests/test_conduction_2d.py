@@ -1334,3 +1334,28 @@ def test_harmonic_layered_section_flux_matches_pair_tallies(backend):
     cuts = [stencil_x_face_power_2d(u,offsets,dx,i,walls,layered_x=True,**opts) for i in range(1,nx)]
     expected = torch.stack([ends[0],*cuts,-ends[1]])/scale
     torch.testing.assert_close(q,expected,atol=1e-13,rtol=0.)
+
+
+@pytest.mark.parametrize("mode",[-2,0,1,4])
+def test_modal_cut_flux_matches_explicit_periodic_rows(mode):
+    from tensorsph.heat_conduction_2d import (
+        lattice_offsets,lattice_diffusion_factor_2d,layered_slab_modal_cut_flux,stencil_x_face_power_2d,
+    )
+
+    n,dx = 8,.125
+    beta = 2*torch.pi*mode
+    x = (torch.arange(n,dtype=torch.float64)+.5)*dx
+    phase = torch.exp(1j*beta*x)
+    field = (.7+.2j)*torch.cos(2*x)+.3j*x
+    walls = (.3-.4j,None)
+    k = torch.where(x<.5,1.3,2.1).double()
+    resistance = torch.zeros(n-1,dtype=x.dtype)
+    resistance[3] = .27
+    options = dict(conductivity=k,contact_resistance_x=resistance)
+    # Include cuts near ghost particles as well as the resistive material boundary.
+    for cut in (1,4,7):
+        modal = layered_slab_modal_cut_flux(field,dx,cut,walls,transverse_wavenumber=beta,**options)
+        row = stencil_x_face_power_2d(phase[:,None]*field,lattice_offsets(dx,1.3*dx),dx,cut,
+                (phase*walls[0],None),layered_x=True,power_by_row=True,**options)
+        expected = row/(dx*lattice_diffusion_factor_2d(1.3,dx,mode="moment"))
+        torch.testing.assert_close(phase*modal,expected,rtol=1e-13,atol=1e-13)
