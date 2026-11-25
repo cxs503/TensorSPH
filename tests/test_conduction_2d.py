@@ -2213,3 +2213,26 @@ def test_interval_mean_temperature_closes_bulk_cooling_balance(options):
         return_interval_temperatures=True, **options)
     dt = initial.new_tensor([b-a for a,b in zip(times, times[1:])])
     torch.testing.assert_close(fields.diff(dim=0), -2*dt[:, None, None]*means, atol=1e-12, rtol=0.)
+
+
+@pytest.mark.parametrize("columns", [2, 3])
+def test_narrow_fixed_wall_resistance_gradient(columns, record_property):
+    from tensorsph.heat_conduction_2d import recover_dirichlet_wall_flux_2d
+
+    k = torch.tensor([1.2, .8, 2.1][:columns], dtype=torch.float64)
+    dx = 1/columns
+    edges = (dx/k).cumsum(0)
+    centers = edges - dx/(2*k)
+    contacts = k.new_tensor([.2, .08][:columns-1])
+    # The conductive-coordinate polynomial and its derivative determine the
+    # temperature on either side of each contact and both exact inward fluxes.
+    curvature = .35 if columns == 3 else 0.
+    jumps = (contacts*(1 + 2*curvature*edges[:-1])).cumsum(0)
+    amplitude = torch.tensor([1.+.2j, -.3+.5j, .6-.9j], dtype=torch.complex128)
+    field = amplitude[:, None]*(centers + curvature*centers**2 + torch.cat((k.new_zeros(1), jumps)))
+    east = amplitude*(edges[-1] + curvature*edges[-1]**2 + jumps[-1])
+    expected = torch.stack((-amplitude, amplitude*(1+2*curvature*edges[-1])))
+    flux = recover_dirichlet_wall_flux_2d(field, dx, k, expected.mean(1),
+                                          x_wall_temperatures=(0., east), contact_resistance_x=contacts)
+    record_property("max_flux_error_W_m2", float(abs(flux-expected).max()))
+    torch.testing.assert_close(flux, expected, atol=2e-13, rtol=0)
