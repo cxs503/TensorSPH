@@ -1088,3 +1088,37 @@ def test_closed_slab_nonuniform_capacity_sets_energy_mean():
     omega = .02
     finite = solve_harmonic_layered_slab(source,1/n,(None,None),omega,**opts)
     torch.testing.assert_close(finite,steady+1j*omega*lag,rtol=0.,atol=3e-8)
+
+
+def test_sdirk2_stiff_layered_mode_and_internal_cut_balance():
+    import math
+    from tensorsph.heat_conduction_2d import lattice_diffusion_factor_2d, solve_transient_layered_slab
+
+    n = 16
+    dx = 1/n
+    wave = 7*math.pi
+    initial = torch.sin(wave*(torch.arange(n,dtype=torch.float64)+.5)*dx)
+    rate = symbol_rate(dx,1.3*dx,wave,0.)/lattice_diffusion_factor_2d(1.3,dx,mode="moment")
+    u,heat = solve_transient_layered_slab(initial,[0.,.1,10.],dx,(0.,0.),conductivity=torch.ones(n),
+                                          volumetric_heat_capacity=1.,method="sdirk2",return_x_heat=True)
+    gamma = 1-1/math.sqrt(2)
+    exact = initial
+    for state,dt in zip(u[1:],(.1,9.9)):
+        z = rate*dt
+        exact = exact*((1-(1-2*gamma)*z)/(1+gamma*z)**2)
+        torch.testing.assert_close(state,exact,atol=2e-12,rtol=0.)
+    assert (dx*u.diff(dim=0)+heat.diff(dim=1)).abs().max()<1e-12
+
+
+def test_sdirk2_step_straddles_flux_pulse_and_closes_film_balance():
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+
+    n = 8
+    dx = 1/n
+    u,heat = solve_transient_layered_slab(torch.zeros(n),[0.,.1,.2],dx,(None,None),
+            conductivity=torch.ones(n),volumetric_heat_capacity=2.,method="sdirk2",return_x_heat=True,
+            x_wall_films=(None,(2.,.3)),x_wall_inward_flux=(lambda t:(3+t) if .03<=t<.04 else 0.,0.),
+            load_jump_times=(.03,.04))
+    assert abs(heat[0,0]-.01*(3+.035))<1e-13
+    assert abs(heat[1,0])<1e-13
+    assert (2*dx*u.diff(dim=0)+heat.diff(dim=1)).abs().max()<1e-12

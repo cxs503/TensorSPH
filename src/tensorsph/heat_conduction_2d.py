@@ -506,7 +506,7 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
                                  volumetric_heat_capacity, contact_resistance_x=None, heat_source=0.,
                                  heat_loss_coefficient=0., theta=.5, h_factor=1.3, load_jump_times=(),
                                  return_x_heat=False, x_wall_inward_flux=(0.,0.), rannacher=False,
-                                 x_wall_films=(None,None), return_wall_temperatures=False):
+                                 x_wall_films=(None,None), return_wall_temperatures=False, method="theta"):
     """Integrate a transversely uniform layered slab with stationary material properties.
 
     Return temperatures (nt,nx) including the initial state. Specify one initial
@@ -522,6 +522,8 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
     with each callable returning the new value at the jump. Internal subdivisions
     preserve the requested output times. Contact resistances follow the
     harmonic layered solver. The dense implicit theta method accepts .5 to 1.
+    method="sdirk2" selects a two-stage, second-order L-stable method. Loads
+    and section heats use both internal stages. The same LU serves both solves.
     With rannacher=True the first Crank–Nicolson step and the first after
     each load jump use two backward Euler half steps.
     return_x_heat appends interval-integrated rightward section heat in J/m²,
@@ -541,6 +543,11 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
         raise ValueError("times must be finite and strictly increasing")
     if not (.5<=theta<=1 and math.isfinite(dx) and dx>0 and math.isfinite(h_factor) and h_factor>0):
         raise ValueError("require theta in [.5,1] and positive finite dx and h_factor")
+    if method not in ("theta","sdirk2"):
+        raise ValueError("method must be theta or sdirk2")
+    sdirk = method=="sdirk2"
+    if sdirk and (rannacher or theta!=.5):
+        raise ValueError("sdirk2 cannot be combined with Rannacher or a theta override")
     walls = tuple(x_wall_temperatures)
     if len(walls)!=2:
         raise ValueError("provide two wall temperatures or None")
@@ -678,21 +685,36 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
 
         wall_history = [wall_trace(state,walls_start,flux_start)]
     for start,stop in zip(segments,segments[1:]):
+        dt = stop-start
         weight = 1. if start in damped else theta
+        if sdirk:
+            weight = 1-1/math.sqrt(2)
+            stage_time = start+weight*dt
+            if not start<stage_time<stop:
+                raise ValueError("SDIRK interval has no representable stage time")
+            load_start,walls_start,flux_start = forcing(stage_time)
         at_jump = stop in events
         load_end,walls_end,flux_end = forcing(math.nextafter(stop,start) if at_jump else stop)
         load = (1-weight)*load_start+weight*load_end
-        dt = stop-start
         shift = weight*dt
         if shift!=previous_shift:
             factors = torch.linalg.lu_factor(mass-shift*operator)
             previous_shift = shift
-        delta = torch.linalg.lu_solve(*factors,(dt*(operator @ state+load))[:,None])[:,0]
+        if sdirk:
+            stored = capacity*state
+            first = torch.linalg.lu_solve(*factors,(stored+shift*load_start)[:,None])[:,0]
+            rhs = stored+dt*(load+(1-weight)*(operator@first))
+            end = torch.linalg.lu_solve(*factors,rhs[:,None])[:,0]
+        else:
+            first = state
+            delta = torch.linalg.lu_solve(*factors,(dt*(operator @ state+load))[:,None])[:,0]
+            end = state+delta
         if return_x_heat:
             stage_walls = tuple(None if a is None else (1-weight)*a+weight*b for a,b in zip(walls_start,walls_end))
             # Start at the directly tallied west wall power. Net pair heat
             # into each column is west minus east; integrate across all cuts.
-            rate,powers = stencil_rhs_with_wall_power_2d((state+weight*delta)[None,:],offsets,dx,stage_walls,
+            stage = (1-weight)*first+weight*end
+            rate,powers = stencil_rhs_with_wall_power_2d(stage[None,:],offsets,dx,stage_walls,
                             conductivity=conductivity,layered_x=True,contact_resistance_x=contact_resistance_x)
             west = powers[:1]/(dx*calibration)
             flux = torch.cat((west,west-dx*rate[0].cumsum(dim=0)/calibration))
@@ -700,13 +722,13 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
                 inward = (1-weight)*flux_start+weight*flux_end
                 for side,_,gain,mode in film_modes:
                     col = 0 if side==0 else -1
-                    inward[side] -= gain*(state[col]+weight*delta[col])
+                    inward[side] -= gain*stage[col]
                     flux[1:] -= dx*inward[side]*mode.cumsum(0)
                 for side,_,mode in flux_modes:
                     flux[1:] -= dx*inward[side]*mode.cumsum(0)
                 flux += inward[0]
             heat[len(fields)-1] += dt*flux
-        state = state+delta
+        state = end
         load_start,walls_start,flux_start = forcing(stop) if at_jump else (load_end,walls_end,flux_end)
         if stop==grid[len(fields)]:
             fields.append(state)
