@@ -306,7 +306,9 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
     backend="banded" uses SciPy on CPU and stores only the stencil diagonals.
     return_x_flux also returns nx+1 cross-section mean rightward heat flux
     phasors (W/m²) for a uniform transverse mode or a sampled periodic grid.
-    For a sampled grid the mean integrates the full periodic section.
+    For a sampled grid the mean integrates the full periodic section. For a
+    vector with nonzero transverse_wavenumber it returns the local Fourier
+    amplitudes on all cuts, including both walls, in the field's phase frame.
     """
     source = torch.as_tensor(heat_source, dtype=torch.complex128)
     if backend not in ("torch", "banded"):
@@ -315,6 +317,10 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
         raise ValueError("banded solves require CPU inputs")
     def solution_with_flux(field,offsets):
         grid = field.reshape(-1,field.shape[-1])
+        if transverse_wavenumber!=0:
+            _,power = _stencil_exchange(grid,offsets,1.,conductivity,x_wall_temperatures,True,dx,
+                contact_resistance_x,None,modal_flux=True,transverse_phase=transverse_wavenumber*dx)
+            return field,power/(dx*lattice_diffusion_factor_2d(h_factor,dx,mode="moment"))
         rate,powers = stencil_rhs_with_wall_power_2d(grid,offsets,dx,x_wall_temperatures,
             conductivity=conductivity,layered_x=True,contact_resistance_x=contact_resistance_x)
         factor = lattice_diffusion_factor_2d(h_factor,dx,mode="moment")
@@ -322,8 +328,6 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
         flux = torch.cat((west,west-dx*rate.mean(0).cumsum(0)/factor))
         return field,flux
 
-    if return_x_flux and transverse_wavenumber!=0:
-        raise ValueError("section mean flux requires a uniform mode or a sampled periodic grid")
     if source.ndim == 2:
         if transverse_wavenumber != 0:
             raise ValueError("explicit wavenumbers apply only to modal vector inputs")
@@ -1317,9 +1321,9 @@ def layered_slab_modal_cut_flux(temperature, dx, face, x_wall_temperatures, *, c
         raise ValueError("wall phasors must be finite scalars or None")
     offsets = lattice_offsets(dx,h_factor*dx)
     _,power = _stencil_exchange(field[None,:],offsets,1.,conductivity,x_wall_temperatures,True,dx,
-                                contact_resistance_x,None,cut=face,power_by_row=True,
+                                contact_resistance_x,None,modal_flux=True,
                                 transverse_phase=transverse_wavenumber*dx)
-    return power[0]/(dx*lattice_diffusion_factor_2d(h_factor,dx,mode="moment"))
+    return power[face]/(dx*lattice_diffusion_factor_2d(h_factor,dx,mode="moment"))
 
 
 def stencil_x_face_power_2d(
@@ -1366,7 +1370,7 @@ def _contact_faces(values, field, dx, layered_x, fixed_walls, width):
 
 
 def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures,
-                      layered_x, dx, contact_resistance_x, specific_heat, collect_power=False, cut=None, power_by_row=False, transverse_phase=None):
+                      layered_x, dx, contact_resistance_x, specific_heat, collect_power=False, cut=None, power_by_row=False, transverse_phase=None, modal_flux=False):
     complex_field = torch.as_tensor(temperature).is_complex()
     if not complex_field and x_wall_temperatures is not None:
         complex_field = any(torch.as_tensor(wall).is_complex()
@@ -1408,6 +1412,8 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
     power = t.new_zeros((2, t.shape[0]) if power_by_row else 2) if collect_power else None
     if cut is not None:
         power = t.new_zeros(t.shape[0] if power_by_row else ())
+    if modal_flux:
+        power = t.new_zeros(nx+1)
     for (m, n), a in offsets:
         if conductivity is not None:
             neighbor = torch.roll(k, shifts=(-m, -n), dims=(0, 1))
@@ -1425,7 +1431,7 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
                 a = a * (2 * k * neighbor / (k + neighbor))
         if transverse_phase is None:
             neighbour_t = torch.roll(t, shifts=(-m, -n), dims=(0, 1))
-        elif cut is not None:
+        elif modal_flux:
             # Cut attribution depends on the direction of the oblique link.
             neighbour_t = torch.roll(t,shifts=-n,dims=1)*cmath.exp(1j*m*transverse_phase)
         else:
@@ -1443,20 +1449,34 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
                     along = m*(n-j-.5)/n
                     lower = math.floor(along)
                     frac = along-lower
-                    if transverse_phase is None:
-                        power += (1-frac)*torch.roll(crossing[:,j], lower)
-                        power += frac*torch.roll(crossing[:,j], lower+1)
-                    else:
-                        shift = ((1-frac)*cmath.exp(-1j*lower*transverse_phase)
-                                 +frac*cmath.exp(-1j*(lower+1)*transverse_phase))
-                        power += crossing[:,j]*shift
+                    power += (1-frac)*torch.roll(crossing[:,j],lower)
+                    power += frac*torch.roll(crossing[:,j],lower+1)
             else:
                 power = power + crossing.sum()
-        if collect_power and n and x_wall_temperatures[int(n > 0)] is not None:
+        if modal_flux and n>0:
+            # For a given link and intersection fraction, all interior cuts
+            # have the same transverse phase shift and consecutive left partners.
+            for j in range(n):
+                along = m*(n-j-.5)/n
+                lower = math.floor(along)
+                frac = along-lower
+                shift = ((1-frac)*cmath.exp(-1j*lower*transverse_phase)
+                         +frac*cmath.exp(-1j*(lower+1)*transverse_phase))
+                start = width+1-n+j
+                power[1:-1] -= transfer[0,start:start+nx-1]*shift
+        if (collect_power or modal_flux) and n and x_wall_temperatures[int(n > 0)] is not None:
             # Only physical particles whose neighbour is a ghost cross a wall.
             start = width if n < 0 else width + nx - n
             crossing = transfer[:, start:start + abs(n)]
-            if power_by_row:
+            if modal_flux:
+                # Wall power is assigned to the ghost row. Change inward to
+                # positive-x orientation at the east wall.
+                value = crossing.sum()*cmath.exp(-1j*m*transverse_phase)
+                if n<0:
+                    power[0] += value
+                else:
+                    power[-1] -= value
+            elif power_by_row:
                 power[int(n > 0)] += torch.roll(crossing.sum(dim=1), shifts=m, dims=0)
             else:
                 power[int(n > 0)] += crossing.sum()

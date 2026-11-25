@@ -1359,3 +1359,29 @@ def test_modal_cut_flux_matches_explicit_periodic_rows(mode):
                 (phase*walls[0],None),layered_x=True,power_by_row=True,**options)
         expected = row/(dx*lattice_diffusion_factor_2d(1.3,dx,mode="moment"))
         torch.testing.assert_close(phase*modal,expected,rtol=1e-13,atol=1e-13)
+
+
+@pytest.mark.parametrize("mode",[-2,1])
+@pytest.mark.parametrize("backend",["torch","banded"])
+def test_modal_flux_on_every_cut_and_wall_agrees_with_periodic_lattice(mode,backend):
+    from tensorsph.heat_conduction_2d import (solve_harmonic_layered_slab,stencil_x_face_power_2d,
+        stencil_rhs_with_wall_power_2d,lattice_offsets,lattice_diffusion_factor_2d)
+
+    n,dx = 9,1/9
+    x = (torch.arange(n,dtype=torch.float64)+.5)*dx
+    phase = torch.exp(2j*torch.pi*mode*x)
+    walls = (1.-.3j,.2+.5j)
+    k = 1+x
+    contacts = torch.zeros_like(k[:-1])
+    contacts[4] = .25
+    opts = dict(conductivity=k,contact_resistance_x=contacts)
+    u,flux = solve_harmonic_layered_slab(.4j*x,dx,walls,2.,volumetric_heat_capacity=1.3,
+            transverse_wavenumber=2*torch.pi*mode,backend=backend,return_x_flux=True,**opts)
+    lattice = phase[:,None]*u
+    wall_rows = tuple(phase*v for v in walls)
+    offsets = lattice_offsets(dx,1.3*dx)
+    _,ends = stencil_rhs_with_wall_power_2d(lattice,offsets,dx,wall_rows,power_by_row=True,layered_x=True,**opts)
+    cuts = [stencil_x_face_power_2d(lattice,offsets,dx,i,wall_rows,power_by_row=True,layered_x=True,**opts)
+            for i in range(1,n)]
+    exact = torch.stack([ends[0],*cuts,-ends[1]],dim=1)/(dx*lattice_diffusion_factor_2d(1.3,dx,mode="moment"))
+    torch.testing.assert_close(phase[:,None]*flux,exact,atol=2e-13,rtol=0.)
