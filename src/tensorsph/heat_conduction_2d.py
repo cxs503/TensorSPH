@@ -1132,7 +1132,7 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                             wall_jump_times=(), rannacher=False, heat_source=0.,
                             conductivity=1., volumetric_heat_capacity=1., theta=.5,
                             h_factor=1.3, x_wall_inward_flux=(0.,0.), return_x_heat=False, heat_loss_coefficient=0.,
-                            method="theta", return_wall_heat_by_row=False):
+                            method="theta", return_wall_heat_by_row=False, wall_gradient_fit="wall"):
     """Advance a reflected slab over requested times with prescribed wall histories.
 
     Each wall may be a fixed scalar, row profile, callable of time returning
@@ -1151,7 +1151,10 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     With return_wall_heat_by_row, append inward heat at each west and east
     wall row (nt-1,2,ny), J/m². At flux walls integrate the prescribed load.
     At temperature walls recover the gradient of a smooth field using at
-    least five columns and match the conservative section mean.
+    least five columns and match the conservative section mean. The default
+    wall_gradient_fit="wall" uses the prescribed temperature and centers 2–4.
+    Select "interior" to extrapolate from centers 2–5 for curved profiles
+    driven by spatially varying wall temperatures.
     """
     grid = [float(t) for t in times]
     jumps = [float(t) for t in wall_jump_times]
@@ -1186,6 +1189,8 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     if field.ndim!=2 or min(field.shape)==0 or field.is_complex():
         raise ValueError("provide a real nonempty (ny,nx) temperature field")
     field = field.to(DTYPE)
+    if wall_gradient_fit not in ("wall", "interior"):
+        raise ValueError("wall_gradient_fit must be wall or interior")
     recover_gradient = return_wall_heat_by_row and any(w is not None for w in walls)
     if recover_gradient and field.shape[1] < 5:
         raise ValueError("rowwise heat at a temperature wall requires at least five columns")
@@ -1207,8 +1212,11 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                     profile = _wall_column(load, stage_field).reshape(-1).expand(field.shape[0])
                 else:
                     inward_field = stage_field if side == 0 else stage_field.flip((1,))
-                    samples = inward_field[:, 1:4] - _wall_column(wall, stage_field)
-                    gradient_flux = _uniform_fixed_wall_flux(samples, conductivity, dx)
+                    if wall_gradient_fit == "interior":
+                        gradient_flux = _interior_wall_flux(inward_field[:, 1:5], conductivity, dx)
+                    else:
+                        samples = inward_field[:, 1:4] - _wall_column(wall, stage_field)
+                        gradient_flux = _uniform_fixed_wall_flux(samples, conductivity, dx)
                     mean = flux[0] if side == 0 else -flux[-1]
                     profile = mean + (gradient_flux - gradient_flux.mean())
                 recovered.append(profile)
@@ -1459,6 +1467,13 @@ def prepare_slab_film_rhs(template, offsets, dx, film_coefficients, *, rho=1.,
     return evaluate
 
 
+def _interior_wall_flux(samples, conductivity, dx):
+    # Fit the cubic through centers 2–5. Differences cancel a common
+    # temperature offset in the reflected solution near a curved boundary profile.
+    weights = samples.new_tensor([333, -261, 71]) / 24
+    return -(conductivity/dx) * ((samples[..., 1:] - samples[..., :1]) @ weights)
+
+
 def _uniform_fixed_wall_flux(differences, conductivity, dx):
     # Derivative of the cubic through the wall and centers at 1.5, 2.5, 3.5 dx.
     weights = differences.new_tensor([35/12, -21/10, 15/28])
@@ -1511,8 +1526,7 @@ def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux
         differences = samples[:,:,1:] - samples[:,:,:1]
     if k.ndim == 0 and contact_resistance_x is None:
         if x_wall_temperatures is None:
-            weights = field.new_tensor([333,-261,71]) / 24
-            flux = -(k/dx) * (differences @ weights)
+            flux = _interior_wall_flux(samples, k, dx)
         else:
             flux = _uniform_fixed_wall_flux(differences, k, dx)
     else:

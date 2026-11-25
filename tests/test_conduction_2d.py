@@ -16,6 +16,7 @@ What is asserted (invariants, not just "the code ran"):
 from __future__ import annotations
 
 import json
+import cmath
 import math
 from pathlib import Path
 
@@ -2118,3 +2119,26 @@ def test_four_column_fixed_wall_flux(material, record_property):
     assert error < 1e-12
     with pytest.raises(ValueError):
         recover_dirichlet_wall_flux_2d(field, dx, k, expected.mean(1))
+
+
+def test_traveling_temperature_wall_row_flux_refines():
+    from tensorsph.heat_conduction_2d import solve_transient_slab_2d
+
+    # A periodic transverse mode propagates from the west wall by diffusion.
+    omega = 8.
+    mu = complex((2*math.pi)**2, omega)**.5
+    errors = []
+    for n in (16, 32, 64):
+        x = (torch.arange(n, dtype=torch.float64)+.5)/n
+        lateral = torch.exp(2j*math.pi*x)
+        amplitude = lateral[:, None]*torch.sinh(mu*(1-x))/cmath.sinh(mu)
+        times = torch.linspace(0., .2, n+1, dtype=x.dtype)
+        _, heat = solve_transient_slab_2d(
+            amplitude.real, times, 1/n,
+            (lambda t: (lateral*cmath.exp(1j*omega*t)).real, 0.),
+            return_wall_heat_by_row=True, method="sdirk2", wall_gradient_fit="interior")
+        average_phase = torch.exp(1j*omega*(times[1:]+times[:-1])/2)*torch.sinc(omega*times.diff()/(2*math.pi))
+        flux = mu/cmath.tanh(mu)*lateral
+        exact = (average_phase[:, None]*flux).real
+        errors.append((heat[:, 0]/times.diff()[:, None]-exact).abs().max().item())
+    assert all(a/b > 3.5 for a, b in zip(errors, errors[1:]))
