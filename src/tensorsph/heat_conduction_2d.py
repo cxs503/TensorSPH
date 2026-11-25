@@ -1298,6 +1298,31 @@ def prepare_slab_film_rhs(template, offsets, dx, film_coefficients, *, rho=1.,
     return evaluate
 
 
+def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux):
+    """Recover rowwise inward flux (W/m²) at two fixed-temperature slab walls.
+
+    For smooth fields on a uniform cell-centered (ny,nx) lattice, with a
+    constant isotropic conductivity and at least five columns. At each wall,
+    differentiate a cubic through centers 2–5, beyond the first particle
+    column. Supply the two inward wall means from the conservative stencil
+    tally. The recovered row fluctuations integrate to zero on each wall.
+    """
+    field = torch.as_tensor(temperature)
+    if (field.ndim != 2 or field.shape[0] < 1 or field.shape[1] < 5 or
+            not (field.is_floating_point() or field.is_complex()) or not torch.isfinite(field).all()):
+        raise ValueError("provide a finite real or complex field with at least five columns")
+    if not (math.isfinite(dx) and dx > 0 and math.isfinite(conductivity) and conductivity > 0):
+        raise ValueError("spacing and conductivity must be positive and finite")
+    means = torch.as_tensor(wall_mean_flux,device=field.device)
+    if means.shape != (2,) or not torch.isfinite(means).all():
+        raise ValueError("provide two finite inward wall flux means")
+    # Lagrange derivative at zero for inward coordinates (1.5,2.5,3.5,4.5)*dx.
+    weights = field.new_tensor([-143,333,-261,71]) / 24
+    samples = torch.stack((field[:,1:5],field[:,-5:-1].flip((1,))))
+    flux = -(conductivity/dx) * ((samples-samples[:,:,:1]) @ weights)
+    return means[:,None] + (flux-flux.mean(dim=1,keepdim=True))
+
+
 def layered_slab_modal_cut_flux(temperature, dx, face, x_wall_temperatures, *, conductivity,
                                 transverse_wavenumber=0., contact_resistance_x=None, h_factor=1.3):
     """Rightward flux phasor (W/m²) at a layered slab cut, including either wall.

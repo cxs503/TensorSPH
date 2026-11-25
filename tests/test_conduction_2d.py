@@ -1392,3 +1392,17 @@ def test_modal_flux_on_every_cut_and_wall_agrees_with_periodic_lattice(mode,back
             for i in range(1,n)]
     exact = torch.stack([ends[0],*cuts,-ends[1]],dim=1)/(dx*lattice_diffusion_factor_2d(1.3,dx,mode="moment"))
     torch.testing.assert_close(phase[:,None]*flux,exact,atol=2e-13,rtol=0.)
+
+
+
+def test_wall_flux_recovery_differentiates_cubic_and_preserves_each_mean():
+    from tensorsph.heat_conduction_2d import recover_dirichlet_wall_flux_2d
+
+    dx, k = .125, 3.
+    x = (torch.arange(8,dtype=torch.float64)+.5)*dx
+    scale = torch.tensor([1+.3j,-.25j,.8+.1j],dtype=torch.complex128)
+    field = scale[:,None]*(1+x+2*x**2-x**3)
+    exact = torch.stack((-k*scale,2*k*scale))
+    offset = torch.tensor([.7j,-.2],dtype=field.dtype)
+    flux = recover_dirichlet_wall_flux_2d(field,dx,k,exact.mean(1)+offset)
+    torch.testing.assert_close(flux,exact+offset[:,None],rtol=1e-13,atol=1e-13)
