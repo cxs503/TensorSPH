@@ -2236,3 +2236,19 @@ def test_narrow_fixed_wall_resistance_gradient(columns, record_property):
                                           x_wall_temperatures=(0., east), contact_resistance_x=contacts)
     record_property("max_flux_error_W_m2", float(abs(flux-expected).max()))
     torch.testing.assert_close(flux, expected, atol=2e-13, rtol=0)
+
+
+@pytest.mark.parametrize("field_dtype,mean", [
+    (torch.float64, 1 + 2**-32),
+    (torch.float64, (1 + 2**-32) + (1 - 2**-32)*1j),
+    (torch.complex128, (1 + 2**-32) + (1 - 2**-32)*1j),
+])
+def test_python_wall_flux_means_keep_double_precision(field_dtype, mean):
+    from tensorsph.heat_conduction_2d import recover_dirichlet_wall_flux_2d
+
+    # A linear temperature profile has spatially constant wall flux. A complex
+    # mean can also supply the phase of a spatially uniform flux component.
+    field = torch.arange(4, dtype=torch.float64).to(field_dtype).expand(3, 4)
+    flux = recover_dirichlet_wall_flux_2d(field, 1., 1., [mean, -mean], x_wall_temperatures=(-.5, 3.5))
+    expected = torch.tensor([mean, -mean], dtype=torch.complex128 if isinstance(mean, complex) else torch.float64)
+    torch.testing.assert_close(flux, expected[:, None].expand_as(flux), atol=0., rtol=0.)

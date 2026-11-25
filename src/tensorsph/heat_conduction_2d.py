@@ -1615,7 +1615,12 @@ def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux
     k = torch.as_tensor(conductivity, dtype=field.real.dtype, device=field.device)
     if not torch.isfinite(k).all() or (k <= 0).any():
         raise ValueError("conductivity must be positive and finite")
-    means = torch.as_tensor(wall_mean_flux,device=field.device)
+    means = torch.as_tensor(wall_mean_flux, device=field.device)
+    # Python sequences initially infer the default dtype. Convert their original
+    # values directly when the field requires more precision.
+    mean_dtype = torch.promote_types(field.dtype, means.dtype)
+    if means.dtype != mean_dtype:
+        means = torch.as_tensor(wall_mean_flux, dtype=mean_dtype, device=field.device)
     if means.shape != (2,) or not torch.isfinite(means).all():
         raise ValueError("provide two finite inward wall flux means")
     width = 5 if x_wall_temperatures is None else min(4, field.shape[1])
