@@ -1300,15 +1300,16 @@ def prepare_slab_film_rhs(template, offsets, dx, film_coefficients, *, rho=1.,
     return evaluate
 
 
-def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux):
+def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux, *,
+                                   contact_resistance_x=None):
     """Recover rowwise inward flux (W/m²) at two fixed-temperature slab walls.
 
     For smooth fields on a uniform cell-centered (ny,nx) lattice, with a
     positive scalar or cellwise conductivity (one value per x column) and
-    at least five columns. For perfect contact, temperature is continuous in
-    the cumulative thermal-resistance coordinate. At each wall differentiate
-    a cubic in this coordinate through centers 2–5, skipping the first column. Supply the two inward wall means from the conservative stencil
-    tally. The recovered row fluctuations integrate to zero on each wall.
+    at least five columns. Fit a cubic in conductive resistance through
+    centers 2–5. Optional nonnegative contact resistances (one per internal
+    face) add a temperature jump proportional to local flux. Supply the two
+    inward wall means from the conservative stencil tally.
     """
     field = torch.as_tensor(temperature)
     if (field.ndim != 2 or field.shape[0] < 1 or field.shape[1] < 5 or
@@ -1327,24 +1328,38 @@ def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux
         raise ValueError("provide two finite inward wall flux means")
     samples = torch.stack((field[:,1:5],field[:,-5:-1].flip((1,))))
     differences = samples - samples[:,:,:1]
-    if k.ndim == 0:
+    if k.ndim == 0 and contact_resistance_x is None:
         weights = field.new_tensor([-143,333,-261,71]) / 24
         flux = -(k/dx) * (differences @ weights)
     else:
+        k = k.expand(field.shape[1]).to(torch.float64)
         resistance = dx / torch.stack((k[:5], k[-5:].flip((0,))))
-        nodes = (resistance.cumsum(dim=1) - resistance / 2)[:,1:]
-        # Normalize before forming products of three resistance differences.
-        scale = nodes[:, -1:]
-        nodes = nodes / scale
-        # Differentiate each cubic Lagrange basis function at the wall (r=0).
-        weights = []
-        for i in range(4):
-            others = nodes[:, [j for j in range(4) if j != i]]
-            denom = (nodes[:, i:i+1] - others).prod(dim=1)
-            a, b, c = others.unbind(dim=1)
-            weights.append((a*b + a*c + b*c) / denom)
-        derivative = torch.stack(weights, dim=1) / scale
-        flux = -(differences * derivative[:,None,:]).sum(dim=2)
+        edges = resistance.cumsum(dim=1)
+        centers = (edges - resistance/2)[:,1:]
+        scale = centers[:,-1:]
+        nodes = centers / scale
+        powers = torch.arange(1, 4, device=field.device)
+        basis = nodes[:,:,None] ** powers
+        if contact_resistance_x is not None:
+            raw = torch.as_tensor(contact_resistance_x, device=field.device)
+            if raw.is_complex() or raw.shape != (field.shape[1]-1,):
+                raise ValueError("provide one real contact resistance per internal face")
+            faces = torch.as_tensor(contact_resistance_x, dtype=k.dtype, device=k.device)
+            if not torch.isfinite(faces).all() or (faces < 0).any():
+                raise ValueError("contact resistance must be finite and nonnegative")
+            contacts = torch.stack((faces[:4], faces[-4:].flip((0,))))
+            # For each basis function p, add R*p'(r_face) to all downstream
+            # temperatures. Conductive distance r excludes contact resistance.
+            face_nodes = edges[:,:4] / scale
+            jumps = (contacts/scale)[:,:,None] * powers * face_nodes[:,:,None] ** (powers-1)
+            basis = basis + jumps.cumsum(dim=1)
+        # Subtract center 2 to eliminate the unknown constant. Choose weights
+        # yielding the linear coefficient (the derivative at the wall).
+        matrix = basis[:,1:] - basis[:,:1]
+        target = matrix.new_tensor([1., 0., 0.]).expand(2,3)
+        weights = torch.linalg.solve(matrix.transpose(1,2), target.unsqueeze(-1)).squeeze(-1)
+        derivative = (weights / scale).to(field.real.dtype)
+        flux = -(differences[:,:,1:] * derivative[:,None,:]).sum(dim=2)
     return means[:,None] + (flux-flux.mean(dim=1,keepdim=True))
 
 

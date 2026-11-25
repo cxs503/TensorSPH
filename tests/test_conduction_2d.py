@@ -1488,3 +1488,58 @@ def test_layered_dirichlet_flux_in_thermal_resistance_coordinate(record_property
         errors.append(float((flux-exact).abs().max()))
         record_property(f"max_flux_error_{n}", errors[-1])
     assert min(math.log2(a/b) for a,b in zip(errors, errors[1:])) > 2.8
+
+
+@pytest.mark.parametrize("layered", [False, True])
+def test_wall_flux_with_resistive_contacts_and_internal_heat(layered, record_property):
+    from tensorsph.heat_conduction_2d import recover_dirichlet_wall_flux_2d
+
+    n = 12
+    dx = 1/n
+    k = torch.linspace(1., 3., n, dtype=torch.float64) if layered else torch.ones(n, dtype=torch.float64)
+    contacts = torch.zeros(n-1, dtype=k.dtype)
+    contacts[[1, 3, 8, 9]] = contacts.new_tensor([.23, .11, .45, .08])
+    edges = (dx/k).cumsum(0)
+    r = edges - dx/(2*k)
+    # T is a cubic between contacts. The jump equals R times the
+    # conductive derivative, which is continuous at each face.
+    derivative = lambda t: 1 + 2*t + 6*t**2
+    jumps = torch.cat((k.new_zeros(1), (contacts*derivative(edges[:-1])).cumsum(0)))
+    amplitudes = torch.tensor([1+.3j, -.5+.1j, .25j], dtype=torch.complex128)
+    field = amplitudes[:,None] * (r + r**2 + 2*r**3 + jumps)
+    exact = torch.stack((-amplitudes, amplitudes * derivative(edges[-1])))
+    conductivity = k if layered else 1.
+    flux = recover_dirichlet_wall_flux_2d(field, dx, conductivity, exact.mean(1),
+                                          contact_resistance_x=contacts)
+    error = float((flux - exact).abs().max())
+    record_property("max_flux_error", error)
+    assert error < 1e-11
+
+
+def test_fixed_wall_flux_from_solved_contact_slab(record_property):
+    from tensorsph.heat_conduction_2d import recover_dirichlet_wall_flux_2d, solve_harmonic_layered_slab
+
+    beta, omega = 2*math.pi, .5
+    errors = []
+    for n in (16, 32, 64, 128):
+        dx = 1/n
+        k = torch.ones(n, dtype=torch.float64)
+        k[n//8:7*n//8] = 2
+        contacts = k.new_zeros(n-1)
+        contacts[[n//8-1, 7*n//8-1]] = k.new_tensor([.12, .18])
+        bulk = dx/k
+        r = bulk.cumsum(0) - bulk/2 + torch.cat((k.new_zeros(1), contacts.cumsum(0)))
+        right = bulk.sum() + contacts.sum()
+        # T = r(x)*exp(i*beta*y+i*omega*t) has unit conductive slope,
+        # with jumps equal to each face resistance. The source balances
+        # transverse diffusion and storage in each layer.
+        solution = solve_harmonic_layered_slab(
+            (k*beta**2 + 1j*omega)*r, dx, (0., right), omega, conductivity=k,
+            volumetric_heat_capacity=1., transverse_wavenumber=beta, contact_resistance_x=contacts)
+        phase = torch.exp(1j * beta * (torch.arange(n, dtype=k.dtype)+.5)*dx)
+        field = phase[:,None]*solution
+        flux = recover_dirichlet_wall_flux_2d(field, dx, k, [0.,0.], contact_resistance_x=contacts)
+        errors.append(float((flux - torch.stack((-phase, phase))).abs().max()))
+        record_property(f"wall_flux_error_{n}", errors[-1])
+    assert all(fine < coarse for coarse, fine in zip(errors, errors[1:]))
+    assert errors[-1] < 0.05
