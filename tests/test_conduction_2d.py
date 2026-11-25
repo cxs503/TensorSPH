@@ -2142,3 +2142,13 @@ def test_traveling_temperature_wall_row_flux_refines():
         exact = (average_phase[:, None]*flux).real
         errors.append((heat[:, 0]/times.diff()[:, None]-exact).abs().max().item())
     assert all(a/b > 3.5 for a, b in zip(errors, errors[1:]))
+
+
+def test_fixed_wall_flux_resolves_one_ulp_temperature_difference():
+    from tensorsph.heat_conduction_2d import solve_steady_slab_2d
+
+    source = torch.zeros((6, 32), dtype=torch.float64)
+    drop = 2**-44
+    _, flux = solve_steady_slab_2d(source, 1/32, (305., 305.+drop),
+                                  conductivity=1.7, return_x_flux=True)
+    torch.testing.assert_close(flux, torch.full_like(flux, -1.7*drop), atol=0., rtol=1e-9)

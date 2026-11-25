@@ -1345,7 +1345,7 @@ def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_fact
         decay += (-4*a*conductivity/factor)*torch.sin(math.pi*(m*ky+n*kx)).square()
     if source.is_complex():
         modes = torch.fft.fft2(rhs)/(decay + shift)
-        correction = reference + torch.fft.ifft2(modes)[:, :source.shape[1]]
+        correction = torch.fft.ifft2(modes)[:, :source.shape[1]]
     else:
         # The homogeneous correction has zero mean by odd symmetry or by prescription.
         denominator = decay + shift
@@ -1354,20 +1354,22 @@ def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_fact
         modes = torch.fft.rfft2(rhs)/denominator
         if not shift:
             modes[0, 0] = 0.
-        correction = reference + torch.fft.irfft2(modes, s=rhs.shape)[:, :source.shape[1]]
-    temperature = lift + correction
+        correction = torch.fft.irfft2(modes, s=rhs.shape)[:, :source.shape[1]]
+    temperature = (lift + correction) + reference
     if not return_x_flux:
         return temperature
 
     # For constant k and periodic y, summing all crossing links over rows
     # commutes with the tangential shift in every diagonal pair.
+    # Compute crossings relative to the same datum on particles and ghosts.
+    # Adding it before differencing can erase a weak physical gradient.
     profile = correction.mean(dim=0)
     radius = max(abs(n) for (_, n), _ in offsets)
     low, high = profile[:radius].flip((0,)), profile[-radius:].flip((0,))
     if left is not None:
-        low = 2*_wall_column(left, correction).mean()-low
+        low = 2*shifted[0].mean()-low
     if right is not None:
-        high = 2*_wall_column(right, correction).mean()-high
+        high = 2*shifted[1].mean()-high
     extended = torch.cat((low, profile, high))
     face_count = profile.numel()+1
     flux = profile.new_zeros(face_count)
