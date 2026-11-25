@@ -79,6 +79,7 @@ from __future__ import annotations
 
 import cmath
 import math
+import operator
 from dataclasses import dataclass, field
 
 import torch
@@ -91,6 +92,7 @@ __all__ = [
     "lattice_offsets",
     "stencil_rhs_2d",
     "solve_transient_layered_slab",
+    "two_column_sheet_materials",
     "layered_slab_contact_temperatures",
     "layered_slab_modal_cut_flux",
     "solve_low_frequency_layered_slab",
@@ -737,6 +739,47 @@ def layered_slab_contact_temperatures(temperature, x_flux, dx, conductivity):
     left_trace = center-(west+3*east)*scale
     right_trace = center+(3*west+east)*scale
     return left_trace[..., :-1],right_trace[..., 1:]
+
+
+def two_column_sheet_materials(conductivity, volumetric_heat_capacity, dx, face, *,
+                               resistance, areal_heat_capacity, sheet_conductivity):
+    """Insert a storing sheet at interior face `face` of a uniform layered slab.
+
+    The bulk conductivity vector (W/m/K) sets the number of original columns.
+    Bulk volumetric capacity (J/m³/K) is scalar or columnwise. Face f is between
+    original columns f-1 and f. Supply total sheet resistance R (m²K/W), areal
+    capacity C (J/m²/K) and sheet conductivity k (W/m/K) with 2*dx/k <= R.
+
+    Returns material keyword arguments for solve_transient_layered_slab. Bulk
+    faces have perfect contact. Insert two initial temperatures into the state
+    at f and distribute a sheet power per unit area P as P/(2*dx) on each of
+    these columns. Their mean temperature times C gives stored energy per area.
+    The heat ledger at cuts f and f+2 gives left and right transfers. This
+    representation was verified for a transversely uniform slab at h/dx=1.3.
+    """
+    if not all(math.isfinite(x) and x > 0 for x in
+               (dx, resistance, areal_heat_capacity, sheet_conductivity)):
+        raise ValueError("spacing and sheet material parameters must be positive and finite")
+    if any(torch.is_complex(torch.as_tensor(v)) for v in (conductivity, volumetric_heat_capacity)):
+        raise ValueError("bulk material properties must be real")
+    k = torch.as_tensor(conductivity, dtype=DTYPE)
+    cv = torch.as_tensor(volumetric_heat_capacity, dtype=DTYPE, device=k.device)
+    face = operator.index(face)
+    if k.ndim != 1 or not 0 < face < k.numel():
+        raise ValueError("supply a conductivity vector and an interior face index")
+    if cv.shape not in ((), k.shape):
+        raise ValueError("bulk capacity must be scalar or match the conductivity vector")
+    if not all(torch.isfinite(v).all() and (v > 0).all() for v in (k, cv)):
+        raise ValueError("bulk material properties must be positive and finite")
+    cv = cv.expand_as(k)
+    contact = resistance/2 - dx/sheet_conductivity
+    if contact < 0:
+        raise ValueError("sheet resistance must include the resistance of both inserted columns")
+    contacts = k.new_zeros(k.numel()+1)
+    contacts[face-1] = contacts[face+1] = contact
+    return dict(conductivity=torch.cat((k[:face], k.new_full((2,), sheet_conductivity), k[face:])),
+                volumetric_heat_capacity=torch.cat((cv[:face], cv.new_full((2,), areal_heat_capacity/(2*dx)), cv[face:])),
+                contact_resistance_x=contacts)
 
 
 def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *, conductivity,
