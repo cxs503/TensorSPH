@@ -215,13 +215,46 @@ def stencil_rhs_with_wall_power_2d(
 
 def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatures: SlabWalls,
                          *, conductivity: float = 1., h_factor: float = 1.3,
-                         mean_temperature: float | None = None) -> torch.Tensor:
+                         mean_temperature: float | None = None,
+                         x_wall_inward_flux=(0., 0.)) -> torch.Tensor:
     """Steady temperature on a uniform lattice, periodic y and reflected x walls.
 
     Supply a (ny, nx) volumetric heat source in W/m³, a constant conductivity
-    in W/(m K), and two wall conditions. None denotes insulation. Two insulated
-    walls require a zero-mean heat source and a prescribed mean_temperature. Uses the lattice second-moment calibration for physical k.
+    in W/(m K), and two wall conditions. None selects a flux wall. Two
+    flux walls require a balanced heat input and a prescribed mean_temperature.
+    x_wall_inward_flux gives uniform heat fluxes into the domain in W/m² on
+    sides with temperature None. The solution uses an analytical polynomial
+    lift for prescribed flux and the calibrated SPH operator for the remainder.
     """
+    west, east = x_wall_inward_flux
+    if not all(math.isfinite(q) for q in (west, east)):
+        raise ValueError("wall fluxes must be finite")
+    if west or east:
+        left, right = x_wall_temperatures
+        if (left is not None and west) or (right is not None and east):
+            raise ValueError("prescribe heat flux only on a wall with temperature None")
+        source = torch.as_tensor(heat_source, dtype=DTYPE)
+        if source.ndim != 2 or min(source.shape) == 0 or not torch.isfinite(source).all():
+            raise ValueError("heat_source must be a finite nonempty (ny, nx) field")
+        if not all(math.isfinite(v) and v > 0 for v in (dx, conductivity)):
+            raise ValueError("dx and conductivity must be positive and finite")
+        length = source.shape[1]*dx
+        x = (torch.arange(source.shape[1], dtype=DTYPE, device=source.device)+0.5)*dx
+        if left is None and right is None:
+            # -k T'(0)=west, +k T'(L)=east. Center the lift to preserve the gauge.
+            sink = (west+east)/length
+            adjusted = source + sink
+            scale = source.abs().mean() + (abs(west)+abs(east))/length
+            if adjusted.mean().abs() > 64*torch.finfo(source.dtype).eps*scale:
+                raise ValueError("net source plus inward wall heat must vanish")
+            source = adjusted - adjusted.mean()
+            lift = (0.5*sink*x.square()-west*x)/conductivity
+            lift = lift-lift.mean()
+        else:
+            # The affine lift vanishes at the opposite, fixed-temperature wall.
+            lift = (west*(length-x) if right is not None else east*x)/conductivity
+        return lift + _solve_slab_modes(source, dx, x_wall_temperatures, conductivity,
+                                        h_factor, mean_temperature, 0.)
     return _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
                              mean_temperature, 0.)
 

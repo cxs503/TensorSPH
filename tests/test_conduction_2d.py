@@ -492,3 +492,40 @@ def test_complex_pair_powers_match_independent_quadratures_through_layered_conta
         imag = outputs(t.imag if t.is_complex() else torch.zeros_like(t), (walls[0].imag, None))
         for value, a, b in zip(actual, real, imag):
             torch.testing.assert_close(value, torch.complex(a, b))
+
+
+def test_uniform_wall_flux_lift_and_heat_balance():
+    import pytest
+    from tensorsph.heat_conduction_2d import solve_steady_slab_2d
+    n, k = 20, 2.
+    dx = 1/n
+    x = (torch.arange(n, dtype=torch.float64)+.5)*dx
+    source = torch.zeros((5, n), dtype=x.dtype)
+    for walls, flux, exact in (
+        ((None, 7.), (3., 0.), 7.+3*(1-x)/k),
+        ((7., None), (0., -3.), 7.-3*x/k),
+    ):
+        u = solve_steady_slab_2d(source, dx, walls, conductivity=k, x_wall_inward_flux=flux)
+        torch.testing.assert_close(u, exact.expand_as(u), rtol=0, atol=1e-12)
+    raw = (-x.square()/2-2*x)/k
+    u = solve_steady_slab_2d(source+1, dx, (None, None), conductivity=k,
+                            x_wall_inward_flux=(2., -3.), mean_temperature=4.)
+    torch.testing.assert_close(u, (4.+raw-raw.mean()).expand_as(u), atol=1e-12, rtol=0)
+    with pytest.raises(ValueError, match="net source"):
+        solve_steady_slab_2d(source, dx, (None,None), x_wall_inward_flux=(2., -3.), mean_temperature=4.)
+    with pytest.raises(ValueError, match="temperature None"):
+        solve_steady_slab_2d(source, dx, (3.,None), x_wall_inward_flux=(2., 0.))
+
+
+def test_uniform_flux_with_spatial_source_converges():
+    from tensorsph.heat_conduction_2d import solve_steady_slab_2d
+    errors = []
+    for n in (12, 24, 48):
+        x = (torch.arange(n, dtype=torch.float64)+.5)/n
+        mode = torch.cos(torch.pi*x)[None,:]*torch.cos(2*torch.pi*x)[:,None]
+        source = 5*torch.pi**2*mode
+        exact = 2. - .7*(x-.5) + mode
+        u = solve_steady_slab_2d(source, 1/n, (None,None), x_wall_inward_flux=(.7,-.7),
+                                mean_temperature=2.)
+        errors.append(float((u-exact).abs().max()))
+    assert all(a/b > 3.7 for a,b in zip(errors, errors[1:])), errors
