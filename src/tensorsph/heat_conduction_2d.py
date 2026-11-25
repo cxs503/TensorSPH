@@ -1301,7 +1301,7 @@ def prepare_slab_film_rhs(template, offsets, dx, film_coefficients, *, rho=1.,
 
 
 def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux, *,
-                                   contact_resistance_x=None):
+                                   contact_resistance_x=None, x_wall_temperatures=None):
     """Recover rowwise inward flux (W/m²) at two fixed-temperature slab walls.
 
     For smooth fields on a uniform cell-centered (ny,nx) lattice, with a
@@ -1309,7 +1309,9 @@ def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux
     at least five columns. Fit a cubic in conductive resistance through
     centers 2–5. Optional nonnegative contact resistances (one per internal
     face) add a temperature jump proportional to local flux. Supply the two
-    inward wall means from the conservative stencil tally.
+    inward wall means from the conservative stencil tally. When the two
+    fixed wall temperatures are supplied, fit the wall and centers 2–4.
+    Each temperature may be scalar or one value per periodic row.
     """
     field = torch.as_tensor(temperature)
     if (field.ndim != 2 or field.shape[0] < 1 or field.shape[1] < 5 or
@@ -1327,9 +1329,22 @@ def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux
     if means.shape != (2,) or not torch.isfinite(means).all():
         raise ValueError("provide two finite inward wall flux means")
     samples = torch.stack((field[:,1:5],field[:,-5:-1].flip((1,))))
-    differences = samples - samples[:,:,:1]
-    if k.ndim == 0 and contact_resistance_x is None:
-        weights = field.new_tensor([-143,333,-261,71]) / 24
+    if x_wall_temperatures is not None:
+        if len(x_wall_temperatures) != 2 or any(v is None for v in x_wall_temperatures):
+            raise ValueError("provide both fixed wall temperatures")
+        walls = []
+        for value in x_wall_temperatures:
+            if torch.as_tensor(value).is_complex() and not field.is_complex():
+                raise ValueError("complex wall temperatures require a complex field")
+            wall = _wall_column(value, field).expand(field.shape[0], 1)
+            if not torch.isfinite(wall).all():
+                raise ValueError("wall temperatures must be finite")
+            walls.append(wall)
+        differences = samples[:,:,:3] - torch.stack(walls)
+    else:
+        differences = samples[:,:,1:] - samples[:,:,:1]
+    if k.ndim == 0 and contact_resistance_x is None and x_wall_temperatures is None:
+        weights = field.new_tensor([333,-261,71]) / 24
         flux = -(k/dx) * (differences @ weights)
     else:
         k = k.expand(field.shape[1]).to(torch.float64)
@@ -1353,13 +1368,12 @@ def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux
             face_nodes = edges[:,:4] / scale
             jumps = (contacts/scale)[:,:,None] * powers * face_nodes[:,:,None] ** (powers-1)
             basis = basis + jumps.cumsum(dim=1)
-        # Subtract center 2 to eliminate the unknown constant. Choose weights
-        # yielding the linear coefficient (the derivative at the wall).
-        matrix = basis[:,1:] - basis[:,:1]
+        # The constant is fixed by the wall or eliminated using center 2.
+        matrix = basis[:,1:] - basis[:,:1] if x_wall_temperatures is None else basis[:,:3]
         target = matrix.new_tensor([1., 0., 0.]).expand(2,3)
         weights = torch.linalg.solve(matrix.transpose(1,2), target.unsqueeze(-1)).squeeze(-1)
         derivative = (weights / scale).to(field.real.dtype)
-        flux = -(differences[:,:,1:] * derivative[:,None,:]).sum(dim=2)
+        flux = -(differences * derivative[:,None,:]).sum(dim=2)
     return means[:,None] + (flux-flux.mean(dim=1,keepdim=True))
 
 

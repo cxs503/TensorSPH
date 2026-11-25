@@ -1514,6 +1514,13 @@ def test_wall_flux_with_resistive_contacts_and_internal_heat(layered, record_pro
     error = float((flux - exact).abs().max())
     record_property("max_flux_error", error)
     assert error < 1e-11
+    total = edges[-1]
+    right = amplitudes * (total + total**2 + 2*total**3 + jumps[-1])
+    anchored = recover_dirichlet_wall_flux_2d(field, dx, conductivity, exact.mean(1),
+        contact_resistance_x=contacts, x_wall_temperatures=(0., right))
+    anchored_error = float((anchored-exact).abs().max())
+    record_property("prescribed_wall_max_flux_error", anchored_error)
+    assert anchored_error < 1e-11
 
 
 def test_fixed_wall_flux_from_solved_contact_slab(record_property):
@@ -1521,6 +1528,7 @@ def test_fixed_wall_flux_from_solved_contact_slab(record_property):
 
     beta, omega = 2*math.pi, .5
     errors = []
+    wall_errors = []
     for n in (16, 32, 64, 128):
         dx = 1/n
         k = torch.ones(n, dtype=torch.float64)
@@ -1541,5 +1549,12 @@ def test_fixed_wall_flux_from_solved_contact_slab(record_property):
         flux = recover_dirichlet_wall_flux_2d(field, dx, k, [0.,0.], contact_resistance_x=contacts)
         errors.append(float((flux - torch.stack((-phase, phase))).abs().max()))
         record_property(f"wall_flux_error_{n}", errors[-1])
+        anchored = recover_dirichlet_wall_flux_2d(field, dx, k, [0.,0.],
+            contact_resistance_x=contacts, x_wall_temperatures=(0., right*phase))
+        wall_errors.append(float((anchored - torch.stack((-phase, phase))).abs().max()))
+        record_property(f"prescribed_wall_flux_error_{n}", wall_errors[-1])
     assert all(fine < coarse for coarse, fine in zip(errors, errors[1:]))
     assert errors[-1] < 0.05
+    assert wall_errors[0] < errors[0] / 30
+    assert wall_errors[1] < errors[1] / 2
+    assert wall_errors[-1] < 0.05

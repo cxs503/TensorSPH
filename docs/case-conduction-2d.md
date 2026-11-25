@@ -253,3 +253,10 @@ Reproduce with
 ### Fixed-temperature wall flux in layered materials
 
 Pass one conductivity per particle column to `recover_dirichlet_wall_flux_2d` for isotropic, perfectly bonded layers on a uniform slab. The function fits temperature against cumulative thermal resistance from each wall and returns inward flux per row, preserving the two supplied wall means. The test `test_layered_dirichlet_flux_in_thermal_resistance_coordinate` checks this reconstruction on alternating layers against an exponential temperature field with known flux on both walls. For an imperfect interface, supply one nonnegative areal resistance per internal face via `contact_resistance_x`. The fit includes each temperature jump using the local normal flux at that face. This assumes that the underlying flux varies smoothly in conductive resistance across the wall stencil. The contact regression uses an analytic cubic with distributed heating and four unequal contact resistances.
+
+When the prescribed Dirichlet values are available, pass them as
+`x_wall_temperatures=(left, right)` to anchor the cubic at the wall and the
+second through fourth particle centers. Each value can be a scalar or a row
+profile. In the harmonic slab with contacts at 1/8 and 7/8 of the thickness,
+anchoring reduces the maximum flux error on 16 and 32 columns. Both fits have
+approximately 0.0484 maximum error at 128 columns for unit flux amplitude.
