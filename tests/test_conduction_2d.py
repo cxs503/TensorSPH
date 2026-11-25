@@ -2341,3 +2341,22 @@ def test_layered_ambient_phasor_with_discontinuous_exchange(backend):
             ambient_temperature=ambient, backend=backend, return_x_flux=True)
         torch.testing.assert_close(field, torch.full_like(field, target), atol=1e-13, rtol=0)
         assert flux.abs().max() < 1e-12
+
+
+@pytest.mark.parametrize("method", ["theta", "sdirk2", "exponential", "exponential_quadratic"])
+def test_layered_wall_heat_components_across_flux_jump(method):
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+
+    times = [0., .15, .3]
+    field = torch.zeros(6, dtype=torch.float64)
+    options = dict(conductivity=field+1., volumetric_heat_capacity=1., method=method,
+                   x_wall_inward_flux=(lambda t: .8 if t < .1 else -.4, 0.),
+                   x_wall_films=(None, (2., 1.)), load_jump_times=[.1],
+                   return_wall_heat_components=True)
+    _, external, parts = solve_transient_layered_slab(field, times, 1/6, (None,None),
+                                                       return_external_heat=True, **options)
+    torch.testing.assert_close(parts["applied"][:,0], field.new_tensor([.06,-.06]), atol=1e-14, rtol=0)
+    assert parts["applied"][:,1].count_nonzero() == parts["film"][:,0].count_nonzero() == 0
+    torch.testing.assert_close(parts["film"]+parts["applied"], external, atol=1e-13, rtol=0)
+    _, alone = solve_transient_layered_slab(field, times, 1/6, (None,None), **options)
+    torch.testing.assert_close(parts["film"], alone["film"])
