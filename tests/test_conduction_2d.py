@@ -1159,3 +1159,48 @@ def test_layered_bulk_reservoir_jumps_preserve_separate_exchange(method,rannache
     exact = torch.where(times<=jump,first,-.5+(first+.5)*torch.exp(-4*(times-jump)))
     torch.testing.assert_close(u,exact[:,None].expand_as(u),atol=2e-3,rtol=0.)
     assert (c*dx*u.diff(dim=0)+section.diff(dim=1)-exchange).abs().max()<1e-12
+
+
+@pytest.mark.parametrize("method,rannacher", [("theta",False),("theta",True),("sdirk2",False)])
+def test_storing_films_and_switched_flux_balance_both_walls(method,rannacher):
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+
+    n,dx,jump = 10,.1,.063
+    times = [0.,.03,.11,.18]
+    cw = torch.tensor([.3,.7],dtype=torch.float64)
+    def run(west):
+        return solve_transient_layered_slab(torch.zeros(n),times,dx,(None,None),
+            conductivity=torch.ones(n),volumetric_heat_capacity=2.,x_wall_films=((2.,1.),None),
+            x_wall_inward_flux=(.4,lambda t: 1. if t<jump else -.5),wall_areal_heat_capacity=cw,
+            initial_wall_temperatures=(west,-.2),load_jump_times=[jump],return_external_heat=True,
+            return_x_heat=True,return_wall_temperatures=True,method=method,rannacher=rannacher)
+    u,q,w,e = run(.3)
+    torch.testing.assert_close(w[0],cw.new_tensor([.3,-.2]))
+    assert (2*dx*u.diff(dim=0)+q.diff(dim=1)).abs().max()<1e-12
+    assert (cw*w.diff(dim=0)+q[:,[0,-1]]*cw.new_tensor([1.,-1.])-e).abs().max()<1e-12
+    assert abs(e[:,1].sum().item()-(jump-.5*(times[-1]-jump)))<1e-13
+
+
+@pytest.mark.parametrize("cw", [(0.,.6),(.3,0.)])
+def test_one_storing_film_preserves_layered_steady_contact_flux(cw):
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+
+    n,dx,j = 12,1/12,.7
+    k = torch.tensor([2.]*(n//2)+[.8]*(n//2),dtype=torch.float64)
+    contacts = torch.zeros(n-1,dtype=k.dtype)
+    contacts[n//2-1] = .15
+    r = dx/k
+    cells = 2.-j*(r.cumsum(0)-r/2+torch.cat((k.new_zeros(1),contacts.cumsum(0))))
+    right = 2.-j*(r.sum()+contacts.sum())
+    surface = (2.,right.item())
+    initial = tuple(t if cap else None for t,cap in zip(surface,cw))
+    times = [0.,.013,.06]
+    u,q,w,external = solve_transient_layered_slab(cells,times,dx,(None,None),conductivity=k,
+        volumetric_heat_capacity=1.,contact_resistance_x=contacts,method="sdirk2",h_factor=1.3,
+        x_wall_films=((3.,2.+j/3),(1.4,right-j/1.4)),wall_areal_heat_capacity=cw,
+        initial_wall_temperatures=initial,return_x_heat=True,return_wall_temperatures=True,return_external_heat=True)
+    dt = k.new_tensor(times).diff()
+    torch.testing.assert_close(u,cells.expand_as(u),atol=1e-12,rtol=0.)
+    torch.testing.assert_close(w,k.new_tensor(surface).expand_as(w),atol=1e-12,rtol=0.)
+    torch.testing.assert_close(q,(dt[:,None]*j).expand_as(q),atol=1e-12,rtol=0.)
+    torch.testing.assert_close(external,dt[:,None]*k.new_tensor([j,-j]),atol=1e-12,rtol=0.)
