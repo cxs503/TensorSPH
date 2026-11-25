@@ -1,4 +1,5 @@
 """Two heat capacities with contact, sinusoidal west wall and switched east wall and heaters."""
+import argparse
 import json
 import math
 from pathlib import Path
@@ -6,12 +7,11 @@ import subprocess
 
 import numpy as np
 from scipy.linalg import expm
-import torch
 
 from tensorsph.heat_conduction_2d import solve_transient_layered_slab
 
 
-def measure(steps,theta):
+def measure(steps,theta,films="none"):
     dx,resistance,omega = .35,.17,8.
     k = np.array([.7,2.3])
     c = np.array([1.2,4.1])
@@ -28,7 +28,15 @@ def measure(steps,theta):
         return np.array([2.,-.5]) if t<jumps[1] else np.array([-.8,3.])
     initial = np.array([1.4,-.2])
     times = np.linspace(0.,.35,steps+1)
-    field,heat = solve_transient_layered_slab(initial,times,dx,(west,east),conductivity=k,
+    temperatures = [west,east]
+    convection = [None,None]
+    for side,(name,h) in enumerate((("west",2.8),("east",5.1))):
+        if films in (name,"both"):
+            wall_g[side] = 1/(1/h+1/wall_g[side])
+            convection[side] = (h,temperatures[side])
+            temperatures[side] = None
+    field,heat = solve_transient_layered_slab(initial,times,dx,temperatures,conductivity=k,
+              x_wall_films=convection,
               volumetric_heat_capacity=c,contact_resistance_x=[resistance],heat_source=source,
               heat_loss_coefficient=loss,theta=theta,h_factor=.8,load_jump_times=jumps,return_x_heat=True)
     # Advance the exact lumped energy equations on each constant-load segment.
@@ -61,15 +69,18 @@ def measure(steps,theta):
 
 
 if __name__=="__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--films",choices=("none","west","east","both"),default="none")
+    args = parser.parse_args()
     rows = []
     for theta in (.5,1.):
         previous = {}
         for steps in (16,32,64,128,256,512):
-            errors = measure(steps,theta)
+            errors = measure(steps,theta,args.films)
             orders = {k:math.log2(previous[k]/v) for k,v in errors.items()} if previous else {}
             passed = steps<512 or min(orders.values())>(1.85 if theta==.5 else .9)
             rows.append(dict(steps=steps,theta=theta,errors=errors,orders=orders,passed=passed))
             previous = errors
     rev = subprocess.check_output(["git","rev-parse","HEAD"],cwd=Path(__file__).parent,text=True).strip()
-    print(json.dumps(dict(commit=rev,runs=rows),indent=2,allow_nan=False))
+    print(json.dumps(dict(commit=rev,films=args.films,runs=rows),indent=2,allow_nan=False))
     raise SystemExit(0 if all(row["passed"] for row in rows) else 1)
