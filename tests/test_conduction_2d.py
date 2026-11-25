@@ -631,3 +631,23 @@ def test_section_power_resolves_periodic_diagonal_intersections():
     expected = torch.tensor([.25,0.,0.,0.,.75], dtype=torch.float64)*(.5+1j)
     torch.testing.assert_close(rows, expected)
     torch.testing.assert_close(rows.sum(), total)
+
+
+def test_layered_slab_grid_accepts_nonseparable_complex_loads():
+    from tensorsph.heat_conduction_2d import lattice_diffusion_factor_2d, solve_harmonic_layered_slab
+    dx = .11
+    for ny in (1, 6, 7):
+        y = torch.arange(ny, dtype=torch.float64)[:,None]
+        x = torch.arange(10, dtype=torch.float64)*dx
+        source = torch.exp(.8j*y*x) + .1*y*x
+        walls = (torch.exp(.4j*y[:,0]), .25j)
+        k = 2.+x
+        c = 1.+x*x
+        contacts = torch.zeros_like(x[:-1])
+        contacts[4] = .2
+        u = solve_harmonic_layered_slab(source, dx, walls, 2., conductivity=k,
+                             volumetric_heat_capacity=c, contact_resistance_x=contacts)
+        rate = stencil_rhs_2d(u, lattice_offsets(dx,1.3*dx), x_wall_temperatures=walls,
+                              dx=dx, layered_x=True, contact_resistance_x=contacts, conductivity=k)
+        factor = lattice_diffusion_factor_2d(1.3, dx, mode="moment")
+        torch.testing.assert_close(rate/factor+source, 2j*c*u, atol=1e-12, rtol=1e-11)

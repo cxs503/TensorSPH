@@ -265,9 +265,34 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
     The dense complex solve uses the calibrated 2-D particle-pair stencil with
     row dependence exp(i β y), with β=transverse_wavenumber in rad/m.
     The inputs and output are modal amplitudes. Supply a periodic wavenumber
-    compatible with the transverse period. Frequency is in rad/s under exp(+iωt).
+    compatible with the transverse period. Alternatively supply a (ny,nx)
+    source and scalar or (ny,) end temperatures sampled on periodic rows.
+    Then the output has the same grid shape and all Fourier modes are solved.
+    Frequency is in rad/s under exp(+iωt).
     """
     source = torch.as_tensor(heat_source, dtype=torch.complex128)
+    if source.ndim == 2:
+        if transverse_wavenumber != 0:
+            raise ValueError("explicit wavenumbers apply only to modal vector inputs")
+        if min(source.shape) == 0 or not math.isfinite(dx) or dx <= 0:
+            raise ValueError("provide a nonempty periodic grid and positive finite dx")
+        ny = source.shape[0]
+        left, right = x_wall_temperatures
+
+        def wall_modes(wall):
+            if wall is None:
+                return [None]*ny
+            samples = _wall_column(wall, source).reshape(-1).expand(ny)
+            return torch.fft.fft(samples.contiguous())
+
+        modes = torch.fft.fft(source.contiguous(), dim=0)
+        waves = (2*math.pi)*torch.fft.fftfreq(ny, d=dx, dtype=DTYPE)
+        rows = [solve_harmonic_layered_slab(load, dx, (west, east), angular_frequency,
+                        conductivity=conductivity, volumetric_heat_capacity=volumetric_heat_capacity,
+                        contact_resistance_x=contact_resistance_x, h_factor=h_factor,
+                        transverse_wavenumber=float(wave))
+                for load, west, east, wave in zip(modes, wall_modes(left), wall_modes(right), waves)]
+        return torch.fft.ifft(torch.stack(rows), dim=0)
     if source.ndim != 1 or source.numel() == 0 or not torch.isfinite(source).all():
         raise ValueError("provide a finite nonempty vector of column heat sources")
     if not all(math.isfinite(v) and v > 0 for v in (angular_frequency, dx, h_factor)):
