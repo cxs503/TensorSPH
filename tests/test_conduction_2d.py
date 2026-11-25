@@ -2476,3 +2476,25 @@ def test_harmonic_separated_mean_with_balanced_wall_flux(loss):
     torch.testing.assert_close(flux, torch.full_like(flux, through_flux))
     pair = solve_harmonic_slab_2d(source, 1/n, (None, None), omega, **options)
     torch.testing.assert_close(pair, (profile, mean))
+
+
+def test_layered_harmonic_weak_wall_flux_reflects_with_the_heater():
+    from tensorsph.heat_conduction_2d import solve_harmonic_layered_slab
+
+    n = 128
+    k = torch.ones(n, dtype=torch.float64)
+    k[:n//2] = 4.
+    capacity = 1.25 + (k == 4.) * 1.25
+    source = torch.zeros_like(k)
+    source[n//8:n//4] = 12.
+    contact = torch.zeros(n-1, dtype=k.dtype)
+    contact[n//2-1] = 0.35
+
+    def solve(load, material, storage):
+        return solve_harmonic_layered_slab(
+            load, 1/n, (0., 0.), 800., conductivity=material, volumetric_heat_capacity=storage,
+            contact_resistance_x=contact, h_factor=0.9, backend="banded", return_x_flux=True)[1]
+
+    cuts = solve(source, k, capacity)
+    reflected = solve(source.flip(0), k.flip(0), capacity.flip(0))
+    torch.testing.assert_close(cuts, -reflected.flip(0), atol=0., rtol=1e-10)

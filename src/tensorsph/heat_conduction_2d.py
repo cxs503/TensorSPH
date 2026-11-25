@@ -365,16 +365,16 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
                     for w in x_wall_temperatures)
     def solution_with_flux(field,offsets):
         grid = field.reshape(-1,field.shape[-1])
-        if transverse_wavenumber!=0:
-            _,power = _stencil_exchange(grid,offsets,1.,conductivity,x_wall_temperatures,True,dx,
-                contact_resistance_x,None,modal_flux=True,transverse_phase=transverse_wavenumber*dx)
-            return field+datum,power/(dx*lattice_diffusion_factor_2d(h_factor,dx,mode="moment"))
-        rate,powers = stencil_rhs_with_wall_power_2d(grid,offsets,dx,x_wall_temperatures,
-            conductivity=conductivity,layered_x=True,contact_resistance_x=contact_resistance_x)
-        factor = lattice_diffusion_factor_2d(h_factor,dx,mode="moment")
-        west = powers[:1]/(grid.shape[0]*dx*factor)
-        flux = torch.cat((west,west-dx*rate.mean(0).cumsum(0)/factor))
-        return field+datum,flux
+        # With material properties uniform along each column, section averaging
+        # commutes with the linear pair flux. Sum links at each cut directly
+        # to retain weak currents far from the heated wall.
+        walls = x_wall_temperatures
+        if grid.shape[0] > 1:
+            walls = tuple(None if w is None else _wall_column(w, grid).mean() for w in walls)
+            grid = grid.mean(dim=0, keepdim=True)
+        _, power = _stencil_exchange(grid, offsets, 1., conductivity, walls,
+            True, dx, contact_resistance_x, None, modal_flux=True, transverse_phase=transverse_wavenumber*dx)
+        return field+datum, power/(dx*lattice_diffusion_factor_2d(h_factor,dx,mode="moment"))
 
     if source.ndim == 2:
         if transverse_wavenumber != 0:
