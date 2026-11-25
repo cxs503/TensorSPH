@@ -1770,14 +1770,17 @@ def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux
 
 
 def layered_slab_modal_cut_flux(temperature, dx, face, x_wall_temperatures, *, conductivity,
-                                transverse_wavenumber=0., contact_resistance_x=None, h_factor=1.3):
+                                transverse_wavenumber=0., contact_resistance_x=None, h_factor=1.3,
+                                split_interface_links=False):
     """Rightward flux phasor (W/m²) at a layered slab cut, including either wall.
 
     The vector contains particle amplitudes multiplying exp(i*beta*y).
     Wall temperatures are scalar amplitudes or None for insulation. The
     returned complex scalar uses the same transverse phase origin. Oblique
     links are assigned to the row centers bracketing their cut intersection,
-    as in stencil_x_face_power_2d with power_by_row=True.
+    as in stencil_x_face_power_2d with power_by_row=True. Set
+    split_interface_links to the same value used by solve_harmonic_layered_slab
+    to recover its interface and wall fluxes from a saved modal field.
     """
     field = torch.as_tensor(temperature,dtype=torch.complex128)
     if field.ndim!=1 or not torch.isfinite(field).all():
@@ -1793,7 +1796,7 @@ def layered_slab_modal_cut_flux(temperature, dx, face, x_wall_temperatures, *, c
     offsets = lattice_offsets(dx,h_factor*dx)
     _,power = _stencil_exchange(field[None,:],offsets,1.,conductivity,x_wall_temperatures,True,dx,
                                 contact_resistance_x,None,modal_flux=True,
-                                transverse_phase=transverse_wavenumber*dx)
+                                transverse_phase=transverse_wavenumber*dx, split_interface_links=split_interface_links)
     return power[face]/(dx*lattice_diffusion_factor_2d(h_factor,dx,mode="moment"))
 
 

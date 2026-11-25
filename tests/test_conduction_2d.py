@@ -2502,7 +2502,7 @@ def test_layered_harmonic_weak_wall_flux_reflects_with_the_heater():
 
 @pytest.mark.parametrize("h_factor", [0.9, 1.6])
 def test_split_interface_links_resolve_transverse_conduction_at_a_material_jump(h_factor):
-    from tensorsph.heat_conduction_2d import solve_harmonic_layered_slab
+    from tensorsph.heat_conduction_2d import layered_slab_modal_cut_flux, solve_harmonic_layered_slab
 
     # Across a perfectly bonded interface the exact field exp(i beta y)
     # has no normal heat flow, even though k and the required heating jump.
@@ -2520,3 +2520,8 @@ def test_split_interface_links_resolve_transverse_conduction_at_a_material_jump(
         h_factor=h_factor, transverse_wavenumber=beta, split_interface_links=True, return_x_flux=True)
     torch.testing.assert_close(field, torch.ones_like(field), rtol=0., atol=2e-12)
     assert cuts[[0, n//2, -1]].abs().max() < 1e-11
+    for face in (0, n//2-1, n//2, n):
+        recovered = layered_slab_modal_cut_flux(field, dx, face, (1., 1.), conductivity=k,
+                                                h_factor=h_factor, transverse_wavenumber=beta,
+                                                split_interface_links=True)
+        torch.testing.assert_close(recovered, cuts[face], rtol=0., atol=1e-13)
