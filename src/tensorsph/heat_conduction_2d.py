@@ -322,6 +322,7 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
     With split_interface_links=True, resolve diagonal links crossing a
     conductivity change or contact resistance into normal exchange through
     the link and tangential diffusion within the particle's own material.
+    Apply the same separation to links crossing prescribed-temperature walls.
     The inputs and output are modal amplitudes. Supply a periodic wavenumber
     compatible with the transverse period. Alternatively supply a (ny,nx)
     source and scalar or (ny,) end temperatures sampled on periodic rows.
@@ -1905,6 +1906,11 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
                 # Identify jumps along the whole link, even when its two
                 # endpoints belong to the same material around a thin layer.
                 split = torch.zeros_like(k[0], dtype=torch.bool)
+                # A prescribed wall fixes temperature at the same transverse
+                # position. Keep tangential exchange on the physical side.
+                for boundary, wall in ((width, left), (width+nx, right)):
+                    if wall is not None:
+                        split[boundary-max(n, 0):boundary-min(n, 0)] = True
                 for j in range(min(n, 0), max(n, 0)):
                     split |= torch.roll(k[0], -j) != torch.roll(k[0], -(j+1))
                     if faces is not None:

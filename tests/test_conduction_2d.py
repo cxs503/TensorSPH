@@ -2519,4 +2519,4 @@ def test_split_interface_links_resolve_transverse_conduction_at_a_material_jump(
         k*decay + 1j*omega, dx, (1., 1.), omega, conductivity=k, volumetric_heat_capacity=1.,
         h_factor=h_factor, transverse_wavenumber=beta, split_interface_links=True, return_x_flux=True)
     torch.testing.assert_close(field, torch.ones_like(field), rtol=0., atol=2e-12)
-    assert cuts[n//2].abs() < 1e-11
+    assert cuts[[0, n//2, -1]].abs().max() < 1e-11
