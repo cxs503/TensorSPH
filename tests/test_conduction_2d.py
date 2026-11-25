@@ -2071,3 +2071,23 @@ def test_unbalanced_closed_slab_laurent_response(backend):
         **dict(opts, wall_applied_flux=surface*rate))
     torch.testing.assert_close(residue, residue.new_tensor(rate))
     assert max(v.abs().max().item() for term in terms for v in term) < 1e-13
+
+
+@pytest.mark.parametrize("backend", ["torch", "banded"])
+def test_uniform_closed_slab_has_zero_cut_flux_at_tiny_frequency(backend):
+    from tensorsph.heat_conduction_2d import solve_harmonic_layered_films
+
+    cap = torch.linspace(.9, 2., 32, dtype=torch.float64)
+    surface = cap.new_tensor([.3, .75])
+    rate = .27+.34j
+    opts = dict(conductivity=torch.ones_like(cap), volumetric_heat_capacity=cap, backend=backend,
+                wall_areal_heat_capacity=surface, wall_applied_flux=surface*rate,
+                film_coefficients=(0., 0.), return_x_flux=True)
+    for omega in (1e-12, 1., 100.):
+        args = (cap*rate, 1/32, (0., 0.), omega)
+        field, wall, inward, cuts, mean = solve_harmonic_layered_films(*args, separate_mean=True, **opts)
+        torch.testing.assert_close(1j*omega*mean, mean.new_tensor(rate), atol=1e-14, rtol=0)
+        assert max(x.abs().max().item() for x in (field, wall, inward, cuts)) < 1e-13
+        full = solve_harmonic_layered_films(*args, **opts)
+        for value, expected in zip(full, (mean+field, mean+wall, inward, cuts)):
+            torch.testing.assert_close(value, expected)

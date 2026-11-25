@@ -477,7 +477,7 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
                                  contact_resistance_x=None, h_factor=1.3, backend="torch",
                                  wall_areal_heat_capacity=(0.,0.), heat_loss_coefficient=0.,
                                  wall_applied_flux=(0.,0.), mean_temperature=None,
-                                 transverse_wavenumber=0., return_x_flux=False):
+                                 transverse_wavenumber=0., return_x_flux=False, separate_mean=False):
     """Solve a transverse Fourier mode of a layered slab with two convective walls.
 
     Return (particle temperatures in K, two wall temperatures in K, two inward
@@ -492,6 +492,9 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
     bulk loss, the wall inputs and integrated source must sum to zero. Supply
     mean_temperature (K) as the heat-capacity-weighted mean of the particle
     columns and both wall stores. Other boundary conditions set their own level.
+    At positive frequency in this flux-only mode, separate_mean=True returns
+    particle and wall temperatures relative to their capacity-weighted mean
+    and appends that complex scalar (K) after the requested flux arrays.
     Set return_x_flux=True to append rightward heat fluxes on all nx+1 cuts.
     """
     source = torch.as_tensor(heat_source, dtype=torch.complex128)
@@ -520,6 +523,20 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
                       transverse_wavenumber=transverse_wavenumber, return_x_flux=True, **opts)
         return field, cuts
 
+    closed = _unanchored_flux_mode(films, heat_loss_coefficient, transverse_wavenumber, dx)
+    harmonic_closed = closed and angular_frequency > 0
+    if separate_mean and not harmonic_closed:
+        raise ValueError("separate_mean requires a positive-frequency lossless flux-only constant mode")
+    if harmonic_closed:
+        capacity = torch.as_tensor(volumetric_heat_capacity, dtype=DTYPE, device=source.device)
+        if capacity.shape not in ((), source.shape) or not torch.all(torch.isfinite(capacity) & (capacity > 0)):
+            raise ValueError("provide positive finite scalar or column heat capacities")
+        weights = dx*capacity.expand_as(source)
+        rate = (dx*source.sum()+applied.sum())/(weights.sum()+wall_capacity.sum())
+        uniform = rate/(1j*angular_frequency)
+        source = source-capacity*rate
+        applied = applied-wall_capacity*rate
+
     base, base_cuts = response(source, (0., 0.))
     # Two unit-temperature solutions give the complete wall admittance,
     # including heat transmitted from one wall to the opposite wall.
@@ -529,7 +546,7 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
     cut_response = torch.stack(cuts, dim=1)
     admittance = torch.stack((cut_response[0], -cut_response[-1]))
     base_flux = torch.stack((base_cuts[0], -base_cuts[-1]))
-    if angular_frequency == 0 and _unanchored_flux_mode(films, heat_loss_coefficient, transverse_wavenumber, dx):
+    if angular_frequency == 0 and closed:
         if mean_temperature is None:
             raise ValueError("steady flux-only walls require a mean_temperature reference")
         target = torch.as_tensor(mean_temperature, dtype=source.dtype, device=source.device)
@@ -551,12 +568,25 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
         return (*result, base_cuts+east*cuts[1]) if return_x_flux else result
     if mean_temperature is not None:
         raise ValueError("mean_temperature applies only to an unanchored steady flux-only mode")
-    walls = torch.linalg.solve(admittance + torch.diag(films+1j*angular_frequency*wall_capacity),
-                               films*ambient+applied-base_flux)
-    field = base + walls @ torch.stack(fields)
-    result = (field, walls, base_flux + admittance @ walls)
+    matrix = admittance + torch.diag(films+1j*angular_frequency*wall_capacity)
+    rhs = films*ambient+applied-base_flux
+    basis = torch.stack(fields)
+    if harmonic_closed:
+        # The summed wall equation degenerates at small frequency. Replace
+        # it by the exact zero capacity mean of the remaining field.
+        mean_row = (basis*weights).sum(dim=1)+wall_capacity
+        matrix = torch.stack((matrix[0]-matrix[1], mean_row))
+        rhs = torch.stack((rhs[0]-rhs[1], -(base*weights).sum()))
+    walls = torch.linalg.solve(matrix, rhs)
+    field = base + walls @ basis
+    inward = base_flux + admittance @ walls
+    result = (field, walls, inward)
     if return_x_flux:
-        return (*result, base_cuts + cut_response @ walls)
+        result += (base_cuts + cut_response @ walls,)
+    if harmonic_closed:
+        if separate_mean:
+            return (*result, uniform)
+        return (field+uniform, walls+uniform, *result[2:])
     return result
 
 
