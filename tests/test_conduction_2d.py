@@ -470,3 +470,25 @@ def test_harmonic_slab_matches_real_space_exchange_and_storage():
             torch.testing.assert_close(k*rate/factor, expected, atol=5e-12, rtol=0)
         if all(w is None for w in walls):
             torch.testing.assert_close(field.mean(), source.mean()/(1j*omega*capacity))
+
+
+def test_complex_pair_powers_match_independent_quadratures_through_layered_contact():
+    from tensorsph.heat_conduction_2d import stencil_rhs_with_wall_power_2d, stencil_x_face_power_2d
+
+    index = torch.arange(40, dtype=torch.float64).reshape(5, 8)
+    field = torch.cos(index)+1j*torch.sin(.3*index)
+    dx = .125
+    offsets = lattice_offsets(dx, 1.3*dx)
+    walls = (torch.exp(.17j*index[:, 0]), None)
+    material = dict(conductivity=1+index[0], layered_x=True, contact_resistance_x=.02*index[0, :-1])
+    def outputs(t, w):
+        rate, powers = stencil_rhs_with_wall_power_2d(t, offsets, dx, w, specific_heat=2.,
+                                                      power_by_row=True, **material)
+        cut = stencil_x_face_power_2d(t, offsets, dx, 3, w, **material)
+        return rate, powers, cut
+    for t in (field, field.real):
+        actual = outputs(t, walls)
+        real = outputs(t.real, (walls[0].real, None))
+        imag = outputs(t.imag if t.is_complex() else torch.zeros_like(t), (walls[0].imag, None))
+        for value, a, b in zip(actual, real, imag):
+            torch.testing.assert_close(value, torch.complex(a, b))

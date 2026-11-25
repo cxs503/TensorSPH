@@ -144,7 +144,7 @@ def lattice_offsets(dx: float, h: float, eta_factor: float = 0.01,
     return tuple(out)
 
 
-WallTemperature = float | torch.Tensor
+WallTemperature = float | complex | torch.Tensor
 SlabWalls = tuple[WallTemperature | None, WallTemperature | None]
 
 
@@ -174,7 +174,8 @@ def stencil_rhs_2d(temperature: torch.Tensor,
     is supplied, x (the last axis) uses cell-centred Dirichlet walls with
     odd-reflected temperature about each wall value and even-reflected material.
     The first axis remains periodic. Each wall accepts a scalar or a vector
-    of temperatures sampled at the y cell centres. A None entry selects an
+    of temperatures sampled at the y cell centres. Complex fields or walls
+    return complex rates and powers, using real material coefficients. A None entry selects an
     insulated wall with even temperature reflection. With layered_x=True, supply
     a 1-D conductivity profile along x. Each pair then uses the integrated
     series resistance along its straight segment through the cell-centred layers.
@@ -267,17 +268,10 @@ def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_fact
     reference = (mean_temperature or 0.) if closed else _wall_column(left if left is not None else right, source).mean()
     shifted = tuple(None if wall is None else torch.as_tensor(wall, dtype=source.dtype,
                     device=source.device)-reference for wall in (left, right))
-    zero = torch.zeros_like(source.real)
+    wall_rate = stencil_rhs_2d(torch.zeros_like(source), offsets, x_wall_temperatures=shifted)
+    rhs = source + (conductivity/factor)*wall_rate
     if storage:
-        # The underlying particle exchange is real-linear. Lift both wall quadratures.
-        real_walls = tuple(None if w is None else w.real for w in shifted)
-        imag_walls = tuple(None if w is None else w.imag for w in shifted)
-        wall_rate = torch.complex(stencil_rhs_2d(zero, offsets, x_wall_temperatures=real_walls),
-                                  stencil_rhs_2d(zero, offsets, x_wall_temperatures=imag_walls))
-        rhs = source - 1j*storage*reference + (conductivity/factor)*wall_rate
-    else:
-        wall_rate = stencil_rhs_2d(zero, offsets, x_wall_temperatures=shifted)
-        rhs = source + (conductivity/factor)*wall_rate
+        rhs = rhs - 1j*storage*reference
     right_image = rhs.flip((1,))
     rhs = torch.cat((rhs, right_image if right is None else -right_image), dim=1)
     if (left is None) != (right is None):
@@ -424,9 +418,13 @@ def _contact_faces(values, field, dx, layered_x, fixed_walls, width):
 
 def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures,
                       layered_x, dx, contact_resistance_x, specific_heat, collect_power=False, cut=None, power_by_row=False):
-    t = torch.as_tensor(temperature, dtype=DTYPE)
+    complex_field = torch.as_tensor(temperature).is_complex()
+    if not complex_field and x_wall_temperatures is not None:
+        complex_field = any(torch.as_tensor(wall).is_complex()
+                            for wall in x_wall_temperatures if wall is not None)
+    t = torch.as_tensor(temperature, dtype=torch.complex128 if complex_field else DTYPE)
     if specific_heat is not None:
-        specific_heat = torch.as_tensor(specific_heat, dtype=t.dtype, device=t.device).expand_as(t)
+        specific_heat = torch.as_tensor(specific_heat, dtype=DTYPE, device=t.device).expand_as(t)
         if not torch.all(torch.isfinite(specific_heat) & (specific_heat > 0)):
             raise ValueError("specific_heat must be finite and positive")
     # Material conductivities live at cell centres. The same pair mean
@@ -434,7 +432,7 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
     if layered_x and (conductivity is None or torch.as_tensor(conductivity).shape != (t.shape[-1],)):
         raise ValueError("layered_x requires one conductivity per x column")
     if conductivity is not None:
-        k = torch.as_tensor(conductivity, device=t.device, dtype=t.dtype).expand_as(t)
+        k = torch.as_tensor(conductivity, device=t.device, dtype=DTYPE).expand_as(t)
         if not torch.all(torch.isfinite(k) & (k > 0)):
             raise ValueError("conductivity must be finite and positive")
     width = 0
@@ -446,7 +444,7 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
         if width > nx:
             raise ValueError("x stencil radius exceeds slab width")
     if contact_resistance_x is not None:
-        faces = _contact_faces(contact_resistance_x, t, dx, layered_x, x_wall_temperatures is not None, width)
+        faces = _contact_faces(contact_resistance_x, t.real, dx, layered_x, x_wall_temperatures is not None, width)
     if width:
         left_ghost = t[:, :width].flip((1,))
         right_ghost = t[:, -width:].flip((1,))
