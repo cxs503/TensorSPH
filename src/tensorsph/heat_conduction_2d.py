@@ -256,14 +256,16 @@ def solve_harmonic_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperat
 
 def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_frequency,
                                 *, conductivity, volumetric_heat_capacity,
-                                contact_resistance_x=None, h_factor=1.3):
-    """Return particle temperature phasors for a transversely uniform layered slab.
+                                contact_resistance_x=None, h_factor=1.3, transverse_wavenumber=0.):
+    """Return particle temperature phasors for one transverse Fourier mode of a layered slab.
 
     Use one source (W/m³) and conductivity (W/(m K)) per x column, a scalar
     or per-column heat capacity (J/(m³ K)), and optional interface resistances
     (m² K/W). Each end has a scalar temperature phasor or None for insulation.
     The dense complex solve uses the calibrated 2-D particle-pair stencil with
-    all transverse rows identical. Frequency is in rad/s under exp(+iωt).
+    row dependence exp(i β y), with β=transverse_wavenumber in rad/m.
+    The inputs and output are modal amplitudes. Supply a periodic wavenumber
+    compatible with the transverse period. Frequency is in rad/s under exp(+iωt).
     """
     source = torch.as_tensor(heat_source, dtype=torch.complex128)
     if source.ndim != 1 or source.numel() == 0 or not torch.isfinite(source).all():
@@ -281,16 +283,18 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
     factor = lattice_diffusion_factor_2d(h_factor, dx, mode="moment")
     if factor <= 0:
         raise ValueError("kernel support must include a conducting neighbour")
-    # For a uniform transverse field each diagonal link sees the same x
-    # neighbour. Suppress its row shift so separate rows can carry basis probes.
-    axial = tuple(((0, n), a) for (_, n), a in offsets if n)
-    options = dict(dx=dx, conductivity=conductivity, layered_x=True,
-                   contact_resistance_x=contact_resistance_x)
+    if not math.isfinite(transverse_wavenumber):
+        raise ValueError("transverse wavenumber must be finite")
+    phase_step = transverse_wavenumber*dx
     homogeneous = tuple(None if wall is None else 0. for wall in (left, right))
     basis = torch.eye(source.numel(), dtype=DTYPE, device=source.device)
-    operator = stencil_rhs_2d(basis, axial, x_wall_temperatures=homogeneous, **options).T/factor
-    load = stencil_rhs_2d(torch.zeros_like(source)[None, :], axial,
-                          x_wall_temperatures=(left, right), **options)[0]/factor
+    def response(probes, walls):
+        rate, _ = _stencil_exchange(probes, offsets, 1., conductivity, walls, True,
+                                    dx, contact_resistance_x, None, transverse_phase=phase_step)
+        return rate/factor
+
+    operator = response(basis, homogeneous).T
+    load = response(torch.zeros_like(source)[None, :], (left, right))[0]
     matrix = torch.diag(1j*angular_frequency*capacity.expand_as(source))-operator
     return torch.linalg.solve(matrix, source+load)
 
@@ -489,7 +493,7 @@ def stencil_x_face_power_2d(
     temperature: torch.Tensor, offsets: tuple[LatticeOffsets, ...], dx: float,
     face: int, x_wall_temperatures: SlabWalls,
     conductivity: torch.Tensor | None = None, *, layered_x: bool = False,
-    contact_resistance_x: torch.Tensor | None = None,
+    contact_resistance_x: torch.Tensor | None = None, power_by_row: bool = False,
 ) -> torch.Tensor:
     """Power crossing x=face*dx from left to right for a slab of unit thickness.
 
@@ -497,13 +501,15 @@ def stencil_x_face_power_2d(
     every crossing pair once, including diagonal and longer-range links.
     Use a symmetric pair stencil; divide by wall area and by the same
     diffusivity calibration used in the evolution to obtain calibrated flux.
+    With power_by_row, distribute each link's power linearly to the two row
+    centers bracketing its intersection with the cut, periodically in y.
     """
     if not isinstance(face, int) or not 0 < face < temperature.shape[-1]:
         raise ValueError("face must be an interior column boundary")
     if x_wall_temperatures is None or not math.isfinite(dx) or dx <= 0:
         raise ValueError("face power requires fixed walls and positive finite dx")
     _, power = _stencil_exchange(temperature, offsets, 1., conductivity, x_wall_temperatures,
-                                 layered_x, dx, contact_resistance_x, None, cut=face)
+                                 layered_x, dx, contact_resistance_x, None, cut=face, power_by_row=power_by_row)
     return power
 
 
@@ -527,7 +533,7 @@ def _contact_faces(values, field, dx, layered_x, fixed_walls, width):
 
 
 def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatures,
-                      layered_x, dx, contact_resistance_x, specific_heat, collect_power=False, cut=None, power_by_row=False):
+                      layered_x, dx, contact_resistance_x, specific_heat, collect_power=False, cut=None, power_by_row=False, transverse_phase=None):
     complex_field = torch.as_tensor(temperature).is_complex()
     if not complex_field and x_wall_temperatures is not None:
         complex_field = any(torch.as_tensor(wall).is_complex()
@@ -568,7 +574,7 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
     acc = torch.zeros_like(t)
     power = t.new_zeros((2, t.shape[0]) if power_by_row else 2) if collect_power else None
     if cut is not None:
-        power = t.new_zeros(())
+        power = t.new_zeros(t.shape[0] if power_by_row else ())
     for (m, n), a in offsets:
         if conductivity is not None:
             neighbor = torch.roll(k, shifts=(-m, -n), dims=(0, 1))
@@ -584,12 +590,27 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
                 a = a * abs(n) / resistance
             else:
                 a = a * (2 * k * neighbor / (k + neighbor))
-        transfer = a * (t - torch.roll(t, shifts=(-m, -n), dims=(0, 1)))
+        if transverse_phase is None:
+            neighbour_t = torch.roll(t, shifts=(-m, -n), dims=(0, 1))
+        else:
+            # Rows are independent probes. +/-m links share material and x
+            # endpoints, so their complex phase factors average to cos(m β dx).
+            neighbour_t = torch.roll(t, shifts=-n, dims=1)*math.cos(m*transverse_phase)
+        transfer = a * (t - neighbour_t)
         acc = acc + transfer
         if cut is not None and n > 0:
             # transfer is positive INTO the left partner; report outward power.
             stop = width + cut
-            power = power - transfer[:, stop-n:stop].sum()
+            crossing = -transfer[:, stop-n:stop]
+            if power_by_row:
+                for j in range(n):
+                    along = m*(n-j-.5)/n
+                    lower = math.floor(along)
+                    frac = along-lower
+                    power += (1-frac)*torch.roll(crossing[:,j], lower)
+                    power += frac*torch.roll(crossing[:,j], lower+1)
+            else:
+                power = power + crossing.sum()
         if collect_power and n and x_wall_temperatures[int(n > 0)] is not None:
             # Only physical particles whose neighbour is a ghost cross a wall.
             start = width if n < 0 else width + nx - n

@@ -592,3 +592,42 @@ def test_harmonic_layered_slab_solves_full_pair_equations():
                                    rtol=1e-11, atol=1e-11)
         balance = dx*(1j*omega*c*u-source).sum()-powers.sum()/(4*dx*factor)
         assert abs(balance) < 1e-11
+
+
+def test_transverse_layered_mode_matches_resolved_particle_exchange():
+    from tensorsph.heat_conduction_2d import lattice_diffusion_factor_2d, solve_harmonic_layered_slab
+    nx, ny, dx = 15, 11, .065
+    beta = -4*torch.pi/(ny*dx)
+    x = torch.arange(nx, dtype=torch.float64)*dx
+    y = torch.arange(ny, dtype=torch.float64)*dx
+    phase = torch.exp(1j*beta*y)
+    k = 1.+(x>.4).double()
+    c = 1.+x
+    contact = torch.zeros_like(x[:-1])
+    contact[6] = .3
+    source = torch.exp(.5j*x)
+    for walls in ((.4j, -.2+1j), (None, 1.+.2j)):
+        u = solve_harmonic_layered_slab(source, dx, walls, 4., conductivity=k,
+                     volumetric_heat_capacity=c, contact_resistance_x=contact, transverse_wavenumber=beta)
+        field = phase[:,None]*u
+        traces = tuple(None if t is None else t*phase for t in walls)
+        rate = stencil_rhs_2d(field, lattice_offsets(dx,1.3*dx), x_wall_temperatures=traces,
+                              dx=dx, layered_x=True, contact_resistance_x=contact, conductivity=k)
+        factor = lattice_diffusion_factor_2d(1.3, dx, mode="moment")
+        torch.testing.assert_close(rate/factor+phase[:,None]*source, 4j*c*field, atol=2e-12, rtol=1e-11)
+
+
+def test_section_power_resolves_periodic_diagonal_intersections():
+    from tensorsph.heat_conduction_2d import stencil_x_face_power_2d
+
+    # Crossing from column 1 to 3 through cut 2 occurs at 1/4 of the link.
+    # Row 4 therefore deposits 3/4 on row 4 and 1/4 across the periodic seam.
+    field = torch.zeros((5,6), dtype=torch.complex128)
+    field[4,1] = 1.+2j
+    offsets = (((1,2), -1.), ((-1,-2), -1.))
+    args = (field, offsets, .5, 2, (None,None))
+    rows = stencil_x_face_power_2d(*args, power_by_row=True)
+    total = stencil_x_face_power_2d(*args)
+    expected = torch.tensor([.25,0.,0.,0.,.75], dtype=torch.float64)*(.5+1j)
+    torch.testing.assert_close(rows, expected)
+    torch.testing.assert_close(rows.sum(), total)
