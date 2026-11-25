@@ -328,8 +328,10 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
         return torch.fft.ifft(torch.stack(rows), dim=0)
     if source.ndim != 1 or source.numel() == 0 or not torch.isfinite(source).all():
         raise ValueError("provide a finite nonempty vector of column heat sources")
-    if not all(math.isfinite(v) and v > 0 for v in (angular_frequency, dx, h_factor)):
-        raise ValueError("frequency, dx and h_factor must be positive and finite")
+    if not all(math.isfinite(v) and v > 0 for v in (dx,h_factor)):
+        raise ValueError("dx and h_factor must be positive and finite")
+    if not math.isfinite(angular_frequency) or angular_frequency < 0:
+        raise ValueError("frequency must be nonnegative and finite")
     capacity = torch.as_tensor(volumetric_heat_capacity, dtype=DTYPE, device=source.device)
     if capacity.shape not in ((), source.shape) or not torch.all(torch.isfinite(capacity) & (capacity > 0)):
         raise ValueError("provide a positive finite scalar or column heat capacities")
@@ -345,6 +347,8 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
     loss = torch.as_tensor(heat_loss_coefficient, dtype=DTYPE, device=source.device)
     if loss.shape not in ((),source.shape) or not torch.all(torch.isfinite(loss) & (loss>=0)):
         raise ValueError("heat_loss_coefficient must be finite, nonnegative and scalar or per column")
+    if angular_frequency==0 and left is None and right is None and not torch.any(loss>0):
+        raise ValueError("steady insulated solves require positive bulk heat loss")
     bulk_shift = loss+1j*angular_frequency*capacity.expand_as(source)
     size = source.numel()
     if backend == "banded":
@@ -424,6 +428,30 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
                                films*ambient-inward(base,(0.,0.)))
     field = base + walls @ torch.stack(fields)
     return field, walls, inward(field, walls)
+
+
+def solve_low_frequency_layered_films(heat_source, dx, ambient_temperatures, *,
+                                      film_coefficients, conductivity, volumetric_heat_capacity,
+                                      contact_resistance_x=None, h_factor=1.3, backend="torch",
+                                      wall_areal_heat_capacity=(0.,0.), heat_loss_coefficient=0.):
+    """Return steady and first-order coefficients of the exp(+iωt) film response.
+
+    Both tuples contain particle temperatures, wall temperatures and inward
+    fluxes. The first-order coefficients have an extra factor of seconds.
+    The volumetric source and ambient temperatures are frequency independent.
+    """
+    options = dict(film_coefficients=film_coefficients,conductivity=conductivity,
+                   volumetric_heat_capacity=volumetric_heat_capacity,contact_resistance_x=contact_resistance_x,
+                   h_factor=h_factor,backend=backend,wall_areal_heat_capacity=wall_areal_heat_capacity,
+                   heat_loss_coefficient=heat_loss_coefficient)
+    steady = solve_harmonic_layered_films(heat_source,dx,ambient_temperatures,0.,**options)
+    field,walls,_ = steady
+    capacity = torch.as_tensor(volumetric_heat_capacity,dtype=DTYPE,device=field.device)
+    surface = torch.as_tensor(wall_areal_heat_capacity,dtype=DTYPE,device=field.device)
+    films = torch.as_tensor(film_coefficients,dtype=DTYPE,device=field.device)
+    # At first order the particle and surface storage act as specified sinks.
+    first = solve_harmonic_layered_films(-capacity*field,dx,-surface*walls/films,0.,**options)
+    return steady,first
 
 
 def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *, conductivity,

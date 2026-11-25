@@ -1014,3 +1014,21 @@ def test_temperature_and_insulated_layer_wall_traces():
                     volumetric_heat_capacity=1.,return_wall_temperatures=True)
     torch.testing.assert_close(walls[:,0],.3+t)
     torch.testing.assert_close(walls[:,1],u[:,-1])
+
+
+def test_low_frequency_films_uniform_exact_storage_response():
+    from tensorsph.heat_conduction_2d import solve_low_frequency_layered_films
+
+    drive = .7+.4j
+    tau = .35
+    loss = torch.linspace(.8,2.,12,dtype=torch.float64)
+    films = torch.tensor([2.,5.],dtype=torch.float64)
+    for backend in ("torch","banded"):
+        steady,lag = solve_low_frequency_layered_films(
+            loss*drive,1/12,(drive,drive),film_coefficients=films,
+            wall_areal_heat_capacity=tau*films,conductivity=2.+loss,
+            volumetric_heat_capacity=tau*loss,heat_loss_coefficient=loss,backend=backend)
+        for (field,walls,flux),value in ((steady,drive),(lag,-tau*drive)):
+            assert (field-value).abs().max()<1e-12
+            assert (walls-value).abs().max()<1e-12
+            assert flux.abs().max()<1e-12
