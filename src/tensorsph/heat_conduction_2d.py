@@ -428,7 +428,8 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
 
 def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *, conductivity,
                                  volumetric_heat_capacity, contact_resistance_x=None, heat_source=0.,
-                                 heat_loss_coefficient=0., theta=.5, h_factor=1.3, load_jump_times=()):
+                                 heat_loss_coefficient=0., theta=.5, h_factor=1.3, load_jump_times=(),
+                                 return_x_heat=False):
     """Integrate a transversely uniform layered slab with stationary material properties.
 
     Return temperatures (nt,nx) including the initial state. Specify one initial
@@ -439,6 +440,8 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
     with each callable returning the new value at the jump. Internal subdivisions
     preserve the requested output times. Contact resistances follow the
     harmonic layered solver. The dense implicit theta method accepts .5 to 1.
+    return_x_heat appends interval-integrated rightward section heat in J/m²,
+    shaped (nt-1,nx+1), including any internal steps at load jumps.
     """
     if torch.is_complex(torch.as_tensor(temperature)):
         raise ValueError("initial column temperatures must be real")
@@ -478,7 +481,7 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
     if any(v is not None and torch.is_complex(torch.as_tensor(v)) for v in (conductivity,contact_resistance_x)):
         raise ValueError("conductivity and contact resistances must be real")
     homogeneous = tuple(None if wall is None else 0. for wall in walls)
-    response, _ = _layered_response(dx,h_factor,conductivity,contact_resistance_x,0.)
+    response, offsets = _layered_response(dx,h_factor,conductivity,contact_resistance_x,0.)
     zero = torch.zeros_like(state)[None,:]
     static_walls = tuple(0. if callable(w) else None if w is None else wall_value(w) for w in walls)
     static_load = response(zero,static_walls)[0]
@@ -489,36 +492,51 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
         if callable(wall):
             unit = list(homogeneous)
             unit[i] = 1.
-            wall_modes.append((wall,response(zero,unit)[0]))
+            wall_modes.append((i,wall,response(zero,unit)[0]))
 
     def forcing(time):
         load = static_load
         if callable(heat_source):
             load = load+profile(heat_source(time),"heat_source")
-        for wall,mode in wall_modes:
-            load = load+mode*wall_value(wall(time))
-        return load
+        sampled = list(static_walls)
+        for i,wall,mode in wall_modes:
+            sampled[i] = wall_value(wall(time))
+            load = load+mode*sampled[i]
+        return load,sampled
     basis = torch.eye(len(state),device=state.device,dtype=state.dtype)
     operator = response(basis,homogeneous).T-torch.diag(loss)
     mass = torch.diag(capacity)
     previous_dt = None
     fields = [state]
     segments = sorted(set(grid)|events)
-    load_start = forcing(grid[0])
+    if return_x_heat:
+        heat = state.new_zeros((len(grid)-1,len(state)+1))
+        calibration = lattice_diffusion_factor_2d(h_factor,dx,mode="moment")
+    load_start,walls_start = forcing(grid[0])
     for start,stop in zip(segments,segments[1:]):
         at_jump = stop in events
-        load_end = forcing(math.nextafter(stop,start) if at_jump else stop)
+        load_end,walls_end = forcing(math.nextafter(stop,start) if at_jump else stop)
         load = (1-theta)*load_start+theta*load_end
-        load_start = forcing(stop) if at_jump else load_end
         dt = stop-start
         if dt!=previous_dt:
             factors = torch.linalg.lu_factor(mass-theta*dt*operator)
             previous_dt = dt
         delta = torch.linalg.lu_solve(*factors,(dt*(operator @ state+load))[:,None])[:,0]
+        if return_x_heat:
+            stage_walls = tuple(None if a is None else (1-theta)*a+theta*b for a,b in zip(walls_start,walls_end))
+            # Start at the directly tallied west wall power. Net pair heat
+            # into each column is west minus east; integrate across all cuts.
+            rate,powers = stencil_rhs_with_wall_power_2d((state+theta*delta)[None,:],offsets,dx,stage_walls,
+                            conductivity=conductivity,layered_x=True,contact_resistance_x=contact_resistance_x)
+            west = powers[:1]/(dx*calibration)
+            flux = torch.cat((west,west-dx*rate[0].cumsum(dim=0)/calibration))
+            heat[len(fields)-1] += dt*flux
         state = state+delta
+        load_start,walls_start = forcing(stop) if at_jump else (load_end,walls_end)
         if stop==grid[len(fields)]:
             fields.append(state)
-    return torch.stack(fields)
+    history = torch.stack(fields)
+    return (history,heat) if return_x_heat else history
 
 
 def step_transient_slab_2d(temperature, dt, dx, x_wall_temperatures, *, heat_source=0.,

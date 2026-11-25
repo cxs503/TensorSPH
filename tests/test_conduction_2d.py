@@ -869,3 +869,33 @@ def test_layered_transient_rejects_invalid_events(jumps):
     with pytest.raises(ValueError,match="load_jump_times"):
         solve_transient_layered_slab(x,[0.,.1],.25,(None,None),conductivity=x,
                                     volumetric_heat_capacity=1.,load_jump_times=jumps)
+
+
+def test_layered_interval_heat_matches_interior_pair_tallies_across_jump():
+    from tensorsph.heat_conduction_2d import (
+        lattice_diffusion_factor_2d, solve_transient_layered_slab, stencil_x_face_power_2d,
+        stencil_rhs_with_wall_power_2d,
+    )
+    x = torch.arange(8,dtype=torch.float64)/8
+    dx,jump = .125,.021
+    k = 1.+2*x
+    resistance = torch.zeros_like(x[:-1])
+    resistance[3] = .18
+    west = lambda t: .3+t if t<jump else 1.2+t
+    load = lambda t: x+t
+    opts = dict(conductivity=k,contact_resistance_x=resistance,volumetric_heat_capacity=1+x,heat_source=load)
+    _,heat = solve_transient_layered_slab(x,[0.,.06],dx,(west,None),return_x_heat=True,
+                                         load_jump_times=[jump],**opts)
+    times = [0.,jump,.06]
+    states = solve_transient_layered_slab(x,times,dx,(west,None),load_jump_times=[jump],**opts)
+    offsets = lattice_offsets(dx,1.3*dx)
+    factor = lattice_diffusion_factor_2d(1.3,dx,mode="moment")
+    expected = torch.zeros_like(heat[0])
+    for i,(a,b) in enumerate(zip(times,times[1:])):
+        stage = .5*(states[i]+states[i+1])[None,:]
+        wall = .3+.5*(a+b) if i==0 else 1.2+.5*(a+b)
+        kw = dict(conductivity=k,layered_x=True,contact_resistance_x=resistance)
+        _,powers = stencil_rhs_with_wall_power_2d(stage,offsets,dx,(wall,None),**kw)
+        cuts = [stencil_x_face_power_2d(stage,offsets,dx,j,(wall,None),**kw) for j in range(1,len(x))]
+        expected += (b-a)*torch.stack([powers[0],*cuts,-powers[1]])/(dx*factor)
+    torch.testing.assert_close(heat[0],expected,rtol=0.,atol=5e-15)
