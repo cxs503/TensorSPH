@@ -429,7 +429,7 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
 def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *, conductivity,
                                  volumetric_heat_capacity, contact_resistance_x=None, heat_source=0.,
                                  heat_loss_coefficient=0., theta=.5, h_factor=1.3, load_jump_times=(),
-                                 return_x_heat=False, x_wall_inward_flux=(0.,0.)):
+                                 return_x_heat=False, x_wall_inward_flux=(0.,0.), rannacher=False):
     """Integrate a transversely uniform layered slab with stationary material properties.
 
     Return temperatures (nt,nx) including the initial state. Specify one initial
@@ -442,6 +442,8 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
     with each callable returning the new value at the jump. Internal subdivisions
     preserve the requested output times. Contact resistances follow the
     harmonic layered solver. The dense implicit theta method accepts .5 to 1.
+    With rannacher=True the first Crank–Nicolson step and the first after
+    each load jump use two backward Euler half steps.
     return_x_heat appends interval-integrated rightward section heat in J/m²,
     shaped (nt-1,nx+1), including any internal steps at load jumps.
     """
@@ -537,32 +539,45 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
     basis = torch.eye(len(state),device=state.device,dtype=state.dtype)
     operator = response(basis,homogeneous).T-torch.diag(loss)
     mass = torch.diag(capacity)
-    previous_dt = None
+    previous_shift = None
     fields = [state]
     segments = sorted(set(grid)|events)
+    damped = set()
+    if rannacher:
+        if theta!=.5:
+            raise ValueError("Rannacher damping requires theta=.5")
+        for start,stop in zip(segments,segments[1:]):
+            if start==grid[0] or start in events:
+                middle = start+(stop-start)/2
+                if not start<middle<stop:
+                    raise ValueError("damped interval has no representable midpoint")
+                damped.update((start,middle))
+        segments = sorted(set(segments)|damped)
     if return_x_heat:
         heat = state.new_zeros((len(grid)-1,len(state)+1))
         calibration = lattice_diffusion_factor_2d(h_factor,dx,mode="moment")
     load_start,walls_start,flux_start = forcing(grid[0])
     for start,stop in zip(segments,segments[1:]):
+        weight = 1. if start in damped else theta
         at_jump = stop in events
         load_end,walls_end,flux_end = forcing(math.nextafter(stop,start) if at_jump else stop)
-        load = (1-theta)*load_start+theta*load_end
+        load = (1-weight)*load_start+weight*load_end
         dt = stop-start
-        if dt!=previous_dt:
-            factors = torch.linalg.lu_factor(mass-theta*dt*operator)
-            previous_dt = dt
+        shift = weight*dt
+        if shift!=previous_shift:
+            factors = torch.linalg.lu_factor(mass-shift*operator)
+            previous_shift = shift
         delta = torch.linalg.lu_solve(*factors,(dt*(operator @ state+load))[:,None])[:,0]
         if return_x_heat:
-            stage_walls = tuple(None if a is None else (1-theta)*a+theta*b for a,b in zip(walls_start,walls_end))
+            stage_walls = tuple(None if a is None else (1-weight)*a+weight*b for a,b in zip(walls_start,walls_end))
             # Start at the directly tallied west wall power. Net pair heat
             # into each column is west minus east; integrate across all cuts.
-            rate,powers = stencil_rhs_with_wall_power_2d((state+theta*delta)[None,:],offsets,dx,stage_walls,
+            rate,powers = stencil_rhs_with_wall_power_2d((state+weight*delta)[None,:],offsets,dx,stage_walls,
                             conductivity=conductivity,layered_x=True,contact_resistance_x=contact_resistance_x)
             west = powers[:1]/(dx*calibration)
             flux = torch.cat((west,west-dx*rate[0].cumsum(dim=0)/calibration))
             if flux_modes:
-                inward = (1-theta)*flux_start+theta*flux_end
+                inward = (1-weight)*flux_start+weight*flux_end
                 flux += inward[0]
                 for side,_,mode in flux_modes:
                     flux[1:] -= dx*inward[side]*mode.cumsum(0)

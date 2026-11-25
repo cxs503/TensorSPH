@@ -943,3 +943,16 @@ def test_layered_flux_wall_with_contacts_inside_kernel_support():
                 x_wall_inward_flux=(1.7,-1.7),return_x_heat=True)
     torch.testing.assert_close(fields,initial.expand_as(fields),atol=1e-13,rtol=0.)
     torch.testing.assert_close(heat,(1.7*times.diff()[:,None]).expand_as(heat),atol=1e-13,rtol=0.)
+
+
+def test_layered_rannacher_heat_matches_explicit_half_steps():
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab as solve
+    k = torch.linspace(1.,3.,8,dtype=torch.float64)
+    opts = dict(conductivity=k,volumetric_heat_capacity=k+1,return_x_heat=True)
+    history,heat = solve(k,[0.,.08,.12],.125,(None,None),load_jump_times=[.03],rannacher=True,
+                         x_wall_inward_flux=(lambda t:1. if t<.03 else -.3,0.),**opts)
+    a,qa = solve(k,[0.,.015,.03],.125,(None,None),theta=1.,x_wall_inward_flux=(1.,0.),**opts)
+    b,qb = solve(a[-1],[.03,.055,.08],.125,(None,None),theta=1.,x_wall_inward_flux=(-.3,0.),**opts)
+    c,qc = solve(b[-1],[.08,.12],.125,(None,None),x_wall_inward_flux=(-.3,0.),**opts)
+    torch.testing.assert_close(history,torch.stack([k,b[-1],c[-1]]))
+    torch.testing.assert_close(heat,torch.stack([qa.sum(0)+qb.sum(0),qc[0]]))
