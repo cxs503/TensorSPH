@@ -541,7 +541,7 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
                                  x_wall_films=(None,None), return_wall_temperatures=False, method="theta",
                                  bulk_ambient_temperature=0., return_bulk_exchange=False,
                                  wall_areal_heat_capacity=(0.,0.), initial_wall_temperatures=(None,None),
-                                 return_external_heat=False):
+                                 return_external_heat=False, return_interval_temperature=False):
     """Integrate a transversely uniform layered slab with stationary material properties.
 
     Return temperatures (nt,nx) including the initial state. Specify one initial
@@ -581,6 +581,9 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
     initial_wall_temperatures defaults to the adjacent particle temperature
     for storing walls. return_external_heat appends inward external heat at
     both walls per output interval (J/m²), including any surface storage.
+    return_interval_temperature appends mean particle temperatures (nt-1,nx)
+    in K. The mean uses the same stage quadrature as the heat balance and
+    includes all internal substeps within each requested interval.
     """
     if torch.is_complex(torch.as_tensor(temperature)):
         raise ValueError("initial column temperatures must be real")
@@ -752,6 +755,8 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
     generator = operator/capacity[:,None] if exponential else None
     previous_shift = None
     fields = [state]
+    if return_interval_temperature:
+        integrated_temperature = state.new_zeros((len(grid)-1,nx))
     segments = sorted(set(grid)|events)
     damped = set()
     if rannacher:
@@ -824,8 +829,10 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
                 first = state
                 delta = torch.linalg.lu_solve(*factors,(dt*(operator @ state+load))[:,None])[:,0]
                 end = state+delta
-            if return_x_heat or return_bulk_exchange or return_external_heat:
+            if return_x_heat or return_bulk_exchange or return_external_heat or return_interval_temperature:
                 stage = (1-weight)*first+weight*end
+        if return_interval_temperature:
+            integrated_temperature[len(fields)-1] += dt*stage[:nx]
         if return_bulk_exchange:
             reservoir = (1-weight)*reservoir_start+weight*reservoir_end
             if quadratic:
@@ -879,6 +886,9 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
         outputs.append(exchange)
     if return_external_heat:
         outputs.append(external)
+    if return_interval_temperature:
+        widths = state.new_tensor([b-a for a,b in zip(grid,grid[1:])])
+        outputs.append(integrated_temperature/widths[:,None])
     return tuple(outputs) if len(outputs)>1 else history
 
 
