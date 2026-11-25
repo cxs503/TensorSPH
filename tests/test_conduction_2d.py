@@ -651,3 +651,19 @@ def test_layered_slab_grid_accepts_nonseparable_complex_loads():
                               dx=dx, layered_x=True, contact_resistance_x=contacts, conductivity=k)
         factor = lattice_diffusion_factor_2d(1.3, dx, mode="moment")
         torch.testing.assert_close(rate/factor+source, 2j*c*u, atol=1e-12, rtol=1e-11)
+
+
+def test_banded_harmonic_slab_agrees_with_dense_on_wide_stencils():
+    from tensorsph.heat_conduction_2d import solve_harmonic_layered_slab
+    import pytest
+    pytest.importorskip("scipy.linalg")
+    for nx, ny, smoothing in ((2,1,.8), (17,5,1.3), (29,8,2.1)):
+        x = torch.arange(nx, dtype=torch.float64)/nx
+        y = torch.arange(ny, dtype=torch.float64)[:,None]
+        source = torch.exp(2j*x*y)
+        opts = dict(conductivity=1.+x, volumetric_heat_capacity=3.-x, h_factor=smoothing,
+                    contact_resistance_x=.1*x[:-1])
+        for walls in ((None,None), (torch.exp(.3j*y[:,0]),None)):
+            u = solve_harmonic_layered_slab(source, 1/nx, walls, 4., **opts)
+            compact = solve_harmonic_layered_slab(source, 1/nx, walls, 4., backend="banded", **opts)
+            torch.testing.assert_close(compact, u, atol=2e-12, rtol=1e-11)

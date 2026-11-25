@@ -256,7 +256,8 @@ def solve_harmonic_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperat
 
 def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_frequency,
                                 *, conductivity, volumetric_heat_capacity,
-                                contact_resistance_x=None, h_factor=1.3, transverse_wavenumber=0.):
+                                contact_resistance_x=None, h_factor=1.3, transverse_wavenumber=0.,
+                                backend="torch"):
     """Return particle temperature phasors for one transverse Fourier mode of a layered slab.
 
     Use one source (W/m³) and conductivity (W/(m K)) per x column, a scalar
@@ -268,9 +269,14 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
     compatible with the transverse period. Alternatively supply a (ny,nx)
     source and scalar or (ny,) end temperatures sampled on periodic rows.
     Then the output has the same grid shape and all Fourier modes are solved.
-    Frequency is in rad/s under exp(+iωt).
+    Frequency is in rad/s under exp(+iωt). The default backend is dense torch.
+    backend="banded" uses SciPy on CPU and stores only the stencil diagonals.
     """
     source = torch.as_tensor(heat_source, dtype=torch.complex128)
+    if backend not in ("torch", "banded"):
+        raise ValueError("backend must be torch or banded")
+    if backend == "banded" and source.device.type != "cpu":
+        raise ValueError("banded solves require CPU inputs")
     if source.ndim == 2:
         if transverse_wavenumber != 0:
             raise ValueError("explicit wavenumbers apply only to modal vector inputs")
@@ -290,7 +296,7 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
         rows = [solve_harmonic_layered_slab(load, dx, (west, east), angular_frequency,
                         conductivity=conductivity, volumetric_heat_capacity=volumetric_heat_capacity,
                         contact_resistance_x=contact_resistance_x, h_factor=h_factor,
-                        transverse_wavenumber=float(wave))
+                        transverse_wavenumber=float(wave), backend=backend)
                 for load, west, east, wave in zip(modes, wall_modes(left), wall_modes(right), waves)]
         return torch.fft.ifft(torch.stack(rows), dim=0)
     if source.ndim != 1 or source.numel() == 0 or not torch.isfinite(source).all():
@@ -312,15 +318,37 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
         raise ValueError("transverse wavenumber must be finite")
     phase_step = transverse_wavenumber*dx
     homogeneous = tuple(None if wall is None else 0. for wall in (left, right))
-    basis = torch.eye(source.numel(), dtype=DTYPE, device=source.device)
     def response(probes, walls):
         rate, _ = _stencil_exchange(probes, offsets, 1., conductivity, walls, True,
                                     dx, contact_resistance_x, None, transverse_phase=phase_step)
         return rate/factor
 
-    operator = response(basis, homogeneous).T
     load = response(torch.zeros_like(source)[None, :], (left, right))[0]
-    matrix = torch.diag(1j*angular_frequency*capacity.expand_as(source))-operator
+    storage = 1j*angular_frequency*capacity.expand_as(source)
+    size = source.numel()
+    if backend == "banded":
+        from scipy.linalg import solve_banded
+
+        radius = min(size-1, max(abs(n) for (_, n), _ in offsets))
+        stride = 2*radius+1
+        columns = torch.arange(size)
+        # Disjoint stencil supports let a single probe excite every stride-th column.
+        classes = columns % stride
+        probes = (torch.arange(stride)[:,None] == classes).to(DTYPE)
+        rates = response(probes, homogeneous)
+        bands = source.new_zeros((stride, size))
+        for offset in range(-radius, radius+1):
+            j = columns[max(0,-offset):min(size,size-offset)]
+            bands[radius+offset,j] = -rates[classes[j],j+offset].to(source.dtype)
+        bands[radius] += storage
+        if radius == 0:
+            return (source+load)/bands[0]
+        result = solve_banded((radius,radius), bands.numpy(), (source+load).numpy())
+        return torch.from_numpy(result)
+
+    basis = torch.eye(size, dtype=DTYPE, device=source.device)
+    operator = response(basis, homogeneous).T
+    matrix = torch.diag(storage)-operator
     return torch.linalg.solve(matrix, source+load)
 
 
