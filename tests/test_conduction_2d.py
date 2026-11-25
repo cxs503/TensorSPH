@@ -2183,3 +2183,19 @@ def test_steady_slab_reference_preserves_weak_heating_temperature_field():
     assert field.max() > 0
     with pytest.raises(ValueError, match="temperature_reference"):
         solve_steady_slab_2d(source, 1/16, (305., 305.), temperature_reference=float("nan"))
+
+
+@pytest.mark.parametrize("method", ["theta", "sdirk2"])
+def test_transient_slab_weak_pulse_is_independent_of_temperature_datum(method):
+    from tensorsph.heat_conduction_2d import solve_transient_slab_2d
+
+    field = torch.zeros((5, 16), dtype=torch.float64)
+    load = torch.arange(16, dtype=field.dtype).expand_as(field)*2**-44
+    options = dict(method=method, heat_source=lambda t: load if t < .02 else 0.,
+                   wall_jump_times=[.02], return_x_heat=True, return_wall_heat_by_row=True)
+    times = [0., .01, .02, .03, .04]
+    control = solve_transient_slab_2d(field, times, 1/16, (0., 0.), **options)
+    shifted = solve_transient_slab_2d(field+305., times, 1/16, (305., 305.),
+                                      temperature_reference=305., **options)
+    for actual, expected in zip(shifted, control):
+        torch.testing.assert_close(actual, expected, rtol=0., atol=0.)

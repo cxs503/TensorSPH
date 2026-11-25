@@ -1150,7 +1150,7 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                             wall_jump_times=(), rannacher=False, heat_source=0.,
                             conductivity=1., volumetric_heat_capacity=1., theta=.5,
                             h_factor=1.3, x_wall_inward_flux=(0.,0.), return_x_heat=False, heat_loss_coefficient=0.,
-                            method="theta", return_wall_heat_by_row=False, wall_gradient_fit="wall"):
+                            method="theta", return_wall_heat_by_row=False, wall_gradient_fit="wall", temperature_reference=0.):
     """Advance a reflected slab over requested times with prescribed wall histories.
 
     Each wall may be a fixed scalar, row profile, callable of time returning
@@ -1164,7 +1164,8 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     immediately after each jump. The default integrator is Crank–Nicolson.
     method="sdirk2" samples all prescribed data at its two stages and integrates
     the section heats with the same second-order L-stable formula.
-    Return particle temperatures (nt,ny,nx). With return_x_heat also return
+    Initial and wall temperatures are absolute. Return particle temperatures
+    relative to temperature_reference in K, shaped (nt,ny,nx). With return_x_heat also return
     the interval-integrated rightward heat on each section (nt-1,nx+1), J/m².
     With return_wall_heat_by_row, append inward heat at each west and east
     wall row (nt-1,2,ny), J/m². At flux walls integrate the prescribed load.
@@ -1192,13 +1193,19 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     fluxes = tuple(x_wall_inward_flux)
     if len(fluxes)!=2:
         raise ValueError("provide west and east inward fluxes")
-    def stage_load(load,start,end,weight):
+    def stage_load(load,start,end,weight,offset=None):
+        def relative(value):
+            if value is None or offset is None:
+                return value
+            value = torch.as_tensor(value, device=field.device,
+                                    dtype=torch.complex128 if torch.is_complex(torch.as_tensor(value)) else field.dtype)
+            return value-offset
         if not callable(load):
-            return load
-        stop_value = load(end)
+            return relative(load)
+        stop_value = relative(load(end))
         if weight==1.:
             return stop_value
-        start_value = load(start)
+        start_value = relative(load(start))
         if any(torch.is_complex(torch.as_tensor(v)) for v in (start_value,stop_value)):
             raise ValueError("transient loads must be real")
         return ((1-weight)*torch.as_tensor(start_value,device=field.device,dtype=field.dtype)
@@ -1207,6 +1214,11 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     if field.ndim!=2 or min(field.shape)==0 or field.is_complex():
         raise ValueError("provide a real nonempty (ny,nx) temperature field")
     field = field.to(DTYPE)
+    if not math.isfinite(temperature_reference):
+        raise ValueError("temperature_reference must be finite")
+    datum = field[0, 0]
+    field = field - datum
+    bulk_offset = _heat_loss(heat_loss_coefficient) * datum
     if wall_gradient_fit not in ("wall", "interior"):
         raise ValueError("wall_gradient_fit must be wall or interior")
     recover_gradient = return_wall_heat_by_row and any(w is not None for w in walls)
@@ -1214,9 +1226,9 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
         raise ValueError("rowwise heat at a temperature wall requires at least five columns")
     need_flux = return_x_heat or recover_gradient
     def advance(initial,dt,start,load_end,weight):
-        stage = tuple(stage_load(wall,start,load_end,weight) for wall in walls)
+        stage = tuple(stage_load(wall,start,load_end,weight,datum) for wall in walls)
         stage_flux = tuple(stage_load(q,start,load_end,weight) for q in fluxes)
-        result = step_transient_slab_2d(initial,dt,dx,stage,heat_source=stage_load(heat_source,start,load_end,weight),
+        result = step_transient_slab_2d(initial,dt,dx,stage,heat_source=stage_load(heat_source,start,load_end,weight,bulk_offset),
                      conductivity=conductivity,volumetric_heat_capacity=volumetric_heat_capacity,
                      theta=weight,h_factor=h_factor,x_wall_inward_flux=stage_flux,return_x_flux=need_flux,
                      heat_loss_coefficient=heat_loss_coefficient)
@@ -1280,7 +1292,7 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
         if stop==grid[interval+1]:
             history.append(field)
             interval += 1
-    fields = torch.stack(history)
+    fields = torch.stack(history) + (datum-temperature_reference)
     if return_wall_heat_by_row:
         return (fields, heat, wall_heat) if return_x_heat else (fields, wall_heat)
     return (fields,heat) if return_x_heat else fields
