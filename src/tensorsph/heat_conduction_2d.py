@@ -1515,8 +1515,14 @@ def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_fact
     decay = torch.zeros((ny, len(kx)), dtype=DTYPE, device=source.device)
     for (m, n), a in offsets:
         decay += (-4*a*conductivity/factor)*torch.sin(math.pi*(m*ky+n*kx)).square()
+    uniform_correction = 0.
     if source.is_complex():
         modes = torch.fft.fft2(rhs)/(decay + shift)
+        if closed:
+            # This uniform mode can grow as 1/omega and carries no flux.
+            # Restore it only in the returned field, after resolving gradients.
+            uniform_correction = modes[0, 0] / rhs.numel()
+            modes[0, 0] = 0.
         correction = torch.fft.ifft2(modes)[:, :source.shape[1]]
     else:
         # The homogeneous correction has zero mean by odd symmetry or by prescription.
@@ -1527,7 +1533,7 @@ def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_fact
         if not shift:
             modes[0, 0] = 0.
         correction = torch.fft.irfft2(modes, s=rhs.shape)[:, :source.shape[1]]
-    temperature = (lift + correction) + (reference - temperature_reference)
+    temperature = (lift + correction) + (uniform_correction + reference - temperature_reference)
     if not return_x_flux:
         return temperature
 

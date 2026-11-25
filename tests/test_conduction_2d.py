@@ -2402,3 +2402,19 @@ def test_quadrature_wall_flux_rotates_harmonic_solution(side):
     torch.testing.assert_close(flux, 1j * real_flux)
     with pytest.raises(ValueError, match="prescribe heat flux"):
         response(1j, (0., 0.))
+
+
+def test_closed_harmonic_section_flux_resolves_small_gradients_on_uniform_pole():
+    from tensorsph.heat_conduction_2d import solve_harmonic_slab_2d
+
+    columns = 32
+    x = (torch.arange(columns, dtype=torch.float64) + 0.5) / columns
+    source = (1 + torch.cos(torch.pi * x)).repeat(8, 1)
+    omega = 1e-14
+    field, flux = solve_harmonic_slab_2d(
+        source, 1 / columns, (None, None), omega,
+        x_wall_inward_flux=(1j, 2j), return_x_flux=True,
+    )
+    storage = 1j * omega * field.mean(dim=0)
+    torch.testing.assert_close(storage.mean(), storage.new_tensor(1+3j))
+    assert (flux.diff() + (storage-source[0])/columns).abs().max() < 1e-12
