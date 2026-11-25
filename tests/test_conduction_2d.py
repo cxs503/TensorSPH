@@ -1272,3 +1272,20 @@ def test_interval_particle_temperature_across_internal_jump():
         np.testing.assert_allclose(u,np.broadcast_to(exact(times)[:,None],u.shape),rtol=0.,atol=2e-13)
         target = np.diff(primitive(times))/np.diff(times)
         np.testing.assert_allclose(mean,np.broadcast_to(target[:,None],mean.shape),rtol=0.,atol=2e-13)
+
+
+def test_interval_wall_temperature_uses_one_sided_quadratic_loads():
+    import numpy as np
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+
+    times = np.array([0., .2, .7])
+    jump = .13
+    wall = lambda t: 2+t*t+(3. if t >= jump else 0.)
+    primitive = lambda t: 2*t+t**3/3+3*np.maximum(t-jump, 0.)
+    _, mean = solve_transient_layered_slab(
+        np.ones(4), times, .25, (wall, 1.), conductivity=np.ones(4),
+        volumetric_heat_capacity=1., load_jump_times=[jump],
+        method="exponential_quadratic", return_interval_wall_temperatures=True)
+    exact = np.diff(primitive(times))/np.diff(times)
+    np.testing.assert_allclose(mean[:,0], exact, rtol=0., atol=1e-13)
+    np.testing.assert_allclose(mean[:,1], 1., rtol=0., atol=1e-13)
