@@ -822,3 +822,27 @@ def test_layered_heat_loss_in_grid_and_film_solvers(backend):
     torch.testing.assert_close(slab,torch.full_like(slab,target))
     torch.testing.assert_close(walls,torch.full_like(walls,target))
     torch.testing.assert_close(flux,torch.zeros_like(flux),atol=1e-12,rtol=0.)
+
+
+@pytest.mark.parametrize("theta",[.5,1.])
+def test_implicit_layered_slab_satisfies_local_particle_balance(theta):
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab, stencil_rhs_2d, lattice_diffusion_factor_2d
+    n,dx = 10,.1
+    x = (torch.arange(n,dtype=torch.float64)+.5)*dx
+    times = [0.,.03,.08,.12]
+    capacity,k,loss = 1.+x,2.+(x>.5),.5+x
+    contact = torch.zeros_like(x[:-1])
+    contact[n//2-1] = .23
+    opts = dict(conductivity=k,volumetric_heat_capacity=capacity,heat_loss_coefficient=loss,
+                contact_resistance_x=contact,heat_source=x.square(),theta=theta)
+    fields = solve_transient_layered_slab(x,times,dx,(1.3,None),**opts)
+    restarted = solve_transient_layered_slab(fields[1],times[1:],dx,(1.3,None),**opts)
+    torch.testing.assert_close(fields[1:],restarted)
+    offsets = lattice_offsets(dx,1.3*dx)
+    factor = lattice_diffusion_factor_2d(1.3,dx,mode="moment")
+    for i,(start,stop) in enumerate(zip(times,times[1:])):
+        stage = (1-theta)*fields[i]+theta*fields[i+1]
+        rate = stencil_rhs_2d(stage[None,:],offsets,x_wall_temperatures=(1.3,None),dx=dx,
+                              conductivity=k,layered_x=True,contact_resistance_x=contact)[0]/factor
+        torch.testing.assert_close(capacity*(fields[i+1]-fields[i]),(stop-start)*(rate+x.square()-loss*stage),
+                                   rtol=0.,atol=2e-14)

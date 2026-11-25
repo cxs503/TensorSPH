@@ -90,6 +90,7 @@ __all__ = [
     "LatticeOffsets",
     "lattice_offsets",
     "stencil_rhs_2d",
+    "solve_transient_layered_slab",
     "pair_geometry_2d",
     "conduction_rhs_2d",
     "symbol_rate",
@@ -263,6 +264,22 @@ def solve_harmonic_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperat
                              None, _heat_loss(heat_loss_coefficient)+1j*storage, x_wall_inward_flux, return_x_flux)
 
 
+def _layered_response(dx, h_factor, conductivity, contact_resistance_x, transverse_wavenumber):
+    offsets = lattice_offsets(dx, h_factor*dx)
+    factor = lattice_diffusion_factor_2d(h_factor, dx, mode="moment")
+    if factor <= 0:
+        raise ValueError("kernel support must include a conducting neighbour")
+    if not math.isfinite(transverse_wavenumber):
+        raise ValueError("transverse wavenumber must be finite")
+    phase_step = transverse_wavenumber*dx
+    def response(probes, walls):
+        rate, _ = _stencil_exchange(probes, offsets, 1., conductivity, walls, True,
+                                    dx, contact_resistance_x, None, transverse_phase=phase_step)
+        return rate/factor
+
+    return response, offsets
+
+
 def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_frequency,
                                 *, conductivity, volumetric_heat_capacity,
                                 contact_resistance_x=None, h_factor=1.3, transverse_wavenumber=0.,
@@ -320,19 +337,8 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
     for wall in (left, right):
         if wall is not None and (torch.as_tensor(wall).ndim or not cmath.isfinite(wall)):
             raise ValueError("wall phasors must be finite scalars")
-    offsets = lattice_offsets(dx, h_factor*dx)
-    factor = lattice_diffusion_factor_2d(h_factor, dx, mode="moment")
-    if factor <= 0:
-        raise ValueError("kernel support must include a conducting neighbour")
-    if not math.isfinite(transverse_wavenumber):
-        raise ValueError("transverse wavenumber must be finite")
-    phase_step = transverse_wavenumber*dx
     homogeneous = tuple(None if wall is None else 0. for wall in (left, right))
-    def response(probes, walls):
-        rate, _ = _stencil_exchange(probes, offsets, 1., conductivity, walls, True,
-                                    dx, contact_resistance_x, None, transverse_phase=phase_step)
-        return rate/factor
-
+    response, offsets = _layered_response(dx,h_factor,conductivity,contact_resistance_x,transverse_wavenumber)
     load = response(torch.zeros_like(source)[None, :], (left, right))[0]
     if torch.is_complex(torch.as_tensor(heat_loss_coefficient)):
         raise ValueError("heat_loss_coefficient must be real")
@@ -418,6 +424,66 @@ def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_
                                films*ambient-inward(base,(0.,0.)))
     field = base + walls @ torch.stack(fields)
     return field, walls, inward(field, walls)
+
+
+def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *, conductivity,
+                                 volumetric_heat_capacity, contact_resistance_x=None, heat_source=0.,
+                                 heat_loss_coefficient=0., theta=.5, h_factor=1.3):
+    """Integrate a transversely uniform layered slab with stationary material and wall data.
+
+    Return temperatures (nt,nx) including the initial state. Specify one initial
+    temperature and conductivity per column, and a scalar or column profile for
+    heat capacity, volumetric source and bulk heat loss. Each end is insulated
+    (None) or held at a fixed temperature. Contact resistances follow the
+    harmonic layered solver. The dense implicit theta method accepts .5 to 1.
+    """
+    if torch.is_complex(torch.as_tensor(temperature)):
+        raise ValueError("initial column temperatures must be real")
+    state = torch.as_tensor(temperature, dtype=DTYPE)
+    if state.ndim!=1 or not state.numel() or not torch.isfinite(state).all():
+        raise ValueError("provide a finite real vector of initial column temperatures")
+    grid = [float(t) for t in times]
+    if len(grid)<2 or not all(math.isfinite(t) for t in grid) or any(a>=b for a,b in zip(grid,grid[1:])):
+        raise ValueError("times must be finite and strictly increasing")
+    if not (.5<=theta<=1 and math.isfinite(dx) and dx>0 and math.isfinite(h_factor) and h_factor>0):
+        raise ValueError("require theta in [.5,1] and positive finite dx and h_factor")
+    walls = tuple(x_wall_temperatures)
+    if len(walls)!=2 or any(w is not None and (torch.as_tensor(w).ndim or
+            torch.is_complex(torch.as_tensor(w)) or not math.isfinite(w)) for w in walls):
+        raise ValueError("provide two real finite wall temperatures or None")
+
+    def profile(value,name):
+        if torch.is_complex(torch.as_tensor(value)):
+            raise ValueError(f"{name} must be real")
+        data = torch.as_tensor(value,dtype=DTYPE,device=state.device)
+        if data.shape not in ((),state.shape) or not torch.isfinite(data).all():
+            raise ValueError(f"{name} must be a finite scalar or column profile")
+        return data.expand_as(state)
+
+    capacity = profile(volumetric_heat_capacity,"volumetric_heat_capacity")
+    loss = profile(heat_loss_coefficient,"heat_loss_coefficient")
+    if (capacity<=0).any() or (loss<0).any():
+        raise ValueError("capacity must be positive and heat loss nonnegative")
+    source = profile(heat_source,"heat_source")
+    if any(v is not None and torch.is_complex(torch.as_tensor(v)) for v in (conductivity,contact_resistance_x)):
+        raise ValueError("conductivity and contact resistances must be real")
+    homogeneous = tuple(None if wall is None else 0. for wall in walls)
+    response, _ = _layered_response(dx,h_factor,conductivity,contact_resistance_x,0.)
+    load = source+response(torch.zeros_like(state)[None,:],walls)[0]
+    basis = torch.eye(len(state),device=state.device,dtype=state.dtype)
+    operator = response(basis,homogeneous).T-torch.diag(loss)
+    mass = torch.diag(capacity)
+    previous_dt = None
+    fields = [state]
+    for start,stop in zip(grid,grid[1:]):
+        dt = stop-start
+        if dt!=previous_dt:
+            factors = torch.linalg.lu_factor(mass-theta*dt*operator)
+            previous_dt = dt
+        delta = torch.linalg.lu_solve(*factors,(dt*(operator @ state+load))[:,None])[:,0]
+        state = state+delta
+        fields.append(state)
+    return torch.stack(fields)
 
 
 def step_transient_slab_2d(temperature, dt, dx, x_wall_temperatures, *, heat_source=0.,
