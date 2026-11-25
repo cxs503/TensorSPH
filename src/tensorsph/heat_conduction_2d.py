@@ -377,6 +377,26 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
     return torch.linalg.solve(matrix, source+load)
 
 
+def solve_low_frequency_layered_slab(heat_source, dx, x_wall_temperatures, *, conductivity,
+                                     volumetric_heat_capacity, contact_resistance_x=None, h_factor=1.3,
+                                     transverse_wavenumber=0., backend="torch", heat_loss_coefficient=0.):
+    """Return steady temperature and its coefficient of iω for fixed slab loads.
+
+    Source, wall data and transverse representation follow solve_harmonic_layered_slab.
+    The first-order field is in K s. A prescribed wall temperature has zero
+    first-order coefficient, and insulated walls retain zero flux.
+    """
+    options = dict(conductivity=conductivity,volumetric_heat_capacity=volumetric_heat_capacity,
+                   contact_resistance_x=contact_resistance_x,h_factor=h_factor,
+                   transverse_wavenumber=transverse_wavenumber,backend=backend,
+                   heat_loss_coefficient=heat_loss_coefficient)
+    steady = solve_harmonic_layered_slab(heat_source,dx,x_wall_temperatures,0.,**options)
+    capacity = torch.as_tensor(volumetric_heat_capacity,dtype=DTYPE,device=steady.device)
+    lag_walls = tuple(None if wall is None else 0. for wall in x_wall_temperatures)
+    lag = solve_harmonic_layered_slab(-capacity*steady,dx,lag_walls,0.,**options)
+    return steady,lag
+
+
 def solve_harmonic_layered_films(heat_source, dx, ambient_temperatures, angular_frequency,
                                  *, film_coefficients, conductivity, volumetric_heat_capacity,
                                  contact_resistance_x=None, h_factor=1.3, backend="torch",

@@ -1032,3 +1032,19 @@ def test_low_frequency_films_uniform_exact_storage_response():
             assert (field-value).abs().max()<1e-12
             assert (walls-value).abs().max()<1e-12
             assert flux.abs().max()<1e-12
+
+
+def test_low_frequency_slab_fixed_drive_insulated_end():
+    from tensorsph.heat_conduction_2d import solve_low_frequency_layered_slab
+
+    n = 32
+    x = (torch.arange(n,dtype=torch.float64)+.5)/n
+    drive = .8-.3j
+    for backend in ("torch","banded"):
+        steady,lag = solve_low_frequency_layered_slab(
+            torch.zeros(n),1/n,(drive,None),conductivity=torch.ones(n)*2,
+            volumetric_heat_capacity=3.,backend=backend)
+        # k*T1'' = C*T0, with T1(0)=0 and T1'(1)=0.
+        exact = 1.5*drive*(x*x/2-x)
+        assert (steady-drive).abs().max()<1e-12
+        assert (lag-exact).abs().max()<2/n**2
