@@ -544,3 +544,26 @@ def test_harmonic_flux_storage_and_reflected_mixed_wall():
     right = solve_harmonic_slab_2d(source, x_wall_temperatures=(2.+1j,None),
                                    x_wall_inward_flux=(0.,west), **options)
     torch.testing.assert_close(left, right.flip((1,)), atol=1e-12, rtol=0)
+
+
+def test_slab_section_flux_resolves_storage_in_each_column():
+    from tensorsph.heat_conduction_2d import solve_harmonic_slab_2d, solve_steady_slab_2d
+
+    nx, ny, dx = 17, 5, .08
+    x = torch.arange(nx, dtype=torch.float64)*dx
+    y = torch.arange(ny, dtype=torch.float64)[:,None]*dx
+    source = (.6-.3j)*torch.cos(x+2*y)
+    for walls, imposed in (((None,None), (.2+.7j, -.3+.1j)),
+                           ((y[:,0]+1j,None), (0., .1-.8j)),
+                           ((None,y[:,0]-1j), (.3j,0.)),
+                           ((y[:,0],-y[:,0]), (0.,0.))):
+        u, q = solve_harmonic_slab_2d(source, dx, walls, 2., conductivity=3.,
+                      volumetric_heat_capacity=4., x_wall_inward_flux=imposed, return_x_flux=True)
+        torch.testing.assert_close(q.diff(), dx*(source-8j*u).mean(dim=0), rtol=0, atol=2e-13)
+        if walls[0] is None:
+            assert abs(q[0]-imposed[0]) < 1e-13
+        if walls[1] is None:
+            assert abs(q[-1]+imposed[1]) < 1e-13
+    _, q = solve_steady_slab_2d(torch.ones_like(source.real), dx, (None,None),
+             mean_temperature=7., x_wall_inward_flux=(2., -2.-nx*dx), return_x_flux=True)
+    torch.testing.assert_close(q, 2.+dx*torch.arange(nx+1, dtype=x.dtype), atol=1e-13, rtol=0)

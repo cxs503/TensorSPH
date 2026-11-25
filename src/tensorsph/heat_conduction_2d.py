@@ -217,7 +217,8 @@ def stencil_rhs_with_wall_power_2d(
 def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatures: SlabWalls,
                          *, conductivity: float = 1., h_factor: float = 1.3,
                          mean_temperature: float | None = None,
-                         x_wall_inward_flux=(0., 0.)) -> torch.Tensor:
+                         x_wall_inward_flux=(0., 0.), return_x_flux: bool = False
+                         ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
     """Steady temperature on a uniform lattice, periodic y and reflected x walls.
 
     Supply a (ny, nx) volumetric heat source in W/m³, a constant conductivity
@@ -226,31 +227,35 @@ def solve_steady_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatur
     x_wall_inward_flux gives uniform heat fluxes into the domain in W/m² on
     sides with temperature None. The solution uses an analytical polynomial
     lift for prescribed flux and the calibrated SPH operator for the remainder.
+    With return_x_flux, also return the cross-section mean heat flux (W/m²)
+    on all nx+1 faces, positive towards increasing x, including the walls.
     """
     return _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
-                             mean_temperature, 0., x_wall_inward_flux)
+                             mean_temperature, 0., x_wall_inward_flux, return_x_flux)
 
 
 def solve_harmonic_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperatures: SlabWalls,
                            angular_frequency: float, *, conductivity: float = 1.,
                            volumetric_heat_capacity: float = 1., h_factor: float = 1.3,
-                           x_wall_inward_flux=(0., 0.)) -> torch.Tensor:
+                           x_wall_inward_flux=(0., 0.), return_x_flux: bool = False
+                         ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
     """Temperature phasors under exp(+iωt), for constant isotropic k and capacity.
 
     Use complex volumetric heating (W/m³) and scalar or row-wise wall phasors
     (K). On each wall with temperature None, x_wall_inward_flux specifies a
     spatially uniform inward flux phasor (W/m²), default zero. Supply ω in
-    rad/s and capacity in J/(m³ K).
+    rad/s and capacity in J/(m³ K). With return_x_flux, also return nx+1
+    section-averaged complex heat fluxes (W/m²), positive towards increasing x.
     """
     storage = angular_frequency*volumetric_heat_capacity
     if not all(math.isfinite(v) and v > 0 for v in (angular_frequency, volumetric_heat_capacity, storage)):
         raise ValueError("frequency and volumetric heat capacity must be positive and finite")
     return _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
-                             None, storage, x_wall_inward_flux)
+                             None, storage, x_wall_inward_flux, return_x_flux)
 
 
 def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
-                      mean_temperature, storage, x_wall_inward_flux):
+                      mean_temperature, storage, x_wall_inward_flux, return_x_flux):
     source = torch.as_tensor(heat_source, dtype=torch.complex128 if storage else DTYPE)
     if source.ndim != 2 or min(source.shape) == 0 or not torch.isfinite(source).all():
         raise ValueError("heat_source must be a finite nonempty (ny, nx) field")
@@ -320,12 +325,42 @@ def _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_fact
         decay += (-4*a*conductivity/factor)*torch.sin(math.pi*(m*ky+n*kx)).square()
     if storage:
         modes = torch.fft.fft2(rhs)/(decay + 1j*storage)
-        return lift + reference + torch.fft.ifft2(modes)[:, :source.shape[1]]
-    # The homogeneous correction has zero mean by odd symmetry or by prescription.
-    decay[0, 0] = 1.
-    modes = torch.fft.rfft2(rhs)/decay
-    modes[0, 0] = 0.
-    return lift + reference + torch.fft.irfft2(modes, s=rhs.shape)[:, :source.shape[1]]
+        correction = reference + torch.fft.ifft2(modes)[:, :source.shape[1]]
+    else:
+        # The homogeneous correction has zero mean by odd symmetry or by prescription.
+        decay[0, 0] = 1.
+        modes = torch.fft.rfft2(rhs)/decay
+        modes[0, 0] = 0.
+        correction = reference + torch.fft.irfft2(modes, s=rhs.shape)[:, :source.shape[1]]
+    temperature = lift + correction
+    if not return_x_flux:
+        return temperature
+
+    # For constant k and periodic y, summing all crossing links over rows
+    # commutes with the tangential shift in every diagonal pair.
+    profile = correction.mean(dim=0)
+    radius = max(abs(n) for (_, n), _ in offsets)
+    low, high = profile[:radius].flip((0,)), profile[-radius:].flip((0,))
+    if left is not None:
+        low = 2*_wall_column(left, correction).mean()-low
+    if right is not None:
+        high = 2*_wall_column(right, correction).mean()-high
+    extended = torch.cat((low, profile, high))
+    face_count = profile.numel()+1
+    flux = profile.new_zeros(face_count)
+    for (_, n), a in offsets:
+        if n > 0:
+            jumps = extended[n:]-extended[:-n]
+            crossings = jumps.unfold(0, n, 1)[radius-n:radius-n+face_count]
+            flux += a*crossings.sum(dim=1)
+    flux *= 2*conductivity*dx/factor
+    if west or east:
+        if closed:
+            position = torch.arange(face_count, device=source.device, dtype=DTYPE)*dx
+            flux += west-curvature_k*position
+        else:
+            flux += west if right is not None else -east
+    return temperature, flux
 
 
 def prepare_slab_film_rhs(template, offsets, dx, film_coefficients, *, rho=1.,
