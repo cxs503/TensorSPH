@@ -2091,3 +2091,30 @@ def test_uniform_closed_slab_has_zero_cut_flux_at_tiny_frequency(backend):
         full = solve_harmonic_layered_films(*args, **opts)
         for value, expected in zip(full, (mean+field, mean+wall, inward, cuts)):
             torch.testing.assert_close(value, expected)
+
+
+@pytest.mark.parametrize("material", ["uniform", "layered", "contact"])
+def test_four_column_fixed_wall_flux(material, record_property):
+    from tensorsph.heat_conduction_2d import recover_dirichlet_wall_flux_2d
+
+    dx = .25
+    k = torch.tensor([1., 2., .8, 1.5], dtype=torch.float64)
+    if material == "uniform":
+        k.fill_(1.)
+    resistance = torch.tensor([.08, .2, .11], dtype=k.dtype) if material == "contact" else torch.zeros_like(k[:-1])
+    edges = torch.cumsum(dx / k, 0)
+    centers = edges - .5 * dx / k
+    # T = amplitude * (r + r^3) plus the jumps R * dT/dr at each contact.
+    jumps = torch.cat((k.new_zeros(1), (resistance * (1 + 3 * edges[:-1]**2)).cumsum(0)))
+    amplitude = torch.tensor([1+.2j, -.3+.5j], dtype=torch.complex128)
+    field = amplitude[:, None] * (centers + centers**3 + jumps)
+    walls = (0., amplitude * (edges[-1] + edges[-1]**3 + jumps[-1]))
+    expected = torch.stack((-amplitude, amplitude * (1 + 3 * edges[-1]**2)))
+    flux = recover_dirichlet_wall_flux_2d(field, dx, 1. if material == "uniform" else k,
+        expected.mean(1), contact_resistance_x=resistance if material == "contact" else None,
+        x_wall_temperatures=walls)
+    error = float((flux - expected).abs().max())
+    record_property("max_flux_error_W_m2", error)
+    assert error < 1e-12
+    with pytest.raises(ValueError):
+        recover_dirichlet_wall_flux_2d(field, dx, k, expected.mean(1))

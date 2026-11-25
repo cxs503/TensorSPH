@@ -1471,7 +1471,7 @@ def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux
 
     For smooth fields on a uniform cell-centered (ny,nx) lattice, with a
     positive scalar or cellwise conductivity (one value per x column) and
-    at least five columns. Fit a cubic in conductive resistance through
+    at least four columns with fixed wall samples or five without. Fit a cubic in conductive resistance through
     centers 2–5. Optional nonnegative contact resistances (one per internal
     face) add a temperature jump proportional to local flux. Supply the two
     inward wall means from the conservative stencil tally. When the two
@@ -1479,9 +1479,10 @@ def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux
     Each temperature may be scalar or one value per periodic row.
     """
     field = torch.as_tensor(temperature)
-    if (field.ndim != 2 or field.shape[0] < 1 or field.shape[1] < 5 or
+    width = 5 if x_wall_temperatures is None else 4
+    if (field.ndim != 2 or field.shape[0] < 1 or field.shape[1] < width or
             not (field.is_floating_point() or field.is_complex()) or not torch.isfinite(field).all()):
-        raise ValueError("provide a finite real or complex field with at least five columns")
+        raise ValueError(f"provide a finite real or complex field with at least {width} columns")
     if not math.isfinite(dx) or dx <= 0:
         raise ValueError("spacing must be positive and finite")
     raw_k = torch.as_tensor(conductivity, device=field.device)
@@ -1493,7 +1494,7 @@ def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux
     means = torch.as_tensor(wall_mean_flux,device=field.device)
     if means.shape != (2,) or not torch.isfinite(means).all():
         raise ValueError("provide two finite inward wall flux means")
-    samples = torch.stack((field[:,1:5],field[:,-5:-1].flip((1,))))
+    samples = torch.stack((field[:,1:width],field[:,-width:-1].flip((1,))))
     if x_wall_temperatures is not None:
         if len(x_wall_temperatures) != 2 or any(v is None for v in x_wall_temperatures):
             raise ValueError("provide both fixed wall temperatures")
@@ -1505,7 +1506,7 @@ def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux
             if not torch.isfinite(wall).all():
                 raise ValueError("wall temperatures must be finite")
             walls.append(wall)
-        differences = samples[:,:,:3] - torch.stack(walls)
+        differences = samples - torch.stack(walls)
     else:
         differences = samples[:,:,1:] - samples[:,:,:1]
     if k.ndim == 0 and contact_resistance_x is None:
@@ -1516,7 +1517,7 @@ def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux
             flux = _uniform_fixed_wall_flux(differences, k, dx)
     else:
         k = k.expand(field.shape[1]).to(torch.float64)
-        resistance = dx / torch.stack((k[:5], k[-5:].flip((0,))))
+        resistance = dx / torch.stack((k[:width], k[-width:].flip((0,))))
         edges = resistance.cumsum(dim=1)
         centers = (edges - resistance/2)[:,1:]
         scale = centers[:,-1:]
@@ -1530,14 +1531,14 @@ def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux
             faces = torch.as_tensor(contact_resistance_x, dtype=k.dtype, device=k.device)
             if not torch.isfinite(faces).all() or (faces < 0).any():
                 raise ValueError("contact resistance must be finite and nonnegative")
-            contacts = torch.stack((faces[:4], faces[-4:].flip((0,))))
+            contacts = torch.stack((faces[:width-1], faces[-(width-1):].flip((0,))))
             # For each basis function p, add R*p'(r_face) to all downstream
             # temperatures. Conductive distance r excludes contact resistance.
-            face_nodes = edges[:,:4] / scale
+            face_nodes = edges[:,:-1] / scale
             jumps = (contacts/scale)[:,:,None] * powers * face_nodes[:,:,None] ** (powers-1)
             basis = basis + jumps.cumsum(dim=1)
         # The constant is fixed by the wall or eliminated using center 2.
-        matrix = basis[:,1:] - basis[:,:1] if x_wall_temperatures is None else basis[:,:3]
+        matrix = basis[:,1:] - basis[:,:1] if x_wall_temperatures is None else basis
         target = matrix.new_tensor([1., 0., 0.]).expand(2,3)
         weights = torch.linalg.solve(matrix.transpose(1,2), target.unsqueeze(-1)).squeeze(-1)
         derivative = (weights / scale).to(field.real.dtype)
