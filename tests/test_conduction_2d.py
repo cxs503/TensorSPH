@@ -16,6 +16,7 @@ What is asserted (invariants, not just "the code ran"):
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 
 import pytest
@@ -1467,3 +1468,23 @@ def test_traveling_film_low_frequency_response():
         errors.append(torch.stack([(actual-base-1j*omega*first).abs().max()
                                    for actual, base, first in zip(direct, steady, lag)]))
     torch.testing.assert_close(errors[0]/errors[1], torch.full_like(errors[0], 4.), rtol=.001, atol=0.)
+
+
+def test_layered_dirichlet_flux_in_thermal_resistance_coordinate(record_property):
+    from tensorsph.heat_conduction_2d import recover_dirichlet_wall_flux_2d
+
+    # Repeated alternating laminae have total resistance 5/8. A smooth mode
+    # in resistance has continuous temperature and flux at every interface.
+    scale = torch.tensor([1+.3j, -.5+.1j, .25j], dtype=torch.complex128)
+    errors = []
+    for n in (16, 32, 64):
+        k = torch.tensor([1., 4.], dtype=torch.float64).repeat(n//2)
+        resistance = (1/n) / k
+        r = resistance.cumsum(0) - resistance/2
+        field = scale[:,None] * torch.exp(r)
+        exact = torch.stack((-scale, math.exp(5/8)*scale))
+        flux = recover_dirichlet_wall_flux_2d(field, 1/n, k, exact.mean(dim=1))
+        torch.testing.assert_close(flux.mean(dim=1), exact.mean(dim=1), atol=2e-15, rtol=0)
+        errors.append(float((flux-exact).abs().max()))
+        record_property(f"max_flux_error_{n}", errors[-1])
+    assert min(math.log2(a/b) for a,b in zip(errors, errors[1:])) > 2.8

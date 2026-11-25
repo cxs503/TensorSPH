@@ -1304,24 +1304,47 @@ def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux
     """Recover rowwise inward flux (W/m²) at two fixed-temperature slab walls.
 
     For smooth fields on a uniform cell-centered (ny,nx) lattice, with a
-    constant isotropic conductivity and at least five columns. At each wall,
-    differentiate a cubic through centers 2–5, beyond the first particle
-    column. Supply the two inward wall means from the conservative stencil
+    positive scalar or cellwise conductivity (one value per x column) and
+    at least five columns. For perfect contact, temperature is continuous in
+    the cumulative thermal-resistance coordinate. At each wall differentiate
+    a cubic in this coordinate through centers 2–5, skipping the first column. Supply the two inward wall means from the conservative stencil
     tally. The recovered row fluctuations integrate to zero on each wall.
     """
     field = torch.as_tensor(temperature)
     if (field.ndim != 2 or field.shape[0] < 1 or field.shape[1] < 5 or
             not (field.is_floating_point() or field.is_complex()) or not torch.isfinite(field).all()):
         raise ValueError("provide a finite real or complex field with at least five columns")
-    if not (math.isfinite(dx) and dx > 0 and math.isfinite(conductivity) and conductivity > 0):
-        raise ValueError("spacing and conductivity must be positive and finite")
+    if not math.isfinite(dx) or dx <= 0:
+        raise ValueError("spacing must be positive and finite")
+    raw_k = torch.as_tensor(conductivity, device=field.device)
+    if raw_k.is_complex() or raw_k.shape not in ((), (field.shape[1],)):
+        raise ValueError("conductivity must be real and scalar or one value per column")
+    k = torch.as_tensor(conductivity, dtype=field.real.dtype, device=field.device)
+    if not torch.isfinite(k).all() or (k <= 0).any():
+        raise ValueError("conductivity must be positive and finite")
     means = torch.as_tensor(wall_mean_flux,device=field.device)
     if means.shape != (2,) or not torch.isfinite(means).all():
         raise ValueError("provide two finite inward wall flux means")
-    # Lagrange derivative at zero for inward coordinates (1.5,2.5,3.5,4.5)*dx.
-    weights = field.new_tensor([-143,333,-261,71]) / 24
     samples = torch.stack((field[:,1:5],field[:,-5:-1].flip((1,))))
-    flux = -(conductivity/dx) * ((samples-samples[:,:,:1]) @ weights)
+    differences = samples - samples[:,:,:1]
+    if k.ndim == 0:
+        weights = field.new_tensor([-143,333,-261,71]) / 24
+        flux = -(k/dx) * (differences @ weights)
+    else:
+        resistance = dx / torch.stack((k[:5], k[-5:].flip((0,))))
+        nodes = (resistance.cumsum(dim=1) - resistance / 2)[:,1:]
+        # Normalize before forming products of three resistance differences.
+        scale = nodes[:, -1:]
+        nodes = nodes / scale
+        # Differentiate each cubic Lagrange basis function at the wall (r=0).
+        weights = []
+        for i in range(4):
+            others = nodes[:, [j for j in range(4) if j != i]]
+            denom = (nodes[:, i:i+1] - others).prod(dim=1)
+            a, b, c = others.unbind(dim=1)
+            weights.append((a*b + a*c + b*c) / denom)
+        derivative = torch.stack(weights, dim=1) / scale
+        flux = -(differences * derivative[:,None,:]).sum(dim=2)
     return means[:,None] + (flux-flux.mean(dim=1,keepdim=True))
 
 

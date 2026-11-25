@@ -249,3 +249,7 @@ and 0.06042 W/m². Wall temperature errors were 0.02534, 0.01757 and
 and h(Tambient−Twall) across the three final states was 3.47e−14 W/m².
 Reproduce with
 `PYTHONPATH=src OMP_NUM_THREADS=1 python -m benchmarks.case_conduction_2d.local_film`.
+
+### Fixed-temperature wall flux in layered materials
+
+Pass one conductivity per particle column to `recover_dirichlet_wall_flux_2d` for isotropic, perfectly bonded layers on a uniform slab. The function fits temperature against cumulative thermal resistance from each wall and returns inward flux per row, preserving the two supplied wall means. The test `test_layered_dirichlet_flux_in_thermal_resistance_coordinate` checks this reconstruction on alternating layers against an exponential temperature field with known flux on both walls. An interfacial temperature jump within the reconstruction stencil falls outside this model.
