@@ -742,7 +742,7 @@ def layered_slab_contact_temperatures(temperature, x_flux, dx, conductivity):
 
 
 def two_column_sheet_materials(conductivity, volumetric_heat_capacity, dx, face, *,
-                               resistance, areal_heat_capacity, sheet_conductivity):
+                               resistance, areal_heat_capacity, sheet_conductivity, contact_resistance_x=None):
     """Insert a storing sheet at interior face `face` of a uniform layered slab.
 
     The bulk conductivity vector (W/m/K) sets the number of original columns.
@@ -750,8 +750,12 @@ def two_column_sheet_materials(conductivity, volumetric_heat_capacity, dx, face,
     original columns f-1 and f. Supply total sheet resistance R (m²K/W), areal
     capacity C (J/m²/K) and sheet conductivity k (W/m/K) with 2*dx/k <= R.
 
-    Returns material keyword arguments for solve_transient_layered_slab. Bulk
-    faces have perfect contact. Insert two initial temperatures into the state
+    contact_resistance_x optionally specifies one nonnegative areal resistance
+    per original internal face. At f its value is divided equally between the
+    two outer sheet faces, in addition to R. Other contacts keep their values.
+    Omit it for perfect original contacts. The returned material keywords may
+    be passed to solve_transient_layered_slab or expanded into another call to
+    this builder (using the updated face indices). Insert two initial temperatures
     at f and distribute a sheet power per unit area P as P/(2*dx) on each of
     these columns. Their mean temperature times C gives stored energy per area.
     The heat ledger at cuts f and f+2 gives left and right transfers. This
@@ -775,8 +779,19 @@ def two_column_sheet_materials(conductivity, volumetric_heat_capacity, dx, face,
     contact = resistance/2 - dx/sheet_conductivity
     if contact < 0:
         raise ValueError("sheet resistance must include the resistance of both inserted columns")
-    contacts = k.new_zeros(k.numel()+1)
-    contacts[face-1] = contacts[face+1] = contact
+    if contact_resistance_x is None:
+        bulk_contacts = k.new_zeros(k.numel()-1)
+    else:
+        if torch.is_complex(torch.as_tensor(contact_resistance_x)):
+            raise ValueError("bulk contact resistances must be real")
+        bulk_contacts = torch.as_tensor(contact_resistance_x, dtype=k.dtype, device=k.device)
+        if bulk_contacts.shape != (k.numel()-1,):
+            raise ValueError("supply one contact resistance per original internal face")
+        if not torch.all(torch.isfinite(bulk_contacts) & (bulk_contacts >= 0)):
+            raise ValueError("bulk contact resistances must be finite and nonnegative")
+    outer_contact = contact + .5*bulk_contacts[face-1:face]
+    contacts = torch.cat((bulk_contacts[:face-1], outer_contact, k.new_zeros(1),
+                          outer_contact, bulk_contacts[face:]))
     return dict(conductivity=torch.cat((k[:face], k.new_full((2,), sheet_conductivity), k[face:])),
                 volumetric_heat_capacity=torch.cat((cv[:face], cv.new_full((2,), areal_heat_capacity/(2*dx)), cv[face:])),
                 contact_resistance_x=contacts)
