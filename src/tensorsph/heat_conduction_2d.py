@@ -264,8 +264,8 @@ def solve_harmonic_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperat
                            angular_frequency: float, *, conductivity: float = 1.,
                            volumetric_heat_capacity: float = 1., h_factor: float = 1.3,
                            heat_loss_coefficient: float = 0., x_wall_inward_flux=(0., 0.), return_x_flux: bool = False,
-                           ambient_temperature=None
-                         ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
+                           ambient_temperature=None, separate_mean: bool = False
+                         ) -> torch.Tensor | tuple[torch.Tensor, ...]:
     """Temperature phasors under exp(+iωt), for constant isotropic k and capacity.
 
     Use complex volumetric heating (W/m³) and scalar or row-wise wall phasors
@@ -275,13 +275,16 @@ def solve_harmonic_slab_2d(heat_source: torch.Tensor, dx: float, x_wall_temperat
     section-averaged complex heat fluxes (W/m²), positive towards increasing x.
     heat_loss_coefficient H adds H*(Ta-T) in W/m³. The ambient_temperature Ta
     is a scalar or per-particle temperature phasor (K), default zero.
+    For two flux walls, separate_mean=True returns the zero-mean temperature
+    phasor field and the scalar mean phasor, with the optional section flux
+    between them. This resolves local oscillations even at very low frequency.
     """
     storage = angular_frequency*volumetric_heat_capacity
     if not all(math.isfinite(v) and v > 0 for v in (angular_frequency, volumetric_heat_capacity, storage)):
         raise ValueError("frequency and volumetric heat capacity must be positive and finite")
     return _solve_slab_modes(heat_source, dx, x_wall_temperatures, conductivity, h_factor,
                              None, _heat_loss(heat_loss_coefficient)+1j*storage, x_wall_inward_flux, return_x_flux,
-                             ambient_temperature=ambient_temperature)
+                             ambient_temperature=ambient_temperature, separate_mean=separate_mean)
 
 
 def _layered_response(dx, h_factor, conductivity, contact_resistance_x, transverse_wavenumber):

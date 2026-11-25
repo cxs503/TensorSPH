@@ -2456,3 +2456,23 @@ def test_steady_separated_mean_resolves_two_flux_wall_profile(loss):
         source, 1/n, (None, None), temperature_reference=1e18, **options)
     torch.testing.assert_close(profile_only, profile)
     assert relative_mean.abs() < 256
+
+
+@pytest.mark.parametrize("loss", [0., 1e-18])
+def test_harmonic_separated_mean_with_balanced_wall_flux(loss):
+    from tensorsph.heat_conduction_2d import solve_harmonic_slab_2d
+
+    n = 16
+    omega = 1e-18
+    x = (torch.arange(n, dtype=torch.float64) + 0.5) / n
+    through_flux = 0.4 - 1j
+    source = torch.full((4, n), 2+3j, dtype=torch.complex128)
+    options = dict(x_wall_inward_flux=(through_flux, -through_flux),
+                   heat_loss_coefficient=loss, separate_mean=True)
+    profile, flux, mean = solve_harmonic_slab_2d(
+        source, 1/n, (None, None), omega, return_x_flux=True, **options)
+    torch.testing.assert_close(mean * (loss + 1j*omega), source[0, 0])
+    torch.testing.assert_close(profile, ((0.5-x)*through_flux).expand_as(source))
+    torch.testing.assert_close(flux, torch.full_like(flux, through_flux))
+    pair = solve_harmonic_slab_2d(source, 1/n, (None, None), omega, **options)
+    torch.testing.assert_close(pair, (profile, mean))
