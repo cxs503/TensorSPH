@@ -299,13 +299,16 @@ def _layered_response(dx, h_factor, conductivity, contact_resistance_x, transver
 def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_frequency,
                                 *, conductivity, volumetric_heat_capacity,
                                 contact_resistance_x=None, h_factor=1.3, transverse_wavenumber=0.,
-                                backend="torch", heat_loss_coefficient=0., return_x_flux=False):
+                                backend="torch", heat_loss_coefficient=0., return_x_flux=False, ambient_temperature=None):
     """Return particle temperature phasors for one transverse Fourier mode of a layered slab.
 
     Use one source (W/m³) and conductivity (W/(m K)) per x column, a scalar
     or per-column heat capacity (J/(m³ K)), and optional interface resistances
     (m² K/W). heat_loss_coefficient is a scalar or per-column nonnegative
-    bulk exchange coefficient H (W/(m³ K)), contributing a sink H*T. Each end has a scalar temperature phasor or None for insulation.
+    bulk exchange coefficient H (W/(m³ K)), contributing H*(Ta-T). The ambient_temperature
+    phasor Ta defaults to zero and may be scalar, per-column or sampled on the source grid.
+    For a modal vector Ta uses the same transverse Fourier mode as the source.
+    Each end has a scalar temperature phasor or None for insulation.
     The dense complex solve uses the calibrated 2-D particle-pair stencil with
     row dependence exp(i β y), with β=transverse_wavenumber in rad/m.
     The inputs and output are modal amplitudes. Supply a periodic wavenumber
@@ -331,6 +334,16 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
         raise ValueError("banded solves require CPU inputs")
     if isinstance(return_x_flux, str) and return_x_flux != "by_row":
         raise ValueError("return_x_flux must be a boolean or 'by_row'")
+    if torch.is_complex(torch.as_tensor(heat_loss_coefficient)):
+        raise ValueError("heat_loss_coefficient must be real")
+    loss = torch.as_tensor(heat_loss_coefficient, dtype=DTYPE, device=source.device)
+    if loss.shape not in ((),source.shape[-1:]) or not torch.all(torch.isfinite(loss) & (loss>=0)):
+        raise ValueError("heat_loss_coefficient must be finite, nonnegative and scalar or per column")
+    if ambient_temperature is not None:
+        ambient = torch.as_tensor(ambient_temperature, dtype=source.dtype, device=source.device)
+        if ambient.shape not in ((), source.shape[-1:], source.shape) or not torch.isfinite(ambient).all():
+            raise ValueError("ambient temperature must be finite and scalar, per column or match the source grid")
+        source = source + loss*ambient
     # A uniform offset is a null mode of lossless DC conduction. Remove it
     # before the transverse FFT, wall forcing and cut-current calculations.
     datum = 0.
@@ -404,11 +417,6 @@ def solve_harmonic_layered_slab(heat_source, dx, x_wall_temperatures, angular_fr
     homogeneous = tuple(None if wall is None else 0. for wall in (left, right))
     response, offsets = _layered_response(dx,h_factor,conductivity,contact_resistance_x,transverse_wavenumber)
     load = response(torch.zeros_like(source)[None, :], (left, right))[0]
-    if torch.is_complex(torch.as_tensor(heat_loss_coefficient)):
-        raise ValueError("heat_loss_coefficient must be real")
-    loss = torch.as_tensor(heat_loss_coefficient, dtype=DTYPE, device=source.device)
-    if loss.shape not in ((),source.shape) or not torch.all(torch.isfinite(loss) & (loss>=0)):
-        raise ValueError("heat_loss_coefficient must be finite, nonnegative and scalar or per column")
     closed_mode = False
     if angular_frequency==0 and left is None and right is None and not torch.any(loss>0):
         # A sampled nonconstant transverse mode supplies its own restoring term.

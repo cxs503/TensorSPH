@@ -2323,3 +2323,21 @@ def test_harmonic_ambient_drives_exchange_but_not_storage(loss):
                                               ambient_temperature=ambient, return_x_flux=True)
         torch.testing.assert_close(field, exact, rtol=1e-13, atol=1e-14)
         assert flux.abs().max() < 1e-13
+
+
+@pytest.mark.parametrize("backend", ["torch", "banded"])
+def test_layered_ambient_phasor_with_discontinuous_exchange(backend):
+    from tensorsph.heat_conduction_2d import solve_harmonic_layered_slab
+
+    n = 8
+    k = torch.linspace(1., 3., n, dtype=torch.float64)
+    loss = (k > 2).to(k.dtype)*2
+    ambient = (.5-.2j)*k
+    target = .3+.4j
+    source = 1j*5*k*target + loss*(target-ambient)
+    for load in (source, source.expand(3, n)):
+        field, flux = solve_harmonic_layered_slab(load, 1/n, (target, None), 5.,
+            conductivity=k, volumetric_heat_capacity=k, heat_loss_coefficient=loss,
+            ambient_temperature=ambient, backend=backend, return_x_flux=True)
+        torch.testing.assert_close(field, torch.full_like(field, target), atol=1e-13, rtol=0)
+        assert flux.abs().max() < 1e-12
