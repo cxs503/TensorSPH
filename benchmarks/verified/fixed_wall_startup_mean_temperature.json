@@ -1,0 +1,16 @@
+{
+  "source_commit": "2bd46ffb02f868cf74518f53e3e3a099d9b9752b",
+  "command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH=src python -m pytest -q tests/test_conduction_2d.py -o junit_family=legacy --junitxml=/tmp/sph_startup.xml",
+  "tests": 243,
+  "failures": 0,
+  "errors": 0,
+  "reference": "Unit slab, initially zero, unit diffusivity. At t=0 step west wall to 1 K and hold east at zero. Average over [0,0.023] s. Sum the nondecaying portion analytically with x(1-x)(2-x)/6, and retain 80 exponentially damped sine terms. Integrate this reference over the slab for the bulk comparison.",
+  "measurements": {
+    "n12_max_startup_mean_error_K": 0.04421269584790022,
+    "n12_bulk_startup_mean_error_K": 0.007708174641589405,
+    "n24_max_startup_mean_error_K": 0.01260103080618169,
+    "n24_bulk_startup_mean_error_K": 0.001966797110113494,
+    "n48_max_startup_mean_error_K": 0.003334297933031416,
+    "n48_bulk_startup_mean_error_K": 0.0004927054216856547
+  }
+}
