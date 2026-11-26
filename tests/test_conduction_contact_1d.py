@@ -253,3 +253,45 @@ def test_node_centered_contact_symmetry_and_refinement(solver, record_property):
         record_property(f"max_reflection_defect_K_n{n}", symmetry)
     assert symmetry < 1e-12
     assert errors[1] < 0.3 * errors[0]
+
+
+def test_finite_slab_contact_wall_influence_and_refinement(record_property):
+    from tensorsph.heat_conduction import finite_slab_contact_temperature
+
+    hot, cold, alpha, length = 7., -1., 0.25, 1.
+    fourier = 0.03
+    errors = []
+    for n in (32, 64):
+        cfg = ContactConfig(n_particles=n, dx=length/n, fourier=fourier,
+                            alpha=alpha, t_hot=hot, t_cold=cold,
+                            calibration="k0", reference="finite_slab")
+        result = run_contact_sph(cfg)
+        errors.append(result.error()[0])
+        record_property(f"sph_max_normalized_error_n{n}", errors[-1])
+    assert errors[1] < 0.3 * errors[0]
+    assert errors[1] < 2e-4
+    x, fd = fd_contact_reference(fourier, alpha, length/2, n=129, t_hot=hot, t_cold=cold)
+    exact = finite_slab_contact_temperature(x, fourier/alpha, alpha, length, hot, cold)
+    fd_error = float((exact - fd).abs().max()) / (hot-cold)
+    record_property("fd_max_normalized_error", fd_error)
+    assert fd_error < 2e-4
+    assert exact[0] == pytest.approx(hot, abs=1e-14, rel=0)
+    assert exact[-1] == pytest.approx(cold, abs=1e-14, rel=0)
+    infinite = contact_temperature(x, fourier/alpha, alpha, hot, cold)
+    discrepancy = float((exact - infinite).abs().max()) / (hot-cold)
+    record_property("semi_infinite_max_normalized_difference", discrepancy)
+    assert discrepancy > 0.01
+
+
+@pytest.mark.parametrize("fourier", [0.001, 0.001000001, 4.0])
+def test_finite_slab_contact_short_and_long_time_limits(fourier):
+    from tensorsph.heat_conduction import finite_slab_contact_temperature
+
+    x = torch.linspace(-1., 1., 65, dtype=torch.float64)
+    time = fourier * 2**2
+    exact = finite_slab_contact_temperature(x, time, 1., 2., -3., 5.)
+    if fourier < 0.01:
+        reference = contact_temperature(x, time, 1., -3., 5.)
+    else:
+        reference = 1 + 4*x
+    torch.testing.assert_close(exact, reference, atol=5e-15, rtol=0)

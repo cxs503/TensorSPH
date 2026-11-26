@@ -249,3 +249,16 @@ python3 -m pytest tests/test_conduction_contact_1d.py -q                 # 约 1
 误差为 **2.18e-06（0.0002%）**，远优于 3% 判据；k0 标定下四段
 网格均呈二阶收敛（2.00–2.03）；仓库既有 3 模标定留下 4.7e-5 平台，其成因已定量定位为
 标定常数与 `k→0` 符号的 4.1e-4 差距并给出可用的 k0 标定。
+
+## 固定端温有限板参考解
+
+当扩散到达两端时，可用 `ContactConfig(reference="finite_slab")` 计算相同壁温下的解析误差。
+板长取 `n_particles * dx`，接触面居中，端壁分别保持初始左右温度。默认参考仍为半无限域解。
+
+令 `z=x/L`、`Fo=αt/L²`，按初始温差归一化的解析温度等于稳态直线
+`1/2-z` 减去各阶 `exp(-4π²m²Fo) sin(2πmz)/(mπ)` 之和。板长 1 m、
+热扩散率 0.25 m²/s、Fo=0.03 时，32、64 粒子的全板最大归一化误差分别为
+3.7444e-4 和 9.3046e-5。129 节点 Crank–Nicolson 独立参照的误差为 6.8559e-6。
+此时半无限域参考与有限板参考的最大差异已达初始温差的 2.0613%。
+
+复现命令为 `PYTHONPATH=src OMP_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py -k finite_slab`。

@@ -76,6 +76,7 @@ __all__ = [
     "similarity_variable",
     "lattice_symbol_ratio",
     "contact_temperature",
+    "finite_slab_contact_temperature",
     "lattice_stencil",
     "stencil_rhs",
     "stencil_vs_dense",
@@ -108,6 +109,30 @@ def contact_temperature(x, t, alpha, t_hot=1.0, t_cold=0.0):
     """
     eta = similarity_variable(x, t, alpha)
     return t_cold + 0.5 * (t_hot - t_cold) * torch.erfc(eta)
+
+
+def finite_slab_contact_temperature(x, t, alpha, length, t_hot=1.0, t_cold=0.0):
+    """Contact step at x=0 in a slab with fixed end temperatures at ±length/2.
+
+    The steady profile is linear. Its transient correction is a sine series
+    with coefficients obtained by integrating the initial step minus the ramp.
+    """
+    if not all(math.isfinite(v) and v > 0 for v in (t, alpha, length)):
+        raise ValueError("t, alpha and length must be finite and positive")
+    z = torch.as_tensor(x, dtype=DTYPE) / length
+    if not torch.all(z.abs() <= 0.5):
+        raise ValueError("contact reference points must lie inside the slab")
+    fourier = alpha * t / length**2
+    if fourier <= 0.001:
+        # The nearest reflected step contributes at most erfc(1/(4 sqrt(Fo)))
+        # of the jump on the slab, below 1e-28 at this cutoff.
+        return contact_temperature(x, t, alpha, t_hot, t_cold)
+    profile = 0.5 - z
+    decay = 4 * math.pi**2 * fourier
+    for mode in range(1, 1 + math.ceil(math.sqrt(40 / decay))):
+        profile = profile - (math.exp(-decay * mode**2) / (mode * math.pi)
+                             * torch.sin(2 * math.pi * mode * z))
+    return t_cold + (t_hot - t_cold) * profile
 
 
 # ------------------------------------------------------- lattice stencil (exact)
@@ -219,6 +244,7 @@ class ContactConfig:
     eta_factor: float = 0.01
     dense: bool = False         # True: O(N^2) conduction_rhs every step (slow)
     sample_every: int = 0       # 0: final profile only
+    reference: str = "semi_infinite"   # or "finite_slab" for fixed end walls
 
 
 @dataclass
@@ -280,6 +306,8 @@ def _mirror_extend(values, t_left, t_right, m):
 def run_contact_sph(cfg: ContactConfig | None = None) -> ContactResult:
     """Run the 1-D SPH contact case and return profiles + metrics."""
     cfg = cfg or ContactConfig()
+    if cfg.reference not in ("semi_infinite", "finite_slab"):
+        raise ValueError(f"unknown contact reference={cfg.reference!r}")
     n, dx = int(cfg.n_particles), float(cfg.dx)
     h = cfg.h_factor * dx
     alpha = float(cfg.alpha)
@@ -360,8 +388,11 @@ def run_contact_sph(cfg: ContactConfig | None = None) -> ContactResult:
     res.time = steps * dt
     res.x = [float(v) for v in pos]
     res.temperature = [float(v) for v in temperature]
-    res.analytic = [float(v) for v in
-                    contact_temperature(pos, res.time, alpha, cfg.t_hot, cfg.t_cold)]
+    if cfg.reference == "finite_slab":
+        exact = finite_slab_contact_temperature(pos, res.time, alpha, length, cfg.t_hot, cfg.t_cold)
+    else:
+        exact = contact_temperature(pos, res.time, alpha, cfg.t_hot, cfg.t_cold)
+    res.analytic = exact.tolist()
     res.profile_time = profile_time
     res.profiles = profiles
     return res
