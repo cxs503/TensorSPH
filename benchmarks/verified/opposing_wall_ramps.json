@@ -1,0 +1,17 @@
+{
+  "source_commit": "4c7b54cc8470d8c4b5c703e5db7ff02e6a51dee7",
+  "command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH=src python -m pytest -q tests/test_conduction_2d.py -o junit_family=legacy --junitxml=/tmp/sph_opposing_ramps.xml",
+  "tests": 244,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "reference": "Initially uniform unit slab, unit diffusivity. Opposing prescribed wall temperature changes reach +1 and -1 K at 0.04 s. Analytic continuum endpoint and time-mean profiles use the polynomial wall lift and 256 even sine modes. Max errors are over all particle centers.",
+  "measurements": {
+    "n12_endpoint_max_error_K": 0.02723382717114453,
+    "n12_time_mean_max_error_K": 0.022187923272814936,
+    "n24_endpoint_max_error_K": 0.007457287875595853,
+    "n24_time_mean_max_error_K": 0.006813548758881183,
+    "n48_endpoint_max_error_K": 0.0019433065402850724,
+    "n48_time_mean_max_error_K": 0.001862930056142409
+  }
+}
