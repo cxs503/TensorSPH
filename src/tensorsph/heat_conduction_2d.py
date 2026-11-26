@@ -736,6 +736,9 @@ def layered_slab_contact_temperatures(temperature, x_flux, dx, conductivity, *, 
 
     temperature holds particle-center temperatures (K) shaped (..., nx).
     x_flux contains rightward section heat fluxes (W/m²) shaped (..., nx+1).
+    Alternatively, shape (..., nx, 2) supplies each particle column’s west
+    and east material fluxes, both positive rightward. Use these one-sided
+    values at a storing interface where the section flux is discontinuous.
     For interval means, supply the mean particle field and divide integrated
     section heat by the duration of each interval. Complex phasors are also
     supported. dx is the particle spacing; conductivity is positive and
@@ -753,8 +756,14 @@ def layered_slab_contact_temperatures(temperature, x_flux, dx, conductivity, *, 
     if center.ndim<1 or center.shape[-1]==0 or not torch.isfinite(center).all():
         raise ValueError("provide a finite nonempty particle field")
     flux = torch.as_tensor(x_flux,device=center.device)
-    if flux.shape!=center.shape[:-1]+(center.shape[-1]+1,) or not torch.isfinite(flux).all():
-        raise ValueError("provide one finite rightward flux per section")
+    if not torch.isfinite(flux).all():
+        raise ValueError("section fluxes must be finite")
+    if flux.shape == center.shape+(2,):
+        west, east = flux.unbind(dim=-1)
+    elif flux.shape == center.shape[:-1]+(center.shape[-1]+1,):
+        west, east = flux[..., :-1], flux[..., 1:]
+    else:
+        raise ValueError("provide one flux per section or west/east fluxes per particle column")
     if not math.isfinite(dx) or dx<=0:
         raise ValueError("dx must be finite and positive")
     if torch.is_complex(torch.as_tensor(conductivity)):
@@ -763,7 +772,6 @@ def layered_slab_contact_temperatures(temperature, x_flux, dx, conductivity, *, 
     if k.shape not in ((),center.shape[-1:]) or not torch.isfinite(k).all() or (k<=0).any():
         raise ValueError("conductivity must be a positive scalar or column profile")
     # Half-cell integration weights are 1/8 and 3/8 of the column width.
-    west,east = flux[..., :-1],flux[..., 1:]
     scale = dx/(8*k)
     left_trace = center-(west+3*east)*scale
     right_trace = center+(3*west+east)*scale

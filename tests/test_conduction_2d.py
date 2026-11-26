@@ -2598,3 +2598,17 @@ def test_quadratic_flux_reconstructs_both_cubic_contact_traces():
     left, right = layered_slab_contact_temperatures(
         phase*center, phase*flux, h, k, axial_flux_curvature=phase*curvature)
     torch.testing.assert_close(torch.cat((left, right), dim=-1), phase*traces, atol=1e-14, rtol=0.)
+
+
+def test_storing_contact_retains_distinct_one_sided_material_fluxes():
+    from tensorsph.heat_conduction_2d import layered_slab_contact_temperatures
+
+    # Constant flux in each bulk. Their difference supplies sheet storage.
+    dx = .4
+    k = torch.tensor([1., 3.], dtype=torch.float64)
+    flux = k.new_tensor([[2., 2.], [-.5, -.5]])
+    traces = k.new_tensor([1.2, .9])
+    centers = traces + dx/2 * k.new_tensor([2., .5])/k
+    phase = torch.tensor([[1+.4j], [-.7j]], dtype=torch.complex128)
+    left, right = layered_slab_contact_temperatures(phase*centers, phase[..., None]*flux, dx, k)
+    torch.testing.assert_close(torch.cat((left, right), dim=-1), phase*traces)
