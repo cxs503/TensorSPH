@@ -3440,3 +3440,27 @@ def test_pair_conductivity_range(operator, exponents, record_property):
     record_property("max_relative_rate_error", error)
     assert error < 1e-14
     assert rates.sum().item() == 0.
+
+
+def test_harmonic_wall_heat_near_tangency(record_property):
+    from tensorsph.heat_conduction_2d import harmonic_wall_interval_heat
+
+    # Integrate the power series of gap + 1 - cos(omega*t) term by term.
+    omega = 2.5
+    gaps = torch.tensor([0., 2.**-50, -2.**-50], dtype=torch.float64)
+    worst = 0.
+    for width in (1.e-3, 1.e-6, 1.e-9):
+        for a, b in ((0., width), (-width, width), (2*width, width)):
+            curvature = sum((-1)**(j+1)*omega**(2*j)*(b**(2*j+1)-a**(2*j+1))
+                            / math.factorial(2*j+1) for j in range(1, 6))
+            for sign in (-1., 1.):
+                reference = sign*(gaps*(b-a) + curvature)
+                for imaginary in (0., width/4):
+                    # Integrate the additional -imaginary*sin(omega*t) term.
+                    sine_heat = (2*math.sin(omega*(b-a)/2)*math.sin(omega*(a+b)/2))/omega
+                    expected = reference - imaginary*sine_heat
+                    heat = harmonic_wall_interval_heat(complex(-sign, imaginary), omega, a, b,
+                                                       steady_flux=sign*(1+gaps))
+                    worst = max(worst, float(((heat-expected)/expected).abs().max()))
+    record_property("max_relative_heat_error", worst)
+    assert worst < 2.e-14

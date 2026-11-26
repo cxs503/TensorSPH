@@ -1911,7 +1911,30 @@ def harmonic_wall_interval_heat(wall_flux, angular_frequency, start_time, end_ti
     # Integrating about the midpoint avoids subtracting nearby phasors.
     average = math.sin(half_phase)/half_phase if half_phase else 1.
     midpoint_flux = flux.real*math.cos(midpoint_phase) - flux.imag*math.sin(midpoint_phase)
-    return duration * (bias + average*midpoint_flux)
+    mean = bias + average*midpoint_flux
+    # Near a grazing zero, evaluate 1 - sinc(h)*cos(delta) as two
+    # small positive terms. The squared chord gives 1 - cos(delta)
+    # without subtracting nearly identical cosines.
+    if abs(half_phase) < .05:
+        h2 = half_phase**2
+        sinc_loss = h2*(1/6 - h2*(1/120 - h2*(1/5040 - h2/362880)))
+        amplitude = flux.abs()
+        sign = torch.sign(bias)
+        near_zero = (amplitude > 0) & (mean.abs() < .125*amplitude) & (bias != 0)
+        scale = torch.where(amplitude > 0, amplitude, 1.)
+        unit = flux / scale
+        chord_real = unit.real + sign*math.cos(midpoint_phase)
+        chord_imag = unit.imag - sign*math.sin(midpoint_phase)
+        cosine_loss = (chord_real.square() + chord_imag.square()) / 2
+        correction = amplitude*(sinc_loss + average*cosine_loss)
+        # A small quadrature component can change the amplitude by less than
+        # one ulp. Rationalize hypot(major, minor) - major in that case.
+        major = torch.maximum(flux.real.abs(), flux.imag.abs())
+        minor = torch.minimum(flux.real.abs(), flux.imag.abs())
+        increment = minor*((minor/scale)/(1 + major/scale))
+        gap = torch.where(minor < .125*major, (bias.abs()-major)-increment, bias.abs()-amplitude)
+        mean = torch.where(near_zero, sign*(gap + correction), mean)
+    return duration * mean
 
 
 def _wall_cycle_geometry(wall_flux, angular_frequency, steady_flux):
