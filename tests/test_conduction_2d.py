@@ -2759,3 +2759,41 @@ def test_travelling_fixed_wall_cycle_heat_refinement(phase, record_property):
             record_property(f"n{n}_order",order)
             assert order > 1.8
         previous = error
+
+
+def test_biased_wall_cycle_heat_for_opposing_rows(record_property):
+    from scipy.integrate import quad
+    from tensorsph.heat_conduction_2d import directional_wall_cycle_heat, recover_dirichlet_wall_flux_2d
+
+    # Linear-in-x temperature profiles, sampled at centres. Both the DC
+    # slope and the AC phase vary by row. The right wall has opposite flux.
+    bias = torch.tensor([-2.,-1.,-.375,0.,.375,1.,2.],dtype=torch.float64)
+    phase = torch.arange(len(bias),dtype=torch.float64)*.5
+    phasor = torch.exp(1j*phase)
+    dx,omega = .125,2.5
+    x = (torch.arange(8,dtype=torch.float64)+.5)*dx
+    def recovered(slope):
+        return recover_dirichlet_wall_flux_2d(slope[:,None]*x,dx,1.,
+            torch.stack((-slope.mean(),slope.mean())),x_wall_temperatures=(0.,slope))
+    inward = recovered(-phasor)
+    steady = recovered(-bias)
+    absorption,release = directional_wall_cycle_heat(inward,omega,steady_flux=steady)
+    rows = []
+    for b,p in zip(bias.tolist(),phase.tolist()):
+        roots = ([(sign*math.acos(-b)-p)%(2*math.pi) for sign in (-1,1)] if abs(b)<1 else [])
+        rows.append([quad(lambda t: max(sign*(b+math.cos(t+p)),0.),0.,2*math.pi,points=roots)[0]/omega
+                     for sign in (1,-1)])
+    reference = bias.new_tensor(rows).T
+    error = max(float((absorption-reference).abs().max()),float((release-reference.flip((0,))).abs().max()))
+    balance = float((absorption-release-2*math.pi*steady/omega).abs().max())
+    record_property("max_directional_error_J_m2",error)
+    record_property("max_net_error_J_m2",balance)
+    assert error < 1e-12 and balance < 1e-14
+
+
+def test_biased_wall_cycle_heat_resolves_grazing_reversal():
+    from tensorsph.heat_conduction_2d import directional_wall_cycle_heat
+
+    gap = 2.**-50
+    _,released = directional_wall_cycle_heat(1.,1.,steady_flux=1-gap)
+    assert abs(released.item()/(4*math.sqrt(2)/3*gap**1.5)-1)<3e-15

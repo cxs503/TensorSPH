@@ -1861,6 +1861,35 @@ def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux
     return recovered if side is None else recovered[0]
 
 
+def directional_wall_cycle_heat(wall_flux, angular_frequency, *, steady_flux=0.):
+    """Return absorbed and released heat magnitudes (J/m²) per wall row.
+
+    Supply peak inward wall-flux phasors in W/m², e.g. from
+    recover_dirichlet_wall_flux_2d, plus a real steady inward flux broadcastable
+    to those rows. Integrate one sinusoidal period before spatial averaging.
+    """
+    if not math.isfinite(angular_frequency) or angular_frequency <= 0:
+        raise ValueError("angular_frequency must be positive and finite")
+    if torch.is_complex(torch.as_tensor(steady_flux)):
+        raise ValueError("steady_flux must be real")
+    amplitude = torch.as_tensor(wall_flux,dtype=torch.complex128).abs()
+    bias = torch.as_tensor(steady_flux,dtype=amplitude.dtype,device=amplitude.device)
+    if not torch.isfinite(amplitude).all() or not torch.isfinite(bias).all():
+        raise ValueError("wall fluxes must be finite")
+    amplitude,bias = torch.broadcast_tensors(amplitude,bias)
+    crossing = amplitude > bias.abs()
+    # At a grazing reversal, compute the half-angle from the small power gap.
+    fraction = (amplitude-bias.abs())/torch.where(crossing,amplitude,1.)
+    angle = 2*torch.asin(torch.sqrt(torch.where(crossing,.5*fraction,.5)))
+    square = angle.square()
+    # The smaller lobe is proportional to sin(angle)-angle*cos(angle).
+    series = angle*square*(1/3+square*(-1/30+square*(1/840-square/45360)))
+    lobe = torch.where(angle < .05,series,torch.sin(angle)-angle*torch.cos(angle))
+    minor = (2/angular_frequency)*torch.where(crossing,amplitude*lobe,0.)
+    period = 2*math.pi/angular_frequency
+    return minor+period*bias.clamp_min(0), minor+period*(-bias).clamp_min(0)
+
+
 def harmonic_fixed_wall_cycle_heat_2d(temperature, dx, conductivity, wall_mean_flux, angular_frequency, *,
                                       contact_resistance_x=None, x_wall_temperatures=None, side=None):
     """Heat absorbed per unit area per row over one zero-mean sinusoidal cycle.
@@ -1869,6 +1898,7 @@ def harmonic_fixed_wall_cycle_heat_2d(temperature, dx, conductivity, wall_mean_f
     recover_dirichlet_wall_flux_2d. The returned positive heat (J/m²) equals
     the magnitude of the heat released per cycle. Average rows after computing
     these local integrals to retain exchange between out-of-phase rows.
+    For a steady bias, pass the recovered fluxes to directional_wall_cycle_heat.
     """
     if not math.isfinite(angular_frequency) or angular_frequency <= 0:
         raise ValueError("angular_frequency must be positive and finite")
