@@ -1886,14 +1886,7 @@ def harmonic_wall_interval_heat(wall_flux, angular_frequency, start_time, end_ti
     return duration * (bias + average*midpoint_flux)
 
 
-def harmonic_wall_reversal_times(wall_flux, angular_frequency, *, steady_flux=0.):
-    """Return the onset times of absorption and release in one cycle (seconds).
-
-    For inward flux steady_flux + Re(wall_flux * exp(iωt)), return two arrays
-    broadcast over wall rows. Times are measured from phase time zero modulo
-    the period. Both entries are NaN where the flux never changes sign,
-    including a tangency or an identically zero flux.
-    """
+def _wall_cycle_geometry(wall_flux, angular_frequency, steady_flux):
     if not math.isfinite(angular_frequency) or angular_frequency <= 0:
         raise ValueError("angular_frequency must be positive and finite")
     if torch.is_complex(torch.as_tensor(steady_flux)):
@@ -1908,6 +1901,18 @@ def harmonic_wall_reversal_times(wall_flux, angular_frequency, *, steady_flux=0.
     gap = torch.where(crossing, (amplitude-bias.abs())/safe_amplitude, 0.)
     cosine = torch.where(crossing, bias.abs()/safe_amplitude, 1.)
     half_width = torch.atan2(torch.sqrt(gap*(1+cosine)), cosine)
+    return flux, bias, amplitude, crossing, half_width
+
+
+def harmonic_wall_reversal_times(wall_flux, angular_frequency, *, steady_flux=0.):
+    """Return the onset times of absorption and release in one cycle (seconds).
+
+    For inward flux steady_flux + Re(wall_flux * exp(iωt)), return two arrays
+    broadcast over wall rows. Times are measured from phase time zero modulo
+    the period. Both entries are NaN where the flux never changes sign,
+    including a tangency or an identically zero flux.
+    """
+    flux, bias, _, crossing, half_width = _wall_cycle_geometry(wall_flux, angular_frequency, steady_flux)
     # Locate both roots relative to the extremum of the smaller lobe.
     center = torch.where(bias > 0, math.pi*torch.ones_like(bias), 0.) - flux.angle()
     offset = torch.where(bias > 0, half_width, -half_width)
@@ -1920,6 +1925,19 @@ def harmonic_wall_reversal_times(wall_flux, angular_frequency, *, steady_flux=0.
     return torch.where(crossing, absorption, torch.nan), torch.where(crossing, release, torch.nan)
 
 
+def directional_wall_cycle_duration(wall_flux, angular_frequency, *, steady_flux=0.):
+    """Seconds of inward and outward flow per cycle for each harmonic wall flux.
+
+    A tangency spends the full period in its prevailing direction. Identically
+    zero flux spends zero time in either direction. Phase does not affect the
+    durations, including for a window spanning the cycle boundary.
+    """
+    _, bias, amplitude, _, half_width = _wall_cycle_geometry(wall_flux, angular_frequency, steady_flux)
+    minor = 2*half_width/angular_frequency
+    major = torch.where((amplitude > 0) | (bias != 0), 2*math.pi/angular_frequency-minor, 0.)
+    return torch.where(bias >= 0, major, minor), torch.where(bias >= 0, minor, major)
+
+
 def directional_wall_cycle_heat(wall_flux, angular_frequency, *, steady_flux=0.):
     """Return absorbed and released heat magnitudes (J/m²) per wall row.
 
@@ -1927,19 +1945,7 @@ def directional_wall_cycle_heat(wall_flux, angular_frequency, *, steady_flux=0.)
     recover_dirichlet_wall_flux_2d, plus a real steady inward flux broadcastable
     to those rows. Integrate one sinusoidal period before spatial averaging.
     """
-    if not math.isfinite(angular_frequency) or angular_frequency <= 0:
-        raise ValueError("angular_frequency must be positive and finite")
-    if torch.is_complex(torch.as_tensor(steady_flux)):
-        raise ValueError("steady_flux must be real")
-    amplitude = torch.as_tensor(wall_flux,dtype=torch.complex128).abs()
-    bias = torch.as_tensor(steady_flux,dtype=amplitude.dtype,device=amplitude.device)
-    if not torch.isfinite(amplitude).all() or not torch.isfinite(bias).all():
-        raise ValueError("wall fluxes must be finite")
-    amplitude,bias = torch.broadcast_tensors(amplitude,bias)
-    crossing = amplitude > bias.abs()
-    # At a grazing reversal, compute the half-angle from the small power gap.
-    fraction = (amplitude-bias.abs())/torch.where(crossing,amplitude,1.)
-    angle = 2*torch.asin(torch.sqrt(torch.where(crossing,.5*fraction,.5)))
+    _, bias, amplitude, crossing, angle = _wall_cycle_geometry(wall_flux, angular_frequency, steady_flux)
     square = angle.square()
     # The smaller lobe is proportional to sin(angle)-angle*cos(angle).
     series = angle*square*(1/3+square*(-1/30+square*(1/840-square/45360)))

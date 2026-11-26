@@ -2970,7 +2970,7 @@ def test_partial_wall_heat_at_fixed_reversing_rows(record_property):
 
 def test_wall_reversal_times_at_fixed_rows(record_property):
     from scipy.optimize import brentq
-    from tensorsph.heat_conduction_2d import harmonic_wall_reversal_times
+    from tensorsph.heat_conduction_2d import directional_wall_cycle_duration, harmonic_wall_reversal_times
 
     omega = 3.
     period = 2*math.pi/omega
@@ -2993,11 +2993,20 @@ def test_wall_reversal_times_at_fixed_rows(record_property):
         selected = factor*indices + factor//2
         _, _, _, dc, ac = _traveling_wall_fluxes(n, omega)
         absorption, release = harmonic_wall_reversal_times(ac[:,selected], omega, steady_flux=dc[:,selected])
-        for label, actual, target in (("absorption", absorption, expected),
+        inward_time, outward_time = directional_wall_cycle_duration(ac[:,selected], omega, steady_flux=dc[:,selected])
+        positive = torch.remainder(expected.flip((0,))-expected, period)
+        for label, actual, target in (("inward_duration", inward_time, positive),
+                                      ("outward_duration", outward_time, period-positive),
+                                      ("absorption", absorption, expected),
                                       ("release", release, expected.flip((0,)))):
-            difference = torch.remainder(actual-target+period/2, period)-period/2
+            if label.endswith("duration"):
+                difference = actual-target
+                metric = f"{label}_error_s"
+            else:
+                difference = torch.remainder(actual-target+period/2, period)-period/2
+                metric = f"{label}_onset_error_s"
             error = difference.abs().max().item()
-            record_property(f"n{n}_{label}_onset_error_s", error)
+            record_property(f"n{n}_{metric}", error)
             assert math.isfinite(error)
             if label in previous:
                 order = math.log(previous[label]/error, 3)
@@ -3014,3 +3023,24 @@ def test_wall_reversal_times_skip_tangencies_and_constant_flux():
     rising, falling = harmonic_wall_reversal_times(-1j, 2.)
     assert rising.item() == pytest.approx(0., abs=1e-15)
     assert falling.item() == pytest.approx(math.pi/2)
+
+
+def test_wall_cycle_durations_at_grazing_and_without_crossings(record_property):
+    from tensorsph.heat_conduction_2d import directional_wall_cycle_duration
+
+    omega = 3.
+    period = 2*math.pi/omega
+    gap = 2.**-52
+    # Use unit phasors with the short window centered on or away from phase zero.
+    flux = torch.tensor([-1., 1j, 1., 1., 0., 0., 1j], dtype=torch.complex128)
+    bias = torch.tensor([1-gap, -(1-gap), 1., -1., 0., 2., 0.], dtype=torch.float64)
+    absorbed, released = directional_wall_cycle_duration(flux, omega, steady_flux=bias)
+    short = 2*math.acos(1-gap)/omega
+    expected = bias.new_tensor([[period-short, short, period, 0., 0., period, period/2],
+                                [short, period-short, 0., period, 0., 0., period/2]])
+    error = (torch.stack((absorbed, released))-expected).abs().max().item()
+    relative = max(abs(released[0].item()/short-1), abs(absorbed[1].item()/short-1))
+    record_property("grazing_duration_s", short)
+    record_property("max_error_s", error)
+    record_property("grazing_relative_error", relative)
+    assert error < 1e-15 and relative < 1e-15
