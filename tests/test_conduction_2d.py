@@ -3220,3 +3220,43 @@ def test_opposing_wall_ramps_particle_temperatures(record_property):
     for coarse, fine in zip(heat_errors, heat_errors[1:]):
         assert coarse > 3*fine
     assert heat_errors[-1] < .01*center_heat
+
+
+def test_equal_wall_ramp_and_hold_heat_storage(record_property):
+    """Both walls supply heat during the ramp and continue to do so during the hold."""
+    import numpy as np
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+
+    ramp_end, end = .04, .09
+    wave = np.pi*np.arange(1, 80, 2)
+
+    def stored_under_ramp(t):
+        # Integrate the unit slab's odd sine modes over space. The constant
+        # 1/12 is the integral of x*(1-x)/2, the steady lag for a unit ramp.
+        return (t-1/12+np.sum(8*np.exp(-wave**2*t)/wave**4))/ramp_end
+
+    stored = [0., stored_under_ramp(ramp_end),
+              stored_under_ramp(end)-stored_under_ramp(end-ramp_end)]
+    inward = np.diff(stored)/2
+    wall = lambda t: min(t/ramp_end, 1.)
+    errors = []
+    for phase, reference in zip(("ramp", "hold"), inward):
+        record_property(f"{phase}_wall_reference_J_m2", reference)
+    for n in (12, 24, 48):
+        states, heat = solve_transient_layered_slab(
+            np.zeros(n), [0., ramp_end, end], 1/n, (wall, wall),
+            conductivity=np.ones(n), volumetric_heat_capacity=1.,
+            method="exponential", return_x_heat=True)
+        west, east = heat[:, 0].numpy(), -heat[:, -1].numpy()
+        uptake = np.diff(states.numpy().mean(axis=1))
+        balance = np.max(np.abs(west+east-uptake))
+        center_heat = heat[:, n//2].abs().max().item()
+        assert max(balance, center_heat) < 1e-12
+        record_property(f"n{n}_max_balance_J_m2", balance)
+        wall_error = np.maximum(np.abs(west-inward), np.abs(east-inward))
+        for phase, error in zip(("ramp", "hold"), wall_error):
+            record_property(f"n{n}_{phase}_wall_error_J_m2", error)
+        errors.append(wall_error)
+    for coarse, fine in zip(errors, errors[1:]):
+        assert np.all(coarse > 3*fine)
+    assert np.all(errors[-1] < .01*inward)
