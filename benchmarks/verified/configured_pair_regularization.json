@@ -1,0 +1,39 @@
+{
+  "source_commit": "59a43518c515f315f076180b538db62d2728c018",
+  "baseline_commit": "2d2c0ef90f5ae86227200ae1e0ad454030324483",
+  "reference": "Exact 1-D stencil eigenvalue ratios for the first three nonconstant Fourier modes of a 256-cell lattice, plus the erfc similarity solution for a slab with fixed end temperatures.",
+  "command": "PYTHONPATH=src OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py tests/test_conduction_2d.py tests/test_conduction_slab.py tests/test_ice_thermal_multiphysics.py -o junit_family=legacy --junitxml=/tmp/config-eta-after.xml",
+  "baseline_procedure": "Run the source commit test file with baseline src using -k configured_pair_regularization.",
+  "before": {
+    "tests": 2,
+    "failures": 2,
+    "measurements": {
+      "test_configured_pair_regularization_in_lattice_calibration[0.125]": {
+        "contact_relative_factor_error": 0.024288806427958498,
+        "comparison_mode_relative_factor_error": 0.024288806427958498,
+        "contact_normalized_erfc_error": 0.003858827056380437
+      },
+      "test_configured_pair_regularization_in_lattice_calibration[0.5]": {
+        "contact_relative_factor_error": 0.3609872603314135,
+        "comparison_mode_relative_factor_error": 0.3609872603314135,
+        "contact_normalized_erfc_error": 0.03859364860636971
+      }
+    }
+  },
+  "after": {
+    "tests": 331,
+    "failures": 0,
+    "measurements": {
+      "test_configured_pair_regularization_in_lattice_calibration[0.125]": {
+        "contact_relative_factor_error": 0.0,
+        "comparison_mode_relative_factor_error": 0.0,
+        "contact_normalized_erfc_error": 0.000984373877640693
+      },
+      "test_configured_pair_regularization_in_lattice_calibration[0.5]": {
+        "contact_relative_factor_error": 2.220446049250313e-16,
+        "comparison_mode_relative_factor_error": 2.220446049250313e-16,
+        "contact_normalized_erfc_error": 0.0011364592835653442
+      }
+    }
+  }
+}
