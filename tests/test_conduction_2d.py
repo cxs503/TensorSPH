@@ -2815,41 +2815,48 @@ def _directional_heat_quadrature(wave, dc, omega, start, end):
                  start, end, points=roots)[0] for sign in (1, -1)]
 
 
+def _traveling_wall_fluxes(n, omega):
+    from tensorsph.heat_conduction_2d import (
+        recover_dirichlet_wall_flux_2d, solve_harmonic_slab_2d, solve_steady_slab_2d,
+    )
+
+    # T_dc = -x*(0.2 + 1.4*cos(2πy)), T_ac = -x*exp(i*2πy).
+    wavenumber = 2 * math.pi
+    dx = 1 / n
+    x = (torch.arange(n, dtype=torch.float64) + .5) * dx
+    phase = wavenumber * x
+    varying_bias = 1.4 * phase.cos()
+    bias = .2 + varying_bias
+    wave = torch.exp(1j * phase)
+    steady_walls = (0., -bias)
+    harmonic_walls = (0., -wave)
+    steady, dc_sections = solve_steady_slab_2d(
+        -wavenumber**2 * varying_bias[:, None] * x, dx, steady_walls, return_x_flux=True)
+    harmonic, ac_sections = solve_harmonic_slab_2d(
+        -(wavenumber**2 + 1j * omega) * wave[:, None] * x, dx, harmonic_walls, omega,
+        return_x_flux=True)
+    dc_flux = recover_dirichlet_wall_flux_2d(
+        steady, dx, 1., torch.stack((dc_sections[0], -dc_sections[-1])),
+        x_wall_temperatures=steady_walls)
+    ac_flux = recover_dirichlet_wall_flux_2d(
+        harmonic, dx, 1., torch.stack((ac_sections[0], -ac_sections[-1])),
+        x_wall_temperatures=harmonic_walls)
+    return bias, phase, wave, dc_flux, ac_flux
+
+
 def test_biased_cycle_heat_from_steady_and_harmonic_slab_solves(record_property):
     from scipy.integrate import quad
     from tensorsph.heat_conduction_2d import (
         directional_wall_cycle_heat, directional_wall_interval_heat, harmonic_wall_interval_heat,
-        recover_dirichlet_wall_flux_2d,
-        solve_harmonic_slab_2d, solve_steady_slab_2d,
     )
 
-    # T_dc = -x*(0.2 + 1.4*cos(2πy)), T_ac = -x*exp(i*2πy).
     # Left inward fluxes equal the respective slopes with their signs reversed.
     omega = 3.
-    wavenumber = 2 * math.pi
     previous_directional = {}
     interval_errors = []
     errors = []
     for n in (16, 32, 64):
-        dx = 1 / n
-        x = (torch.arange(n, dtype=torch.float64) + .5) * dx
-        phase = wavenumber * x
-        varying_bias = 1.4 * phase.cos()
-        bias = .2 + varying_bias
-        wave = torch.exp(1j * phase)
-        steady_walls = (0., -bias)
-        harmonic_walls = (0., -wave)
-        steady, dc_sections = solve_steady_slab_2d(
-            -wavenumber**2 * varying_bias[:, None] * x, dx, steady_walls, return_x_flux=True)
-        harmonic, ac_sections = solve_harmonic_slab_2d(
-            -(wavenumber**2 + 1j * omega) * wave[:, None] * x, dx, harmonic_walls, omega,
-            return_x_flux=True)
-        dc_flux = recover_dirichlet_wall_flux_2d(
-            steady, dx, 1., torch.stack((dc_sections[0], -dc_sections[-1])),
-            x_wall_temperatures=steady_walls)
-        ac_flux = recover_dirichlet_wall_flux_2d(
-            harmonic, dx, 1., torch.stack((ac_sections[0], -ac_sections[-1])),
-            x_wall_temperatures=harmonic_walls)
+        bias, phase, wave, dc_flux, ac_flux = _traveling_wall_fluxes(n, omega)
         absorbed, released = directional_wall_cycle_heat(ac_flux, omega, steady_flux=dc_flux)
 
         # A full-cycle integral is invariant under a phase shift. On the right
@@ -2928,3 +2935,34 @@ def test_directional_wall_interval_heat_against_split_quadrature(record_property
     gap = 2.**-50
     _, released = directional_wall_interval_heat(-1., 1., 0., .1, steady_flux=1-gap)
     assert abs(released.item()/(2*math.sqrt(2)/3*gap**1.5)-1) < 1e-12
+
+def test_partial_wall_heat_at_fixed_reversing_rows(record_property):
+    from tensorsph.heat_conduction_2d import directional_wall_interval_heat
+
+    omega, start, end = 3., -.13, .57
+    base = 16
+    centres = (torch.arange(base, dtype=torch.float64)+.5)/base
+    phase = 2*math.pi*centres
+    reference = [_directional_heat_quadrature(w, b, omega, start, end)
+                 for w, b in zip(torch.exp(1j*phase).tolist(), (.2+1.4*phase.cos()).tolist())]
+    rows = centres.new_tensor(reference)
+    reversing = (rows > 0).all(dim=1)
+    assert reversing.any()
+    record_property("reversing_positions", centres[reversing].tolist())
+    exact = rows[reversing].T
+    previous = {}
+    for factor in (1, 3, 9):
+        n = base*factor
+        # An odd refinement factor retains every original particle centre.
+        indices = (factor*torch.arange(base) + factor//2)[reversing]
+        _, _, _, dc_flux, ac_flux = _traveling_wall_fluxes(n, omega)
+        absorbed, released = directional_wall_interval_heat(
+            ac_flux[:, indices], omega, start, end, steady_flux=dc_flux[:, indices])
+        for name, actual, target in (("absorbed", absorbed, exact), ("released", released, exact.flip((0,)))):
+            error = (actual-target).abs().max().item()
+            record_property(f"n{n}_{name}_error_J_m2", error)
+            if name in previous:
+                order = math.log(previous[name]/error, 3)
+                record_property(f"n{n}_{name}_order", order)
+                assert order > 1.8
+            previous[name] = error
