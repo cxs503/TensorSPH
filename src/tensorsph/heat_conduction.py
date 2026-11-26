@@ -159,20 +159,20 @@ def stencil_rhs(temperature, stencil, rho=1.0, ends="periodic"):
 def lattice_symbol_ratio(k, dx, h, eta_factor=0.01, volume=None):
     """``alpha_eff(k) / alpha`` of the lattice stencil -- its discrete dispersion.
 
-    Applying the stencil to ``cos(k x)`` gives ``rhs = -[2 sum_m a_m
-    (1 - cos(m k dx))] cos(k x)``, so the ratio of that factor to the exact
-    ``alpha k^2`` is the wavenumber-dependent effective diffusivity.  ``k -> 0``
-    is what :func:`lattice_diffusion_factor` measures (and the solver calibrates
-    away); the deviation at larger ``k`` is the part a single factor cannot
-    remove, and it is what puts a floor under the profile error.
+    For each positive offset r=m*dx with coefficient a, its two neighbors
+    contribute -4*a*(1-cos(k*r)) to the decay rate. Divide by k² to get
+    the effective diffusivity ratio. At k=0 return its continuous extension,
+    the exact stencil second moment used by the contact solver's k0 calibration.
     """
     stencil = lattice_stencil(dx, h, eta_factor, volume=volume)
     kk = float(k)
-    acc = 0.0
+    terms = []
     for m, a in stencil:
-        theta = m * kk * float(dx)
-        acc += a * 4.0 * math.sin(0.5 * theta) ** 2      # = 2 - 2 cos(theta), stable
-    return -2.0 * acc / (kk * kk)
+        distance = m * float(dx)
+        phase = .5 * kk * distance
+        sinc = math.sin(phase) / phase if phase else 1.0
+        terms.append(-2.0 * a * (distance * sinc)**2)
+    return math.fsum(terms)
 
 
 def stencil_vs_dense(dx=0.02, h_factor=1.3, eta_factor=0.01, n=40, seed=0):
@@ -302,7 +302,7 @@ def run_contact_sph(cfg: ContactConfig | None = None) -> ContactResult:
         # ~4e-4 below it (the symbol falls off like (k dx)^2), and that gap is
         # exactly the residual diffusivity this case exposes -- see
         # docs/case-conduction-1d.md.
-        factor = lattice_symbol_ratio(1.0e-3 / dx, dx, h, cfg.eta_factor)
+        factor = lattice_symbol_ratio(0., dx, h, cfg.eta_factor)
         scatter = 0.0
     elif mode != "none":
         raise ValueError(f"unknown calibration={cfg.calibration!r}")

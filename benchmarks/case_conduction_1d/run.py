@@ -142,7 +142,7 @@ def symbol_table(dx=1.0, h_factor=1.3):
         out["ratio"].append(lattice_symbol_ratio(kdx / dx, dx, h))
     modes = [2.0 * math.pi * m / 256.0 for m in (1, 2, 3)]      # the repo's calibration modes
     repo_factor = lattice_diffusion_factor(h_factor=h_factor)[0]
-    k0 = lattice_symbol_ratio(1.0e-3, dx, h)
+    k0 = lattice_symbol_ratio(0., dx, h)
     return {"rows": out,
             "repo_three_mode_factor": repo_factor,
             "mode_k_dx": modes,

@@ -105,7 +105,7 @@ def test_second_order_trend():
 def test_calibration_factor_is_the_k0_symbol():
     """The k->0 calibration and the three-mode mean bracket the symbol."""
     factor = lattice_diffusion_factor(h_factor=1.3)[0]
-    k0 = lattice_symbol_ratio(1e-3, 1.0, 1.3)
+    k0 = lattice_symbol_ratio(0., 1.0, 1.3)
     assert 1.0 < factor < k0 < 1.05
     # the three-mode mean sits below the k->0 limit by ~4e-4 -- that gap is the
     # residual diffusivity measured in the benchmark
@@ -126,8 +126,8 @@ def test_residual_diffusivity_explains_the_plateau():
     keep = x.abs() <= X_CUT
     lhs, rhs = e[keep], res.time * tpp[keep]
     d_alpha = float((lhs * rhs).sum() / (rhs * rhs).sum())
-    gap = (lattice_symbol_ratio(1e-3, 1.0, 1.3) - lattice_diffusion_factor(h_factor=1.3)[0]) \
-        / lattice_symbol_ratio(1e-3, 1.0, 1.3)
+    gap = (lattice_symbol_ratio(0., 1.0, 1.3) - lattice_diffusion_factor(h_factor=1.3)[0]) \
+        / lattice_symbol_ratio(0., 1.0, 1.3)
     # the model must explain the plateau, not merely correlate with it: the
     # residual left after removing it is a small fraction of the raw error
     residual = float((lhs - d_alpha * rhs).abs().max())
@@ -145,3 +145,31 @@ def test_wall_condition_does_not_pollute_the_metric():
     narrow = run_contact_sph(ContactConfig(n_particles=300, dx=0.04, calibration="k0"))
     wide = run_contact_sph(ContactConfig(n_particles=600, dx=0.04, calibration="k0"))
     assert abs(narrow.error(X_CUT)[0] - wide.error(X_CUT)[0]) <= 1e-6
+
+@pytest.mark.parametrize("dx,h_factor,volume", [(1., 1.3, None), (.125, 1.75, .25)])
+def test_long_wave_ratio_from_quadratic_patch(dx, h_factor, volume, record_property):
+    # T=x²/2 has unit curvature. Its center rate from the physical particle
+    # pairs is the long-wave effective diffusivity for unit conductivity.
+    from tensorsph.ice_thermal.sph_thermal import conduction_rhs
+
+    positions = torch.arange(-5, 6, dtype=torch.float64)*dx
+    ones = torch.ones_like(positions)
+    rate = conduction_rhs(positions.square()/2, ones, ones*(volume or dx), 1.,
+                          positions, h_factor*dx)[5].item()
+    errors = []
+    for k in (0., 1e-200, -1e-200, 2.**-38/dx):
+        ratio = lattice_symbol_ratio(k, dx, h_factor*dx, volume=volume)
+        errors.append(abs(ratio/rate-1))
+    record_property("pair_reference_diffusivity_ratio", rate)
+    record_property("max_relative_error", max(errors))
+    assert max(errors) < 2e-15
+
+
+def test_contact_solver_uses_exact_long_wave_calibration(record_property):
+    dx, hf = .125, 1.3
+    result = run_contact_sph(ContactConfig(n_particles=32, dx=dx, h_factor=hf,
+                                           fourier=.01, calibration="k0"))
+    expected = -2*sum(a*(m*dx)**2 for m,a in lattice_stencil(dx,hf*dx))
+    error = abs(result.diffusion_factor/expected-1)
+    record_property("relative_calibration_error", error)
+    assert error < 2e-15
