@@ -1,0 +1,22 @@
+{
+  "source_commit": "b3f9fbe6c56330937e9790c9378cfa4b03697acd",
+  "command": "PYTHONPATH=src OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py tests/test_conduction_slab.py tests/test_conduction_2d.py -o junit_family=legacy --junitxml=/tmp/contact-wall-heat-final.xml",
+  "passed": 321,
+  "reference": "Time integral of the finite slab Fourier-series wall flux, centered contact, length 1.5 m, left/right 302/310 K, diffusivity 0.25 m^2/s, unit volumetric heat capacity, slab Fourier number 0.06.",
+  "measurements": {
+    "test_integrated_contact_wall_heat[False]": {
+      "max_relative_heat_error_n32": 0.0020133810438546316,
+      "balance_residual_n32": 0.0,
+      "max_relative_heat_error_n64": 0.0005058934199428821,
+      "balance_residual_n64": 0.0,
+      "analytic_left_inward_heat": -0.2768914394749973
+    },
+    "test_integrated_contact_wall_heat[True]": {
+      "max_relative_heat_error_n32": 0.0020133810438546316,
+      "balance_residual_n32": 0.0,
+      "max_relative_heat_error_n64": 0.0005058934199428821,
+      "balance_residual_n64": 0.0,
+      "analytic_left_inward_heat": -0.2768914394749973
+    }
+  }
+}
