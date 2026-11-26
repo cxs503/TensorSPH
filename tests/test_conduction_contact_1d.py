@@ -536,3 +536,44 @@ def test_offset_wall_heat_per_boundary(fraction, record_property):
             error = abs(calculated/reference-1)
             record_property(f"{wall}_relative_error_n{n}", error)
             assert error < .025*(48/n)**2
+
+
+@pytest.mark.parametrize("window", [(.0187, .00913), (.095, 1e-19)])
+def test_contact_window_heat_refinement(window, record_property):
+    from scipy.integrate import quad
+    from tensorsph.heat_conduction import finite_slab_contact_wall_fluxes
+
+    start, duration = window
+    reference = []
+    for side, wall in enumerate(("left", "right")):
+        def flux(u):
+            return finite_slab_contact_wall_fluxes(start+u*duration, 1., 1., 1.,
+                                                  4., 1., contact_position=-.17)[side]
+        reference.append(duration*quad(flux, 0., 1., epsabs=1e-13)[0])
+        record_property(f"{wall}_reference_j_m2", reference[-1])
+
+    for n in (48, 96):
+        run = run_contact_sph(ContactConfig(
+            n_particles=n, dx=1/n, fourier=.1, t_hot=4., t_cold=1.,
+            contact_position=-.17, calibration="k0", wall_heat_window=window))
+        for wall, value, expected in zip(("left", "right"),
+                                         (run.window_heat_left, run.window_heat_right), reference):
+            error = abs(value/expected-1)
+            record_property(f"{wall}_relative_error_n{n}", error)
+            assert error < .03*(48/n)**2
+        assert run.wall_heat_left is None
+
+
+def test_contact_heat_window_full_empty_and_out_of_bounds():
+    cfg = ContactConfig(n_particles=16, dx=1/16, fourier=.04, track_wall_heat=True,
+                        wall_heat_window=(0., .04))
+    run = run_contact_sph(cfg)
+    assert (run.window_heat_left, run.window_heat_right) == pytest.approx(
+        (run.wall_heat_left, run.wall_heat_right), rel=1e-13, abs=0.)
+    cfg.wall_heat_window = (.04, 0.)
+    run = run_contact_sph(cfg)
+    assert (run.window_heat_left, run.window_heat_right) == (0., 0.)
+    for window in ((-.01, .01), (.03, .02), (0., -.01)):
+        cfg.wall_heat_window = window
+        with pytest.raises(ValueError, match="wall_heat_window"):
+            run_contact_sph(cfg)

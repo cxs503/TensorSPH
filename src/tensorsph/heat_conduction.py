@@ -346,6 +346,7 @@ class ContactConfig:
     reference: str = "semi_infinite"   # or "finite_slab" for fixed end walls
     track_wall_heat: bool = False      # accumulate each wall's inward heat per unit area
     contact_position: float = 0.0      # initial jump position relative to slab center, m
+    wall_heat_window: tuple[float, float] | None = None  # (start, duration), seconds
 
 
 @dataclass
@@ -372,6 +373,8 @@ class ContactResult:
     wall_flux_right: float = 0.0
     wall_heat_left: float | None = None    # cumulative inward heat per unit area
     wall_heat_right: float | None = None
+    window_heat_left: float | None = None   # inward heat per unit area within wall_heat_window
+    window_heat_right: float | None = None
 
     # ---------------------------------------------------------------- metrics
     def error(self, x_cut: float | None = None):
@@ -426,6 +429,10 @@ def run_contact_sph(cfg: ContactConfig | None = None) -> ContactResult:
     vol = torch.full((n,), dx, dtype=DTYPE)
 
     t_end = float(cfg.fourier) * 1.0 ** 2 / alpha
+    if cfg.wall_heat_window is not None:
+        start, duration = cfg.wall_heat_window
+        if not (0 <= start <= t_end and 0 <= duration <= t_end - start):
+            raise ValueError("wall_heat_window must lie within the run with nonnegative duration")
     dt = cfg.courante * dx ** 2 / alpha
     steps = max(1, int(math.ceil(t_end / dt)))
     dt = t_end / steps                                 # land exactly on t*
@@ -470,6 +477,7 @@ def run_contact_sph(cfg: ContactConfig | None = None) -> ContactResult:
                         diffusion_scatter=scatter, cfg=cfg)
     profile_time, profiles = [], []
     heat_left = heat_right = 0.0
+    window_left = window_right = 0.0
 
     for step in range(steps + 1):
         if cfg.sample_every and step % cfg.sample_every == 0:
@@ -491,18 +499,30 @@ def run_contact_sph(cfg: ContactConfig | None = None) -> ContactResult:
             t_ext = _mirror_extend(temperature, float(cfg.t_hot),
                                    float(cfg.t_cold), m)
             rate = alpha * stencil_rhs(t_ext, stencil, rho=1.0)[m:m + n]
-        if cfg.track_wall_heat:
+        overlap = 0.
+        if cfg.wall_heat_window is not None:
+            # Clip step endpoints relative to the window start. Adding a tiny
+            # duration to a late start could round the entire window away.
+            step_end = t_end if step + 1 == steps else (step + 1)*dt
+            overlap = (min(duration, max(0., step_end-start))
+                       - min(duration, max(0., step*dt-start)))
+        if cfg.track_wall_heat or overlap > 0.:
             # The forward Euler energy update uses the flux at the start of the step.
             flux_left, flux_right = contact_wall_fluxes(
                 temperature, stencil, dx, alpha * alpha_corr, cfg.t_hot, cfg.t_cold)
-            heat_left += dt * flux_left
-            heat_right += dt * flux_right
+            if cfg.track_wall_heat:
+                heat_left += dt * flux_left
+                heat_right += dt * flux_right
+            window_left += overlap * flux_left
+            window_right += overlap * flux_right
         temperature = temperature + dt * rate * alpha_corr
         if not torch.isfinite(temperature).all():
             raise FloatingPointError(f"conduction diverged at step {step}")
 
     if cfg.track_wall_heat:
         res.wall_heat_left, res.wall_heat_right = heat_left, heat_right
+    if cfg.wall_heat_window is not None:
+        res.window_heat_left, res.window_heat_right = window_left, window_right
     res.time = steps * dt
     res.x = [float(v) for v in pos]
     res.temperature = [float(v) for v in temperature]

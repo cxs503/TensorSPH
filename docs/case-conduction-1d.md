@@ -319,3 +319,9 @@ Fo=0.06，得到左、右端累计热量分别为 −0.27689144 和 +0.27689144 
 早期解对各高斯镜像逐项积分，较晚时刻使用积分后的傅里叶级数。在初始温度阶跃偏心时，
 这一参考值可分别检验粒子计算的 `wall_heat_left` 和 `wall_heat_right`。
 复现命令为 `PYTHONPATH=src OMP_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py -k offset_wall_heat`。
+
+`ContactConfig(wall_heat_window=(start, duration))` 可只记录指定观测窗口的两端传热量。
+起始时刻和持续时间以秒计，两者指定的窗口须位于本次计算内。结果
+`window_heat_left`、`window_heat_right` 以流入为正，单位为 J/m²。
+每个欧拉时间步按实际落入窗口的时长累加步首热通量，允许窗口边界落在步内。
+即使持续时间短于一个时间步，通量的时间分辨率仍由该步长决定。
