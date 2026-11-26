@@ -2966,3 +2966,51 @@ def test_partial_wall_heat_at_fixed_reversing_rows(record_property):
                 record_property(f"n{n}_{name}_order", order)
                 assert order > 1.8
             previous[name] = error
+
+
+def test_wall_reversal_times_at_fixed_rows(record_property):
+    from scipy.optimize import brentq
+    from tensorsph.heat_conduction_2d import harmonic_wall_reversal_times
+
+    omega = 3.
+    period = 2*math.pi/omega
+    # Reference roots bracketed by consecutive extrema of the exact flux.
+    base = 16
+    indices = torch.tensor([3, 4, 10, 11])
+    phase = (indices.to(torch.float64)+.5)*2*math.pi/base
+    roots = []
+    for phi in phase.tolist():
+        def inward(t):
+            return .2+1.4*math.cos(phi)+math.cos(omega*t+phi)
+        peak = -phi/omega
+        roots.append([brentq(inward, peak-period/2, peak)%period,
+                      brentq(inward, peak, peak+period/2)%period])
+    rising, falling = phase.new_tensor(roots).T
+    expected = torch.stack((rising, falling))
+    previous = {}
+    for factor in (1, 3, 9):
+        n = base*factor
+        selected = factor*indices + factor//2
+        _, _, _, dc, ac = _traveling_wall_fluxes(n, omega)
+        absorption, release = harmonic_wall_reversal_times(ac[:,selected], omega, steady_flux=dc[:,selected])
+        for label, actual, target in (("absorption", absorption, expected),
+                                      ("release", release, expected.flip((0,)))):
+            difference = torch.remainder(actual-target+period/2, period)-period/2
+            error = difference.abs().max().item()
+            record_property(f"n{n}_{label}_onset_error_s", error)
+            assert math.isfinite(error)
+            if label in previous:
+                order = math.log(previous[label]/error, 3)
+                record_property(f"n{n}_{label}_order", order)
+                assert order > 1.8
+            previous[label] = error
+
+
+def test_wall_reversal_times_skip_tangencies_and_constant_flux():
+    from tensorsph.heat_conduction_2d import harmonic_wall_reversal_times
+
+    for times in harmonic_wall_reversal_times([1j, -1., 0., .5], 2., steady_flux=[-1., 1., 0., 3.]):
+        assert torch.isnan(times).all()
+    rising, falling = harmonic_wall_reversal_times(-1j, 2.)
+    assert rising.item() == pytest.approx(0., abs=1e-15)
+    assert falling.item() == pytest.approx(math.pi/2)

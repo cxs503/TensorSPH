@@ -1886,6 +1886,40 @@ def harmonic_wall_interval_heat(wall_flux, angular_frequency, start_time, end_ti
     return duration * (bias + average*midpoint_flux)
 
 
+def harmonic_wall_reversal_times(wall_flux, angular_frequency, *, steady_flux=0.):
+    """Return the onset times of absorption and release in one cycle (seconds).
+
+    For inward flux steady_flux + Re(wall_flux * exp(iωt)), return two arrays
+    broadcast over wall rows. Times are measured from phase time zero modulo
+    the period. Both entries are NaN where the flux never changes sign,
+    including a tangency or an identically zero flux.
+    """
+    if not math.isfinite(angular_frequency) or angular_frequency <= 0:
+        raise ValueError("angular_frequency must be positive and finite")
+    if torch.is_complex(torch.as_tensor(steady_flux)):
+        raise ValueError("steady_flux must be real")
+    flux = torch.as_tensor(wall_flux, dtype=torch.complex128)
+    bias = torch.as_tensor(steady_flux, dtype=torch.float64, device=flux.device)
+    amplitude = flux.abs()
+    if not torch.isfinite(amplitude).all() or not torch.isfinite(bias).all():
+        raise ValueError("wall fluxes must be finite")
+    crossing = amplitude > bias.abs()
+    safe_amplitude = torch.where(crossing, amplitude, 1.)
+    gap = torch.where(crossing, (amplitude-bias.abs())/safe_amplitude, 0.)
+    cosine = torch.where(crossing, bias.abs()/safe_amplitude, 1.)
+    half_width = torch.atan2(torch.sqrt(gap*(1+cosine)), cosine)
+    # Locate both roots relative to the extremum of the smaller lobe.
+    center = torch.where(bias > 0, math.pi*torch.ones_like(bias), 0.) - flux.angle()
+    offset = torch.where(bias > 0, half_width, -half_width)
+    absorption = torch.remainder(center+offset, 2*math.pi)/angular_frequency
+    release = torch.remainder(center-offset, 2*math.pi)/angular_frequency
+    # Roundoff can map a tiny negative phase to the period itself.
+    period = 2*math.pi/angular_frequency
+    absorption = torch.where(absorption >= period, 0., absorption)
+    release = torch.where(release >= period, 0., release)
+    return torch.where(crossing, absorption, torch.nan), torch.where(crossing, release, torch.nan)
+
+
 def directional_wall_cycle_heat(wall_flux, angular_frequency, *, steady_flux=0.):
     """Return absorbed and released heat magnitudes (J/m²) per wall row.
 
