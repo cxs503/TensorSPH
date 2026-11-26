@@ -2649,7 +2649,7 @@ def run_mode_decay(cfg: ModeDecayConfig | None = None) -> ModeDecayResult:
     if cfg.calibration == "none":
         factor = 1.0
     elif cfg.calibration == "lattice_1d":
-        factor = lattice_diffusion_factor(h_factor=cfg.h_factor)[0]
+        factor = lattice_diffusion_factor(h_factor=cfg.h_factor, eta_factor=cfg.eta_factor)[0]
     elif cfg.calibration == "k0_2d":
         factor = lattice_diffusion_factor_2d(cfg.h_factor, dx, cfg.eta_factor, "k0")
     elif cfg.calibration == "mean_2d":

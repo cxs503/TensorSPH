@@ -189,3 +189,28 @@ def test_fixed_wall_contact_diffusivity_scaling(alpha, record_property):
     assert fast.time * alpha == pytest.approx(options["fourier"])
     assert backend_error < 1e-12
     assert analytic_error < 0.002
+
+
+@pytest.mark.parametrize("eta_factor", [0.125, 0.5])
+def test_configured_pair_regularization_in_lattice_calibration(eta_factor, record_property):
+    from tensorsph.heat_conduction_2d import ModeDecayConfig, run_mode_decay
+
+    # The production calibration projects dense particle rates onto three modes.
+    # Independently evaluate their exact eigenvalues from the stencil symbol.
+    dx, h_factor = 0.0625, 1.5
+    ratios = [lattice_symbol_ratio(2 * math.pi * m / (256 * dx), dx,
+                                   h_factor * dx, eta_factor) for m in (1, 2, 3)]
+    reference = sum(ratios) / len(ratios)
+    contact = run_contact_sph(ContactConfig(n_particles=96, dx=dx, h_factor=h_factor,
+                                            eta_factor=eta_factor, fourier=0.0625))
+    # This comparison mode deliberately uses the 1-D calibration on a 2-D grid.
+    mode = run_mode_decay(ModeDecayConfig(n=16, h_factor=h_factor, eta_factor=eta_factor,
+                                          calibration="lattice_1d", amplitude_end=0.95))
+    contact_error = abs(contact.diffusion_factor / reference - 1)
+    mode_error = abs(mode.factor / reference - 1)
+    record_property("contact_relative_factor_error", contact_error)
+    record_property("comparison_mode_relative_factor_error", mode_error)
+    record_property("contact_normalized_erfc_error", contact.error()[0])
+    assert max(contact_error, mode_error) < 1e-12
+    assert contact.diffusion_scatter == pytest.approx(max(ratios) - min(ratios), abs=1e-12)
+    assert contact.error()[0] < 0.002

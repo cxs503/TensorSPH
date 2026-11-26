@@ -296,7 +296,7 @@ def run_contact_sph(cfg: ContactConfig | None = None) -> ContactResult:
     mode = cfg.calibration if cfg.calibrate else "none"
     if mode == "lattice":
         # repository practice: mean of the three longest periodic modes
-        factor, scatter = lattice_diffusion_factor(h_factor=cfg.h_factor)
+        factor, scatter = lattice_diffusion_factor(h_factor=cfg.h_factor, eta_factor=cfg.eta_factor)
     elif mode == "k0":
         # long-wavelength limit of the same symbol.  The three-mode mean sits
         # ~4e-4 below it (the symbol falls off like (k dx)^2), and that gap is
