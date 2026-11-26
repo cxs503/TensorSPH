@@ -1291,7 +1291,7 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                             conductivity=1., volumetric_heat_capacity=1., theta=.5,
                             h_factor=1.3, x_wall_inward_flux=(0.,0.), return_x_heat=False, heat_loss_coefficient=0.,
                             method="theta", return_wall_heat_by_row=False, wall_gradient_fit="wall", temperature_reference=0.,
-                            return_interval_temperatures=False, ambient_temperature=None):
+                            return_interval_temperatures=False, ambient_temperature=None, return_bulk_exchange=False):
     """Advance a reflected slab over requested times with prescribed wall histories.
 
     Each wall may be a fixed scalar, row profile, callable of time returning
@@ -1318,6 +1318,8 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     driven by spatially varying wall temperatures. With return_interval_temperatures,
     append stage-weighted mean particle temperatures (nt-1,ny,nx) relative to
     temperature_reference, integrating every internal substep in each output interval.
+    With return_bulk_exchange, append signed ambient heat absorbed per particle
+    volume (nt-1,ny,nx), J/m³, integrated with the same stages as the field.
     """
     grid = [float(t) for t in times]
     jumps = [float(t) for t in wall_jump_times]
@@ -1373,6 +1375,7 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     def advance(initial,dt,start,load_end,weight):
         stage = tuple(stage_load(wall,start,load_end,weight,datum) for wall in walls)
         stage_flux = tuple(stage_load(q,start,load_end,weight) for q in fluxes)
+        ambient = -datum
         if ambient_temperature is None or loss == 0:
             source = stage_load(heat_source,start,load_end,weight,bulk_offset)
         else:
@@ -1387,8 +1390,9 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                      heat_loss_coefficient=heat_loss_coefficient)
         updated, flux = result if need_flux else (result, None)
         wall_flux = None
-        if return_wall_heat_by_row:
+        if return_wall_heat_by_row or return_bulk_exchange:
             stage_field = updated if weight == 1. else initial + weight*(updated-initial)
+        if return_wall_heat_by_row:
             recovered = []
             for side, (wall, load) in enumerate(zip(stage, stage_flux)):
                 if wall is None:
@@ -1404,12 +1408,14 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                     profile = mean + (gradient_flux - gradient_flux.mean())
                 recovered.append(profile)
             wall_flux = torch.stack(recovered)
-        return updated, flux, wall_flux
+        exchange = loss*(ambient-stage_field) if return_bulk_exchange else None
+        return updated, flux, wall_flux, exchange
 
     history = [field]
     heat = field.new_zeros((len(grid)-1,field.shape[1]+1)) if return_x_heat else None
     wall_heat = field.new_zeros((len(grid)-1, 2, field.shape[0])) if return_wall_heat_by_row else None
     averages = field.new_zeros((len(grid)-1, *field.shape)) if return_interval_temperatures else None
+    bulk = field.new_zeros((len(grid)-1, *field.shape)) if return_bulk_exchange else None
     events = set(jumps)
     segments = sorted(set(grid)|events)
     interval = 0
@@ -1427,11 +1433,13 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                 stage_time = start+gamma*dt
                 if not start<stage_time<end:
                     raise ValueError("SDIRK interval has no representable stage time")
-                first,flux1,wall_flux1 = advance(field,gamma*dt,start,stage_time,1.)
+                first,flux1,wall_flux1,exchange1 = advance(field,gamma*dt,start,stage_time,1.)
                 # Advance the explicit first-stage contribution before the
                 # second implicit solve, using the same diagonal RK weight.
                 base = field+((1-gamma)/gamma)*(first-field)
-                field,flux,wall_flux = advance(base,gamma*dt,stage_time,load_end,1.)
+                field,flux,wall_flux,exchange = advance(base,gamma*dt,stage_time,load_end,1.)
+                if return_bulk_exchange:
+                    exchange = (1-gamma)*exchange1 + gamma*exchange
                 if return_interval_temperatures:
                     stage_mean = (1-gamma)*first + gamma*field
                 if return_x_heat:
@@ -1440,7 +1448,7 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                     wall_flux = (1-gamma)*wall_flux1 + gamma*wall_flux
             else:
                 previous = field
-                field,flux,wall_flux = advance(previous,dt,start,load_end,weight)
+                field,flux,wall_flux,exchange = advance(previous,dt,start,load_end,weight)
                 if return_interval_temperatures:
                     stage_mean = field if weight == 1. else previous + weight*(field-previous)
             if return_interval_temperatures:
@@ -1449,6 +1457,8 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                 heat[interval] += dt*flux
             if return_wall_heat_by_row:
                 wall_heat[interval] += dt*wall_flux
+            if return_bulk_exchange:
+                bulk[interval] += dt*exchange
             start = end
         if stop==grid[interval+1]:
             history.append(field)
@@ -1462,6 +1472,8 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     if return_interval_temperatures:
         durations = field.new_tensor([b-a for a,b in zip(grid,grid[1:])])
         outputs.append(averages/durations[:, None, None] + (datum-temperature_reference))
+    if return_bulk_exchange:
+        outputs.append(bulk)
     return tuple(outputs) if len(outputs)>1 else fields
 
 

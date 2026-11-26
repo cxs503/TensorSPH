@@ -2612,3 +2612,39 @@ def test_storing_contact_retains_distinct_one_sided_material_fluxes():
     phase = torch.tensor([[1+.4j], [-.7j]], dtype=torch.complex128)
     left, right = layered_slab_contact_temperatures(phase*centers, phase[..., None]*flux, dx, k)
     torch.testing.assert_close(torch.cat((left, right), dim=-1), phase*traces)
+
+
+@pytest.mark.parametrize("options", [{}, {"rannacher": True}, {"method": "sdirk2"}])
+def test_fixed_wall_bulk_exchange_across_load_switch(options, record_property):
+    from tensorsph.heat_conduction_2d import solve_transient_slab_2d
+
+    dx, jump, end = .125, .125, .5
+    x = (torch.arange(8, dtype=torch.float64)+.5)*dx
+    initial = (305.+x).repeat(2, 1)
+    pattern = torch.stack((x, -x))
+    def exchange(t):
+        return pattern*(1. if t < jump else -2.)
+
+    # T=305+x+t gives unit temperature rate and constant rightward flux -1.
+    # C=2, H=4. The external source compensates the patterned bulk exchange.
+    field, heat, means, bulk = solve_transient_slab_2d(
+        initial, [0., end], dx, (lambda t: 305.+t, lambda t: 306.+t),
+        ambient_temperature=lambda t: initial+t+exchange(t)/4,
+        heat_source=lambda t: 2.-exchange(t), heat_loss_coefficient=4.,
+        volumetric_heat_capacity=2., wall_jump_times=[jump], temperature_reference=305.,
+        return_x_heat=True, return_interval_temperatures=True, return_bulk_exchange=True, **options)
+    expected = (jump-2*(end-jump))*pattern
+    # Rannacher uses backward-Euler endpoint quadrature on two half steps
+    # in each segment; its reported stage mean includes that quadrature bias.
+    mean_time = end/2
+    if options.get("rannacher"):
+        mean_time += (jump**2+(end-jump)**2)/(4*end)
+    errors = dict(bulk_J_m3=(bulk[0]-expected).abs().max(),
+                  final_K=(field[-1]-x-end).abs().max(),
+                  mean_K=(means[0]-x-mean_time).abs().max(),
+                  section_J_m2=(heat+end).abs().max(),
+                  budget_J_m3=(2*(field[-1]-field[0])-bulk[0]-(2*end-expected)
+                               +heat[0].diff()/dx).abs().max())
+    for name, error in errors.items():
+        record_property(name, float(error))
+        assert error < 5e-12
