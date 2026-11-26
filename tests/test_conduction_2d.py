@@ -3131,3 +3131,32 @@ def test_layered_fixed_wall_pulse_mean_temperature(record_property):
         record_property(f"n{n}_max_cooling_mean_error_K", error)
     for coarse, fine in zip(errors, errors[1:]):
         assert coarse > 3.4*fine
+
+
+def test_layered_fixed_wall_startup_mean_temperature(record_property):
+    """Mean temperature from the initial wall step through the end of heating."""
+    import numpy as np
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+
+    duration = .023
+    wave = np.pi*np.arange(1, 81)
+    tail = 2*np.exp(-wave**2*duration)/wave**3
+    # Integrating the step response leaves a nondecaying sine series.
+    # Its sum solves -v'' = 1-x with zero wall values: v=x*(1-x)*(2-x)/6.
+    bulk_reference = .5 - (1/24 - (1-np.cos(wave))/wave @ tail)/duration
+    errors = []
+    for n in (12, 24, 48):
+        _, mean = solve_transient_layered_slab(
+            np.zeros(n), [0., duration], 1/n, (1., 0.), conductivity=np.ones(n),
+            volumetric_heat_capacity=1., method="exponential", return_interval_temperature=True)
+        x = (np.arange(n)+.5)/n
+        primitive = x*(1-x)*(2-x)/6
+        reference = 1-x - (primitive - np.sin(x[:, None]*wave) @ tail)/duration
+        field = mean[0].numpy()
+        probe_error = float(np.max(np.abs(field-reference)))
+        bulk_error = abs(field.mean()-bulk_reference)
+        errors.append(np.array([probe_error, bulk_error]))
+        record_property(f"n{n}_max_startup_mean_error_K", probe_error)
+        record_property(f"n{n}_bulk_startup_mean_error_K", bulk_error)
+    for coarse, fine in zip(errors, errors[1:]):
+        assert np.all(coarse > 3.4*fine)
