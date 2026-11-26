@@ -2802,7 +2802,7 @@ def test_biased_wall_cycle_heat_resolves_grazing_reversal():
 def test_biased_cycle_heat_from_steady_and_harmonic_slab_solves(record_property):
     from scipy.integrate import quad
     from tensorsph.heat_conduction_2d import (
-        directional_wall_cycle_heat, recover_dirichlet_wall_flux_2d,
+        directional_wall_cycle_heat, harmonic_wall_interval_heat, recover_dirichlet_wall_flux_2d,
         solve_harmonic_slab_2d, solve_steady_slab_2d,
     )
 
@@ -2810,6 +2810,7 @@ def test_biased_cycle_heat_from_steady_and_harmonic_slab_solves(record_property)
     # Left inward fluxes equal the respective slopes with their signs reversed.
     omega = 3.
     wavenumber = 2 * math.pi
+    interval_errors = []
     errors = []
     for n in (16, 32, 64):
         dx = 1 / n
@@ -2851,4 +2852,15 @@ def test_biased_cycle_heat_from_steady_and_harmonic_slab_solves(record_property)
             record_property(f"n{n}_order", order)
             assert order > 1.8
         errors.append(error)
+
+        start, end = -.13, .57
+        heat = harmonic_wall_interval_heat(ac_flux, omega, start, end, steady_flux=dc_flux)
+        reference = bias*(end-start) + ((phase+omega*end).sin()-(phase+omega*start).sin())/omega
+        interval_error = (heat-torch.stack((reference,-reference))).abs().max().item()
+        record_property(f"n{n}_interval_error_J_m2", interval_error)
+        if interval_errors:
+            order = math.log2(interval_errors[-1]/interval_error)
+            record_property(f"n{n}_interval_order", order)
+            assert order > 1.8
+        interval_errors.append(interval_error)
     assert errors[-1] < .04

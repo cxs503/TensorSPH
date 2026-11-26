@@ -1861,6 +1861,31 @@ def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux
     return recovered if side is None else recovered[0]
 
 
+def harmonic_wall_interval_heat(wall_flux, angular_frequency, start_time, end_time, *, steady_flux=0.):
+    """Signed inward heat per wall row (J/m²) between two times in seconds.
+
+    The instantaneous inward flux is steady_flux + Re(wall_flux * exp(iωt)).
+    Supply peak phasors in W/m². Reversing the time limits reverses the sign.
+    """
+    if not math.isfinite(angular_frequency) or angular_frequency <= 0:
+        raise ValueError("angular_frequency must be positive and finite")
+    if not math.isfinite(start_time) or not math.isfinite(end_time):
+        raise ValueError("integration times must be finite")
+    if torch.is_complex(torch.as_tensor(steady_flux)):
+        raise ValueError("steady_flux must be real")
+    flux = torch.as_tensor(wall_flux, dtype=torch.complex128)
+    bias = torch.as_tensor(steady_flux, dtype=torch.float64, device=flux.device)
+    if not torch.isfinite(flux).all() or not torch.isfinite(bias).all():
+        raise ValueError("wall fluxes must be finite")
+    duration = end_time - start_time
+    half_phase = angular_frequency * duration / 2
+    midpoint_phase = angular_frequency * (start_time + duration/2)
+    # Integrating about the midpoint avoids subtracting nearby phasors.
+    average = math.sin(half_phase)/half_phase if half_phase else 1.
+    midpoint_flux = flux.real*math.cos(midpoint_phase) - flux.imag*math.sin(midpoint_phase)
+    return duration * (bias + average*midpoint_flux)
+
+
 def directional_wall_cycle_heat(wall_flux, angular_frequency, *, steady_flux=0.):
     """Return absorbed and released heat magnitudes (J/m²) per wall row.
 
