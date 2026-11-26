@@ -3412,3 +3412,31 @@ def test_dense_particle_exchange_at_small_temperature_contrast(dimension, record
     record_property("relative_energy_imbalance", balance)
     assert relative < 1e-14
     assert balance < 1e-15
+
+
+@pytest.mark.parametrize("exponents", [(-800, -500), (500, 800), (1023, -800)])
+@pytest.mark.parametrize("operator", ["dense_1d", "dense_2d", "stencil"])
+def test_pair_conductivity_range(operator, exponents, record_property):
+    from fractions import Fraction
+    from tensorsph.ice_thermal.sph_thermal import conduction_rhs
+    from tensorsph.heat_conduction_2d import conduction_rhs_2d
+
+    # Two insulated particles at unit distance with unit volumes, rho and h.
+    # At r=1, dW/dr=-1/2. Evaluate the series resistance in exact arithmetic.
+    left, right = (Fraction(2)**e for e in exponents)
+    exchange = float(2 / (1/left + 1/right) / Fraction(10001, 10000))
+    k = torch.tensor([float(left), float(right)], dtype=torch.float64)
+    t = torch.tensor([1., 0.], dtype=k.dtype)
+    x = torch.arange(2, dtype=k.dtype)
+    if operator == "stencil":
+        offsets = tuple(((0, n), -0.5/1.0001) for n in (-1, 1))
+        rates = stencil_rhs_2d(t[None, :], offsets, conductivity=k,
+                               x_wall_temperatures=(None, None)).flatten()
+    elif operator == "dense_1d":
+        rates = conduction_rhs(t, k, torch.ones_like(t), 1., x, 1.)
+    else:
+        rates = conduction_rhs_2d(t, k, torch.ones_like(t), 1., torch.stack((0*x, x), dim=1), 1.)
+    error = (rates / exchange - t.new_tensor([-1., 1.])).abs().max().item()
+    record_property("max_relative_rate_error", error)
+    assert error < 1e-14
+    assert rates.sum().item() == 0.

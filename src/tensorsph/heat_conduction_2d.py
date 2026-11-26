@@ -84,7 +84,7 @@ from dataclasses import dataclass, field
 
 import torch
 
-from .ice_thermal.sph_thermal import _dense_pair_exchange, kernel_dwdr
+from .ice_thermal.sph_thermal import _dense_pair_exchange, _pair_conductivity, kernel_dwdr
 
 __all__ = [
     "DTYPE",
@@ -2287,7 +2287,7 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
                         resistance = resistance + torch.roll(faces, shifts=-j, dims=0)
                 a = a * abs(n) / resistance
             else:
-                a = a * (2 * k * neighbor / (k + neighbor))
+                a = a * _pair_conductivity(k, neighbor)
             if split_interface_links and m and n and transverse_phase:
                 # Identify jumps along the whole link, even when its two
                 # endpoints belong to the same material around a thin layer.

@@ -87,9 +87,16 @@ def pair_geometry(pos, volume, h, eta_factor=0.01):
     return f_ij * v[None, :]
 
 
+def _pair_conductivity(left, right):
+    """Harmonic mean for positive conductivities without forming their product."""
+    lower = torch.minimum(left, right)
+    upper = torch.maximum(left, right)
+    return lower / (0.5 + 0.5 * (lower / upper))
+
+
 def _dense_pair_exchange(temperature, conductivity, volume_geometry, rho):
     k = conductivity
-    pair_k = 2.0 * k[:, None] * k[None, :] / (k[:, None] + k[None, :])
+    pair_k = _pair_conductivity(k[:, None], k[None, :])
     # Form each physical jump before summation to retain small contrasts
     # on a common temperature background.
     jumps = temperature[:, None] - temperature[None, :]
