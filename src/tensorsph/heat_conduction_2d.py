@@ -2658,7 +2658,7 @@ def run_mode_decay(cfg: ModeDecayConfig | None = None) -> ModeDecayResult:
         factor = symbol_rate(dx, h, kx, ky, cfg.eta_factor) / (kx * kx + ky * ky)
     else:
         raise ValueError(f"unknown calibration={cfg.calibration!r}")
-    alpha_corr = 1.0 / factor if cfg.calibration != "none" else 1.0
+    alpha_corr = alpha / factor
 
     offsets = lattice_offsets(dx, h, cfg.eta_factor)
     temperature = mode_field(n, dx, kx, ky)

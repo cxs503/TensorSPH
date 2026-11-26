@@ -173,3 +173,19 @@ def test_contact_solver_uses_exact_long_wave_calibration(record_property):
     error = abs(result.diffusion_factor/expected-1)
     record_property("relative_calibration_error", error)
     assert error < 2e-15
+
+
+@pytest.mark.parametrize("alpha", [0.25, 4.0])
+def test_fixed_wall_contact_diffusivity_scaling(alpha, record_property):
+    # At fixed Fourier number the erfc profile and both discrete solutions
+    # are independent of alpha. The wall planes are six similarity lengths out.
+    options = dict(n_particles=96, dx=0.0625, fourier=0.0625, calibration="k0")
+    fast = run_contact_sph(ContactConfig(alpha=alpha, **options))
+    dense = run_contact_sph(ContactConfig(alpha=alpha, dense=True, **options))
+    backend_error = max(abs(a-b) for a, b in zip(fast.temperature, dense.temperature))
+    analytic_error = fast.error()[0]
+    record_property("max_backend_difference_K", backend_error)
+    record_property("max_normalized_erfc_error", analytic_error)
+    assert fast.time * alpha == pytest.approx(options["fourier"])
+    assert backend_error < 1e-12
+    assert analytic_error < 0.002

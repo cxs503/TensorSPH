@@ -348,7 +348,7 @@ def run_contact_sph(cfg: ContactConfig | None = None) -> ContactResult:
         else:
             t_ext = _mirror_extend(temperature, float(cfg.t_hot),
                                    float(cfg.t_cold), m)
-            rate = stencil_rhs(t_ext, stencil, rho=1.0)[m:m + n]
+            rate = alpha * stencil_rhs(t_ext, stencil, rho=1.0)[m:m + n]
         temperature = temperature + dt * rate * alpha_corr
         if not torch.isfinite(temperature).all():
             raise FloatingPointError(f"conduction diverged at step {step}")

@@ -3598,3 +3598,15 @@ def test_k0_calibration_against_rotated_quadratic_patch(dx, h_factor, eta, recor
     record_property("max_relative_patch_error", max(errors))
     record_property("relative_solver_factor_error", solver_error)
     assert max(*errors, solver_error) < 2e-15
+
+
+@pytest.mark.parametrize("integrator,alpha", [("euler", 4.), ("rk4", 0.25)])
+def test_mode_decay_diffusivity_scaling(integrator, alpha, record_property):
+    cfg = ModeDecayConfig(n=24, alpha=alpha, integrator=integrator, calibration="mode_2d",
+                          amplitude_end=0.5, courante=0.05)
+    result = run_mode_decay(cfg)
+    # Mode calibration matches the spatial eigenvalue to the continuum rate.
+    # The remaining amplitude error comes from time integration.
+    error = abs(result.amplitude_end / result.amplitude_start / cfg.amplitude_end - 1)
+    record_property("relative_amplitude_error", error)
+    assert error < (0.003 if integrator == "euler" else 1e-9)
