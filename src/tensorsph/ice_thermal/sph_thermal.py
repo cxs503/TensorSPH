@@ -87,6 +87,15 @@ def pair_geometry(pos, volume, h, eta_factor=0.01):
     return f_ij * v[None, :]
 
 
+def _dense_pair_exchange(temperature, conductivity, volume_geometry, rho):
+    k = conductivity
+    pair_k = 2.0 * k[:, None] * k[None, :] / (k[:, None] + k[None, :])
+    # Form each physical jump before summation to retain small contrasts
+    # on a common temperature background.
+    jumps = temperature[:, None] - temperature[None, :]
+    return (2.0 / rho) * ((pair_k * volume_geometry) * jumps).sum(dim=1)
+
+
 def conduction_rhs(temperature, conductivity, volume, rho, pos, h, eta_factor=0.01,
                    fv=None):
     """``dH/dt`` (J/(kg s)) from the SPH conduction operator; shapes (N,).
@@ -103,9 +112,7 @@ def conduction_rhs(temperature, conductivity, volume, rho, pos, h, eta_factor=0.
     k, v, t = torch.broadcast_tensors(k, v, t)
     if fv is None:
         fv = pair_geometry(pos, v, h, eta_factor)
-    k_ij = 2.0 * k[:, None] * k[None, :] / (k[:, None] + k[None, :])
-    kernel = k_ij * fv
-    return 2.0 / rho_t * (t * kernel.sum(dim=1) - kernel @ t)
+    return _dense_pair_exchange(t, k, fv, rho_t)
 
 
 def lattice_diffusion_factor(n=256, h_factor=1.3, eta_factor=0.01, kmodes=None):
@@ -275,9 +282,7 @@ def run_stefan_sph(cfg: StefanConfig | None = None, model: EnthalpyModel | None 
         k_p = props.K_ICE + w_l * (props.K_FRESH - props.K_ICE)
         k_ext = k_p[mirror]
         t_ext = copper + mirror_sign * temperature[mirror]
-        k_ij = 2.0 * k_ext[:, None] * k_ext[None, :] / (k_ext[:, None] + k_ext[None, :])
-        kernel = k_ij * fv
-        rhs = 2.0 / rho * (t_ext * kernel.sum(dim=1) - kernel @ t_ext)
+        rhs = _dense_pair_exchange(t_ext, k_ext, fv, rho)
         h_field = h_field + dt * rhs[n:2 * n] * alpha_corr
         if cfg.pin_wall:
             h_field[0] = h_wall  # extra strong Dirichlet on the wall particle

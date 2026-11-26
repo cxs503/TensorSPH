@@ -84,7 +84,7 @@ from dataclasses import dataclass, field
 
 import torch
 
-from .ice_thermal.sph_thermal import kernel_dwdr
+from .ice_thermal.sph_thermal import _dense_pair_exchange, kernel_dwdr
 
 __all__ = [
     "DTYPE",
@@ -2404,9 +2404,7 @@ def conduction_rhs_2d(temperature, conductivity, volume, rho, pos, h,
     k, v, t = torch.broadcast_tensors(k, v, t)
     if fv is None:
         fv = pair_geometry_2d(pos, v, h, eta_factor)
-    k_ij = 2.0 * k[:, None] * k[None, :] / (k[:, None] + k[None, :])
-    kernel = k_ij * fv
-    return 2.0 / rho_t * (t * kernel.sum(dim=1) - kernel @ t)
+    return _dense_pair_exchange(t, k, fv, rho_t)
 
 
 # ---------------------------------------------------------------- mode algebra

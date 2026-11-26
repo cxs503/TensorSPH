@@ -3386,3 +3386,29 @@ def test_directional_section_heat_keeps_hidden_neumann_pulse():
         method="sdirk2", return_directional_x_heat=True)
     assert parts["rightward"][0, 0].item() == pytest.approx(.75, abs=1e-13, rel=0.)
     assert parts["leftward"][0, 0].item() == pytest.approx(.75, abs=1e-13, rel=0.)
+
+
+@pytest.mark.parametrize("dimension", [1, 2])
+def test_dense_particle_exchange_at_small_temperature_contrast(dimension, record_property):
+    from tensorsph.ice_thermal.sph_thermal import conduction_rhs
+    from tensorsph.heat_conduction_2d import conduction_rhs_2d
+
+    # At h=1 the kernel derivative at unit distance is -1/2. The end
+    # particles lie outside one another's support. Use exact binary increments
+    # above 300 K so the small input differences survive storage in float64.
+    x = torch.arange(3, dtype=torch.float64)
+    positions = x if dimension == 1 else torch.stack((0*x, x), dim=1)
+    solve = conduction_rhs if dimension == 1 else conduction_rhs_2d
+    temperature = 300 + torch.tensor([0., 3., 1.], dtype=x.dtype) * math.ulp(300.)
+    volume = torch.tensor([1., 2., 0.5], dtype=x.dtype)
+    k = torch.tensor([1., 2., 4.], dtype=x.dtype)
+    # Rates per unit mass for rho=1, including harmonic pair conductivities
+    # 4/3 and 8/3, neighbour volumes and the kernel regularisation.
+    reference = torch.tensor([8., -20/3, 32/3], dtype=x.dtype) * (math.ulp(300.)/1.0001)
+    rates = solve(temperature, k, volume, 1., positions, 1.)
+    relative = ((rates-reference).abs()/reference.abs()).max().item()
+    balance = abs(torch.dot(volume, rates).item()) / torch.dot(volume, rates.abs()).item()
+    record_property("max_relative_rate_error", relative)
+    record_property("relative_energy_imbalance", balance)
+    assert relative < 1e-14
+    assert balance < 1e-15
