@@ -1,0 +1,25 @@
+{
+  "source_commit": "dd33c85a22b836403e775f5a0f50e487510e26e3",
+  "command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH=src python -m pytest -q -o junit_family=legacy tests/test_conduction_2d.py --junitxml=wall.xml",
+  "tests": 237,
+  "failures": 0,
+  "reference": "Retain all reversing cell centers of the 16-grid on 48 and 144 grids. Compare absorption and release on both walls from -0.13 to 0.57 s against quadrature split at exact zero crossings.",
+  "measurements": {
+    "reversing_positions": [
+      0.21875,
+      0.28125,
+      0.65625,
+      0.71875
+    ],
+    "n16_absorbed_error_J_m2": 0.07277499467659959,
+    "n16_released_error_J_m2": 0.02032681903373801,
+    "n48_absorbed_error_J_m2": 0.007871645985269793,
+    "n48_absorbed_order": 2.024467823697842,
+    "n48_released_error_J_m2": 0.0022191511248809137,
+    "n48_released_order": 2.016012769062696,
+    "n144_absorbed_error_J_m2": 0.0008565431867182949,
+    "n144_absorbed_order": 2.0190177648678183,
+    "n144_released_error_J_m2": 0.0002415180398993022,
+    "n144_released_order": 2.0188522181672237
+  }
+}
