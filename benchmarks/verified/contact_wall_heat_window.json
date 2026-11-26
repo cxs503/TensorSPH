@@ -1,0 +1,24 @@
+{
+  "source_commit": "6d9c03f17332515b06a4a6302b7e4b7202f16f9d",
+  "command": "PYTHONPATH=src OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py tests/test_conduction_slab.py tests/test_conduction_2d.py -o junit_family=legacy --junitxml=/tmp/sph-contact-window.xml",
+  "passed": 345,
+  "reference": "Adaptive quadrature of the analytic Dirichlet wall flux over a normalized interval multiplied by duration. Unit slab length, diffusivity and conductivity; fixed walls 4 and 1 K; initial jump 0.17 m left of center. window0 starts at 0.0187 s and lasts 0.00913 s; window1 starts at 0.095 s and lasts 1e-19 s.",
+  "measurements": {
+    "test_contact_window_heat_refinement[window0]": {
+      "left_reference_j_m2": 0.03115558050736552,
+      "right_reference_j_m2": -0.000863520207727232,
+      "left_relative_error_n48": 0.0008105454523358313,
+      "right_relative_error_n48": 0.00908602983143636,
+      "left_relative_error_n96": 6.54948915441711e-05,
+      "right_relative_error_n96": 0.0030883371402012916
+    },
+    "test_contact_window_heat_refinement[window1]": {
+      "left_reference_j_m2": 4.1266798702937793e-19,
+      "right_reference_j_m2": -1.7374221630656978e-19,
+      "left_relative_error_n48": 4.934450420102099e-05,
+      "right_relative_error_n48": 4.876324427305345e-05,
+      "left_relative_error_n96": 1.2249254598861725e-05,
+      "right_relative_error_n96": 1.1079069143882236e-05
+    }
+  }
+}
