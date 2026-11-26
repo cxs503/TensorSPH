@@ -1,0 +1,24 @@
+{
+  "source_commit": "b7d6f932325618fe4263d8c3e62ac9ab46b21eb9",
+  "command": "PYTHONPATH=src OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py tests/test_conduction_slab.py tests/test_conduction_2d.py -o junit_family=legacy --junitxml=/tmp/wallflux-verified.xml",
+  "passed": 318,
+  "reference": "Spatial derivative of the fixed-wall contact Fourier series at both ends at Fo=0.03; independent dense-pair energy balance on a nonsymmetric profile.",
+  "measurements": {
+    "test_fixed_wall_contact_flux_refinement[False]": {
+      "max_relative_flux_error_n32": 0.0014818926317436765,
+      "max_relative_flux_error_n64": 0.00036966431964307597,
+      "analytic_left_inward_flux": 0.8111744937457914
+    },
+    "test_fixed_wall_contact_flux_refinement[True]": {
+      "max_relative_flux_error_n32": 0.0014818926317436765,
+      "max_relative_flux_error_n64": 0.00036966431964307597,
+      "analytic_left_inward_flux": 0.8111744937457914
+    },
+    "test_contact_wall_fluxes_balance_dense_rates[1.7]": {
+      "absolute_heat_balance_residual": 6.661338147750939e-16
+    },
+    "test_contact_wall_fluxes_balance_dense_rates[14.0]": {
+      "absolute_heat_balance_residual": 0.0
+    }
+  }
+}
