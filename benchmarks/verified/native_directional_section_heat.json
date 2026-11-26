@@ -1,0 +1,43 @@
+{
+  "source_commit": "9e22f34ab2d511e47a7b056e9f38011b9a179d0e",
+  "command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH=src python -m pytest -q tests/test_conduction_2d.py -o junit_family=legacy --junitxml=/tmp/sph_native_direction.xml",
+  "reference": "T=(1-t)(1-x), unit properties, 8 particles, h/dx=0.9. Every section has flux 1-t with analytical positive and negative integrals. Separately a west Neumann pulse of -3 W/m2 from 0.25 to 0.5 s and +1 W/m2 otherwise produces 0.75 J/m2 each way in a single one-second output interval.",
+  "times_s": [
+    0,
+    0.5,
+    1.5,
+    2
+  ],
+  "reference_rightward_J_m2": [
+    0.375,
+    0.125,
+    0
+  ],
+  "reference_leftward_J_m2": [
+    0,
+    0.125,
+    0.375
+  ],
+  "tests": 252,
+  "errors": 0,
+  "failures": 0,
+  "skipped": 0,
+  "cases": {
+    "test_native_directional_section_heat_affine_reversal[theta]": {
+      "rightward_max_error_J_m2": 2.0816681711721685e-15,
+      "leftward_max_error_J_m2": 2.220446049250313e-15
+    },
+    "test_native_directional_section_heat_affine_reversal[sdirk2]": {
+      "rightward_max_error_J_m2": 1.7763568394002505e-15,
+      "leftward_max_error_J_m2": 2.1649348980190553e-15
+    },
+    "test_native_directional_section_heat_affine_reversal[exponential]": {
+      "rightward_max_error_J_m2": 1.27675647831893e-15,
+      "leftward_max_error_J_m2": 3.552713678800501e-15
+    },
+    "test_native_directional_section_heat_affine_reversal[exponential_quadratic]": {
+      "rightward_max_error_J_m2": 1.7763568394002505e-15,
+      "leftward_max_error_J_m2": 2.6645352591003757e-15
+    }
+  }
+}
