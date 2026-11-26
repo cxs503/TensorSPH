@@ -2937,7 +2937,7 @@ def test_directional_wall_interval_heat_against_split_quadrature(record_property
     assert abs(released.item()/(2*math.sqrt(2)/3*gap**1.5)-1) < 1e-12
 
 def test_partial_wall_heat_at_fixed_reversing_rows(record_property):
-    from tensorsph.heat_conduction_2d import directional_wall_interval_heat
+    from tensorsph.heat_conduction_2d import directional_wall_interval_heat, directional_wall_interval_duration
 
     omega, start, end = 3., -.13, .57
     base = 16
@@ -2950,6 +2950,10 @@ def test_partial_wall_heat_at_fixed_reversing_rows(record_property):
     assert reversing.any()
     record_property("reversing_positions", centres[reversing].tolist())
     exact = rows[reversing].T
+    duration_reference = [_reference_wall_durations(w, b, omega, start, end)
+                          for w, b in zip(torch.exp(1j*phase).tolist(), (.2+1.4*phase.cos()).tolist())]
+    durations = centres.new_tensor(duration_reference)[reversing].T
+    assert (durations > 0).all() and (durations < end-start).all()
     previous = {}
     for factor in (1, 3, 9):
         n = base*factor
@@ -2958,9 +2962,18 @@ def test_partial_wall_heat_at_fixed_reversing_rows(record_property):
         _, _, _, dc_flux, ac_flux = _traveling_wall_fluxes(n, omega)
         absorbed, released = directional_wall_interval_heat(
             ac_flux[:, indices], omega, start, end, steady_flux=dc_flux[:, indices])
-        for name, actual, target in (("absorbed", absorbed, exact), ("released", released, exact.flip((0,)))):
+        inward, outward = directional_wall_interval_duration(
+            ac_flux[:, indices], omega, start, end, steady_flux=dc_flux[:, indices])
+        balance = (inward+outward-(end-start)).abs().max().item()
+        record_property(f"n{n}_duration_sum_error_s", balance)
+        assert balance < 1e-14
+        for name, actual, target, unit in (
+                ("inward_duration", inward, durations, "s"),
+                ("outward_duration", outward, durations.flip((0,)), "s"),
+                ("absorbed", absorbed, exact, "J_m2"),
+                ("released", released, exact.flip((0,)), "J_m2")):
             error = (actual-target).abs().max().item()
-            record_property(f"n{n}_{name}_error_J_m2", error)
+            record_property(f"n{n}_{name}_error_{unit}", error)
             if name in previous:
                 order = math.log(previous[name]/error, 3)
                 record_property(f"n{n}_{name}_order", order)
@@ -3046,6 +3059,27 @@ def test_wall_cycle_durations_at_grazing_and_without_crossings(record_property):
     assert error < 1e-15 and relative < 1e-15
 
 
+def _reference_wall_durations(flux, bias, omega, start, end):
+    """Partition the exact waveform at all sign changes in the observation window."""
+    if abs(bias) >= abs(flux):
+        return (end-start if bias > 0 else 0., end-start if bias < 0 else 0.)
+    phase = math.atan2(flux.imag, flux.real)
+    period = 2*math.pi/omega
+    angle = math.acos(-bias/abs(flux))
+    cuts = [start, end]
+    for k in range(math.floor(start/period)-2, math.ceil(end/period)+2):
+        for root in (-angle, angle):
+            t = (root-phase+2*math.pi*k)/omega
+            if start < t < end:
+                cuts.append(t)
+    cuts.sort()
+    durations = [0., 0.]
+    for left, right in zip(cuts, cuts[1:]):
+        q = bias + abs(flux)*math.cos(phase+omega*(left+right)/2)
+        durations[int(q < 0)] += right-left
+    return durations
+
+
 def test_directional_wall_interval_duration(record_property):
     from tensorsph.heat_conduction_2d import directional_wall_interval_duration
 
@@ -3057,21 +3091,7 @@ def test_directional_wall_interval_duration(record_property):
     for start, end in ((-.63,.51), (.12,4.7*period), (period-.01,period+.02), (1.,1.)):
         inward, outward = directional_wall_interval_duration(fluxes, omega, start, end, steady_flux=biases)
         for j, (flux,bias) in enumerate(zip(fluxes,biases)):
-            phase = math.atan2(flux.imag,flux.real)
-            cuts = [start,end]
-            if abs(bias) < abs(flux):
-                angle = math.acos(-bias/abs(flux))
-                for k in range(math.floor(start/period)-2, math.ceil(end/period)+2):
-                    for root in (-angle,angle):
-                        t = (root-phase+2*math.pi*k)/omega
-                        if start < t < end:
-                            cuts.append(t)
-            cuts.sort()
-            durations = [0.,0.]
-            for left,right in zip(cuts,cuts[1:]):
-                q = bias + abs(flux)*math.cos(phase+omega*(left+right)/2)
-                if q != 0:
-                    durations[int(q < 0)] += right-left
+            durations = _reference_wall_durations(flux, bias, omega, start, end)
             worst = max(worst, abs(inward[j].item()-durations[0]), abs(outward[j].item()-durations[1]))
     record_property("max_duration_error_s",worst)
     assert worst < 1e-13
