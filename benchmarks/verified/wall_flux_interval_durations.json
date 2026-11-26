@@ -1,0 +1,12 @@
+{
+  "source_commit": "88c756f4a4a3d96e6a451e5dd6e8ef017bdef2f3",
+  "command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH=src python -m pytest -q -o junit_family=legacy tests/test_conduction_2d.py --junitxml=wall.xml",
+  "tests": 241,
+  "failures": 0,
+  "reference": "Enumerate analytic flux zeros, classify each segment by its midpoint and sum its length. Separately clip a grazing reversal at relative bias gap 2^-52 across the cycle origin.",
+  "measurements": {
+    "max_duration_error_s": 5.329070518200751e-15,
+    "clipped_release_s": 1.3743537557900228e-08,
+    "clipped_relative_error": 2.220446049250313e-16
+  }
+}
