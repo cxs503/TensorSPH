@@ -1,0 +1,40 @@
+{
+  "source_commit": "e7e73db2ea91d5ded7648c73650f5af5c8763bea",
+  "baseline_commit": "6f6ba657b808e0e3b82f07b43be46dead4042e19",
+  "reference": "1-D fixed walls at six similarity lengths: compare the erfc contact solution and dense particle exchange at Fo=0.0625. 2-D periodic calibrated mode: compare final amplitude to exp(-alpha |k|^2 t)=1/2.",
+  "command": "PYTHONPATH=src OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py tests/test_conduction_slab.py tests/test_conduction_2d.py tests/test_ice_thermal_multiphysics.py -o junit_family=legacy --junitxml=/tmp/diffusivity-final.xml",
+  "baseline_procedure": "Use the source commit tests against baseline src, select -k diffusivity_scaling.",
+  "passed": 329,
+  "before": {
+    "test_fixed_wall_contact_diffusivity_scaling[0.25]": {
+      "max_backend_difference_K": 26629516791.51046,
+      "max_normalized_erfc_error": 26629516791.510582
+    },
+    "test_fixed_wall_contact_diffusivity_scaling[4.0]": {
+      "max_backend_difference_K": 0.16305294562530925,
+      "max_normalized_erfc_error": 0.16370261735286068
+    },
+    "test_mode_decay_diffusivity_scaling[euler-4.0]": {
+      "relative_amplitude_error": 0.6815450121369497
+    },
+    "test_mode_decay_diffusivity_scaling[rk4-0.25]": {
+      "relative_amplitude_error": 0.8749999983871422
+    }
+  },
+  "after": {
+    "test_fixed_wall_contact_diffusivity_scaling[0.25]": {
+      "max_backend_difference_K": 1.1102230246251565e-16,
+      "max_normalized_erfc_error": 0.0006939794494631446
+    },
+    "test_fixed_wall_contact_diffusivity_scaling[4.0]": {
+      "max_backend_difference_K": 1.1102230246251565e-16,
+      "max_normalized_erfc_error": 0.0006939794494631446
+    },
+    "test_mode_decay_diffusivity_scaling[euler-4.0]": {
+      "relative_amplitude_error": 0.002363089770722193
+    },
+    "test_mode_decay_diffusivity_scaling[rk4-0.25]": {
+      "relative_amplitude_error": 1.2388312597977347e-11
+    }
+  }
+}
