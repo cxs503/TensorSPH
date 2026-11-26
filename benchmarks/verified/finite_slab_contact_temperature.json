@@ -1,0 +1,21 @@
+{
+  "source_commit": "2c1d2ba86ce8aa9a27b13217cacf26c1acf61acd",
+  "command": "PYTHONPATH=src OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py tests/test_conduction_slab.py tests/test_conduction_2d.py -o junit_family=legacy --junitxml=/tmp/sph-finite-final.xml",
+  "passed": 314,
+  "reference": "Fixed Dirichlet end temperatures on a centered 1 m slab with a contact step. Compare SPH and Crank-Nicolson FD against a Fourier sine expansion about the steady linear solution.",
+  "conditions": {
+    "hot_K": 7,
+    "cold_K": -1,
+    "alpha": 0.25,
+    "slab_fourier": 0.03,
+    "calibration": "k0",
+    "fd_nodes": 129,
+    "temperature_unit": "temperature relative to an arbitrary datum (K differences)"
+  },
+  "measurements": {
+    "sph_max_normalized_error_n32": 0.00037443854719257375,
+    "sph_max_normalized_error_n64": 9.30461711813324e-05,
+    "fd_max_normalized_error": 6.8558520153194635e-06,
+    "semi_infinite_max_normalized_difference": 0.020613416668581852
+  }
+}
