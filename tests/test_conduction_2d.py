@@ -3181,12 +3181,17 @@ def test_opposing_wall_ramps_particle_temperatures(record_property):
     wave = 2*np.pi*np.arange(1, 257)
     rate = wave**2
     decay_integral = -np.expm1(-rate*end)/rate
+    # Fourier's law applied to the time-integrated profile at x=1/2.
+    # Here v'(1/2)=-1/12 and the cosine takes alternating signs.
+    center_heat = slope*(end**2-end/12-np.cos(wave/2) @ (4*decay_integral/rate))
+    record_property("reference_center_heat_J_m2", center_heat)
     errors = []
+    heat_errors = []
     for n in (12, 24, 48):
-        states, means = solve_transient_layered_slab(
+        states, heat, means = solve_transient_layered_slab(
             np.zeros(n), [0., end], 1/n, (lambda t: slope*t, lambda t: -slope*t),
             conductivity=np.ones(n), volumetric_heat_capacity=1.,
-            method="exponential", return_interval_temperature=True)
+            method="exponential", return_x_heat=True, return_interval_temperature=True)
         x = (np.arange(n)+.5)/n
         basis = np.sin(x[:, None]*wave)
         # -v'' = 1-2*x, v(0)=v(1)=0. Removing this polynomial leaves
@@ -3195,6 +3200,14 @@ def test_opposing_wall_ramps_particle_temperatures(record_property):
         final_ref = slope*(end*(1-2*x)-v+basis @ (4*np.exp(-rate*end)/wave**3))
         mean_ref = slope*(end*(1-2*x)/2-v+basis @ (4*decay_integral/(end*wave**3)))
         final = states[-1].numpy()
+        center = heat[0, n//2].item()
+        west = heat[0, 0].item()
+        # Unit volumetric capacity and initially uniform zero temperature.
+        balance = abs(west-center-final[:n//2].sum()/n)
+        heat_errors.append(abs(center-center_heat))
+        record_property(f"n{n}_center_heat_error_J_m2", heat_errors[-1])
+        record_property(f"n{n}_west_half_balance_J_m2", balance)
+        assert balance < 1e-12
         mean = means[0].numpy()
         assert max(abs(final.mean()), abs(mean.mean())) < 1e-12
         local = np.array([np.max(np.abs(final-final_ref)), np.max(np.abs(mean-mean_ref))])
@@ -3204,3 +3217,6 @@ def test_opposing_wall_ramps_particle_temperatures(record_property):
     for coarse, fine in zip(errors, errors[1:]):
         assert np.all(coarse > 3*fine)
     assert np.all(errors[-1] < .003)
+    for coarse, fine in zip(heat_errors, heat_errors[1:]):
+        assert coarse > 3*fine
+    assert heat_errors[-1] < .01*center_heat
