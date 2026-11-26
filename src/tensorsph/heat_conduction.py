@@ -315,6 +315,10 @@ def run_contact_sph(cfg: ContactConfig | None = None) -> ContactResult:
                               torch.full((n,), float(cfg.t_hot), dtype=DTYPE),
                               torch.full((n,), float(cfg.t_cold), dtype=DTYPE))
 
+    if n % 2:
+        # The central particle volume straddles the initial temperature jump.
+        temperature[n // 2] = 0.5 * cfg.t_hot + 0.5 * cfg.t_cold
+
     # dense path: frozen pair matrix on the mirror-extended lattice
     fv_dense = None
     if cfg.dense:
@@ -389,6 +393,9 @@ def fd_contact_reference(fourier=0.5, alpha=1.0, half_length=6.0, n=1201,
     r = alpha * dt / (2.0 * dx ** 2)
 
     t = np.where(x.numpy() < 0.0, t_hot, t_cold).astype(np.float64)
+    if n % 2:
+        # Use the symmetric interface trace even when linspace rounds x away from zero.
+        t[n // 2] = 0.5 * t_hot + 0.5 * t_cold
     inner = n - 2
     ab = np.zeros((3, inner))
     ab[0, 1:] = -r

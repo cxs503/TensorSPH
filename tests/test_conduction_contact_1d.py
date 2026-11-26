@@ -230,3 +230,26 @@ def test_fd_contact_at_fixed_fourier_number(alpha, record_property):
         errors.append(error)
     assert errors[1] < 3e-4
     assert errors[1] < 0.3 * errors[0]
+
+
+@pytest.mark.parametrize("solver", ["sph", "fd"])
+def test_node_centered_contact_symmetry_and_refinement(solver, record_property):
+    hot, cold = 7., -1.
+    errors = []
+    for n in (97, 193):
+        if solver == "fd":
+            x, temperature = fd_contact_reference(fourier=0.0625, half_length=3., n=n,
+                                                   t_hot=hot, t_cold=cold)
+        else:
+            cfg = ContactConfig(n_particles=n, dx=6./n, fourier=0.0625,
+                                t_hot=hot, t_cold=cold, calibration="k0")
+            result = run_contact_sph(cfg)
+            x = torch.tensor(result.x, dtype=torch.float64)
+            temperature = torch.tensor(result.temperature, dtype=torch.float64)
+        exact = contact_temperature(x, 0.0625, 1., hot, cold)
+        errors.append(float((temperature - exact).abs().max()) / (hot - cold))
+        symmetry = float((temperature + temperature.flip(0) - (hot + cold)).abs().max())
+        record_property(f"max_normalized_erfc_error_n{n}", errors[-1])
+        record_property(f"max_reflection_defect_K_n{n}", symmetry)
+    assert symmetry < 1e-12
+    assert errors[1] < 0.3 * errors[0]
