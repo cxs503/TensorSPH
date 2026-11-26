@@ -1,0 +1,29 @@
+{
+  "source_commit": "0efa34d80d7025eb2a834852ac99f97c3ac6668b",
+  "command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH=src python -m pytest -q tests/test_conduction_2d.py -o junit_family=legacy --junitxml=/tmp/sph_effusivity.xml",
+  "reference": "Two perfectly bonded half-slabs with conductivities 2 and 2/3, volumetric capacities 1/2 and 3/2, and unit area. Both walls ramp from zero to 1 K by 0.04 s and hold until 0.09 s. The resistance coordinate maps the interface to y=1/4 of the unit homogeneous slab. Integrate the odd sine series for rightward heat over each phase. Exponential time integration with one affine load per phase.",
+  "companions": [
+    "https://github.com/cxs503/TensorFEM/blob/fd4f5b8/benchmarks/verified/equal_effusivity_interface_ramp.json",
+    "https://github.com/cxs503/TensorFVM/blob/434e23a5/benchmarks/verified/equal_effusivity_interface_ramp.json"
+  ],
+  "tests": 246,
+  "errors": 0,
+  "failures": 0,
+  "skipped": 0,
+  "measurements": {
+    "ramp_interface_reference_J_m2": 0.02273717543107151,
+    "hold_interface_reference_J_m2": 0.08281479860975863,
+    "n12_west_balance_J_m2": 6.106226635438361e-16,
+    "n12_east_balance_J_m2": 1.0824674490095276e-15,
+    "n12_ramp_interface_error_J_m2": 0.0016197799897230726,
+    "n12_hold_interface_error_J_m2": 0.001616770588978772,
+    "n24_west_balance_J_m2": 1.790234627208065e-15,
+    "n24_east_balance_J_m2": 2.4980018054066022e-15,
+    "n24_ramp_interface_error_J_m2": 0.00043523285693548505,
+    "n24_hold_interface_error_J_m2": 0.0003878405284137715,
+    "n48_west_balance_J_m2": 8.798517470154366e-15,
+    "n48_east_balance_J_m2": 1.3822276656583199e-14,
+    "n48_ramp_interface_error_J_m2": 0.0001112984989292895,
+    "n48_hold_interface_error_J_m2": 9.575494754911207e-05
+  }
+}
