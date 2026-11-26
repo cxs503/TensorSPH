@@ -1,0 +1,14 @@
+{
+  "source_commit": "e4d65c86ff2add1449eed32ca6e8f803e65c2cb3",
+  "command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH=src python -m pytest -q -o junit_family=legacy tests/test_conduction_2d.py --junitxml=wall.xml",
+  "tests": 235,
+  "failures": 0,
+  "reference": "Signed local heat on both Dirichlet walls from t=-0.13 to 0.57 s. Integrate the exact traveling sinusoidal wall flux and the row-dependent steady flux.",
+  "measurements": {
+    "n16_interval_error_J_m2": 0.1773309499748521,
+    "n32_interval_error_J_m2": 0.043490652843376276,
+    "n32_interval_order": 2.0276670845215437,
+    "n64_interval_error_J_m2": 0.010683770873860299,
+    "n64_interval_order": 2.0252844243209083
+  }
+}
