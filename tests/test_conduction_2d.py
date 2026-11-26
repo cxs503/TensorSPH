@@ -3108,7 +3108,7 @@ def test_directional_wall_interval_duration(record_property):
 
 
 def test_layered_fixed_wall_pulse_mean_temperature(record_property):
-    """Compare the post-pulse exposure of every particle to the slab sine series."""
+    """Compare mean particle temperatures across and after a wall pulse."""
     import numpy as np
     from tensorsph.heat_conduction_2d import solve_transient_layered_slab
 
@@ -3118,6 +3118,9 @@ def test_layered_fixed_wall_pulse_mean_temperature(record_property):
     # Difference of two wall step responses, integrated over the cooling window.
     mean_amplitude = (2/wave * np.exp(-rate*(start-shutoff)) * -np.expm1(-rate*shutoff)
                       * -np.expm1(-rate*(end-start))/(rate*(end-start)))
+    # Over [0,start] the integral of the two steady profiles lasts only
+    # until shutoff. The remaining Fourier terms decay for at least start-shutoff.
+    pulse_correction = 2*np.exp(-rate*(start-shutoff))*(-np.expm1(-rate*shutoff))/wave**3
     errors = []
     for n in (12, 24, 48):
         _, mean = solve_transient_layered_slab(
@@ -3125,12 +3128,16 @@ def test_layered_fixed_wall_pulse_mean_temperature(record_property):
             conductivity=np.ones(n), volumetric_heat_capacity=1.,
             load_jump_times=[shutoff], method="exponential", return_interval_temperature=True)
         centers = (np.arange(n)+.5)/n
-        reference = np.sin(centers[:, None]*wave) @ mean_amplitude
+        basis = np.sin(centers[:, None]*wave)
+        reference = basis @ mean_amplitude
+        pulse_reference = (shutoff*(1-centers) - basis @ pulse_correction)/start
+        pulse_error = float(np.max(np.abs(mean[0].numpy()-pulse_reference)))
+        record_property(f"n{n}_max_cross_switch_mean_error_K", pulse_error)
         error = float(np.max(np.abs(mean[-1].numpy()-reference)))
-        errors.append(error)
+        errors.append(np.array([error, pulse_error]))
         record_property(f"n{n}_max_cooling_mean_error_K", error)
     for coarse, fine in zip(errors, errors[1:]):
-        assert coarse > 3.4*fine
+        assert np.all(coarse > 3.4*fine)
 
 
 def test_layered_fixed_wall_startup_mean_temperature(record_property):
