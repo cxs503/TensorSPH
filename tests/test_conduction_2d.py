@@ -3540,3 +3540,35 @@ def test_zero_mode_contact_flux_at_large_temperature_datum(reverse, record_prope
     record_property("max_relative_modal_flux_error", error)
     record_property("max_relative_physical_discrepancy", discrepancy)
     assert max(error, discrepancy) < 3e-14
+
+
+@pytest.mark.parametrize("direction", [(0., 1.), (.6, -.8)])
+def test_long_wave_symbol_retains_quadratic_decay(direction, record_property):
+    from tensorsph.heat_conduction_2d import lattice_diffusion_factor_2d
+
+    dx, wave, hf = .125, 2.**-28, 1.3
+    moment = lattice_diffusion_factor_2d(hf, dx, mode="moment")
+    # Isotropy gives lambda = moment*|k|² with relative O((k dx)²)
+    # corrections below binary64 precision for this wavelength.
+    measured = symbol_rate(dx, hf*dx, direction[0]*wave, direction[1]*wave)
+    error = abs(measured/(moment*wave**2)-1)
+    record_property("relative_decay_error", error)
+    assert error < 2e-15
+
+
+@pytest.mark.parametrize("backend", ["torch", "banded"])
+def test_long_transverse_wave_balances_harmonic_storage(backend, record_property):
+    from tensorsph.heat_conduction_2d import solve_harmonic_layered_slab
+
+    # One insulated axial column retains only the transverse restoring term.
+    # Choose comparable storage and diffusion so losing either changes phase.
+    dx, beta, k, capacity = .125, 2.**-28, 2., 3.
+    omega = k*beta**2/capacity
+    exact = complex(.75, -.5)
+    source = torch.tensor([(k*beta**2+1j*omega*capacity)*exact], dtype=torch.complex128)
+    field = solve_harmonic_layered_slab(source, dx, (None,None), omega, conductivity=[k],
+                                        volumetric_heat_capacity=capacity, h_factor=.8,
+                                        transverse_wavenumber=beta, backend=backend)
+    error = abs(field.item()/exact-1)
+    record_property("relative_temperature_error", error)
+    assert error < 2e-15

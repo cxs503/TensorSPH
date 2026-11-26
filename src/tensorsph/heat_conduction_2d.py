@@ -2342,15 +2342,20 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
             # Physical rows have transverse neighbours; modal rows are
             # independent probes even when their phase increment is zero.
             shifts = (-m if transverse_phase is None else 0, -n)
-            neighbour_t = torch.roll(t, shifts, (0, 1))
+            difference = t - torch.roll(t, shifts, (0, 1))
         elif modal_flux:
             # Cut attribution depends on the direction of the oblique link.
-            neighbour_t = torch.roll(t,shifts=-n,dims=1)*cmath.exp(1j*m*transverse_phase)
+            difference = t - torch.roll(t,shifts=-n,dims=1)*cmath.exp(1j*m*transverse_phase)
         else:
             # Rows are independent probes. +/-m links share material and x
             # endpoints, so their complex phase factors average to cos(m β dx).
-            neighbour_t = torch.roll(t, shifts=-n, dims=1)*math.cos(m*transverse_phase)
-        difference = t - neighbour_t
+            neighbour = torch.roll(t, shifts=-n, dims=1)
+            angle = m*transverse_phase
+            if abs(angle) < .5:
+                # Keep tangential diffusion even when cos(angle) rounds to one.
+                difference = (t-neighbour) + (2*math.sin(angle/2)**2)*neighbour
+            else:
+                difference = t-neighbour*math.cos(angle)
         if ghost_error is not None:
             difference = difference + (ghost_error - torch.roll(ghost_error, shifts, (0, 1)))
         transfer = a * difference
@@ -2465,7 +2470,10 @@ def symbol_rate(dx: float, h: float, kx: float, ky: float,
     dx = float(dx)
     total = 0.0
     for (m, n), a in lattice_offsets(dx, h, eta_factor):
-        total += a * (1.0 - math.cos(m * kx * dx) * math.cos(n * ky * dx))
+        # 1-cos(x)cos(y) as a sum of squares, including axial/oblique
+        # modes whose directional cosines both round to one.
+        x, y = .5*m*kx*dx, .5*n*ky*dx
+        total += 2*a*((math.sin(x)*math.cos(y))**2 + (math.cos(x)*math.sin(y))**2)
     return -2.0 * total
 
 
