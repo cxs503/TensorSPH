@@ -3572,3 +3572,29 @@ def test_long_transverse_wave_balances_harmonic_storage(backend, record_property
     error = abs(field.item()/exact-1)
     record_property("relative_temperature_error", error)
     assert error < 2e-15
+
+
+@pytest.mark.parametrize("dx,h_factor,eta", [(.125, 1.3, .01), (.25, 1.75, .04)])
+def test_k0_calibration_against_rotated_quadratic_patch(dx, h_factor, eta, record_property):
+    from tensorsph.heat_conduction_2d import conduction_rhs_2d, lattice_diffusion_factor_2d
+
+    # Each unit direction gives T=(e·x)^2/2 with Laplacian one. The
+    # central particle's complete support lies inside the finite patch.
+    coord = torch.arange(-4, 5, dtype=torch.float64)*dx
+    points = torch.cartesian_prod(coord, coord)
+    ones = torch.ones_like(points[:,0])
+    factor = lattice_diffusion_factor_2d(h_factor, dx, eta)
+    errors = []
+    for axis in ((1.,0.), (0.,1.), (.6,-.8)):
+        temperature = .5*(points @ points.new_tensor(axis)).square()
+        rate = conduction_rhs_2d(temperature, ones, ones*dx**2, 1., points,
+                                 h_factor*dx, eta_factor=eta)
+        reference = rate[len(rate)//2].item()
+        errors.append(abs(factor/reference-1))
+    cfg = ModeDecayConfig(n=8, length=8*dx, h_factor=h_factor, eta_factor=eta,
+                          amplitude_end=.99, calibration="k0_2d")
+    solver_error = abs(run_mode_decay(cfg).factor/reference-1)
+    record_property("calibration_factor", factor)
+    record_property("max_relative_patch_error", max(errors))
+    record_property("relative_solver_factor_error", solver_error)
+    assert max(*errors, solver_error) < 2e-15
