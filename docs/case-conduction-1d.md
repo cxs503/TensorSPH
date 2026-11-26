@@ -304,3 +304,12 @@ Fo=0.06，得到左、右端累计热量分别为 −0.27689144 和 +0.27689144 
 在 49、98、196 个网格区间上依次约为 1.122e-4、2.749e-5 和 7.013e-6。
 最细有限差分网格的奇数号节点还与 98 个 SPH 粒子中心逐点对应，可直接交叉验证。
 复现命令为 `PYTHONPATH=src OMP_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py -k fd_offset`。
+
+### 偏心初始温度阶跃的两端瞬时热通量
+
+对于材料参数均匀、两端固定温度的板，`finite_slab_contact_wall_fluxes` 返回左右端
+朝板内的热通量（W/m²）。传入物理时间（秒）、热扩散率、板长、导热系数及左右端温度，
+并用 `contact_position` 指定初始阶跃相对板中心的位置（米）。
+早期解使用周期高斯镜像求和，较晚时刻使用温度正弦级数在端点的导数。
+复现两端 SPH 通量及独立有限差分对照可运行
+`PYTHONPATH=src OMP_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py -k offset_contact_wall_flux`。

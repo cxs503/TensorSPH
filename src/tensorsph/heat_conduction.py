@@ -78,6 +78,7 @@ __all__ = [
     "lattice_symbol_ratio",
     "contact_temperature",
     "finite_slab_contact_temperature",
+    "finite_slab_contact_wall_fluxes",
     "lattice_stencil",
     "stencil_rhs",
     "contact_wall_fluxes",
@@ -145,6 +146,35 @@ def finite_slab_contact_temperature(x, t, alpha, length, t_hot=1.0, t_cold=0.0,
             amplitude = -2 * math.cos(phase * fraction) * math.exp(-decay * mode**2) / phase
             profile = profile + amplitude * torch.sin(phase * y)
     return t_cold + (t_hot - t_cold) * profile
+
+
+def finite_slab_contact_wall_fluxes(t, alpha, length, conductivity, t_hot=1., t_cold=0.,
+                                   *, contact_position=0.):
+    """Exact inward (left, right) wall fluxes in W/m² for a uniform fixed-wall slab.
+
+    The initial temperature jump is at contact_position relative to the center.
+    Conductivity is in W/(m K), diffusivity in m²/s, and t in seconds.
+    """
+    if not all(math.isfinite(v) and v > 0 for v in (t, alpha, length, conductivity)):
+        raise ValueError("t, alpha, length and conductivity must be finite and positive")
+    if not -length/2 < contact_position < length/2:
+        raise ValueError("contact_position must be inside the slab")
+    fourier = alpha*t/length**2
+    steady = conductivity*(t_hot-t_cold)/length
+
+    def flux_factor(distance):
+        if fourier <= .1:
+            # Periodic Gaussian images avoid subtractive cancellation at early times.
+            return math.fsum(math.exp(-(distance + 2*j)**2/(4*fourier))
+                             for j in range(-3, 4))/math.sqrt(math.pi*fourier)
+        decay = math.pi**2*fourier
+        modes = math.ceil(math.sqrt(40/decay))
+        return 1 + 2*math.fsum(math.cos(math.pi*m*distance)*math.exp(-decay*m*m)
+                               for m in range(1, modes+1))
+
+    left = (length/2 + contact_position)/length
+    right = (length/2 - contact_position)/length
+    return steady*flux_factor(left), -steady*flux_factor(right)
 
 
 # ------------------------------------------------------- lattice stencil (exact)

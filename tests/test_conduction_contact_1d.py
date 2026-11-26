@@ -456,3 +456,47 @@ def test_fd_offset_contact_initial_cut_cell_and_fixed_walls():
     _, near_wall = fd_contact_reference(0., half_length=.5, n=9, t_hot=6., t_cold=2.,
                                         contact_position=-.499)
     assert near_wall.tolist() == [6.] + [2.]*8
+
+
+@pytest.mark.parametrize("fraction", [1/3, 2/3])
+def test_offset_contact_wall_flux_refinement(fraction, record_property):
+    from tensorsph.heat_conduction import finite_slab_contact_wall_fluxes
+
+    length, alpha, fo = 1.5, .25, .04
+    left, right = 5., 1.
+    position = length*(fraction-.5)
+    expected = finite_slab_contact_wall_fluxes(fo*length**2/alpha, alpha, length,
+                                              alpha, left, right, contact_position=position)
+    for wall, flux in zip(("left", "right"), expected):
+        record_property(f"analytic_{wall}_inward_flux", flux)
+    for n in (48, 96):
+        sph = run_contact_sph(ContactConfig(
+            n_particles=n, dx=length/n, alpha=alpha, fourier=fo*length**2,
+            t_hot=left, t_cold=right, contact_position=position, calibration="k0"))
+        x, fd = fd_contact_reference(fo*length**2, alpha, length/2, 2*n+1,
+                                     t_hot=left, t_cold=right, contact_position=position)
+        dx = float(x[1]-x[0])
+        for wall, profile, sph_flux, exact in (
+            ("left", fd, sph.wall_flux_left, expected[0]),
+            ("right", fd.flip(0), sph.wall_flux_right, expected[1]),
+        ):
+            fd_flux = alpha*float(3*profile[0]-4*profile[1]+profile[2])/(2*dx)
+            for method, flux in (("fd", fd_flux), ("sph", sph_flux)):
+                error = abs(flux/exact-1)
+                record_property(f"{method}_{wall}_relative_error_n{n}", error)
+                assert error < .008*(48/n)**2
+
+
+@pytest.mark.parametrize("fo", [.0001, .09999999, .10000001, 5.])
+def test_contact_flux_matches_temperature_gradient(fo):
+    from tensorsph.heat_conduction import finite_slab_contact_temperature, finite_slab_contact_wall_fluxes
+
+    length, alpha, k, position = 2., .5, 3., -.99
+    t = fo*length**2/alpha
+    fluxes = finite_slab_contact_wall_fluxes(t, alpha, length, k, -2., 4., contact_position=position)
+    for wall, sign, flux in ((-1., 1., fluxes[0]), (1., -1., fluxes[1])):
+        dx = 1e-6
+        x = wall + sign*dx*torch.arange(3, dtype=torch.float64)
+        temp = finite_slab_contact_temperature(x, t, alpha, length, -2., 4., contact_position=position)
+        gradient_flux = k*float(3*temp[0]-4*temp[1]+temp[2])/(2*dx)
+        assert flux == pytest.approx(gradient_flux, rel=1e-8, abs=2e-8)
