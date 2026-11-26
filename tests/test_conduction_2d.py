@@ -2797,3 +2797,58 @@ def test_biased_wall_cycle_heat_resolves_grazing_reversal():
     gap = 2.**-50
     _,released = directional_wall_cycle_heat(1.,1.,steady_flux=1-gap)
     assert abs(released.item()/(4*math.sqrt(2)/3*gap**1.5)-1)<3e-15
+
+
+def test_biased_cycle_heat_from_steady_and_harmonic_slab_solves(record_property):
+    from scipy.integrate import quad
+    from tensorsph.heat_conduction_2d import (
+        directional_wall_cycle_heat, recover_dirichlet_wall_flux_2d,
+        solve_harmonic_slab_2d, solve_steady_slab_2d,
+    )
+
+    # T_dc = -x*(0.2 + 1.4*cos(2πy)), T_ac = -x*exp(i*2πy).
+    # Left inward fluxes equal the respective slopes with their signs reversed.
+    omega = 3.
+    wavenumber = 2 * math.pi
+    errors = []
+    for n in (16, 32, 64):
+        dx = 1 / n
+        x = (torch.arange(n, dtype=torch.float64) + .5) * dx
+        phase = wavenumber * x
+        varying_bias = 1.4 * phase.cos()
+        bias = .2 + varying_bias
+        wave = torch.exp(1j * phase)
+        steady_walls = (0., -bias)
+        harmonic_walls = (0., -wave)
+        steady, dc_sections = solve_steady_slab_2d(
+            -wavenumber**2 * varying_bias[:, None] * x, dx, steady_walls, return_x_flux=True)
+        harmonic, ac_sections = solve_harmonic_slab_2d(
+            -(wavenumber**2 + 1j * omega) * wave[:, None] * x, dx, harmonic_walls, omega,
+            return_x_flux=True)
+        dc_flux = recover_dirichlet_wall_flux_2d(
+            steady, dx, 1., torch.stack((dc_sections[0], -dc_sections[-1])),
+            x_wall_temperatures=steady_walls)
+        ac_flux = recover_dirichlet_wall_flux_2d(
+            harmonic, dx, 1., torch.stack((ac_sections[0], -ac_sections[-1])),
+            x_wall_temperatures=harmonic_walls)
+        absorbed, released = directional_wall_cycle_heat(ac_flux, omega, steady_flux=dc_flux)
+
+        # A full-cycle integral is invariant under a phase shift. On the right
+        # wall both fluxes reverse, exchanging the absorbed and released heat.
+        reference = []
+        for b in bias.tolist():
+            cuts = [math.acos(-b), 2 * math.pi - math.acos(-b)] if abs(b) < 1 else []
+            reference.append([
+                quad(lambda a: max(sign * (b + math.cos(a)), 0.), 0., 2 * math.pi,
+                     points=cuts)[0] / omega for sign in (1, -1)])
+        left, right = bias.new_tensor(reference).T
+        expected = torch.stack((left, right))
+        error = max((absorbed - expected).abs().max().item(),
+                    (released - expected.flip((0,))).abs().max().item())
+        record_property(f"n{n}_max_directional_error_J_m2", error)
+        if errors:
+            order = math.log2(errors[-1] / error)
+            record_property(f"n{n}_order", order)
+            assert order > 1.8
+        errors.append(error)
+    assert errors[-1] < .04
