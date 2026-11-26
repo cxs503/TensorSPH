@@ -3351,3 +3351,38 @@ def test_resistive_decay_mode_interface_traces_and_heat(record_property):
     for coarse, fine in zip(errors, errors[1:]):
         assert np.all(coarse > 3*fine)
     assert np.all(errors[-1] < [1e-3, 1e-3, 1e-4])
+
+
+@pytest.mark.parametrize("method", ["theta", "sdirk2", "exponential", "exponential_quadratic"])
+def test_native_directional_section_heat_affine_reversal(method, record_property):
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+
+    n = 8
+    x = (torch.arange(n, dtype=torch.float64)+.5)/n
+    # T=(1-t)*(1-x) yields a spatially constant rightward flux 1-t.
+    # With nearest-column support, ghost reflection reproduces the linear field.
+    times = [0., .5, 1.5, 2.]
+    _, net, parts = solve_transient_layered_slab(
+        1-x, times, 1/n, (lambda t: 1-t, 0.), conductivity=torch.ones_like(x),
+        volumetric_heat_capacity=1., heat_source=x-1, h_factor=.9, method=method,
+        return_x_heat=True, return_directional_x_heat=True)
+    for name, values in (("rightward", [.375, .125, 0.]), ("leftward", [0., .125, .375])):
+        error = (parts[name]-x.new_tensor(values)[:, None]).abs().max().item()
+        record_property(f"{name}_max_error_J_m2", error)
+        assert error < 1e-12
+    torch.testing.assert_close(parts["rightward"]-parts["leftward"], net, rtol=0., atol=1e-13)
+
+
+def test_directional_section_heat_keeps_hidden_neumann_pulse():
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+
+    def pulse(t):
+        return -3. if .25 <= t < .5 else 1.
+
+    initial = torch.zeros(8, dtype=torch.float64)
+    _, parts = solve_transient_layered_slab(
+        initial, [0., 1.], 1/8, (None, 0.), conductivity=torch.ones_like(initial),
+        volumetric_heat_capacity=1., x_wall_inward_flux=(pulse, 0.), load_jump_times=[.25, .5],
+        method="sdirk2", return_directional_x_heat=True)
+    assert parts["rightward"][0, 0].item() == pytest.approx(.75, abs=1e-13, rel=0.)
+    assert parts["leftward"][0, 0].item() == pytest.approx(.75, abs=1e-13, rel=0.)

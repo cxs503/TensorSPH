@@ -857,7 +857,7 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
                                  wall_areal_heat_capacity=(0.,0.), initial_wall_temperatures=(None,None),
                                  return_external_heat=False, return_interval_temperature=False,
                                  return_interval_wall_temperatures=False, return_wall_heat_components=False,
-                                 return_source_heat=False):
+                                 return_source_heat=False, return_directional_x_heat=False):
     """Integrate a transversely uniform layered slab with stationary material properties.
 
     Return temperatures (nt,nx) including the initial state. Specify one initial
@@ -885,6 +885,11 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
     each load jump use two backward Euler half steps.
     return_x_heat appends interval-integrated rightward section heat in J/m²,
     shaped (nt-1,nx+1), including any internal steps at load jumps.
+    return_directional_x_heat appends a final dict of nonnegative rightward
+    and leftward heats (J/m²) on the same cuts. Within each internal step
+    fit an affine flux with the solver's interval mean and final flux (left
+    limit at a load jump). Its signed integral equals the native net heat;
+    directional integrals approximate the flux history within the step.
     Bulk exchange H*(Tb-T) uses heat_loss_coefficient and the scalar or column
     profile bulk_ambient_temperature in K, optionally callable in time.
     return_bulk_exchange appends one signed heat per output interval and column
@@ -1115,10 +1120,38 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
         segments = sorted(set(segments)|damped)
     if return_external_heat:
         external = state.new_zeros((len(grid)-1,2))
-    if return_x_heat or return_external_heat:
+    need_section_flux = return_x_heat or return_directional_x_heat or return_external_heat
+    if return_directional_x_heat:
+        rightward = state.new_zeros((len(grid)-1,nx+1))
+        leftward = torch.zeros_like(rightward)
+    if need_section_flux:
         if return_x_heat:
             heat = state.new_zeros((len(grid)-1,nx+1))
         calibration = lattice_diffusion_factor_2d(h_factor,dx,mode="moment")
+
+    def section_flux(stage, stage_walls, inward):
+        # Start at the directly tallied west wall power. Net pair heat
+        # into each column is west minus east; integrate across all cuts.
+        rate,powers = stencil_rhs_with_wall_power_2d(stage[None,:nx],offsets,dx,stage_walls,
+                        conductivity=conductivity,layered_x=True,contact_resistance_x=contact_resistance_x)
+        west = powers[:1]/(dx*calibration)
+        flux = torch.cat((west,west-dx*rate[0].cumsum(dim=0)/calibration))
+        wall_drive = None
+        if flux_modes or film_modes or storing:
+            inward = inward.clone()
+            for side,_,gain,mode,_,_ in film_modes:
+                col = 0 if side==0 else nx-1
+                inward[side] -= gain*stage[col]
+                flux[1:] -= dx*inward[side]*mode.cumsum(0)
+            for side,_,mode in flux_modes:
+                flux[1:] -= dx*inward[side]*mode.cumsum(0)
+            wall_drive = inward.clone() if storing and return_external_heat else None
+            for wall in storing:
+                inward[wall.side] = wall.conductance*(stage[wall.index]-stage[wall.column])
+                flux[1:] -= dx*inward[wall.side]*wall.mode.cumsum(0)
+            flux += inward[0]
+        return flux, wall_drive
+
     if return_source_heat:
         source_heat = state.new_zeros((len(grid)-1,nx))
     if return_bulk_exchange:
@@ -1180,7 +1213,7 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
                 first = state
                 delta = torch.linalg.lu_solve(*factors,(dt*(operator @ state+load))[:,None])[:,0]
                 end = state+delta
-            if return_x_heat or return_bulk_exchange or return_external_heat or return_interval_temperature or return_interval_wall_temperatures or return_wall_heat_components:
+            if need_section_flux or return_bulk_exchange or return_interval_temperature or return_interval_wall_temperatures or return_wall_heat_components:
                 stage = (1-weight)*first+weight*end
         if return_wall_heat_components:
             drive = (1-weight)*components_start + weight*components_end
@@ -1203,7 +1236,7 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
             if quadratic:
                 reservoir = (reservoir+2*middle_reservoir)/3
             exchange[len(fields)-1] += dt*dx*loss*(reservoir-stage[:nx])
-        if return_x_heat or return_external_heat or return_interval_wall_temperatures:
+        if need_section_flux or return_interval_wall_temperatures:
             stage_walls = tuple(None if a is None else (1-weight)*a+weight*b for a,b in zip(walls_start,walls_end))
             if quadratic:
                 stage_walls = tuple(None if a is None else (a+2*m)/3 for a,m in zip(stage_walls,middle_walls))
@@ -1212,25 +1245,18 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
                 inward = (inward+2*middle_flux)/3
             if return_interval_wall_temperatures:
                 integrated_walls[len(fields)-1] += dt*wall_trace(stage,stage_walls,inward)
-        if return_x_heat or return_external_heat:
-            # Start at the directly tallied west wall power. Net pair heat
-            # into each column is west minus east; integrate across all cuts.
-            rate,powers = stencil_rhs_with_wall_power_2d(stage[None,:nx],offsets,dx,stage_walls,
-                            conductivity=conductivity,layered_x=True,contact_resistance_x=contact_resistance_x)
-            west = powers[:1]/(dx*calibration)
-            flux = torch.cat((west,west-dx*rate[0].cumsum(dim=0)/calibration))
-            if flux_modes or film_modes or storing:
-                for side,_,gain,mode,_,_ in film_modes:
-                    col = 0 if side==0 else nx-1
-                    inward[side] -= gain*stage[col]
-                    flux[1:] -= dx*inward[side]*mode.cumsum(0)
-                for side,_,mode in flux_modes:
-                    flux[1:] -= dx*inward[side]*mode.cumsum(0)
-                wall_drive = inward.clone() if storing and return_external_heat else None
-                for wall in storing:
-                    inward[wall.side] = wall.conductance*(stage[wall.index]-stage[wall.column])
-                    flux[1:] -= dx*inward[wall.side]*wall.mode.cumsum(0)
-                flux += inward[0]
+        if need_section_flux:
+            flux, wall_drive = section_flux(stage, stage_walls, inward)
+            if return_directional_x_heat:
+                final_flux, _ = section_flux(end, walls_end, flux_end)
+                initial_flux = flux+(flux-final_flux)
+                crossing = ((initial_flux > 0) & (final_flux < 0)) | ((initial_flux < 0) & (final_flux > 0))
+                small = torch.minimum(initial_flux.abs(), final_flux.abs())
+                large = torch.maximum(initial_flux.abs(), final_flux.abs())
+                ratio = small/torch.where(large > 0, large, 1.)
+                minor = torch.where(crossing, .5*small*(ratio/(1+ratio)), 0.)
+                rightward[len(fields)-1] += dt*(minor+flux.clamp_min(0))
+                leftward[len(fields)-1] += dt*(minor+(-flux).clamp_min(0))
             if return_x_heat:
                 heat[len(fields)-1] += dt*flux
             if return_external_heat:
@@ -1264,6 +1290,8 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
         outputs.append(dict(applied=component_heat[:,0], film=component_heat[:,1]))
     if return_source_heat:
         outputs.append(source_heat)
+    if return_directional_x_heat:
+        outputs.append(dict(rightward=rightward, leftward=leftward))
     return tuple(outputs) if len(outputs)>1 else history
 
 
