@@ -1,0 +1,21 @@
+{
+  "source_commit": "c7534765474b6188ddc8257b8b997eed4de316c0",
+  "command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH=src python -m pytest -q tests/test_conduction_2d.py tests/test_conduction_slab.py tests/test_conduction_contact_1d.py tests/test_ice_thermal_multiphysics.py -o junit_family=legacy --junitxml=/tmp/sph-grazing-final.xml",
+  "reference": "Integrated cosine Taylor expansion through degree ten and exact sine integral. Both heat-flow signs, three steady biases, two quadrature amplitudes, and forward, symmetric and reversed windows are covered.",
+  "time_scales_s": [
+    0.001,
+    1e-06,
+    1e-09
+  ],
+  "reproduction": {
+    "inward_flux_W_m2": "1 - cos(t)",
+    "interval_s": [
+      0,
+      1e-09
+    ],
+    "before_J_m2": 0.0,
+    "after_J_m2": 1.6666666666666669e-28
+  },
+  "max_relative_heat_error": 5.617495656155378e-16,
+  "passed": 312
+}
