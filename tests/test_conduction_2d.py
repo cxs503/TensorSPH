@@ -3304,3 +3304,50 @@ def test_matched_effusivity_interface_ramp_and_hold(record_property):
     for coarse, fine in zip(errors, errors[1:]):
         assert np.all(coarse > 3*fine)
     assert np.all(errors[-1] < .01*expected)
+
+
+def test_resistive_decay_mode_interface_traces_and_heat(record_property):
+    """Recover the two temperatures at a resistive cut from interval particle means."""
+    import numpy as np
+    from tensorsph.heat_conduction_2d import (
+        layered_slab_contact_temperatures, solve_transient_layered_slab,
+    )
+
+    wave = 1.5*np.pi
+    times = np.array([0., .025, .05])
+    dt = np.diff(times)
+    decay_integral = np.exp(-wave**2*times[:-1])*(-np.expm1(-wave**2*dt))/wave**2
+    # With k=C=3 on the east, its reflected mode has amplitude -1/3:
+    # both materials give the same positive rightward flux at the contact.
+    traces = np.sin(wave/2)*np.array([1., -1/3])
+    flux = -wave*np.cos(wave/2)
+    resistance = (traces[0]-traces[1])/flux
+    exact_heat = flux*decay_integral
+    exact_means = (decay_integral/dt)[:, None]*traces
+    errors = []
+    for n in (12, 24, 48):
+        mid = n//2
+        dx = 1/n
+        x = (np.arange(n)+.5)*dx
+        k = np.repeat([1., 3.], mid)
+        initial = np.where(x < .5, np.sin(wave*x), -np.sin(wave*(1-x))/3)
+        contacts = np.zeros(n-1)
+        contacts[mid-1] = resistance
+        states, heat, means = solve_transient_layered_slab(
+            initial, times, dx, (0., 0.), conductivity=k, volumetric_heat_capacity=k,
+            contact_resistance_x=contacts, method="exponential", return_x_heat=True,
+            return_interval_temperature=True)
+        left, right = layered_slab_contact_temperatures(means, heat.numpy()/dt[:, None], dx, k)
+        observed = np.column_stack((left[:, mid-1], right[:, mid-1]))
+        transfer = heat[:, mid].numpy()
+        uptake = dx*np.diff(states[:, :mid].numpy() @ k[:mid])
+        balance = max(abs(heat[:, 0].numpy()-transfer-uptake))
+        assert balance < 1e-12
+        record_property(f"n{n}_left_balance_J_m2", balance)
+        error = np.r_[abs(observed-exact_means).max(axis=0), max(abs(transfer-exact_heat))]
+        errors.append(error)
+        for label, value in zip(("west_trace_K", "east_trace_K", "contact_heat_J_m2"), error):
+            record_property(f"n{n}_max_error_{label}", value)
+    for coarse, fine in zip(errors, errors[1:]):
+        assert np.all(coarse > 3*fine)
+    assert np.all(errors[-1] < [1e-3, 1e-3, 1e-4])
