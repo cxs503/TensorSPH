@@ -262,3 +262,11 @@ python3 -m pytest tests/test_conduction_contact_1d.py -q                 # 约 1
 此时半无限域参考与有限板参考的最大差异已达初始温差的 2.0613%。
 
 复现命令为 `PYTHONPATH=src OMP_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py -k finite_slab`。
+
+### 固定端壁热通量
+
+`run_contact_sph` 在结果的 `wall_flux_left` 和 `wall_flux_right` 中给出终态的单位面积热流，
+两端都以流入板内为正。计算采用实际参与跨壁导热的镜像粒子对、粒子体积和求解时的导热标定系数。
+板长 1 m、壁温 310 K 和 302 K、热扩散率 0.25 m²/s、Fo=0.03 时，对有限板解析温度求导得到
+左端热流 0.81117449 W/m²，右端为其相反数（体积热容取 1 J/(m³ K)）。
+32、64 粒子的两端最大相对误差分别为 0.1482% 和 0.0370%。

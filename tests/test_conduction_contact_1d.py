@@ -295,3 +295,44 @@ def test_finite_slab_contact_short_and_long_time_limits(fourier):
     else:
         reference = 1 + 4*x
     torch.testing.assert_close(exact, reference, atol=5e-15, rtol=0)
+
+
+@pytest.mark.parametrize("dense", [False, True])
+def test_fixed_wall_contact_flux_refinement(dense, record_property):
+    # Differentiate the finite slab Fourier series at x=-L/2. Both ends
+    # have the same gradient and opposite inward normals.
+    hot, cold, alpha, length, fo = 310., 302., .25, 1., .03
+    exact = alpha * (hot-cold) / length * (1 + 2 * sum(
+        (-1)**m * math.exp(-4*math.pi**2*m*m*fo) for m in range(1, 25)))
+    errors = []
+    for n in (32, 64):
+        result = run_contact_sph(ContactConfig(
+            n_particles=n, dx=length/n, alpha=alpha, fourier=fo*length**2,
+            t_hot=hot, t_cold=cold, dense=dense, calibration="k0"))
+        error = max(abs(result.wall_flux_left-exact), abs(result.wall_flux_right+exact))
+        errors.append(error / exact)
+        record_property(f"max_relative_flux_error_n{n}", errors[-1])
+    record_property("analytic_left_inward_flux", exact)
+    assert errors[1] < .005
+    assert errors[1] < .3*errors[0]
+
+
+@pytest.mark.parametrize("h_factor", [1.7, 14.0])
+def test_contact_wall_fluxes_balance_dense_rates(h_factor, record_property):
+    from tensorsph.heat_conduction import contact_wall_fluxes
+    from tensorsph.ice_thermal.sph_thermal import conduction_rhs
+
+    dx, k, n = .125, .375, 12
+    h = h_factor * dx
+    x = (torch.arange(n, dtype=torch.float64) + .5) * dx
+    t = 2. + x**2
+    walls = 1.3, 4.8
+    fluxes = contact_wall_fluxes(t, lattice_stencil(dx, h), dx, k, *walls)
+    ext = torch.cat((2*walls[0]-t.flip(0), t, 2*walls[1]-t.flip(0)))
+    pos = torch.cat((-x.flip(0), x, 2*n*dx-x.flip(0)))
+    rates = conduction_rhs(ext, torch.full_like(ext, k), torch.full_like(ext, dx),
+                           1., pos, h)
+    difference = abs(sum(fluxes)-float(dx*rates[n:2*n].sum()))
+    record_property("absolute_heat_balance_residual", difference)
+    assert fluxes[0] < 0 < fluxes[1]
+    assert difference < 1e-13

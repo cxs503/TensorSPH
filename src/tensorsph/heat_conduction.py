@@ -79,6 +79,7 @@ __all__ = [
     "finite_slab_contact_temperature",
     "lattice_stencil",
     "stencil_rhs",
+    "contact_wall_fluxes",
     "stencil_vs_dense",
     "ContactConfig",
     "ContactResult",
@@ -154,6 +155,27 @@ def lattice_stencil(dx, h, eta_factor=0.01, volume=None):
         if a != 0.0:
             out.append((m, a))
     return out
+
+
+def contact_wall_fluxes(temperature, stencil, dx, conductivity, t_left, t_right):
+    """Return inward fluxes (left, right) per unit area for mirrored fixed walls.
+
+    Use the effective conductivity applied to the stencil, including any
+    lattice calibration. At each offset, the particle-to-ghost pairs at a
+    wall have the same physical partners in reverse order. Their summed
+    temperature difference is twice the sum of the wall-to-particle jumps.
+    """
+    temperature = torch.as_tensor(temperature, dtype=DTYPE)
+    left, right = 0.0, 0.0
+    n = temperature.numel()
+    for m, a in stencil:
+        first, stop = max(0, m - n), min(m, n)
+        if first >= stop:
+            continue
+        weight = -4.0 * dx * conductivity * a
+        left += weight * float((t_left - temperature[first:stop]).sum())
+        right += weight * float((t_right - temperature[n-stop:n-first]).sum())
+    return left, right
 
 
 def stencil_rhs(temperature, stencil, rho=1.0, ends="periodic"):
@@ -266,6 +288,9 @@ class ContactResult:
     diffusion_scatter: float = 0.0
     calibration: str = "lattice"
     cfg: ContactConfig = field(default_factory=ContactConfig)
+
+    wall_flux_left: float = 0.0     # final inward heat flux per unit area
+    wall_flux_right: float = 0.0
 
     # ---------------------------------------------------------------- metrics
     def error(self, x_cut: float | None = None):
@@ -388,6 +413,8 @@ def run_contact_sph(cfg: ContactConfig | None = None) -> ContactResult:
     res.time = steps * dt
     res.x = [float(v) for v in pos]
     res.temperature = [float(v) for v in temperature]
+    res.wall_flux_left, res.wall_flux_right = contact_wall_fluxes(
+        temperature, stencil, dx, alpha * alpha_corr, cfg.t_hot, cfg.t_cold)
     if cfg.reference == "finite_slab":
         exact = finite_slab_contact_temperature(pos, res.time, alpha, length, cfg.t_hot, cfg.t_cold)
     else:
