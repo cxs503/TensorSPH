@@ -1,0 +1,35 @@
+{
+  "source_commit": "bf96be81b41302aa2566ef9d68059d6977b28766",
+  "baseline_commit": "e982ac1826bba00e80176ab40844f25a1f3a7da1",
+  "reference": "Unit reference length, Fo=0.0625, t=Fo/alpha. Evaluate the erfc profile on each FD grid; the fixed-temperature walls are at similarity coordinate +/-6.",
+  "command": "PYTHONPATH=src OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py tests/test_conduction_2d.py tests/test_conduction_slab.py tests/test_ice_thermal_multiphysics.py -o junit_family=legacy --junitxml=/tmp/fd-fo-after.xml",
+  "baseline_procedure": "Run the source commit tests against baseline src, select -k fd_contact_at_fixed_fourier_number.",
+  "before": {
+    "tests": 2,
+    "failures": 2,
+    "measurements": {
+      "test_fd_contact_at_fixed_fourier_number[0.25]": {
+        "max_normalized_erfc_error_n96": 0.16317065486912175,
+        "max_normalized_erfc_error_n192": 0.16191416244178936
+      },
+      "test_fd_contact_at_fixed_fourier_number[4.0]": {
+        "max_normalized_erfc_error_n96": 0.16105645708505156,
+        "max_normalized_erfc_error_n192": 0.16124966886948078
+      }
+    }
+  },
+  "after": {
+    "tests": 333,
+    "failures": 0,
+    "measurements": {
+      "test_fd_contact_at_fixed_fourier_number[0.25]": {
+        "max_normalized_erfc_error_n96": 0.0009916086824806047,
+        "max_normalized_erfc_error_n192": 0.0002527302684226518
+      },
+      "test_fd_contact_at_fixed_fourier_number[4.0]": {
+        "max_normalized_erfc_error_n96": 0.0009916086824806047,
+        "max_normalized_erfc_error_n192": 0.0002527302684226518
+      }
+    }
+  }
+}
