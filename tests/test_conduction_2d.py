@@ -2578,3 +2578,23 @@ def test_single_fixed_wall_with_layered_contact(anchor):
             field, dx, k, sign*flux.mean(), side=side, contact_resistance_x=contacts,
             x_wall_temperatures=walls if anchor else None)
         torch.testing.assert_close(recovered, sign*flux, rtol=1e-12, atol=1e-12)
+
+
+def test_quadratic_flux_reconstructs_both_cubic_contact_traces():
+    from tensorsph.heat_conduction_2d import layered_slab_contact_temperatures
+
+    h = .25
+    k = torch.tensor([1.5, 3.], dtype=torch.float64)
+    curvature = k.new_tensor([2., -5.])
+    # q(x)=q0+b*x+c*x²/2 with x measured from the shared contact.
+    q0, slope = .8, k.new_tensor([.4, -.2])
+    z = k.new_tensor([-h/2, h/2])
+    traces = k.new_tensor([2., 1.7])
+    center = traces-(q0*z+slope*z**2/2+curvature*z**3/6)/k
+    outer_z = 2*z
+    outer = q0+slope*outer_z+curvature*outer_z**2/2
+    flux = k.new_tensor([outer[0], q0, outer[1]])
+    phase = torch.tensor([[1+.3j], [-.4j]], dtype=torch.complex128)
+    left, right = layered_slab_contact_temperatures(
+        phase*center, phase*flux, h, k, axial_flux_curvature=phase*curvature)
+    torch.testing.assert_close(torch.cat((left, right), dim=-1), phase*traces, atol=1e-14, rtol=0.)

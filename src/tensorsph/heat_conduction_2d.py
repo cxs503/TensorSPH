@@ -731,7 +731,7 @@ def _polynomial_exponential_step(state, generator, capacity, load_start, load_en
     return state+propagator[:n,-2],state+propagator[:n,-1]
 
 
-def layered_slab_contact_temperatures(temperature, x_flux, dx, conductivity):
+def layered_slab_contact_temperatures(temperature, x_flux, dx, conductivity, *, axial_flux_curvature=None):
     """Reconstruct temperatures on both material sides of all interior cuts.
 
     temperature holds particle-center temperatures (K) shaped (..., nx).
@@ -743,7 +743,10 @@ def layered_slab_contact_temperatures(temperature, x_flux, dx, conductivity):
 
     Return two arrays shaped (..., nx-1), ordered by interior cut. Each
     particle is extrapolated to its own side by integrating Fourier's law
-    over half a column with linearly interpolated flux. The temperature jump
+    over half a column with linearly interpolated flux. Supply axial_flux_curvature
+    (d²q/dx² in W/m⁴, broadcastable to the field) for a quadratic flux profile
+    inside each column. In steady one-dimensional conduction this equals the
+    volumetric source gradient. The temperature jump
     can thus be checked independently against resistance times section flux.
     """
     center = torch.as_tensor(temperature)
@@ -764,6 +767,20 @@ def layered_slab_contact_temperatures(temperature, x_flux, dx, conductivity):
     scale = dx/(8*k)
     left_trace = center-(west+3*east)*scale
     right_trace = center+(3*west+east)*scale
+    if axial_flux_curvature is not None:
+        raw = torch.as_tensor(axial_flux_curvature, device=center.device)
+        dtype = torch.promote_types(left_trace.dtype, raw.dtype)
+        curvature = torch.as_tensor(axial_flux_curvature, dtype=dtype, device=center.device)
+        try:
+            curvature = torch.broadcast_to(curvature, center.shape)
+        except RuntimeError as exc:
+            raise ValueError("flux curvature must broadcast to the particle field") from exc
+        if not torch.isfinite(curvature).all():
+            raise ValueError("provide a finite flux curvature broadcastable to the particle field")
+        # Integrate the quadratic correction, zero at both faces, over each half.
+        offset = curvature*(dx**3/(24*k))
+        left_trace = left_trace+offset
+        right_trace = right_trace-offset
     return left_trace[..., :-1],right_trace[..., 1:]
 
 
