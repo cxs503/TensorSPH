@@ -2278,14 +2278,27 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
             raise ValueError("x stencil radius exceeds slab width")
     if contact_resistance_x is not None:
         faces = _contact_faces(contact_resistance_x, t.real, dx, layered_x, x_wall_temperatures is not None, width)
+    ghost_error = None
     if width:
-        left_ghost = t[:, :width].flip((1,))
-        right_ghost = t[:, -width:].flip((1,))
-        if left is not None:
-            left_ghost = 2 * _wall_column(left, t) - left_ghost
-        if right is not None:
-            right_ghost = 2 * _wall_column(right, t) - right_ghost
-        t = torch.cat((left_ghost, t, right_ghost), dim=1)
+        ghosts, residuals = [], []
+        for wall, mirror in ((left, t[:, :width].flip((1,))), (right, t[:, -width:].flip((1,)))):
+            if wall is None:
+                ghosts.append(mirror)
+                if transverse_phase is None:
+                    residuals.append(torch.zeros_like(mirror))
+                continue
+            wall = _wall_column(wall, t)
+            jump = wall-mirror
+            ghost = wall+jump
+            ghosts.append(ghost)
+            # Preserve the low part of the reflected sum for physical-space
+            # links. A tiny wall-to-center jump can be lost on reflection.
+            if transverse_phase is None:
+                rounded_jump = ghost-wall
+                residuals.append((wall-(ghost-rounded_jump)) + (jump-rounded_jump))
+        if transverse_phase is None and any(torch.any(e != 0) for e in residuals):
+            ghost_error = torch.cat((residuals[0], torch.zeros_like(t), residuals[1]), dim=1)
+        t = torch.cat((ghosts[0], t, ghosts[1]), dim=1)
         if conductivity is not None:
             k = torch.cat((k[:, :width].flip((1,)), k, k[:, -width:].flip((1,))), dim=1)
     acc = torch.zeros_like(t)
@@ -2333,7 +2346,10 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
             # Rows are independent probes. +/-m links share material and x
             # endpoints, so their complex phase factors average to cos(m β dx).
             neighbour_t = torch.roll(t, shifts=-n, dims=1)*math.cos(m*transverse_phase)
-        transfer = a * (t - neighbour_t)
+        difference = t - neighbour_t
+        if ghost_error is not None:
+            difference = difference + (ghost_error - torch.roll(ghost_error, (-m, -n), (0, 1)))
+        transfer = a * difference
         if split is not None:
             normal = a * (t - torch.roll(t, -n, dims=1))
             transfer = torch.where(split, normal, transfer)

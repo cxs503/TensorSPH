@@ -3464,3 +3464,40 @@ def test_harmonic_wall_heat_near_tangency(record_property):
                     worst = max(worst, float(((heat-expected)/expected).abs().max()))
     record_property("max_relative_heat_error", worst)
     assert worst < 2.e-14
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+def test_dirichlet_ghost_keeps_subulp_reflected_temperature(reverse, record_property):
+    from tensorsph.heat_conduction_2d import (
+        lattice_offsets, lattice_diffusion_factor_2d, stencil_rhs_with_wall_power_2d,
+        stencil_x_face_power_2d,
+    )
+
+    # All physical temperatures lie just below 512 K and are representable.
+    # The first reflected center above the hot wall lies halfway between floats.
+    n, datum, k = 8, 512., 2.
+    dx = 1/n
+    epsilon = 2.**-44
+    jumps = -(2*torch.arange(n, dtype=torch.float64)+1)*epsilon
+    local = jumps.expand(3,n)
+    walls = (datum, datum-2*n*epsilon)
+    if reverse:
+        local, walls = local.flip((1,)), walls[::-1]
+    field = datum+local
+    offsets = lattice_offsets(dx, 1.3*dx)
+    factor = lattice_diffusion_factor_2d(1.3, dx, mode="moment")
+    rate, power = stencil_rhs_with_wall_power_2d(field, offsets, dx, walls, conductivity=k)
+    local_rate, local_power = stencil_rhs_with_wall_power_2d(
+        local, offsets, dx, tuple(v-datum for v in walls), conductivity=k)
+    q = (-1 if reverse else 1)*2*epsilon*k/dx
+    power_ref = field.new_tensor([q,-q])*dx*field.shape[0]
+    wall_error = ((power/factor-power_ref).abs()/power_ref.abs()).max().item()
+    face_error = max(abs(float(stencil_x_face_power_2d(
+        field, offsets, dx, face, walls, conductivity=k))/(factor*power_ref[0].item())-1)
+                     for face in range(1,n))
+    rate_error = rate.abs().max().item()/(factor*abs(q)/dx)
+    for name,error in (("wall",wall_error), ("interior",face_error), ("rate",rate_error)):
+        record_property(name+"_scaled_error", error)
+    assert max(wall_error, face_error, rate_error) < 3e-14
+    torch.testing.assert_close(rate, local_rate, rtol=0., atol=0.)
+    torch.testing.assert_close(power, local_power, rtol=0., atol=0.)
