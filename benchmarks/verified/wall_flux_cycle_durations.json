@@ -1,0 +1,22 @@
+{
+  "source_commit": "5fa30a7c3faf2b6ab663e812a20906d8482fd21f",
+  "command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH=src python -m pytest -q -o junit_family=legacy tests/test_conduction_2d.py --junitxml=wall.xml",
+  "tests": 240,
+  "failures": 0,
+  "reference": "Reference cycle durations from bracketed roots at four fixed positions on both solved walls. Separately compare a grazing window at relative amplitude gap 2^-52 to 2 acos(1-gap)/omega.",
+  "measurements": {
+    "n16_inward_duration_error_s": 0.021980354402707514,
+    "n16_outward_duration_error_s": 0.021980354402707403,
+    "n48_inward_duration_error_s": 0.002136820097423664,
+    "n48_inward_duration_order": 2.1216131556204494,
+    "n48_outward_duration_error_s": 0.002136820097423775,
+    "n48_outward_duration_order": 2.121613155620398,
+    "n144_inward_duration_error_s": 0.00023010125916544943,
+    "n144_inward_duration_order": 2.028517813647781,
+    "n144_outward_duration_error_s": 0.00023010125916556046,
+    "n144_outward_duration_order": 2.028517813647389,
+    "grazing_duration_s": 1.4048949503631345e-08,
+    "max_error_s": 3.308722450212111e-24,
+    "grazing_relative_error": 2.220446049250313e-16
+  }
+}
