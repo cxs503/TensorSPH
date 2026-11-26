@@ -336,3 +336,39 @@ def test_contact_wall_fluxes_balance_dense_rates(h_factor, record_property):
     record_property("absolute_heat_balance_residual", difference)
     assert fluxes[0] < 0 < fluxes[1]
     assert difference < 1e-13
+
+
+@pytest.mark.parametrize("dense", [False, True])
+def test_integrated_contact_wall_heat(dense, record_property):
+    # Integrate the Fourier-series flux from time zero. The constant term
+    # uses sum((-1)^m/m^2, m>=1) = -pi^2/12.
+    length, alpha, fo = 1.5, .25, .06
+    left, right = 302., 310.
+    tail = sum((-1)**m * math.exp(-4*math.pi**2*m*m*fo) / m**2
+               for m in range(1, 20))
+    exact = (left-right)*length*(fo - 1/24 - tail/(2*math.pi**2))
+    errors = []
+    for n in (32, 64):
+        cfg = ContactConfig(n_particles=n, dx=length/n, alpha=alpha, fourier=fo*length**2,
+                            t_hot=left, t_cold=right, calibration="k0", dense=dense,
+                            track_wall_heat=True)
+        run = run_contact_sph(cfg)
+        errors.append(max(abs(run.wall_heat_left-exact), abs(run.wall_heat_right+exact))/abs(exact))
+        stored = cfg.dx * math.fsum(t - (left if i < n//2 else right)
+                                    for i, t in enumerate(run.temperature))
+        residual = abs(stored - (run.wall_heat_left + run.wall_heat_right))
+        record_property(f"max_relative_heat_error_n{n}", errors[-1])
+        record_property(f"balance_residual_n{n}", residual)
+        assert residual < 2e-12
+    record_property("analytic_left_inward_heat", exact)
+    assert errors[1] < .005
+    assert errors[1] < .3*errors[0]
+
+
+def test_contact_wall_heat_uses_start_of_step_flux():
+    cfg = ContactConfig(n_particles=4, dx=.25, fourier=.002, calibration="k0",
+                        track_wall_heat=True)
+    run = run_contact_sph(cfg)
+    assert run.steps == 1
+    assert run.wall_heat_left == run.wall_heat_right == 0.
+    assert run.wall_flux_left > 0 > run.wall_flux_right

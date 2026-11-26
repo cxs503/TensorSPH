@@ -267,6 +267,7 @@ class ContactConfig:
     dense: bool = False         # True: O(N^2) conduction_rhs every step (slow)
     sample_every: int = 0       # 0: final profile only
     reference: str = "semi_infinite"   # or "finite_slab" for fixed end walls
+    track_wall_heat: bool = False      # accumulate each wall's inward heat per unit area
 
 
 @dataclass
@@ -291,6 +292,8 @@ class ContactResult:
 
     wall_flux_left: float = 0.0     # final inward heat flux per unit area
     wall_flux_right: float = 0.0
+    wall_heat_left: float | None = None    # cumulative inward heat per unit area
+    wall_heat_right: float | None = None
 
     # ---------------------------------------------------------------- metrics
     def error(self, x_cut: float | None = None):
@@ -385,6 +388,7 @@ def run_contact_sph(cfg: ContactConfig | None = None) -> ContactResult:
                         dx=dx, diffusion_factor=factor, calibration=mode,
                         diffusion_scatter=scatter, cfg=cfg)
     profile_time, profiles = [], []
+    heat_left = heat_right = 0.0
 
     for step in range(steps + 1):
         if cfg.sample_every and step % cfg.sample_every == 0:
@@ -406,10 +410,18 @@ def run_contact_sph(cfg: ContactConfig | None = None) -> ContactResult:
             t_ext = _mirror_extend(temperature, float(cfg.t_hot),
                                    float(cfg.t_cold), m)
             rate = alpha * stencil_rhs(t_ext, stencil, rho=1.0)[m:m + n]
+        if cfg.track_wall_heat:
+            # The forward Euler energy update uses the flux at the start of the step.
+            flux_left, flux_right = contact_wall_fluxes(
+                temperature, stencil, dx, alpha * alpha_corr, cfg.t_hot, cfg.t_cold)
+            heat_left += dt * flux_left
+            heat_right += dt * flux_right
         temperature = temperature + dt * rate * alpha_corr
         if not torch.isfinite(temperature).all():
             raise FloatingPointError(f"conduction diverged at step {step}")
 
+    if cfg.track_wall_heat:
+        res.wall_heat_left, res.wall_heat_right = heat_left, heat_right
     res.time = steps * dt
     res.x = [float(v) for v in pos]
     res.temperature = [float(v) for v in temperature]

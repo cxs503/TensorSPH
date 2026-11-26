@@ -270,3 +270,16 @@ python3 -m pytest tests/test_conduction_contact_1d.py -q                 # 约 1
 板长 1 m、壁温 310 K 和 302 K、热扩散率 0.25 m²/s、Fo=0.03 时，对有限板解析温度求导得到
 左端热流 0.81117449 W/m²，右端为其相反数（体积热容取 1 J/(m³ K)）。
 32、64 粒子的两端最大相对误差分别为 0.1482% 和 0.0370%。
+
+### 固定端壁累计传热量
+
+设置 `ContactConfig(track_wall_heat=True)` 后，`wall_heat_left` 和
+`wall_heat_right` 返回从初始时刻到终态、各端流入板内的累计热量（J/m²）。
+求解器在每个显式 Euler 步开始时取端壁热通量，乘以实际步长后累加。
+该选项独立于温度剖面的采样频率，默认关闭，关闭时两个结果均为 `None`。
+
+板长 1.5 m、左端 302 K、右端 310 K、热扩散率 0.25 m²/s、
+体积热容 1 J/(m³ K) 时，对端壁热通量的 Fourier 级数从零积分至
+Fo=0.06，得到左、右端累计热量分别为 −0.27689144 和 +0.27689144 J/m²。
+32、64 粒子下，相对解析值的最大误差分别为 0.20134% 和 0.05059%。
+复现命令为 `PYTHONPATH=src OMP_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py -k wall_heat`。
