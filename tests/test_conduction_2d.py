@@ -2864,3 +2864,36 @@ def test_biased_cycle_heat_from_steady_and_harmonic_slab_solves(record_property)
             assert order > 1.8
         interval_errors.append(interval_error)
     assert errors[-1] < .04
+
+
+def test_directional_wall_interval_heat_against_split_quadrature(record_property):
+    from scipy.integrate import quad
+    from tensorsph.heat_conduction_2d import directional_wall_interval_heat, harmonic_wall_interval_heat
+
+    omega = 2.7
+    flux = torch.tensor([0j, 1+.5j, -.3+1.2j, -1j, 1j], dtype=torch.complex128)
+    bias = torch.tensor([.23, -2., .3, 1., -.4], dtype=torch.float64)
+    worst, balance = 0., 0.
+    for start, end in ((-.83, .21), (.2, 9.7), (1.1, 1.10000001), (2., 2.)):
+        absorbed, released = directional_wall_interval_heat(flux, omega, start, end, steady_flux=bias)
+        for j, (wave, dc) in enumerate(zip(flux.tolist(), bias.tolist())):
+            phase = math.atan2(wave.imag, wave.real)
+            roots = []
+            if abs(dc) < abs(wave):
+                for root in (-math.acos(-dc/abs(wave)), math.acos(-dc/abs(wave))):
+                    first = math.ceil((omega*start+phase-root)/(2*math.pi))
+                    last = math.floor((omega*end+phase-root)/(2*math.pi))
+                    roots.extend((root-phase+2*math.pi*k)/omega for k in range(first, last+1))
+            for sign, result in ((1, absorbed), (-1, released)):
+                reference = quad(lambda t: max(0., sign*(dc+abs(wave)*math.cos(omega*t+phase))),
+                                 start, end, points=roots)[0]
+                worst = max(worst, abs(result[j].item()-reference))
+        net = harmonic_wall_interval_heat(flux, omega, start, end, steady_flux=bias)
+        balance = max(balance, (absorbed-released-net).abs().max().item())
+    record_property("directional_error_J_m2", worst)
+    record_property("balance_error_J_m2", balance)
+    assert max(worst, balance) < 1e-12
+
+    gap = 2.**-50
+    _, released = directional_wall_interval_heat(-1., 1., 0., .1, steady_flux=1-gap)
+    assert abs(released.item()/(2*math.sqrt(2)/3*gap**1.5)-1) < 1e-12

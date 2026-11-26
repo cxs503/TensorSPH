@@ -1915,6 +1915,49 @@ def directional_wall_cycle_heat(wall_flux, angular_frequency, *, steady_flux=0.)
     return minor+period*bias.clamp_min(0), minor+period*(-bias).clamp_min(0)
 
 
+def directional_wall_interval_heat(wall_flux, angular_frequency, start_time, end_time, *, steady_flux=0.):
+    """Absorbed and released heat magnitudes (J/m²) in a forward time interval.
+
+    Supply peak inward flux phasors and real steady fluxes as for
+    directional_wall_cycle_heat. The interval may include multiple cycles.
+    """
+    if not math.isfinite(start_time) or not math.isfinite(end_time) or end_time < start_time:
+        raise ValueError("provide finite, nondecreasing integration times")
+    cycle = directional_wall_cycle_heat(wall_flux, angular_frequency, steady_flux=steady_flux)
+    flux = torch.as_tensor(wall_flux, dtype=torch.complex128)
+    amplitude = flux.abs()
+    bias = torch.as_tensor(steady_flux, dtype=amplitude.dtype, device=amplitude.device)
+    period = 2*math.pi/angular_frequency
+    cycles, remaining = divmod(end_time-start_time, period)
+    extent = remaining*angular_frequency
+    phase = math.remainder(start_time, period)*angular_frequency + flux.angle()
+
+    def integrate(sign, cycle_heat):
+        offset = sign*bias
+        start = torch.remainder(phase + (math.pi if sign < 0 else 0.) + math.pi, 2*math.pi) - math.pi
+        # Positive flux lies within +/-limit around each peak. Compute the
+        # shorter angular distance first to resolve nearly grazing reversals.
+        safe_amp = torch.where(amplitude > 0, amplitude, 1.)
+        small = 2*torch.asin(torch.sqrt(((amplitude-offset.abs())/(2*safe_amp)).clamp(0, .5)))
+        limit = torch.where(offset >= 0, math.pi-small, small)
+        heat = cycles*cycle_heat
+        for peak in (0., 2*math.pi):
+            left = (peak-limit-start).clamp(0, extent)
+            right = (peak+limit-start).clamp(0, extent)
+            half = (right-left)/2
+            mid = (start-peak) + (left+right)/2
+            # cos(mid)*sinc(half)-cos(limit), without subtracting near-equal cosines.
+            h2 = half.square()
+            sinc_loss = torch.where(half < .05, h2*(1/6-h2*(1/120-h2/5040)),
+                                    1-torch.sinc(half/math.pi))
+            cosine_gap = 2*torch.sin((limit+mid)/2)*torch.sin((limit-mid)/2)
+            mean = (offset-amplitude).clamp_min(0) + amplitude*(cosine_gap-mid.cos()*sinc_loss)
+            heat = heat + (right-left)/angular_frequency * mean.clamp_min(0)
+        return heat
+
+    return integrate(1, cycle[0]), integrate(-1, cycle[1])
+
+
 def harmonic_fixed_wall_cycle_heat_2d(temperature, dx, conductivity, wall_mean_flux, angular_frequency, *,
                                       contact_resistance_x=None, x_wall_temperatures=None, side=None):
     """Heat absorbed per unit area per row over one zero-mean sinusoidal cycle.
