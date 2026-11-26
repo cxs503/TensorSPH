@@ -2279,24 +2279,25 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
     if contact_resistance_x is not None:
         faces = _contact_faces(contact_resistance_x, t.real, dx, layered_x, x_wall_temperatures is not None, width)
     ghost_error = None
+    unphased = transverse_phase is None or transverse_phase == 0.
     if width:
         ghosts, residuals = [], []
         for wall, mirror in ((left, t[:, :width].flip((1,))), (right, t[:, -width:].flip((1,)))):
             if wall is None:
                 ghosts.append(mirror)
-                if transverse_phase is None:
+                if unphased:
                     residuals.append(torch.zeros_like(mirror))
                 continue
             wall = _wall_column(wall, t)
             jump = wall-mirror
             ghost = wall+jump
             ghosts.append(ghost)
-            # Preserve the low part of the reflected sum for physical-space
-            # links. A tiny wall-to-center jump can be lost on reflection.
-            if transverse_phase is None:
+            # Preserve the low part of the reflected sum for links without
+            # a phase rotation. A tiny wall-to-center jump can be lost on reflection.
+            if unphased:
                 rounded_jump = ghost-wall
                 residuals.append((wall-(ghost-rounded_jump)) + (jump-rounded_jump))
-        if transverse_phase is None and any(torch.any(e != 0) for e in residuals):
+        if unphased and any(torch.any(e != 0) for e in residuals):
             ghost_error = torch.cat((residuals[0], torch.zeros_like(t), residuals[1]), dim=1)
         t = torch.cat((ghosts[0], t, ghosts[1]), dim=1)
         if conductivity is not None:
@@ -2337,8 +2338,11 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
                     split |= torch.roll(k[0], -j) != torch.roll(k[0], -(j+1))
                     if faces is not None:
                         split |= torch.roll(faces, -j) != 0
-        if transverse_phase is None:
-            neighbour_t = torch.roll(t, shifts=(-m, -n), dims=(0, 1))
+        if unphased:
+            # Physical rows have transverse neighbours; modal rows are
+            # independent probes even when their phase increment is zero.
+            shifts = (-m if transverse_phase is None else 0, -n)
+            neighbour_t = torch.roll(t, shifts, (0, 1))
         elif modal_flux:
             # Cut attribution depends on the direction of the oblique link.
             neighbour_t = torch.roll(t,shifts=-n,dims=1)*cmath.exp(1j*m*transverse_phase)
@@ -2348,7 +2352,7 @@ def _stencil_exchange(temperature, offsets, rho, conductivity, x_wall_temperatur
             neighbour_t = torch.roll(t, shifts=-n, dims=1)*math.cos(m*transverse_phase)
         difference = t - neighbour_t
         if ghost_error is not None:
-            difference = difference + (ghost_error - torch.roll(ghost_error, (-m, -n), (0, 1)))
+            difference = difference + (ghost_error - torch.roll(ghost_error, shifts, (0, 1)))
         transfer = a * difference
         if split is not None:
             normal = a * (t - torch.roll(t, -n, dims=1))

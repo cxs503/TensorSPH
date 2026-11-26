@@ -3501,3 +3501,42 @@ def test_dirichlet_ghost_keeps_subulp_reflected_temperature(reverse, record_prop
     assert max(wall_error, face_error, rate_error) < 3e-14
     torch.testing.assert_close(rate, local_rate, rtol=0., atol=0.)
     torch.testing.assert_close(power, local_power, rtol=0., atol=0.)
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+def test_zero_mode_contact_flux_at_large_temperature_datum(reverse, record_property):
+    from tensorsph.heat_conduction_2d import (
+        lattice_diffusion_factor_2d, lattice_offsets, layered_slab_modal_cut_flux,
+        stencil_rhs_with_wall_power_2d, stencil_x_face_power_2d,
+    )
+
+    n, dx = 8, .125
+    k = torch.tensor([1.]*4+[.5]*4, dtype=torch.float64)
+    resistance = torch.zeros(n-1, dtype=k.dtype)
+    resistance[3] = 2*dx
+    # Exact series-resistance law. The first physical center differs from
+    # the fixed wall by one spacing below 512 K in each quadrature.
+    magnitude = 2.**-43/dx
+    q = complex(magnitude,-magnitude)
+    datum = complex(512.,-512.)
+    cell_drop = dx/k
+    before = torch.cat((k.new_zeros(1), (cell_drop[:-1]+resistance).cumsum(0)))
+    field = datum-q*(before+cell_drop/2)
+    walls = (datum, datum-q*float(cell_drop.sum()+resistance.sum()))
+    if reverse:
+        k, resistance, field, walls, q = k.flip((0,)), resistance.flip((0,)), field.flip((0,)), walls[::-1], -q
+    opts = dict(conductivity=k, contact_resistance_x=resistance)
+    modal = torch.stack([layered_slab_modal_cut_flux(field, dx, face, walls, **opts)
+                         for face in range(n+1)])
+    offsets = lattice_offsets(dx, 1.3*dx)
+    factor = lattice_diffusion_factor_2d(1.3, dx, mode="moment")
+    physical = field[None,:].expand(3,n)
+    _, ends = stencil_rhs_with_wall_power_2d(physical, offsets, dx, walls, layered_x=True, **opts)
+    cuts = [stencil_x_face_power_2d(physical, offsets, dx, face, walls, layered_x=True, **opts)
+            for face in range(1,n)]
+    direct = torch.stack([ends[0], *cuts, -ends[1]])/(3*dx*factor)
+    error = float((modal-q).abs().max()/abs(q))
+    discrepancy = float((modal-direct).abs().max()/abs(q))
+    record_property("max_relative_modal_flux_error", error)
+    record_property("max_relative_physical_discrepancy", discrepancy)
+    assert max(error, discrepancy) < 3e-14
