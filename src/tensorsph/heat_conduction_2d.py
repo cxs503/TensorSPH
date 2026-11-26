@@ -856,7 +856,8 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
                                  bulk_ambient_temperature=0., return_bulk_exchange=False,
                                  wall_areal_heat_capacity=(0.,0.), initial_wall_temperatures=(None,None),
                                  return_external_heat=False, return_interval_temperature=False,
-                                 return_interval_wall_temperatures=False, return_wall_heat_components=False):
+                                 return_interval_wall_temperatures=False, return_wall_heat_components=False,
+                                 return_source_heat=False):
     """Integrate a transversely uniform layered slab with stationary material properties.
 
     Return temperatures (nt,nx) including the initial state. Specify one initial
@@ -906,6 +907,9 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
     inward heat arrays (nt-1,2) in J/m². These integrate prescribed flux and
     convective exchange separately. Both are zero on fixed-temperature ends;
     their thermostat input is available through return_external_heat.
+    return_source_heat appends the signed integral of heat_source per column
+    and unit slab area (nt-1,nx), in J/m². Positive heat adds energy. The
+    integration follows the selected method and splits at each load jump.
     """
     if torch.is_complex(torch.as_tensor(temperature)):
         raise ValueError("initial column temperatures must be real")
@@ -965,8 +969,9 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
     zero = torch.zeros_like(state)[None,:]
     static_walls = tuple(0. if callable(w) else None if w is None else wall_value(w) for w in walls)
     static_load = response(zero,static_walls)[0]
-    if not callable(heat_source):
-        static_load = static_load+profile(heat_source,"heat_source")
+    fixed_source = None if callable(heat_source) else profile(heat_source,"heat_source").clone()
+    if fixed_source is not None:
+        static_load = static_load+fixed_source
     fixed_reservoir = None if callable(bulk_ambient_temperature) else profile(bulk_ambient_temperature,"bulk ambient temperature")
     wall_modes = []
     for i,wall in enumerate(walls):
@@ -1029,8 +1034,12 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
         reservoir = (profile(bulk_ambient_temperature(time),"bulk ambient temperature")
                      if fixed_reservoir is None else fixed_reservoir)
         load = static_load+loss*reservoir
-        if callable(heat_source):
-            load = load+profile(heat_source(time),"heat_source")
+        source = fixed_source
+        if source is None:
+            source = profile(heat_source(time),"heat_source")
+            if return_source_heat:
+                source = source.clone()  # A callback can reuse its profile buffer.
+            load = load+source
         sampled = list(static_walls)
         for i,wall,mode in wall_modes:
             sampled[i] = wall_value(wall(time))
@@ -1066,7 +1075,7 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
                 inward[wall.side] = wall.film*fluid+applied
                 wall_loads.append(inward[wall.side])
             load = torch.cat((load,torch.stack(wall_loads)))
-        return load,sampled,inward,reservoir,components
+        return load,sampled,inward,reservoir,components,source
     basis = torch.eye(len(state),device=state.device,dtype=state.dtype)
     operator = response(basis,homogeneous).T-torch.diag(loss)
     for side,_,gain,mode,_,_ in film_modes:
@@ -1110,11 +1119,13 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
         if return_x_heat:
             heat = state.new_zeros((len(grid)-1,nx+1))
         calibration = lattice_diffusion_factor_2d(h_factor,dx,mode="moment")
+    if return_source_heat:
+        source_heat = state.new_zeros((len(grid)-1,nx))
     if return_bulk_exchange:
         exchange = state.new_zeros((len(grid)-1,nx))
     if return_wall_heat_components:
         component_heat = state.new_zeros((len(grid)-1,2,2))
-    load_start,walls_start,flux_start,reservoir_start,components_start = forcing(grid[0])
+    load_start,walls_start,flux_start,reservoir_start,components_start,source_start = forcing(grid[0])
     if return_interval_wall_temperatures:
         integrated_walls = state.new_zeros((len(grid)-1,2))
     if return_wall_temperatures or return_interval_wall_temperatures:
@@ -1143,9 +1154,9 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
             stage_time = start+weight*dt
             if not start<stage_time<stop:
                 raise ValueError("SDIRK interval has no representable stage time")
-            load_start,walls_start,flux_start,reservoir_start,components_start = forcing(stage_time)
+            load_start,walls_start,flux_start,reservoir_start,components_start,source_start = forcing(stage_time)
         at_jump = stop in events
-        load_end,walls_end,flux_end,reservoir_end,components_end = forcing(math.nextafter(stop,start) if at_jump else stop)
+        load_end,walls_end,flux_end,reservoir_end,components_end,source_end = forcing(math.nextafter(stop,start) if at_jump else stop)
         load = (1-weight)*load_start+weight*load_end
         shift = weight*dt
         if exponential:
@@ -1154,7 +1165,7 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
                 middle = start+.5*dt
                 if not start<middle<stop:
                     raise ValueError("quadratic load interval has no representable midpoint")
-                midpoint_load,middle_walls,middle_flux,middle_reservoir,middle_components = forcing(middle)
+                midpoint_load,middle_walls,middle_flux,middle_reservoir,middle_components,middle_source = forcing(middle)
             end,stage = _polynomial_exponential_step(state,generator,capacity,load_start,load_end,dt,midpoint_load)
         else:
             if shift!=previous_shift:
@@ -1182,6 +1193,11 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
             component_heat[len(fields)-1] += dt*drive
         if return_interval_temperature:
             integrated_temperature[len(fields)-1] += dt*stage[:nx]
+        if return_source_heat:
+            source_mean = (1-weight)*source_start + weight*source_end
+            if quadratic:
+                source_mean = (source_mean+2*middle_source)/3
+            source_heat[len(fields)-1] += dt*dx*source_mean
         if return_bulk_exchange:
             reservoir = (1-weight)*reservoir_start+weight*reservoir_end
             if quadratic:
@@ -1223,7 +1239,7 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
                     net[wall.side] = wall_drive[wall.side]-wall.film*stage[wall.index]
                 external[len(fields)-1] += dt*net
         state = end
-        load_start,walls_start,flux_start,reservoir_start,components_start = forcing(stop) if at_jump else (load_end,walls_end,flux_end,reservoir_end,components_end)
+        load_start,walls_start,flux_start,reservoir_start,components_start,source_start = forcing(stop) if at_jump else (load_end,walls_end,flux_end,reservoir_end,components_end,source_end)
         if stop==grid[len(fields)]:
             fields.append(state)
             if return_wall_temperatures:
@@ -1246,6 +1262,8 @@ def solve_transient_layered_slab(temperature, times, dx, x_wall_temperatures, *,
         outputs.append(integrated_walls/widths[:,None])
     if return_wall_heat_components:
         outputs.append(dict(applied=component_heat[:,0], film=component_heat[:,1]))
+    if return_source_heat:
+        outputs.append(source_heat)
     return tuple(outputs) if len(outputs)>1 else history
 
 

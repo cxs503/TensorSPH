@@ -2683,3 +2683,51 @@ def test_source_history_can_reuse_its_particle_buffer():
         initial, [0., 1.], .125, (None, None), heat_source=source, return_source_heat=True)
     torch.testing.assert_close(supplied[0], torch.full_like(initial, .5))
     torch.testing.assert_close(field[-1], supplied[0])
+
+
+@pytest.mark.parametrize("options", [{}, {"rannacher": True}, {"method": "sdirk2"},
+                                     {"method": "exponential"}, {"method": "exponential_quadratic"}])
+def test_layered_source_heat_closes_each_column(options, record_property):
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+
+    dx, jump = .125, .125
+    k = torch.tensor([1.]*4+[4.]*4, dtype=torch.float64)
+    c = k.new_tensor([2.]*4+[3.]*4)
+    thickness = dx/k
+    initial = thickness.cumsum(0)-thickness/2
+    right = float(thickness.sum())
+    times = [0., .25, .5]
+    # Unit rightward temperature gradient in resistance coordinates gives
+    # constant flux -1. The source and ambient together drive dT/dt=1.
+    def exchange(t):
+        return k*(1. if t < jump else -2.)
+    source_buffer = torch.empty_like(k)
+    def heating(t):
+        return source_buffer.copy_(c-exchange(t))
+    field, heat, bulk, supplied = solve_transient_layered_slab(
+        initial, times, dx, (lambda t: t, lambda t: right+t), conductivity=k,
+        volumetric_heat_capacity=c, heat_source=heating, heat_loss_coefficient=1.,
+        bulk_ambient_temperature=lambda t: initial+t+exchange(t), load_jump_times=[jump],
+        return_x_heat=True, return_bulk_exchange=True, return_source_heat=True, **options)
+    expected_bulk = dx*k*k.new_tensor([jump-2*(.25-jump), -.5])[:, None]
+    expected_storage = .25*dx*c
+    errors = dict(source_J_m2=(supplied-(expected_storage-expected_bulk)).abs().max(),
+                  exchange_J_m2=(bulk-expected_bulk).abs().max(),
+                  section_J_m2=(heat+.25).abs().max(),
+                  field_K=(field-initial-k.new_tensor(times)[:, None]).abs().max(),
+                  budget_J_m2=(dx*c*field.diff(dim=0)+heat.diff(dim=1)-bulk-supplied).abs().max())
+    for name, error in errors.items():
+        record_property(name, float(error))
+        assert error < 5e-12
+
+
+def test_layered_source_heat_integrates_quadratic_midpoint():
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+
+    k = torch.ones(8, dtype=torch.float64)
+    state, supplied = solve_transient_layered_slab(
+        torch.zeros_like(k), [0., .5], .125, (None, None), conductivity=k,
+        volumetric_heat_capacity=1., heat_source=lambda t: t*t, method="exponential_quadratic",
+        return_source_heat=True)
+    torch.testing.assert_close(supplied[0], torch.full_like(k, .125*.5**3/3), atol=1e-15, rtol=0)
+    torch.testing.assert_close(state[-1]*.125, supplied[0], atol=1e-14, rtol=0)
