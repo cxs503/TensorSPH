@@ -65,6 +65,7 @@ stays on the record instead of being hidden inside the tolerance.
 from __future__ import annotations
 
 import math
+from bisect import bisect_left
 from dataclasses import dataclass, field
 
 import torch
@@ -112,8 +113,9 @@ def contact_temperature(x, t, alpha, t_hot=1.0, t_cold=0.0):
     return t_cold + 0.5 * (t_hot - t_cold) * torch.erfc(eta)
 
 
-def finite_slab_contact_temperature(x, t, alpha, length, t_hot=1.0, t_cold=0.0):
-    """Contact step at x=0 in a slab with fixed end temperatures at ±length/2.
+def finite_slab_contact_temperature(x, t, alpha, length, t_hot=1.0, t_cold=0.0,
+                                    *, contact_position=0.0):
+    """Contact step at contact_position in a slab with fixed end temperatures at ±length/2.
 
     The steady profile is linear. Its transient correction is a sine series
     with coefficients obtained by integrating the initial step minus the ramp.
@@ -123,16 +125,25 @@ def finite_slab_contact_temperature(x, t, alpha, length, t_hot=1.0, t_cold=0.0):
     z = torch.as_tensor(x, dtype=DTYPE) / length
     if not torch.all(z.abs() <= 0.5):
         raise ValueError("contact reference points must lie inside the slab")
+    if not -length/2 < contact_position < length/2:
+        raise ValueError("contact_position must be inside the slab")
+    y = z + 0.5
+    fraction = contact_position / length + 0.5
     fourier = alpha * t / length**2
     if fourier <= 0.001:
-        # The nearest reflected step contributes at most erfc(1/(4 sqrt(Fo)))
-        # of the jump on the slab, below 1e-28 at this cutoff.
-        return contact_temperature(x, t, alpha, t_hot, t_cold)
-    profile = 0.5 - z
-    decay = 4 * math.pi**2 * fourier
-    for mode in range(1, 1 + math.ceil(math.sqrt(40 / decay))):
-        profile = profile - (math.exp(-decay * mode**2) / (mode * math.pi)
-                             * torch.sin(2 * math.pi * mode * z))
+        # Include the reflected step at each end. All omitted images are
+        # at least a slab length away even for contacts close to a wall.
+        scale = 2 * math.sqrt(fourier)
+        profile = 0.5 * (torch.erfc((z - contact_position/length) / scale)
+                         + torch.erfc((y + fraction) / scale)
+                         - torch.erfc((2 - y - fraction) / scale))
+    else:
+        profile = 0.5 - z
+        decay = math.pi**2 * fourier
+        for mode in range(1, 1 + math.ceil(math.sqrt(40 / decay))):
+            phase = mode * math.pi
+            amplitude = -2 * math.cos(phase * fraction) * math.exp(-decay * mode**2) / phase
+            profile = profile + amplitude * torch.sin(phase * y)
     return t_cold + (t_hot - t_cold) * profile
 
 
@@ -268,6 +279,7 @@ class ContactConfig:
     sample_every: int = 0       # 0: final profile only
     reference: str = "semi_infinite"   # or "finite_slab" for fixed end walls
     track_wall_heat: bool = False      # accumulate each wall's inward heat per unit area
+    contact_position: float = 0.0      # initial jump position relative to slab center, m
 
 
 @dataclass
@@ -309,13 +321,17 @@ class ContactResult:
         return float(e.max()), float(torch.sqrt((e ** 2).mean()))
 
     def interface_temperature(self):
-        """``T`` at ``x = 0`` by linear interpolation between the two neighbours."""
-        x = torch.tensor(self.x, dtype=DTYPE)
-        a = torch.tensor(self.temperature, dtype=DTYPE)
-        right = int(torch.nonzero(x >= 0.0)[0])
-        left = right - 1
-        w = (0.0 - float(x[left])) / float(x[right] - x[left])
-        return float((1.0 - w) * a[left] + w * a[right])
+        """Interpolate at the initial contact, including the Dirichlet end values."""
+        position = self.cfg.contact_position
+        half_length = self.n_particles * self.dx / 2
+        right = bisect_left(self.x, position)
+        x0, t0 = (self.x[right-1], self.temperature[right-1]) if right else (-half_length, self.cfg.t_hot)
+        if right == len(self.x):
+            x1, t1 = half_length, self.cfg.t_cold
+        else:
+            x1, t1 = self.x[right], self.temperature[right]
+        w = (position - x0) / (x1 - x0)
+        return (1.0 - w) * t0 + w * t1
 
 
 def _mirror_extend(values, t_left, t_right, m):
@@ -367,13 +383,12 @@ def run_contact_sph(cfg: ContactConfig | None = None) -> ContactResult:
     stencil = lattice_stencil(dx, h, cfg.eta_factor)
     m = max(mm for mm, _ in stencil)
 
-    temperature = torch.where(pos < 0.0,
-                              torch.full((n,), float(cfg.t_hot), dtype=DTYPE),
-                              torch.full((n,), float(cfg.t_cold), dtype=DTYPE))
-
-    if n % 2:
-        # The central particle volume straddles the initial temperature jump.
-        temperature[n // 2] = 0.5 * cfg.t_hot + 0.5 * cfg.t_cold
+    if not -length/2 < cfg.contact_position < length/2:
+        raise ValueError("contact_position must be inside the slab")
+    # Integrate the initial step over each particle volume, including cut cells.
+    cut = n / 2 + cfg.contact_position / dx
+    fraction = (cut - torch.arange(n, dtype=DTYPE)).clamp(0., 1.)
+    temperature = fraction * cfg.t_hot + (1. - fraction) * cfg.t_cold
 
     # dense path: frozen pair matrix on the mirror-extended lattice
     fv_dense = None
@@ -428,9 +443,10 @@ def run_contact_sph(cfg: ContactConfig | None = None) -> ContactResult:
     res.wall_flux_left, res.wall_flux_right = contact_wall_fluxes(
         temperature, stencil, dx, alpha * alpha_corr, cfg.t_hot, cfg.t_cold)
     if cfg.reference == "finite_slab":
-        exact = finite_slab_contact_temperature(pos, res.time, alpha, length, cfg.t_hot, cfg.t_cold)
+        exact = finite_slab_contact_temperature(pos, res.time, alpha, length, cfg.t_hot, cfg.t_cold,
+                                               contact_position=cfg.contact_position)
     else:
-        exact = contact_temperature(pos, res.time, alpha, cfg.t_hot, cfg.t_cold)
+        exact = contact_temperature(pos - cfg.contact_position, res.time, alpha, cfg.t_hot, cfg.t_cold)
     res.analytic = exact.tolist()
     res.profile_time = profile_time
     res.profiles = profiles

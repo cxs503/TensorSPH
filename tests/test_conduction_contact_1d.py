@@ -372,3 +372,50 @@ def test_contact_wall_heat_uses_start_of_step_flux():
     assert run.steps == 1
     assert run.wall_heat_left == run.wall_heat_right == 0.
     assert run.wall_flux_left > 0 > run.wall_flux_right
+
+
+@pytest.mark.parametrize("dense", [False, True])
+def test_offset_contact_net_wall_heat(dense, record_property):
+    # Integrate the exact sine modes over the slab to obtain its mean temperature.
+    length, fraction, fo = 1., .317, .04
+    left, right = 5., 1.
+    net_fraction = .5 - fraction - sum(
+        4 * math.cos(math.pi*m*fraction) * math.exp(-(math.pi*m)**2*fo) / (math.pi*m)**2
+        for m in range(1, 30, 2))
+    reference = length * (left-right) * net_fraction
+    for n in (32, 64):
+        result = run_contact_sph(ContactConfig(
+            n_particles=n, dx=length/n, t_hot=left, t_cold=right, dense=dense,
+            fourier=fo*length**2, calibration="k0", reference="finite_slab",
+            contact_position=length*(fraction-.5), track_wall_heat=True))
+        stored = length * (math.fsum(result.temperature)/n - (right+(left-right)*fraction))
+        net = result.wall_heat_left + result.wall_heat_right
+        record_property(f"relative_heat_error_n{n}", abs(net/reference-1))
+        record_property(f"balance_residual_n{n}", abs(stored-net))
+        record_property(f"normalized_temperature_error_n{n}", result.error()[0])
+        assert abs(stored-net) < 1e-13
+        assert abs(net/reference-1) < 3/n**2
+        assert result.error()[0] < 1/n**2
+    record_property("analytic_net_inward_heat", reference)
+
+
+@pytest.mark.parametrize("position", [-.499, .499])
+def test_short_time_contact_near_fixed_wall(position):
+    from tensorsph.heat_conduction import finite_slab_contact_temperature
+
+    x = torch.tensor([-.5, -.49, position, .49, .5], dtype=torch.float64)
+    at_cut = finite_slab_contact_temperature(x, .001, 1., 1., contact_position=position)
+    above = finite_slab_contact_temperature(x, .00100000000001, 1., 1., contact_position=position)
+    torch.testing.assert_close(at_cut, above, atol=1e-11, rtol=0.)
+    assert at_cut[0] == pytest.approx(1.)
+    assert at_cut[-1] == pytest.approx(0., abs=1e-14)
+
+
+@pytest.mark.parametrize("position,wall,index", [(-.499, 1., 0), (.499, 0., -1)])
+def test_offset_interface_interpolation_inside_wall_half_cell(position, wall, index):
+    result = run_contact_sph(ContactConfig(n_particles=16, dx=1/16, fourier=.003,
+                                           contact_position=position, calibration="k0"))
+    weight = (.5-abs(position))/(.5-abs(result.x[index]))
+    assert result.interface_temperature() == pytest.approx(wall + weight*(result.temperature[index]-wall))
+    exact = contact_temperature(torch.tensor(result.x, dtype=torch.float64)-position, result.time, 1.)
+    torch.testing.assert_close(torch.tensor(result.analytic, dtype=torch.float64), exact)

@@ -283,3 +283,15 @@ python3 -m pytest tests/test_conduction_contact_1d.py -q                 # 约 1
 Fo=0.06，得到左、右端累计热量分别为 −0.27689144 和 +0.27689144 J/m²。
 32、64 粒子下，相对解析值的最大误差分别为 0.20134% 和 0.05059%。
 复现命令为 `PYTHONPATH=src OMP_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py -k wall_heat`。
+
+### 偏心接触面的净传热量
+
+`ContactConfig(contact_position=...)` 接受相对板中心的初始接触面坐标（m），
+取值须在两端壁之间，默认值为 0。跨接触面的粒子按左右材料所占长度初始化温度。
+`interface_temperature()` 在该初始接触面插值。偏心有限板参考使用初始阶跃的正弦级数，
+在短时间使用包含左右端镜像的表达式。
+
+在 1 m 板上取左侧初始热区长度 0.317 m、初始温差 4 K、体积热容
+1 J/(m³ K)、Fo=0.04。积分解析温度剖面得到板内储热增加 0.14311165 J/m²。
+32 和 64 粒子下，两端累计净流入量相对该参考的误差分别为 0.11036% 和 0.01118%。
+复现命令为 `PYTHONPATH=src OMP_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py -k 'offset or near_fixed'`。
