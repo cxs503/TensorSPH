@@ -2559,3 +2559,22 @@ def test_contact_flux_from_independent_interior_anchors():
         torch.testing.assert_close(value, phases, rtol=0., atol=1e-14)
     with pytest.raises(ValueError, match="anchors"):
         extrapolate_layered_face_flux(q, dx, 4, 4, axial_flux_gradient=gradient)
+
+
+@pytest.mark.parametrize("anchor", [True, False])
+def test_single_fixed_wall_with_layered_contact(anchor):
+    from tensorsph.heat_conduction_2d import recover_dirichlet_wall_flux_2d
+
+    dx = .2
+    k = torch.tensor([1., 2., 3., 4., 5.], dtype=torch.float64)
+    contacts = k.new_tensor([.1, 0., 0., .3])
+    resistance = dx/k
+    centers = resistance.cumsum(0)-resistance/2 + torch.cat((k.new_zeros(1), contacts.cumsum(0)))
+    flux = torch.tensor([1+2j, -3j, .2+.4j], dtype=torch.complex128)
+    field = -flux[:, None]*centers
+    for side, sign, walls in (("left", 1, (0., None)),
+                               ("right", -1, (None, -flux*(resistance.sum()+contacts.sum())))):
+        recovered = recover_dirichlet_wall_flux_2d(
+            field, dx, k, sign*flux.mean(), side=side, contact_resistance_x=contacts,
+            x_wall_temperatures=walls if anchor else None)
+        torch.testing.assert_close(recovered, sign*flux, rtol=1e-12, atol=1e-12)
