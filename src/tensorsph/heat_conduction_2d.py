@@ -1291,7 +1291,8 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                             conductivity=1., volumetric_heat_capacity=1., theta=.5,
                             h_factor=1.3, x_wall_inward_flux=(0.,0.), return_x_heat=False, heat_loss_coefficient=0.,
                             method="theta", return_wall_heat_by_row=False, wall_gradient_fit="wall", temperature_reference=0.,
-                            return_interval_temperatures=False, ambient_temperature=None, return_bulk_exchange=False):
+                            return_interval_temperatures=False, ambient_temperature=None, return_bulk_exchange=False,
+                            return_source_heat=False):
     """Advance a reflected slab over requested times with prescribed wall histories.
 
     Each wall may be a fixed scalar, row profile, callable of time returning
@@ -1320,6 +1321,9 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     temperature_reference, integrating every internal substep in each output interval.
     With return_bulk_exchange, append signed ambient heat absorbed per particle
     volume (nt-1,ny,nx), J/m³, integrated with the same stages as the field.
+    With return_source_heat, append the integrated prescribed volumetric heat
+    source, also in J/m³ per particle and output interval. Positive values
+    add energy. This output follows all other requested arrays.
     """
     grid = [float(t) for t in times]
     jumps = [float(t) for t in wall_jump_times]
@@ -1339,23 +1343,37 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     fluxes = tuple(x_wall_inward_flux)
     if len(fluxes)!=2:
         raise ValueError("provide west and east inward fluxes")
-    def stage_load(load,start,end,weight,offset=None):
+    def sample_load(load,start,end,weight):
+        if not callable(load):
+            return (load,)
+        stop_value = load(end)
+        if weight == 1.:
+            return (stop_value,)
+        # A load may update and return the same profile buffer at each time.
+        if torch.is_tensor(stop_value):
+            stop_value = stop_value.clone()
+        elif not isinstance(stop_value, (int, float, complex)):
+            import copy
+            stop_value = copy.deepcopy(stop_value)
+        return load(start), stop_value
+
+    def stage_value(samples,weight,offset=None):
         def relative(value):
             if value is None or offset is None:
                 return value
             value = torch.as_tensor(value, device=field.device,
                                     dtype=torch.complex128 if torch.is_complex(torch.as_tensor(value)) else field.dtype)
             return value-offset
-        if not callable(load):
-            return relative(load)
-        stop_value = relative(load(end))
-        if weight==1.:
-            return stop_value
-        start_value = relative(load(start))
+        if len(samples) == 1:
+            return relative(samples[0])
+        start_value, stop_value = map(relative, samples)
         if any(torch.is_complex(torch.as_tensor(v)) for v in (start_value,stop_value)):
             raise ValueError("transient loads must be real")
         return ((1-weight)*torch.as_tensor(start_value,device=field.device,dtype=field.dtype)
                 +weight*torch.as_tensor(stop_value,device=field.device,dtype=field.dtype))
+    def stage_load(load,start,end,weight,offset=None):
+        return stage_value(sample_load(load,start,end,weight),weight,offset)
+
     field = torch.as_tensor(temperature)
     if field.ndim!=2 or min(field.shape)==0 or field.is_complex():
         raise ValueError("provide a real nonempty (ny,nx) temperature field")
@@ -1375,12 +1393,13 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
     def advance(initial,dt,start,load_end,weight):
         stage = tuple(stage_load(wall,start,load_end,weight,datum) for wall in walls)
         stage_flux = tuple(stage_load(q,start,load_end,weight) for q in fluxes)
+        samples = sample_load(heat_source,start,load_end,weight)
         ambient = -datum
         if ambient_temperature is None or loss == 0:
-            source = stage_load(heat_source,start,load_end,weight,bulk_offset)
+            source = stage_value(samples,weight,bulk_offset)
         else:
             ambient = stage_load(ambient_temperature,start,load_end,weight,datum)
-            source = stage_load(heat_source,start,load_end,weight,0.)
+            source = stage_value(samples,weight,0.)
             if any(value.shape not in ((),field.shape) for value in (ambient,source)):
                 raise ValueError("ambient temperature and heat source must be scalar or match the field shape")
             source = source + loss*ambient
@@ -1409,13 +1428,15 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                 recovered.append(profile)
             wall_flux = torch.stack(recovered)
         exchange = loss*(ambient-stage_field) if return_bulk_exchange else None
-        return updated, flux, wall_flux, exchange
+        source_power = stage_value(samples,weight,0.) if return_source_heat else None
+        return updated, flux, wall_flux, exchange, source_power
 
     history = [field]
     heat = field.new_zeros((len(grid)-1,field.shape[1]+1)) if return_x_heat else None
     wall_heat = field.new_zeros((len(grid)-1, 2, field.shape[0])) if return_wall_heat_by_row else None
     averages = field.new_zeros((len(grid)-1, *field.shape)) if return_interval_temperatures else None
     bulk = field.new_zeros((len(grid)-1, *field.shape)) if return_bulk_exchange else None
+    source_heat = field.new_zeros((len(grid)-1, *field.shape)) if return_source_heat else None
     events = set(jumps)
     segments = sorted(set(grid)|events)
     interval = 0
@@ -1433,11 +1454,13 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                 stage_time = start+gamma*dt
                 if not start<stage_time<end:
                     raise ValueError("SDIRK interval has no representable stage time")
-                first,flux1,wall_flux1,exchange1 = advance(field,gamma*dt,start,stage_time,1.)
+                first,flux1,wall_flux1,exchange1,source1 = advance(field,gamma*dt,start,stage_time,1.)
                 # Advance the explicit first-stage contribution before the
                 # second implicit solve, using the same diagonal RK weight.
                 base = field+((1-gamma)/gamma)*(first-field)
-                field,flux,wall_flux,exchange = advance(base,gamma*dt,stage_time,load_end,1.)
+                field,flux,wall_flux,exchange,source_power = advance(base,gamma*dt,stage_time,load_end,1.)
+                if return_source_heat:
+                    source_power = (1-gamma)*source1 + gamma*source_power
                 if return_bulk_exchange:
                     exchange = (1-gamma)*exchange1 + gamma*exchange
                 if return_interval_temperatures:
@@ -1448,7 +1471,7 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                     wall_flux = (1-gamma)*wall_flux1 + gamma*wall_flux
             else:
                 previous = field
-                field,flux,wall_flux,exchange = advance(previous,dt,start,load_end,weight)
+                field,flux,wall_flux,exchange,source_power = advance(previous,dt,start,load_end,weight)
                 if return_interval_temperatures:
                     stage_mean = field if weight == 1. else previous + weight*(field-previous)
             if return_interval_temperatures:
@@ -1459,6 +1482,8 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
                 wall_heat[interval] += dt*wall_flux
             if return_bulk_exchange:
                 bulk[interval] += dt*exchange
+            if return_source_heat:
+                source_heat[interval] += dt*source_power
             start = end
         if stop==grid[interval+1]:
             history.append(field)
@@ -1474,6 +1499,8 @@ def solve_transient_slab_2d(temperature, times, dx, x_wall_temperatures, *,
         outputs.append(averages/durations[:, None, None] + (datum-temperature_reference))
     if return_bulk_exchange:
         outputs.append(bulk)
+    if return_source_heat:
+        outputs.append(source_heat)
     return tuple(outputs) if len(outputs)>1 else fields
 
 

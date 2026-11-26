@@ -2627,12 +2627,12 @@ def test_fixed_wall_bulk_exchange_across_load_switch(options, record_property):
 
     # T=305+x+t gives unit temperature rate and constant rightward flux -1.
     # C=2, H=4. The external source compensates the patterned bulk exchange.
-    field, heat, means, bulk = solve_transient_slab_2d(
+    field, heat, means, bulk, supplied = solve_transient_slab_2d(
         initial, [0., end], dx, (lambda t: 305.+t, lambda t: 306.+t),
         ambient_temperature=lambda t: initial+t+exchange(t)/4,
         heat_source=lambda t: 2.-exchange(t), heat_loss_coefficient=4.,
         volumetric_heat_capacity=2., wall_jump_times=[jump], temperature_reference=305.,
-        return_x_heat=True, return_interval_temperatures=True, return_bulk_exchange=True, **options)
+        return_x_heat=True, return_interval_temperatures=True, return_bulk_exchange=True, return_source_heat=True, **options)
     expected = (jump-2*(end-jump))*pattern
     # Rannacher uses backward-Euler endpoint quadrature on two half steps
     # in each segment; its reported stage mean includes that quadrature bias.
@@ -2640,11 +2640,46 @@ def test_fixed_wall_bulk_exchange_across_load_switch(options, record_property):
     if options.get("rannacher"):
         mean_time += (jump**2+(end-jump)**2)/(4*end)
     errors = dict(bulk_J_m3=(bulk[0]-expected).abs().max(),
+                  source_J_m3=(supplied[0]-(2*end-expected)).abs().max(),
                   final_K=(field[-1]-x-end).abs().max(),
                   mean_K=(means[0]-x-mean_time).abs().max(),
                   section_J_m2=(heat+end).abs().max(),
-                  budget_J_m3=(2*(field[-1]-field[0])-bulk[0]-(2*end-expected)
+                  budget_J_m3=(2*(field[-1]-field[0])-bulk[0]-supplied[0]
                                +heat[0].diff()/dx).abs().max())
     for name, error in errors.items():
         record_property(name, float(error))
         assert error < 5e-12
+
+
+@pytest.mark.parametrize("method", ["theta", "sdirk2"])
+def test_weak_source_heat_with_implicit_zero_ambient(method, record_property):
+    from tensorsph.heat_conduction_2d import solve_transient_slab_2d
+
+    # A weak scalar load on top of the much larger sink referenced to 0 K.
+    # Its integral must retain the physical input and its sign on both intervals.
+    initial = torch.full((2, 8), 305., dtype=torch.float64)
+    power = 2.**-50
+    times = [0., .25, .75]
+    def heating(t):
+        return power*(1.-4*t)
+    _, supplied = solve_transient_slab_2d(
+        initial, times, .125, (305., 305.), heat_source=heating,
+        heat_loss_coefficient=4., method=method, return_source_heat=True)
+    primitive = initial.new_tensor([t-2*t*t for t in times])
+    expected = primitive.diff()[:, None, None].expand_as(supplied)
+    error = float((supplied/power-expected).abs().max())
+    record_property("source_error_divided_by_power_s", error)
+    assert supplied.shape == (2, 2, 8) and error < 1e-14
+
+
+def test_source_history_can_reuse_its_particle_buffer():
+    from tensorsph.heat_conduction_2d import solve_transient_slab_2d
+
+    initial = torch.zeros((2, 8), dtype=torch.float64)
+    buffer = torch.empty_like(initial)
+    def source(t):
+        return buffer.fill_(t)
+    field, supplied = solve_transient_slab_2d(
+        initial, [0., 1.], .125, (None, None), heat_source=source, return_source_heat=True)
+    torch.testing.assert_close(supplied[0], torch.full_like(initial, .5))
+    torch.testing.assert_close(field[-1], supplied[0])
