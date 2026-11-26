@@ -1,0 +1,64 @@
+{
+  "source_commit": "94e488bcd89a74490ffcc283b3b175f5fdce45f2",
+  "baseline_commit": "ffcf50c0f9dd229fd06fc43006c529ec96faa977",
+  "reference": "erfc contact at Fo=0.0625, reflection T(x)+T(-x)=T_hot+T_cold. Initial hot and cold temperatures 7 K and -1 K are numerical test data.",
+  "command": "PYTHONPATH=src OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py tests/test_conduction_2d.py tests/test_conduction_slab.py tests/test_ice_thermal_multiphysics.py -o junit_family=legacy --junitxml=/tmp/odd-contact-after.xml",
+  "baseline_procedure": "Run the source commit tests against baseline src with -k node_centered_contact_symmetry_and_refinement.",
+  "default_fd_ladder": [
+    {
+      "n": 601,
+      "dx": 0.02,
+      "max_all": 5.4254571777434535e-06,
+      "max_away_from_interface": 5.4254571777434535e-06
+    },
+    {
+      "n": 1201,
+      "dx": 0.01,
+      "max_all": 1.3572788603033459e-06,
+      "max_away_from_interface": 1.3572788603033459e-06
+    },
+    {
+      "n": 2401,
+      "dx": 0.005,
+      "max_all": 3.3937127086325347e-07,
+      "max_away_from_interface": 3.3937127086325347e-07
+    }
+  ],
+  "ladder_callable": "benchmarks/case_conduction_1d/run.py:fd_ladder()",
+  "before": {
+    "tests": 2,
+    "failures": 2,
+    "measurements": {
+      "test_node_centered_contact_symmetry_and_refinement[sph]": {
+        "max_normalized_erfc_error_n97": 0.03497260218193282,
+        "max_reflection_defect_K_n97": 0.5595616349109251,
+        "max_normalized_erfc_error_n193": 0.017548813133549224,
+        "max_reflection_defect_K_n193": 0.2807810101367876
+      },
+      "test_node_centered_contact_symmetry_and_refinement[fd]": {
+        "max_normalized_erfc_error_n97": 0.0353879681425075,
+        "max_reflection_defect_K_n97": 0.56620749028012,
+        "max_normalized_erfc_error_n193": 0.017647785133276694,
+        "max_reflection_defect_K_n193": 0.2823645621324271
+      }
+    }
+  },
+  "after": {
+    "tests": 335,
+    "failures": 0,
+    "measurements": {
+      "test_node_centered_contact_symmetry_and_refinement[sph]": {
+        "max_normalized_erfc_error_n97": 0.0003996608399546159,
+        "max_reflection_defect_K_n97": 8.881784197001252e-16,
+        "max_normalized_erfc_error_n193": 0.00010076321825025492,
+        "max_reflection_defect_K_n193": 2.6645352591003757e-15
+      },
+      "test_node_centered_contact_symmetry_and_refinement[fd]": {
+        "max_normalized_erfc_error_n97": 0.0003985482355789438,
+        "max_reflection_defect_K_n97": 8.881784197001252e-15,
+        "max_normalized_erfc_error_n193": 0.00010440620652230059,
+        "max_reflection_defect_K_n193": 2.7533531010703882e-14
+      }
+    }
+  }
+}
