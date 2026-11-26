@@ -1,0 +1,25 @@
+{
+  "source_commit": "cbb129e68a688adb81312fbbd134999f9b71bb5f",
+  "command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH=src python -m pytest -q -o junit_family=legacy tests/test_conduction_2d.py --junitxml=wall.xml",
+  "tests": 236,
+  "failures": 0,
+  "reference": "Integrate the exact steady plus traveling harmonic flux over [-0.13,0.57] seconds using independent quadrature split at analytic zero crossings. Errors are maxima over both walls. Reversing-row membership varies with resolution.",
+  "measurements": {
+    "n16_reversing_absorbed_error_J_m2": 0.07277499467659959,
+    "n16_partial_absorbed_error_J_m2": 0.17733094997485033,
+    "n16_reversing_released_error_J_m2": 0.02032681903373801,
+    "n16_partial_released_error_J_m2": 0.17733094997485255,
+    "n32_reversing_absorbed_error_J_m2": 0.018850076679576167,
+    "n32_partial_absorbed_error_J_m2": 0.04349065284337672,
+    "n32_partial_absorbed_order": 2.0276670845215143,
+    "n32_reversing_released_error_J_m2": 0.011601554253917457,
+    "n32_partial_released_error_J_m2": 0.043490652843374944,
+    "n32_partial_released_order": 2.0276670845215916,
+    "n64_reversing_absorbed_error_J_m2": 0.005113106556665414,
+    "n64_partial_absorbed_error_J_m2": 0.010683770873860299,
+    "n64_partial_absorbed_order": 2.025284424320923,
+    "n64_reversing_released_error_J_m2": 0.003249713967900303,
+    "n64_partial_released_error_J_m2": 0.010683770873724407,
+    "n64_partial_released_order": 2.025284424339214
+  }
+}
