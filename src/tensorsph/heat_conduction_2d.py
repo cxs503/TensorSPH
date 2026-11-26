@@ -1938,6 +1938,35 @@ def directional_wall_cycle_duration(wall_flux, angular_frequency, *, steady_flux
     return torch.where(bias >= 0, major, minor), torch.where(bias >= 0, minor, major)
 
 
+def directional_wall_interval_duration(wall_flux, angular_frequency, start_time, end_time, *, steady_flux=0.):
+    """Seconds of strictly inward and outward flow during a forward interval.
+
+    Use the same inward phasor, steady bias and phase convention as
+    harmonic_wall_reversal_times. Zero flux contributes to neither duration.
+    """
+    if not math.isfinite(start_time) or not math.isfinite(end_time) or end_time < start_time:
+        raise ValueError("provide finite, nondecreasing integration times")
+    flux, bias, amplitude, _, half_width = _wall_cycle_geometry(wall_flux, angular_frequency, steady_flux)
+    duration = end_time-start_time
+    period = 2*math.pi/angular_frequency
+    cycles, remainder = divmod(duration, period)
+    extent = angular_frequency*remainder
+    # Measure phase from the centre of the shorter directional window.
+    phase = flux.angle() - torch.where(bias > 0, torch.full_like(bias, math.pi), 0.)
+    start = math.remainder(start_time, period)*angular_frequency + phase
+    start = torch.where(start.abs() <= math.pi, start, torch.remainder(start+math.pi, 2*math.pi)-math.pi)
+    minor = cycles*(2*half_width/angular_frequency)
+    for center in (0., 2*math.pi):
+        offset = start-center
+        # Intersection length of [offset, offset+extent] and [-half_width, half_width].
+        overlap = torch.minimum(half_width-offset, offset+extent+half_width)
+        overlap = torch.minimum(overlap, 2*half_width).clamp(0., extent)
+        minor = minor + overlap/angular_frequency
+    minor = minor.clamp_max(duration)
+    major = torch.where((amplitude > 0) | (bias != 0), duration-minor, 0.)
+    return torch.where(bias >= 0, major, minor), torch.where(bias >= 0, minor, major)
+
+
 def directional_wall_cycle_heat(wall_flux, angular_frequency, *, steady_flux=0.):
     """Return absorbed and released heat magnitudes (J/m²) per wall row.
 

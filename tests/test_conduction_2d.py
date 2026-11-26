@@ -3044,3 +3044,44 @@ def test_wall_cycle_durations_at_grazing_and_without_crossings(record_property):
     record_property("max_error_s", error)
     record_property("grazing_relative_error", relative)
     assert error < 1e-15 and relative < 1e-15
+
+
+def test_directional_wall_interval_duration(record_property):
+    from tensorsph.heat_conduction_2d import directional_wall_interval_duration
+
+    omega = 2.3
+    period = 2*math.pi/omega
+    fluxes = [1+0j, -.3+.7j, -1j, 0j, 1j, 0j]
+    biases = [.3, -.2, 1., 0., -2., .7]
+    worst = 0.
+    for start, end in ((-.63,.51), (.12,4.7*period), (period-.01,period+.02), (1.,1.)):
+        inward, outward = directional_wall_interval_duration(fluxes, omega, start, end, steady_flux=biases)
+        for j, (flux,bias) in enumerate(zip(fluxes,biases)):
+            phase = math.atan2(flux.imag,flux.real)
+            cuts = [start,end]
+            if abs(bias) < abs(flux):
+                angle = math.acos(-bias/abs(flux))
+                for k in range(math.floor(start/period)-2, math.ceil(end/period)+2):
+                    for root in (-angle,angle):
+                        t = (root-phase+2*math.pi*k)/omega
+                        if start < t < end:
+                            cuts.append(t)
+            cuts.sort()
+            durations = [0.,0.]
+            for left,right in zip(cuts,cuts[1:]):
+                q = bias + abs(flux)*math.cos(phase+omega*(left+right)/2)
+                if q != 0:
+                    durations[int(q < 0)] += right-left
+            worst = max(worst, abs(inward[j].item()-durations[0]), abs(outward[j].item()-durations[1]))
+    record_property("max_duration_error_s",worst)
+    assert worst < 1e-13
+
+    # Clip a grazing release window on both sides of the cycle origin.
+    gap = 2.**-52
+    half = math.acos(1-gap)/omega
+    inward, outward = directional_wall_interval_duration(-1., omega, -2*half, half/2, steady_flux=1-gap)
+    expected = 1.5*half
+    record_property("clipped_release_s",outward.item())
+    relative = abs(outward.item()/expected-1)
+    record_property("clipped_relative_error",relative)
+    assert relative < 1e-14 and abs(inward.item()/half-1) < 1e-14
