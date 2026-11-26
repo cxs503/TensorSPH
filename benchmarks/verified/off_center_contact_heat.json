@@ -1,0 +1,26 @@
+{
+  "source_commit": "03f2b0fa2f5437cc1116d3d51b9342c646042068",
+  "command": "PYTHONPATH=src OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py tests/test_conduction_slab.py tests/test_conduction_2d.py -o junit_family=legacy --junitxml=/tmp/eccentric-contact-final.xml",
+  "passed": 327,
+  "reference": "Spatial integral of the finite-slab Dirichlet sine expansion at Fo=0.04 minus initial heat, for a 1 m slab, hot-side fraction 0.317, temperature jump 4 K and unit volumetric heat capacity.",
+  "measurements": {
+    "test_offset_contact_net_wall_heat[False]": {
+      "relative_heat_error_n32": 0.0011036367995704843,
+      "balance_residual_n32": 2.498001805406602e-16,
+      "normalized_temperature_error_n32": 0.00012133803376357388,
+      "relative_heat_error_n64": 0.00011178229007158258,
+      "balance_residual_n64": 5.828670879282072e-16,
+      "normalized_temperature_error_n64": 2.8930946083804976e-05,
+      "analytic_net_inward_heat": 0.14311164814683297
+    },
+    "test_offset_contact_net_wall_heat[True]": {
+      "relative_heat_error_n32": 0.0011036367995704843,
+      "balance_residual_n32": 2.498001805406602e-16,
+      "normalized_temperature_error_n32": 0.00012133803376357388,
+      "relative_heat_error_n64": 0.00011178229007113849,
+      "balance_residual_n64": 6.38378239159465e-16,
+      "normalized_temperature_error_n64": 2.8930946083804976e-05,
+      "analytic_net_inward_heat": 0.14311164814683297
+    }
+  }
+}
