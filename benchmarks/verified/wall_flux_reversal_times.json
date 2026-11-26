@@ -1,0 +1,19 @@
+{
+  "source_commit": "3eb43cf6666377b8cfe744403e6e044f7dece09f",
+  "command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH=src python -m pytest -q -o junit_family=legacy tests/test_conduction_2d.py --junitxml=wall.xml",
+  "tests": 239,
+  "failures": 0,
+  "reference": "Bracket exact zero crossings of the manufactured traveling flux between adjacent extrema on four fixed rows of both walls. Measure time differences modulo the period at omega=3 rad/s.",
+  "measurements": {
+    "n16_absorption_onset_error_s": 0.009497773379063545,
+    "n16_release_onset_error_s": 0.012482581023643746,
+    "n48_absorption_onset_error_s": 0.0009373399943104488,
+    "n48_absorption_order": 2.1079015975968822,
+    "n48_release_onset_error_s": 0.0011994801031132152,
+    "n48_release_order": 2.13218617978572,
+    "n144_absorption_onset_error_s": 0.00010083560438745032,
+    "n144_absorption_order": 2.0294280176365707,
+    "n144_release_onset_error_s": 0.00012926565477799912,
+    "n144_release_order": 2.02780716297934
+  }
+}
