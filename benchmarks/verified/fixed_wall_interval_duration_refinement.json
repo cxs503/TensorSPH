@@ -1,0 +1,28 @@
+{
+  "source_commit": "422bcd1b48cd2441c9fe020790042eb1d05ea0eb",
+  "command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH=src python -m pytest -q -o junit_family=legacy tests/test_conduction_2d.py --junitxml=wall.xml",
+  "tests": 241,
+  "failures": 0,
+  "reference": "At four reversing rows common to all three grids, partition the exact traveling-wave flux at analytic zeros inside [-0.13,0.57] seconds. Compare summed inward and outward durations on both solved walls.",
+  "measurements": {
+    "reversing_positions": [
+      0.21875,
+      0.28125,
+      0.65625,
+      0.71875
+    ],
+    "n16_duration_sum_error_s": 0.0,
+    "n16_inward_duration_error_s": 0.012482581023643968,
+    "n16_outward_duration_error_s": 0.012482581023643913,
+    "n48_duration_sum_error_s": 0.0,
+    "n48_inward_duration_error_s": 0.0011994801031134372,
+    "n48_inward_duration_order": 2.1321861797855677,
+    "n48_outward_duration_error_s": 0.0011994801031133817,
+    "n48_outward_duration_order": 2.1321861797856063,
+    "n144_duration_sum_error_s": 0.0,
+    "n144_inward_duration_error_s": 0.00012926565477822116,
+    "n144_inward_duration_order": 2.027807162977945,
+    "n144_outward_duration_error_s": 0.0001292656547781934,
+    "n144_outward_duration_order": 2.0278071629780983
+  }
+}
