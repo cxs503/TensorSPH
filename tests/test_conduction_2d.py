@@ -3260,3 +3260,47 @@ def test_equal_wall_ramp_and_hold_heat_storage(record_property):
     for coarse, fine in zip(errors, errors[1:]):
         assert np.all(coarse > 3*fine)
     assert np.all(errors[-1] < .01*inward)
+
+
+def test_matched_effusivity_interface_ramp_and_hold(record_property):
+    """Native section heat through a perfectly bonded two-material slab."""
+    import numpy as np
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+
+    ramp_end, end = .04, .09
+    # The resistance coordinate y=integral(dx/k) spans [0,1]. Since k*C=1,
+    # T_t=T_yy and the rightward flux at the physical midpoint is -T_y(.25).
+    y = .25
+    wave = np.pi*np.arange(1, 80, 2)
+
+    def ramp_heat(t):
+        # Integral of the odd-mode flux for a continuing linear wall ramp.
+        tail = np.sum(4*np.cos(wave*y)*np.exp(-wave**2*t)/wave**4)
+        return (t*(.5-y)-1/24+y*y/4-y**3/6+tail)/ramp_end
+
+    expected = np.diff([0., ramp_heat(ramp_end), ramp_heat(end)-ramp_heat(end-ramp_end)])
+    wall = lambda t: min(t/ramp_end, 1.)
+    errors = []
+    for phase, value in zip(("ramp", "hold"), expected):
+        record_property(f"{phase}_interface_reference_J_m2", value)
+    for n in (12, 24, 48):
+        mid = n//2
+        k = np.repeat([2., 2/3], mid)
+        states, heat = solve_transient_layered_slab(
+            np.zeros(n), [0., ramp_end, end], 1/n, (wall, wall),
+            conductivity=k, volumetric_heat_capacity=1/k,
+            method="exponential", return_x_heat=True)
+        stored = states.numpy()/(n*k)
+        west, through, east = heat.numpy()[:, [0, mid, -1]].T
+        for side, net, layer in (("west", west-through, stored[:, :mid]),
+                                 ("east", through-east, stored[:, mid:])):
+            residual = np.max(abs(net-np.diff(layer.sum(axis=1))))
+            record_property(f"n{n}_{side}_balance_J_m2", residual)
+            assert residual < 1e-12
+        error = abs(through-expected)
+        for phase, value in zip(("ramp", "hold"), error):
+            record_property(f"n{n}_{phase}_interface_error_J_m2", value)
+        errors.append(error)
+    for coarse, fine in zip(errors, errors[1:]):
+        assert np.all(coarse > 3*fine)
+    assert np.all(errors[-1] < .01*expected)
