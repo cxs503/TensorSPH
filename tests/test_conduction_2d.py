@@ -3167,3 +3167,40 @@ def test_layered_fixed_wall_startup_mean_temperature(record_property):
         record_property(f"n{n}_bulk_startup_mean_error_K", bulk_error)
     for coarse, fine in zip(errors, errors[1:]):
         assert np.all(coarse > 3.4*fine)
+
+
+def test_opposing_wall_ramps_particle_temperatures(record_property):
+    """A zero bulk mean can hide local errors during antisymmetric heating."""
+    import numpy as np
+    from tensorsph.heat_conduction_2d import solve_transient_layered_slab
+
+    end = .04
+    slope = 1/end
+    # Lift the linear wall data with slope*t*(1-2*x). Only even sine
+    # modes remain in the homogeneous-wall response to the constant forcing.
+    wave = 2*np.pi*np.arange(1, 257)
+    rate = wave**2
+    decay_integral = -np.expm1(-rate*end)/rate
+    errors = []
+    for n in (12, 24, 48):
+        states, means = solve_transient_layered_slab(
+            np.zeros(n), [0., end], 1/n, (lambda t: slope*t, lambda t: -slope*t),
+            conductivity=np.ones(n), volumetric_heat_capacity=1.,
+            method="exponential", return_interval_temperature=True)
+        x = (np.arange(n)+.5)/n
+        basis = np.sin(x[:, None]*wave)
+        # -v'' = 1-2*x, v(0)=v(1)=0. Removing this polynomial leaves
+        # an exponentially small endpoint tail and a fifth-order mean tail.
+        v = x*(1-x)*(1-2*x)/6
+        final_ref = slope*(end*(1-2*x)-v+basis @ (4*np.exp(-rate*end)/wave**3))
+        mean_ref = slope*(end*(1-2*x)/2-v+basis @ (4*decay_integral/(end*wave**3)))
+        final = states[-1].numpy()
+        mean = means[0].numpy()
+        assert max(abs(final.mean()), abs(mean.mean())) < 1e-12
+        local = np.array([np.max(np.abs(final-final_ref)), np.max(np.abs(mean-mean_ref))])
+        errors.append(local)
+        record_property(f"n{n}_endpoint_max_error_K", local[0])
+        record_property(f"n{n}_time_mean_max_error_K", local[1])
+    for coarse, fine in zip(errors, errors[1:]):
+        assert np.all(coarse > 3*fine)
+    assert np.all(errors[-1] < .003)
