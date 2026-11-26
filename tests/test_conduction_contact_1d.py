@@ -214,3 +214,19 @@ def test_configured_pair_regularization_in_lattice_calibration(eta_factor, recor
     assert max(contact_error, mode_error) < 1e-12
     assert contact.diffusion_scatter == pytest.approx(max(ratios) - min(ratios), abs=1e-12)
     assert contact.error()[0] < 0.002
+
+
+@pytest.mark.parametrize("alpha", [0.25, 4.0])
+def test_fd_contact_at_fixed_fourier_number(alpha, record_property):
+    # The contact lies midway between nodes on both grids. The fixed walls
+    # are six similarity lengths away, so the infinite-domain erfc is resolved.
+    fourier = 0.0625
+    errors = []
+    for n in (96, 192):
+        x, temperature = fd_contact_reference(fourier=fourier, alpha=alpha, half_length=3., n=n)
+        exact = contact_temperature(x, fourier / alpha, alpha)
+        error = float((temperature - exact).abs().max())
+        record_property(f"max_normalized_erfc_error_n{n}", error)
+        errors.append(error)
+    assert errors[1] < 3e-4
+    assert errors[1] < 0.3 * errors[0]

@@ -368,9 +368,10 @@ def fd_contact_reference(fourier=0.5, alpha=1.0, half_length=6.0, n=1201,
                          r_target=0.4, t_hot=1.0, t_cold=0.0):
     """Crank-Nicolson finite-difference solution of the same PDE (independent check).
 
-    Returns ``(x, T)`` on ``x in [-half_length, half_length]`` at ``t = fourier``.
-    Ends are Dirichlet at the exact analytic values (they sit 4.2 similarity
-    lengths out, where the analytic deficit is ~1e-7 of the jump); the
+    Returns ``(x, T)`` on ``x in [-half_length, half_length]`` at ``t = fourier / alpha``
+    for the unit reference length used by :func:`run_contact_sph`.
+    Ends are held at the imposed hot and cold temperatures. With the default
+    parameters they sit 4.2 similarity lengths from the contact. The
     tridiagonal system is solved with ``scipy.linalg.solve_banded`` at
     ``r = alpha dt / (2 dx^2) = 0.4``.  This shares no code, kernel or
     discretisation with the SPH path, so it independently checks both the
@@ -381,7 +382,7 @@ def fd_contact_reference(fourier=0.5, alpha=1.0, half_length=6.0, n=1201,
 
     dx = 2.0 * float(half_length) / (n - 1)
     x = torch.linspace(-half_length, half_length, n, dtype=DTYPE)
-    t_end = float(fourier)
+    t_end = float(fourier) / alpha
     dt = float(r_target) * 2.0 * dx ** 2 / alpha
     steps = int(math.ceil(t_end / dt))
     dt = t_end / steps
