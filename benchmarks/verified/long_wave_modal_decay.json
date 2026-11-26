@@ -1,0 +1,35 @@
+{
+  "source_commit": "fce9ea4fff3a3d63b35b91378886640bc7077c86",
+  "baseline_commit": "0fe12b1a34838f1762c84c6c30ba8ab4550aeb3c",
+  "command": "PYTHONPATH=src OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m pytest -q tests/test_conduction_2d.py tests/test_conduction_slab.py tests/test_conduction_contact_1d.py tests/test_ice_thermal_multiphysics.py -o junit_family=legacy --junitxml=/tmp/sph-long-after.xml",
+  "reference": "Lattice second-moment rate times |k|\u00b2 at |k|=2^-28 rad/m and dx=1/8 m, where the relative dispersion correction is below double precision. Verify axial and oblique directions and a single insulated axial column driven by a complex source with matched storage and transverse diffusion.",
+  "before": {
+    "test_long_wave_symbol_retains_quadratic_decay[direction0]": {
+      "relative_decay_error": 1.0
+    },
+    "test_long_wave_symbol_retains_quadratic_decay[direction1]": {
+      "relative_decay_error": 1.0
+    },
+    "test_long_transverse_wave_balances_harmonic_storage[torch]": {
+      "relative_temperature_error": 1.0
+    },
+    "test_long_transverse_wave_balances_harmonic_storage[banded]": {
+      "relative_temperature_error": 1.0
+    }
+  },
+  "after": {
+    "test_long_wave_symbol_retains_quadratic_decay[direction0]": {
+      "relative_decay_error": 0.0
+    },
+    "test_long_wave_symbol_retains_quadratic_decay[direction1]": {
+      "relative_decay_error": 2.220446049250313e-16
+    },
+    "test_long_transverse_wave_balances_harmonic_storage[torch]": {
+      "relative_temperature_error": 0.0
+    },
+    "test_long_transverse_wave_balances_harmonic_storage[banded]": {
+      "relative_temperature_error": 0.0
+    }
+  },
+  "passed": 320
+}
