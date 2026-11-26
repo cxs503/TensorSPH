@@ -1,0 +1,11 @@
+{
+  "source_commit": "5ddb5d00ddab83e7cb4bff00d3509a71e4fe8bbb",
+  "command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH=src python -m pytest -q -o junit_family=legacy tests/test_conduction_2d.py --junitxml=wall.xml",
+  "tests": 236,
+  "failures": 0,
+  "reference": "Independent quadrature with exact zero-crossing breakpoints for signed sinusoidal flux plus steady bias. Compare positive and negative lobes and the signed net integral.",
+  "measurements": {
+    "directional_error_J_m2": 1.7763568394002505e-15,
+    "balance_error_J_m2": 8.881784197001252e-16
+  }
+}
