@@ -1,0 +1,44 @@
+{
+  "source_commit": "94b06520758a90d00df7ad4377713be988d58edb",
+  "baseline_commit": "05cc1bedaf1fd8d4fcf7e648b207b47122011cfa",
+  "reference": "Central temperature rate for a unit-curvature quadratic field in three directions, evaluated with the particle diffusion operator.",
+  "environment": {
+    "PYTHONPATH": "src",
+    "OPENBLAS_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1"
+  },
+  "before": {
+    "tests": 2,
+    "failures": 2,
+    "measurements": {
+      "test_k0_calibration_against_rotated_quadratic_patch[0.125-1.3-0.01]": {
+        "calibration_factor": 0.24072327456216644,
+        "max_relative_patch_error": 2.7104463962146497e-07,
+        "relative_solver_factor_error": 2.7104463962146497e-07
+      },
+      "test_k0_calibration_against_rotated_quadratic_patch[0.25-1.75-0.04]": {
+        "calibration_factor": 0.6359758713079755,
+        "max_relative_patch_error": 4.870254042277367e-07,
+        "relative_solver_factor_error": 4.870254042277367e-07
+      }
+    }
+  },
+  "after": {
+    "tests": 325,
+    "failures": 0,
+    "measurements": {
+      "test_k0_calibration_against_rotated_quadratic_patch[0.125-1.3-0.01]": {
+        "calibration_factor": 0.24072333980893734,
+        "max_relative_patch_error": 2.220446049250313e-16,
+        "relative_solver_factor_error": 2.220446049250313e-16
+      },
+      "test_k0_calibration_against_rotated_quadratic_patch[0.25-1.75-0.04]": {
+        "calibration_factor": 0.635976181044532,
+        "max_relative_patch_error": 2.220446049250313e-16,
+        "relative_solver_factor_error": 2.220446049250313e-16
+      }
+    }
+  },
+  "regression_command": "PYTHONPATH=src OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m pytest -q tests/test_conduction_2d.py tests/test_conduction_contact_1d.py tests/test_conduction_slab.py tests/test_ice_thermal_multiphysics.py -o junit_family=legacy --junitxml=/tmp/sph-k0-2d-after.xml",
+  "baseline_procedure": "Run the source commit test file with the baseline implementation using -k k0_calibration_against_rotated_quadratic_patch."
+}
