@@ -79,6 +79,7 @@ __all__ = [
     "contact_temperature",
     "finite_slab_contact_temperature",
     "finite_slab_contact_wall_fluxes",
+    "finite_slab_contact_wall_heat",
     "lattice_stencil",
     "stencil_rhs",
     "contact_wall_fluxes",
@@ -175,6 +176,41 @@ def finite_slab_contact_wall_fluxes(t, alpha, length, conductivity, t_hot=1., t_
     left = (length/2 + contact_position)/length
     right = (length/2 - contact_position)/length
     return steady*flux_factor(left), -steady*flux_factor(right)
+
+
+def finite_slab_contact_wall_heat(t, alpha, length, conductivity, t_hot=1., t_cold=0.,
+                                  *, contact_position=0.):
+    """Cumulative inward heat at each fixed wall from time zero to t (J/m²)."""
+    if not math.isfinite(t) or t < 0:
+        raise ValueError("t must be finite and nonnegative")
+    if not all(math.isfinite(v) and v > 0 for v in (alpha, length, conductivity)):
+        raise ValueError("alpha, length and conductivity must be finite and positive")
+    if not -length/2 < contact_position < length/2:
+        raise ValueError("contact_position must be inside the slab")
+    if t == 0:
+        return 0., 0.
+    fourier = alpha*t/length**2
+    scale = conductivity*(t_hot-t_cold)*length/alpha
+
+    def heat_factor(distance):
+        if fourier <= .1:
+            # Integrate each Gaussian image in time from the initial step.
+            width = 2*math.sqrt(fourier)
+            terms = []
+            for j in range(-3, 4):
+                r = abs(distance + 2*j)
+                z = r/width
+                terms.append(width/math.sqrt(math.pi)*math.exp(-z*z) - r*math.erfc(z))
+            return math.fsum(terms)
+        # The integrated cosine series at t=0 sums to this quadratic.
+        decay = math.pi**2*fourier
+        tail = math.fsum(math.cos(math.pi*m*distance)*math.exp(-decay*m*m)/(math.pi*m)**2
+                         for m in range(1, math.ceil(math.sqrt(40/decay))+1))
+        return fourier + 1/3 - distance + distance**2/2 - 2*tail
+
+    left = (length/2 + contact_position)/length
+    right = (length/2 - contact_position)/length
+    return scale*heat_factor(left), -scale*heat_factor(right)
 
 
 # ------------------------------------------------------- lattice stencil (exact)

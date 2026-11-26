@@ -313,3 +313,9 @@ Fo=0.06，得到左、右端累计热量分别为 −0.27689144 和 +0.27689144 
 早期解使用周期高斯镜像求和，较晚时刻使用温度正弦级数在端点的导数。
 复现两端 SPH 通量及独立有限差分对照可运行
 `PYTHONPATH=src OMP_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py -k offset_contact_wall_flux`。
+
+`finite_slab_contact_wall_heat(t, alpha, length, conductivity, t_hot, t_cold, contact_position=x0)`
+给出从初始时刻到物理时间 `t` 两端各自的累计流入热量，单位 J/m²，返回顺序为左、右。
+早期解对各高斯镜像逐项积分，较晚时刻使用积分后的傅里叶级数。在初始温度阶跃偏心时，
+这一参考值可分别检验粒子计算的 `wall_heat_left` 和 `wall_heat_right`。
+复现命令为 `PYTHONPATH=src OMP_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py -k offset_wall_heat`。

@@ -500,3 +500,39 @@ def test_contact_flux_matches_temperature_gradient(fo):
         temp = finite_slab_contact_temperature(x, t, alpha, length, -2., 4., contact_position=position)
         gradient_flux = k*float(3*temp[0]-4*temp[1]+temp[2])/(2*dx)
         assert flux == pytest.approx(gradient_flux, rel=1e-8, abs=2e-8)
+
+
+@pytest.mark.parametrize("fo", [.002, .1, .10000001, 3.])
+def test_offset_wall_heat_matches_flux_quadrature(fo):
+    from scipy.integrate import quad
+    from tensorsph.heat_conduction import finite_slab_contact_wall_heat, finite_slab_contact_wall_fluxes
+
+    args = dict(alpha=.25, length=1.5, conductivity=2., t_hot=-3., t_cold=5.,
+                contact_position=-.48)
+    t = fo*args["length"]**2/args["alpha"]
+    assert finite_slab_contact_wall_heat(0., **args) == (0., 0.)
+    for side, heat in enumerate(finite_slab_contact_wall_heat(t, **args)):
+        reference, _ = quad(lambda s: finite_slab_contact_wall_fluxes(s, **args)[side],
+                            0., t, epsabs=1e-48, epsrel=1e-12)
+        assert heat == pytest.approx(reference, rel=2e-11, abs=1e-47)
+
+
+@pytest.mark.parametrize("fraction", [1/3, 2/3])
+def test_offset_wall_heat_per_boundary(fraction, record_property):
+    from tensorsph.heat_conduction import finite_slab_contact_wall_heat
+
+    alpha, length, fo = .25, 1.5, .04
+    position = length*(fraction-.5)
+    exact = finite_slab_contact_wall_heat(fo*length**2/alpha, alpha, length, alpha,
+                                         5., 1., contact_position=position)
+    for wall, value in zip(("left", "right"), exact):
+        record_property(f"{wall}_analytic_heat_j_m2", value)
+    for n in (48, 96):
+        run = run_contact_sph(ContactConfig(
+            n_particles=n, dx=length/n, alpha=alpha, fourier=fo*length**2,
+            t_hot=5., t_cold=1., contact_position=position, calibration="k0", track_wall_heat=True))
+        for wall, calculated, reference in zip(("left", "right"),
+                                               (run.wall_heat_left, run.wall_heat_right), exact):
+            error = abs(calculated/reference-1)
+            record_property(f"{wall}_relative_error_n{n}", error)
+            assert error < .025*(48/n)**2
