@@ -2799,10 +2799,27 @@ def test_biased_wall_cycle_heat_resolves_grazing_reversal():
     assert abs(released.item()/(4*math.sqrt(2)/3*gap**1.5)-1)<3e-15
 
 
+def _directional_heat_quadrature(wave, dc, omega, start, end):
+    from scipy.integrate import quad
+
+    phase = math.atan2(wave.imag, wave.real)
+    amplitude = abs(wave)
+    roots = []
+    if abs(dc) < amplitude:
+        angle = math.acos(-dc/amplitude)
+        for root in (-angle, angle):
+            first = math.ceil((omega*start+phase-root)/(2*math.pi))
+            last = math.floor((omega*end+phase-root)/(2*math.pi))
+            roots.extend((root-phase+2*math.pi*k)/omega for k in range(first, last+1))
+    return [quad(lambda t: max(0., sign*(dc+amplitude*math.cos(omega*t+phase))),
+                 start, end, points=roots)[0] for sign in (1, -1)]
+
+
 def test_biased_cycle_heat_from_steady_and_harmonic_slab_solves(record_property):
     from scipy.integrate import quad
     from tensorsph.heat_conduction_2d import (
-        directional_wall_cycle_heat, harmonic_wall_interval_heat, recover_dirichlet_wall_flux_2d,
+        directional_wall_cycle_heat, directional_wall_interval_heat, harmonic_wall_interval_heat,
+        recover_dirichlet_wall_flux_2d,
         solve_harmonic_slab_2d, solve_steady_slab_2d,
     )
 
@@ -2810,6 +2827,7 @@ def test_biased_cycle_heat_from_steady_and_harmonic_slab_solves(record_property)
     # Left inward fluxes equal the respective slopes with their signs reversed.
     omega = 3.
     wavenumber = 2 * math.pi
+    previous_directional = {}
     interval_errors = []
     errors = []
     for n in (16, 32, 64):
@@ -2863,11 +2881,32 @@ def test_biased_cycle_heat_from_steady_and_harmonic_slab_solves(record_property)
             record_property(f"n{n}_interval_order", order)
             assert order > 1.8
         interval_errors.append(interval_error)
+
+        # Use analytic zero crossings of the exact traveling wave for each row.
+        # Integrate the two signs independently, before averaging any rows.
+        exact_rows = [_directional_heat_quadrature(w, b, omega, start, end)
+                      for w, b in zip(wave.tolist(), bias.tolist())]
+        left_absorbed, left_released = bias.new_tensor(exact_rows).T
+        expected_absorbed = torch.stack((left_absorbed, left_released))
+        absorbed, released = directional_wall_interval_heat(ac_flux, omega, start, end, steady_flux=dc_flux)
+        for name, actual, target in (("absorbed", absorbed, expected_absorbed),
+                                     ("released", released, expected_absorbed.flip((0,)))):
+            differences = (actual-target).abs()
+            # Cell centres move on refinement, changing the set of reversing rows.
+            reversing = (left_absorbed > 0) & (left_released > 0)
+            assert reversing.any()
+            record_property(f"n{n}_reversing_{name}_error_J_m2", differences[:, reversing].max().item())
+            error = differences.max().item()
+            record_property(f"n{n}_partial_{name}_error_J_m2", error)
+            if name in previous_directional:
+                order = math.log2(previous_directional[name]/error)
+                record_property(f"n{n}_partial_{name}_order", order)
+                assert order > 1.8
+            previous_directional[name] = error
     assert errors[-1] < .04
 
 
 def test_directional_wall_interval_heat_against_split_quadrature(record_property):
-    from scipy.integrate import quad
     from tensorsph.heat_conduction_2d import directional_wall_interval_heat, harmonic_wall_interval_heat
 
     omega = 2.7
@@ -2877,16 +2916,8 @@ def test_directional_wall_interval_heat_against_split_quadrature(record_property
     for start, end in ((-.83, .21), (.2, 9.7), (1.1, 1.10000001), (2., 2.)):
         absorbed, released = directional_wall_interval_heat(flux, omega, start, end, steady_flux=bias)
         for j, (wave, dc) in enumerate(zip(flux.tolist(), bias.tolist())):
-            phase = math.atan2(wave.imag, wave.real)
-            roots = []
-            if abs(dc) < abs(wave):
-                for root in (-math.acos(-dc/abs(wave)), math.acos(-dc/abs(wave))):
-                    first = math.ceil((omega*start+phase-root)/(2*math.pi))
-                    last = math.floor((omega*end+phase-root)/(2*math.pi))
-                    roots.extend((root-phase+2*math.pi*k)/omega for k in range(first, last+1))
-            for sign, result in ((1, absorbed), (-1, released)):
-                reference = quad(lambda t: max(0., sign*(dc+abs(wave)*math.cos(omega*t+phase))),
-                                 start, end, points=roots)[0]
+            references = _directional_heat_quadrature(wave, dc, omega, start, end)
+            for reference, result in zip(references, (absorbed, released)):
                 worst = max(worst, abs(result[j].item()-reference))
         net = harmonic_wall_interval_heat(flux, omega, start, end, steady_flux=bias)
         balance = max(balance, (absorbed-released-net).abs().max().item())
