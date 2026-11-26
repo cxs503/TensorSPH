@@ -455,11 +455,13 @@ def run_contact_sph(cfg: ContactConfig | None = None) -> ContactResult:
 
 # ------------------------------------------------------- independent reference
 def fd_contact_reference(fourier=0.5, alpha=1.0, half_length=6.0, n=1201,
-                         r_target=0.4, t_hot=1.0, t_cold=0.0):
+                         r_target=0.4, t_hot=1.0, t_cold=0.0, *, contact_position=0.0):
     """Crank-Nicolson finite-difference solution of the same PDE (independent check).
 
     Returns ``(x, T)`` on ``x in [-half_length, half_length]`` at ``t = fourier / alpha``
     for the unit reference length used by :func:`run_contact_sph`.
+    The initial jump lies at contact_position, measured from the slab center.
+    Interior nodes store initial step averages over their centered intervals.
     Ends are held at the imposed hot and cold temperatures. With the default
     parameters they sit 4.2 similarity lengths from the contact. The
     tridiagonal system is solved with ``scipy.linalg.solve_banded`` at
@@ -470,18 +472,24 @@ def fd_contact_reference(fourier=0.5, alpha=1.0, half_length=6.0, n=1201,
     import numpy as np
     from scipy.linalg import solve_banded
 
+    if not -half_length < contact_position < half_length:
+        raise ValueError("contact_position must be inside the slab")
     dx = 2.0 * float(half_length) / (n - 1)
     x = torch.linspace(-half_length, half_length, n, dtype=DTYPE)
+    cut = (n - 1) / 2 + contact_position / dx
+    hot_fraction = np.clip(cut - np.arange(n) + 0.5, 0., 1.)
+    t = hot_fraction * t_hot + (1. - hot_fraction) * t_cold
+    t[0], t[-1] = t_hot, t_cold
+    if fourier == 0:
+        return x, torch.from_numpy(t)
+    if not math.isfinite(fourier) or fourier < 0:
+        raise ValueError("fourier must be finite and nonnegative")
     t_end = float(fourier) / alpha
     dt = float(r_target) * 2.0 * dx ** 2 / alpha
     steps = int(math.ceil(t_end / dt))
     dt = t_end / steps
     r = alpha * dt / (2.0 * dx ** 2)
 
-    t = np.where(x.numpy() < 0.0, t_hot, t_cold).astype(np.float64)
-    if n % 2:
-        # Use the symmetric interface trace even when linspace rounds x away from zero.
-        t[n // 2] = 0.5 * t_hot + 0.5 * t_cold
     inner = n - 2
     ab = np.zeros((3, inner))
     ab[0, 1:] = -r

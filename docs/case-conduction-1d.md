@@ -295,3 +295,12 @@ Fo=0.06，得到左、右端累计热量分别为 −0.27689144 和 +0.27689144 
 1 J/(m³ K)、Fo=0.04。积分解析温度剖面得到板内储热增加 0.14311165 J/m²。
 32 和 64 粒子下，两端累计净流入量相对该参考的误差分别为 0.11036% 和 0.01118%。
 复现命令为 `PYTHONPATH=src OMP_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py -k 'offset or near_fixed'`。
+
+独立的 Crank–Nicolson 有限差分参照也接受 `fd_contact_reference(..., contact_position=x0)`。
+坐标以板中心为原点，单位为米。内节点的初值取节点两侧半个网格宽度内的温度平均值，
+两个端点始终取规定壁温。`fourier=0` 可直接读取此初始剖面。
+
+板长 1.5 m、热区占板长三分之一或三分之二、Fo=0.04 时，按初始温差归一化的全板最大温度误差
+在 49、98、196 个网格区间上依次约为 1.122e-4、2.749e-5 和 7.013e-6。
+最细有限差分网格的奇数号节点还与 98 个 SPH 粒子中心逐点对应，可直接交叉验证。
+复现命令为 `PYTHONPATH=src OMP_NUM_THREADS=1 python -m pytest -q tests/test_conduction_contact_1d.py -k fd_offset`。

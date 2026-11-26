@@ -419,3 +419,40 @@ def test_offset_interface_interpolation_inside_wall_half_cell(position, wall, in
     assert result.interface_temperature() == pytest.approx(wall + weight*(result.temperature[index]-wall))
     exact = contact_temperature(torch.tensor(result.x, dtype=torch.float64)-position, result.time, 1.)
     torch.testing.assert_close(torch.tensor(result.analytic, dtype=torch.float64), exact)
+
+
+@pytest.mark.parametrize("fraction", [1/3, 2/3])
+def test_fd_offset_contact_refinement(fraction, record_property):
+    from tensorsph.heat_conduction import finite_slab_contact_temperature
+
+    length, alpha, fo = 1.5, .25, .04
+    left, right = 5., 1.
+    position = length * (fraction - .5)
+    errors = []
+    for intervals in (49, 98, 196):
+        x, fd = fd_contact_reference(fo*length**2, alpha, length/2, intervals+1,
+                                     t_hot=left, t_cold=right, contact_position=position)
+        exact = finite_slab_contact_temperature(x, fo*length**2/alpha, alpha, length,
+                                                left, right, contact_position=position)
+        errors.append(float((fd-exact).abs().max()) / abs(left-right))
+        record_property(f"normalized_error_intervals_{intervals}", errors[-1])
+        assert (float(fd[0]), float(fd[-1])) == (left, right)
+    # With 98 SPH particles their centers coincide with odd FD nodes.
+    sph = run_contact_sph(ContactConfig(
+        n_particles=98, dx=length/98, alpha=alpha, fourier=fo*length**2,
+        t_hot=left, t_cold=right, contact_position=position, calibration="k0"))
+    temperature = torch.tensor(sph.temperature, dtype=torch.float64)
+    difference = float((temperature - fd[1::2]).abs().max()) / abs(left-right)
+    record_property("normalized_sph_fd_difference", difference)
+    assert difference < 1e-4
+    assert errors[-1] < 2e-5
+    assert max(b/a for a, b in zip(errors, errors[1:])) < .3
+
+
+def test_fd_offset_contact_initial_cut_cell_and_fixed_walls():
+    _, t = fd_contact_reference(0., half_length=.5, n=9, t_hot=6., t_cold=2.,
+                                contact_position=-.15625)
+    assert t.tolist() == [6., 6., 6., 3., 2., 2., 2., 2., 2.]
+    _, near_wall = fd_contact_reference(0., half_length=.5, n=9, t_hot=6., t_cold=2.,
+                                        contact_position=-.499)
+    assert near_wall.tolist() == [6.] + [2.]*8
