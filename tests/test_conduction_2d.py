@@ -2731,3 +2731,31 @@ def test_layered_source_heat_integrates_quadratic_midpoint():
         return_source_heat=True)
     torch.testing.assert_close(supplied[0], torch.full_like(k, .125*.5**3/3), atol=1e-15, rtol=0)
     torch.testing.assert_close(state[-1]*.125, supplied[0], atol=1e-14, rtol=0)
+
+
+@pytest.mark.parametrize("phase", [0., .7])
+def test_travelling_fixed_wall_cycle_heat_refinement(phase, record_property):
+    from tensorsph.heat_conduction_2d import harmonic_fixed_wall_cycle_heat_2d, solve_harmonic_slab_2d
+
+    # T=x*exp(i*2*pi*y+i*phase), k=C=1. Opposite wall flux phasors have
+    # unit amplitude in every row and sum to zero along either periodic wall.
+    omega = 3.
+    previous = None
+    for n in (16,32,64):
+        dx = 1/n
+        x = (torch.arange(n,dtype=torch.float64)+.5)*dx
+        wave = torch.exp(1j*(2*math.pi*x+phase))
+        exact = wave[:,None]*x
+        walls = (0.,wave)
+        field,sections = solve_harmonic_slab_2d(
+            (1j*omega+(2*math.pi)**2)*exact,dx,walls,omega,return_x_flux=True)
+        heat = harmonic_fixed_wall_cycle_heat_2d(field,dx,1.,torch.stack((sections[0],-sections[-1])),
+                                                 omega,x_wall_temperatures=walls)
+        error = float((heat-2/omega).abs().max())
+        record_property(f"n{n}_max_cycle_heat_error_J_m2",error)
+        assert float(sections[[0,-1]].abs().max()) < 1e-12
+        if previous is not None:
+            order = math.log2(previous/error)
+            record_property(f"n{n}_order",order)
+            assert order > 1.8
+        previous = error

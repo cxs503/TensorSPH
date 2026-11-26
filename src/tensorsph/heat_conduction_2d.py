@@ -1861,6 +1861,22 @@ def recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux
     return recovered if side is None else recovered[0]
 
 
+def harmonic_fixed_wall_cycle_heat_2d(temperature, dx, conductivity, wall_mean_flux, angular_frequency, *,
+                                      contact_resistance_x=None, x_wall_temperatures=None, side=None):
+    """Heat absorbed per unit area per row over one zero-mean sinusoidal cycle.
+
+    Supply peak temperature phasors and inward mean flux phasors as for
+    recover_dirichlet_wall_flux_2d. The returned positive heat (J/m²) equals
+    the magnitude of the heat released per cycle. Average rows after computing
+    these local integrals to retain exchange between out-of-phase rows.
+    """
+    if not math.isfinite(angular_frequency) or angular_frequency <= 0:
+        raise ValueError("angular_frequency must be positive and finite")
+    flux = recover_dirichlet_wall_flux_2d(temperature, dx, conductivity, wall_mean_flux,
+        contact_resistance_x=contact_resistance_x, x_wall_temperatures=x_wall_temperatures, side=side)
+    return (2/angular_frequency)*flux.abs()
+
+
 def recover_layered_interior_flux(temperature, dx, conductivity, *, axial_flux_gradient=0.,
                                   contact_resistance_x=None):
     """Reconstruct rightward Fourier flux at internal faces from centre temperatures.
